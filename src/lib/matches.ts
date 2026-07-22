@@ -12,6 +12,7 @@ export type MatchTeam = {
 
 export type Match = {
   id: string
+  espnEventId: string
   leagueId: LeagueId
   kickoff: string
   dateKey: string
@@ -110,6 +111,7 @@ function normalizeEvent(event: EspnEvent, leagueId: LeagueId): Match | null {
 
   return {
     id: `${leagueId}-${event.id}`,
+    espnEventId: event.id,
     leagueId,
     kickoff,
     dateKey: dateKeyFromIso(kickoff),

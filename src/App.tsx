@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarStrip } from './components/CalendarStrip'
 import { MatchList } from './components/MatchList'
+import { StandingsTable } from './components/StandingsTable'
 import {
   addDays,
   CALENDAR_RADIUS_DAYS,
@@ -12,46 +13,21 @@ import {
 import { LEAGUES, type League, type LeagueId } from './lib/leagues'
 import {
   dateKeysWithMatches,
-  fetchBigFiveWindow,
   groupMatchesByDate,
   matchesForLeagueFrom,
   matchesOnDate,
   type Match,
 } from './lib/matches'
+import { useLeagueStandings } from './lib/stats/useLeagueStandings'
+import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
-function useBigFiveMatches() {
-  const [matches, setMatches] = useState<Match[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const today = startOfDay(new Date())
-    const from = addDays(today, -CALENDAR_RADIUS_DAYS)
-    const to = addDays(today, CALENDAR_RADIUS_DAYS)
-    let cancelled = false
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await fetchBigFiveWindow(from, to)
-        if (!cancelled) setMatches(data)
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Could not load fixtures')
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    void load()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  return { matches, loading, error }
+function formatUpdatedAt(updatedAt: number | null): string {
+  if (!updatedAt) return 'Waiting for first sync'
+  return `Updated ${new Date(updatedAt).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })}`
 }
 
 function HomeScreen({
@@ -62,6 +38,10 @@ function HomeScreen({
   matches,
   loading,
   error,
+  updatedAt,
+  refreshing,
+  hasLive,
+  onRefresh,
   reduce,
 }: {
   selectedDate: Date
@@ -71,6 +51,10 @@ function HomeScreen({
   matches: Match[]
   loading: boolean
   error: string | null
+  updatedAt: number | null
+  refreshing: boolean
+  hasLive: boolean
+  onRefresh: () => void
   reduce: boolean | null
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
@@ -118,6 +102,18 @@ function HomeScreen({
           >
             Player ratings from match stats, and what clubs pay per goal, assist, and more.
           </motion.p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70">
+            <span>{formatUpdatedAt(updatedAt)}</span>
+            {hasLive && <span className="text-lime">Live polling</span>}
+            {refreshing && <span>Syncing…</span>}
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="border border-white/15 px-2 py-1 text-mist transition hover:border-lime/50 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            >
+              Refresh
+            </button>
+          </div>
         </header>
 
         <CalendarStrip
@@ -223,6 +219,7 @@ function LeagueScreen({
     [matches, league.id, today, horizon],
   )
   const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
+  const standings = useLeagueStandings(league.id)
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -258,17 +255,40 @@ function LeagueScreen({
             {league.name}
           </h1>
           <p className="mt-3 text-sm text-mist/80">
-            Fixtures from today through the next {CALENDAR_RADIUS_DAYS} days
+            Table + fixtures for the next {CALENDAR_RADIUS_DAYS} days
             {!loading && !error ? ` · ${leagueMatches.length} matches` : ''}
           </p>
         </motion.header>
+
+        <motion.section
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
+          className="mt-8"
+          aria-label={`${league.name} standings`}
+        >
+          <div className="mb-3 px-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
+            <p className="mt-1 text-sm text-mist/80">Live standings from ESPN</p>
+          </div>
+          <StandingsTable
+            rows={standings.rows}
+            loading={standings.loading}
+            error={standings.error}
+          />
+        </motion.section>
 
         <motion.div
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.45, delay: reduce ? 0 : 0.15 }}
-          className="mt-8 flex flex-1 flex-col gap-6"
+          className="mt-10 flex flex-1 flex-col gap-6"
         >
+          <div className="px-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Fixtures</p>
+            <p className="mt-1 text-sm text-mist/80">Tap a match for possession, shots, and key moments</p>
+          </div>
+
           {loading ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
           ) : error ? (
@@ -290,10 +310,7 @@ function LeagueScreen({
                     </span>
                   )}
                 </div>
-                <MatchList
-                  matches={dayMatches}
-                  emptyLabel="No matches"
-                />
+                <MatchList matches={dayMatches} emptyLabel="No matches" />
               </section>
             ))
           )}
@@ -305,7 +322,8 @@ function LeagueScreen({
 
 export default function App() {
   const reduce = useReducedMotion()
-  const { matches, loading, error } = useBigFiveMatches()
+  const { matches, loading, error, updatedAt, refreshing, hasLive, refresh } =
+    useLiveBigFiveMatches()
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
 
@@ -348,6 +366,10 @@ export default function App() {
             matches={matches}
             loading={loading}
             error={error}
+            updatedAt={updatedAt}
+            refreshing={refreshing}
+            hasLive={hasLive}
+            onRefresh={refresh}
             reduce={reduce}
           />
         </motion.div>
