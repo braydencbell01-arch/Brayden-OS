@@ -128,6 +128,9 @@ export type PlayerProfile = {
   seasonStats: PlayerSeasonStatLine[]
   averageRating: number | null
   recentRatings: PlayerRecentMatchRating[]
+  /** Club sides only (no national teams). */
   clubHistory: PlayerClubStint[]
+  /** National / country teams only. */
+  nationalHistory: PlayerClubStint[]
   fetchedAt: number
 }

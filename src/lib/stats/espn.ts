@@ -508,6 +508,7 @@ type EspnBioPayload = {
     id?: string
     displayName?: string
     logo?: string
+    slug?: string
     seasons?: string
   }>
 }
@@ -588,6 +589,32 @@ function parseGameLogRatings(
     .filter((row): row is PlayerRecentMatchRating => row != null)
 }
 
+function isNationalTeamHistoryEntry(stint: {
+  logo?: string
+  slug?: string
+}): boolean {
+  // ESPN country sides use /teamlogos/countries/; clubs use /teamlogos/soccer/.
+  if (stint.logo?.includes('/teamlogos/countries/')) return true
+  // Fallback: country slug like "arg" or women's "aut.w"
+  if (stint.slug && /^[a-z]{3}(\.w)?$/i.test(stint.slug)) return true
+  return false
+}
+
+function mapTeamHistoryStint(stint: {
+  id?: string
+  displayName?: string
+  logo?: string
+  seasons?: string
+}): PlayerClubStint | null {
+  if (!stint.displayName) return null
+  return {
+    teamId: stint.id || stint.displayName.toLowerCase().replace(/\s+/g, '-'),
+    teamName: stint.displayName,
+    logoUrl: stint.logo,
+    seasons: stint.seasons || '—',
+  }
+}
+
 export async function fetchPlayerProfile(
   leagueId: LeagueId,
   playerId: string,
@@ -630,16 +657,14 @@ export async function fetchPlayerProfile(
     })
   }
 
-  const clubHistory = (bioJson.teamHistory ?? []).flatMap((stint) => {
-    if (!stint.displayName) return []
-    const row: PlayerClubStint = {
-      teamId: stint.id || stint.displayName.toLowerCase().replace(/\s+/g, '-'),
-      teamName: stint.displayName,
-      logoUrl: stint.logo,
-      seasons: stint.seasons || '—',
-    }
-    return [row]
-  })
+  const clubHistory: PlayerClubStint[] = []
+  const nationalHistory: PlayerClubStint[] = []
+  for (const raw of bioJson.teamHistory ?? []) {
+    const mapped = mapTeamHistoryStint(raw)
+    if (!mapped) continue
+    if (isNationalTeamHistoryEntry(raw)) nationalHistory.push(mapped)
+    else clubHistory.push(mapped)
+  }
 
   return {
     id: athlete.id,
@@ -661,6 +686,7 @@ export async function fetchPlayerProfile(
     averageRating,
     recentRatings,
     clubHistory,
+    nationalHistory,
     fetchedAt: Date.now(),
   }
 }

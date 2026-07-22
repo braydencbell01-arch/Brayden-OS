@@ -74,7 +74,9 @@ export function PlayerProfileScreen({
 }) {
   const { profile, loading, error } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
-  const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'clubs' | null>('stats')
+  const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'transfers' | null>(
+    'stats',
+  )
 
   const favoritePayload: FavoritePlayer = {
     id: player.id,
@@ -89,9 +91,12 @@ export function PlayerProfileScreen({
 
   const favorited = favorites.isPlayerFavorite(player.id)
 
-  const toggle = (section: 'stats' | 'ratings' | 'clubs') => {
+  const toggle = (section: 'stats' | 'ratings' | 'transfers') => {
     setOpenSection((current) => (current === section ? null : section))
   }
+
+  const transferCount =
+    (profile?.clubHistory.length ?? 0) + (profile?.nationalHistory.length ?? 0)
 
   return (
     <ProfileShell onBack={onBack} onOpenFavorites={onOpenFavorites} reduce={reduce}>
@@ -206,41 +211,87 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
 
             <ProfileAccordion
-              title="Clubs"
-              subtitle="Career path"
-              open={openSection === 'clubs'}
-              onToggle={() => toggle('clubs')}
-              meta={profile.clubHistory.length ? String(profile.clubHistory.length) : undefined}
+              title="Transfer history"
+              subtitle="Clubs and national team kept separate"
+              open={openSection === 'transfers'}
+              onToggle={() => toggle('transfers')}
+              meta={transferCount ? String(transferCount) : undefined}
             >
-              {profile.clubHistory.length === 0 ? (
-                <p className="text-sm text-mist/70">No club history listed yet.</p>
-              ) : (
-                <ul className="flex flex-col gap-1.5">
-                  {profile.clubHistory.map((stint) => (
-                    <li
-                      key={`${stint.teamId}-${stint.seasons}`}
-                      className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
-                    >
-                      {stint.logoUrl ? (
-                        <img
-                          src={stint.logoUrl}
-                          alt=""
-                          className="h-7 w-7 object-contain"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="h-7 w-7 rounded-full bg-white/10" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-cream">{stint.teamName}</p>
-                        <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                          {stint.seasons}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="flex flex-col gap-5">
+                <section aria-label="Club transfer history">
+                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                    Clubs
+                  </p>
+                  {profile.clubHistory.length === 0 ? (
+                    <p className="text-sm text-mist/70">No club history listed yet.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-1.5">
+                      {profile.clubHistory.map((stint) => (
+                        <li
+                          key={`club-${stint.teamId}-${stint.seasons}`}
+                          className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
+                        >
+                          {stint.logoUrl ? (
+                            <img
+                              src={stint.logoUrl}
+                              alt=""
+                              className="h-7 w-7 object-contain"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-white/10" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-cream">
+                              {stint.teamName}
+                            </p>
+                            <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                              {stint.seasons}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                <section aria-label="National team transfer history">
+                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                    National team
+                  </p>
+                  {profile.nationalHistory.length === 0 ? (
+                    <p className="text-sm text-mist/70">No national team history listed yet.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-1.5">
+                      {profile.nationalHistory.map((stint) => (
+                        <li
+                          key={`nat-${stint.teamId}-${stint.seasons}`}
+                          className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
+                        >
+                          {stint.logoUrl ? (
+                            <img
+                              src={stint.logoUrl}
+                              alt=""
+                              className="h-7 w-7 object-contain"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="h-7 w-7 rounded-full bg-white/10" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-cream">
+                              {stint.teamName}
+                            </p>
+                            <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                              {stint.seasons}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              </div>
             </ProfileAccordion>
           </div>
         </>
