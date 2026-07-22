@@ -38,6 +38,7 @@ export const STAT_FEEDS: StatFeed[] = [
     ],
     gaps: [
       'No xG / xA',
+      'No chances created / successful dribbles on match player lines (rating placeholders ready)',
       'No progressive passes / carries',
       'No reliable minutes played in match roster payload',
       'No transfer fees (needed for pay-per-stat)',

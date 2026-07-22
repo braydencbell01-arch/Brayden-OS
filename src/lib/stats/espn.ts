@@ -155,6 +155,15 @@ function readNumericStat(stats: EspnStat[] | undefined, name: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
+/** Read the first matching ESPN stat name (for placeholder fields with aliases). */
+function readNumericStatAlias(stats: EspnStat[] | undefined, names: string[]): number {
+  for (const name of names) {
+    const value = readNumericStat(stats, name)
+    if (value > 0) return value
+  }
+  return 0
+}
+
 export function playerHeadshotUrl(playerId: string): string {
   return `https://a.espncdn.com/i/headshots/soccer/players/full/${playerId}.png`
 }
@@ -196,6 +205,19 @@ function toMatchPlayerStats(entry: EspnRosterEntry): MatchPlayerStats {
     saves: readNumericStat(entry.stats, 'saves'),
     goalsConceded: readNumericStat(entry.stats, 'goalsConceded'),
     shotsFaced: readNumericStat(entry.stats, 'shotsFaced'),
+    // Placeholders — ESPN match lines usually omit these; aliases ready for future feeds.
+    chancesCreated: readNumericStatAlias(entry.stats, [
+      'chancesCreated',
+      'chanceCreated',
+      'keyPasses',
+      'keyPass',
+    ]),
+    successfulDribbles: readNumericStatAlias(entry.stats, [
+      'successfulDribbles',
+      'dribblesWon',
+      'takeOnsWon',
+      'dribblesSuccessful',
+    ]),
   }
 }
 
@@ -963,6 +985,13 @@ function parseGameLogRatings(
         saves: num('saves'),
         goalsConceded: num('goalsConceded'),
         shotsFaced: num('shotsFaced'),
+        chancesCreated:
+          num('chancesCreated') || num('chanceCreated') || num('keyPasses') || num('keyPass'),
+        successfulDribbles:
+          num('successfulDribbles') ||
+          num('dribblesWon') ||
+          num('takeOnsWon') ||
+          num('dribblesSuccessful'),
       }
 
       const breakdown = rateMatchPerformance(
@@ -1132,6 +1161,14 @@ async function ratingFromEventLogItem(
     saves: readCoreStatValue(categories, 'saves'),
     goalsConceded: readCoreStatValue(categories, 'goalsConceded'),
     shotsFaced: readCoreStatValue(categories, 'shotsFaced'),
+    chancesCreated:
+      readCoreStatValue(categories, 'chancesCreated') ||
+      readCoreStatValue(categories, 'chanceCreated') ||
+      readCoreStatValue(categories, 'keyPasses'),
+    successfulDribbles:
+      readCoreStatValue(categories, 'successfulDribbles') ||
+      readCoreStatValue(categories, 'dribblesWon') ||
+      readCoreStatValue(categories, 'takeOnsWon'),
   }
 
   const breakdown = rateMatchPerformance(stats, positionGroupFromAbbrev(positionAbbrev), {

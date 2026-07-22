@@ -11,6 +11,10 @@
  *   games actually separate (not clustered around 6–7)
  * - Live matches use the same math on stats so far (no artificial spike-to-10)
  *
+ * Placeholders (not in ESPN match lines yet — wired for a richer feed):
+ * - chancesCreated
+ * - successfulDribbles
+ *
  * Season form = recency-weighted average of recent match ratings.
  */
 
@@ -32,6 +36,16 @@ export type MatchPlayerStats = {
   saves: number
   goalsConceded: number
   shotsFaced: number
+  /**
+   * Placeholder — ESPN match rosters do not provide this yet.
+   * When a richer feed supplies it, it scores under creation.
+   */
+  chancesCreated?: number
+  /**
+   * Placeholder — ESPN match rosters do not provide this yet.
+   * When a richer feed supplies it, it scores under attack.
+   */
+  successfulDribbles?: number
 }
 
 export type RateMatchOptions = {
@@ -89,7 +103,29 @@ const W = {
   save: 4.5,
   gkGoalConceded: -12,
   defGoalConceded: -5,
+  /** Placeholder until chances-created feed lands — retune then. */
+  chanceCreated: 4,
+  /** Placeholder until successful-dribbles feed lands — retune then. */
+  successfulDribble: 2.5,
 } as const
+
+/** Exposed so UI / docs can show pending inputs. */
+export const RATING_PLACEHOLDER_STATS = [
+  {
+    key: 'chancesCreated',
+    label: 'Chances created',
+    weight: W.chanceCreated,
+    status: 'awaiting-feed',
+    note: 'Not in ESPN match player lines yet',
+  },
+  {
+    key: 'successfulDribbles',
+    label: 'Successful dribbles',
+    weight: W.successfulDribble,
+    status: 'awaiting-feed',
+    note: 'Not in ESPN match player lines yet',
+  },
+] as const
 
 export function positionGroupFromAbbrev(abbrev: string | undefined | null): PlayerPositionGroup {
   const a = (abbrev || '').toUpperCase()
@@ -164,6 +200,10 @@ function resolveMinutes(options?: RateMatchOptions): number {
   return FULL_TIME
 }
 
+function countOrZero(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+}
+
 /** Convert 0–100 performance → 0–10 rating (26 → 2.6). */
 export function ratingFromPerformance100(performance100: number): number {
   return clipRating(performance100 / 10)
@@ -182,17 +222,24 @@ export function rateMatchPerformance(
   if (stats.starter === false) notes.push('Came off the bench')
   if (options?.live) notes.push(`Live @ ${Math.round(minutesUsed)}′`)
 
+  const chancesCreated = countOrZero(stats.chancesCreated)
+  const successfulDribbles = countOrZero(stats.successfulDribbles)
+
   let attack = 0
   const goalWeight =
     position === 'FWD' ? W.goal : position === 'MID' ? W.goal + 1 : W.goal + 2
   attack += stats.totalGoals * goalWeight
   attack += Math.min(stats.shotsOnTarget, 10) * W.shotOnTarget
   attack += Math.min(Math.max(stats.totalShots - stats.shotsOnTarget, 0), 10) * W.shotOffTarget
+  attack += Math.min(successfulDribbles, 12) * W.successfulDribble
   if (stats.totalGoals > 0) notes.push(`${stats.totalGoals} goal(s)`)
+  if (successfulDribbles > 0) notes.push(`${successfulDribbles} successful dribble(s)`)
 
   let creation = 0
   creation += stats.goalAssists * (position === 'MID' ? W.assist + 1 : W.assist)
+  creation += Math.min(chancesCreated, 10) * W.chanceCreated
   if (stats.goalAssists > 0) notes.push(`${stats.goalAssists} assist(s)`)
+  if (chancesCreated > 0) notes.push(`${chancesCreated} chance(s) created`)
 
   let discipline = 0
   discipline += Math.min(stats.foulsCommitted, 8) * W.foulCommitted
@@ -265,6 +312,7 @@ export function rateSeasonForm(matchRatings: number[], maxGames = 8): number | n
 export const RATING_ROADMAP = {
   v0: 'Linear 0–100 performance → rating/10 (26/100 = 2.6); wide action weights',
   v1: 'True per-player minutes from feed (not just match clock)',
-  v2: 'Blend xG/xA overperformance from FootyStats/Big Balls/API-Football',
-  v3: 'Progressive actions + duel rates from FBref-style weekly enrichment',
+  v2: 'Wire chancesCreated + successfulDribbles once a richer feed is connected',
+  v3: 'Blend xG/xA overperformance from FootyStats/Big Balls/API-Football',
+  v4: 'Progressive actions + duel rates from FBref-style weekly enrichment',
 } as const
