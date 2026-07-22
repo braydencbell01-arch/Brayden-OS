@@ -1,19 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Barlow Condensed", sans-serif;
-  --font-brand: "Libre Baskerville", Georgia, "Times New Roman", serif;
-  --font-sans: "Outfit", sans-serif;
-  --font-comic: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Comic Neue", cursive;
+  --font-display: "Bebas Neue", sans-serif;
+  --font-sans: "Manrope", sans-serif;
 
-  --color-navy: #0b223f;
-  --color-navy-deep: #06101c;
-  --color-crimson: #d7282f;
-  --color-crimson-hot: #e83a40;
-  --color-chalk: #f7f5f2;
-  --color-cream: #fcf5e9;
-  --color-mist: #ebe7e1;
-  --color-muted: #5a6470;
+  --color-pitch: #0b3d2e;
+  --color-pitch-deep: #06261c;
+  --color-turf: #146b4a;
+  --color-lime: #c8f542;
+  --color-lime-hot: #d9ff6a;
+  --color-cream: #f2f7f3;
+  --color-mist: #d8e6de;
+  --color-ink: #0a1f18;
+  --color-muted: #6b8579;
   --color-white: #ffffff;
 }
 
@@ -26,8 +25,8 @@
     margin: 0;
     min-width: 320px;
     font-family: var(--font-sans);
-    color: var(--color-navy);
-    background: var(--color-chalk);
+    color: var(--color-cream);
+    background: var(--color-pitch-deep);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -42,11 +41,19 @@
     text-wrap: balance;
   }
 
-  .font-brand {
-    font-family: var(--font-brand);
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
-  .font-comic {
-    font-family: var(--font-comic);
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pitch-grid {
+    background-image:
+      linear-gradient(rgba(200, 245, 66, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200, 245, 66, 0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
   }
 }
