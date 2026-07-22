@@ -77,14 +77,14 @@ export const LEAGUES: League[] = [
   },
   {
     id: 'belgian-pro-league',
-    name: 'Belgian Pro League',
+    name: 'Pro League',
     short: 'BEL',
     country: 'Belgium',
     espnCode: 'bel.1',
   },
   {
     id: 'turkish-super-lig',
-    name: 'Turkish Super Lig',
+    name: 'Super Lig',
     short: 'TUR',
     country: 'Turkey',
     espnCode: 'tur.1',
