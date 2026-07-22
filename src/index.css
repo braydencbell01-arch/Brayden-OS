@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: "Bebas Neue", sans-serif;
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-sans: "Outfit", sans-serif;
+  --font-comic: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Comic Neue", cursive;
 
-  --color-pitch: #0c3b2e;
-  --color-pitch-deep: #07261e;
-  --color-ink: #0e1a24;
-  --color-chalk: #f4f7f5;
-  --color-mist: #e4ece8;
-  --color-flare: #ff5a1f;
-  --color-turf: #1f8a5b;
-  --color-muted: #5c6b66;
+  --color-navy: #0a1628;
+  --color-navy-deep: #06101c;
+  --color-crimson: #c8102e;
+  --color-crimson-hot: #e11d3a;
+  --color-chalk: #f7f5f2;
+  --color-mist: #ebe7e1;
+  --color-muted: #5a6470;
+  --color-white: #ffffff;
 }
 
 @layer base {
@@ -23,7 +24,7 @@
     margin: 0;
     min-width: 320px;
     font-family: var(--font-sans);
-    color: var(--color-ink);
+    color: var(--color-navy);
     background: var(--color-chalk);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -37,5 +38,9 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .font-comic {
+    font-family: var(--font-comic);
   }
 }
