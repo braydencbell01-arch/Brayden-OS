@@ -536,6 +536,56 @@ type EspnOverviewPayload = {
   }
 }
 
+/** Season stats grid order (left→right, top→bottom). */
+const SEASON_STAT_ORDER: Array<{ key: string; label: string }> = [
+  { key: 'totalGoals', label: 'Goals' },
+  { key: 'goalAssists', label: 'Assists' },
+  { key: 'starts', label: 'Starts' },
+  { key: 'offsides', label: 'Offsides' },
+  { key: 'totalShots', label: 'Shots' },
+  { key: 'shotsOnTarget', label: 'Shots on goal' },
+  { key: 'foulsCommitted', label: 'Fouls committed' },
+  { key: 'foulsSuffered', label: 'Fouls suffered' },
+  { key: 'yellowCards', label: 'Yellow cards' },
+  { key: 'redCards', label: 'Red cards' },
+]
+
+function buildOrderedSeasonStats(overview: EspnOverviewPayload): PlayerSeasonStatLine[] {
+  const names = overview.statistics?.names ?? []
+  const labels = overview.statistics?.displayNames ?? []
+  const values = overview.statistics?.splits?.[0]?.stats ?? []
+  if (names.length === 0 || values.length === 0) return []
+
+  const byKey = new Map<string, { label: string; value: string }>()
+  names.forEach((name, index) => {
+    if (!name) return
+    byKey.set(name, {
+      label: labels[index] || name,
+      value: values[index] || '0',
+    })
+  })
+
+  const ordered: PlayerSeasonStatLine[] = []
+  const used = new Set<string>()
+
+  for (const { key, label } of SEASON_STAT_ORDER) {
+    const found = byKey.get(key)
+    if (!found) continue
+    ordered.push({ label, value: found.value })
+    used.add(key)
+  }
+
+  // Keep any extra ESPN stats after the preferred grid (stable API order).
+  names.forEach((name) => {
+    if (!name || used.has(name)) return
+    const found = byKey.get(name)
+    if (!found) return
+    ordered.push({ label: found.label, value: found.value })
+  })
+
+  return ordered
+}
+
 function parseGameLogRatings(
   overview: EspnOverviewPayload,
   positionAbbrev?: string,
@@ -671,16 +721,7 @@ export async function fetchPlayerProfile(
   const positionAbbrev = athlete.position?.abbreviation
   const recentRatings = parseGameLogRatings(overviewJson, positionAbbrev)
   const averageRating = rateSeasonForm(recentRatings.map((row) => row.rating))
-
-  const seasonStats: PlayerSeasonStatLine[] = []
-  const split = overviewJson.statistics?.splits?.[0]
-  const labels = overviewJson.statistics?.displayNames ?? []
-  if (split?.stats && labels.length > 0) {
-    split.stats.forEach((value, index) => {
-      if (!labels[index]) return
-      seasonStats.push({ label: labels[index], value: value || '0' })
-    })
-  }
+  const seasonStats = buildOrderedSeasonStats(overviewJson)
 
   const clubHistory: PlayerClubStint[] = []
   const nationalHistory: PlayerClubStint[] = []
