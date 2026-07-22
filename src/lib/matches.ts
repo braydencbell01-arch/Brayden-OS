@@ -207,8 +207,13 @@ export function dateKeysForFavorites(
   matches: Match[],
   favoriteLeagueIds: Set<string>,
   favoriteTeamIds: Set<string>,
+  favoritePlayerTeamIds: Set<string> = new Set(),
 ): Set<string> {
-  if (favoriteLeagueIds.size === 0 && favoriteTeamIds.size === 0) {
+  if (
+    favoriteLeagueIds.size === 0 &&
+    favoriteTeamIds.size === 0 &&
+    favoritePlayerTeamIds.size === 0
+  ) {
     return new Set()
   }
 
@@ -216,7 +221,10 @@ export function dateKeysForFavorites(
   for (const match of matches) {
     const leagueFav = favoriteLeagueIds.has(match.leagueId)
     const teamFav =
-      favoriteTeamIds.has(match.home.id) || favoriteTeamIds.has(match.away.id)
+      favoriteTeamIds.has(match.home.id) ||
+      favoriteTeamIds.has(match.away.id) ||
+      favoritePlayerTeamIds.has(match.home.id) ||
+      favoritePlayerTeamIds.has(match.away.id)
     if (leagueFav || teamFav) keys.add(match.dateKey)
   }
   return keys

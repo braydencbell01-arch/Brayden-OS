@@ -13,6 +13,12 @@ export type FavoriteTeam = {
 export type FavoritePlayer = {
   id: string
   name: string
+  shortName: string
+  photoUrl?: string
+  position?: string
+  leagueId: LeagueId
+  teamId?: string
+  teamName?: string
 }
 
 type FavoritesState = {
@@ -60,6 +66,17 @@ export function useFavorites() {
 
   const leagueIds = useMemo(() => new Set(state.leagues), [state.leagues])
   const teamIds = useMemo(() => new Set(state.teams.map((team) => team.id)), [state.teams])
+  const playerIds = useMemo(
+    () => new Set(state.players.map((player) => player.id)),
+    [state.players],
+  )
+  const favoritePlayerTeamIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const player of state.players) {
+      if (player.teamId) ids.add(player.teamId)
+    }
+    return ids
+  }, [state.players])
 
   const isLeagueFavorite = useCallback(
     (id: LeagueId) => leagueIds.has(id),
@@ -69,6 +86,11 @@ export function useFavorites() {
   const isTeamFavorite = useCallback(
     (id: string) => teamIds.has(id),
     [teamIds],
+  )
+
+  const isPlayerFavorite = useCallback(
+    (id: string) => playerIds.has(id),
+    [playerIds],
   )
 
   const toggleLeague = useCallback(
@@ -91,16 +113,30 @@ export function useFavorites() {
     [persist, state, teamIds],
   )
 
+  const togglePlayer = useCallback(
+    (player: FavoritePlayer) => {
+      const players = playerIds.has(player.id)
+        ? state.players.filter((item) => item.id !== player.id)
+        : [...state.players, player]
+      persist({ ...state, players })
+    },
+    [persist, playerIds, state],
+  )
+
   return {
     leagues: state.leagues,
     teams: state.teams,
     players: state.players,
     leagueIds,
     teamIds,
+    playerIds,
+    favoritePlayerTeamIds,
     isLeagueFavorite,
     isTeamFavorite,
+    isPlayerFavorite,
     toggleLeague,
     toggleTeam,
+    togglePlayer,
   }
 }
 

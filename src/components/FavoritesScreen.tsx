@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
-import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
+import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { FavoriteStar } from './FavoriteStar'
+import type { PlayerNavRef } from './PlayerProfileScreen'
 
 type FavoritesSection = 'leagues' | 'teams' | 'players'
 
@@ -11,12 +12,14 @@ export function FavoritesScreen({
   onBack,
   onOpenLeague,
   onOpenTeam,
+  onOpenPlayer,
   reduce,
 }: {
   favorites: FavoritesApi
   onBack: () => void
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
+  onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
 }) {
   const [openSection, setOpenSection] = useState<FavoritesSection | null>('leagues')
@@ -26,6 +29,17 @@ export function FavoritesScreen({
   const toggleSection = (section: FavoritesSection) => {
     setOpenSection((current) => (current === section ? null : section))
   }
+
+  const toNav = (player: FavoritePlayer): PlayerNavRef => ({
+    id: player.id,
+    leagueId: player.leagueId,
+    name: player.name,
+    shortName: player.shortName,
+    photoUrl: player.photoUrl,
+    teamId: player.teamId,
+    teamName: player.teamName,
+    position: player.position,
+  })
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -187,9 +201,52 @@ export function FavoritesScreen({
                     )}
 
                     {section.id === 'players' && (
-                      <p className="text-sm text-mist/70">
-                        No players yet — player favorites will land here once player profiles are added.
-                      </p>
+                      favorites.players.length === 0 ? (
+                        <p className="text-sm text-mist/70">
+                          No favorited players yet. Open a match lineup and tap a player, then star
+                          their profile.
+                        </p>
+                      ) : (
+                        <ul className="flex flex-col gap-2">
+                          {favorites.players.map((player) => (
+                            <li key={player.id}>
+                              <div className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3">
+                                <FavoriteStar
+                                  active
+                                  label={player.name}
+                                  onToggle={() => favorites.togglePlayer(player)}
+                                />
+                                {player.photoUrl ? (
+                                  <img
+                                    src={player.photoUrl}
+                                    alt=""
+                                    className="h-9 w-9 rounded-full object-cover bg-pitch"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="h-9 w-9 rounded-full bg-white/10" />
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenPlayer(toNav(player))}
+                                  className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                >
+                                  <span>
+                                    <span className="block text-sm font-semibold text-cream">
+                                      {player.name}
+                                    </span>
+                                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
+                                      {player.teamName || getLeague(player.leagueId).short}
+                                      {player.position ? ` · ${player.position}` : ''}
+                                    </span>
+                                  </span>
+                                  <span className="text-lime">Profile →</span>
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )
                     )}
                   </div>
                 )}
