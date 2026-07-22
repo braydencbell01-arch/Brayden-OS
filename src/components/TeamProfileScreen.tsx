@@ -61,7 +61,7 @@ export function TeamProfileScreen({
   const league = getLeague(team.leagueId)
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
-  const [openSection, setOpenSection] = useState<'upcoming' | 'recent' | null>('upcoming')
+  const [openSection, setOpenSection] = useState<'upcoming' | 'recent' | null>(null)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,

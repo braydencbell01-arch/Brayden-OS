@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   addDays,
@@ -38,7 +38,10 @@ export function CalendarStrip({
   const extendingRef = useRef(false)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
+  const hasCenteredRef = useRef(false)
+  const prevSelectedKeyRef = useRef<string | null>(null)
   const isSelectedToday = isSameDay(selected, today)
+  const selectedKey = toDateKey(selected)
 
   const forwardDays = Math.max(CALENDAR_INITIAL_FORWARD_DAYS, minForwardDays) + extraForwardDays
   const rangeStart = useMemo(() => addDays(today, -pastDays), [today, pastDays])
@@ -49,13 +52,34 @@ export function CalendarStrip({
     onNeedRange?.(rangeStart, rangeEnd)
   }, [onNeedRange, rangeStart, rangeEnd])
 
-  useEffect(() => {
+  const scrollSelectedIntoView = (behavior: ScrollBehavior) => {
     const scroller = scrollerRef.current
     const selectedBtn = selectedRef.current
-    if (!scroller || !selectedBtn) return
+    if (!scroller || !selectedBtn) return false
     const left = selectedBtn.offsetLeft - scroller.clientWidth / 2 + selectedBtn.clientWidth / 2
-    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-  }, [selected])
+    scroller.scrollTo({ left: Math.max(0, left), behavior })
+    return true
+  }
+
+  // Keep the selected day (usually today) centered. The strip starts ~100 days in
+  // the past (April when today is July); without this re-center, range rebuilds
+  // from fixture discovery reset scrollLeft to 0 and strand the user in April.
+  useLayoutEffect(() => {
+    const selectedChanged = prevSelectedKeyRef.current !== selectedKey
+    prevSelectedKeyRef.current = selectedKey
+    const behavior: ScrollBehavior =
+      hasCenteredRef.current && selectedChanged ? 'smooth' : 'auto'
+
+    if (scrollSelectedIntoView(behavior)) {
+      hasCenteredRef.current = true
+      return
+    }
+
+    const id = window.requestAnimationFrame(() => {
+      if (scrollSelectedIntoView('auto')) hasCenteredRef.current = true
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [selectedKey, days, pastDays, forwardDays])
 
   const extendPast = () => {
     if (extendingRef.current) return
@@ -93,7 +117,9 @@ export function CalendarStrip({
     if (!scroller) return
 
     const onScroll = () => {
-      if (extendingRef.current) return
+      // Ignore edge loads until we've centered on today — otherwise scrollLeft≈0
+      // on first paint eagerly prepends more April days.
+      if (extendingRef.current || !hasCenteredRef.current) return
       if (scroller.scrollLeft < 120) {
         extendPast()
         return
@@ -104,7 +130,6 @@ export function CalendarStrip({
 
     scroller.addEventListener('scroll', onScroll, { passive: true })
     return () => scroller.removeEventListener('scroll', onScroll)
-    // extendPast/extendForward close over latest setters; rebind when extents change.
   }, [pastDays, extraForwardDays, forwardDays])
 
   return (
@@ -139,14 +164,16 @@ export function CalendarStrip({
       </div>
 
       <motion.div
-        ref={scrollerRef}
-        initial={reduce ? false : { opacity: 0, x: 24 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className="scrollbar-hide -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 snap-x snap-mandatory"
-        role="listbox"
-        aria-label="Select a date"
+        initial={reduce ? false : { opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
+        <div
+          ref={scrollerRef}
+          className="scrollbar-hide -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 snap-x snap-mandatory"
+          role="listbox"
+          aria-label="Select a date"
+        >
         <button
           type="button"
           onClick={extendPast}
@@ -218,6 +245,7 @@ export function CalendarStrip({
         >
           Later
         </button>
+        </div>
       </motion.div>
     </section>
   )

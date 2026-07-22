@@ -41,7 +41,7 @@ export function PlayerProfileScreen({
   const { profile, loading, error } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'transfers' | null>(
-    'stats',
+    null,
   )
 
   const favoritePayload: FavoritePlayer = {
