@@ -27,12 +27,13 @@ const LEAGUES: League[] = [
   { id: 'eredivisie', name: 'Eredivisie', short: 'NED', country: 'NED' },
 ]
 
-function buildCalendarDays(center: Date, span = 21) {
+function buildCalendarDays(center: Date, range = 100) {
   const start = new Date(center)
   start.setHours(0, 0, 0, 0)
-  start.setDate(start.getDate() - Math.floor(span / 2))
+  start.setDate(start.getDate() - range)
+  const length = range * 2 + 1
 
-  return Array.from({ length: span }, (_, i) => {
+  return Array.from({ length }, (_, i) => {
     const date = new Date(start)
     date.setDate(start.getDate() + i)
     return date
@@ -45,6 +46,17 @@ function isSameDay(a: Date, b: Date) {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   )
+}
+
+function dayOffsetFrom(base: Date, day: Date) {
+  return Math.round((day.getTime() - base.getTime()) / 86_400_000)
+}
+
+function relativeDayLabel(offset: number) {
+  if (offset === 0) return 'Today'
+  if (offset === 1) return 'Tomorrow'
+  if (offset === -1) return 'Yesterday'
+  return null
 }
 
 function CalendarStrip({
@@ -61,28 +73,77 @@ function CalendarStrip({
     d.setHours(0, 0, 0, 0)
     return d
   }, [])
-  const days = useMemo(() => buildCalendarDays(today), [today])
+  const days = useMemo(() => buildCalendarDays(today, 100), [today])
   const scrollerRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLButtonElement>(null)
+  const [showJumpToToday, setShowJumpToToday] = useState(false)
 
-  useEffect(() => {
+  const scrollToToday = (behavior: ScrollBehavior = 'smooth') => {
     const scroller = scrollerRef.current
     const todayBtn = todayRef.current
     if (!scroller || !todayBtn) return
     const left = todayBtn.offsetLeft - scroller.clientWidth / 2 + todayBtn.clientWidth / 2
-    scroller.scrollTo({ left: Math.max(0, left), behavior: 'auto' })
+    scroller.scrollTo({ left: Math.max(0, left), behavior })
+  }
+
+  const updateJumpVisibility = () => {
+    const scroller = scrollerRef.current
+    const todayBtn = todayRef.current
+    if (!scroller || !todayBtn) return
+    const scrollerRect = scroller.getBoundingClientRect()
+    const todayRect = todayBtn.getBoundingClientRect()
+    const fullyVisible =
+      todayRect.left >= scrollerRect.left - 4 && todayRect.right <= scrollerRect.right + 4
+    setShowJumpToToday(!fullyVisible)
+  }
+
+  useEffect(() => {
+    scrollToToday('auto')
+    // After initial layout, hide the jump control if today is already in view.
+    requestAnimationFrame(updateJumpVisibility)
   }, [days])
+
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    scroller.addEventListener('scroll', updateJumpVisibility, { passive: true })
+    window.addEventListener('resize', updateJumpVisibility)
+    return () => {
+      scroller.removeEventListener('scroll', updateJumpVisibility)
+      window.removeEventListener('resize', updateJumpVisibility)
+    }
+  }, [days])
+
+  const goToToday = () => {
+    onSelect(today)
+    requestAnimationFrame(() => {
+      scrollToToday('smooth')
+      requestAnimationFrame(updateJumpVisibility)
+    })
+  }
 
   return (
     <section aria-label="Match calendar" className="relative">
-      <div className="mb-3 flex items-end justify-between px-1">
-        <div>
+      <div className="mb-3 flex items-end justify-between gap-2 px-1">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
           <p className="mt-1 text-sm text-mist/80">Swipe for match days</p>
         </div>
-        <p className="font-display text-2xl tracking-wide text-cream/90">
-          {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <p className="font-display text-2xl tracking-wide text-cream/90">
+            {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+          </p>
+          {showJumpToToday && (
+            <button
+              type="button"
+              onClick={goToToday}
+              aria-label="Jump calendar back to today"
+              className="rounded border border-lime/40 bg-lime/15 px-1.5 py-0.5 text-[0.55rem] font-bold uppercase leading-none tracking-[0.08em] text-lime transition hover:bg-lime/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-1 focus-visible:ring-offset-pitch-deep"
+            >
+              Today
+            </button>
+          )}
+        </div>
       </div>
 
       <motion.div
@@ -96,7 +157,9 @@ function CalendarStrip({
       >
         {days.map((day) => {
           const active = isSameDay(day, selected)
-          const isToday = isSameDay(day, today)
+          const offset = dayOffsetFrom(today, day)
+          const isToday = offset === 0
+          const label = relativeDayLabel(offset)
           const weekday = day.toLocaleDateString(undefined, { weekday: 'short' })
           const dayNum = day.getDate()
 
@@ -120,9 +183,9 @@ function CalendarStrip({
                 {weekday}
               </span>
               <span className="mt-1 block font-display text-3xl leading-none tracking-wide">{dayNum}</span>
-              {isToday && (
+              {label && (
                 <span className={`mt-1 block text-[0.6rem] font-bold uppercase tracking-[0.12em] ${active ? 'text-ink/80' : 'text-lime'}`}>
-                  Today
+                  {label}
                 </span>
               )}
             </button>
