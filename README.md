@@ -1,22 +1,26 @@
 # Brayden-OS
 
-Monorepo-style workspace with two independent Vite apps:
+Monorepo-style workspace with two independent Vite apps and two **permanent** GitHub Pages URLs:
 
-| Path | App |
-|------|-----|
-| `/` (repo root) | **Brayden Stats** — soccer stats app shell |
-| [`jerseydeals/`](./jerseydeals) | **Jersey Deals** — storefront landing page |
+| App | Source | Permanent live URL |
+|-----|--------|--------------------|
+| **Brayden Stats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
+| **Jersey Deals** | [`jerseydeals/`](./jerseydeals) | https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/ |
+
+These URLs never change. Every push to `Brayden-OS` rebuilds **both** apps via [`.github/workflows/deploy-pages.yml`](./.github/workflows/deploy-pages.yml): Stats → site root, Jersey Deals → `/jerseydeals/` only (never the reverse).
 
 ---
 
 # Brayden Stats
 
-Interactive soccer stats app shell — player ratings, pay-per-stat insights, and the top five European leagues.
+Interactive soccer stats app shell — player ratings, pay-per-stat insights, and major leagues.
+
+**Permanent live link:** https://braydencbell01-arch.github.io/Brayden-OS/
 
 ## What's included
 
-- **Home**: Brayden Stats branding, horizontally scrollable match calendar, league list
-- **Leagues**: Premier League, La Liga, Bundesliga, Serie A, Ligue 1 — each opens its own screen
+- **Home**: Brayden Stats branding, horizontally scrollable match calendar (±100 days), league list
+- **Leagues**: Premier League, La Liga, Bundesliga, Serie A, Ligue 1, MLS, Eredivisie — each opens its own screen
 - Built as a mobile-friendly web app you can wrap later (Capacitor / PWA / native shell)
 
 ## Stack
@@ -44,15 +48,9 @@ npm run preview
 
 # Jersey Deals
 
-Separate project — see [`jerseydeals/README.md`](./jerseydeals/README.md).
+Separate storefront landing — see [`jerseydeals/README.md`](./jerseydeals/README.md).
 
-**Permanent live link (always latest deploy):**  
-https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
-
-Brayden Stats (root of the same Pages site):  
-https://braydencbell01-arch.github.io/Brayden-OS/
-
-Pushes to `Brayden-OS` rebuild and publish both apps via GitHub Actions.
+**Permanent live link:** https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
 
 ```bash
 cd jerseydeals
