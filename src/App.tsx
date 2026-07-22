@@ -255,10 +255,16 @@ export default function App() {
   const [returnTab, setReturnTab] = useState<BottomTab>('home')
   /** One-level stack so Team → opponent → Back returns to the previous club. */
   const previousTeamRef = useRef<FavoriteTeam | null>(null)
+  /** Team → League Back restores the club (separate from opponent stack). */
+  const leagueReturnTeamRef = useRef<FavoriteTeam | null>(null)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
-  const jumpToToday = () => setSelectedDate(startOfDay(new Date()))
+  const jumpToToday = () => {
+    const day = startOfDay(new Date())
+    setSelectedDate(day)
+    void ensureDate(day)
+  }
 
   const handleSelectDate = useCallback(
     (date: Date) => {
@@ -282,6 +288,7 @@ export default function App() {
     setActiveTeam(null)
     setActivePlayer(null)
     previousTeamRef.current = null
+    leagueReturnTeamRef.current = null
     setReturnTab(tab)
     setScreen(tab)
   }
@@ -289,12 +296,22 @@ export default function App() {
   const openLeague = (id: LeagueId) => {
     if (isTabScreen(screen)) {
       setReturnTab(screen)
-      setActiveTab(screen === 'favorites' ? 'favorites' : 'leagues')
+      setActiveTab(screen)
+      previousTeamRef.current = null
+      leagueReturnTeamRef.current = null
+      setActiveTeam(null)
+    } else if (screen === 'team' && activeTeam) {
+      // Team → league: keep the club so Back returns here instead of the tab.
+      leagueReturnTeamRef.current = activeTeam
+      setActiveTeam(null)
+    } else if (screen === 'player' && activeTeam) {
+      leagueReturnTeamRef.current = activeTeam
+      setActiveTeam(null)
+    } else {
+      setActiveTeam(null)
     }
-    previousTeamRef.current = null
-    setActiveLeagueId(id)
-    setActiveTeam(null)
     setActivePlayer(null)
+    setActiveLeagueId(id)
     setScreen('league-profile')
   }
 
@@ -304,6 +321,7 @@ export default function App() {
     } else if (screen !== 'team' && screen !== 'player') {
       previousTeamRef.current = null
       if (isTabScreen(screen)) {
+        leagueReturnTeamRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
       }
@@ -317,6 +335,7 @@ export default function App() {
     if (screen !== 'team' && screen !== 'player') {
       previousTeamRef.current = null
       if (isTabScreen(screen)) {
+        leagueReturnTeamRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
       }
@@ -349,14 +368,22 @@ export default function App() {
       setScreen('league-profile')
       return
     }
+    leagueReturnTeamRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
   }
 
   const closeLeagueProfile = () => {
     setActiveLeagueId(null)
-    setActiveTeam(null)
     setActivePlayer(null)
+    const returnTeam = leagueReturnTeamRef.current
+    if (returnTeam) {
+      leagueReturnTeamRef.current = null
+      setActiveTeam(returnTeam)
+      setScreen('team')
+      return
+    }
+    setActiveTeam(null)
     previousTeamRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
@@ -364,7 +391,7 @@ export default function App() {
 
   const navActive: BottomTab =
     screen === 'league-profile'
-      ? 'leagues'
+      ? activeTab
       : screen === 'team' || screen === 'player'
         ? activeTab
         : isTabScreen(screen)

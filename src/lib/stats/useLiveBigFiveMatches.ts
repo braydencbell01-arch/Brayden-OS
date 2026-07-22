@@ -204,10 +204,10 @@ export function useLiveBigFiveMatches() {
         expandLoadedBounds(from, to)
 
         if (!discoveryStartedRef.current) {
-          discoveryStartedRef.current = true
           setRefreshing(true)
           try {
             await discoverForwardHorizon()
+            discoveryStartedRef.current = true
           } finally {
             setRefreshing(false)
           }

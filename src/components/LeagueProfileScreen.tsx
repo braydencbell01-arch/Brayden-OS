@@ -143,40 +143,50 @@ export function LeagueProfileScreen({
           open={openSection === 'fixtures'}
           onToggle={() => toggleSection('fixtures')}
         >
-          {loading ? (
+          {loading && grouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : error ? (
-            <p className="text-sm text-mist/80">{error}</p>
-          ) : grouped.length === 0 ? (
-            <p className="text-sm text-mist/70">
-              No upcoming {league.name} matches known yet.
-            </p>
           ) : (
-            <div className="flex flex-col gap-5">
-              {grouped.map(({ dateKey, matches: dayMatches }) => (
-                <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                  <div className="mb-2 flex items-baseline justify-between px-0.5">
-                    <h2 className="font-display text-xl tracking-wide text-cream">
-                      {formatMatchDayHeading(dateKey)}
-                    </h2>
-                    {dateKey === toDateKey(today) && (
-                      <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
-                        Today
-                      </span>
-                    )}
+            <>
+              {error && grouped.length === 0 ? (
+                <p className="text-sm text-mist/80">{error}</p>
+              ) : null}
+              {error && grouped.length > 0 ? (
+                <p className="mb-3 text-sm text-mist/70">{error}</p>
+              ) : null}
+              {!error || grouped.length > 0 ? (
+                grouped.length === 0 ? (
+                  <p className="text-sm text-mist/70">
+                    No upcoming {league.name} matches known yet.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    {grouped.map(({ dateKey, matches: dayMatches }) => (
+                      <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                        <div className="mb-2 flex items-baseline justify-between px-0.5">
+                          <h2 className="font-display text-xl tracking-wide text-cream">
+                            {formatMatchDayHeading(dateKey)}
+                          </h2>
+                          {dateKey === toDateKey(today) && (
+                            <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
+                              Today
+                            </span>
+                          )}
+                        </div>
+                        <MatchList
+                          matches={dayMatches}
+                          onOpenTeam={onOpenTeam}
+                          onOpenPlayer={onOpenPlayer}
+                          favoriteLeagueIds={favorites.leagueIds}
+                          favoriteTeamIds={favorites.teamIds}
+                          favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
+                          emptyLabel="No matches"
+                        />
+                      </section>
+                    ))}
                   </div>
-                  <MatchList
-                    matches={dayMatches}
-                    onOpenTeam={onOpenTeam}
-                    onOpenPlayer={onOpenPlayer}
-                    favoriteLeagueIds={favorites.leagueIds}
-                    favoriteTeamIds={favorites.teamIds}
-                    favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
-                    emptyLabel="No matches"
-                  />
-                </section>
-              ))}
-            </div>
+                )
+              ) : null}
+            </>
           )}
         </ProfileAccordion>
 

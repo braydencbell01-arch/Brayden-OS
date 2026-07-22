@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export type PlayerAvatarProps = {
   name: string
@@ -34,6 +34,12 @@ export function PlayerAvatar({
     if (jerseyUrl) return 'jersey'
     return 'fallback'
   })
+
+  useEffect(() => {
+    if (photoUrl) setStage('photo')
+    else if (jerseyUrl) setStage('jersey')
+    else setStage('fallback')
+  }, [photoUrl, jerseyUrl])
 
   const sizeClass = SIZE[size]
   const numberLabel = jersey?.trim() ? jersey.trim().replace(/^#/, '') : null

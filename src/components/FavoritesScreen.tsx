@@ -96,7 +96,7 @@ export function FavoritesScreen({
                     {section.id === 'leagues' && (
                       favoriteLeagues.length === 0 ? (
                         <p className="text-sm text-mist/70">
-                          No favorited leagues yet. Tap the star next to a league on home.
+                          No favorited leagues yet. Tap the star next to a league on the Leagues tab.
                         </p>
                       ) : (
                         <ul className="flex flex-col gap-2">

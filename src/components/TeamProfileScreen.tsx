@@ -177,31 +177,41 @@ export function TeamProfileScreen({
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
         >
-          {loading ? (
+          {loading && upcomingGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : error ? (
-            <p className="text-sm text-mist/80">{error}</p>
-          ) : upcomingGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
           ) : (
-            <div className="flex flex-col gap-5">
-              {upcomingGrouped.map(({ dateKey, matches: dayMatches }) => (
-                <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                  <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
-                    {formatMatchDayHeading(dateKey)}
-                  </h2>
-                  <MatchList
-                    matches={dayMatches}
-                    onOpenTeam={onOpenTeam}
-                    onOpenPlayer={onOpenPlayer}
-                    favoriteLeagueIds={favorites.leagueIds}
-                    favoriteTeamIds={favorites.teamIds}
-                    favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
-                    emptyLabel="No matches"
-                  />
-                </section>
-              ))}
-            </div>
+            <>
+              {error && upcomingGrouped.length === 0 ? (
+                <p className="text-sm text-mist/80">{error}</p>
+              ) : null}
+              {error && upcomingGrouped.length > 0 ? (
+                <p className="mb-3 text-sm text-mist/70">{error}</p>
+              ) : null}
+              {!error || upcomingGrouped.length > 0 ? (
+                upcomingGrouped.length === 0 ? (
+                  <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    {upcomingGrouped.map(({ dateKey, matches: dayMatches }) => (
+                      <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                        <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
+                          {formatMatchDayHeading(dateKey)}
+                        </h2>
+                        <MatchList
+                          matches={dayMatches}
+                          onOpenTeam={onOpenTeam}
+                          onOpenPlayer={onOpenPlayer}
+                          favoriteLeagueIds={favorites.leagueIds}
+                          favoriteTeamIds={favorites.teamIds}
+                          favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
+                          emptyLabel="No matches"
+                        />
+                      </section>
+                    ))}
+                  </div>
+                )
+              ) : null}
+            </>
           )}
         </ProfileAccordion>
 
