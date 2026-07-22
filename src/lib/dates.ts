@@ -1,4 +1,17 @@
+/** Default forward horizon (+ upcoming league fixtures). */
 export const CALENDAR_RADIUS_DAYS = 100
+
+/** Days loaded behind today on first sync / calendar start. */
+export const CALENDAR_INITIAL_PAST_DAYS = 100
+
+/** Days shown ahead of today on the home calendar. */
+export const CALENDAR_FORWARD_DAYS = 100
+
+/** How many extra past days to append when scrolling near the start. */
+export const CALENDAR_PAST_CHUNK_DAYS = 60
+
+/** ESPN scoreboard fetch slice size for historical windows. */
+export const MATCH_FETCH_CHUNK_DAYS = 45
 
 export function startOfDay(date: Date): Date {
   const next = new Date(date)
@@ -43,6 +56,19 @@ export function buildCalendarDays(center: Date, radius = CALENDAR_RADIUS_DAYS): 
   const start = addDays(startOfDay(center), -radius)
   const total = radius * 2 + 1
   return Array.from({ length: total }, (_, i) => addDays(start, i))
+}
+
+/** Inclusive local-day range for the home calendar strip. */
+export function buildCalendarRange(from: Date, to: Date): Date[] {
+  const start = startOfDay(from)
+  const end = startOfDay(to)
+  if (end < start) return []
+
+  const days: Date[] = []
+  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
+    days.push(cursor)
+  }
+  return days
 }
 
 export function formatKickoffTime(iso: string): string {
