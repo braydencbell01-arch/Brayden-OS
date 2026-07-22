@@ -82,7 +82,7 @@ export function LeagueProfileScreen({
         meta={
           <>
             {league.short}
-            {!loading && !error ? ` · ${leagueMatches.length} upcoming` : ''}
+            {!loading && !error ? ` · ${leagueMatches.length} upcoming games` : ''}
           </>
         }
       />
@@ -92,7 +92,7 @@ export function LeagueProfileScreen({
           label="Clubs"
           value={standings.loading ? '…' : clubCount || '—'}
         />
-        <ProfileMetric label="Upcoming" value={loading ? '…' : leagueMatches.length} />
+        <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
         <ProfileMetric
           label="Leader"
           value={
@@ -139,7 +139,7 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Upcoming Fixtures"
+          title="Upcoming games"
           open={openSection === 'fixtures'}
           onToggle={() => toggleSection('fixtures')}
         >
