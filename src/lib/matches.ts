@@ -199,6 +199,23 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
     .map(([dateKey, dayMatches]) => ({ dateKey, matches: dayMatches }))
 }
 
+/** Group fixtures by league, keeping LEAGUES display order. Only leagues with matches are returned. */
+export function groupMatchesByLeague(
+  matches: Match[],
+): Array<{ leagueId: LeagueId; matches: Match[] }> {
+  const map = new Map<LeagueId, Match[]>()
+  for (const match of matches) {
+    const list = map.get(match.leagueId)
+    if (list) list.push(match)
+    else map.set(match.leagueId, [match])
+  }
+
+  return LEAGUES.filter((league) => map.has(league.id)).map((league) => ({
+    leagueId: league.id,
+    matches: (map.get(league.id) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
+  }))
+}
+
 export function dateKeysWithMatches(matches: Match[]): Set<string> {
   return new Set(matches.map((match) => match.dateKey))
 }

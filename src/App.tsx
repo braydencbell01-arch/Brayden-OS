@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarStrip } from './components/CalendarStrip'
 import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
+import { MatchDayByLeague } from './components/MatchDayByLeague'
 import { MatchList } from './components/MatchList'
 import { StandingsTable } from './components/StandingsTable'
 import { TeamProfileScreen } from './components/TeamProfileScreen'
@@ -188,9 +189,9 @@ function HomeScreen({
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
           ) : (
-            <MatchList
+            <MatchDayByLeague
               matches={dayMatches}
-              showLeague
+              dateKey={toDateKey(startOfDay(selectedDate))}
               onOpenTeam={onOpenTeam}
               emptyLabel="No matches on this date. Try another day or jump to Today."
             />
