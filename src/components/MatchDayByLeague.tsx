@@ -133,8 +133,14 @@ export function MatchDayByLeague({
   favoritePlayerTeamIds?: Set<string>
 }) {
   const groups = useMemo(
-    () => groupMatchesByLeague(matches, favoriteLeagueIds),
-    [matches, favoriteLeagueIds],
+    () =>
+      groupMatchesByLeague(
+        matches,
+        favoriteLeagueIds,
+        favoriteTeamIds,
+        favoritePlayerTeamIds,
+      ),
+    [matches, favoriteLeagueIds, favoriteTeamIds, favoritePlayerTeamIds],
   )
   const leagueIds = favoriteLeagueIds ?? new Set<string>()
   const teamIds = favoriteTeamIds ?? new Set<string>()

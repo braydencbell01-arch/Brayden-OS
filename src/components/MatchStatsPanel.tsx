@@ -7,12 +7,14 @@ export function MatchStatsPanel({
   error,
   scheduled,
   onOpenPlayer,
+  onRetry,
 }: {
   stats: MatchDetailStats | null
   loading: boolean
   error: string | null
   scheduled: boolean
   onOpenPlayer?: (player: MatchLineupPlayer) => void
+  onRetry?: () => void
 }) {
   if (scheduled) {
     return (
@@ -36,7 +38,20 @@ export function MatchStatsPanel({
   }
 
   if (error && !stats) {
-    return <p className="mt-3 text-xs text-mist/70">{error}</p>
+    return (
+      <div className="mt-3 space-y-2">
+        <p className="text-xs text-mist/70">{error}</p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-xs font-semibold text-lime underline-offset-2 hover:underline"
+          >
+            Retry
+          </button>
+        ) : null}
+      </div>
+    )
   }
 
   if (!stats) {
@@ -45,12 +60,29 @@ export function MatchStatsPanel({
 
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
+      {error ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2">
+          <p className="flex-1 text-xs text-amber-100/90">
+            Live refresh failed — showing last loaded stats. {error}
+          </p>
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="shrink-0 text-xs font-semibold text-lime underline-offset-2 hover:underline"
+            >
+              Retry
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mb-4">
         <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
           Lineups + ratings
         </p>
         <p className="mb-3 text-xs text-mist/65">
-          Tap a player for their profile. Ratings start at 5.0 and average out over the match.
+          Tap a player for their profile. Ratings start at 5.0 from a 50/100 performance floor.
         </p>
         <MatchLineupPanel lineups={stats.lineups} onOpenPlayer={onOpenPlayer} />
       </div>

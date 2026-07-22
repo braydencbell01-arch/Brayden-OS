@@ -1,6 +1,7 @@
 import { applyDraftPick, setDraftOrder, startDraft, tickDraftClock } from './draft'
 import {
   activateFromIr as activateFromIrLineup,
+  ensureLegalStarters,
   moveToIr as moveToIrLineup,
   suggestStarters,
   validateStarters,
@@ -349,7 +350,7 @@ export function addFreeAgent(
     }
 
     roster = [...roster, playerId]
-    const starters = m.starters.filter((id) => roster.includes(id))
+    const starters = ensureLegalStarters(m.starters, roster, league.starterSpots, catalog)
     return { ...m, roster, starters }
   })
 
@@ -442,6 +443,13 @@ function completeTrade(
   const from = members.find((m) => m.id === trade.fromMemberId)!
   const to = members.find((m) => m.id === trade.toMemberId)!
 
+  if (trade.offerPlayerIds.some((id) => !from.roster.includes(id))) {
+    throw new Error('Trade is stale — offered players are no longer on the proposer roster')
+  }
+  if (trade.requestPlayerIds.some((id) => !to.roster.includes(id))) {
+    throw new Error('Trade is stale — requested players are no longer on the recipient roster')
+  }
+
   for (const id of trade.offerPlayerIds) {
     from.roster = from.roster.filter((x) => x !== id)
     from.starters = from.starters.filter((x) => x !== id)
@@ -465,6 +473,9 @@ function completeTrade(
       }
     }
   }
+
+  from.starters = ensureLegalStarters(from.starters, from.roster, league.starterSpots, catalog)
+  to.starters = ensureLegalStarters(to.starters, to.roster, league.starterSpots, catalog)
 
   return {
     ...league,
@@ -610,12 +621,18 @@ export function scoreGameweek(
     if (mu.gw !== gw) return mu
     const homeMember = working.members.find((m) => m.id === mu.home.memberId)
     const awayMember = working.members.find((m) => m.id === mu.away.memberId)
-    const homeStarters = homeMember?.starters?.length
-      ? homeMember.starters
-      : suggestStarters(homeMember?.roster ?? [], working.starterSpots, catalog)
-    const awayStarters = awayMember?.starters?.length
-      ? awayMember.starters
-      : suggestStarters(awayMember?.roster ?? [], working.starterSpots, catalog)
+    const homeRoster = homeMember?.roster ?? []
+    const awayRoster = awayMember?.roster ?? []
+    const homeRaw = homeMember?.starters ?? []
+    const awayRaw = awayMember?.starters ?? []
+    const homeStarters =
+      validateStarters(homeRaw, homeRoster, working.starterSpots, catalog) === null
+        ? homeRaw
+        : suggestStarters(homeRoster, working.starterSpots, catalog)
+    const awayStarters =
+      validateStarters(awayRaw, awayRoster, working.starterSpots, catalog) === null
+        ? awayRaw
+        : suggestStarters(awayRoster, working.starterSpots, catalog)
 
     const homePts = sidePoints(homeStarters, gw, working, catalog)
     const awayPts = sidePoints(awayStarters, gw, working, catalog)
@@ -668,7 +685,8 @@ export function scoreGameweek(
     ...working,
     members: [...stats.values()],
     matchups,
-    currentGw: Math.max(working.currentGw, gw),
+    // Advance the active week after scoring so the hub moves off a finished GW.
+    currentGw: Math.min(working.seasonGws, Math.max(working.currentGw, gw + 1)),
     lineupLockedGws: working.lineupLockedGws.includes(gw)
       ? working.lineupLockedGws
       : [...working.lineupLockedGws, gw],

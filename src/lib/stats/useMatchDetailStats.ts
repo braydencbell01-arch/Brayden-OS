@@ -71,5 +71,8 @@ export function useMatchDetailStats(match: Match | null) {
     return () => window.clearInterval(id)
   }, [matchId, matchStatus, load])
 
-  return { stats, loading, error }
+  return { stats, loading, error, reload: () => {
+    const current = matchRef.current
+    if (current) void load(current, false)
+  } }
 }

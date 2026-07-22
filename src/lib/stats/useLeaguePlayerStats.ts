@@ -9,9 +9,15 @@ export function useLeaguePlayerStats(leagueId: LeagueId, enabled: boolean) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      setData(null)
+      setError(null)
+      setLoading(false)
+      return
+    }
 
     let cancelled = false
+    setData(null)
     setLoading(true)
     setError(null)
 

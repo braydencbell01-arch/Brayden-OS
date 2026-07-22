@@ -42,6 +42,8 @@ type CreateOptions = {
   draftMode?: DraftMode
   scoringPreset?: ScoringPreset
   quickFillBots?: boolean
+  /** Prefer this over store identity — create runs before setState flushes. */
+  managerName?: string
 }
 
 function newMemberId(): string {
@@ -77,7 +79,11 @@ function readStore(): FantasyStoreState {
 }
 
 function writeStore(state: FantasyStoreState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Quota / private mode — keep in-memory fantasy state for this session.
+  }
 }
 
 export function useFantasy() {
@@ -156,11 +162,12 @@ export function useFantasy() {
       maybeOptions?: CreateOptions,
     ) => {
       const identity = store.identity
-      const displayName = identity.displayName.trim() || 'Commissioner'
       const options =
         typeof draftClockSecondsOrOptions === 'number'
           ? { ...maybeOptions, draftClockSeconds: draftClockSecondsOrOptions }
           : (draftClockSecondsOrOptions ?? maybeOptions ?? {})
+      const displayName =
+        (options.managerName ?? identity.displayName).trim() || 'Commissioner'
       let league = createLeague({
         name,
         commissionerId: identity.memberId,
@@ -305,10 +312,12 @@ export function useFantasy() {
     if (!id) return
     const league = store.leagues[id]
     if (!league?.syncBlobId) return
-    if (!['lobby', 'draft_setup', 'drafting'].includes(league.phase)) return
+    // Keep multi-manager leagues fresh through the season (not only draft).
+    if (league.phase === 'complete') return
+    const intervalMs = ['lobby', 'draft_setup', 'drafting'].includes(league.phase) ? 2500 : 8000
     const timer = window.setInterval(() => {
       void refreshActive()
-    }, 2500)
+    }, intervalMs)
     return () => window.clearInterval(timer)
   }, [refreshActive, store.activeLeagueId, store.leagues])
 
@@ -529,7 +538,7 @@ export function useFantasy() {
     },
     dropPlayer: (playerId: number) => {
       if (!me) throw new Error('You are not in this league')
-      return updateActive((l) => dropToWaivers(l, me.id, playerId))
+      return updateActive((l) => dropToWaivers(l, me.id, playerId, playerMap))
     },
     moveIr: (playerId: number) => {
       if (!me) throw new Error('You are not in this league')
@@ -560,7 +569,13 @@ export function useFantasy() {
       if (!me) throw new Error('You are not in this league')
       return updateActive((l) => voteTradeVeto(l, tradeId, me.id))
     },
-    runScoreGw: (gw: number) => updateActive((l) => scoreGameweek(l, gw, playerMap)),
+    runScoreGw: (gw: number) => {
+      const liveGw = catalog?.currentGw
+      if (liveGw != null && gw > liveGw) {
+        throw new Error(`GW ${gw} has not started yet (live GW is ${liveGw})`)
+      }
+      return updateActive((l) => scoreGameweek(l, gw, playerMap))
+    },
     runAutos,
   }
 }

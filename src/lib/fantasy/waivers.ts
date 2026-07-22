@@ -1,4 +1,4 @@
-import { canAddPosition } from './lineup'
+import { canAddPosition, ensureLegalStarters } from './lineup'
 import type { FantasyLeague, FantasyPlayer, WaiverClaim } from './types'
 import { POSITION_LIMITS } from './types'
 
@@ -71,22 +71,15 @@ export function cancelWaiverClaim(
 /**
  * Process pending claims in waiver priority order (FF rolling list).
  * Successful claim → manager moves to end of waiverOrder.
+ * Priority is re-evaluated after each claim so one manager cannot
+ * win multiple adds before rolling to the back of the queue.
  * Dropped players enter the waiver pool.
  */
 export function processWaiverClaims(
   league: FantasyLeague,
   catalog: Map<number, FantasyPlayer>,
 ): FantasyLeague {
-  const pending = league.waiverClaims
-    .filter((c) => c.status === 'pending')
-    .sort((a, b) => {
-      const ai = league.waiverOrder.indexOf(a.memberId)
-      const bi = league.waiverOrder.indexOf(b.memberId)
-      const aRank = ai === -1 ? 999 : ai
-      const bRank = bi === -1 ? 999 : bi
-      if (aRank !== bRank) return aRank - bRank
-      return a.createdAt - b.createdAt
-    })
+  const pending = league.waiverClaims.filter((c) => c.status === 'pending')
 
   let members = league.members.map((m) => ({
     ...m,
@@ -96,10 +89,23 @@ export function processWaiverClaims(
   let waiverOrder = [...league.waiverOrder]
   let waiverPool = [...league.waiverPool]
   const claimUpdates = new Map<string, WaiverClaim>()
+  const remaining = [...pending]
 
   const owned = () => new Set(members.flatMap((m) => m.roster))
+  const rankOf = (memberId: string) => {
+    const i = waiverOrder.indexOf(memberId)
+    return i === -1 ? 999 : i
+  }
 
-  for (const claim of pending) {
+  while (remaining.length > 0) {
+    remaining.sort((a, b) => {
+      const aRank = rankOf(a.memberId)
+      const bRank = rankOf(b.memberId)
+      if (aRank !== bRank) return aRank - bRank
+      return a.createdAt - b.createdAt
+    })
+    const claim = remaining.shift()!
+
     const member = members.find((m) => m.id === claim.memberId)
     const player = catalog.get(claim.addPlayerId)
     if (!member || !player) {
@@ -165,7 +171,7 @@ export function processWaiverClaims(
         ? {
             ...m,
             roster,
-            starters: m.starters.filter((id) => roster.includes(id)),
+            starters: ensureLegalStarters(m.starters, roster, league.starterSpots, catalog),
           }
         : m,
     )
@@ -192,19 +198,20 @@ export function dropToWaivers(
   league: FantasyLeague,
   memberId: string,
   playerId: number,
+  catalog: Map<number, FantasyPlayer>,
 ): FantasyLeague {
   const member = league.members.find((m) => m.id === memberId)
   if (!member?.roster.includes(playerId)) throw new Error('Player not on your roster')
 
-  const members = league.members.map((m) =>
-    m.id === memberId
-      ? {
-          ...m,
-          roster: m.roster.filter((id) => id !== playerId),
-          starters: m.starters.filter((id) => id !== playerId),
-        }
-      : m,
-  )
+  const members = league.members.map((m) => {
+    if (m.id !== memberId) return m
+    const roster = m.roster.filter((id) => id !== playerId)
+    return {
+      ...m,
+      roster,
+      starters: ensureLegalStarters(m.starters, roster, league.starterSpots, catalog),
+    }
+  })
   const waiverPool = league.waiverPool.includes(playerId)
     ? league.waiverPool
     : [...league.waiverPool, playerId]

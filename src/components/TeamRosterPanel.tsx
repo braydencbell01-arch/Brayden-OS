@@ -8,20 +8,39 @@ export function TeamRosterPanel({
   loading,
   error,
   leagueId,
+  teamId,
+  teamName,
   onOpenPlayer,
+  onRetry,
 }: {
   data: TeamRoster | null
   loading: boolean
   error: string | null
   leagueId: LeagueId
+  teamId?: string
+  teamName?: string
   onOpenPlayer?: (player: PlayerNavRef) => void
+  onRetry?: () => void
 }) {
   if (loading && !data) {
     return <p className="text-sm text-mist/70">Loading roster…</p>
   }
 
   if (error && !data) {
-    return <p className="text-sm text-mist/80">{error}</p>
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-mist/80">{error}</p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-xs font-semibold text-lime underline-offset-2 hover:underline"
+          >
+            Retry
+          </button>
+        ) : null}
+      </div>
+    )
   }
 
   if (!data || data.groups.length === 0) {
@@ -57,6 +76,8 @@ export function TeamRosterPanel({
                         photoUrl: player.photoUrl,
                         jersey: player.jersey,
                         position: player.positionAbbrev,
+                        teamId,
+                        teamName,
                       })
                     }
                     className={`flex w-full items-center gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 text-left outline-none transition ${

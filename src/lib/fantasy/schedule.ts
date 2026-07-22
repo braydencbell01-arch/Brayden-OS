@@ -211,7 +211,8 @@ export function resolveSeriesWinners(league: FantasyLeague): FantasyLeague {
 
   if (
     next.phase === 'finals' &&
-    playoffs.filter((p) => p.kind === 'final').every((p) => p.winnerId)
+    next.playoffs.filter((p) => p.kind === 'final').length > 0 &&
+    next.playoffs.filter((p) => p.kind === 'final').every((p) => p.winnerId)
   ) {
     next = { ...next, phase: 'complete', updatedAt: Date.now() }
   }

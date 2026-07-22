@@ -17,7 +17,7 @@ export function FantasyShell({
         }}
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-screen pt-screen md:max-w-xl md:px-6">
         {children}
       </div>
     </div>

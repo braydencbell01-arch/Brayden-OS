@@ -75,7 +75,11 @@ function readStorage(): FavoritesState {
 }
 
 function writeStorage(state: FavoritesState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Quota / private mode — keep in-memory favorites for this session.
+  }
 }
 
 export function useFavorites() {
@@ -154,6 +158,30 @@ export function useFavorites() {
     })
   }, [])
 
+  /** Keep club/league metadata fresh after transfers without toggling the star. */
+  const refreshPlayer = useCallback((player: FavoritePlayer) => {
+    setState((prev) => {
+      const index = prev.players.findIndex((item) => item.id === player.id)
+      if (index < 0) return prev
+      const current = prev.players[index]!
+      const same =
+        current.teamId === player.teamId &&
+        current.teamName === player.teamName &&
+        current.leagueId === player.leagueId &&
+        current.name === player.name &&
+        current.shortName === player.shortName &&
+        current.photoUrl === player.photoUrl &&
+        current.jersey === player.jersey &&
+        current.position === player.position
+      if (same) return prev
+      const players = prev.players.slice()
+      players[index] = { ...current, ...player }
+      const next = { ...prev, players }
+      writeStorage(next)
+      return next
+    })
+  }, [])
+
   return {
     leagues: state.leagues,
     teams: state.teams,
@@ -168,6 +196,7 @@ export function useFavorites() {
     toggleLeague,
     toggleTeam,
     togglePlayer,
+    refreshPlayer,
   }
 }
 

@@ -123,7 +123,7 @@ function HomeScreen({
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-screen pt-screen md:max-w-xl md:px-6">
         <div className="mb-3 flex items-center gap-3">
           <BrandMark />
         </div>
@@ -387,13 +387,14 @@ export default function App() {
   const openTeam = (team: FavoriteTeam) => {
     if (screen === 'team' && activeTeam && activeTeam.id !== team.id) {
       previousTeamRef.current = activeTeam
-    } else if (screen !== 'team' && screen !== 'player') {
+    } else if (isTabScreen(screen)) {
+      // Only reset the opponent stack when opening from a bottom tab.
+      // Opening a club from a league profile must keep previousTeamRef so
+      // Team → opponent → League → other club → Back still restores the stack.
       previousTeamRef.current = null
-      if (isTabScreen(screen)) {
-        leagueReturnTeamRef.current = null
-        setReturnTab(screen)
-        setActiveTab(screen)
-      }
+      leagueReturnTeamRef.current = null
+      setReturnTab(screen)
+      setActiveTab(screen)
     }
     setActivePlayer(null)
     setActiveTeam(team)
@@ -506,9 +507,7 @@ export default function App() {
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               onOpenLeague={openLeague}
-              onNeedPastRange={(from, to) => {
-                void ensureRange(from, to)
-              }}
+              onNeedPastRange={(from, to) => ensureRange(from, to)}
               reduce={reduce}
             />
           </motion.div>

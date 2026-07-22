@@ -63,4 +63,9 @@
   .pt-screen {
     padding-top: max(1.75rem, calc(env(safe-area-inset-top, 0px) + 0.85rem));
   }
+
+  /* Clear the bottom nav + home indicator so the last list row stays tappable. */
+  .pb-screen {
+    padding-bottom: max(7rem, calc(env(safe-area-inset-bottom, 0px) + 5.5rem));
+  }
 }

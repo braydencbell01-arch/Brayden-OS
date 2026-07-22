@@ -130,6 +130,7 @@ export function HomeSearch({
     }
 
     const id = ++requestId.current
+    setRemote({ teams: [], players: [] })
     setLoadingRemote(true)
     const timer = window.setTimeout(() => {
       void searchEspnSoccer(q)
@@ -150,14 +151,23 @@ export function HomeSearch({
     return () => window.clearTimeout(timer)
   }, [query])
 
+  const openPlayerReq = useRef(0)
+
   useEffect(() => {
-    const onPointerDown = (event: MouseEvent) => {
+    const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setFocused(false)
       }
     }
-    document.addEventListener('mousedown', onPointerDown)
-    return () => document.removeEventListener('mousedown', onPointerDown)
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setFocused(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
   }, [])
 
   const clearAndClose = () => {
@@ -177,13 +187,15 @@ export function HomeSearch({
       clearAndClose()
       return
     }
+    const req = ++openPlayerReq.current
     setOpeningPlayerId(hit.player.id)
     try {
       const player = await resolvePlayerNavFromSearch(hit as SearchPlayerHit)
+      if (openPlayerReq.current !== req) return
       onOpenPlayer(player)
       clearAndClose()
     } finally {
-      setOpeningPlayerId(null)
+      if (openPlayerReq.current === req) setOpeningPlayerId(null)
     }
   }
 
