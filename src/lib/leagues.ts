@@ -35,7 +35,7 @@ export type League = {
 
 /**
  * Display / Match day order: most important competitions first.
- * `groupMatchesByLeague` and the Leagues screen both follow this array order.
+ * Favorited leagues are pinned above this order via `leaguesInDisplayOrder`.
  *
  * Only include leagues with a working ESPN scoreboard slug.
  * ESPN does not serve Serbian SuperLiga (or POL/CRO/UKR domestic leagues).
@@ -223,4 +223,30 @@ export function getLeague(id: LeagueId): League {
   const league = LEAGUES.find((item) => item.id === id)
   if (!league) throw new Error(`Unknown league: ${id}`)
   return league
+}
+
+const LEAGUE_IMPORTANCE_RANK = new Map(LEAGUES.map((league, index) => [league.id, index]))
+
+/** Lower = more important. Unknown ids sort last. */
+export function leagueImportanceRank(id: LeagueId): number {
+  return LEAGUE_IMPORTANCE_RANK.get(id) ?? Number.MAX_SAFE_INTEGER
+}
+
+/**
+ * Favorited leagues first (still by importance among themselves),
+ * then the rest in LEAGUES priority order.
+ */
+export function compareLeaguesForDisplay(
+  a: LeagueId,
+  b: LeagueId,
+  favoriteLeagueIds?: Set<string> | null,
+): number {
+  const aFav = favoriteLeagueIds?.has(a) ? 0 : 1
+  const bFav = favoriteLeagueIds?.has(b) ? 0 : 1
+  if (aFav !== bFav) return aFav - bFav
+  return leagueImportanceRank(a) - leagueImportanceRank(b)
+}
+
+export function leaguesInDisplayOrder(favoriteLeagueIds?: Set<string> | null): League[] {
+  return [...LEAGUES].sort((a, b) => compareLeaguesForDisplay(a.id, b.id, favoriteLeagueIds))
 }
