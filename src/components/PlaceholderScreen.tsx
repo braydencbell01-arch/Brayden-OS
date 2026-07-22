@@ -3,9 +3,11 @@ import { motion } from 'framer-motion'
 export function PlaceholderScreen({
   title,
   reduce,
+  onBrowseLeagues,
 }: {
   title: string
   reduce: boolean | null
+  onBrowseLeagues?: () => void
 }) {
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -27,7 +29,20 @@ export function PlaceholderScreen({
         >
           {title}
         </motion.h1>
-        <p className="mt-3 text-sm text-mist/70">Coming soon</p>
+        <p className="mt-3 max-w-sm text-center text-sm text-mist/70">
+          {title === 'Stats'
+            ? 'Standings, leaders, and player stats live on each league profile for now.'
+            : 'Coming soon'}
+        </p>
+        {title === 'Stats' && onBrowseLeagues ? (
+          <button
+            type="button"
+            onClick={onBrowseLeagues}
+            className="mt-5 rounded-full border border-lime/45 bg-lime/15 px-4 py-2 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          >
+            Browse leagues →
+          </button>
+        ) : null}
       </div>
     </div>
   )

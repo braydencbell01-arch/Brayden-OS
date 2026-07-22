@@ -23,7 +23,7 @@ export function FavoriteStar({
       aria-label={active ? `Unfavorite ${label}` : `Favorite ${label}`}
       title={active ? `Unfavorite ${label}` : `Favorite ${label}`}
       className={[
-        'inline-flex shrink-0 items-center justify-center rounded-full p-1 transition outline-none',
+        'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition outline-none',
         'focus-visible:ring-2 focus-visible:ring-star focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
         active ? 'text-star' : 'text-mist/55 hover:text-star/80',
       ].join(' ')}
