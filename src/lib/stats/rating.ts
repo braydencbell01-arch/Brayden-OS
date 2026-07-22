@@ -2,6 +2,7 @@
  * Brayden Rating v0 — position-aware match rating from ESPN-available stats.
  *
  * Scale: roughly 0–10 (Sofascore-like), clipped.
+ * Base starts at 5.0 for every player who appears; contributions add/subtract from there.
  * Designed so we can ship ratings NOW from match roster stats, then upgrade
  * weights when xG / minutes / progressive actions arrive from richer feeds.
  *
@@ -93,8 +94,8 @@ export function rateMatchPerformance(
   if (!stats.appearances || stats.appearances <= 0) return null
 
   const notes: string[] = []
-  const base = stats.starter === false ? 5.8 : 6.0
-  if (stats.starter === false) notes.push('Came off the bench (slightly lower base)')
+  const base = 5.0
+  if (stats.starter === false) notes.push('Came off the bench')
 
   // Attack finishing
   let attack = 0
