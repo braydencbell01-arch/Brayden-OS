@@ -198,7 +198,7 @@ export function PlayerProfileScreen({
               {profile.recentRatings.length === 0 ? (
                 <p className="text-sm text-mist/70">Not enough recent matches to rate yet.</p>
               ) : (
-                <ul className="scrollbar-hide flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-0.5">
+                <ul className="flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-1">
                   {profile.recentRatings.map((row) => (
                     <li
                       key={row.eventId}
