@@ -22,6 +22,9 @@ import type {
   PlayerSeasonStatLine,
   StandingRow,
   TeamMatchStatLine,
+  TeamRoster,
+  TeamRosterGroup,
+  TeamRosterPlayer,
 } from './types'
 
 const STAT_KEYS: Array<{ key: string; label: string }> = [
@@ -426,6 +429,110 @@ async function fetchStandingsForSeason(
 
 export async function fetchLeagueStandings(leagueId: LeagueId): Promise<StandingRow[]> {
   return fetchStandingsForSeason(leagueId)
+}
+
+type EspnTeamRosterAthlete = {
+  id?: string
+  displayName?: string
+  fullName?: string
+  shortName?: string
+  jersey?: string | null
+  headshot?: { href?: string } | null
+  position?: {
+    abbreviation?: string
+    displayName?: string
+    name?: string
+  }
+}
+
+type EspnTeamRosterResponse = {
+  season?: { year?: number; displayName?: string }
+  athletes?: EspnTeamRosterAthlete[]
+}
+
+const ROSTER_GROUP_ORDER: Array<{ id: TeamRosterGroup['id']; label: string }> = [
+  { id: 'GK', label: 'Goalkeepers' },
+  { id: 'DEF', label: 'Defenders' },
+  { id: 'MID', label: 'Midfielders' },
+  { id: 'FWD', label: 'Forwards' },
+  { id: 'UNK', label: 'Other' },
+]
+
+function jerseySortValue(jersey?: string): number {
+  if (!jersey) return Number.MAX_SAFE_INTEGER
+  const n = Number(jersey)
+  return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER
+}
+
+/** Full club squad, grouped by position (GK → DEF → MID → FWD). */
+export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promise<TeamRoster> {
+  const league = getLeague(leagueId)
+  const nowYear = new Date().getUTCFullYear()
+  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2, null] as const
+
+  let athletes: EspnTeamRosterAthlete[] = []
+  let season = nowYear
+  let seasonLabel = String(nowYear)
+
+  for (const year of yearsToTry) {
+    const url = new URL(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/roster`,
+    )
+    if (year != null) url.searchParams.set('season', String(year))
+    const res = await fetch(url)
+    if (!res.ok) continue
+    const data = (await res.json()) as EspnTeamRosterResponse
+    const list = data.athletes ?? []
+    if (list.length === 0) continue
+    athletes = list
+    season = data.season?.year ?? year ?? nowYear
+    seasonLabel = data.season?.displayName || `${season} season`
+    break
+  }
+
+  if (athletes.length === 0) {
+    throw new Error(`No roster available for this club yet`)
+  }
+
+  const buckets = new Map<string, TeamRosterPlayer[]>()
+  for (const entry of athletes) {
+    if (!entry.id || !entry.displayName) continue
+    const positionAbbrev = entry.position?.abbreviation || '—'
+    const groupId = positionGroupFromAbbrev(positionAbbrev)
+    const player: TeamRosterPlayer = {
+      id: entry.id,
+      name: entry.displayName,
+      shortName: entry.shortName || entry.displayName,
+      jersey: entry.jersey?.trim() || undefined,
+      positionAbbrev,
+      positionLabel: entry.position?.displayName || entry.position?.name || positionAbbrev,
+      photoUrl: entry.headshot?.href || playerHeadshotUrl(entry.id),
+    }
+    const list = buckets.get(groupId)
+    if (list) list.push(player)
+    else buckets.set(groupId, [player])
+  }
+
+  const groups: TeamRosterGroup[] = ROSTER_GROUP_ORDER.flatMap(({ id, label }) => {
+    const players = (buckets.get(id) ?? [])
+      .slice()
+      .sort(
+        (a, b) =>
+          jerseySortValue(a.jersey) - jerseySortValue(b.jersey) ||
+          a.name.localeCompare(b.name),
+      )
+    if (players.length === 0) return []
+    return [{ id, label, players }]
+  })
+
+  return {
+    leagueId,
+    teamId,
+    season,
+    seasonLabel,
+    groups,
+    fetchedAt: Date.now(),
+  }
 }
 
 function teamLeadersFromStandings(rows: StandingRow[], limit: number): LeaderCategory[] {
