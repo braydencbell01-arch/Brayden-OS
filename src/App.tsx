@@ -138,14 +138,14 @@ function HomeScreen({
           </div>
 
           {loading ? (
-            <p className="text-sm text-mist/70">Loading Big 5 fixtures…</p>
+            <p className="text-sm text-mist/70">Loading fixtures…</p>
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
           ) : (
             <MatchList
               matches={dayMatches}
               showLeague
-              emptyLabel="No Big 5 matches on this date. Try another day or jump to Today."
+              emptyLabel="No matches on this date. Try another day or jump to Today."
             />
           )}
         </section>
