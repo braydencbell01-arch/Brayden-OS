@@ -34,7 +34,7 @@ type EspnSummary = {
 
 type EspnStandingStat = { name?: string; displayValue?: string; value?: number }
 type EspnStandingEntry = {
-  team?: { displayName?: string; shortDisplayName?: string }
+  team?: { id?: string; displayName?: string; shortDisplayName?: string }
   note?: { description?: string }
   stats?: EspnStandingStat[]
 }
@@ -141,17 +141,21 @@ export async function fetchLeagueStandings(leagueId: LeagueId): Promise<Standing
   const entries = data.children?.[0]?.standings?.entries ?? []
 
   return entries
-    .map((entry, index) => ({
-      rank: readStat(entry, 'rank') || index + 1,
-      team: entry.team?.displayName || 'Unknown',
-      shortName: entry.team?.shortDisplayName || entry.team?.displayName || '—',
-      played: readStat(entry, 'gamesPlayed'),
-      won: readStat(entry, 'wins'),
-      drawn: readStat(entry, 'ties'),
-      lost: readStat(entry, 'losses'),
-      goalDiff: readStat(entry, 'pointDifferential'),
-      points: readStat(entry, 'points'),
-      note: entry.note?.description,
-    }))
+    .map((entry, index) => {
+      const teamName = entry.team?.displayName || 'Unknown'
+      return {
+        rank: readStat(entry, 'rank') || index + 1,
+        teamId: entry.team?.id || teamName.toLowerCase().replace(/\s+/g, '-'),
+        team: teamName,
+        shortName: entry.team?.shortDisplayName || entry.team?.displayName || '—',
+        played: readStat(entry, 'gamesPlayed'),
+        won: readStat(entry, 'wins'),
+        drawn: readStat(entry, 'ties'),
+        lost: readStat(entry, 'losses'),
+        goalDiff: readStat(entry, 'pointDifferential'),
+        points: readStat(entry, 'points'),
+        note: entry.note?.description,
+      }
+    })
     .sort((a, b) => a.rank - b.rank || b.points - a.points)
 }

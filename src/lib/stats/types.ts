@@ -25,6 +25,7 @@ export type MatchDetailStats = {
 
 export type StandingRow = {
   rank: number
+  teamId: string
   team: string
   shortName: string
   played: number

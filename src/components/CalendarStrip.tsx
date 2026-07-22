@@ -12,13 +12,13 @@ export function CalendarStrip({
   selected,
   onSelect,
   onJumpToToday,
-  matchDateKeys,
+  favoriteDateKeys,
   reduce,
 }: {
   selected: Date
   onSelect: (date: Date) => void
   onJumpToToday: () => void
-  matchDateKeys: Set<string>
+  favoriteDateKeys: Set<string>
   reduce: boolean | null
 }) {
   const today = useMemo(() => startOfDay(new Date()), [])
@@ -41,7 +41,7 @@ export function CalendarStrip({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
           <p className="mt-1 text-sm text-mist/80">
-            ±{CALENDAR_RADIUS_DAYS} days · Big 5 fixtures
+            ±{CALENDAR_RADIUS_DAYS} days · yellow = favorites
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ export function CalendarStrip({
         {days.map((day) => {
           const active = isSameDay(day, selected)
           const isToday = isSameDay(day, today)
-          const hasMatches = matchDateKeys.has(toDateKey(day))
+          const hasFavoriteMatch = favoriteDateKeys.has(toDateKey(day))
           const weekday = day.toLocaleDateString(undefined, { weekday: 'short' })
           const dayNum = day.getDate()
 
@@ -110,9 +110,14 @@ export function CalendarStrip({
                 >
                   Today
                 </span>
-              ) : hasMatches ? (
+              ) : hasFavoriteMatch ? (
                 <span
-                  className={`mt-2 mx-auto block h-1.5 w-1.5 rounded-full ${active ? 'bg-ink/70' : 'bg-lime'}`}
+                  className={[
+                    'mt-2 mx-auto block h-1.5 w-1.5 rounded-full',
+                    active
+                      ? 'bg-ink/70'
+                      : 'bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]',
+                  ].join(' ')}
                   aria-hidden
                 />
               ) : (
