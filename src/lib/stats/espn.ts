@@ -307,6 +307,12 @@ type EspnSiteLeaderAthlete = {
   id?: string
   displayName?: string
   shortName?: string
+  jersey?: string
+  team?: {
+    id?: string
+    displayName?: string
+    shortDisplayName?: string
+  }
 }
 
 type EspnSiteLeader = {
@@ -314,6 +320,11 @@ type EspnSiteLeader = {
   shortDisplayValue?: string
   value?: number
   athlete?: EspnSiteLeaderAthlete
+  team?: {
+    id?: string
+    displayName?: string
+    shortDisplayName?: string
+  }
 }
 
 type EspnSiteStatisticsResponse = {
@@ -382,6 +393,8 @@ function teamLeadersFromStandings(rows: StandingRow[], limit: number): LeaderCat
       id: row.teamId,
       name: row.team,
       shortName: row.shortName,
+      teamId: row.teamId,
+      teamName: row.team,
       value: valueOf(row),
       displayValue: String(valueOf(row)),
     }))
@@ -418,11 +431,18 @@ function playerLeadersFromSiteStats(
       const leaders = (block?.leaders ?? []).slice(0, limit).map((leader, index) => {
         const athlete = leader.athlete
         const nameText = athlete?.displayName || 'Unknown'
+        const team =
+          athlete?.team ||
+          leader.team ||
+          undefined
         return {
           rank: index + 1,
           id: athlete?.id || `${name}-${index}`,
           name: nameText,
           shortName: athlete?.shortName || nameText,
+          jersey: athlete?.jersey,
+          teamId: team?.id,
+          teamName: team?.displayName || team?.shortDisplayName,
           value: typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0,
           displayValue: leader.shortDisplayValue || leader.displayValue || String(leader.value ?? '—'),
         }

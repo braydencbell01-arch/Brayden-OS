@@ -186,6 +186,9 @@ export function LeagueProfileScreen({
             data={leaders.data}
             loading={leaders.loading}
             error={leaders.error}
+            leagueId={league.id}
+            onOpenPlayer={onOpenPlayer}
+            onOpenTeam={onOpenTeam}
           />
         </ProfileAccordion>
       </div>

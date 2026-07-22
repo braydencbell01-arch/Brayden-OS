@@ -72,6 +72,8 @@ export type LeaderEntry = {
   id: string
   name: string
   shortName: string
+  jersey?: string
+  teamId?: string
   teamName?: string
   value: number
   displayValue: string

@@ -1,33 +1,93 @@
-import type { LeaderCategory, LeagueLeaders } from '../lib/stats/types'
+import type { LeagueId } from '../lib/leagues'
+import type { FavoriteTeam } from '../lib/favorites'
+import type { LeaderCategory, LeaderEntry, LeagueLeaders } from '../lib/stats/types'
+import type { PlayerNavRef } from './PlayerProfileScreen'
 
-function LeadersTable({ category }: { category: LeaderCategory }) {
+function LeadersTable({
+  category,
+  leagueId,
+  onOpenPlayer,
+  onOpenTeam,
+}: {
+  category: LeaderCategory
+  leagueId: LeagueId
+  onOpenPlayer?: (player: PlayerNavRef) => void
+  onOpenTeam?: (team: FavoriteTeam) => void
+}) {
+  const isClickable = (leader: LeaderEntry) => {
+    if (category.kind === 'team') return Boolean(onOpenTeam && leader.id)
+    if (!onOpenPlayer || !leader.id) return false
+    // ESPN athlete ids are numeric; skip synthetic fallback ids like "goalsLeaders-0"
+    return /^\d+$/.test(leader.id)
+  }
+
+  const openLeader = (leader: LeaderEntry) => {
+    if (!isClickable(leader)) return
+    if (category.kind === 'player') {
+      onOpenPlayer?.({
+        id: leader.id,
+        leagueId,
+        name: leader.name,
+        shortName: leader.shortName,
+        jersey: leader.jersey,
+        teamId: leader.teamId,
+        teamName: leader.teamName,
+      })
+      return
+    }
+
+    onOpenTeam?.({
+      id: leader.id,
+      name: leader.name,
+      shortName: leader.shortName,
+      leagueId,
+    })
+  }
+
   return (
     <div>
       <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
         {category.label}
       </p>
       <ol className="flex flex-col gap-1.5">
-        {category.leaders.map((leader) => (
-          <li
-            key={`${category.id}-${leader.id}`}
-            className="grid grid-cols-[1.5rem_1fr_auto] items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-2"
-          >
-            <span className="font-display text-lg tracking-wide text-mist/70 tabular-nums">
-              {leader.rank}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-cream">{leader.name}</p>
-              {leader.teamName ? (
-                <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-                  {leader.teamName}
-                </p>
-              ) : null}
-            </div>
-            <span className="font-display text-xl tracking-wide text-lime tabular-nums">
-              {category.id === 'team-gd' && leader.value > 0 ? `+${leader.value}` : leader.value}
-            </span>
-          </li>
-        ))}
+        {category.leaders.map((leader) => {
+          const clickable = isClickable(leader)
+          return (
+            <li key={`${category.id}-${leader.id}`}>
+              <button
+                type="button"
+                disabled={!clickable}
+                onClick={() => openLeader(leader)}
+                className={`grid w-full grid-cols-[1.5rem_1fr_auto] items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-2 text-left outline-none transition ${
+                  clickable
+                    ? 'hover:border-lime/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime'
+                    : 'cursor-default'
+                }`}
+              >
+                <span className="font-display text-lg tracking-wide text-mist/70 tabular-nums">
+                  {leader.rank}
+                </span>
+                <div className="min-w-0">
+                  <p
+                    className={`truncate text-sm font-semibold ${
+                      clickable ? 'text-cream underline-offset-2 hover:underline' : 'text-cream'
+                    }`}
+                  >
+                    {leader.name}
+                  </p>
+                  {leader.teamName ? (
+                    <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
+                      {leader.teamName}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="font-display text-xl tracking-wide text-lime tabular-nums">
+                  {category.id === 'team-gd' && leader.value > 0 ? `+${leader.value}` : leader.value}
+                </span>
+              </button>
+            </li>
+          )
+        })}
       </ol>
     </div>
   )
@@ -37,10 +97,16 @@ export function LeagueStatsPanel({
   data,
   loading,
   error,
+  leagueId,
+  onOpenPlayer,
+  onOpenTeam,
 }: {
   data: LeagueLeaders | null
   loading: boolean
   error: string | null
+  leagueId: LeagueId
+  onOpenPlayer?: (player: PlayerNavRef) => void
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (loading && !data) {
     return <p className="text-sm text-mist/70">Loading stats leaders…</p>
@@ -67,7 +133,13 @@ export function LeagueStatsPanel({
         <section aria-label="Player leaders" className="flex flex-col gap-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mist/70">Players</p>
           {players.map((category) => (
-            <LeadersTable key={category.id} category={category} />
+            <LeadersTable
+              key={category.id}
+              category={category}
+              leagueId={leagueId}
+              onOpenPlayer={onOpenPlayer}
+              onOpenTeam={onOpenTeam}
+            />
           ))}
         </section>
       ) : null}
@@ -76,7 +148,13 @@ export function LeagueStatsPanel({
         <section aria-label="Team leaders" className="flex flex-col gap-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mist/70">Teams</p>
           {teams.map((category) => (
-            <LeadersTable key={category.id} category={category} />
+            <LeadersTable
+              key={category.id}
+              category={category}
+              leagueId={leagueId}
+              onOpenPlayer={onOpenPlayer}
+              onOpenTeam={onOpenTeam}
+            />
           ))}
         </section>
       ) : null}
