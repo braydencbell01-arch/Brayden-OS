@@ -346,7 +346,6 @@ export function splitTeamFixtures(
     .filter((match) => match.dateKey < todayKey || match.status === 'finished')
     .filter((match) => match.status === 'finished' || match.status === 'postponed')
     .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
-    .slice(0, 5)
   const upcoming = teamMatches
     .filter(
       (match) =>

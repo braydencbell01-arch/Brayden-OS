@@ -429,11 +429,15 @@ export default function App() {
               matches={matches}
               loading={loading}
               error={error}
+              refreshing={refreshing}
               favorites={favorites}
               onBack={closeOverlay}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               onOpenLeague={openLeague}
+              onNeedPastRange={(from, to) => {
+                void ensureRange(from, to)
+              }}
               reduce={reduce}
             />
           </motion.div>

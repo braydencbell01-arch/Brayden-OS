@@ -109,6 +109,31 @@ export type LeaguePlayerStatsOverview = {
   fetchedAt: number
 }
 
+export type TeamRosterPlayer = {
+  id: string
+  name: string
+  shortName: string
+  jersey?: string
+  positionAbbrev: string
+  positionLabel: string
+  photoUrl: string
+}
+
+export type TeamRosterGroup = {
+  id: string
+  label: string
+  players: TeamRosterPlayer[]
+}
+
+export type TeamRoster = {
+  leagueId: LeagueId
+  teamId: string
+  season: number
+  seasonLabel: string
+  groups: TeamRosterGroup[]
+  fetchedAt: number
+}
+
 export type PlayerClubStint = {
   teamId: string
   teamName: string

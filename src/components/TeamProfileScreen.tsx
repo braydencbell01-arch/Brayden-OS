@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
@@ -8,14 +8,22 @@ import {
   type Match,
   type TeamFormResult,
 } from '../lib/matches'
-import { formatMatchDayHeading } from '../lib/dates'
+import {
+  addDays,
+  CALENDAR_INITIAL_PAST_DAYS,
+  CALENDAR_PAST_CHUNK_DAYS,
+  formatMatchDayHeading,
+  startOfDay,
+} from '../lib/dates'
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
+import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
 import { ProfileHeader, ProfileShell } from './ProfileShell'
+import { TeamRosterPanel } from './TeamRosterPanel'
 
 function FormDot({ result }: { result: TeamFormResult }) {
   const styles =
@@ -40,28 +48,41 @@ export function TeamProfileScreen({
   matches,
   loading,
   error,
+  refreshing,
   favorites,
   onBack,
   onOpenTeam,
   onOpenPlayer,
   onOpenLeague,
+  onNeedPastRange,
   reduce,
 }: {
   team: FavoriteTeam
   matches: Match[]
   loading: boolean
   error: string | null
+  refreshing?: boolean
   favorites: FavoritesApi
   onBack: () => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   onOpenLeague: (id: LeagueId) => void
+  /** Expand the shared fixture cache further into the past for infinite Recent. */
+  onNeedPastRange?: (from: Date, to: Date) => void
   reduce: boolean | null
 }) {
   const league = getLeague(team.leagueId)
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
-  const [openSection, setOpenSection] = useState<'upcoming' | 'recent' | null>(null)
+  const [openSection, setOpenSection] = useState<
+    'upcoming' | 'recent' | 'roster' | null
+  >(null)
+  const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
+  const recentScrollRef = useRef<HTMLDivElement>(null)
+  const loadingMoreRef = useRef(false)
+
+  const rosterEnabled = openSection === 'roster'
+  const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
@@ -76,11 +97,37 @@ export function TeamProfileScreen({
   )
 
   const upcomingGrouped = useMemo(() => groupMatchesByDate(upcoming), [upcoming])
+  const recentGrouped = useMemo(
+    () => groupMatchesByDate(recent).slice().reverse(),
+    [recent],
+  )
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
 
-  const toggle = (section: 'upcoming' | 'recent') => {
+  const toggle = (section: 'upcoming' | 'recent' | 'roster') => {
     setOpenSection((current) => (current === section ? null : section))
+  }
+
+  const loadEarlierResults = useCallback(() => {
+    if (!onNeedPastRange || loadingMoreRef.current) return
+    loadingMoreRef.current = true
+    setPastHorizonDays((current) => {
+      const next = current + CALENDAR_PAST_CHUNK_DAYS
+      const today = startOfDay(new Date())
+      onNeedPastRange(addDays(today, -next), today)
+      return next
+    })
+  }, [onNeedPastRange])
+
+  useEffect(() => {
+    if (!refreshing) loadingMoreRef.current = false
+  }, [refreshing])
+
+  const onRecentScroll = () => {
+    const scroller = recentScrollRef.current
+    if (!scroller || openSection !== 'recent') return
+    const remaining = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight
+    if (remaining < 120) loadEarlierResults()
   }
 
   const tableCells = standing
@@ -217,22 +264,68 @@ export function TeamProfileScreen({
 
         <ProfileAccordion
           title="Recent"
+          subtitle="Scroll for earlier results"
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
         >
-          {loading ? (
+          {loading && recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading results…</p>
+          ) : recentGrouped.length === 0 ? (
+            <p className="text-sm text-mist/70">No recent results in the current window.</p>
           ) : (
-            <MatchList
-              matches={recent}
-              onOpenTeam={onOpenTeam}
-              onOpenPlayer={onOpenPlayer}
-              favoriteLeagueIds={favorites.leagueIds}
-              favoriteTeamIds={favorites.teamIds}
-              favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
-              emptyLabel="No recent results in the current window."
-            />
+            <div
+              ref={recentScrollRef}
+              onScroll={onRecentScroll}
+              className="max-h-[28rem] overflow-y-auto overscroll-contain pr-1"
+            >
+              <div className="flex flex-col gap-5">
+                {recentGrouped.map(({ dateKey, matches: dayMatches }) => (
+                  <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                    <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
+                      {formatMatchDayHeading(dateKey)}
+                    </h2>
+                    <MatchList
+                      matches={dayMatches}
+                      onOpenTeam={onOpenTeam}
+                      onOpenPlayer={onOpenPlayer}
+                      favoriteLeagueIds={favorites.leagueIds}
+                      favoriteTeamIds={favorites.teamIds}
+                      favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
+                      emptyLabel="No matches"
+                    />
+                  </section>
+                ))}
+              </div>
+
+              <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
+                <button
+                  type="button"
+                  onClick={loadEarlierResults}
+                  disabled={refreshing}
+                  className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
+                >
+                  {refreshing
+                    ? 'Loading earlier…'
+                    : `Load earlier results · ${pastHorizonDays}+ days`}
+                </button>
+              </div>
+            </div>
           )}
+        </ProfileAccordion>
+
+        <ProfileAccordion
+          title="Roster"
+          subtitle="Full squad by position"
+          open={openSection === 'roster'}
+          onToggle={() => toggle('roster')}
+        >
+          <TeamRosterPanel
+            data={roster.data}
+            loading={roster.loading}
+            error={roster.error}
+            leagueId={team.leagueId}
+            onOpenPlayer={onOpenPlayer}
+          />
         </ProfileAccordion>
       </div>
     </ProfileShell>
