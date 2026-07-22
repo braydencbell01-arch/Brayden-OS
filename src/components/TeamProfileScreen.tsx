@@ -44,7 +44,6 @@ export function TeamProfileScreen({
   onOpenTeam,
   onOpenPlayer,
   onOpenLeague,
-  onOpenFavorites,
   reduce,
 }: {
   team: FavoriteTeam
@@ -56,7 +55,6 @@ export function TeamProfileScreen({
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   onOpenLeague: (id: LeagueId) => void
-  onOpenFavorites: () => void
   reduce: boolean | null
 }) {
   const league = getLeague(team.leagueId)
@@ -97,7 +95,7 @@ export function TeamProfileScreen({
     : []
 
   return (
-    <ProfileShell onBack={onBack} onOpenFavorites={onOpenFavorites} reduce={reduce}>
+    <ProfileShell onBack={onBack} reduce={reduce}>
       <ProfileHeader
         reduce={reduce}
         star={

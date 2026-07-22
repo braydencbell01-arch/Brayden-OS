@@ -31,13 +31,11 @@ export function PlayerProfileScreen({
   player,
   favorites,
   onBack,
-  onOpenFavorites,
   reduce,
 }: {
   player: PlayerNavRef
   favorites: FavoritesApi
   onBack: () => void
-  onOpenFavorites: () => void
   reduce: boolean | null
 }) {
   const { profile, loading, error } = usePlayerProfile(player.leagueId, player.id)
@@ -66,7 +64,7 @@ export function PlayerProfileScreen({
   }
 
   return (
-    <ProfileShell onBack={onBack} onOpenFavorites={onOpenFavorites} reduce={reduce}>
+    <ProfileShell onBack={onBack} reduce={reduce}>
       {loading && !profile ? (
         <p className="text-sm text-mist/70">Loading player…</p>
       ) : error && !profile ? (

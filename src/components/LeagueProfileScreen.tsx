@@ -31,7 +31,6 @@ export function LeagueProfileScreen({
   onBack,
   onOpenTeam,
   onOpenPlayer,
-  onOpenFavorites,
   reduce,
 }: {
   league: League
@@ -42,7 +41,6 @@ export function LeagueProfileScreen({
   onBack: () => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
-  onOpenFavorites: () => void
   reduce: boolean | null
 }) {
   const today = useMemo(() => startOfDay(new Date()), [])
@@ -66,7 +64,7 @@ export function LeagueProfileScreen({
   const clubCount = standings.rows.length
 
   return (
-    <ProfileShell onBack={onBack} onOpenFavorites={onOpenFavorites} reduce={reduce}>
+    <ProfileShell onBack={onBack} reduce={reduce}>
       <ProfileHeader
         reduce={reduce}
         star={

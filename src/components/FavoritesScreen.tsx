@@ -10,14 +10,12 @@ type FavoritesSection = 'leagues' | 'teams' | 'players'
 
 export function FavoritesScreen({
   favorites,
-  onBack,
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
   reduce,
 }: {
   favorites: FavoritesApi
-  onBack: () => void
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
@@ -55,43 +53,12 @@ export function FavoritesScreen({
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-6 md:max-w-xl md:px-6">
-        <div className="mb-8 flex items-center justify-between gap-3">
-          <motion.button
-            type="button"
-            initial={reduce ? false : { opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.35 }}
-            onClick={onBack}
-            className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-          >
-            <span aria-hidden>←</span> Back to home
-          </motion.button>
-          <span className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-star">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              aria-hidden
-              className="drop-shadow-[0_0_8px_rgba(255,216,74,0.95)]"
-            >
-              <path
-                d="M12 2.8l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 16.7 6.6 19.6l1-6.1-4.4-4.3 6.1-.9L12 2.8z"
-                fill="currentColor"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Favorites
-          </span>
-        </div>
-
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-6 md:max-w-xl md:px-6">
         <motion.header
           initial={reduce ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="border-b border-white/10 pb-6"
+          className="mb-8 border-b border-white/10 pb-6"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-star">Your picks</p>
           <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
@@ -102,7 +69,7 @@ export function FavoritesScreen({
           </p>
         </motion.header>
 
-        <div className="mt-8 flex flex-col gap-3" role="tablist" aria-label="Favorites categories">
+        <div className="flex flex-col gap-3" role="tablist" aria-label="Favorites categories">
           {(
             [
               { id: 'leagues', label: 'Leagues' },

@@ -3,12 +3,10 @@ import { motion } from 'framer-motion'
 
 export function ProfileShell({
   onBack,
-  onOpenFavorites,
   reduce,
   children,
 }: {
   onBack: () => void
-  onOpenFavorites: () => void
   reduce: boolean | null
   children: ReactNode
 }) {
@@ -23,7 +21,7 @@ export function ProfileShell({
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-6 md:max-w-xl md:px-6">
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-6 md:max-w-xl md:px-6">
         <div className="mb-7 flex items-center justify-between gap-3">
           <motion.button
             type="button"
@@ -35,13 +33,6 @@ export function ProfileShell({
           >
             <span aria-hidden>←</span> Back
           </motion.button>
-          <button
-            type="button"
-            onClick={onOpenFavorites}
-            className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-mist/80 transition hover:text-star focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-star focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-          >
-            Favorites
-          </button>
         </div>
         {children}
       </div>

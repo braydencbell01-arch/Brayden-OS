@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { BottomNav, type BottomTab } from './components/BottomNav'
 import { CalendarStrip } from './components/CalendarStrip'
-import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
+import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
+import { PlaceholderScreen } from './components/PlaceholderScreen'
 import {
   PlayerProfileScreen,
   type PlayerNavRef,
@@ -16,7 +18,13 @@ import { LEAGUES, type LeagueId } from './lib/leagues'
 import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
-type Screen = 'home' | 'league' | 'favorites' | 'team' | 'player'
+type Screen =
+  | BottomTab
+  | 'league-profile'
+  | 'team'
+  | 'player'
+
+type ReturnScreen = BottomTab | 'league-profile'
 
 function formatUpdatedAt(updatedAt: number | null): string {
   if (!updatedAt) return 'Waiting for first sync'
@@ -39,30 +47,13 @@ function BrandMark({ className = '' }: { className?: string }) {
   )
 }
 
-function FavoritesLink({ onOpen }: { onOpen: () => void }) {
+function isTabScreen(screen: Screen): screen is BottomTab {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-mist/80 transition hover:text-star focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-star focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-    >
-      Favorites
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        aria-hidden
-        className="text-star drop-shadow-[0_0_6px_rgba(255,216,74,0.8)]"
-      >
-        <path
-          d="M12 2.8l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 16.7 6.6 19.6l1-6.1-4.4-4.3 6.1-.9L12 2.8z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
+    screen === 'home' ||
+    screen === 'stats' ||
+    screen === 'leagues' ||
+    screen === 'fantasy' ||
+    screen === 'favorites'
   )
 }
 
@@ -72,10 +63,8 @@ function HomeScreen({
   onJumpToToday,
   onNeedMatchRange,
   knownForwardDays,
-  onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
-  onOpenFavorites,
   matches,
   loading,
   error,
@@ -91,10 +80,8 @@ function HomeScreen({
   onJumpToToday: () => void
   onNeedMatchRange: (from: Date, to: Date) => void
   knownForwardDays: number
-  onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
-  onOpenFavorites: () => void
   matches: Match[]
   loading: boolean
   error: string | null
@@ -133,10 +120,9 @@ function HomeScreen({
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-6 md:max-w-xl md:px-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-6 md:max-w-xl md:px-6">
+        <div className="mb-4">
           <BrandMark />
-          <FavoritesLink onOpen={onOpenFavorites} />
         </div>
 
         <header className="mb-8">
@@ -218,62 +204,6 @@ function HomeScreen({
             />
           )}
         </section>
-
-        <section className="mt-10 flex flex-1 flex-col" aria-label="Leagues">
-          <motion.div
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, delay: reduce ? 0 : 0.2 }}
-            className="mb-4"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Leagues</p>
-            <p className="mt-1 text-sm text-mist/80">Tap a league to open its profile</p>
-          </motion.div>
-
-          <div className="flex flex-col gap-3">
-            {LEAGUES.map((league, i) => {
-              const favorited = favorites.isLeagueFavorite(league.id)
-              return (
-                <motion.div
-                  key={league.id}
-                  initial={reduce ? false : { opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: reduce ? 0 : 0.22 + i * 0.07,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="flex items-stretch border border-white/10 bg-gradient-to-r from-pitch/80 to-turf/40 transition hover:border-lime/50"
-                >
-                  <div className="flex items-center px-2">
-                    <FavoriteStar
-                      active={favorited}
-                      label={league.name}
-                      onToggle={() => favorites.toggleLeague(league.id)}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onOpenLeague(league.id)}
-                    className="group flex min-w-0 flex-1 items-center justify-between px-3 py-4 text-left outline-none transition hover:from-turf/50 focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
-                  >
-                    <span>
-                      <span className="block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
-                        {league.name}
-                      </span>
-                      <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
-                        {league.country}
-                      </span>
-                    </span>
-                    <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
-                      Profile →
-                    </span>
-                  </button>
-                </motion.div>
-              )
-            })}
-          </div>
-        </section>
       </div>
     </div>
   )
@@ -296,10 +226,11 @@ export default function App() {
   } = useLiveBigFiveMatches()
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [screen, setScreen] = useState<Screen>('home')
+  const [activeTab, setActiveTab] = useState<BottomTab>('home')
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
   const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
-  const [returnScreen, setReturnScreen] = useState<Exclude<Screen, 'team' | 'player'>>('home')
+  const [returnScreen, setReturnScreen] = useState<ReturnScreen>('home')
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
@@ -321,22 +252,31 @@ export default function App() {
     [ensureRange],
   )
 
+  const selectTab = (tab: BottomTab) => {
+    setActiveTab(tab)
+    setActiveLeagueId(null)
+    setActiveTeam(null)
+    setActivePlayer(null)
+    setReturnScreen(tab)
+    setScreen(tab)
+  }
+
   const openLeague = (id: LeagueId) => {
+    if (isTabScreen(screen)) {
+      setReturnScreen(screen)
+      setActiveTab(screen === 'favorites' ? 'favorites' : 'leagues')
+    }
     setActiveLeagueId(id)
     setActiveTeam(null)
     setActivePlayer(null)
-    setScreen('league')
-  }
-
-  const openFavorites = () => {
-    setActiveTeam(null)
-    setActivePlayer(null)
-    setScreen('favorites')
+    setScreen('league-profile')
   }
 
   const openTeam = (team: FavoriteTeam) => {
     if (screen !== 'team' && screen !== 'player') {
-      setReturnScreen(screen)
+      setReturnScreen(screen === 'league-profile' ? 'league-profile' : (screen as ReturnScreen))
+      if (isTabScreen(screen)) setActiveTab(screen)
+      else if (screen === 'league-profile') setActiveTab('leagues')
     }
     setActivePlayer(null)
     setActiveTeam(team)
@@ -345,7 +285,9 @@ export default function App() {
 
   const openPlayer = (player: PlayerNavRef) => {
     if (screen !== 'team' && screen !== 'player') {
-      setReturnScreen(screen)
+      setReturnScreen(screen === 'league-profile' ? 'league-profile' : (screen as ReturnScreen))
+      if (isTabScreen(screen)) setActiveTab(screen)
+      else if (screen === 'league-profile') setActiveTab('leagues')
     }
     setActivePlayer(player)
     setScreen('player')
@@ -354,124 +296,174 @@ export default function App() {
   const closeOverlay = () => {
     setActiveTeam(null)
     setActivePlayer(null)
+    if (returnScreen === 'league-profile' && activeLeagueId) {
+      setScreen('league-profile')
+      setActiveTab('leagues')
+      return
+    }
+    setActiveLeagueId(null)
     setScreen(returnScreen)
+    if (isTabScreen(returnScreen)) setActiveTab(returnScreen)
   }
 
-  const goHome = () => {
+  const closeLeagueProfile = () => {
     setActiveLeagueId(null)
     setActiveTeam(null)
     setActivePlayer(null)
-    setScreen('home')
+    setScreen('leagues')
+    setActiveTab('leagues')
+    setReturnScreen('leagues')
   }
 
+  const navActive: BottomTab =
+    screen === 'league-profile'
+      ? 'leagues'
+      : screen === 'team' || screen === 'player'
+        ? activeTab
+        : isTabScreen(screen)
+          ? screen
+          : 'home'
+
   return (
-    <AnimatePresence mode="wait">
-      {screen === 'player' && activePlayer ? (
-        <motion.div
-          key={`player-${activePlayer.id}`}
-          initial={reduce ? false : { opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reduce ? undefined : { opacity: 0, x: 40 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <PlayerProfileScreen
-            player={activePlayer}
-            favorites={favorites}
-            onBack={closeOverlay}
-            onOpenFavorites={openFavorites}
-            reduce={reduce}
-          />
-        </motion.div>
-      ) : screen === 'team' && activeTeam ? (
-        <motion.div
-          key={`team-${activeTeam.id}`}
-          initial={reduce ? false : { opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reduce ? undefined : { opacity: 0, x: 40 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <TeamProfileScreen
-            team={activeTeam}
-            matches={matches}
-            loading={loading}
-            error={error}
-            favorites={favorites}
-            onBack={closeOverlay}
-            onOpenTeam={openTeam}
-            onOpenPlayer={openPlayer}
-            onOpenLeague={openLeague}
-            onOpenFavorites={openFavorites}
-            reduce={reduce}
-          />
-        </motion.div>
-      ) : screen === 'favorites' ? (
-        <motion.div
-          key="favorites"
-          initial={reduce ? false : { opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={reduce ? undefined : { opacity: 0, y: 24 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <FavoritesScreen
-            favorites={favorites}
-            onBack={goHome}
-            onOpenLeague={openLeague}
-            onOpenTeam={openTeam}
-            onOpenPlayer={openPlayer}
-            reduce={reduce}
-          />
-        </motion.div>
-      ) : screen === 'league' && activeLeague ? (
-        <motion.div
-          key={activeLeague.id}
-          initial={reduce ? false : { opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reduce ? undefined : { opacity: 0, x: 40 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <LeagueProfileScreen
-            league={activeLeague}
-            matches={matches}
-            loading={loading}
-            error={error}
-            favorites={favorites}
-            onBack={goHome}
-            onOpenTeam={openTeam}
-            onOpenPlayer={openPlayer}
-            onOpenFavorites={openFavorites}
-            reduce={reduce}
-          />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="home"
-          initial={reduce ? false : { opacity: 0, x: -24 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={reduce ? undefined : { opacity: 0, x: -24 }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <HomeScreen
-            selectedDate={selectedDate}
-            onSelectDate={handleSelectDate}
-            onJumpToToday={jumpToToday}
-            onNeedMatchRange={handleNeedMatchRange}
-            knownForwardDays={knownForwardDays}
-            onOpenLeague={openLeague}
-            onOpenTeam={openTeam}
-            onOpenPlayer={openPlayer}
-            onOpenFavorites={openFavorites}
-            matches={matches}
-            loading={loading}
-            error={error}
-            updatedAt={updatedAt}
-            refreshing={refreshing}
-            hasLive={hasLive}
-            onRefresh={refresh}
-            favorites={favorites}
-            reduce={reduce}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <>
+      <AnimatePresence mode="wait">
+        {screen === 'player' && activePlayer ? (
+          <motion.div
+            key={`player-${activePlayer.id}`}
+            initial={reduce ? false : { opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? undefined : { opacity: 0, x: 40 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <PlayerProfileScreen
+              player={activePlayer}
+              favorites={favorites}
+              onBack={closeOverlay}
+              reduce={reduce}
+            />
+          </motion.div>
+        ) : screen === 'team' && activeTeam ? (
+          <motion.div
+            key={`team-${activeTeam.id}`}
+            initial={reduce ? false : { opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? undefined : { opacity: 0, x: 40 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <TeamProfileScreen
+              team={activeTeam}
+              matches={matches}
+              loading={loading}
+              error={error}
+              favorites={favorites}
+              onBack={closeOverlay}
+              onOpenTeam={openTeam}
+              onOpenPlayer={openPlayer}
+              onOpenLeague={openLeague}
+              reduce={reduce}
+            />
+          </motion.div>
+        ) : screen === 'league-profile' && activeLeague ? (
+          <motion.div
+            key={activeLeague.id}
+            initial={reduce ? false : { opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? undefined : { opacity: 0, x: 40 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <LeagueProfileScreen
+              league={activeLeague}
+              matches={matches}
+              loading={loading}
+              error={error}
+              favorites={favorites}
+              onBack={closeLeagueProfile}
+              onOpenTeam={openTeam}
+              onOpenPlayer={openPlayer}
+              reduce={reduce}
+            />
+          </motion.div>
+        ) : screen === 'favorites' ? (
+          <motion.div
+            key="favorites"
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: 24 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <FavoritesScreen
+              favorites={favorites}
+              onOpenLeague={openLeague}
+              onOpenTeam={openTeam}
+              onOpenPlayer={openPlayer}
+              reduce={reduce}
+            />
+          </motion.div>
+        ) : screen === 'leagues' ? (
+          <motion.div
+            key="leagues"
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: 24 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <LeaguesScreen
+              favorites={favorites}
+              onOpenLeague={openLeague}
+              reduce={reduce}
+            />
+          </motion.div>
+        ) : screen === 'stats' ? (
+          <motion.div
+            key="stats"
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: 24 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <PlaceholderScreen title="Stats" reduce={reduce} />
+          </motion.div>
+        ) : screen === 'fantasy' ? (
+          <motion.div
+            key="fantasy"
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? undefined : { opacity: 0, y: 24 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <PlaceholderScreen title="Fantasy" reduce={reduce} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="home"
+            initial={reduce ? false : { opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? undefined : { opacity: 0, x: -24 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <HomeScreen
+              selectedDate={selectedDate}
+              onSelectDate={handleSelectDate}
+              onJumpToToday={jumpToToday}
+              onNeedMatchRange={handleNeedMatchRange}
+              knownForwardDays={knownForwardDays}
+              onOpenTeam={openTeam}
+              onOpenPlayer={openPlayer}
+              matches={matches}
+              loading={loading}
+              error={error}
+              updatedAt={updatedAt}
+              refreshing={refreshing}
+              hasLive={hasLive}
+              onRefresh={refresh}
+              favorites={favorites}
+              reduce={reduce}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <BottomNav active={navActive} onSelect={selectTab} />
+    </>
   )
 }
