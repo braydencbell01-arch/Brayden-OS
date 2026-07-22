@@ -5,6 +5,7 @@ export type LeagueId =
   | 'serie-a'
   | 'ligue-1'
   | 'eredivisie'
+  | 'primeira-liga'
 
 export type League = {
   id: LeagueId
@@ -56,6 +57,13 @@ export const LEAGUES: League[] = [
     short: 'NED',
     country: 'Netherlands',
     espnCode: 'ned.1',
+  },
+  {
+    id: 'primeira-liga',
+    name: 'Primeira Liga',
+    short: 'POR',
+    country: 'Portugal',
+    espnCode: 'por.1',
   },
 ]
 
