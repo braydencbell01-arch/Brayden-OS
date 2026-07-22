@@ -128,15 +128,6 @@ export function PlayerProfileScreen({
                 </span>
               }
             />
-            <ProfileMetric label="Age" value={profile.age ?? '—'} />
-            <ProfileMetric
-              label={profile.representsNationalTeam ? 'National team' : 'Represents'}
-              value={
-                <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {profile.represents || '—'}
-                </span>
-              }
-            />
             <ProfileMetric
               label="Club"
               value={
@@ -145,6 +136,15 @@ export function PlayerProfileScreen({
                 </span>
               }
             />
+            <ProfileMetric
+              label={profile.representsNationalTeam ? 'National team' : 'Represents'}
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {profile.represents || '—'}
+                </span>
+              }
+            />
+            <ProfileMetric label="Age" value={profile.age ?? '—'} />
             <ProfileMetric
               label="Height"
               value={
