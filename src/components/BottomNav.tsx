@@ -55,11 +55,19 @@ const TABS: Array<{
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
         <path
-          d="M12 3.2l2.2 4.6 5 .7-3.6 3.5.9 5.1L12 14.8 7.5 17.1l.9-5.1L4.8 8.5l5-.7L12 3.2z"
+          d="M8.5 4.5h7l1.5 3.5V19a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1V8L8.5 4.5z"
           stroke="currentColor"
           strokeWidth={active ? 2 : 1.7}
           strokeLinejoin="round"
         />
+        <path
+          d="M8.5 4.5L7 7.5M15.5 4.5L17 7.5M10 8.5h4"
+          stroke="currentColor"
+          strokeWidth={active ? 2 : 1.7}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="12" cy="13.5" r="2" stroke="currentColor" strokeWidth={active ? 2 : 1.7} />
       </svg>
     ),
   },
