@@ -197,6 +197,28 @@ function toMatchPlayerStats(entry: EspnRosterEntry): MatchPlayerStats {
   }
 }
 
+/** True when the player entered the match — not merely named in the matchday squad. */
+function playerAppearedOnPitch(entry: EspnRosterEntry, stats: MatchPlayerStats): boolean {
+  if (entry.starter) return true
+  if (stats.appearances > 0) return true
+  // ESPN often flags unused substitutes as `active`; ignore that flag.
+  // A used sub with delayed appearances still rates if they recorded an action.
+  return (
+    stats.totalGoals > 0 ||
+    stats.goalAssists > 0 ||
+    stats.totalShots > 0 ||
+    stats.shotsOnTarget > 0 ||
+    stats.foulsCommitted > 0 ||
+    stats.foulsSuffered > 0 ||
+    stats.yellowCards > 0 ||
+    stats.redCards > 0 ||
+    stats.offsides > 0 ||
+    stats.ownGoals > 0 ||
+    stats.saves > 0 ||
+    stats.shotsFaced > 0
+  )
+}
+
 function buildLineups(
   summary: EspnSummary,
   leagueId: LeagueId,
@@ -216,7 +238,7 @@ function buildLineups(
           const positionAbbrev = entry.position?.abbreviation || '—'
           const jerseyUrl = entry.athlete?.jerseyImages?.[0]?.href
           const stats = toMatchPlayerStats(entry)
-          const appeared = stats.appearances > 0 || Boolean(entry.starter) || Boolean(entry.active)
+          const appeared = playerAppearedOnPitch(entry, stats)
           const ratingStats: MatchPlayerStats = {
             ...stats,
             appearances: appeared ? Math.max(stats.appearances, 1) : 0,
@@ -251,7 +273,8 @@ function buildLineups(
         teamName,
         homeAway,
         starters: players.filter((player) => player.starter),
-        bench: players.filter((player) => !player.starter && player.rating != null),
+        // Keep unused substitutes visible — they just have no rating.
+        bench: players.filter((player) => !player.starter),
       } satisfies MatchLineupSide
     })
     .filter((side) => side.starters.length > 0 || side.bench.length > 0)
