@@ -41,10 +41,11 @@ export type FantasyMember = {
   name: string
   joinedAt: number
   isCommissioner: boolean
-  /** Snake draft slot 1..N once set */
   draftSlot: number | null
   roster: number[]
   starters: number[]
+  /** When on, picks fire automatically on your turn (season-proj best fit). */
+  autodraft: boolean
   wins: number
   losses: number
   ties: number
@@ -59,6 +60,7 @@ export type DraftPick = {
   memberId: string
   playerId: number
   at: number
+  auto?: boolean
 }
 
 export type TradeOffer = {
@@ -70,6 +72,17 @@ export type TradeOffer = {
   status: 'pending' | 'accepted' | 'rejected' | 'canceled'
   createdAt: number
   resolvedAt?: number
+}
+
+export type WaiverClaim = {
+  id: string
+  memberId: string
+  addPlayerId: number
+  dropPlayerId: number | null
+  status: 'pending' | 'successful' | 'failed' | 'canceled'
+  createdAt: number
+  resolvedAt?: number
+  failReason?: string
 }
 
 export type MatchupSide = {
@@ -84,9 +97,7 @@ export type WeeklyMatchup = {
   home: MatchupSide
   away: MatchupSide
   kind: 'regular' | 'semifinal' | 'final'
-  /** Aggregate series id for playoff multi-week matchups */
   seriesId?: string
-  /** Set when commissioner runs Score GW for this matchup */
   scored?: boolean
 }
 
@@ -103,19 +114,20 @@ export type PlayoffSeries = {
 
 export type FantasyLeague = {
   id: string
-  /** Short code people type to join */
   inviteCode: string
-  /** jsonblob id for cloud sync (optional) */
   syncBlobId?: string
   name: string
   competition: 'premier-league'
   createdAt: number
   updatedAt: number
   commissionerId: string
-  /** Even count only: 4 | 6 | 8 | 10 | 12 */
   teamCount: number
   rosterSpots: number
   starterSpots: number
+  /** Seconds on the clock per draft pick (FF-style). */
+  draftClockSeconds: number
+  /** When the current pick expires and autodraft fires. */
+  draftPickDeadlineAt?: number
   phase: LeaguePhase
   members: FantasyMember[]
   draftOrder: string[]
@@ -123,14 +135,16 @@ export type FantasyLeague = {
   draftPickIndex: number
   draftStartedAt?: number
   trades: TradeOffer[]
+  /** Rolling waiver priority — successful claim moves manager to the end. */
+  waiverOrder: string[]
+  waiverClaims: WaiverClaim[]
+  /** Recently dropped players that must be claimed via waivers. */
+  waiverPool: number[]
   matchups: WeeklyMatchup[]
   playoffs: PlayoffSeries[]
-  /** playerId -> gw -> fantasy points (scored) */
   playerGwPoints: Record<string, Record<string, number>>
   currentGw: number
-  /** Regular season ends before this GW (inclusive last regular = playoffStartGw - 1) */
   playoffStartGw: number
-  /** Season length in GWs */
   seasonGws: number
 }
 
@@ -141,22 +155,39 @@ export type FantasyIdentity = {
 
 export type FantasyStoreState = {
   identity: FantasyIdentity
-  /** league id -> league */
   leagues: Record<string, FantasyLeague>
   activeLeagueId: string | null
 }
 
 export const ALLOWED_TEAM_COUNTS = [4, 6, 8, 10, 12] as const
-export const DEFAULT_ROSTER_SPOTS = 15
+/** Fantasy-football depth: 11 starters + 7 bench. */
+export const DEFAULT_ROSTER_SPOTS = 18
 export const DEFAULT_STARTER_SPOTS = 11
+export const DEFAULT_DRAFT_CLOCK_SECONDS = 90
+export const ALLOWED_DRAFT_CLOCKS = [30, 60, 90, 120] as const
 export const SEASON_GWS = 38
-/** Last 10 matchweeks: 5 semi + 5 final */
 export const PLAYOFF_START_GW = 29
 export const SEMI_GWS = [29, 30, 31, 32, 33] as const
 export const FINAL_GWS = [34, 35, 36, 37, 38] as const
 
+/** Max on full roster (must sum to DEFAULT_ROSTER_SPOTS). */
 export const POSITION_LIMITS: Record<FantasyPosition, number> = {
   GKP: 2,
+  DEF: 6,
+  MID: 6,
+  FWD: 4,
+}
+
+/** Starter formation bands (must be able to sum to 11). */
+export const STARTER_MIN: Record<FantasyPosition, number> = {
+  GKP: 1,
+  DEF: 3,
+  MID: 2,
+  FWD: 1,
+}
+
+export const STARTER_MAX: Record<FantasyPosition, number> = {
+  GKP: 1,
   DEF: 5,
   MID: 5,
   FWD: 3,
