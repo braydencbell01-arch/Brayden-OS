@@ -13,6 +13,7 @@ import { formatMatchDayHeading, startOfDay, toDateKey } from '../lib/dates'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
+import type { PlayerNavRef } from './PlayerProfileScreen'
 
 function FormDot({ result }: { result: TeamFormResult }) {
   const styles =
@@ -40,6 +41,7 @@ export function TeamProfileScreen({
   favorites,
   onBack,
   onOpenTeam,
+  onOpenPlayer,
   onOpenFavorites,
   reduce,
 }: {
@@ -50,6 +52,7 @@ export function TeamProfileScreen({
   favorites: FavoritesApi
   onBack: () => void
   onOpenTeam: (team: FavoriteTeam) => void
+  onOpenPlayer: (player: PlayerNavRef) => void
   onOpenFavorites: () => void
   reduce: boolean | null
 }) {
@@ -234,6 +237,7 @@ export function TeamProfileScreen({
                   <MatchList
                     matches={dayMatches}
                     onOpenTeam={onOpenTeam}
+                    onOpenPlayer={onOpenPlayer}
                     emptyLabel="No matches"
                   />
                 </section>
@@ -260,6 +264,7 @@ export function TeamProfileScreen({
             <MatchList
               matches={recent}
               onOpenTeam={onOpenTeam}
+              onOpenPlayer={onOpenPlayer}
               emptyLabel="No recent results in the current window."
             />
           )}

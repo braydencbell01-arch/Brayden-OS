@@ -5,6 +5,10 @@ import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
 import { MatchList } from './components/MatchList'
 import { StandingsTable } from './components/StandingsTable'
+import {
+  PlayerProfileScreen,
+  type PlayerNavRef,
+} from './components/PlayerProfileScreen'
 import { TeamProfileScreen } from './components/TeamProfileScreen'
 import {
   addDays,
@@ -25,7 +29,7 @@ import {
 import { useLeagueStandings } from './lib/stats/useLeagueStandings'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
-type Screen = 'home' | 'league' | 'favorites' | 'team'
+type Screen = 'home' | 'league' | 'favorites' | 'team' | 'player'
 
 function formatUpdatedAt(updatedAt: number | null): string {
   if (!updatedAt) return 'Waiting for first sync'
@@ -69,6 +73,7 @@ function HomeScreen({
   onJumpToToday,
   onOpenLeague,
   onOpenTeam,
+  onOpenPlayer,
   onOpenFavorites,
   matches,
   loading,
@@ -85,6 +90,7 @@ function HomeScreen({
   onJumpToToday: () => void
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
+  onOpenPlayer: (player: PlayerNavRef) => void
   onOpenFavorites: () => void
   matches: Match[]
   loading: boolean
@@ -98,8 +104,14 @@ function HomeScreen({
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
   const favoriteDateKeys = useMemo(
-    () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
-    [matches, favorites.leagueIds, favorites.teamIds],
+    () =>
+      dateKeysForFavorites(
+        matches,
+        favorites.leagueIds,
+        favorites.teamIds,
+        favorites.favoritePlayerTeamIds,
+      ),
+    [matches, favorites.leagueIds, favorites.teamIds, favorites.favoritePlayerTeamIds],
   )
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
@@ -192,6 +204,7 @@ function HomeScreen({
               matches={dayMatches}
               showLeague
               onOpenTeam={onOpenTeam}
+              onOpenPlayer={onOpenPlayer}
               emptyLabel="No matches on this date. Try another day or jump to Today."
             />
           )}
@@ -265,6 +278,7 @@ function LeagueScreen({
   favorites,
   onBack,
   onOpenTeam,
+  onOpenPlayer,
   onOpenFavorites,
   reduce,
 }: {
@@ -275,6 +289,7 @@ function LeagueScreen({
   favorites: FavoritesApi
   onBack: () => void
   onOpenTeam: (team: FavoriteTeam) => void
+  onOpenPlayer: (player: PlayerNavRef) => void
   onOpenFavorites: () => void
   reduce: boolean | null
 }) {
@@ -371,7 +386,7 @@ function LeagueScreen({
         >
           <div className="px-1">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Fixtures</p>
-            <p className="mt-1 text-sm text-mist/80">Tap a match for possession, shots, and key moments</p>
+            <p className="mt-1 text-sm text-mist/80">Tap a match for lineups, ratings, and key moments</p>
           </div>
 
           {loading ? (
@@ -395,7 +410,12 @@ function LeagueScreen({
                     </span>
                   )}
                 </div>
-                <MatchList matches={dayMatches} onOpenTeam={onOpenTeam} emptyLabel="No matches" />
+                <MatchList
+                  matches={dayMatches}
+                  onOpenTeam={onOpenTeam}
+                  onOpenPlayer={onOpenPlayer}
+                  emptyLabel="No matches"
+                />
               </section>
             ))
           )}
@@ -414,7 +434,8 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
-  const [teamReturnScreen, setTeamReturnScreen] = useState<Exclude<Screen, 'team'>>('home')
+  const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
+  const [returnScreen, setReturnScreen] = useState<Exclude<Screen, 'team' | 'player'>>('home')
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
@@ -423,36 +444,65 @@ export default function App() {
   const openLeague = (id: LeagueId) => {
     setActiveLeagueId(id)
     setActiveTeam(null)
+    setActivePlayer(null)
     setScreen('league')
   }
 
   const openFavorites = () => {
     setActiveTeam(null)
+    setActivePlayer(null)
     setScreen('favorites')
   }
 
   const openTeam = (team: FavoriteTeam) => {
-    if (screen !== 'team') {
-      setTeamReturnScreen(screen)
+    if (screen !== 'team' && screen !== 'player') {
+      setReturnScreen(screen)
     }
+    setActivePlayer(null)
     setActiveTeam(team)
     setScreen('team')
   }
 
-  const closeTeam = () => {
+  const openPlayer = (player: PlayerNavRef) => {
+    if (screen !== 'team' && screen !== 'player') {
+      setReturnScreen(screen)
+    }
+    setActivePlayer(player)
+    setScreen('player')
+  }
+
+  const closeOverlay = () => {
     setActiveTeam(null)
-    setScreen(teamReturnScreen)
+    setActivePlayer(null)
+    setScreen(returnScreen)
   }
 
   const goHome = () => {
     setActiveLeagueId(null)
     setActiveTeam(null)
+    setActivePlayer(null)
     setScreen('home')
   }
 
   return (
     <AnimatePresence mode="wait">
-      {screen === 'team' && activeTeam ? (
+      {screen === 'player' && activePlayer ? (
+        <motion.div
+          key={`player-${activePlayer.id}`}
+          initial={reduce ? false : { opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={reduce ? undefined : { opacity: 0, x: 40 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <PlayerProfileScreen
+            player={activePlayer}
+            favorites={favorites}
+            onBack={closeOverlay}
+            onOpenFavorites={openFavorites}
+            reduce={reduce}
+          />
+        </motion.div>
+      ) : screen === 'team' && activeTeam ? (
         <motion.div
           key={`team-${activeTeam.id}`}
           initial={reduce ? false : { opacity: 0, x: 40 }}
@@ -466,8 +516,9 @@ export default function App() {
             loading={loading}
             error={error}
             favorites={favorites}
-            onBack={closeTeam}
+            onBack={closeOverlay}
             onOpenTeam={openTeam}
+            onOpenPlayer={openPlayer}
             onOpenFavorites={openFavorites}
             reduce={reduce}
           />
@@ -485,6 +536,7 @@ export default function App() {
             onBack={goHome}
             onOpenLeague={openLeague}
             onOpenTeam={openTeam}
+            onOpenPlayer={openPlayer}
             reduce={reduce}
           />
         </motion.div>
@@ -504,6 +556,7 @@ export default function App() {
             favorites={favorites}
             onBack={goHome}
             onOpenTeam={openTeam}
+            onOpenPlayer={openPlayer}
             onOpenFavorites={openFavorites}
             reduce={reduce}
           />
@@ -522,6 +575,7 @@ export default function App() {
             onJumpToToday={jumpToToday}
             onOpenLeague={openLeague}
             onOpenTeam={openTeam}
+            onOpenPlayer={openPlayer}
             onOpenFavorites={openFavorites}
             matches={matches}
             loading={loading}

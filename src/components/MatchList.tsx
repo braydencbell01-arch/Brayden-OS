@@ -3,8 +3,23 @@ import { getLeague } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { formatKickoffTime } from '../lib/dates'
 import type { Match } from '../lib/matches'
+import type { MatchLineupPlayer } from '../lib/stats/types'
 import { useMatchDetailStats } from '../lib/stats/useMatchDetailStats'
 import { MatchStatsPanel } from './MatchStatsPanel'
+import type { PlayerNavRef } from './PlayerProfileScreen'
+
+function toPlayerNav(player: MatchLineupPlayer): PlayerNavRef {
+  return {
+    id: player.id,
+    leagueId: player.leagueId,
+    name: player.name,
+    shortName: player.shortName,
+    photoUrl: player.photoUrl,
+    teamId: player.teamId,
+    teamName: player.teamName,
+    position: player.positionAbbrev,
+  }
+}
 
 function statusLabel(match: Match): string {
   if (match.status === 'scheduled') return formatKickoffTime(match.kickoff)
@@ -68,10 +83,12 @@ function ExpandableMatchRow({
   match,
   showLeague = false,
   onOpenTeam,
+  onOpenPlayer,
 }: {
   match: Match
   showLeague?: boolean
   onOpenTeam?: (team: FavoriteTeam) => void
+  onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
   const [open, setOpen] = useState(false)
   const league = getLeague(match.leagueId)
@@ -97,7 +114,7 @@ function ExpandableMatchRow({
             ].join(' ')}
           >
             {status}
-            <span className="ml-2 text-mist/50">{open ? '▴' : '▾'} stats</span>
+            <span className="ml-2 text-mist/50">{open ? '▴' : '▾'} lineup</span>
           </p>
         </button>
 
@@ -115,6 +132,11 @@ function ExpandableMatchRow({
             loading={loading}
             error={error}
             scheduled={match.status === 'scheduled'}
+            onOpenPlayer={
+              onOpenPlayer
+                ? (player) => onOpenPlayer(toPlayerNav(player))
+                : undefined
+            }
           />
         </div>
       )}
@@ -127,11 +149,13 @@ export function MatchList({
   showLeague = false,
   emptyLabel,
   onOpenTeam,
+  onOpenPlayer,
 }: {
   matches: Match[]
   showLeague?: boolean
   emptyLabel: string
   onOpenTeam?: (team: FavoriteTeam) => void
+  onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
   if (matches.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
@@ -141,7 +165,12 @@ export function MatchList({
     <ul className="flex flex-col gap-2">
       {matches.map((match) => (
         <li key={match.id}>
-          <ExpandableMatchRow match={match} showLeague={showLeague} onOpenTeam={onOpenTeam} />
+          <ExpandableMatchRow
+            match={match}
+            showLeague={showLeague}
+            onOpenTeam={onOpenTeam}
+            onOpenPlayer={onOpenPlayer}
+          />
         </li>
       ))}
     </ul>
