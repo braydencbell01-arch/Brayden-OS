@@ -1,10 +1,15 @@
 /**
- * Brayden Rating v0 — position-aware match rating from ESPN-available stats.
+ * Brayden Rating v0 — live-aware, time-averaged match rating.
  *
- * Scale: roughly 0–10 (Sofascore-like), clipped.
- * Base starts at 5.0 for every player who appears; contributions add/subtract from there.
- * Designed so we can ship ratings NOW from match roster stats, then upgrade
- * weights when xG / minutes / progressive actions arrive from richer feeds.
+ * Scale: 0–10, clipped.
+ *
+ * Model:
+ * - Every player who appears starts at base **5.0**
+ * - Stats produce an “end-of-game” delta (e.g. a goal ≈ **+1.0** at 90′)
+ * - During the match that delta is stretched by time:
+ *     liveDelta = endGameDelta * (90 / minutesSoFar)
+ *   So a 1st-minute goal spikes close to **10**, then as minutes and other
+ *   stats accumulate the rating averages back toward a calmer final number.
  *
  * Season form = recency-weighted average of recent match ratings.
  */
@@ -30,9 +35,25 @@ export type MatchPlayerStats = {
   shotsFaced: number
 }
 
+export type RateMatchOptions = {
+  /**
+   * Minutes the player has been on the pitch (or match clock if unknown).
+   * Live: pass current elapsed minute. Finished: pass ~90 (default).
+   */
+  minutesPlayed?: number
+  /** True while the match is still in progress (uses live time stretch). */
+  live?: boolean
+}
+
 export type RatingBreakdown = {
   rating: number
   base: number
+  /** Stat contribution if the match were already at 90′ */
+  endGameDelta: number
+  /** endGameDelta after live time stretch */
+  liveDelta: number
+  minutesUsed: number
+  timeFactor: number
   attack: number
   creation: number
   discipline: number
@@ -43,6 +64,26 @@ export type RatingBreakdown = {
 
 const CLIP_MIN = 1
 const CLIP_MAX = 10
+const FULL_TIME = 90
+/** Avoid divide-by-zero; minute 1 still produces a near-max spike. */
+const MIN_MINUTES = 1
+
+/** End-of-game weights: one goal ≈ +1.0 after 90 minutes. */
+const W = {
+  goal: 1.0,
+  assist: 0.7,
+  shotOnTarget: 0.12,
+  shotOffTarget: 0.03,
+  foulCommitted: -0.04,
+  foulSuffered: 0.015,
+  yellow: -0.25,
+  red: -1.0,
+  ownGoal: -0.9,
+  offside: -0.02,
+  save: 0.22,
+  gkGoalConceded: -0.3,
+  defGoalConceded: -0.1,
+} as const
 
 export function positionGroupFromAbbrev(abbrev: string | undefined | null): PlayerPositionGroup {
   const a = (abbrev || '').toUpperCase()
@@ -71,7 +112,6 @@ export function positionGroupFromAbbrev(abbrev: string | undefined | null): Play
     a === 'M' ||
     a.includes('M')
   ) {
-    // keep MID before FWD checks for AM-* already handled
     if (a.startsWith('CF') || a === 'ST' || a === 'F' || a === 'FW' || a === 'SS') return 'FWD'
     return 'MID'
   }
@@ -83,71 +123,103 @@ function clip(n: number): number {
   return Math.round(Math.min(CLIP_MAX, Math.max(CLIP_MIN, n)) * 10) / 10
 }
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100
+}
+
+function resolveMinutes(options?: RateMatchOptions): number {
+  const raw = options?.minutesPlayed
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) {
+    return Math.min(120, Math.max(MIN_MINUTES, raw))
+  }
+  // Finished / unknown → fully averaged 90′ rating
+  return FULL_TIME
+}
+
 /**
  * Single-match Brayden Rating from ESPN roster stats.
  * Returns null if the player did not appear.
+ *
+ * @example
+ * // Live, minute 1, just scored → ~10
+ * rateMatchPerformance(stats, 'FWD', { minutesPlayed: 1, live: true })
+ *
+ * // Full time, one goal → ~6.0 (5.0 base + ~1.0)
+ * rateMatchPerformance(stats, 'FWD', { minutesPlayed: 90 })
  */
 export function rateMatchPerformance(
   stats: MatchPlayerStats,
   position: PlayerPositionGroup,
+  options?: RateMatchOptions,
 ): RatingBreakdown | null {
   if (!stats.appearances || stats.appearances <= 0) return null
 
   const notes: string[] = []
   const base = 5.0
+  const minutesUsed = resolveMinutes(options)
   if (stats.starter === false) notes.push('Came off the bench')
+  if (options?.live) notes.push(`Live @ ${Math.round(minutesUsed)}′`)
 
-  // Attack finishing
   let attack = 0
-  attack += stats.totalGoals * (position === 'FWD' ? 1.15 : position === 'MID' ? 1.25 : 1.35)
-  attack += Math.min(stats.shotsOnTarget, 6) * 0.18
-  attack += Math.min(Math.max(stats.totalShots - stats.shotsOnTarget, 0), 6) * 0.04
+  const goalWeight =
+    position === 'FWD' ? W.goal : position === 'MID' ? W.goal + 0.05 : W.goal + 0.1
+  attack += stats.totalGoals * goalWeight
+  attack += Math.min(stats.shotsOnTarget, 8) * W.shotOnTarget
+  attack += Math.min(Math.max(stats.totalShots - stats.shotsOnTarget, 0), 8) * W.shotOffTarget
   if (stats.totalGoals > 0) notes.push(`${stats.totalGoals} goal(s)`)
 
-  // Creation
   let creation = 0
-  creation += stats.goalAssists * (position === 'MID' ? 0.95 : 0.85)
+  creation += stats.goalAssists * (position === 'MID' ? W.assist + 0.05 : W.assist)
   if (stats.goalAssists > 0) notes.push(`${stats.goalAssists} assist(s)`)
 
-  // Discipline / waste
   let discipline = 0
-  discipline -= stats.yellowCards * 0.3
-  discipline -= stats.redCards * 1.2
-  discipline -= Math.min(stats.foulsCommitted, 6) * 0.05
-  discipline += Math.min(stats.foulsSuffered, 6) * 0.02
-  discipline -= stats.ownGoals * 1.0
-  discipline -= Math.min(stats.offsides, 4) * 0.03
+  discipline += Math.min(stats.foulsCommitted, 8) * W.foulCommitted
+  discipline += Math.min(stats.foulsSuffered, 8) * W.foulSuffered
+  discipline += stats.yellowCards * W.yellow
+  discipline += stats.redCards * W.red
+  discipline += stats.ownGoals * W.ownGoal
+  discipline += Math.min(stats.offsides, 5) * W.offside
   if (stats.redCards > 0) notes.push('Red card')
 
-  // Goalkeeping
   let goalkeeping = 0
   if (position === 'GK') {
-    goalkeeping += Math.min(stats.saves, 10) * 0.28
-    goalkeeping -= stats.goalsConceded * 0.35
+    goalkeeping += Math.min(stats.saves, 12) * W.save
+    goalkeeping += stats.goalsConceded * W.gkGoalConceded
     if (stats.saves > 0) notes.push(`${stats.saves} save(s)`)
   }
 
-  // Defending proxy (no tackles/interceptions on ESPN player line yet)
   let defending = 0
-  if (position === 'DEF' || position === 'GK') {
-    // Light team-goal penalty for defenders when they played
-    defending -= Math.min(stats.goalsConceded, 5) * 0.12
+  if (position === 'DEF') {
+    defending += Math.min(stats.goalsConceded, 5) * W.defGoalConceded
+  } else if (position === 'GK') {
+    defending += Math.min(stats.goalsConceded, 5) * (W.defGoalConceded * 0.5)
   }
 
-  // Position emphasis: mute attack for GK, mute GK for outfield
   if (position === 'GK') {
-    attack *= 0.25
-    creation *= 0.4
+    attack *= 0.2
+    creation *= 0.35
   } else {
     goalkeeping = 0
   }
 
-  const raw = base + attack + creation + discipline + goalkeeping + defending
-  const rating = clip(raw)
+  const endGameDelta = attack + creation + discipline + goalkeeping + defending
+
+  // Early minutes inflate the same delta; later minutes average it out.
+  const timeFactor = FULL_TIME / minutesUsed
+  const liveDelta = endGameDelta * timeFactor
+  const rating = clip(base + liveDelta)
+
+  if (options?.live && minutesUsed < FULL_TIME) {
+    notes.push(`Averaging toward ~${clip(base + endGameDelta)} by FT`)
+  }
 
   return {
     rating,
     base,
+    endGameDelta: round2(endGameDelta),
+    liveDelta: round2(liveDelta),
+    minutesUsed: round2(minutesUsed),
+    timeFactor: round2(timeFactor),
     attack: round2(attack),
     creation: round2(creation),
     discipline: round2(discipline),
@@ -155,10 +227,6 @@ export function rateMatchPerformance(
     defending: round2(defending),
     notes,
   }
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100
 }
 
 /**
@@ -183,8 +251,8 @@ export function rateSeasonForm(matchRatings: number[], maxGames = 8): number | n
  * Roadmap for rating v1 / v2 once richer feeds land.
  */
 export const RATING_ROADMAP = {
-  v0: 'ESPN match roster stats only (this module)',
-  v1: 'Add minutes played + normalize per 90; include pass leaders when available',
+  v0: 'Time-averaged ESPN match stats; base 5.0; live spike then settle by FT',
+  v1: 'True per-player minutes from feed (not just match clock)',
   v2: 'Blend xG/xA overperformance from FootyStats/Big Balls/API-Football',
   v3: 'Progressive actions + duel rates from FBref-style weekly enrichment',
 } as const
