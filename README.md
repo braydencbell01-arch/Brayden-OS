@@ -46,6 +46,14 @@ npm run preview
 
 Separate project — see [`jerseydeals/README.md`](./jerseydeals/README.md).
 
+**Permanent live link (always latest deploy):**  
+https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+
+Brayden Stats (root of the same Pages site):  
+https://braydencbell01-arch.github.io/Brayden-OS/
+
+Pushes to `Brayden-OS` rebuild and publish both apps via GitHub Actions.
+
 ```bash
 cd jerseydeals
 npm install
