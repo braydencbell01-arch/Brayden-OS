@@ -1,15 +1,15 @@
 import type { FantasyPlayer, FantasyPosition } from './types'
 
 /**
- * BrayStats FPL scoring algorithm v1
- * (Commissioner can intervene later — keep weights centralized here.)
+ * BrayStats H2H scoring v2 — closer to fantasy-football “every starter counts”
+ * weekly matchups (tune freely later).
  */
 export const SCORING = {
   appearanceUnder60: 1,
   appearance60Plus: 2,
-  goal: { GKP: 6, DEF: 6, MID: 5, FWD: 4 } as Record<FantasyPosition, number>,
+  goal: { GKP: 8, DEF: 6, MID: 5, FWD: 4 } as Record<FantasyPosition, number>,
   assist: 3,
-  cleanSheet: { GKP: 4, DEF: 4, MID: 1, FWD: 0 } as Record<FantasyPosition, number>,
+  cleanSheet: { GKP: 5, DEF: 4, MID: 1, FWD: 0 } as Record<FantasyPosition, number>,
   goalsConcededPerTwo: -1, // GKP/DEF only
   savePerThree: 1,
   penaltySave: 5,
@@ -121,9 +121,9 @@ export function estimateGwPoints(
 
 export const SCORING_BLURB = [
   'Appearance: 1 (<60′) / 2 (60′+)',
-  'Goals: GKP/DEF 6 · MID 5 · FWD 4',
+  'Goals: GKP 8 · DEF 6 · MID 5 · FWD 4',
   'Assist: 3',
-  'CS (60′+): GKP/DEF 4 · MID 1',
+  'CS (60′+): GKP 5 · DEF 4 · MID 1',
   'GC: −1 / 2 (GKP/DEF)',
   'Saves: 1 / 3 · Pen save 5 · Pen miss −2',
   'Cards: Y −1 · R −3 · OG −2 · Bonus up to 3',

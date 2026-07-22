@@ -1,9 +1,12 @@
-import { applyDraftPick, setDraftOrder, startDraft } from './draft'
+import { applyDraftPick, setDraftOrder, startDraft, tickDraftClock } from './draft'
+import { suggestStarters, validateStarters } from './lineup'
 import { buildRegularSeasonMatchups, resolveSeriesWinners, seedPlayoffs } from './schedule'
 import { estimateGwPoints } from './scoring'
 import type { FantasyPlayer } from './types'
 import {
+  ALLOWED_DRAFT_CLOCKS,
   ALLOWED_TEAM_COUNTS,
+  DEFAULT_DRAFT_CLOCK_SECONDS,
   DEFAULT_ROSTER_SPOTS,
   DEFAULT_STARTER_SPOTS,
   PLAYOFF_START_GW,
@@ -14,6 +17,13 @@ import {
   type FantasyPosition,
   type TradeOffer,
 } from './types'
+import { canAddPosition } from './lineup'
+import {
+  cancelWaiverClaim,
+  dropToWaivers,
+  processWaiverClaims,
+  submitWaiverClaim,
+} from './waivers'
 
 function uid(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`
@@ -26,32 +36,81 @@ function inviteCode(): string {
   return out
 }
 
-export function createLeague(input: {
-  name: string
-  commissionerId: string
-  commissionerName: string
-  teamCount: number
-  rosterSpots?: number
-  currentGw?: number
-}): FantasyLeague {
-  if (!ALLOWED_TEAM_COUNTS.includes(input.teamCount as (typeof ALLOWED_TEAM_COUNTS)[number])) {
-    throw new Error('Team count must be 4, 6, 8, 10, or 12')
-  }
-  const now = Date.now()
-  const commissioner: FantasyMember = {
-    id: input.commissionerId,
-    name: input.commissionerName.trim() || 'Commissioner',
+function blankMember(
+  id: string,
+  name: string,
+  isCommissioner: boolean,
+  now: number,
+): FantasyMember {
+  return {
+    id,
+    name: name.trim() || (isCommissioner ? 'Commissioner' : 'Manager'),
     joinedAt: now,
-    isCommissioner: true,
+    isCommissioner,
     draftSlot: null,
     roster: [],
     starters: [],
+    autodraft: false,
     wins: 0,
     losses: 0,
     ties: 0,
     pointsFor: 0,
     pointsAgainst: 0,
   }
+}
+
+/** Migrate older local/cloud leagues to FF-style defaults. */
+export function normalizeLeague(raw: FantasyLeague): FantasyLeague {
+  const members = (raw.members ?? []).map((m) => ({
+    ...m,
+    autodraft: Boolean(m.autodraft),
+    roster: m.roster ?? [],
+    starters: m.starters ?? [],
+    wins: m.wins ?? 0,
+    losses: m.losses ?? 0,
+    ties: m.ties ?? 0,
+    pointsFor: m.pointsFor ?? 0,
+    pointsAgainst: m.pointsAgainst ?? 0,
+  }))
+
+  return {
+    ...raw,
+    members,
+    rosterSpots: raw.rosterSpots || DEFAULT_ROSTER_SPOTS,
+    starterSpots: raw.starterSpots || DEFAULT_STARTER_SPOTS,
+    draftClockSeconds: raw.draftClockSeconds || DEFAULT_DRAFT_CLOCK_SECONDS,
+    waiverOrder: raw.waiverOrder ?? members.map((m) => m.id),
+    waiverClaims: raw.waiverClaims ?? [],
+    waiverPool: raw.waiverPool ?? [],
+    trades: raw.trades ?? [],
+    matchups: raw.matchups ?? [],
+    playoffs: raw.playoffs ?? [],
+    draftPicks: raw.draftPicks ?? [],
+    draftOrder: raw.draftOrder ?? [],
+    playerGwPoints: raw.playerGwPoints ?? {},
+    playoffStartGw: raw.playoffStartGw || PLAYOFF_START_GW,
+    seasonGws: raw.seasonGws || SEASON_GWS,
+  }
+}
+
+export function createLeague(input: {
+  name: string
+  commissionerId: string
+  commissionerName: string
+  teamCount: number
+  rosterSpots?: number
+  draftClockSeconds?: number
+  currentGw?: number
+}): FantasyLeague {
+  if (!ALLOWED_TEAM_COUNTS.includes(input.teamCount as (typeof ALLOWED_TEAM_COUNTS)[number])) {
+    throw new Error('Team count must be 4, 6, 8, 10, or 12')
+  }
+  const clock = input.draftClockSeconds ?? DEFAULT_DRAFT_CLOCK_SECONDS
+  if (!ALLOWED_DRAFT_CLOCKS.includes(clock as (typeof ALLOWED_DRAFT_CLOCKS)[number])) {
+    throw new Error('Invalid draft clock')
+  }
+  const now = Date.now()
+  const commissioner = blankMember(input.commissionerId, input.commissionerName, true, now)
 
   return {
     id: uid('lg'),
@@ -64,12 +123,16 @@ export function createLeague(input: {
     teamCount: input.teamCount,
     rosterSpots: input.rosterSpots ?? DEFAULT_ROSTER_SPOTS,
     starterSpots: DEFAULT_STARTER_SPOTS,
+    draftClockSeconds: clock,
     phase: 'lobby',
     members: [commissioner],
     draftOrder: [],
     draftPicks: [],
     draftPickIndex: 0,
     trades: [],
+    waiverOrder: [commissioner.id],
+    waiverClaims: [],
+    waiverPool: [],
     matchups: [],
     playoffs: [],
     playerGwPoints: {},
@@ -91,25 +154,35 @@ export function joinLeague(
   if (league.phase !== 'lobby' && league.phase !== 'draft_setup') {
     throw new Error('Draft already started — joining is closed')
   }
-  const member: FantasyMember = {
-    id: memberId,
-    name: name.trim() || 'Manager',
-    joinedAt: Date.now(),
-    isCommissioner: false,
-    draftSlot: null,
-    roster: [],
-    starters: [],
-    wins: 0,
-    losses: 0,
-    ties: 0,
-    pointsFor: 0,
-    pointsAgainst: 0,
-  }
+  const member = blankMember(memberId, name, false, Date.now())
   return {
     ...league,
     members: [...league.members, member],
+    waiverOrder: [...league.waiverOrder, member.id],
     updatedAt: Date.now(),
   }
+}
+
+export function setMemberAutodraft(
+  league: FantasyLeague,
+  memberId: string,
+  autodraft: boolean,
+): FantasyLeague {
+  return {
+    ...league,
+    members: league.members.map((m) => (m.id === memberId ? { ...m, autodraft } : m)),
+    updatedAt: Date.now(),
+  }
+}
+
+export function setDraftClockSeconds(league: FantasyLeague, seconds: number): FantasyLeague {
+  if (!ALLOWED_DRAFT_CLOCKS.includes(seconds as (typeof ALLOWED_DRAFT_CLOCKS)[number])) {
+    throw new Error('Clock must be 30, 60, 90, or 120 seconds')
+  }
+  if (league.phase === 'drafting') {
+    throw new Error('Cannot change clock during a live draft')
+  }
+  return { ...league, draftClockSeconds: seconds, updatedAt: Date.now() }
 }
 
 export function randomizeDraftOrder(league: FantasyLeague): FantasyLeague {
@@ -125,22 +198,20 @@ export function beginDraft(league: FantasyLeague): FantasyLeague {
   return startDraft(league)
 }
 
-export function draftPlayer(league: FantasyLeague, memberId: string, playerId: number): FantasyLeague {
-  const next = applyDraftPick(league, memberId, playerId)
-  if (next.phase === 'regular' && next.matchups.length === 0) {
-    return {
-      ...next,
-      matchups: buildRegularSeasonMatchups(next.members, next.playoffStartGw),
-    }
-  }
-  return next
+export function draftPlayer(
+  league: FantasyLeague,
+  memberId: string,
+  playerId: number,
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  return applyDraftPick(league, memberId, playerId, { catalog })
 }
 
-function countPos(roster: number[], players: Map<number, FantasyPlayer>, pos: FantasyPosition) {
-  return roster.reduce((n, id) => {
-    const p = players.get(id)
-    return p?.pos === pos ? n + 1 : n
-  }, 0)
+export function runDraftTick(
+  league: FantasyLeague,
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  return tickDraftClock(league, catalog)
 }
 
 export function addFreeAgent(
@@ -152,6 +223,9 @@ export function addFreeAgent(
 ): FantasyLeague {
   if (league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting') {
     throw new Error('Free agency opens after the draft')
+  }
+  if (league.waiverPool.includes(playerId)) {
+    throw new Error('Player is on waivers — submit a waiver claim')
   }
   const owned = new Set(league.members.flatMap((m) => m.roster))
   if (owned.has(playerId)) throw new Error('Player is on a roster')
@@ -171,8 +245,7 @@ export function addFreeAgent(
       roster = roster.filter((id) => id !== dropPlayerId)
     }
 
-    const nextPosCount = countPos(roster, catalog, player.pos) + 1
-    if (nextPosCount > POSITION_LIMITS[player.pos]) {
+    if (!canAddPosition(roster, player.pos, POSITION_LIMITS, catalog)) {
       throw new Error(`Max ${POSITION_LIMITS[player.pos]} ${player.pos} on roster`)
     }
 
@@ -181,25 +254,39 @@ export function addFreeAgent(
     return { ...m, roster, starters }
   })
 
-  return { ...league, members, updatedAt: Date.now() }
+  // Instant FA drop goes to waivers (FF-style)
+  let waiverPool = [...league.waiverPool]
+  if (dropPlayerId != null && !waiverPool.includes(dropPlayerId)) {
+    waiverPool.push(dropPlayerId)
+  }
+
+  return { ...league, members, waiverPool, updatedAt: Date.now() }
 }
 
 export function setStarters(
   league: FantasyLeague,
   memberId: string,
   starterIds: number[],
+  catalog: Map<number, FantasyPlayer>,
 ): FantasyLeague {
-  if (starterIds.length > league.starterSpots) {
-    throw new Error(`Start exactly ${league.starterSpots} or fewer`)
-  }
   const members = league.members.map((m) => {
     if (m.id !== memberId) return m
-    if (starterIds.some((id) => !m.roster.includes(id))) {
-      throw new Error('Starters must be on your roster')
-    }
-    return { ...m, starters: starterIds.slice(0, league.starterSpots) }
+    const err = validateStarters(starterIds, m.roster, league.starterSpots, catalog)
+    if (err) throw new Error(err)
+    return { ...m, starters: starterIds }
   })
   return { ...league, members, updatedAt: Date.now() }
+}
+
+export function autoSetStarters(
+  league: FantasyLeague,
+  memberId: string,
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  const member = league.members.find((m) => m.id === memberId)
+  if (!member) throw new Error('Manager not found')
+  const starters = suggestStarters(member.roster, league.starterSpots, catalog)
+  return setStarters(league, memberId, starters, catalog)
 }
 
 export function proposeTrade(
@@ -315,25 +402,27 @@ function sidePoints(
   }, 0)
 }
 
-/** Score a gameweek's matchups and recompute regular-season W-L from all scored weeks. */
 export function scoreGameweek(
   league: FantasyLeague,
   gw: number,
   catalog: Map<number, FantasyPlayer>,
 ): FantasyLeague {
-  const matchups = league.matchups.map((mu) => {
+  // Process waivers before locking weekly scores (FF weekly wire)
+  let working = processWaiverClaims(league, catalog)
+
+  const matchups = working.matchups.map((mu) => {
     if (mu.gw !== gw) return mu
-    const homeMember = league.members.find((m) => m.id === mu.home.memberId)
-    const awayMember = league.members.find((m) => m.id === mu.away.memberId)
+    const homeMember = working.members.find((m) => m.id === mu.home.memberId)
+    const awayMember = working.members.find((m) => m.id === mu.away.memberId)
     const homeStarters = homeMember?.starters?.length
       ? homeMember.starters
-      : (homeMember?.roster.slice(0, league.starterSpots) ?? [])
+      : suggestStarters(homeMember?.roster ?? [], working.starterSpots, catalog)
     const awayStarters = awayMember?.starters?.length
       ? awayMember.starters
-      : (awayMember?.roster.slice(0, league.starterSpots) ?? [])
+      : suggestStarters(awayMember?.roster ?? [], working.starterSpots, catalog)
 
-    const homePts = sidePoints(homeStarters, gw, league, catalog)
-    const awayPts = sidePoints(awayStarters, gw, league, catalog)
+    const homePts = sidePoints(homeStarters, gw, working, catalog)
+    const awayPts = sidePoints(awayStarters, gw, working, catalog)
 
     return {
       ...mu,
@@ -344,7 +433,7 @@ export function scoreGameweek(
   })
 
   const stats = new Map(
-    league.members.map((m) => [
+    working.members.map((m) => [
       m.id,
       {
         ...m,
@@ -380,14 +469,14 @@ export function scoreGameweek(
   }
 
   let next: FantasyLeague = {
-    ...league,
+    ...working,
     members: [...stats.values()],
     matchups,
-    currentGw: Math.max(league.currentGw, gw),
+    currentGw: Math.max(working.currentGw, gw),
     updatedAt: Date.now(),
   }
 
-  if (gw === league.playoffStartGw - 1 && next.phase === 'regular' && next.playoffs.length === 0) {
+  if (gw === next.playoffStartGw - 1 && next.phase === 'regular' && next.playoffs.length === 0) {
     next = seedPlayoffs(next)
   }
 
@@ -398,4 +487,12 @@ export function scoreGameweek(
   return next
 }
 
-export { setDraftOrder, startDraft }
+export {
+  setDraftOrder,
+  startDraft,
+  submitWaiverClaim,
+  cancelWaiverClaim,
+  processWaiverClaims,
+  dropToWaivers,
+  buildRegularSeasonMatchups,
+}
