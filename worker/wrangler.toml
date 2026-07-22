@@ -1,0 +1,9 @@
+name = "brayden-stats-football-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-03-01"
+
+[vars]
+CORS_ORIGIN = "*"
+
+# Set the secret (do not commit the key):
+#   npx wrangler secret put API_FOOTBALL_KEY
