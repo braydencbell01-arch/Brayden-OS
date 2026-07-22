@@ -7,7 +7,9 @@ import { HomeSearch } from './components/HomeSearch'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
 import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
+import { FantasyScreen } from './components/fantasy/FantasyScreen'
 import { PlaceholderScreen } from './components/PlaceholderScreen'
+import { useFantasy } from './lib/fantasy/useFantasy'
 import {
   PlayerProfileScreen,
   type PlayerNavRef,
@@ -230,6 +232,7 @@ function HomeScreen({
 export default function App() {
   const reduce = useReducedMotion()
   const favorites = useFavorites()
+  const fantasy = useFantasy()
   const {
     matches,
     loading,
@@ -475,7 +478,7 @@ export default function App() {
             exit={reduce ? undefined : { opacity: 0, y: 24 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <PlaceholderScreen title="Fantasy" reduce={reduce} />
+            <FantasyScreen fantasy={fantasy} reduce={reduce} />
           </motion.div>
         ) : (
           <motion.div
