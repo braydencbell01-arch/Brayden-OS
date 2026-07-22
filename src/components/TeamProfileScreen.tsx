@@ -177,7 +177,6 @@ export function TeamProfileScreen({
           title="Upcoming"
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
-          meta={loading ? '…' : String(upcoming.length)}
         >
           {loading ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
@@ -211,7 +210,6 @@ export function TeamProfileScreen({
           title="Recent"
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
-          meta={loading ? '…' : String(recent.length)}
         >
           {loading ? (
             <p className="text-sm text-mist/70">Loading results…</p>
