@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { getLeague } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { formatKickoffTime } from '../lib/dates'
-import type { Match } from '../lib/matches'
+import { isFavoriteMatch, type Match } from '../lib/matches'
 import { useMatchDetailStats } from '../lib/stats/useMatchDetailStats'
 import { MatchStatsPanel } from './MatchStatsPanel'
 
@@ -12,6 +12,16 @@ function statusLabel(match: Match): string {
   if (match.status === 'finished') return 'FT'
   if (match.status === 'postponed') return 'PPD'
   return match.statusText
+}
+
+function FavoriteDot({ label }: { label: string }) {
+  return (
+    <span
+      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]"
+      title={label}
+      aria-label={label}
+    />
+  )
 }
 
 function Score({ match }: { match: Match }) {
@@ -67,10 +77,12 @@ function TeamNameButton({
 function ExpandableMatchRow({
   match,
   showLeague = false,
+  isFavorite = false,
   onOpenTeam,
 }: {
   match: Match
   showLeague?: boolean
+  isFavorite?: boolean
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -79,7 +91,12 @@ function ExpandableMatchRow({
   const { stats, loading, error } = useMatchDetailStats(open ? match : null)
 
   return (
-    <article className="border border-white/10 bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]">
+    <article
+      className={[
+        'border bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]',
+        isFavorite ? 'border-star/35' : 'border-white/10',
+      ].join(' ')}
+    >
       <div className="px-4 py-3">
         <button
           type="button"
@@ -87,8 +104,9 @@ function ExpandableMatchRow({
           aria-expanded={open}
           className="mb-2 flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
         >
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
-            {showLeague ? league.short : match.venue || league.country}
+          <p className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
+            {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
+            <span>{showLeague ? league.short : match.venue || league.country}</span>
           </p>
           <p
             className={[
@@ -127,21 +145,33 @@ export function MatchList({
   showLeague = false,
   emptyLabel,
   onOpenTeam,
+  favoriteLeagueIds,
+  favoriteTeamIds,
 }: {
   matches: Match[]
   showLeague?: boolean
   emptyLabel: string
   onOpenTeam?: (team: FavoriteTeam) => void
+  favoriteLeagueIds?: Set<string>
+  favoriteTeamIds?: Set<string>
 }) {
   if (matches.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
 
+  const leagueIds = favoriteLeagueIds ?? new Set<string>()
+  const teamIds = favoriteTeamIds ?? new Set<string>()
+
   return (
     <ul className="flex flex-col gap-2">
       {matches.map((match) => (
         <li key={match.id}>
-          <ExpandableMatchRow match={match} showLeague={showLeague} onOpenTeam={onOpenTeam} />
+          <ExpandableMatchRow
+            match={match}
+            showLeague={showLeague}
+            isFavorite={isFavoriteMatch(match, leagueIds, teamIds)}
+            onOpenTeam={onOpenTeam}
+          />
         </li>
       ))}
     </ul>

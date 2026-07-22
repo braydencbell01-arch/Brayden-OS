@@ -3,7 +3,10 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarStrip } from './components/CalendarStrip'
 import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
+import { MatchDayByLeague } from './components/MatchDayByLeague'
 import { MatchList } from './components/MatchList'
+import { LeagueStatsPanel } from './components/LeagueStatsPanel'
+import { ProfileAccordion } from './components/ProfileAccordion'
 import { StandingsTable } from './components/StandingsTable'
 import { TeamProfileScreen } from './components/TeamProfileScreen'
 import {
@@ -22,6 +25,7 @@ import {
   matchesOnDate,
   type Match,
 } from './lib/matches'
+import { useLeagueLeaders } from './lib/stats/useLeagueLeaders'
 import { useLeagueStandings } from './lib/stats/useLeagueStandings'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
@@ -188,10 +192,12 @@ function HomeScreen({
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
           ) : (
-            <MatchList
+            <MatchDayByLeague
               matches={dayMatches}
-              showLeague
+              dateKey={toDateKey(startOfDay(selectedDate))}
               onOpenTeam={onOpenTeam}
+              favoriteLeagueIds={favorites.leagueIds}
+              favoriteTeamIds={favorites.teamIds}
               emptyLabel="No matches on this date. Try another day or jump to Today."
             />
           )}
@@ -288,6 +294,14 @@ function LeagueScreen({
   const standings = useLeagueStandings(league.id)
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
 
+  const [openSection, setOpenSection] = useState<'table' | 'fixtures' | 'stats' | null>('table')
+  const statsEnabled = openSection === 'stats'
+  const leaders = useLeagueLeaders(league.id, statsEnabled)
+
+  const toggleSection = (section: 'table' | 'fixtures' | 'stats') => {
+    setOpenSection((current) => (current === section ? null : section))
+  }
+
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
       <div
@@ -336,69 +350,89 @@ function LeagueScreen({
             </div>
           </div>
           <p className="mt-3 text-sm text-mist/80">
-            Table + upcoming fixtures
-            {!loading && !error ? ` · ${leagueMatches.length} matches` : ''}
+            Open a section below for the table, fixtures, or stats leaders
+            {!loading && !error ? ` · ${leagueMatches.length} upcoming` : ''}
           </p>
         </motion.header>
-
-        <motion.section
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
-          className="mt-8"
-          aria-label={`${league.name} standings`}
-        >
-          <div className="mb-3 px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
-            <p className="mt-1 text-sm text-mist/80">Tap a club name for its profile · star to favorite</p>
-          </div>
-          <StandingsTable
-            rows={standings.rows}
-            loading={standings.loading}
-            error={standings.error}
-            leagueId={league.id}
-            isTeamFavorite={favorites.isTeamFavorite}
-            onToggleTeam={favorites.toggleTeam}
-            onOpenTeam={onOpenTeam}
-          />
-        </motion.section>
 
         <motion.div
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.45, delay: reduce ? 0 : 0.15 }}
-          className="mt-10 flex flex-1 flex-col gap-6"
+          transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
+          className="mt-6 flex flex-col gap-3"
         >
-          <div className="px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Fixtures</p>
-            <p className="mt-1 text-sm text-mist/80">Tap a match for possession, shots, and key moments</p>
-          </div>
+          <ProfileAccordion
+            title="Standings"
+            subtitle="Table · tap a club for its profile"
+            open={openSection === 'table'}
+            onToggle={() => toggleSection('table')}
+            meta={standings.rows.length ? String(standings.rows.length) : undefined}
+          >
+            <StandingsTable
+              rows={standings.rows}
+              loading={standings.loading}
+              error={standings.error}
+              leagueId={league.id}
+              isTeamFavorite={favorites.isTeamFavorite}
+              onToggleTeam={favorites.toggleTeam}
+              onOpenTeam={onOpenTeam}
+            />
+          </ProfileAccordion>
 
-          {loading ? (
-            <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : error ? (
-            <p className="text-sm text-mist/80">{error}</p>
-          ) : grouped.length === 0 ? (
-            <p className="text-sm text-mist/70">
-              No upcoming {league.name} matches scheduled.
-            </p>
-          ) : (
-            grouped.map(({ dateKey, matches: dayMatches }) => (
-              <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                <div className="mb-2 flex items-baseline justify-between px-1">
-                  <h2 className="font-display text-2xl tracking-wide text-cream">
-                    {formatMatchDayHeading(dateKey)}
-                  </h2>
-                  {dateKey === toDateKey(today) && (
-                    <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
-                      Today
-                    </span>
-                  )}
-                </div>
-                <MatchList matches={dayMatches} onOpenTeam={onOpenTeam} emptyLabel="No matches" />
-              </section>
-            ))
-          )}
+          <ProfileAccordion
+            title="Upcoming matches"
+            subtitle="Fixtures in the current window"
+            open={openSection === 'fixtures'}
+            onToggle={() => toggleSection('fixtures')}
+            meta={loading ? '…' : String(leagueMatches.length)}
+          >
+            {loading ? (
+              <p className="text-sm text-mist/70">Loading fixtures…</p>
+            ) : error ? (
+              <p className="text-sm text-mist/80">{error}</p>
+            ) : grouped.length === 0 ? (
+              <p className="text-sm text-mist/70">
+                No upcoming {league.name} matches scheduled.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {grouped.map(({ dateKey, matches: dayMatches }) => (
+                  <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                    <div className="mb-2 flex items-baseline justify-between px-1">
+                      <h2 className="font-display text-2xl tracking-wide text-cream">
+                        {formatMatchDayHeading(dateKey)}
+                      </h2>
+                      {dateKey === toDateKey(today) && (
+                        <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
+                          Today
+                        </span>
+                      )}
+                    </div>
+                    <MatchList
+                      matches={dayMatches}
+                      onOpenTeam={onOpenTeam}
+                      favoriteLeagueIds={favorites.leagueIds}
+                      favoriteTeamIds={favorites.teamIds}
+                      emptyLabel="No matches"
+                    />
+                  </section>
+                ))}
+              </div>
+            )}
+          </ProfileAccordion>
+
+          <ProfileAccordion
+            title="Stats"
+            subtitle="Player and team leaders"
+            open={openSection === 'stats'}
+            onToggle={() => toggleSection('stats')}
+          >
+            <LeagueStatsPanel
+              data={leaders.data}
+              loading={leaders.loading}
+              error={leaders.error}
+            />
+          </ProfileAccordion>
         </motion.div>
       </div>
     </div>

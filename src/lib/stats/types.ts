@@ -34,5 +34,32 @@ export type StandingRow = {
   lost: number
   goalDiff: number
   points: number
+  goalsFor: number
+  goalsAgainst: number
   note?: string
+}
+
+export type LeaderEntry = {
+  rank: number
+  id: string
+  name: string
+  shortName: string
+  teamName?: string
+  value: number
+  displayValue: string
+}
+
+export type LeaderCategory = {
+  id: string
+  label: string
+  kind: 'player' | 'team'
+  leaders: LeaderEntry[]
+}
+
+export type LeagueLeaders = {
+  leagueId: LeagueId
+  season: number
+  seasonLabel: string
+  categories: LeaderCategory[]
+  fetchedAt: number
 }

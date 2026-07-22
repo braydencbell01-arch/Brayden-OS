@@ -234,6 +234,8 @@ export function TeamProfileScreen({
                   <MatchList
                     matches={dayMatches}
                     onOpenTeam={onOpenTeam}
+                    favoriteLeagueIds={favorites.leagueIds}
+                    favoriteTeamIds={favorites.teamIds}
                     emptyLabel="No matches"
                   />
                 </section>
@@ -260,6 +262,8 @@ export function TeamProfileScreen({
             <MatchList
               matches={recent}
               onOpenTeam={onOpenTeam}
+              favoriteLeagueIds={favorites.leagueIds}
+              favoriteTeamIds={favorites.teamIds}
               emptyLabel="No recent results in the current window."
             />
           )}
