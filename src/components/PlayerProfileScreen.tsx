@@ -104,7 +104,7 @@ export function PlayerProfileScreen({
             }
             eyebrow={
               <>
-                {league.short}
+                {profile.represents || 'Nation TBD'}
                 {profile.position ? ` · ${profile.position}` : ''}
               </>
             }
@@ -112,6 +112,7 @@ export function PlayerProfileScreen({
             meta={
               <>
                 {profile.teamName || 'Club TBD'}
+                {` · ${league.short}`}
                 {profile.jersey ? ` · #${profile.jersey}` : ''}
               </>
             }
@@ -129,10 +130,10 @@ export function PlayerProfileScreen({
             />
             <ProfileMetric label="Age" value={profile.age ?? '—'} />
             <ProfileMetric
-              label="Nation"
+              label={profile.representsNationalTeam ? 'National team' : 'Represents'}
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {profile.citizenship || '—'}
+                  {profile.represents || '—'}
                 </span>
               }
             />

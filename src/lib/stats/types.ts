@@ -97,6 +97,8 @@ export type PlayerClubStint = {
   teamName: string
   logoUrl?: string
   seasons: string
+  /** True when ESPN marks this as an active stint. */
+  isActive?: boolean
 }
 
 export type PlayerSeasonStatLine = {
@@ -123,6 +125,13 @@ export type PlayerProfile = {
   height?: string
   weight?: string
   citizenship?: string
+  /**
+   * Country shown near the player name: active national team if capped,
+   * otherwise citizenship / country of origin they would represent.
+   */
+  represents: string | null
+  /** Whether `represents` comes from a national-team stint. */
+  representsNationalTeam: boolean
   position?: string
   positionAbbrev?: string
   teamId?: string
