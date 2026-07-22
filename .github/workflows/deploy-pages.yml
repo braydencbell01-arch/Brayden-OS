@@ -39,11 +39,21 @@ jobs:
 
       - name: Assemble Pages site
         run: |
+          # Dual permanent URLs (never swap):
+          #   Brayden Stats  → https://braydencbell01-arch.github.io/Brayden-OS/
+          #   Jersey Deals   → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
           mkdir -p site
           cp -a dist/. site/
           mkdir -p site/jerseydeals
           cp -a jerseydeals/dist/. site/jerseydeals/
-          # SPA fallbacks
+          if ! grep -q 'Brayden Stats' site/index.html; then
+            echo "ERROR: site/index.html is not Brayden Stats" >&2
+            exit 1
+          fi
+          if ! grep -q 'Jersey Deals' site/jerseydeals/index.html; then
+            echo "ERROR: site/jerseydeals/index.html is not Jersey Deals" >&2
+            exit 1
+          fi
           cp site/index.html site/404.html
           cp site/jerseydeals/index.html site/jerseydeals/404.html
           touch site/.nojekyll
