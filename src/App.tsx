@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarStrip } from './components/CalendarStrip'
 import { FavoriteStar } from './components/FavoriteStar'
@@ -70,6 +70,7 @@ function HomeScreen({
   selectedDate,
   onSelectDate,
   onJumpToToday,
+  onNeedMatchRange,
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
@@ -87,6 +88,7 @@ function HomeScreen({
   selectedDate: Date
   onSelectDate: (date: Date) => void
   onJumpToToday: () => void
+  onNeedMatchRange: (from: Date, to: Date) => void
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
@@ -178,6 +180,7 @@ function HomeScreen({
           selected={selectedDate}
           onSelect={onSelectDate}
           onJumpToToday={onJumpToToday}
+          onNeedRange={onNeedMatchRange}
           favoriteDateKeys={favoriteDateKeys}
           reduce={reduce}
         />
@@ -276,7 +279,7 @@ function HomeScreen({
 export default function App() {
   const reduce = useReducedMotion()
   const favorites = useFavorites()
-  const { matches, loading, error, updatedAt, refreshing, hasLive, refresh } =
+  const { matches, loading, error, updatedAt, refreshing, hasLive, refresh, ensureRange, ensureDate } =
     useLiveBigFiveMatches()
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [screen, setScreen] = useState<Screen>('home')
@@ -288,6 +291,22 @@ export default function App() {
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
   const jumpToToday = () => setSelectedDate(startOfDay(new Date()))
+
+  const handleSelectDate = useCallback(
+    (date: Date) => {
+      const day = startOfDay(date)
+      setSelectedDate(day)
+      void ensureDate(day)
+    },
+    [ensureDate],
+  )
+
+  const handleNeedMatchRange = useCallback(
+    (from: Date, to: Date) => {
+      void ensureRange(from, to)
+    },
+    [ensureRange],
+  )
 
   const openLeague = (id: LeagueId) => {
     setActiveLeagueId(id)
@@ -420,8 +439,9 @@ export default function App() {
         >
           <HomeScreen
             selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
+            onSelectDate={handleSelectDate}
             onJumpToToday={jumpToToday}
+            onNeedMatchRange={handleNeedMatchRange}
             onOpenLeague={openLeague}
             onOpenTeam={openTeam}
             onOpenPlayer={openPlayer}

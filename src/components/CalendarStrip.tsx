@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  buildCalendarDays,
-  CALENDAR_RADIUS_DAYS,
+  addDays,
+  buildCalendarRange,
+  CALENDAR_FORWARD_DAYS,
+  CALENDAR_INITIAL_PAST_DAYS,
+  CALENDAR_PAST_CHUNK_DAYS,
   isSameDay,
   startOfDay,
   toDateKey,
@@ -12,20 +15,32 @@ export function CalendarStrip({
   selected,
   onSelect,
   onJumpToToday,
+  onNeedRange,
   favoriteDateKeys,
   reduce,
 }: {
   selected: Date
   onSelect: (date: Date) => void
   onJumpToToday: () => void
+  /** Fired when the visible calendar needs fixtures for an expanded past/future span. */
+  onNeedRange?: (from: Date, to: Date) => void
   favoriteDateKeys: Set<string>
   reduce: boolean | null
 }) {
   const today = useMemo(() => startOfDay(new Date()), [])
-  const days = useMemo(() => buildCalendarDays(today, CALENDAR_RADIUS_DAYS), [today])
+  const [pastDays, setPastDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
+  const extendingRef = useRef(false)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
   const isSelectedToday = isSameDay(selected, today)
+
+  const rangeStart = useMemo(() => addDays(today, -pastDays), [today, pastDays])
+  const rangeEnd = useMemo(() => addDays(today, CALENDAR_FORWARD_DAYS), [today])
+  const days = useMemo(() => buildCalendarRange(rangeStart, rangeEnd), [rangeStart, rangeEnd])
+
+  useEffect(() => {
+    onNeedRange?.(rangeStart, rangeEnd)
+  }, [onNeedRange, rangeStart, rangeEnd])
 
   useEffect(() => {
     const scroller = scrollerRef.current
@@ -35,13 +50,40 @@ export function CalendarStrip({
     scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
   }, [selected])
 
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+
+    const maybeExtendPast = () => {
+      if (extendingRef.current) return
+      if (scroller.scrollLeft > 120) return
+
+      extendingRef.current = true
+      const prevWidth = scroller.scrollWidth
+      const prevLeft = scroller.scrollLeft
+
+      setPastDays((current) => current + CALENDAR_PAST_CHUNK_DAYS)
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const delta = scroller.scrollWidth - prevWidth
+          scroller.scrollLeft = prevLeft + delta
+          extendingRef.current = false
+        })
+      })
+    }
+
+    scroller.addEventListener('scroll', maybeExtendPast, { passive: true })
+    return () => scroller.removeEventListener('scroll', maybeExtendPast)
+  }, [])
+
   return (
     <section aria-label="Match calendar" className="relative">
       <div className="mb-3 flex items-end justify-between gap-3 px-1">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
           <p className="mt-1 text-sm text-mist/80">
-            Swipe for match days · yellow = favorites
+            Swipe back for older match days · yellow = favorites
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -75,6 +117,29 @@ export function CalendarStrip({
         role="listbox"
         aria-label="Select a date"
       >
+        <button
+          type="button"
+          onClick={() => {
+            const scroller = scrollerRef.current
+            if (!scroller || extendingRef.current) return
+            extendingRef.current = true
+            const prevWidth = scroller.scrollWidth
+            const prevLeft = scroller.scrollLeft
+            setPastDays((current) => current + CALENDAR_PAST_CHUNK_DAYS)
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                const delta = scroller.scrollWidth - prevWidth
+                scroller.scrollLeft = prevLeft + delta
+                extendingRef.current = false
+              })
+            })
+          }}
+          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-3 py-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          aria-label="Load earlier match days"
+        >
+          Earlier
+        </button>
+
         {days.map((day) => {
           const active = isSameDay(day, selected)
           const isToday = isSameDay(day, today)
