@@ -21,7 +21,7 @@ export function FavoritesScreen({
   onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
 }) {
-  const [openSection, setOpenSection] = useState<FavoritesSection | null>('leagues')
+  const [openSection, setOpenSection] = useState<FavoritesSection | null>(null)
 
   const favoriteLeagues = LEAGUES.filter((league) => favorites.isLeagueFavorite(league.id))
 

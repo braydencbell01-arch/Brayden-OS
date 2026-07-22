@@ -49,7 +49,7 @@ export function LeagueProfileScreen({
   const standings = useLeagueStandings(league.id)
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
 
-  const [openSection, setOpenSection] = useState<'table' | 'fixtures' | 'stats' | null>('table')
+  const [openSection, setOpenSection] = useState<'table' | 'fixtures' | 'stats' | null>(null)
   const statsEnabled = openSection === 'stats'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
 
