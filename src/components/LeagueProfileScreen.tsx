@@ -139,8 +139,7 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Fixtures"
-          subtitle="All known fixtures from today forward"
+          title="Upcoming Fixtures"
           open={openSection === 'fixtures'}
           onToggle={() => toggleSection('fixtures')}
         >
@@ -193,7 +192,6 @@ export function LeagueProfileScreen({
 
         <ProfileAccordion
           title="Player stats"
-          subtitle="Highest-ranked player in each category"
           open={openSection === 'player-stats'}
           onToggle={() => toggleSection('player-stats')}
         >
