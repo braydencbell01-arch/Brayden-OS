@@ -1,4 +1,11 @@
-export type LeagueId = 'premier-league' | 'la-liga' | 'bundesliga' | 'serie-a' | 'ligue-1'
+export type LeagueId =
+  | 'premier-league'
+  | 'la-liga'
+  | 'bundesliga'
+  | 'serie-a'
+  | 'ligue-1'
+  | 'eredivisie'
+  | 'primeira-liga'
 
 export type League = {
   id: LeagueId
@@ -12,7 +19,7 @@ export const LEAGUES: League[] = [
   {
     id: 'premier-league',
     name: 'Premier League',
-    short: 'EPL',
+    short: 'ENG',
     country: 'England',
     espnCode: 'eng.1',
   },
@@ -43,6 +50,20 @@ export const LEAGUES: League[] = [
     short: 'FRA',
     country: 'France',
     espnCode: 'fra.1',
+  },
+  {
+    id: 'eredivisie',
+    name: 'Eredivisie',
+    short: 'NED',
+    country: 'Netherlands',
+    espnCode: 'ned.1',
+  },
+  {
+    id: 'primeira-liga',
+    name: 'Primeira Liga',
+    short: 'POR',
+    country: 'Portugal',
+    espnCode: 'por.1',
   },
 ]
 
