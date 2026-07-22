@@ -9,6 +9,8 @@ import type {
   LeaderCategory,
   LeaderEntry,
   LeagueLeaders,
+  LeaguePlayerStatTop,
+  LeaguePlayerStatsOverview,
   MatchDetailStats,
   MatchLineupPlayer,
   MatchLineupSide,
@@ -527,6 +529,159 @@ export async function fetchLeagueLeaders(
     season,
     seasonLabel,
     categories: [...playerCategories, ...teamCategories],
+    fetchedAt: Date.now(),
+  }
+}
+
+type EspnCoreLeadersResponse = {
+  categories?: Array<{
+    name?: string
+    displayName?: string
+    shortDisplayName?: string
+    leaders?: Array<{
+      displayValue?: string
+      shortDisplayValue?: string
+      value?: number
+      athlete?: { $ref?: string }
+      team?: { $ref?: string }
+    }>
+  }>
+}
+
+type EspnCoreNamed = {
+  id?: string | number
+  displayName?: string
+  shortName?: string
+  shortDisplayName?: string
+  abbreviation?: string
+  jersey?: string
+}
+
+/** Prefer canonical categories; skip *Leaders duplicates from the same feed. */
+const PLAYER_STAT_CATEGORY_ORDER = [
+  'goals',
+  'assists',
+  'shotsOnTarget',
+  'totalShots',
+  'accuratePasses',
+  'foulsSuffered',
+  'foulsCommitted',
+  'yellowCards',
+  'redCards',
+  'saves',
+] as const
+
+function idFromCoreRef(ref: string | undefined, kind: 'athletes' | 'teams'): string | null {
+  if (!ref) return null
+  const match = ref.match(new RegExp(`/${kind}/(\\d+)`))
+  return match?.[1] ?? null
+}
+
+async function fetchCoreNamed(ref: string | undefined): Promise<EspnCoreNamed | null> {
+  if (!ref) return null
+  try {
+    const res = await fetch(ref.replace(/^http:\/\//, 'https://'))
+    if (!res.ok) return null
+    return (await res.json()) as EspnCoreNamed
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Highest-ranked player in each available league stat (goals, assists, shots, cards, saves, …).
+ * Uses ESPN core leaders, which expose more categories than the site statistics feed.
+ */
+export async function fetchLeaguePlayerStatsOverview(
+  leagueId: LeagueId,
+): Promise<LeaguePlayerStatsOverview> {
+  const league = getLeague(leagueId)
+  const nowYear = new Date().getUTCFullYear()
+  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+
+  let payload: EspnCoreLeadersResponse | null = null
+  let season = nowYear
+
+  for (const year of yearsToTry) {
+    const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`
+    const res = await fetch(url)
+    if (!res.ok) continue
+    const data = (await res.json()) as EspnCoreLeadersResponse
+    if (!data.categories?.length) continue
+    payload = data
+    season = year
+    break
+  }
+
+  if (!payload?.categories?.length) {
+    throw new Error(`No ${league.name} player stats available yet`)
+  }
+
+  const byName = new Map(
+    payload.categories
+      .filter((category) => category.name)
+      .map((category) => [category.name as string, category]),
+  )
+
+  const selected = PLAYER_STAT_CATEGORY_ORDER.map((name) => byName.get(name)).filter(
+    (category): category is NonNullable<typeof category> => Boolean(category?.leaders?.[0]),
+  )
+
+  const athleteRefs = new Map<string, string>()
+  const teamRefs = new Map<string, string>()
+  for (const category of selected) {
+    const top = category.leaders![0]
+    const athleteId = idFromCoreRef(top.athlete?.$ref, 'athletes')
+    const teamId = idFromCoreRef(top.team?.$ref, 'teams')
+    if (athleteId && top.athlete?.$ref) athleteRefs.set(athleteId, top.athlete.$ref)
+    if (teamId && top.team?.$ref) teamRefs.set(teamId, top.team.$ref)
+  }
+
+  const [athletes, teams] = await Promise.all([
+    Promise.all(
+      [...athleteRefs.entries()].map(async ([id, ref]) => [id, await fetchCoreNamed(ref)] as const),
+    ),
+    Promise.all(
+      [...teamRefs.entries()].map(async ([id, ref]) => [id, await fetchCoreNamed(ref)] as const),
+    ),
+  ])
+  const athleteById = new Map(athletes)
+  const teamById = new Map(teams)
+
+  const rows: LeaguePlayerStatTop[] = selected.map((category) => {
+    const top = category.leaders![0]
+    const athleteId = idFromCoreRef(top.athlete?.$ref, 'athletes') || `${category.name}-0`
+    const teamId = idFromCoreRef(top.team?.$ref, 'teams')
+    const athlete = athleteId ? athleteById.get(athleteId) : null
+    const team = teamId ? teamById.get(teamId) : null
+    const name = athlete?.displayName || 'Unknown'
+    const value = typeof top.value === 'number' ? top.value : Number(top.value) || 0
+    return {
+      categoryId: category.name || name,
+      label: category.displayName || category.shortDisplayName || category.name || 'Stat',
+      player: {
+        rank: 1,
+        id: athleteId,
+        name,
+        shortName: athlete?.shortName || athlete?.shortDisplayName || name,
+        jersey: athlete?.jersey,
+        teamId: teamId || undefined,
+        teamName: team?.displayName || team?.shortDisplayName || team?.abbreviation,
+        value,
+        displayValue: top.shortDisplayValue || top.displayValue || String(value),
+      },
+    }
+  })
+
+  if (rows.length === 0) {
+    throw new Error(`No ${league.name} player stats available yet`)
+  }
+
+  return {
+    leagueId,
+    season,
+    seasonLabel: `${season} season`,
+    rows,
     fetchedAt: Date.now(),
   }
 }

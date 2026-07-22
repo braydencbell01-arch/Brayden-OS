@@ -94,6 +94,21 @@ export type LeagueLeaders = {
   fetchedAt: number
 }
 
+/** One row: the #1 player for a single league stat category. */
+export type LeaguePlayerStatTop = {
+  categoryId: string
+  label: string
+  player: LeaderEntry
+}
+
+export type LeaguePlayerStatsOverview = {
+  leagueId: LeagueId
+  season: number
+  seasonLabel: string
+  rows: LeaguePlayerStatTop[]
+  fetchedAt: number
+}
+
 export type PlayerClubStint = {
   teamId: string
   teamName: string

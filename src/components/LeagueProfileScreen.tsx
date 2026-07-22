@@ -5,8 +5,10 @@ import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import type { League } from '../lib/leagues'
 import { groupMatchesByDate, matchesForLeagueFrom, type Match } from '../lib/matches'
 import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
+import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { FavoriteStar } from './FavoriteStar'
+import { LeaguePlayerStatsPanel } from './LeaguePlayerStatsPanel'
 import { LeagueStatsPanel } from './LeagueStatsPanel'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -49,11 +51,15 @@ export function LeagueProfileScreen({
   const standings = useLeagueStandings(league.id)
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
 
-  const [openSection, setOpenSection] = useState<'table' | 'fixtures' | 'stats' | null>(null)
+  const [openSection, setOpenSection] = useState<
+    'table' | 'fixtures' | 'player-stats' | 'stats' | null
+  >(null)
   const statsEnabled = openSection === 'stats'
+  const playerStatsEnabled = openSection === 'player-stats'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
+  const playerStats = useLeaguePlayerStats(league.id, playerStatsEnabled)
 
-  const toggleSection = (section: 'table' | 'fixtures' | 'stats') => {
+  const toggleSection = (section: 'table' | 'fixtures' | 'player-stats' | 'stats') => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -172,6 +178,21 @@ export function LeagueProfileScreen({
               ))}
             </div>
           )}
+        </ProfileAccordion>
+
+        <ProfileAccordion
+          title="Player stats"
+          subtitle="Highest-ranked player in each category"
+          open={openSection === 'player-stats'}
+          onToggle={() => toggleSection('player-stats')}
+        >
+          <LeaguePlayerStatsPanel
+            data={playerStats.data}
+            loading={playerStats.loading}
+            error={playerStats.error}
+            leagueId={league.id}
+            onOpenPlayer={onOpenPlayer}
+          />
         </ProfileAccordion>
 
         <ProfileAccordion
