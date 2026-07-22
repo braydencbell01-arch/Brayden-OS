@@ -34,7 +34,7 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
           <a
             href="#top"
-            className="font-brand text-xl uppercase tracking-[0.06em] text-navy md:text-2xl"
+            className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-navy md:text-2xl"
           >
             Jersey Deals
           </a>
@@ -258,7 +258,7 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex items-center gap-3">
             <img src="/favicon.svg" alt="" className="h-9 w-9" width={36} height={36} />
-            <p className="font-brand text-xl uppercase tracking-[0.06em] text-white">
+            <p className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-white">
               Jersey Deals
             </p>
           </div>
