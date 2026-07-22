@@ -1,140 +1,70 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { CalendarStrip } from './components/CalendarStrip'
+import { MatchList } from './components/MatchList'
+import { StandingsTable } from './components/StandingsTable'
+import {
+  addDays,
+  CALENDAR_RADIUS_DAYS,
+  formatMatchDayHeading,
+  startOfDay,
+  toDateKey,
+} from './lib/dates'
+import { LEAGUES, type League, type LeagueId } from './lib/leagues'
+import {
+  dateKeysWithMatches,
+  groupMatchesByDate,
+  matchesForLeagueFrom,
+  matchesOnDate,
+  type Match,
+} from './lib/matches'
+import { useLeagueStandings } from './lib/stats/useLeagueStandings'
+import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
-type LeagueId = 'premier-league' | 'la-liga' | 'bundesliga' | 'serie-a' | 'ligue-1'
-
-type League = {
-  id: LeagueId
-  name: string
-  short: string
-  country: string
-}
-
-const LEAGUES: League[] = [
-  { id: 'premier-league', name: 'Premier League', short: 'EPL', country: 'England' },
-  { id: 'la-liga', name: 'La Liga', short: 'ESP', country: 'Spain' },
-  { id: 'bundesliga', name: 'Bundesliga', short: 'GER', country: 'Germany' },
-  { id: 'serie-a', name: 'Serie A', short: 'ITA', country: 'Italy' },
-  { id: 'ligue-1', name: 'Ligue 1', short: 'FRA', country: 'France' },
-]
-
-function buildCalendarDays(center: Date, span = 21) {
-  const start = new Date(center)
-  start.setHours(0, 0, 0, 0)
-  start.setDate(start.getDate() - Math.floor(span / 2))
-
-  return Array.from({ length: span }, (_, i) => {
-    const date = new Date(start)
-    date.setDate(start.getDate() + i)
-    return date
-  })
-}
-
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
-
-function CalendarStrip({
-  selected,
-  onSelect,
-  reduce,
-}: {
-  selected: Date
-  onSelect: (date: Date) => void
-  reduce: boolean | null
-}) {
-  const today = useMemo(() => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    return d
-  }, [])
-  const days = useMemo(() => buildCalendarDays(today), [today])
-  const scrollerRef = useRef<HTMLDivElement>(null)
-  const todayRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    const scroller = scrollerRef.current
-    const todayBtn = todayRef.current
-    if (!scroller || !todayBtn) return
-    const left = todayBtn.offsetLeft - scroller.clientWidth / 2 + todayBtn.clientWidth / 2
-    scroller.scrollTo({ left: Math.max(0, left), behavior: 'auto' })
-  }, [days])
-
-  return (
-    <section aria-label="Match calendar" className="relative">
-      <div className="mb-3 flex items-end justify-between px-1">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
-          <p className="mt-1 text-sm text-mist/80">Swipe for match days</p>
-        </div>
-        <p className="font-display text-2xl tracking-wide text-cream/90">
-          {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-        </p>
-      </div>
-
-      <motion.div
-        ref={scrollerRef}
-        initial={reduce ? false : { opacity: 0, x: 24 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className="scrollbar-hide -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 snap-x snap-mandatory"
-        role="listbox"
-        aria-label="Select a date"
-      >
-        {days.map((day) => {
-          const active = isSameDay(day, selected)
-          const isToday = isSameDay(day, today)
-          const weekday = day.toLocaleDateString(undefined, { weekday: 'short' })
-          const dayNum = day.getDate()
-
-          return (
-            <button
-              key={day.toISOString()}
-              ref={isToday ? todayRef : undefined}
-              type="button"
-              role="option"
-              aria-selected={active}
-              onClick={() => onSelect(day)}
-              className={[
-                'snap-center shrink-0 rounded-2xl px-3 py-3 text-center transition outline-none',
-                'min-w-[4.25rem] border focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
-                active
-                  ? 'border-lime bg-lime text-ink shadow-[0_0_0_1px_rgba(200,245,66,0.35)]'
-                  : 'border-white/10 bg-white/5 text-cream hover:border-lime/40 hover:bg-white/10',
-              ].join(' ')}
-            >
-              <span className={`block text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${active ? 'text-ink/70' : 'text-mist/70'}`}>
-                {weekday}
-              </span>
-              <span className="mt-1 block font-display text-3xl leading-none tracking-wide">{dayNum}</span>
-              {isToday && (
-                <span className={`mt-1 block text-[0.6rem] font-bold uppercase tracking-[0.12em] ${active ? 'text-ink/80' : 'text-lime'}`}>
-                  Today
-                </span>
-              )}
-            </button>
-          )
-        })}
-      </motion.div>
-    </section>
-  )
+function formatUpdatedAt(updatedAt: number | null): string {
+  if (!updatedAt) return 'Waiting for first sync'
+  return `Updated ${new Date(updatedAt).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })}`
 }
 
 function HomeScreen({
   selectedDate,
   onSelectDate,
+  onJumpToToday,
   onOpenLeague,
+  matches,
+  loading,
+  error,
+  updatedAt,
+  refreshing,
+  hasLive,
+  onRefresh,
   reduce,
 }: {
   selectedDate: Date
   onSelectDate: (date: Date) => void
+  onJumpToToday: () => void
   onOpenLeague: (id: LeagueId) => void
+  matches: Match[]
+  loading: boolean
+  error: string | null
+  updatedAt: number | null
+  refreshing: boolean
+  hasLive: boolean
+  onRefresh: () => void
   reduce: boolean | null
 }) {
+  const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
+  const matchDateKeys = useMemo(() => dateKeysWithMatches(matches), [matches])
+  const dayLabel = selectedDate.toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
+
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
       <div
@@ -172,9 +102,53 @@ function HomeScreen({
           >
             Player ratings from match stats, and what clubs pay per goal, assist, and more.
           </motion.p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70">
+            <span>{formatUpdatedAt(updatedAt)}</span>
+            {hasLive && <span className="text-lime">Live polling</span>}
+            {refreshing && <span>Syncing…</span>}
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="border border-white/15 px-2 py-1 text-mist transition hover:border-lime/50 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            >
+              Refresh
+            </button>
+          </div>
         </header>
 
-        <CalendarStrip selected={selectedDate} onSelect={onSelectDate} reduce={reduce} />
+        <CalendarStrip
+          selected={selectedDate}
+          onSelect={onSelectDate}
+          onJumpToToday={onJumpToToday}
+          matchDateKeys={matchDateKeys}
+          reduce={reduce}
+        />
+
+        <section className="mt-8" aria-label="Fixtures for selected date">
+          <div className="mb-3 flex items-end justify-between gap-3 px-1">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">
+                Match day
+              </p>
+              <p className="mt-1 text-sm text-mist/80">{dayLabel}</p>
+            </div>
+            <p className="font-display text-xl tracking-wide text-cream/80">
+              {loading ? '…' : `${dayMatches.length}`}
+            </p>
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-mist/70">Loading Big 5 fixtures…</p>
+          ) : error ? (
+            <p className="text-sm text-mist/80">{error}</p>
+          ) : (
+            <MatchList
+              matches={dayMatches}
+              showLeague
+              emptyLabel="No Big 5 matches on this date. Try another day or jump to Today."
+            />
+          )}
+        </section>
 
         <section className="mt-10 flex flex-1 flex-col" aria-label="Leagues">
           <motion.div
@@ -184,7 +158,7 @@ function HomeScreen({
             className="mb-4"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Leagues</p>
-            <p className="mt-1 text-sm text-mist/80">Pick a competition to explore</p>
+            <p className="mt-1 text-sm text-mist/80">Open a league for the next 100 days</p>
           </motion.div>
 
           <div className="flex flex-col gap-3">
@@ -225,15 +199,30 @@ function HomeScreen({
 
 function LeagueScreen({
   league,
+  matches,
+  loading,
+  error,
   onBack,
   reduce,
 }: {
   league: League
+  matches: Match[]
+  loading: boolean
+  error: string | null
   onBack: () => void
   reduce: boolean | null
 }) {
+  const today = useMemo(() => startOfDay(new Date()), [])
+  const horizon = useMemo(() => addDays(today, CALENDAR_RADIUS_DAYS), [today])
+  const leagueMatches = useMemo(
+    () => matchesForLeagueFrom(matches, league.id, today, horizon),
+    [matches, league.id, today, horizon],
+  )
+  const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
+  const standings = useLeagueStandings(league.id)
+
   return (
-    <div className="relative min-h-dvh overflow-hidden">
+    <div className="relative min-h-dvh overflow-x-hidden">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -265,17 +254,66 @@ function LeagueScreen({
           <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
             {league.name}
           </h1>
+          <p className="mt-3 text-sm text-mist/80">
+            Table + fixtures for the next {CALENDAR_RADIUS_DAYS} days
+            {!loading && !error ? ` · ${leagueMatches.length} matches` : ''}
+          </p>
         </motion.header>
+
+        <motion.section
+          initial={reduce ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
+          className="mt-8"
+          aria-label={`${league.name} standings`}
+        >
+          <div className="mb-3 px-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
+            <p className="mt-1 text-sm text-mist/80">Live standings from ESPN</p>
+          </div>
+          <StandingsTable
+            rows={standings.rows}
+            loading={standings.loading}
+            error={standings.error}
+          />
+        </motion.section>
 
         <motion.div
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.45, delay: reduce ? 0 : 0.15 }}
-          className="mt-10 flex flex-1 items-start"
+          className="mt-10 flex flex-1 flex-col gap-6"
         >
-          <p className="text-sm text-mist/70">
-            League screen ready — ratings, pay-per-stat, and match insights land here next.
-          </p>
+          <div className="px-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Fixtures</p>
+            <p className="mt-1 text-sm text-mist/80">Tap a match for possession, shots, and key moments</p>
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-mist/70">Loading fixtures…</p>
+          ) : error ? (
+            <p className="text-sm text-mist/80">{error}</p>
+          ) : grouped.length === 0 ? (
+            <p className="text-sm text-mist/70">
+              No scheduled {league.name} matches in the next {CALENDAR_RADIUS_DAYS} days.
+            </p>
+          ) : (
+            grouped.map(({ dateKey, matches: dayMatches }) => (
+              <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                <div className="mb-2 flex items-baseline justify-between px-1">
+                  <h2 className="font-display text-2xl tracking-wide text-cream">
+                    {formatMatchDayHeading(dateKey)}
+                  </h2>
+                  {dateKey === toDateKey(today) && (
+                    <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
+                      Today
+                    </span>
+                  )}
+                </div>
+                <MatchList matches={dayMatches} emptyLabel="No matches" />
+              </section>
+            ))
+          )}
         </motion.div>
       </div>
     </div>
@@ -284,14 +322,14 @@ function LeagueScreen({
 
 export default function App() {
   const reduce = useReducedMotion()
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    return d
-  })
+  const { matches, loading, error, updatedAt, refreshing, hasLive, refresh } =
+    useLiveBigFiveMatches()
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
+
+  const jumpToToday = () => setSelectedDate(startOfDay(new Date()))
 
   return (
     <AnimatePresence mode="wait">
@@ -305,6 +343,9 @@ export default function App() {
         >
           <LeagueScreen
             league={activeLeague}
+            matches={matches}
+            loading={loading}
+            error={error}
             onBack={() => setActiveLeagueId(null)}
             reduce={reduce}
           />
@@ -320,7 +361,15 @@ export default function App() {
           <HomeScreen
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
+            onJumpToToday={jumpToToday}
             onOpenLeague={setActiveLeagueId}
+            matches={matches}
+            loading={loading}
+            error={error}
+            updatedAt={updatedAt}
+            refreshing={refreshing}
+            hasLive={hasLive}
+            onRefresh={refresh}
             reduce={reduce}
           />
         </motion.div>
