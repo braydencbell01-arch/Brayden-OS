@@ -23,13 +23,14 @@ Interactive soccer stats app shell — player ratings, pay-per-stat insights, an
 - **Player profiles + Brayden Ratings**: expand a live/finished match for lineups with ratings; tap a player for stats, rating history, club path, and favorites (Favorites → Players). Rating = match performance /100 shown as /10 (26/100 → 2.6)
 - **Live fixture + stats pipeline (Jefferson)**: ESPN public soccer APIs for scores, team match stats, key moments, and standings — auto-refreshes (faster while matches are live)
 - Tap any kickoff/finished match for possession, shots, cards, lineups/ratings, and goal/card timeline
-- Built as a mobile-friendly web app you can wrap later (Capacitor / PWA / native shell)
+- **Installable PWA**: add Brayden Stats to your phone home screen (Safari → Share → Add to Home Screen, or Chrome → Install app). Updates still ship through normal GitHub Pages deploys.
 
 ## Stack
 
 - Vite + React + TypeScript
 - Tailwind CSS v4
 - Framer Motion
+- PWA (`vite-plugin-pwa`) for home-screen install
 - Fonts: Bebas Neue, Manrope
 
 ## Develop
@@ -38,6 +39,14 @@ Interactive soccer stats app shell — player ratings, pay-per-stat insights, an
 npm install
 npm run dev
 ```
+
+## Install on your phone
+
+1. Open https://braydencbell01-arch.github.io/Brayden-OS/ on your phone
+2. **iPhone (Safari):** Share → **Add to Home Screen**
+3. **Android (Chrome):** menu ⋮ → **Install app** / **Add to Home screen**
+
+After that it opens full-screen like an app. New features still update automatically when we deploy — no App Store resubmit.
 
 ## Build
 
