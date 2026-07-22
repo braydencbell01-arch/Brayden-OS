@@ -1,5 +1,5 @@
 /**
- * Jefferson — external data inventory for Brayden Stats (Big 5 only).
+ * Jefferson — external data inventory for BrayStats (Big 5 only).
  *
  * Goal: keep fixtures, scores, standings, and player stats fresh without
  * typing numbers in by hand. Prefer free, CORS-friendly sources first.
@@ -18,7 +18,7 @@ export type StatFeed = {
   notes: string
 }
 
-/** Ranked options for constantly updating Brayden Stats. */
+/** Ranked options for constantly updating BrayStats. */
 export const STAT_FEEDS: StatFeed[] = [
   {
     id: 'espn-public',

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish Brayden Stats to the gh-pages site ROOT only.
+# Publish BrayStats to the gh-pages site ROOT only.
 # Preserves /jerseydeals/ (Jersey Deals).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -12,8 +12,8 @@ npm run build
 cp dist/index.html dist/404.html
 touch dist/.nojekyll
 
-if ! grep -q 'Brayden Stats' dist/index.html; then
-  echo "ERROR: dist/index.html is not Brayden Stats" >&2
+if ! grep -q 'BrayStats' dist/index.html; then
+  echo "ERROR: dist/index.html is not BrayStats" >&2
   exit 1
 fi
 
@@ -54,8 +54,8 @@ fi
 
 touch "$BRANCH_DIR/.nojekyll"
 
-if ! grep -q 'Brayden Stats' "$BRANCH_DIR/index.html"; then
-  echo "ERROR: root index.html is not Brayden Stats" >&2
+if ! grep -q 'BrayStats' "$BRANCH_DIR/index.html"; then
+  echo "ERROR: root index.html is not BrayStats" >&2
   exit 1
 fi
 if [ -f "$BRANCH_DIR/jerseydeals/index.html" ] && ! grep -q 'Jersey Deals' "$BRANCH_DIR/jerseydeals/index.html"; then
@@ -68,10 +68,10 @@ git add -A
 if git diff --cached --quiet; then
   echo "No changes to deploy."
 else
-  git -c user.name='Brayden Stats Deploy' -c user.email='deploy@brayden-stats.local' \
-    commit -m "Deploy Brayden Stats to Pages root (keep jerseydeals/)"
+  git -c user.name='BrayStats Deploy' -c user.email='deploy@brayden-stats.local' \
+    commit -m "Deploy BrayStats to Pages root (keep jerseydeals/)"
   git push -u origin gh-pages
 fi
 
-echo "Brayden Stats: $STATS_URL"
+echo "BrayStats: $STATS_URL"
 echo "Jersey Deals:  $JERSEY_URL"

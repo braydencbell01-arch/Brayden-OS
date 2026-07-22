@@ -20,8 +20,8 @@ export default defineConfig({
         'pwa-512.png',
       ],
       manifest: {
-        name: 'Brayden Stats',
-        short_name: 'Brayden Stats',
+        name: 'BrayStats',
+        short_name: 'BrayStats',
         description:
           'Soccer player ratings, live Big 5 scores, and league insights.',
         theme_color: '#06261c',

@@ -6,14 +6,14 @@ Read this before changing code or deploying. Multiple agents work in this repo; 
 
 | Product | Source | Permanent live URL |
 |---------|--------|--------------------|
-| **Brayden Stats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
+| **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
 | **Jersey Deals** | `jerseydeals/` | https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/ |
 
-- Do **not** publish Brayden Stats into `/jerseydeals/`.
+- Do **not** publish BrayStats into `/jerseydeals/`.
 - Do **not** publish Jersey Deals into the Pages root.
-- When a Brayden Stats task finishes, report **both** URLs, labeled.
+- When a BrayStats task finishes, report **both** URLs, labeled.
 
-## Brayden Stats agent roles
+## BrayStats agent roles
 
 | Role | Owns | Does not own |
 |------|------|----------------|
@@ -38,7 +38,7 @@ Stay in your lane. If a task needs another role’s files, coordinate or leave a
    - Never `force_orphan` / wipe the whole `gh-pages` branch unless you rebuild **both** apps in the same deploy.
 3. Do not force-push `gh-pages` over a teammate’s newer commit without rebuilding both products from current `Brayden-OS`.
 
-## Designer checklist (Brayden Stats)
+## Designer checklist (BrayStats)
 
 Before finishing a design task:
 
