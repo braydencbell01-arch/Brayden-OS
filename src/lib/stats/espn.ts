@@ -498,6 +498,8 @@ type EspnAthletePayload = {
     displayHeight?: string
     displayWeight?: string
     citizenship?: string
+    displayBirthPlace?: string
+    citizenshipCountry?: { abbreviation?: string }
     headshot?: { href?: string }
     position?: { displayName?: string; abbreviation?: string }
     team?: {
@@ -516,6 +518,7 @@ type EspnBioPayload = {
     logo?: string
     slug?: string
     seasons?: string
+    isActive?: boolean
   }>
 }
 
@@ -611,6 +614,7 @@ function mapTeamHistoryStint(stint: {
   displayName?: string
   logo?: string
   seasons?: string
+  isActive?: boolean
 }): PlayerClubStint | null {
   if (!stint.displayName) return null
   return {
@@ -618,7 +622,22 @@ function mapTeamHistoryStint(stint: {
     teamName: stint.displayName,
     logoUrl: stint.logo,
     seasons: stint.seasons || '—',
+    isActive: stint.isActive === true,
   }
+}
+
+function pickNationalSide(nationalHistory: PlayerClubStint[]): PlayerClubStint | null {
+  if (nationalHistory.length === 0) return null
+  return nationalHistory.find((stint) => stint.isActive) ?? nationalHistory[0]
+}
+
+function countryOfOrigin(athlete: NonNullable<EspnAthletePayload['athlete']>): string | null {
+  if (athlete.citizenship?.trim()) return athlete.citizenship.trim()
+  if (athlete.citizenshipCountry?.abbreviation?.trim()) {
+    return athlete.citizenshipCountry.abbreviation.trim()
+  }
+  if (athlete.displayBirthPlace?.trim()) return athlete.displayBirthPlace.trim()
+  return null
 }
 
 export async function fetchPlayerProfile(
@@ -672,6 +691,11 @@ export async function fetchPlayerProfile(
     else clubHistory.push(mapped)
   }
 
+  const nationalSide = pickNationalSide(nationalHistory)
+  const origin = countryOfOrigin(athlete)
+  const represents = nationalSide?.teamName || origin
+  const representsNationalTeam = Boolean(nationalSide)
+
   return {
     id: athlete.id,
     name,
@@ -681,7 +705,9 @@ export async function fetchPlayerProfile(
     age: athlete.age,
     height: athlete.displayHeight,
     weight: athlete.displayWeight,
-    citizenship: athlete.citizenship,
+    citizenship: athlete.citizenship || origin || undefined,
+    represents,
+    representsNationalTeam,
     position: athlete.position?.displayName,
     positionAbbrev,
     teamId: athlete.team?.id,
