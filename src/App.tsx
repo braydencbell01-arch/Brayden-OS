@@ -199,19 +199,27 @@ function HomeScreen({
 
           {loading ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : error ? (
-            <p className="text-sm text-mist/80">{error}</p>
           ) : (
-            <MatchDayByLeague
-              matches={dayMatches}
-              dateKey={toDateKey(selectedDate)}
-              onOpenTeam={onOpenTeam}
-              onOpenPlayer={onOpenPlayer}
-              favoriteLeagueIds={favorites.leagueIds}
-              favoriteTeamIds={favorites.teamIds}
-              favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
-              emptyLabel="No matches on this date. Try another day or jump to Today."
-            />
+            <>
+              {error && dayMatches.length === 0 ? (
+                <p className="text-sm text-mist/80">{error}</p>
+              ) : null}
+              {error && dayMatches.length > 0 ? (
+                <p className="mb-3 text-sm text-mist/70">{error}</p>
+              ) : null}
+              {!error || dayMatches.length > 0 ? (
+                <MatchDayByLeague
+                  matches={dayMatches}
+                  dateKey={toDateKey(selectedDate)}
+                  onOpenTeam={onOpenTeam}
+                  onOpenPlayer={onOpenPlayer}
+                  favoriteLeagueIds={favorites.leagueIds}
+                  favoriteTeamIds={favorites.teamIds}
+                  favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
+                  emptyLabel="No matches on this date. Try another day or jump to Today."
+                />
+              ) : null}
+            </>
           )}
         </section>
       </div>

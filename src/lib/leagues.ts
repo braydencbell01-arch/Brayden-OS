@@ -18,11 +18,8 @@ export type LeagueId =
   | 'superliga'
   | 'allsvenskan'
   | 'eliteserien'
-  | 'ekstraklasa'
   | 'j1-league'
   | 'saudi-pro-league'
-  | 'hnl'
-  | 'ukrainian-premier-league'
   | 'czech-first-league'
 
 export type League = {
@@ -36,6 +33,9 @@ export type League = {
 /**
  * Display / Match day order: most important competitions first.
  * `groupMatchesByLeague` and the Leagues screen both follow this array order.
+ *
+ * Only include leagues with a working ESPN scoreboard slug — unsupported codes
+ * (e.g. pol.1 / cro.1 / ukr.1) 400 and used to blank Match day.
  */
 export const LEAGUES: League[] = [
   {
@@ -172,13 +172,6 @@ export const LEAGUES: League[] = [
     espnCode: 'nor.1',
   },
   {
-    id: 'ekstraklasa',
-    name: 'Ekstraklasa',
-    short: 'POL',
-    country: 'Poland',
-    espnCode: 'pol.1',
-  },
-  {
     id: 'j1-league',
     name: 'J1 League',
     short: 'JPN',
@@ -191,20 +184,6 @@ export const LEAGUES: League[] = [
     short: 'KSA',
     country: 'Saudi Arabia',
     espnCode: 'ksa.1',
-  },
-  {
-    id: 'hnl',
-    name: 'HNL',
-    short: 'CRO',
-    country: 'Croatia',
-    espnCode: 'cro.1',
-  },
-  {
-    id: 'ukrainian-premier-league',
-    name: 'Ukrainian Premier League',
-    short: 'UKR',
-    country: 'Ukraine',
-    espnCode: 'ukr.1',
   },
   {
     id: 'czech-first-league',
