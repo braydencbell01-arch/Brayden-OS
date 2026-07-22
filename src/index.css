@@ -2,14 +2,16 @@
 
 @theme {
   --font-display: "Barlow Condensed", sans-serif;
+  --font-brand: "Libre Baskerville", Georgia, "Times New Roman", serif;
   --font-sans: "Outfit", sans-serif;
   --font-comic: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Comic Neue", cursive;
 
-  --color-navy: #0a1628;
+  --color-navy: #0b223f;
   --color-navy-deep: #06101c;
-  --color-crimson: #c8102e;
-  --color-crimson-hot: #e11d3a;
+  --color-crimson: #d7282f;
+  --color-crimson-hot: #e83a40;
   --color-chalk: #f7f5f2;
+  --color-cream: #fcf5e9;
   --color-mist: #ebe7e1;
   --color-muted: #5a6470;
   --color-white: #ffffff;
@@ -38,6 +40,10 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .font-brand {
+    font-family: var(--font-brand);
   }
 
   .font-comic {
