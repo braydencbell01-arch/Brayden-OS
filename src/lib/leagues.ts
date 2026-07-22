@@ -7,6 +7,8 @@ export type LeagueId =
   | 'mls'
   | 'eredivisie'
   | 'primeira-liga'
+  | 'belgian-pro-league'
+  | 'turkish-super-lig'
 
 export type League = {
   id: LeagueId
@@ -72,6 +74,20 @@ export const LEAGUES: League[] = [
     short: 'POR',
     country: 'Portugal',
     espnCode: 'por.1',
+  },
+  {
+    id: 'belgian-pro-league',
+    name: 'Belgian Pro League',
+    short: 'BEL',
+    country: 'Belgium',
+    espnCode: 'bel.1',
+  },
+  {
+    id: 'turkish-super-lig',
+    name: 'Turkish Super Lig',
+    short: 'TUR',
+    country: 'Turkey',
+    espnCode: 'tur.1',
   },
 ]
 
