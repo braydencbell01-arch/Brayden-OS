@@ -560,7 +560,7 @@ const SEASON_STAT_ORDER: Array<{ key: string; label: string }> = [
   { key: 'totalGoals', label: 'Goals' },
   { key: 'goalAssists', label: 'Assists' },
   { key: 'starts', label: 'Starts' },
-  { key: 'offsides', label: 'Offsides' },
+  { key: 'appearances', label: 'Appearances' },
   { key: 'totalShots', label: 'Shots' },
   { key: 'shotsOnTarget', label: 'Shots on goal' },
   { key: 'foulsCommitted', label: 'Fouls committed' },
@@ -568,6 +568,9 @@ const SEASON_STAT_ORDER: Array<{ key: string; label: string }> = [
   { key: 'yellowCards', label: 'Yellow cards' },
   { key: 'redCards', label: 'Red cards' },
 ]
+
+/** Stats we intentionally omit from the season grid (and from leftover extras). */
+const SEASON_STAT_HIDDEN = new Set(['offsides', 'OF'])
 
 /** Map ESPN overview keys + athlete stats abbreviations onto our order keys. */
 const SEASON_STAT_ALIASES: Record<string, string> = {
@@ -577,6 +580,9 @@ const SEASON_STAT_ALIASES: Record<string, string> = {
   A: 'goalAssists',
   starts: 'starts',
   STRT: 'starts',
+  appearances: 'appearances',
+  APP: 'appearances',
+  gamesPlayed: 'appearances',
   offsides: 'offsides',
   OF: 'offsides',
   totalShots: 'totalShots',
@@ -604,6 +610,7 @@ function buildOrderedSeasonStatsFromArrays(
   names.forEach((name, index) => {
     if (!name) return
     const key = SEASON_STAT_ALIASES[name] || name
+    if (SEASON_STAT_HIDDEN.has(name) || SEASON_STAT_HIDDEN.has(key)) return
     byKey.set(key, values[index] || '0')
   })
 
@@ -619,6 +626,7 @@ function buildOrderedSeasonStatsFromArrays(
   names.forEach((name, index) => {
     if (!name) return
     const key = SEASON_STAT_ALIASES[name] || name
+    if (SEASON_STAT_HIDDEN.has(name) || SEASON_STAT_HIDDEN.has(key)) return
     if (used.has(key)) return
     used.add(key)
     ordered.push({ label: labels[index] || name, value: values[index] || '0' })
@@ -646,22 +654,51 @@ function buildOrderedSeasonStatsFromOverview(
 function buildOrderedSeasonStatsFromAthleteStats(
   payload: EspnAthleteStatsPayload,
   leagueSlug: string,
-): { stats: PlayerSeasonStatLine[]; seasonLabel: string | null } {
+  appearances?: number | null,
+): { stats: PlayerSeasonStatLine[]; seasonLabel: string | null; seasonYear: number | null } {
   const category = payload.categories?.[0]
-  const names = category?.names ?? []
-  const labels = category?.displayNames ?? []
+  const names = [...(category?.names ?? [])]
+  const labels = [...(category?.displayNames ?? [])]
   const rows = category?.statistics ?? []
   const row =
     rows.find((item) => item.leagueSlug === leagueSlug) ||
     rows[0] ||
     null
   if (!row?.stats?.length || names.length === 0) {
-    return { stats: [], seasonLabel: null }
+    return { stats: [], seasonLabel: null, seasonYear: null }
   }
+
+  const values = [...row.stats]
+  if (
+    appearances != null &&
+    Number.isFinite(appearances) &&
+    !names.some((name) => SEASON_STAT_ALIASES[name] === 'appearances' || name === 'appearances')
+  ) {
+    names.push('appearances')
+    labels.push('Appearances')
+    values.push(String(Math.round(appearances)))
+  }
+
   return {
-    stats: buildOrderedSeasonStatsFromArrays(names, labels, row.stats),
+    stats: buildOrderedSeasonStatsFromArrays(names, labels, values),
     seasonLabel: row.season?.type?.name || (row.season?.year ? String(row.season.year) : null),
+    seasonYear: typeof row.season?.year === 'number' ? row.season.year : null,
   }
+}
+
+async function fetchCoreSeasonAppearances(
+  leagueSlug: string,
+  seasonYear: number,
+  playerId: string,
+): Promise<number | null> {
+  const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(leagueSlug)}/seasons/${seasonYear}/types/1/athletes/${encodeURIComponent(playerId)}/statistics`
+  const res = await fetch(url)
+  if (!res.ok) return null
+  const payload = (await res.json()) as EspnCoreStatSplit
+  const categories = payload.splits?.categories
+  if (!categories?.length) return null
+  const value = readCoreStatValue(categories, 'appearances')
+  return Number.isFinite(value) ? value : null
 }
 
 async function fetchAthleteLeagueSeasonStats(
@@ -672,7 +709,16 @@ async function fetchAthleteLeagueSeasonStats(
   const res = await fetch(url)
   if (!res.ok) return { stats: [], seasonLabel: null }
   const payload = (await res.json()) as EspnAthleteStatsPayload
-  return buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug)
+
+  // First pass: learn which season year the club-league row uses.
+  const preview = buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug)
+  let appearances: number | null = null
+  if (preview.seasonYear != null) {
+    appearances = await fetchCoreSeasonAppearances(leagueSlug, preview.seasonYear, playerId)
+  }
+
+  const full = buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug, appearances)
+  return { stats: full.stats, seasonLabel: full.seasonLabel }
 }
 
 function parseGameLogRatings(
