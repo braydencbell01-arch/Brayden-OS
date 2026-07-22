@@ -19,6 +19,7 @@ export type LeagueId =
   | 'allsvenskan'
   | 'eliteserien'
   | 'j1-league'
+  | 'chinese-super-league'
   | 'saudi-pro-league'
   | 'a-league'
   | 'czech-first-league'
@@ -38,6 +39,7 @@ export type League = {
  *
  * Only include leagues with a working ESPN scoreboard slug.
  * ESPN does not serve Serbian SuperLiga (or POL/CRO/UKR domestic leagues).
+ * Chinese Super League is included via chn.1.
  */
 export const LEAGUES: League[] = [
   {
@@ -179,6 +181,13 @@ export const LEAGUES: League[] = [
     short: 'JPN',
     country: 'Japan',
     espnCode: 'jpn.1',
+  },
+  {
+    id: 'chinese-super-league',
+    name: 'Chinese Super League',
+    short: 'CHN',
+    country: 'China',
+    espnCode: 'chn.1',
   },
   {
     id: 'saudi-pro-league',
