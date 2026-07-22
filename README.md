@@ -18,8 +18,8 @@ Interactive soccer stats app shell — player ratings, pay-per-stat insights, an
 ## What's included
 
 - **Home**: Brayden Stats branding, match calendar with a **Today** jump button, and fixtures for the selected date
-- **Leagues**: Premier League (ENG), La Liga, Bundesliga, Serie A, Ligue 1, MLS, Eredivisie, Primeira Liga — each shows that league’s table plus upcoming fixtures
-- **Team profiles**: tap any club name on home fixtures, league tables, match lists, or Favorites to open a simple club page (table line, form, upcoming/recent matches)
+- **League profiles**: tap a league on home or Favorites to open its profile (season snapshot, table, upcoming fixtures)
+- **Team profiles**: tap any club name on home fixtures, league tables, match lists, or Favorites to open a simple club page (table line, form, upcoming/recent matches). From a team profile, tap the league name to open that league’s profile
 - **Live fixture + stats pipeline (Jefferson)**: ESPN public soccer APIs for scores, team match stats, key moments, and standings — auto-refreshes (faster while matches are live)
 - Tap any kickoff/finished match for possession, shots, cards, and goal/card timeline
 - Built as a mobile-friendly web app you can wrap later (Capacitor / PWA / native shell)
