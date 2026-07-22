@@ -14,6 +14,16 @@ export type LeagueId =
   | 'turkish-super-lig'
   | 'austrian-bundesliga'
   | 'swiss-super-league'
+  | 'scottish-premiership'
+  | 'superliga'
+  | 'allsvenskan'
+  | 'eliteserien'
+  | 'ekstraklasa'
+  | 'j1-league'
+  | 'saudi-pro-league'
+  | 'hnl'
+  | 'ukrainian-premier-league'
+  | 'czech-first-league'
 
 export type League = {
   id: LeagueId
@@ -132,6 +142,76 @@ export const LEAGUES: League[] = [
     short: 'SUI',
     country: 'Switzerland',
     espnCode: 'sui.1',
+  },
+  {
+    id: 'scottish-premiership',
+    name: 'Scottish Premiership',
+    short: 'SCO',
+    country: 'Scotland',
+    espnCode: 'sco.1',
+  },
+  {
+    id: 'superliga',
+    name: 'Superliga',
+    short: 'DEN',
+    country: 'Denmark',
+    espnCode: 'den.1',
+  },
+  {
+    id: 'allsvenskan',
+    name: 'Allsvenskan',
+    short: 'SWE',
+    country: 'Sweden',
+    espnCode: 'swe.1',
+  },
+  {
+    id: 'eliteserien',
+    name: 'Eliteserien',
+    short: 'NOR',
+    country: 'Norway',
+    espnCode: 'nor.1',
+  },
+  {
+    id: 'ekstraklasa',
+    name: 'Ekstraklasa',
+    short: 'POL',
+    country: 'Poland',
+    espnCode: 'pol.1',
+  },
+  {
+    id: 'j1-league',
+    name: 'J1 League',
+    short: 'JPN',
+    country: 'Japan',
+    espnCode: 'jpn.1',
+  },
+  {
+    id: 'saudi-pro-league',
+    name: 'Saudi Pro League',
+    short: 'KSA',
+    country: 'Saudi Arabia',
+    espnCode: 'ksa.1',
+  },
+  {
+    id: 'hnl',
+    name: 'HNL',
+    short: 'CRO',
+    country: 'Croatia',
+    espnCode: 'cro.1',
+  },
+  {
+    id: 'ukrainian-premier-league',
+    name: 'Ukrainian Premier League',
+    short: 'UKR',
+    country: 'Ukraine',
+    espnCode: 'ukr.1',
+  },
+  {
+    id: 'czech-first-league',
+    name: 'Czech First League',
+    short: 'CZE',
+    country: 'Czechia',
+    espnCode: 'cze.1',
   },
 ]
 
