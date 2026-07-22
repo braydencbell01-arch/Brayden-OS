@@ -75,7 +75,7 @@ export function LeaguesScreen({
                   className="group flex min-w-0 flex-1 items-center justify-between px-3 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
                 >
                   <span>
-                    <span className="block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
+                    <span className="profile-link block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
                       {league.name}
                     </span>
                     <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">

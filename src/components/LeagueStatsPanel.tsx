@@ -70,7 +70,7 @@ function LeadersTable({
                 <div className="min-w-0">
                   <p
                     className={`truncate text-sm font-semibold ${
-                      clickable ? 'text-cream underline-offset-2 hover:underline' : 'text-cream'
+                      clickable ? 'profile-link text-cream' : 'text-cream'
                     }`}
                   >
                     {leader.name}
