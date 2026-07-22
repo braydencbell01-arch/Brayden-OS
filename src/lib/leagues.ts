@@ -54,7 +54,7 @@ export const LEAGUES: League[] = [
     id: 'eredivisie',
     name: 'Eredivisie',
     short: 'NED',
-    country: 'NED',
+    country: 'Netherlands',
     espnCode: 'ned.1',
   },
 ]
