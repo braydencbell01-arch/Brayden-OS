@@ -1,4 +1,4 @@
-import { LEAGUES, type LeagueId } from './leagues'
+import { compareLeaguesForDisplay, LEAGUES, type LeagueId } from './leagues'
 import { dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
@@ -236,6 +236,7 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
 
 export function groupMatchesByLeague(
   matches: Match[],
+  favoriteLeagueIds?: Set<string> | null,
 ): Array<{ leagueId: LeagueId; matches: Match[] }> {
   const map = new Map<LeagueId, Match[]>()
   for (const match of matches) {
@@ -244,10 +245,12 @@ export function groupMatchesByLeague(
     else map.set(match.leagueId, [match])
   }
 
-  return LEAGUES.filter((league) => map.has(league.id)).map((league) => ({
-    leagueId: league.id,
-    matches: (map.get(league.id) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
-  }))
+  return [...map.keys()]
+    .sort((a, b) => compareLeaguesForDisplay(a, b, favoriteLeagueIds))
+    .map((leagueId) => ({
+      leagueId,
+      matches: (map.get(leagueId) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
+    }))
 }
 
 export function dateKeysWithMatches(matches: Match[]): Set<string> {
@@ -343,7 +346,6 @@ export function splitTeamFixtures(
     .filter((match) => match.dateKey < todayKey || match.status === 'finished')
     .filter((match) => match.status === 'finished' || match.status === 'postponed')
     .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
-    .slice(0, 5)
   const upcoming = teamMatches
     .filter(
       (match) =>

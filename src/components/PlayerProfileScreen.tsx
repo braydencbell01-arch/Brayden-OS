@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLeague } from '../lib/leagues'
 import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { usePlayerProfile } from '../lib/stats/usePlayerProfile'
-import type { MatchLineupPlayer } from '../lib/stats/types'
+import type { MatchLineupPlayer, PlayerRecentMatchRating } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
 import { ProfileAccordion } from './ProfileAccordion'
@@ -27,6 +27,98 @@ export type PlayerNavRef = {
   position?: string
 }
 
+function formatMatchDate(iso: string | undefined): string | null {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function ratingMatchLabel(row: PlayerRecentMatchRating): string {
+  const vs =
+    row.opponentAbbrev || row.opponent
+      ? `vs ${row.opponentAbbrev || row.opponent}`
+      : null
+  const side =
+    row.homeAway === 'home' ? 'H' : row.homeAway === 'away' ? 'A' : null
+  const date = formatMatchDate(row.date)
+  const bits = [
+    vs ? (side ? `${vs} (${side})` : vs) : null,
+    date,
+    row.starter ? 'Started' : 'Sub',
+    row.goals ? `${row.goals}G` : null,
+    row.assists ? `${row.assists}A` : null,
+  ].filter(Boolean)
+  return bits.join(' · ')
+}
+
+function RecentRatingsList({
+  rows,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: {
+  rows: PlayerRecentMatchRating[]
+  hasMore: boolean
+  loadingMore: boolean
+  onLoadMore: () => void
+}) {
+  const scrollerRef = useRef<HTMLUListElement | null>(null)
+  const sentinelRef = useRef<HTMLLIElement | null>(null)
+
+  const maybeLoad = useCallback(() => {
+    if (!hasMore || loadingMore) return
+    onLoadMore()
+  }, [hasMore, loadingMore, onLoadMore])
+
+  useEffect(() => {
+    const root = scrollerRef.current
+    const sentinel = sentinelRef.current
+    if (!root || !sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) maybeLoad()
+      },
+      { root, rootMargin: '80px', threshold: 0 },
+    )
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [maybeLoad, rows.length])
+
+  return (
+    <ul
+      ref={scrollerRef}
+      className="flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-1"
+    >
+      {rows.map((row) => (
+        <li
+          key={row.eventId}
+          className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
+        >
+          <span className="min-w-0 flex-1 text-xs leading-snug text-mist/75">
+            {ratingMatchLabel(row)}
+          </span>
+          <span
+            className="shrink-0 font-display text-2xl tabular-nums"
+            style={ratingColorStyle(row.rating)}
+          >
+            {row.rating.toFixed(1)}
+          </span>
+        </li>
+      ))}
+      <li ref={sentinelRef} className="list-none py-1 text-center text-[11px] text-mist/50">
+        {loadingMore ? 'Loading more ratings…' : hasMore ? 'Scroll for more' : 'End of ratings'}
+      </li>
+    </ul>
+  )
+}
+
 export function PlayerProfileScreen({
   player,
   favorites,
@@ -38,7 +130,8 @@ export function PlayerProfileScreen({
   onBack: () => void
   reduce: boolean | null
 }) {
-  const { profile, loading, error } = usePlayerProfile(player.leagueId, player.id)
+  const { profile, loading, error, loadMoreRatings, loadingMoreRatings, hasMoreRatings } =
+    usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'transfers' | null>(
     null,
@@ -179,33 +272,21 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Recent ratings"
-              subtitle="Brayden Rating Latest Matches"
+              subtitle="Brayden Rating · Scroll For Full History"
               open={openSection === 'ratings'}
               onToggle={() => toggle('ratings')}
             >
               {profile.recentRatings.length === 0 ? (
                 <p className="text-sm text-mist/70">Not enough recent matches to rate yet.</p>
               ) : (
-                <ul className="flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-1">
-                  {profile.recentRatings.map((row) => (
-                    <li
-                      key={row.eventId}
-                      className="flex items-center justify-between border border-white/10 px-3 py-2"
-                    >
-                      <span className="text-xs text-mist/75">
-                        {row.starter ? 'Started' : 'Sub'}
-                        {row.goals ? ` · ${row.goals}G` : ''}
-                        {row.assists ? ` · ${row.assists}A` : ''}
-                      </span>
-                      <span
-                        className="font-display text-2xl tabular-nums"
-                        style={ratingColorStyle(row.rating)}
-                      >
-                        {row.rating.toFixed(1)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <RecentRatingsList
+                  rows={profile.recentRatings}
+                  hasMore={hasMoreRatings}
+                  loadingMore={loadingMoreRatings}
+                  onLoadMore={() => {
+                    void loadMoreRatings()
+                  }}
+                />
               )}
             </ProfileAccordion>
 

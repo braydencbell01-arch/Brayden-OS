@@ -109,6 +109,31 @@ export type LeaguePlayerStatsOverview = {
   fetchedAt: number
 }
 
+export type TeamRosterPlayer = {
+  id: string
+  name: string
+  shortName: string
+  jersey?: string
+  positionAbbrev: string
+  positionLabel: string
+  photoUrl: string
+}
+
+export type TeamRosterGroup = {
+  id: string
+  label: string
+  players: TeamRosterPlayer[]
+}
+
+export type TeamRoster = {
+  leagueId: LeagueId
+  teamId: string
+  season: number
+  seasonLabel: string
+  groups: TeamRosterGroup[]
+  fetchedAt: number
+}
+
 export type PlayerClubStint = {
   teamId: string
   teamName: string
@@ -129,6 +154,23 @@ export type PlayerRecentMatchRating = {
   goals: number
   assists: number
   starter: boolean
+  /** Opponent club/nation display name when known. */
+  opponent?: string
+  /** Short opponent code when known (e.g. WHU). */
+  opponentAbbrev?: string
+  /** Kickoff / match date ISO string. */
+  date?: string
+  /** Player's side: home or away. */
+  homeAway?: 'home' | 'away'
+}
+
+/** Opaque cursor for paginating recent match ratings across seasons. */
+export type PlayerRatingsCursor = {
+  seasons: number[]
+  seasonIndex: number
+  page: number
+  pageCount: number
+  done: boolean
 }
 
 export type PlayerProfile = {

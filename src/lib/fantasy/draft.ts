@@ -1,4 +1,8 @@
-import type { DraftPick, FantasyLeague, FantasyMember } from './types'
+import { canAddPosition } from './lineup'
+import { suggestStarters } from './lineup'
+import type { DraftPick, FantasyLeague, FantasyMember, FantasyPlayer } from './types'
+import { DEFAULT_DRAFT_CLOCK_SECONDS, POSITION_LIMITS } from './types'
+import { buildRegularSeasonMatchups } from './schedule'
 
 /** Snake: round 1 left→right, round 2 right→left, … */
 export function snakeMemberForPick(
@@ -28,12 +32,57 @@ export function draftedPlayerIds(league: FantasyLeague): Set<number> {
   return new Set(league.draftPicks.map((p) => p.playerId))
 }
 
+export function nextDeadline(now: number, clockSeconds: number): number {
+  return now + Math.max(15, clockSeconds) * 1000
+}
+
+function finishDraftIfNeeded(
+  league: FantasyLeague,
+  catalog?: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  if (!isDraftComplete(league)) return league
+
+  const members = league.members.map((m) => ({
+    ...m,
+    starters:
+      catalog && catalog.size > 0
+        ? suggestStarters(m.roster, league.starterSpots, catalog)
+        : m.roster.slice(0, league.starterSpots),
+  }))
+
+  // Waiver priority: reverse draft order (last pick gets first claim — classic FF vibe)
+  const waiverOrder = [...league.draftOrder].reverse()
+
+  let next: FantasyLeague = {
+    ...league,
+    members,
+    phase: 'regular',
+    draftPickDeadlineAt: undefined,
+    waiverOrder,
+    waiverPool: [],
+    updatedAt: Date.now(),
+  }
+
+  if (next.matchups.length === 0) {
+    next = {
+      ...next,
+      matchups: buildRegularSeasonMatchups(next.members, next.playoffStartGw),
+    }
+  }
+  return next
+}
+
 export function applyDraftPick(
   league: FantasyLeague,
   memberId: string,
   playerId: number,
-  now = Date.now(),
+  opts: {
+    now?: number
+    auto?: boolean
+    catalog?: Map<number, FantasyPlayer>
+  } = {},
 ): FantasyLeague {
+  const now = opts.now ?? Date.now()
   const turn = snakeMemberForPick(league.draftOrder, league.draftPickIndex)
   if (!turn || turn.memberId !== memberId) {
     throw new Error('Not your turn to draft')
@@ -47,6 +96,14 @@ export function applyDraftPick(
     throw new Error('Roster is full')
   }
 
+  if (opts.catalog) {
+    const player = opts.catalog.get(playerId)
+    if (!player) throw new Error('Unknown player')
+    if (!canAddPosition(member.roster, player.pos, POSITION_LIMITS, opts.catalog)) {
+      throw new Error(`Max ${POSITION_LIMITS[player.pos]} ${player.pos} on roster`)
+    }
+  }
+
   const pick: DraftPick = {
     overall: turn.overall,
     round: turn.round,
@@ -54,30 +111,49 @@ export function applyDraftPick(
     memberId,
     playerId,
     at: now,
+    auto: opts.auto,
   }
 
   const members = league.members.map((m) =>
     m.id === memberId ? { ...m, roster: [...m.roster, playerId] } : m,
   )
 
-  const next: FantasyLeague = {
+  let next: FantasyLeague = {
     ...league,
     members,
     draftPicks: [...league.draftPicks, pick],
     draftPickIndex: league.draftPickIndex + 1,
+    draftPickDeadlineAt: nextDeadline(
+      now,
+      league.draftClockSeconds || DEFAULT_DRAFT_CLOCK_SECONDS,
+    ),
     updatedAt: now,
   }
 
-  if (isDraftComplete(next)) {
-    // Auto-set starters to first 11 rostered, then enter regular season
-    next.members = next.members.map((m) => ({
-      ...m,
-      starters: m.roster.slice(0, league.starterSpots),
-    }))
-    next.phase = 'regular'
-  }
+  return finishDraftIfNeeded(next, opts.catalog)
+}
 
-  return next
+/** Highest season-projection player that fits roster position caps. */
+export function pickAutodraftPlayer(
+  member: FantasyMember,
+  taken: Set<number>,
+  catalog: Map<number, FantasyPlayer>,
+): number | null {
+  const ranked = [...catalog.values()]
+    .filter((p) => !taken.has(p.id) && p.status !== 'u')
+    .sort(
+      (a, b) =>
+        b.seasonProjection - a.seasonProjection ||
+        b.totalPoints - a.totalPoints ||
+        a.webName.localeCompare(b.webName),
+    )
+
+  for (const p of ranked) {
+    if (canAddPosition(member.roster, p.pos, POSITION_LIMITS, catalog)) {
+      return p.id
+    }
+  }
+  return null
 }
 
 export function setDraftOrder(league: FantasyLeague, order: string[]): FantasyLeague {
@@ -116,12 +192,49 @@ export function startDraft(league: FantasyLeague): FantasyLeague {
   if (league.draftOrder.length !== league.teamCount) {
     throw new Error('Set draft order first')
   }
+  const now = Date.now()
   return {
     ...league,
     phase: 'drafting',
     draftPicks: [],
     draftPickIndex: 0,
-    draftStartedAt: Date.now(),
-    updatedAt: Date.now(),
+    draftStartedAt: now,
+    draftPickDeadlineAt: nextDeadline(
+      now,
+      league.draftClockSeconds || DEFAULT_DRAFT_CLOCK_SECONDS,
+    ),
+    updatedAt: now,
+  }
+}
+
+/**
+ * Advance draft when clock expires or current manager has autodraft on.
+ * Returns same league reference semantics via updatedAt check — caller should
+ * skip persist if unchanged.
+ */
+export function tickDraftClock(
+  league: FantasyLeague,
+  catalog: Map<number, FantasyPlayer>,
+  now = Date.now(),
+): FantasyLeague {
+  if (league.phase !== 'drafting') return league
+
+  const turn = snakeMemberForPick(league.draftOrder, league.draftPickIndex)
+  if (!turn) return league
+  const member = league.members.find((m) => m.id === turn.memberId)
+  if (!member) return league
+
+  const deadline = league.draftPickDeadlineAt ?? 0
+  const shouldAuto = member.autodraft || (deadline > 0 && now >= deadline)
+  if (!shouldAuto) return league
+
+  const taken = draftedPlayerIds(league)
+  const playerId = pickAutodraftPlayer(member, taken, catalog)
+  if (playerId == null) return league
+
+  try {
+    return applyDraftPick(league, member.id, playerId, { now, auto: true, catalog })
+  } catch {
+    return league
   }
 }

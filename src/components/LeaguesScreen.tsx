@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { FavoriteStar } from './FavoriteStar'
-import { LEAGUES, type LeagueId } from '../lib/leagues'
+import { leaguesInDisplayOrder, type LeagueId } from '../lib/leagues'
 import type { FavoritesApi } from '../lib/favorites'
 
 export function LeaguesScreen({
@@ -12,6 +12,8 @@ export function LeaguesScreen({
   onOpenLeague: (id: LeagueId) => void
   reduce: boolean | null
 }) {
+  const leagues = leaguesInDisplayOrder(favorites.leagueIds)
+
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
       <div
@@ -23,7 +25,7 @@ export function LeaguesScreen({
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-6 md:max-w-xl md:px-6">
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
         <header className="mb-8">
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 10 }}
@@ -45,11 +47,12 @@ export function LeaguesScreen({
         </header>
 
         <div className="flex flex-col gap-3">
-          {LEAGUES.map((league, i) => {
+          {leagues.map((league, i) => {
             const favorited = favorites.isLeagueFavorite(league.id)
             return (
               <motion.div
                 key={league.id}
+                layout={!reduce}
                 initial={reduce ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{

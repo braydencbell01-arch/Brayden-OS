@@ -1,11 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { snakeMemberForPick, totalDraftPicks } from '../../lib/fantasy/draft'
 import { standingsRank, seriesAggregate } from '../../lib/fantasy/schedule'
 import { SCORING_BLURB } from '../../lib/fantasy/scoring'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
 import type { FantasyLeague, FantasyPlayer } from '../../lib/fantasy/types'
-import { ALLOWED_TEAM_COUNTS, POSITION_LIMITS } from '../../lib/fantasy/types'
+import {
+  ALLOWED_DRAFT_CLOCKS,
+  ALLOWED_TEAM_COUNTS,
+  DEFAULT_DRAFT_CLOCK_SECONDS,
+  DEFAULT_ROSTER_SPOTS,
+  POSITION_LIMITS,
+  STARTER_MAX,
+  STARTER_MIN,
+} from '../../lib/fantasy/types'
 import {
   FantasyButton,
   FantasyInput,
@@ -22,6 +30,19 @@ function playerLabel(p: FantasyPlayer | undefined, id: number): string {
   return `${p.webName} · ${p.pos} · ${p.teamShort}`
 }
 
+function useClockLabel(deadlineAt: number | undefined): string {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 250)
+    return () => window.clearInterval(t)
+  }, [])
+  if (!deadlineAt) return '—'
+  const left = Math.max(0, Math.ceil((deadlineAt - now) / 1000))
+  const m = Math.floor(left / 60)
+  const s = left % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 export function FantasyScreen({
   fantasy,
   reduce,
@@ -29,12 +50,9 @@ export function FantasyScreen({
   fantasy: FantasyApi
   reduce: boolean | null
 }) {
-  const { activeLeague } = fantasy
-
-  if (!activeLeague) {
+  if (!fantasy.activeLeague) {
     return <FantasyHome fantasy={fantasy} reduce={reduce} />
   }
-
   return <FantasyLeagueHub fantasy={fantasy} reduce={reduce} />
 }
 
@@ -43,6 +61,7 @@ function FantasyHome({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean
   const [name, setName] = useState(fantasy.identity.displayName)
   const [leagueName, setLeagueName] = useState('FPL League')
   const [teamCount, setTeamCount] = useState(8)
+  const [clock, setClock] = useState(DEFAULT_DRAFT_CLOCK_SECONDS)
   const [invite, setInvite] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -51,9 +70,8 @@ function FantasyHome({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean
     <FantasyShell reduce={reduce}>
       <FantasyTitle eyebrow="Fantasy Premier League" title="Fantasy" reduce={reduce} />
       <p className="mb-6 max-w-md text-sm leading-relaxed text-mist/75">
-        Create a private FPL league, invite friends, snake-draft PL players, trade, stream free
-        agents, and battle weekly — with a five-game semi and five-game final over the last ten
-        matchweeks.
+        H2H draft leagues built like fantasy football: snake draft with a pick clock, optional
+        autodraft, rolling waivers, weekly matchups, and a 10-week playoff bracket.
       </p>
 
       {fantasy.catalogError ? (
@@ -109,8 +127,8 @@ function FantasyHome({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean
                       <span>
                         <span className="block font-semibold text-cream">{league.name}</span>
                         <span className="text-xs text-mist/60">
-                          {phaseLabel(league.phase)} · {league.members.length}/{league.teamCount}{' '}
-                          managers
+                          {phaseLabel(league.phase)} · {league.members.length}/{league.teamCount} ·{' '}
+                          {league.draftClockSeconds || 90}s clock
                         </span>
                       </span>
                       <span className="text-lime" aria-hidden>
@@ -124,12 +142,18 @@ function FantasyHome({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean
           ) : null}
 
           <details className="mt-8 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-mist/70">
-            <summary className="cursor-pointer font-semibold text-cream">Scoring algorithm</summary>
-            <p className="mt-2 leading-relaxed">{SCORING_BLURB}</p>
-            <p className="mt-2 text-xs text-mist/50">
-              Weekly & season projections blend FPL expected points, form, and PPG — shown as the
-              draft board ranking. You can tune this later.
-            </p>
+            <summary className="cursor-pointer font-semibold text-cream">League defaults</summary>
+            <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed">
+              <li>{DEFAULT_ROSTER_SPOTS} roster spots (11 starters + 7 bench)</li>
+              <li>
+                XI bands: GKP {STARTER_MIN.GKP} · DEF {STARTER_MIN.DEF}–{STARTER_MAX.DEF} · MID{' '}
+                {STARTER_MIN.MID}–{STARTER_MAX.MID} · FWD {STARTER_MIN.FWD}–{STARTER_MAX.FWD}
+              </li>
+              <li>Snake draft + pick clock + optional autodraft</li>
+              <li>Rolling waiver priority; drops go on waivers; clear players are open FA</li>
+              <li>Playoffs: last 10 GWs — 5-game semis (1v4, 2v3) + 5-game final</li>
+            </ul>
+            <p className="mt-3 text-xs leading-relaxed">{SCORING_BLURB}</p>
           </details>
         </motion.div>
       ) : null}
@@ -143,7 +167,7 @@ function FantasyHome({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean
             setError(null)
             fantasy.setDisplayName(name)
             void fantasy
-              .create(leagueName, teamCount)
+              .create(leagueName, teamCount, clock)
               .catch((err: unknown) =>
                 setError(err instanceof Error ? err.message : 'Could not create league'),
               )
@@ -164,19 +188,26 @@ function FantasyHome({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean
           <label className="text-xs font-semibold uppercase tracking-[0.16em] text-mist/60">
             Managers (even only)
           </label>
-          <FantasySelect
-            value={teamCount}
-            onChange={(e) => setTeamCount(Number(e.target.value))}
-          >
+          <FantasySelect value={teamCount} onChange={(e) => setTeamCount(Number(e.target.value))}>
             {ALLOWED_TEAM_COUNTS.map((n) => (
               <option key={n} value={n}>
                 {n} teams
               </option>
             ))}
           </FantasySelect>
+          <label className="text-xs font-semibold uppercase tracking-[0.16em] text-mist/60">
+            Draft pick clock
+          </label>
+          <FantasySelect value={clock} onChange={(e) => setClock(Number(e.target.value))}>
+            {ALLOWED_DRAFT_CLOCKS.map((n) => (
+              <option key={n} value={n}>
+                {n} seconds
+              </option>
+            ))}
+          </FantasySelect>
           <p className="text-xs text-mist/55">
-            Even count required so every manager has a weekly matchup. Roster cap{' '}
-            {fantasy.activeLeague?.rosterSpots ?? 15} — drop to add free agents.
+            {DEFAULT_ROSTER_SPOTS}-man rosters · snake draft · waivers after draft. Even team count
+            keeps weekly matchups clean.
           </p>
           {error ? <p className="text-sm text-red-200">{error}</p> : null}
           <FantasyButton type="submit" disabled={busy || fantasy.syncing}>
@@ -239,7 +270,7 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
     { id: 'draft', label: 'Draft' },
     { id: 'roster', label: 'Roster' },
     { id: 'matchup', label: 'Matchup' },
-    { id: 'waivers', label: 'FA' },
+    { id: 'waivers', label: 'Waivers' },
     { id: 'trades', label: 'Trades' },
     { id: 'standings', label: 'Table' },
   ]
@@ -259,7 +290,8 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
             {league.name}
           </h1>
           <p className="mt-1 text-xs text-mist/60">
-            Premier League · {phaseLabel(league.phase)} · {league.members.length}/{league.teamCount}
+            Premier League · {phaseLabel(league.phase)} · {league.members.length}/{league.teamCount}{' '}
+            · {league.rosterSpots}-man
           </p>
         </div>
         <FantasyButton variant="ghost" onClick={() => void fantasy.refreshActive()}>
@@ -286,7 +318,7 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
       {tab === 'draft' ? <DraftPanel fantasy={fantasy} /> : null}
       {tab === 'roster' ? <RosterPanel fantasy={fantasy} /> : null}
       {tab === 'matchup' ? <MatchupPanel fantasy={fantasy} /> : null}
-      {tab === 'waivers' ? <FreeAgentPanel fantasy={fantasy} /> : null}
+      {tab === 'waivers' ? <WaiversPanel fantasy={fantasy} /> : null}
       {tab === 'trades' ? <TradesPanel fantasy={fantasy} /> : null}
       {tab === 'standings' ? <StandingsPanel fantasy={fantasy} /> : null}
     </FantasyShell>
@@ -318,11 +350,58 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
             {copied ? 'Copied' : 'Copy invite'}
           </FantasyButton>
         </div>
-        <p className="mt-3 text-xs text-mist/55">
-          Friends open Fantasy → Join and paste this code. League size must stay even (
-          {league.teamCount} max). Cloud invites stay alive while anyone taps Sync; open the app
-          regularly during your season.
-        </p>
+      </section>
+
+      <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-lime">Your draft</h2>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-cream">
+            <input
+              type="checkbox"
+              checked={Boolean(fantasy.me?.autodraft)}
+              onChange={(e) => {
+                try {
+                  fantasy.setAutodraft(e.target.checked)
+                } catch (err: unknown) {
+                  alert(err instanceof Error ? err.message : 'Failed')
+                }
+              }}
+            />
+            Enable autodraft
+          </label>
+          <span className="text-xs text-mist/55">
+            Autodraft picks the best season-projection fit when you&apos;re on the clock (or when the
+            clock hits zero for anyone).
+          </span>
+        </div>
+        {isCommish && league.phase !== 'drafting' ? (
+          <div className="mt-4">
+            <label className="text-xs font-semibold uppercase tracking-[0.16em] text-mist/60">
+              Pick clock
+            </label>
+            <FantasySelect
+              className="mt-1"
+              value={league.draftClockSeconds || 90}
+              onChange={(e) => {
+                try {
+                  fantasy.setClock(Number(e.target.value))
+                } catch (err: unknown) {
+                  alert(err instanceof Error ? err.message : 'Failed')
+                }
+              }}
+            >
+              {ALLOWED_DRAFT_CLOCKS.map((n) => (
+                <option key={n} value={n}>
+                  {n}s
+                </option>
+              ))}
+            </FantasySelect>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-mist/55">
+            Pick clock: {league.draftClockSeconds || 90}s
+          </p>
+        )}
       </section>
 
       <section>
@@ -338,6 +417,7 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
               <span className="font-semibold text-cream">
                 {m.name}
                 {m.id === fantasy.identity.memberId ? ' (you)' : ''}
+                {m.autodraft ? <span className="ml-2 text-[10px] text-lime">AUTO</span> : null}
               </span>
               <span className="text-xs text-mist/50">
                 {m.isCommissioner ? 'Commissioner' : 'Member'}
@@ -406,9 +486,8 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
       <section className="rounded-2xl border border-white/10 bg-black/20 p-4 text-xs leading-relaxed text-mist/65">
         <p className="font-semibold text-cream">Season format</p>
         <p className="mt-2">
-          Regular season GW 1–{league.playoffStartGw - 1}. Playoffs last 10 matchweeks: semifinals
-          GW 29–33 (1-seed vs 4, 2 vs 3), finals GW 34–38. Series decided by aggregate starter
-          points; higher seed wins ties.
+          Regular season GW 1–{league.playoffStartGw - 1}. Playoffs last 10 matchweeks: semis GW
+          29–33 (1 vs 4, 2 vs 3), finals GW 34–38. Aggregate starter points; higher seed wins ties.
         </p>
       </section>
     </div>
@@ -421,7 +500,7 @@ function DraftOrderEditor({ fantasy }: { fantasy: FantasyApi }) {
 
   return (
     <div className="mt-3 space-y-2">
-      <p className="text-xs text-mist/55">Drag mentally — use arrows to reorder before starting.</p>
+      <p className="text-xs text-mist/55">Use arrows to reorder before starting.</p>
       {order.map((id, index) => {
         const m = league.members.find((x) => x.id === id)
         return (
@@ -476,6 +555,7 @@ function DraftPanel({ fantasy }: { fantasy: FantasyApi }) {
   const turn = snakeMemberForPick(league.draftOrder, league.draftPickIndex)
   const myTurn = turn?.memberId === fantasy.me?.id
   const total = totalDraftPicks(league.teamCount, league.rosterSpots)
+  const clockLabel = useClockLabel(league.draftPickDeadlineAt)
 
   const board = useMemo(() => {
     const list = fantasy.catalog?.players ?? []
@@ -514,17 +594,37 @@ function DraftPanel({ fantasy }: { fantasy: FantasyApi }) {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl border border-lime/30 bg-lime/10 px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
-          Pick {league.draftPickIndex + 1} / {total}
-          {turn ? ` · Round ${turn.round}` : ''}
-        </p>
-        <p className="mt-1 text-sm text-cream">
-          {league.phase === 'draft_setup'
-            ? 'Order set — commissioner can start the draft from Home.'
-            : myTurn
-              ? 'Your turn — draft from the season projection board.'
-              : `On the clock: ${league.members.find((m) => m.id === turn?.memberId)?.name ?? '…'}`}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
+              Pick {Math.min(league.draftPickIndex + 1, total)} / {total}
+              {turn ? ` · Round ${turn.round}` : ''}
+            </p>
+            <p className="mt-1 text-sm text-cream">
+              {league.phase === 'draft_setup'
+                ? 'Order set — start the draft from Home.'
+                : myTurn
+                  ? fantasy.me?.autodraft
+                    ? 'Autodraft is on — best available will be taken for you.'
+                    : 'You are on the clock.'
+                  : `On the clock: ${league.members.find((m) => m.id === turn?.memberId)?.name ?? '…'}`}
+            </p>
+          </div>
+          {league.phase === 'drafting' ? (
+            <div className="text-right">
+              <p className="font-display text-3xl leading-none text-lime">{clockLabel}</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-mist/50">Pick clock</p>
+            </div>
+          ) : null}
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-xs text-cream">
+          <input
+            type="checkbox"
+            checked={Boolean(fantasy.me?.autodraft)}
+            onChange={(e) => fantasy.setAutodraft(e.target.checked)}
+          />
+          Autodraft for me
+        </label>
       </div>
 
       <div className="flex gap-2">
@@ -548,7 +648,10 @@ function DraftPanel({ fantasy }: { fantasy: FantasyApi }) {
       </div>
 
       <p className="text-xs text-mist/50">
-        Ranked by season projection (week blend × 38). Also shows weekly proj.
+        Ranked by season projection. Roster caps:{' '}
+        {Object.entries(POSITION_LIMITS)
+          .map(([k, v]) => `${v} ${k}`)
+          .join(' · ')}
       </p>
 
       <ul className="space-y-1.5">
@@ -571,7 +674,7 @@ function DraftPanel({ fantasy }: { fantasy: FantasyApi }) {
               </p>
             </div>
             <FantasyButton
-              disabled={league.phase !== 'drafting' || !myTurn}
+              disabled={league.phase !== 'drafting' || !myTurn || Boolean(fantasy.me?.autodraft)}
               onClick={() => {
                 try {
                   fantasy.pick(p.id)
@@ -592,7 +695,7 @@ function DraftPanel({ fantasy }: { fantasy: FantasyApi }) {
 }
 
 function PickList({ league, fantasy }: { league: FantasyLeague; fantasy: FantasyApi }) {
-  const recent = [...league.draftPicks].reverse().slice(0, 12)
+  const recent = [...league.draftPicks].reverse().slice(0, 16)
   if (recent.length === 0) return null
   return (
     <div>
@@ -606,6 +709,7 @@ function PickList({ league, fantasy }: { league: FantasyLeague; fantasy: Fantasy
           return (
             <li key={pick.overall}>
               R{pick.round}.{pick.slot} {m?.name}: {playerLabel(p, pick.playerId)}
+              {pick.auto ? <span className="text-lime"> · auto</span> : null}
             </li>
           )
         })}
@@ -618,6 +722,10 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
   const league = fantasy.activeLeague!
   const me = fantasy.me
   const [starters, setStarters] = useState<number[]>(me?.starters ?? [])
+
+  useEffect(() => {
+    setStarters(me?.starters ?? [])
+  }, [me?.id, me?.starters])
 
   if (!me) return <p className="text-sm text-mist/70">Join this league to manage a roster.</p>
 
@@ -632,11 +740,39 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-mist/70">
-        {me.roster.length}/{league.rosterSpots} rostered · start up to {league.starterSpots}. Limits:{' '}
-        {Object.entries(POSITION_LIMITS)
-          .map(([k, v]) => `${v} ${k}`)
-          .join(' · ')}
+        {me.roster.length}/{league.rosterSpots} rostered · start {league.starterSpots} (
+        {Object.entries(STARTER_MIN)
+          .map(([k, v]) => `${v}+ ${k}`)
+          .join(', ')}
+        ).
       </p>
+      <div className="flex flex-wrap gap-2">
+        <FantasyButton
+          variant="ghost"
+          onClick={() => {
+            try {
+              fantasy.optimizeLineup()
+              setStarters(fantasy.me?.starters ?? starters)
+            } catch (err: unknown) {
+              alert(err instanceof Error ? err.message : 'Failed')
+            }
+          }}
+        >
+          Optimize XI
+        </FantasyButton>
+        <FantasyButton
+          onClick={() => {
+            try {
+              fantasy.setMyStarters(starters)
+              alert('Lineup saved')
+            } catch (err: unknown) {
+              alert(err instanceof Error ? err.message : 'Failed')
+            }
+          }}
+        >
+          Save lineup ({starters.length}/{league.starterSpots})
+        </FantasyButton>
+      </div>
       <ul className="space-y-2">
         {me.roster.map((id) => {
           const p = fantasy.playerMap.get(id)
@@ -644,34 +780,35 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
           return (
             <li
               key={id}
-              className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2"
+              className="flex items-center justify-between gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2"
             >
-              <div>
-                <p className="text-sm font-semibold text-cream">{playerLabel(p, id)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-cream">{playerLabel(p, id)}</p>
                 <p className="text-[11px] text-mist/50">
-                  Week proj {p?.weekProjection.toFixed(1) ?? '—'} · Season{' '}
+                  Week {p?.weekProjection.toFixed(1) ?? '—'} · Season{' '}
                   {p?.seasonProjection.toFixed(0) ?? '—'}
                 </p>
               </div>
               <FantasyButton variant={on ? 'primary' : 'ghost'} onClick={() => toggle(id)}>
                 {on ? 'Starting' : 'Bench'}
               </FantasyButton>
+              <FantasyButton
+                variant="danger"
+                onClick={() => {
+                  if (!confirm(`Drop ${p?.webName ?? id} to waivers?`)) return
+                  try {
+                    fantasy.dropPlayer(id)
+                  } catch (err: unknown) {
+                    alert(err instanceof Error ? err.message : 'Failed')
+                  }
+                }}
+              >
+                Drop
+              </FantasyButton>
             </li>
           )
         })}
       </ul>
-      <FantasyButton
-        onClick={() => {
-          try {
-            fantasy.setMyStarters(starters)
-            alert('Lineup saved')
-          } catch (err: unknown) {
-            alert(err instanceof Error ? err.message : 'Failed')
-          }
-        }}
-      >
-        Save lineup ({starters.length}/{league.starterSpots})
-      </FantasyButton>
     </div>
   )
 }
@@ -685,11 +822,7 @@ function MatchupPanel({ fantasy }: { fantasy: FantasyApi }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <FantasyButton
-          variant="ghost"
-          disabled={viewGw <= 1}
-          onClick={() => setViewGw((g) => g - 1)}
-        >
+        <FantasyButton variant="ghost" disabled={viewGw <= 1} onClick={() => setViewGw((g) => g - 1)}>
           ←
         </FantasyButton>
         <span className="text-sm font-semibold text-cream">Gameweek {viewGw}</span>
@@ -711,10 +844,13 @@ function MatchupPanel({ fantasy }: { fantasy: FantasyApi }) {
               }
             }}
           >
-            Score GW
+            Process & score
           </FantasyButton>
         ) : null}
       </div>
+      <p className="text-xs text-mist/50">
+        Commissioner scoring also processes pending waiver claims first (weekly wire).
+      </p>
 
       {weekMatchups.length === 0 ? (
         <p className="text-sm text-mist/65">No matchups for this week yet (finish the draft first).</p>
@@ -724,12 +860,10 @@ function MatchupPanel({ fantasy }: { fantasy: FantasyApi }) {
             const home = league.members.find((m) => m.id === mu.home.memberId)
             const away = league.members.find((m) => m.id === mu.away.memberId)
             return (
-              <li
-                key={mu.id}
-                className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3"
-              >
+              <li key={mu.id} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-mist/50">
                   {mu.kind}
+                  {mu.scored ? ' · final' : ''}
                 </p>
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="font-semibold text-cream">{home?.name}</span>
@@ -780,12 +914,15 @@ function MatchupPanel({ fantasy }: { fantasy: FantasyApi }) {
   )
 }
 
-function FreeAgentPanel({ fantasy }: { fantasy: FantasyApi }) {
+function WaiversPanel({ fantasy }: { fantasy: FantasyApi }) {
   const league = fantasy.activeLeague!
   const [q, setQ] = useState('')
   const [dropId, setDropId] = useState<number | ''>('')
+  const [mode, setMode] = useState<'fa' | 'wire' | 'priority'>('fa')
   const owned = useMemo(() => new Set(league.members.flatMap((m) => m.roster)), [league.members])
-  const fas = useMemo(() => {
+  const waiverSet = useMemo(() => new Set(league.waiverPool ?? []), [league.waiverPool])
+
+  const players = useMemo(() => {
     return (fantasy.catalog?.players ?? [])
       .filter((p) => !owned.has(p.id))
       .filter((p) => {
@@ -793,67 +930,156 @@ function FreeAgentPanel({ fantasy }: { fantasy: FantasyApi }) {
         const s = q.toLowerCase()
         return p.webName.toLowerCase().includes(s) || p.teamShort.toLowerCase().includes(s)
       })
+      .filter((p) => (mode === 'wire' ? waiverSet.has(p.id) : !waiverSet.has(p.id)))
       .slice(0, 60)
-  }, [fantasy.catalog?.players, owned, q])
+  }, [fantasy.catalog?.players, mode, owned, q, waiverSet])
 
   const needDrop = (fantasy.me?.roster.length ?? 0) >= league.rosterSpots
 
   if (league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting') {
-    return <p className="text-sm text-mist/70">Free agency opens after the draft.</p>
+    return <p className="text-sm text-mist/70">Waivers & free agency open after the draft.</p>
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-mist/70">
-        Roster max {league.rosterSpots}. {needDrop ? 'Select a drop to claim a free agent.' : null}
-      </p>
-      {needDrop && fantasy.me ? (
-        <FantasySelect
-          value={dropId}
-          onChange={(e) => setDropId(e.target.value ? Number(e.target.value) : '')}
-        >
-          <option value="">Drop player…</option>
-          {fantasy.me.roster.map((id) => (
-            <option key={id} value={id}>
-              {playerLabel(fantasy.playerMap.get(id), id)}
-            </option>
-          ))}
-        </FantasySelect>
-      ) : null}
-      <FantasyInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search free agents" />
-      <ul className="space-y-1.5">
-        {fas.map((p) => (
-          <li
-            key={p.id}
-            className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2"
+      <div className="flex gap-2">
+        {(
+          [
+            ['fa', 'Free agents'],
+            ['wire', 'On waivers'],
+            ['priority', 'Priority'],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMode(id)}
+            className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+              mode === id ? 'bg-lime text-ink' : 'bg-white/5 text-mist'
+            }`}
           >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-cream">
-                {p.webName}{' '}
-                <span className="font-normal text-mist/55">
-                  {p.pos} {p.teamShort}
-                </span>
-              </p>
-              <p className="text-[11px] text-mist/50">
-                Week {p.weekProjection.toFixed(1)} · Season {p.seasonProjection.toFixed(0)}
-              </p>
-            </div>
-            <FantasyButton
-              disabled={needDrop && dropId === ''}
-              onClick={() => {
-                try {
-                  fantasy.claimFreeAgent(p.id, needDrop ? Number(dropId) : null)
-                  setDropId('')
-                } catch (err: unknown) {
-                  alert(err instanceof Error ? err.message : 'Failed')
-                }
-              }}
-            >
-              Add
-            </FantasyButton>
-          </li>
+            {label}
+          </button>
         ))}
-      </ul>
+      </div>
+
+      {mode === 'priority' ? (
+        <div className="space-y-3">
+          <ol className="space-y-1">
+            {(league.waiverOrder ?? []).map((id, i) => {
+              const m = league.members.find((x) => x.id === id)
+              return (
+                <li key={id} className="text-sm text-cream">
+                  <span className="text-lime">{i + 1}.</span> {m?.name ?? id}
+                </li>
+              )
+            })}
+          </ol>
+          <p className="text-xs text-mist/55">
+            Successful claims move you to the end of the list (rolling waivers).
+          </p>
+          {fantasy.me?.isCommissioner ? (
+            <FantasyButton onClick={() => fantasy.processWaivers()}>Process claims now</FantasyButton>
+          ) : null}
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-mist/60">
+              Pending claims
+            </h3>
+            <ul className="space-y-2">
+              {(league.waiverClaims ?? [])
+                .filter((c) => c.status === 'pending')
+                .map((c) => {
+                  const m = league.members.find((x) => x.id === c.memberId)
+                  return (
+                    <li
+                      key={c.id}
+                      className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-sm"
+                    >
+                      <p className="text-cream">
+                        {m?.name}: +{fantasy.playerMap.get(c.addPlayerId)?.webName ?? c.addPlayerId}
+                        {c.dropPlayerId
+                          ? ` / −${fantasy.playerMap.get(c.dropPlayerId)?.webName ?? c.dropPlayerId}`
+                          : ''}
+                      </p>
+                      {c.memberId === fantasy.identity.memberId ? (
+                        <FantasyButton
+                          className="mt-2"
+                          variant="ghost"
+                          onClick={() => fantasy.cancelClaim(c.id)}
+                        >
+                          Cancel
+                        </FantasyButton>
+                      ) : null}
+                    </li>
+                  )
+                })}
+            </ul>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-mist/70">
+            {mode === 'wire'
+              ? 'Submit a claim — processed by priority (or when the commissioner scores a GW).'
+              : 'Open free agents add instantly. Drops go onto the waiver wire.'}
+          </p>
+          {needDrop && fantasy.me ? (
+            <FantasySelect
+              value={dropId}
+              onChange={(e) => setDropId(e.target.value ? Number(e.target.value) : '')}
+            >
+              <option value="">Drop player…</option>
+              {fantasy.me.roster.map((id) => (
+                <option key={id} value={id}>
+                  {playerLabel(fantasy.playerMap.get(id), id)}
+                </option>
+              ))}
+            </FantasySelect>
+          ) : null}
+          <FantasyInput
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={mode === 'wire' ? 'Search waivers' : 'Search free agents'}
+          />
+          <ul className="space-y-1.5">
+            {players.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-cream">
+                    {p.webName}{' '}
+                    <span className="font-normal text-mist/55">
+                      {p.pos} {p.teamShort}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-mist/50">
+                    Week {p.weekProjection.toFixed(1)} · Season {p.seasonProjection.toFixed(0)}
+                  </p>
+                </div>
+                <FantasyButton
+                  disabled={needDrop && dropId === ''}
+                  onClick={() => {
+                    try {
+                      if (mode === 'wire') {
+                        fantasy.submitClaim(p.id, needDrop ? Number(dropId) : null)
+                      } else {
+                        fantasy.claimFreeAgent(p.id, needDrop ? Number(dropId) : null)
+                      }
+                      setDropId('')
+                    } catch (err: unknown) {
+                      alert(err instanceof Error ? err.message : 'Failed')
+                    }
+                  }}
+                >
+                  {mode === 'wire' ? 'Claim' : 'Add'}
+                </FantasyButton>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
@@ -871,7 +1097,6 @@ function TradesPanel({ fantasy }: { fantasy: FantasyApi }) {
   }
 
   const partner = league.members.find((m) => m.id === toId)
-
   const toggle = (list: number[], id: number, set: (v: number[]) => void) => {
     set(list.includes(id) ? list.filter((x) => x !== id) : [...list, id])
   }
@@ -949,18 +1174,24 @@ function TradesPanel({ fantasy }: { fantasy: FantasyApi }) {
             const from = league.members.find((m) => m.id === t.fromMemberId)
             const to = league.members.find((m) => m.id === t.toMemberId)
             return (
-              <li key={t.id} className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-sm">
+              <li
+                key={t.id}
+                className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-sm"
+              >
                 <p className="text-cream">
                   {from?.name} → {to?.name}{' '}
                   <span className="text-xs text-mist/50">({t.status})</span>
                 </p>
                 <p className="mt-1 text-xs text-mist/60">
-                  Offer: {t.offerPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') || '—'}
+                  Offer:{' '}
+                  {t.offerPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') ||
+                    '—'}
                 </p>
                 <p className="text-xs text-mist/60">
                   Request:{' '}
-                  {t.requestPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') ||
-                    '—'}
+                  {t.requestPlayerIds
+                    .map((id) => fantasy.playerMap.get(id)?.webName ?? id)
+                    .join(', ') || '—'}
                 </p>
                 {t.status === 'pending' ? (
                   <div className="mt-2 flex gap-2">
@@ -986,7 +1217,10 @@ function TradesPanel({ fantasy }: { fantasy: FantasyApi }) {
                       </>
                     ) : null}
                     {fantasy.identity.memberId === t.fromMemberId ? (
-                      <FantasyButton variant="ghost" onClick={() => fantasy.decideTrade(t.id, 'canceled')}>
+                      <FantasyButton
+                        variant="ghost"
+                        onClick={() => fantasy.decideTrade(t.id, 'canceled')}
+                      >
                         Cancel
                       </FantasyButton>
                     ) : null}

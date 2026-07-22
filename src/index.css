@@ -58,4 +58,9 @@
       linear-gradient(90deg, rgba(200, 245, 66, 0.04) 1px, transparent 1px);
     background-size: 48px 48px;
   }
+
+  /* Clear the iOS status bar / Dynamic Island so Back and headers stay tappable. */
+  .pt-screen {
+    padding-top: max(1.75rem, calc(env(safe-area-inset-top, 0px) + 0.85rem));
+  }
 }
