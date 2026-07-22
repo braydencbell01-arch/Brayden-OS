@@ -17,16 +17,22 @@ export function MatchStatsPanel({
   if (scheduled) {
     return (
       <p className="mt-3 text-xs text-mist/65">
-        Lineup: Not available
+        Lineups usually post closer to kickoff.
         <span className="mt-1 block text-mist/55">
-          Ratings and full match stats unlock at kickoff.
+          Ratings and full match stats unlock once the match starts.
         </span>
       </p>
     )
   }
 
   if (loading && !stats) {
-    return <p className="mt-3 text-xs text-mist/65">Pulling match stats and lineups…</p>
+    return (
+      <div className="mt-3 space-y-2" aria-label="Loading match details">
+        <div className="h-3 w-2/5 animate-pulse rounded bg-white/10" />
+        <div className="h-10 animate-pulse rounded bg-white/[0.06]" />
+        <div className="h-10 animate-pulse rounded bg-white/[0.06]" />
+      </div>
+    )
   }
 
   if (error && !stats) {
@@ -34,7 +40,7 @@ export function MatchStatsPanel({
   }
 
   if (!stats) {
-    return <p className="mt-3 text-xs text-mist/65">Not available</p>
+    return <p className="mt-3 text-xs text-mist/65">Match details aren’t ready yet.</p>
   }
 
   return (

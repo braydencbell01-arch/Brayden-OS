@@ -195,13 +195,33 @@ function HomeScreen({
               </p>
               <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
             </div>
-            <p className="font-display text-lg tracking-wide text-cream/80">
-              {loading ? '…' : `${dayMatches.length}`}
-            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onRefresh}
+                className={[
+                  'rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition outline-none',
+                  'focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
+                  hasLive || refreshing
+                    ? 'border-lime/50 bg-lime/15 text-lime'
+                    : 'border-white/15 text-mist/75 hover:border-lime/40 hover:text-lime',
+                ].join(' ')}
+                aria-label="Refresh fixtures"
+              >
+                {refreshing ? 'Syncing…' : 'Refresh'}
+              </button>
+              <p className="font-display text-lg tracking-wide text-cream/80">
+                {loading ? '…' : `${dayMatches.length}`}
+              </p>
+            </div>
           </div>
 
           {loading ? (
-            <p className="text-sm text-mist/70">Loading fixtures…</p>
+            <div className="space-y-2" aria-label="Loading fixtures">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="h-14 animate-pulse rounded bg-white/[0.06]" />
+              ))}
+            </div>
           ) : (
             <>
               {error && dayMatches.length === 0 ? (
@@ -326,6 +346,7 @@ export default function App() {
   )
 
   const selectTab = (tab: BottomTab) => {
+    const sameTab = screen === tab
     setActiveTab(tab)
     setActiveLeagueId(null)
     setActiveTeam(null)
@@ -334,6 +355,10 @@ export default function App() {
     leagueReturnTeamRef.current = null
     setReturnTab(tab)
     setScreen(tab)
+    // Fresh tab or re-tap active: jump to top so you aren't mid-scroll on a new view.
+    if (sameTab || typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: sameTab ? 'smooth' : 'auto' })
+    }
   }
 
   const openLeague = (id: LeagueId) => {

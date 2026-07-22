@@ -84,14 +84,16 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
   const league = fantasy.activeLeague!
   const [tab, setTab] = useState<HubTab>(() => defaultTab(league))
 
+  const draftPhase =
+    league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting'
   const tabs: Array<{ id: HubTab; label: string; hidden?: boolean }> = [
     { id: 'home', label: 'Home' },
-    { id: 'draft', label: 'Draft' },
-    { id: 'matchup', label: 'Matchup' },
+    { id: 'draft', label: 'Draft', hidden: !draftPhase },
+    { id: 'matchup', label: 'Matchup', hidden: draftPhase },
     { id: 'roster', label: 'Roster' },
-    { id: 'waivers', label: 'Waivers' },
-    { id: 'trades', label: 'Trades' },
-    { id: 'standings', label: 'Table' },
+    { id: 'waivers', label: 'Waivers', hidden: draftPhase },
+    { id: 'trades', label: 'Trades', hidden: draftPhase },
+    { id: 'standings', label: 'Table', hidden: draftPhase },
     { id: 'bracket', label: 'Bracket', hidden: league.playoffs.length === 0 },
   ]
 

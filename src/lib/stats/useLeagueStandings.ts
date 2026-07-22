@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { fetchLeagueStandings } from './espn'
 import type { StandingRow } from './types'
@@ -8,30 +8,41 @@ export function useLeagueStandings(leagueId: LeagueId) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await fetchLeagueStandings(leagueId)
+      setRows(data)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load standings')
+      setRows([])
+    } finally {
+      setLoading(false)
+    }
+  }, [leagueId])
+
   useEffect(() => {
     let cancelled = false
-
-    async function load() {
-      setLoading(true)
-      setError(null)
-      try {
-        const data = await fetchLeagueStandings(leagueId)
+    setLoading(true)
+    setError(null)
+    void fetchLeagueStandings(leagueId)
+      .then((data) => {
         if (!cancelled) setRows(data)
-      } catch (err) {
+      })
+      .catch((err: unknown) => {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Could not load standings')
           setRows([])
         }
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) setLoading(false)
-      }
-    }
-
-    void load()
+      })
     return () => {
       cancelled = true
     }
   }, [leagueId])
 
-  return { rows, loading, error }
+  return { rows, loading, error, reload: load }
 }
