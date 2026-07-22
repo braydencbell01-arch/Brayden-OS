@@ -221,3 +221,67 @@ export function dateKeysForFavorites(
   }
   return keys
 }
+
+export function matchesForTeam(matches: Match[], teamId: string): Match[] {
+  return matches
+    .filter((match) => match.home.id === teamId || match.away.id === teamId)
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+}
+
+export type TeamFormResult = 'W' | 'D' | 'L'
+
+export function teamResult(match: Match, teamId: string): TeamFormResult | null {
+  if (match.status !== 'finished') return null
+  const homeScore = match.home.score
+  const awayScore = match.away.score
+  if (homeScore == null || awayScore == null) return null
+
+  const isHome = match.home.id === teamId
+  const isAway = match.away.id === teamId
+  if (!isHome && !isAway) return null
+
+  if (homeScore === awayScore) return 'D'
+  const teamWon = isHome ? homeScore > awayScore : awayScore > homeScore
+  return teamWon ? 'W' : 'L'
+}
+
+/** Most recent finished results for a club (newest last, like a form strip). */
+export function recentFormForTeam(
+  matches: Match[],
+  teamId: string,
+  limit = 5,
+): TeamFormResult[] {
+  const finished = matchesForTeam(matches, teamId)
+    .filter((match) => match.status === 'finished')
+    .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
+    .slice(0, limit)
+    .reverse()
+
+  return finished
+    .map((match) => teamResult(match, teamId))
+    .filter((result): result is TeamFormResult => result != null)
+}
+
+export function splitTeamFixtures(
+  matches: Match[],
+  teamId: string,
+  todayKey: string,
+): { recent: Match[]; upcoming: Match[] } {
+  const teamMatches = matchesForTeam(matches, teamId)
+  const recent = teamMatches
+    .filter((match) => match.dateKey < todayKey || match.status === 'finished')
+    .filter((match) => match.status === 'finished' || match.status === 'postponed')
+    .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
+    .slice(0, 5)
+  const upcoming = teamMatches
+    .filter(
+      (match) =>
+        match.status === 'scheduled' ||
+        match.status === 'live' ||
+        (match.status === 'other' && match.dateKey >= todayKey),
+    )
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+    .slice(0, 8)
+
+  return { recent, upcoming }
+}
