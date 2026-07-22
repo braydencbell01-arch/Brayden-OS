@@ -1,23 +1,18 @@
 # Brayden Stats
 
-Interactive soccer stats app shell — player ratings, pay-per-stat insights, and the top five European leagues.
+Interactive soccer stats app shell — player ratings, pay-per-stat insights, and league screens.
 
 ## Live site
 
-**Permanent URL (after you turn on GitHub Pages once):**  
-https://braydencbell01-arch.github.io/Brayden-OS/
+**https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/**
 
-### One-time setup on your phone
-1. Open: https://github.com/braydencbell01-arch/Brayden-OS/settings/pages  
-2. Under **Build and deployment** → **Source**, choose **Deploy from a branch**  
-3. Branch: **gh-pages** / folder: **/ (root)** → Save  
-
-After that, the link above stays the same. When you ask the agent for site changes, it redeploys `gh-pages` and the link updates.
+Deploys update only the `jerseydeals/` folder on the `gh-pages` branch so other work at the Pages root is left alone.
 
 ## What's included
 
-- **Home**: Brayden Stats branding, horizontally scrollable match calendar, league list
-- **Leagues**: Premier League, La Liga, Bundesliga, Serie A, Ligue 1 — each opens its own screen
+- **Home**: Brayden Stats branding, horizontally scrollable match calendar (±100 days), league list
+- **Leagues**: Premier League (ENG), La Liga, Bundesliga, Serie A, Ligue 1, MLS (USA), Eredivisie (NED)
+- Tiny **Today** jump control; Yesterday / Today / Tomorrow labels
 - Built as a mobile-friendly web app you can wrap later (Capacitor / PWA / native shell)
 
 ## Stack
@@ -38,5 +33,5 @@ npm run dev
 
 ```bash
 npm run build
-npm run deploy:pages   # updates the permanent GitHub Pages site
+npm run deploy:pages   # publishes to the live jerseydeals/ URL above
 ```

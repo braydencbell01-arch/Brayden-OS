@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Build and publish the static site to the gh-pages branch (for GitHub Pages).
+# Publish Brayden Stats into the gh-pages `jerseydeals/` folder only.
+# Leaves the Pages root (and any sibling paths) alone for other teammates.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+LIVE_PATH="jerseydeals"
+LIVE_URL="https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/"
 
 npm run build
 cp dist/index.html dist/404.html
@@ -25,11 +29,16 @@ elif git show-ref --verify --quiet refs/heads/gh-pages; then
   git worktree add --force "$BRANCH_DIR" gh-pages
 else
   git worktree add --force --orphan -B gh-pages "$BRANCH_DIR"
+  touch "$BRANCH_DIR/.nojekyll"
 fi
 
-# Replace published files (keep .git via worktree)
-find "$BRANCH_DIR" -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-cp -a dist/. "$BRANCH_DIR/"
+TARGET="$BRANCH_DIR/$LIVE_PATH"
+rm -rf "$TARGET"
+mkdir -p "$TARGET"
+cp -a dist/. "$TARGET/"
+
+# Ensure Pages root keeps a nojekyll marker if this is a fresh orphan branch
+touch "$BRANCH_DIR/.nojekyll"
 
 cd "$BRANCH_DIR"
 git add -A
@@ -37,6 +46,8 @@ if git diff --cached --quiet; then
   echo "No changes to deploy."
 else
   git -c user.name='Brayden Stats Deploy' -c user.email='deploy@brayden-stats.local' \
-    commit -m "Deploy Brayden Stats site"
+    commit -m "Deploy Brayden Stats to jerseydeals/"
   git push -u origin gh-pages
 fi
+
+echo "Live: $LIVE_URL"
