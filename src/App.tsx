@@ -1,5 +1,4 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { Logo } from './components/Logo'
 
 const STOREFRONT_URL = '#' // Replace with Shopify / Square storefront URL
 
@@ -35,7 +34,7 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
           <a
             href="#top"
-            className="font-brand text-xl font-bold uppercase tracking-[0.12em] text-navy md:text-2xl"
+            className="font-brand text-xl uppercase tracking-[0.06em] text-navy md:text-2xl"
           >
             Jersey Deals
           </a>
@@ -66,7 +65,13 @@ export default function App() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="w-full max-w-[240px] sm:max-w-[280px] md:max-w-[320px]"
             >
-              <Logo className="mx-auto h-auto w-full drop-shadow-sm" />
+              <img
+                src="/logo.png"
+                alt="Jersey Deals logo"
+                className="mx-auto h-auto w-full"
+                width={1024}
+                height={1024}
+              />
             </motion.div>
 
             <motion.p
@@ -253,7 +258,7 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex items-center gap-3">
             <img src="/favicon.svg" alt="" className="h-9 w-9" width={36} height={36} />
-            <p className="font-brand text-xl font-bold uppercase tracking-[0.12em] text-white">
+            <p className="font-brand text-xl uppercase tracking-[0.06em] text-white">
               Jersey Deals
             </p>
           </div>
