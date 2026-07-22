@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-
-type LeagueId = 'premier-league' | 'la-liga' | 'bundesliga' | 'serie-a' | 'ligue-1'
+import { MatchList } from './components/MatchList'
+import { useFixtures } from './lib/football/useFixtures'
+import type { LeagueId } from './lib/football/types'
 
 type League = {
   id: LeagueId
@@ -135,6 +136,8 @@ function HomeScreen({
   onOpenLeague: (id: LeagueId) => void
   reduce: boolean | null
 }) {
+  const fixtures = useFixtures(selectedDate)
+
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
       <div
@@ -170,11 +173,29 @@ function HomeScreen({
             transition={{ duration: 0.55, delay: reduce ? 0 : 0.14 }}
             className="mt-3 max-w-md text-base text-mist/90"
           >
-            Player ratings from match stats, and what clubs pay per goal, assist, and more.
+            Live Big 5 scores, player ratings from match stats, and what clubs pay per goal.
           </motion.p>
         </header>
 
         <CalendarStrip selected={selectedDate} onSelect={onSelectDate} reduce={reduce} />
+
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: reduce ? 0 : 0.18 }}
+          className="mt-8"
+        >
+          <MatchList
+            matches={fixtures.matches}
+            loading={fixtures.loading}
+            error={fixtures.error}
+            source={fixtures.source}
+            updatedAt={fixtures.updatedAt}
+            usingMock={fixtures.usingMock}
+            showLeague
+            reduce={reduce}
+          />
+        </motion.div>
 
         <section className="mt-10 flex flex-1 flex-col" aria-label="Leagues">
           <motion.div
@@ -225,13 +246,19 @@ function HomeScreen({
 
 function LeagueScreen({
   league,
+  selectedDate,
+  onSelectDate,
   onBack,
   reduce,
 }: {
   league: League
+  selectedDate: Date
+  onSelectDate: (date: Date) => void
   onBack: () => void
   reduce: boolean | null
 }) {
+  const fixtures = useFixtures(selectedDate, league.id)
+
   return (
     <div className="relative min-h-dvh overflow-hidden">
       <div
@@ -268,14 +295,31 @@ function LeagueScreen({
         </motion.header>
 
         <motion.div
+          initial={reduce ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
+          className="mt-8"
+        >
+          <CalendarStrip selected={selectedDate} onSelect={onSelectDate} reduce={reduce} />
+        </motion.div>
+
+        <motion.div
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.45, delay: reduce ? 0 : 0.15 }}
-          className="mt-10 flex flex-1 items-start"
+          className="mt-8 flex flex-1 flex-col"
         >
-          <p className="text-sm text-mist/70">
-            League screen ready — ratings, pay-per-stat, and match insights land here next.
-          </p>
+          <MatchList
+            matches={fixtures.matches}
+            loading={fixtures.loading}
+            error={fixtures.error}
+            source={fixtures.source}
+            updatedAt={fixtures.updatedAt}
+            usingMock={fixtures.usingMock}
+            showLeague={false}
+            reduce={reduce}
+            emptyLabel={`No ${league.name} matches on this date.`}
+          />
         </motion.div>
       </div>
     </div>
@@ -305,6 +349,8 @@ export default function App() {
         >
           <LeagueScreen
             league={activeLeague}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
             onBack={() => setActiveLeagueId(null)}
             reduce={reduce}
           />
