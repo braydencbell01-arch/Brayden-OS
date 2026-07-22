@@ -42,6 +42,8 @@ type CreateOptions = {
   draftMode?: DraftMode
   scoringPreset?: ScoringPreset
   quickFillBots?: boolean
+  /** Prefer this over store identity — create runs before setState flushes. */
+  managerName?: string
 }
 
 function newMemberId(): string {
@@ -160,11 +162,12 @@ export function useFantasy() {
       maybeOptions?: CreateOptions,
     ) => {
       const identity = store.identity
-      const displayName = identity.displayName.trim() || 'Commissioner'
       const options =
         typeof draftClockSecondsOrOptions === 'number'
           ? { ...maybeOptions, draftClockSeconds: draftClockSecondsOrOptions }
           : (draftClockSecondsOrOptions ?? maybeOptions ?? {})
+      const displayName =
+        (options.managerName ?? identity.displayName).trim() || 'Commissioner'
       let league = createLeague({
         name,
         commissionerId: identity.memberId,
@@ -566,7 +569,13 @@ export function useFantasy() {
       if (!me) throw new Error('You are not in this league')
       return updateActive((l) => voteTradeVeto(l, tradeId, me.id))
     },
-    runScoreGw: (gw: number) => updateActive((l) => scoreGameweek(l, gw, playerMap)),
+    runScoreGw: (gw: number) => {
+      const liveGw = catalog?.currentGw
+      if (liveGw != null && gw > liveGw) {
+        throw new Error(`GW ${gw} has not started yet (live GW is ${liveGw})`)
+      }
+      return updateActive((l) => scoreGameweek(l, gw, playerMap))
+    },
     runAutos,
   }
 }

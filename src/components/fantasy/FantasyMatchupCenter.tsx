@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { seriesAggregate } from '../../lib/fantasy/schedule'
 import type { FantasyLeague, FantasyMember, FantasyPlayer, WeeklyMatchup } from '../../lib/fantasy/types'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
@@ -163,6 +163,11 @@ export function FantasyMatchupCenter({
 }) {
   const league = fantasy.activeLeague!
   const [viewGw, setViewGw] = useState(league.currentGw)
+
+  useEffect(() => {
+    setViewGw(league.currentGw)
+  }, [league.id, league.currentGw])
+
   const weekMatchups = useMemo(
     () => league.matchups.filter((matchup) => matchup.gw === viewGw),
     [league.matchups, viewGw],

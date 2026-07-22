@@ -159,6 +159,22 @@ export function PlayerProfileScreen({
 
   const favorited = favorites.isPlayerFavorite(player.id)
 
+  useEffect(() => {
+    if (!favorited || !profile) return
+    favorites.refreshPlayer({
+      id: profile.id,
+      name: profile.name,
+      shortName: profile.shortName,
+      photoUrl: profile.photoUrl,
+      jerseyUrl: profile.jerseyUrl,
+      jersey: profile.jersey,
+      position: profile.position,
+      leagueId: player.leagueId,
+      teamId: profile.teamId,
+      teamName: profile.teamName,
+    })
+  }, [favorited, favorites, player.leagueId, profile])
+
   const toggle = (section: 'stats' | 'ratings' | 'transfers') => {
     setOpenSection((current) => (current === section ? null : section))
   }

@@ -21,7 +21,7 @@ export function ProfileShell({
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
 
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
+      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-screen pt-screen md:max-w-xl md:px-6">
         <div className="sticky top-0 z-30 -mx-5 mb-7 border-b border-white/10 bg-pitch-deep/90 px-5 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md md:-mx-6 md:px-6">
           <motion.button
             type="button"

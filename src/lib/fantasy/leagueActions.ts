@@ -685,7 +685,8 @@ export function scoreGameweek(
     ...working,
     members: [...stats.values()],
     matchups,
-    currentGw: Math.max(working.currentGw, gw),
+    // Advance the active week after scoring so the hub moves off a finished GW.
+    currentGw: Math.min(working.seasonGws, Math.max(working.currentGw, gw + 1)),
     lineupLockedGws: working.lineupLockedGws.includes(gw)
       ? working.lineupLockedGws
       : [...working.lineupLockedGws, gw],

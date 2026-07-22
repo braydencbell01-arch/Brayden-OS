@@ -238,6 +238,8 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
 export function groupMatchesByLeague(
   matches: Match[],
   favoriteLeagueIds?: Set<string> | null,
+  favoriteTeamIds?: Set<string> | null,
+  favoritePlayerTeamIds?: Set<string> | null,
 ): Array<{ leagueId: LeagueId; matches: Match[] }> {
   const map = new Map<LeagueId, Match[]>()
   for (const match of matches) {
@@ -246,8 +248,23 @@ export function groupMatchesByLeague(
     else map.set(match.leagueId, [match])
   }
 
+  // Promote leagues that contain a favorited club even when the league itself isn't starred.
+  const boosted = new Set<string>(favoriteLeagueIds ?? [])
+  if (favoriteTeamIds?.size || favoritePlayerTeamIds?.size) {
+    for (const match of matches) {
+      if (
+        favoriteTeamIds?.has(match.home.id) ||
+        favoriteTeamIds?.has(match.away.id) ||
+        favoritePlayerTeamIds?.has(match.home.id) ||
+        favoritePlayerTeamIds?.has(match.away.id)
+      ) {
+        boosted.add(match.leagueId)
+      }
+    }
+  }
+
   return [...map.keys()]
-    .sort((a, b) => compareLeaguesForDisplay(a, b, favoriteLeagueIds))
+    .sort((a, b) => compareLeaguesForDisplay(a, b, boosted))
     .map((leagueId) => ({
       leagueId,
       matches: (map.get(leagueId) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),

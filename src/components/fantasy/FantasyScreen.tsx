@@ -84,6 +84,10 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
   const league = fantasy.activeLeague!
   const [tab, setTab] = useState<HubTab>(() => defaultTab(league))
 
+  useEffect(() => {
+    setTab(defaultTab(league))
+  }, [league.id, league.phase])
+
   const draftPhase =
     league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting'
   const tabs: Array<{ id: HubTab; label: string; hidden?: boolean }> = [
@@ -161,7 +165,14 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
     <div className="space-y-5">
       <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-lime">Invite</h2>
-        <p className="mt-2 text-xs text-mist/55">Share the short code and link with managers.</p>
+        {league.syncBlobId ? (
+          <p className="mt-2 text-xs text-mist/55">Share the short code and link with managers.</p>
+        ) : (
+          <p className="mt-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100/90">
+            This league is saved on this device only. The invite code will not work for friends on
+            another phone until cloud sync is available — use Demo or retry sync later.
+          </p>
+        )}
         <div className="mt-3 rounded-2xl border border-lime/30 bg-lime/10 px-4 py-3">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-lime">Code</p>
           <p className="font-display text-4xl tracking-[0.12em] text-cream">{league.inviteCode}</p>
@@ -171,23 +182,25 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
             {league.syncBlobId}
           </p>
         ) : null}
-        <div className="mt-3 flex gap-2">
-          <FantasyButton
-            onClick={() => {
-              void navigator.clipboard
-                .writeText(shareInviteText(league))
-                .then(() => {
-                  setCopied(true)
-                  window.setTimeout(() => setCopied(false), 1500)
-                })
-                .catch(() => {
-                  alert('Copy failed — long-press the invite code to copy it.')
-                })
-            }}
-          >
-            {copied ? 'Copied' : 'Share invite'}
-          </FantasyButton>
-        </div>
+        {league.syncBlobId ? (
+          <div className="mt-3 flex gap-2">
+            <FantasyButton
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(shareInviteText(league))
+                  .then(() => {
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 1500)
+                  })
+                  .catch(() => {
+                    alert('Copy failed — long-press the invite code to copy it.')
+                  })
+              }}
+            >
+              {copied ? 'Copied' : 'Share invite'}
+            </FantasyButton>
+          </div>
+        ) : null}
       </section>
 
       <FantasyCommissionerChecklist fantasy={fantasy} />
@@ -714,6 +727,14 @@ function DraftBoard({
     }
   }
 
+  if (board.length === 0) {
+    return (
+      <p className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-mist/70">
+        No players match this search or filter.
+      </p>
+    )
+  }
+
   return (
     <ul className="space-y-1.5">
       {board.map((p, index) => {
@@ -1128,6 +1149,11 @@ function WaiversPanel({ fantasy }: { fantasy: FantasyApi }) {
             onChange={(e) => setQ(e.target.value)}
             placeholder={mode === 'wire' ? 'Search waivers' : 'Search free agents'}
           />
+          {players.length === 0 ? (
+            <p className="rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-mist/70">
+              No players match this search or filter.
+            </p>
+          ) : null}
           <ul className="space-y-1.5">
             {players.map((p) => (
               <li

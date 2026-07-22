@@ -228,6 +228,7 @@ export function FantasyHome({
                   draftMode,
                   scoringPreset,
                   quickFillBots,
+                  managerName: name,
                 }),
               'Could not create league',
             )
