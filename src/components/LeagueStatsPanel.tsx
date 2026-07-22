@@ -59,8 +59,8 @@ export function LeagueStatsPanel({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-mist/75">
-        Season leaders · <span className="text-cream/90">{data.seasonLabel}</span>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
+        {data.seasonLabel}
       </p>
 
       {players.length > 0 ? (
