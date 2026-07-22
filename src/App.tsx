@@ -12,10 +12,14 @@ import {
 } from './lib/dates'
 import { LEAGUES, type League, type LeagueId } from './lib/leagues'
 import {
+  dateFromKey,
   dateKeysWithMatches,
+  findNextMatchDate,
+  findPreviousMatchDate,
   groupMatchesByDate,
   matchesForLeagueFrom,
   matchesOnDate,
+  upcomingMatchDays,
   type Match,
 } from './lib/matches'
 import { useLeagueStandings } from './lib/stats/useLeagueStandings'
@@ -59,6 +63,15 @@ function HomeScreen({
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
   const matchDateKeys = useMemo(() => dateKeysWithMatches(matches), [matches])
+  const nextMatchDate = useMemo(
+    () => findNextMatchDate(matches, selectedDate),
+    [matches, selectedDate],
+  )
+  const previousMatchDate = useMemo(
+    () => findPreviousMatchDate(matches, selectedDate),
+    [matches, selectedDate],
+  )
+  const upcoming = useMemo(() => upcomingMatchDays(matches, selectedDate, 4), [matches, selectedDate])
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
@@ -141,12 +154,73 @@ function HomeScreen({
             <p className="text-sm text-mist/70">Loading Big 5 fixtures…</p>
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
-          ) : (
+          ) : dayMatches.length > 0 ? (
             <MatchList
               matches={dayMatches}
               showLeague
-              emptyLabel="No Big 5 matches on this date. Try another day or jump to Today."
+              emptyLabel="No Big 5 matches on this date."
             />
+          ) : (
+            <div className="border border-white/10 bg-white/[0.04] px-4 py-4">
+              <p className="text-sm text-mist/85">
+                No Big 5 matches on this date — European leagues are in the summer break right
+                now. Live ESPN data is connected; fixtures resume in August.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {nextMatchDate && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectDate(nextMatchDate)}
+                    className="border border-lime/50 bg-lime/15 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                  >
+                    Next matchday ·{' '}
+                    {nextMatchDate.toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </button>
+                )}
+                {previousMatchDate && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectDate(previousMatchDate)}
+                    className="border border-white/15 px-3 py-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-mist transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                  >
+                    Last results ·{' '}
+                    {previousMatchDate.toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && upcoming.length > 0 && dayMatches.length === 0 && (
+            <div className="mt-4">
+              <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">
+                Upcoming Big 5 days
+              </p>
+              <ul className="flex flex-col gap-2">
+                {upcoming.map(({ dateKey, count }) => (
+                  <li key={dateKey}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectDate(dateFromKey(dateKey))}
+                      className="flex w-full items-center justify-between border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-lime/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      <span className="text-sm font-semibold text-cream">
+                        {formatMatchDayHeading(dateKey)}
+                      </span>
+                      <span className="font-display text-lg tracking-wide text-lime">
+                        {count} →
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
 
