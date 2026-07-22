@@ -188,7 +188,9 @@ export async function fetchBigFiveWindow(from: Date, to: Date): Promise<Match[]>
     }
   })
 
-  if (matches.length === 0 && errors.length > 0) {
+  // Only fail hard when every league request failed. Empty windows (future
+  // discovery) or partial ESPN outages must not blank Match day.
+  if (errors.length === LEAGUES.length) {
     throw new Error(`Could not load fixtures for ${errors.join(', ')}`)
   }
 
