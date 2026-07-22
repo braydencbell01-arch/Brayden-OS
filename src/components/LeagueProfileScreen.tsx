@@ -1,9 +1,6 @@
 import { useMemo, useState } from 'react'
-import {
-  formatMatchDayHeading,
-  startOfDay,
-  toDateKey,
-} from '../lib/dates'
+import { formatMatchDayHeading, toDateKey } from '../lib/dates'
+import { useToday } from '../lib/useToday'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import type { League } from '../lib/leagues'
 import { groupMatchesByDate, matchesForLeagueFrom, type Match } from '../lib/matches'
@@ -43,7 +40,7 @@ export function LeagueProfileScreen({
   onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
 }) {
-  const today = useMemo(() => startOfDay(new Date()), [])
+  const today = useToday()
   const leagueMatches = useMemo(
     () => matchesForLeagueFrom(matches, league.id, today),
     [matches, league.id, today],

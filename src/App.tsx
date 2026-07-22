@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BottomNav, type BottomTab } from './components/BottomNav'
 import { CalendarStrip } from './components/CalendarStrip'
@@ -24,8 +24,6 @@ type Screen =
   | 'league-profile'
   | 'team'
   | 'player'
-
-type ReturnScreen = BottomTab | 'league-profile'
 
 function formatUpdatedAt(updatedAt: number | null): string {
   if (!updatedAt) return 'Waiting for first sync'
@@ -242,7 +240,10 @@ export default function App() {
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
   const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
-  const [returnScreen, setReturnScreen] = useState<ReturnScreen>('home')
+  /** Bottom tab to restore when overlays fully close (never overwritten by league→team). */
+  const [returnTab, setReturnTab] = useState<BottomTab>('home')
+  /** One-level stack so Team → opponent → Back returns to the previous club. */
+  const previousTeamRef = useRef<FavoriteTeam | null>(null)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
@@ -269,15 +270,17 @@ export default function App() {
     setActiveLeagueId(null)
     setActiveTeam(null)
     setActivePlayer(null)
-    setReturnScreen(tab)
+    previousTeamRef.current = null
+    setReturnTab(tab)
     setScreen(tab)
   }
 
   const openLeague = (id: LeagueId) => {
     if (isTabScreen(screen)) {
-      setReturnScreen(screen)
+      setReturnTab(screen)
       setActiveTab(screen === 'favorites' ? 'favorites' : 'leagues')
     }
+    previousTeamRef.current = null
     setActiveLeagueId(id)
     setActiveTeam(null)
     setActivePlayer(null)
@@ -285,10 +288,14 @@ export default function App() {
   }
 
   const openTeam = (team: FavoriteTeam) => {
-    if (screen !== 'team' && screen !== 'player') {
-      setReturnScreen(screen === 'league-profile' ? 'league-profile' : (screen as ReturnScreen))
-      if (isTabScreen(screen)) setActiveTab(screen)
-      else if (screen === 'league-profile') setActiveTab('leagues')
+    if (screen === 'team' && activeTeam && activeTeam.id !== team.id) {
+      previousTeamRef.current = activeTeam
+    } else if (screen !== 'team' && screen !== 'player') {
+      previousTeamRef.current = null
+      if (isTabScreen(screen)) {
+        setReturnTab(screen)
+        setActiveTab(screen)
+      }
     }
     setActivePlayer(null)
     setActiveTeam(team)
@@ -297,34 +304,51 @@ export default function App() {
 
   const openPlayer = (player: PlayerNavRef) => {
     if (screen !== 'team' && screen !== 'player') {
-      setReturnScreen(screen === 'league-profile' ? 'league-profile' : (screen as ReturnScreen))
-      if (isTabScreen(screen)) setActiveTab(screen)
-      else if (screen === 'league-profile') setActiveTab('leagues')
+      previousTeamRef.current = null
+      if (isTabScreen(screen)) {
+        setReturnTab(screen)
+        setActiveTab(screen)
+      }
     }
     setActivePlayer(player)
     setScreen('player')
   }
 
   const closeOverlay = () => {
-    setActiveTeam(null)
-    setActivePlayer(null)
-    if (returnScreen === 'league-profile' && activeLeagueId) {
-      setScreen('league-profile')
-      setActiveTab('leagues')
+    // Team → Player → Back should return to the team, not skip the stack.
+    if (activePlayer && activeTeam) {
+      setActivePlayer(null)
+      setScreen('team')
       return
     }
-    setActiveLeagueId(null)
-    setScreen(returnScreen)
-    if (isTabScreen(returnScreen)) setActiveTab(returnScreen)
+
+    // Team → opponent → Back should restore the previous club.
+    if (previousTeamRef.current) {
+      const previous = previousTeamRef.current
+      previousTeamRef.current = null
+      setActivePlayer(null)
+      setActiveTeam(previous)
+      setScreen('team')
+      return
+    }
+
+    setActiveTeam(null)
+    setActivePlayer(null)
+    if (activeLeagueId) {
+      setScreen('league-profile')
+      return
+    }
+    setScreen(returnTab)
+    setActiveTab(returnTab)
   }
 
   const closeLeagueProfile = () => {
     setActiveLeagueId(null)
     setActiveTeam(null)
     setActivePlayer(null)
-    setScreen('leagues')
-    setActiveTab('leagues')
-    setReturnScreen('leagues')
+    previousTeamRef.current = null
+    setScreen(returnTab)
+    setActiveTab(returnTab)
   }
 
   const navActive: BottomTab =

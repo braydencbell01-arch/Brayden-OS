@@ -351,7 +351,8 @@ async function fetchStandingsForSeason(
   }
 
   const data = (await res.json()) as EspnStandingsResponse
-  const entries = data.children?.[0]?.standings?.entries ?? []
+  const entries =
+    data.children?.flatMap((child) => child.standings?.entries ?? []) ?? []
 
   return entries
     .map((entry, index) => {
@@ -682,7 +683,8 @@ function buildOrderedSeasonStatsFromAthleteStats(
   const rows = category?.statistics ?? []
   const row =
     rows.find((item) => item.leagueSlug === leagueSlug) ||
-    rows[0] ||
+    // Prefer a club-league row over an unrelated first split (often national team).
+    rows.find((item) => item.leagueSlug && item.leagueSlug.includes('.')) ||
     null
   if (!row?.stats?.length || names.length === 0) {
     return { stats: [], seasonLabel: null, seasonYear: null }
