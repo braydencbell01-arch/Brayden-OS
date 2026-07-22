@@ -20,7 +20,9 @@ export type LeagueId =
   | 'eliteserien'
   | 'j1-league'
   | 'saudi-pro-league'
+  | 'a-league'
   | 'czech-first-league'
+  | 'cyprus-first-division'
 
 export type League = {
   id: LeagueId
@@ -34,8 +36,8 @@ export type League = {
  * Display / Match day order: most important competitions first.
  * `groupMatchesByLeague` and the Leagues screen both follow this array order.
  *
- * Only include leagues with a working ESPN scoreboard slug — unsupported codes
- * (e.g. pol.1 / cro.1 / ukr.1) 400 and used to blank Match day.
+ * Only include leagues with a working ESPN scoreboard slug.
+ * ESPN does not serve Serbian SuperLiga (or POL/CRO/UKR domestic leagues).
  */
 export const LEAGUES: League[] = [
   {
@@ -186,11 +188,25 @@ export const LEAGUES: League[] = [
     espnCode: 'ksa.1',
   },
   {
+    id: 'a-league',
+    name: 'A-League Men',
+    short: 'AUS',
+    country: 'Australia',
+    espnCode: 'aus.1',
+  },
+  {
     id: 'czech-first-league',
     name: 'Czech First League',
     short: 'CZE',
     country: 'Czechia',
     espnCode: 'cze.1',
+  },
+  {
+    id: 'cyprus-first-division',
+    name: 'Cyprus First Division',
+    short: 'CYP',
+    country: 'Cyprus',
+    espnCode: 'cyp.1',
   },
 ]
 
