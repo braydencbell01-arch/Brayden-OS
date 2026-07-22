@@ -17,6 +17,8 @@ export type Match = {
   leagueId: LeagueId
   kickoff: string
   dateKey: string
+  /** False when ESPN has a date but no reliable kickoff clock yet. */
+  kickoffTimeKnown: boolean
   status: MatchStatus
   statusText: string
   home: MatchTeam
@@ -51,6 +53,7 @@ type EspnEvent = {
   }
   competitions?: Array<{
     date?: string
+    timeValid?: boolean
     venue?: { fullName?: string }
     competitors?: EspnCompetitor[]
     status?: EspnEvent['status']
@@ -84,11 +87,14 @@ function parseScore(value: string | undefined, status: MatchStatus): number | nu
 
 function mapCompetitor(comp: EspnCompetitor | undefined, status: MatchStatus): MatchTeam {
   const team = comp?.team
-  const name = team?.displayName || team?.name || 'TBD'
+  const rawName = team?.displayName || team?.name
+  const name = rawName && rawName.trim() ? rawName : 'Not available'
+  const shortRaw = team?.shortDisplayName || team?.abbreviation || team?.name
+  const shortName = shortRaw && shortRaw.trim() && shortRaw !== 'TBD' ? shortRaw : 'Not available'
   return {
     id: team?.id || name.toLowerCase().replace(/\s+/g, '-'),
-    name,
-    shortName: team?.shortDisplayName || team?.abbreviation || team?.name || 'TBD',
+    name: name === 'TBD' ? 'Not available' : name,
+    shortName: shortName === 'TBD' ? 'Not available' : shortName,
     abbreviation: team?.abbreviation || '—',
     score: parseScore(comp?.score, status),
   }
@@ -112,6 +118,7 @@ function normalizeEvent(event: EspnEvent, leagueId: LeagueId): Match | null {
   const competitors = competition?.competitors ?? []
   const home = competitors.find((c) => c.homeAway === 'home') ?? competitors[0]
   const away = competitors.find((c) => c.homeAway === 'away') ?? competitors[1]
+  const venue = competition?.venue?.fullName?.trim()
 
   return {
     id: `${leagueId}-${event.id}`,
@@ -119,11 +126,12 @@ function normalizeEvent(event: EspnEvent, leagueId: LeagueId): Match | null {
     leagueId,
     kickoff,
     dateKey: dateKeyFromIso(kickoff),
+    kickoffTimeKnown: competition?.timeValid !== false,
     status,
     statusText,
     home: mapCompetitor(home, status),
     away: mapCompetitor(away, status),
-    venue: competition?.venue?.fullName,
+    venue: venue || undefined,
   }
 }
 
@@ -177,14 +185,18 @@ export function matchesForLeagueFrom(
   matches: Match[],
   leagueId: LeagueId,
   from: Date,
-  to: Date,
+  to?: Date,
 ): Match[] {
   const fromKey = toDateKey(startOfDay(from))
-  const toKey = toDateKey(startOfDay(to))
-  return matches.filter(
-    (match) =>
-      match.leagueId === leagueId && match.dateKey >= fromKey && match.dateKey <= toKey,
-  )
+  const toKey = to ? toDateKey(startOfDay(to)) : null
+  return matches
+    .filter((match) => {
+      if (match.leagueId !== leagueId) return false
+      if (match.dateKey < fromKey) return false
+      if (toKey != null && match.dateKey > toKey) return false
+      return true
+    })
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff))
 }
 
 export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; matches: Match[] }> {
@@ -317,7 +329,6 @@ export function splitTeamFixtures(
         (match.status === 'other' && match.dateKey >= todayKey),
     )
     .sort((a, b) => a.kickoff.localeCompare(b.kickoff))
-    .slice(0, 8)
 
   return { recent, upcoming }
 }

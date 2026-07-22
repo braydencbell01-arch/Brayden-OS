@@ -17,7 +17,10 @@ export function MatchStatsPanel({
   if (scheduled) {
     return (
       <p className="mt-3 text-xs text-mist/65">
-        Lineups and Brayden Ratings unlock at kickoff.
+        Lineup: Not available
+        <span className="mt-1 block text-mist/55">
+          Ratings and full match stats unlock at kickoff.
+        </span>
       </p>
     )
   }
@@ -30,7 +33,9 @@ export function MatchStatsPanel({
     return <p className="mt-3 text-xs text-mist/70">{error}</p>
   }
 
-  if (!stats) return null
+  if (!stats) {
+    return <p className="mt-3 text-xs text-mist/65">Not available</p>
+  }
 
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
@@ -39,8 +44,7 @@ export function MatchStatsPanel({
           Lineups + ratings
         </p>
         <p className="mb-3 text-xs text-mist/65">
-          Tap a player for their profile. Brayden Rating = match performance out of 100, shown as /10
-          (e.g. 26/100 → 2.6).
+          Tap a player for their profile. Ratings start at 5.0 and average out over the match.
         </p>
         <MatchLineupPanel lineups={stats.lineups} onOpenPlayer={onOpenPlayer} />
       </div>
@@ -52,16 +56,20 @@ export function MatchStatsPanel({
               key={line.key}
               className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs"
             >
-              <span className="text-right font-semibold tabular-nums text-cream">{line.home}</span>
+              <span className="text-right font-semibold tabular-nums text-cream">
+                {line.home && line.home !== '—' ? line.home : 'Not available'}
+              </span>
               <span className="min-w-[5.5rem] text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/65">
                 {line.label}
               </span>
-              <span className="text-left font-semibold tabular-nums text-cream">{line.away}</span>
+              <span className="text-left font-semibold tabular-nums text-cream">
+                {line.away && line.away !== '—' ? line.away : 'Not available'}
+              </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-mist/65">No team stats published for this match yet.</p>
+        <p className="text-xs text-mist/65">Not available</p>
       )}
 
       {stats.moments.length > 0 && (
@@ -74,9 +82,9 @@ export function MatchStatsPanel({
                   moment.kind === 'goal' ? 'text-lime' : 'text-mist/70',
                 ].join(' ')}
               >
-                {moment.clock || '—'}
+                {moment.clock || 'Not available'}
               </span>
-              <span>{moment.text}</span>
+              <span>{moment.text || 'Not available'}</span>
             </li>
           ))}
         </ul>

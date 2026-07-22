@@ -32,11 +32,13 @@ function toPlayerNav(player: MatchLineupPlayer): PlayerNavRef {
 }
 
 function statusLabel(match: Match): string {
-  if (match.status === 'scheduled') return formatKickoffTime(match.kickoff)
+  if (match.status === 'scheduled') {
+    return match.kickoffTimeKnown ? formatKickoffTime(match.kickoff) : 'Not available'
+  }
   if (match.status === 'live') return 'LIVE'
   if (match.status === 'finished') return 'FT'
   if (match.status === 'postponed') return 'PPD'
-  return match.statusText
+  return match.statusText || 'Not available'
 }
 
 function Score({ match }: { match: Match }) {
@@ -123,7 +125,9 @@ function ExpandableMatchRow({
         >
           <p className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
-            <span>{showLeague ? league.short : match.venue || league.country}</span>
+            <span>
+              {showLeague ? league.short : match.venue || 'Not available'}
+            </span>
           </p>
           <p
             className={[
