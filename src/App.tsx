@@ -128,16 +128,7 @@ function HomeScreen({
           <BrandMark />
         </div>
 
-        <HomeSearch
-          matches={matches}
-          favoriteTeams={favorites.teams}
-          favoritePlayers={favorites.players}
-          onOpenLeague={onOpenLeague}
-          onOpenTeam={onOpenTeam}
-          onOpenPlayer={onOpenPlayer}
-        />
-
-        <header className="mb-5">
+        <header className="mb-4">
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -176,17 +167,27 @@ function HomeScreen({
           </div>
         </header>
 
-        <CalendarStrip
-          selected={selectedDate}
-          onSelect={onSelectDate}
-          onJumpToToday={onJumpToToday}
-          onNeedRange={onNeedMatchRange}
-          favoriteDateKeys={favoriteDateKeys}
-          minForwardDays={knownForwardDays}
-          reduce={reduce}
-        />
+        <div className="sticky top-0 z-30 -mx-5 mb-5 border-b border-white/10 bg-pitch-deep/92 px-5 pb-3 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md md:-mx-6 md:px-6">
+          <HomeSearch
+            matches={matches}
+            favoriteTeams={favorites.teams}
+            favoritePlayers={favorites.players}
+            onOpenLeague={onOpenLeague}
+            onOpenTeam={onOpenTeam}
+            onOpenPlayer={onOpenPlayer}
+          />
+          <CalendarStrip
+            selected={selectedDate}
+            onSelect={onSelectDate}
+            onJumpToToday={onJumpToToday}
+            onNeedRange={onNeedMatchRange}
+            favoriteDateKeys={favoriteDateKeys}
+            minForwardDays={knownForwardDays}
+            reduce={reduce}
+          />
+        </div>
 
-        <section className="mt-6" aria-label="Fixtures for selected date">
+        <section className="mt-1" aria-label="Fixtures for selected date">
           <div className="mb-2.5 flex items-end justify-between gap-3 px-1">
             <div>
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-lime/80">
@@ -204,22 +205,64 @@ function HomeScreen({
           ) : (
             <>
               {error && dayMatches.length === 0 ? (
-                <p className="text-sm text-mist/80">{error}</p>
+                <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
+                  <p className="text-sm text-mist/80">{error}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={onRefresh}
+                      className="rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+                    >
+                      Retry
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onJumpToToday}
+                      className="rounded-full border border-white/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-mist transition hover:border-lime/40 hover:text-lime"
+                    >
+                      Today
+                    </button>
+                  </div>
+                </div>
               ) : null}
               {error && dayMatches.length > 0 ? (
-                <p className="mb-3 text-sm text-mist/70">{error}</p>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-mist/70">
+                  <p>{error}</p>
+                  <button
+                    type="button"
+                    onClick={onRefresh}
+                    className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : null}
               {!error || dayMatches.length > 0 ? (
-                <MatchDayByLeague
-                  matches={dayMatches}
-                  dateKey={toDateKey(selectedDate)}
-                  onOpenTeam={onOpenTeam}
-                  onOpenPlayer={onOpenPlayer}
-                  favoriteLeagueIds={favorites.leagueIds}
-                  favoriteTeamIds={favorites.teamIds}
-                  favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
-                  emptyLabel="No matches on this date. Try another day or jump to Today."
-                />
+                dayMatches.length === 0 ? (
+                  <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
+                    <p className="text-sm text-mist/70">
+                      No matches on this date. Try another day or jump back to Today.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onJumpToToday}
+                      className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+                    >
+                      Jump to Today
+                    </button>
+                  </div>
+                ) : (
+                  <MatchDayByLeague
+                    matches={dayMatches}
+                    dateKey={toDateKey(selectedDate)}
+                    onOpenTeam={onOpenTeam}
+                    onOpenPlayer={onOpenPlayer}
+                    favoriteLeagueIds={favorites.leagueIds}
+                    favoriteTeamIds={favorites.teamIds}
+                    favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
+                    emptyLabel="No matches on this date. Try another day or jump to Today."
+                  />
+                )
               ) : null}
             </>
           )}
@@ -474,6 +517,7 @@ export default function App() {
               onOpenLeague={openLeague}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
+              onBrowseLeagues={() => selectTab('leagues')}
               reduce={reduce}
             />
           </motion.div>
@@ -499,7 +543,11 @@ export default function App() {
             exit={reduce ? undefined : { opacity: 0, y: 24 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <PlaceholderScreen title="Stats" reduce={reduce} />
+            <PlaceholderScreen
+              title="Stats"
+              reduce={reduce}
+              onBrowseLeagues={() => selectTab('leagues')}
+            />
           </motion.div>
         ) : screen === 'fantasy' ? (
           <motion.div

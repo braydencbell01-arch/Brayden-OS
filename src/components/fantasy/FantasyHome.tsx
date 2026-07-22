@@ -122,6 +122,36 @@ export function FantasyHome({
             placeholder="e.g. Brayden"
           />
 
+          {fantasy.leagues.length > 0 ? (
+            <div className="mb-2">
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-mist/60">
+                Your leagues
+              </h2>
+              <ul className="space-y-2">
+                {fantasy.leagues.map((league) => (
+                  <li key={league.id}>
+                    <button
+                      type="button"
+                      onClick={() => fantasy.setActiveLeagueId(league.id)}
+                      className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-lime/40 hover:bg-white/[0.07]"
+                    >
+                      <span>
+                        <span className="block font-semibold text-cream">{league.name}</span>
+                        <span className="text-xs text-mist/60">
+                          {phaseLabel(league.phase)} · {league.draftMode} · {league.members.length}/
+                          {league.teamCount} · {league.draftClockSeconds || 90}s clock
+                        </span>
+                      </span>
+                      <span className="text-lime" aria-hidden>
+                        →
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div className="grid gap-2 sm:grid-cols-2">
             <FantasyButton
               disabled={busy || !fantasy.catalog}
@@ -146,6 +176,9 @@ export function FantasyHome({
               Join with invite
             </FantasyButton>
           </div>
+          {!fantasy.catalog && !fantasy.catalogError ? (
+            <p className="text-xs text-mist/55">Loading player catalog…</p>
+          ) : null}
 
           <FantasyButton
             variant="ghost"
@@ -164,36 +197,6 @@ export function FantasyHome({
             Enable reminders
           </FantasyButton>
           {reminderStatus ? <p className="text-xs text-mist/60">{reminderStatus}</p> : null}
-
-          {fantasy.leagues.length > 0 ? (
-            <div className="mt-7">
-              <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-mist/60">
-                Your leagues
-              </h2>
-              <ul className="space-y-2">
-                {fantasy.leagues.map((league) => (
-                  <li key={league.id}>
-                    <button
-                      type="button"
-                      onClick={() => fantasy.setActiveLeagueId(league.id)}
-                      className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-lime/40 hover:bg-white/[0.07]"
-                    >
-                      <span>
-                        <span className="block font-semibold text-cream">{league.name}</span>
-                        <span className="text-xs text-mist/60">
-                          {phaseLabel(league.phase)} - {league.draftMode} - {league.members.length}/
-                          {league.teamCount} - {league.draftClockSeconds || 90}s clock
-                        </span>
-                      </span>
-                      <span className="text-lime" aria-hidden>
-                        -&gt;
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
 
           <details className="mt-7 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-mist/70">
             <summary className="cursor-pointer font-semibold text-cream">League defaults</summary>
