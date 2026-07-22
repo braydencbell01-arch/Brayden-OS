@@ -1,3 +1,4 @@
+import { pushActivity } from './activity'
 import { canAddPosition } from './lineup'
 import { suggestStarters } from './lineup'
 import type { DraftPick, FantasyLeague, FantasyMember, FantasyPlayer } from './types'
@@ -36,7 +37,7 @@ export function nextDeadline(now: number, clockSeconds: number): number {
   return now + Math.max(15, clockSeconds) * 1000
 }
 
-function finishDraftIfNeeded(
+export function finishDraftIfNeeded(
   league: FantasyLeague,
   catalog?: Map<number, FantasyPlayer>,
 ): FantasyLeague {
@@ -69,7 +70,7 @@ function finishDraftIfNeeded(
       matchups: buildRegularSeasonMatchups(next.members, next.playoffStartGw),
     }
   }
-  return next
+  return pushActivity(next, 'draft_complete', 'Draft complete')
 }
 
 export function applyDraftPick(
@@ -115,7 +116,9 @@ export function applyDraftPick(
   }
 
   const members = league.members.map((m) =>
-    m.id === memberId ? { ...m, roster: [...m.roster, playerId] } : m,
+    m.id === memberId
+      ? { ...m, roster: [...m.roster, playerId], draftQueue: (m.draftQueue ?? []).filter((id) => id !== playerId) }
+      : m,
   )
 
   let next: FantasyLeague = {
@@ -130,6 +133,8 @@ export function applyDraftPick(
     updatedAt: now,
   }
 
+  next = pushActivity(next, 'draft_pick', `${member.name} drafted player #${playerId}`, memberId)
+
   return finishDraftIfNeeded(next, opts.catalog)
 }
 
@@ -139,6 +144,14 @@ export function pickAutodraftPlayer(
   taken: Set<number>,
   catalog: Map<number, FantasyPlayer>,
 ): number | null {
+  for (const queuedId of member.draftQueue ?? []) {
+    const queued = catalog.get(queuedId)
+    if (!queued || queued.status === 'u' || taken.has(queued.id)) continue
+    if (canAddPosition(member.roster, queued.pos, POSITION_LIMITS, catalog)) {
+      return queued.id
+    }
+  }
+
   const ranked = [...catalog.values()]
     .filter((p) => !taken.has(p.id) && p.status !== 'u')
     .sort(
@@ -173,13 +186,13 @@ export function setDraftOrder(league: FantasyLeague, order: string[]): FantasyLe
     draftSlot: order.indexOf(m.id) + 1,
   }))
 
-  return {
+  return pushActivity({
     ...league,
     members,
     draftOrder: order,
     phase: 'draft_setup',
     updatedAt: Date.now(),
-  }
+  }, 'draft_order', 'Draft order set')
 }
 
 export function startDraft(league: FantasyLeague): FantasyLeague {
@@ -193,7 +206,7 @@ export function startDraft(league: FantasyLeague): FantasyLeague {
     throw new Error('Set draft order first')
   }
   const now = Date.now()
-  return {
+  return pushActivity({
     ...league,
     phase: 'drafting',
     draftPicks: [],
@@ -204,7 +217,7 @@ export function startDraft(league: FantasyLeague): FantasyLeague {
       league.draftClockSeconds || DEFAULT_DRAFT_CLOCK_SECONDS,
     ),
     updatedAt: now,
-  }
+  }, 'draft_start', 'Snake draft started')
 }
 
 /**
