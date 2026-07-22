@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
-type LeagueId = 'premier-league' | 'la-liga' | 'bundesliga' | 'serie-a' | 'ligue-1'
+type LeagueId =
+  | 'premier-league'
+  | 'la-liga'
+  | 'bundesliga'
+  | 'serie-a'
+  | 'ligue-1'
+  | 'mls'
+  | 'eredivisie'
 
 type League = {
   id: LeagueId
@@ -11,11 +18,13 @@ type League = {
 }
 
 const LEAGUES: League[] = [
-  { id: 'premier-league', name: 'Premier League', short: 'EPL', country: 'England' },
+  { id: 'premier-league', name: 'Premier League', short: 'ENG', country: 'England' },
   { id: 'la-liga', name: 'La Liga', short: 'ESP', country: 'Spain' },
   { id: 'bundesliga', name: 'Bundesliga', short: 'GER', country: 'Germany' },
   { id: 'serie-a', name: 'Serie A', short: 'ITA', country: 'Italy' },
   { id: 'ligue-1', name: 'Ligue 1', short: 'FRA', country: 'France' },
+  { id: 'mls', name: 'MLS', short: 'USA', country: 'USA' },
+  { id: 'eredivisie', name: 'Eredivisie', short: 'NED', country: 'NED' },
 ]
 
 function buildCalendarDays(center: Date, span = 21) {
