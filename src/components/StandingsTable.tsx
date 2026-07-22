@@ -1,4 +1,5 @@
 import type { LeagueId } from '../lib/leagues'
+import type { FavoriteTeam } from '../lib/favorites'
 import type { StandingRow } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
 
@@ -9,18 +10,15 @@ export function StandingsTable({
   leagueId,
   isTeamFavorite,
   onToggleTeam,
+  onOpenTeam,
 }: {
   rows: StandingRow[]
   loading: boolean
   error: string | null
   leagueId: LeagueId
   isTeamFavorite: (teamId: string) => boolean
-  onToggleTeam: (team: {
-    id: string
-    name: string
-    shortName: string
-    leagueId: LeagueId
-  }) => void
+  onToggleTeam: (team: FavoriteTeam) => void
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (loading) {
     return <p className="text-sm text-mist/70">Loading table…</p>
@@ -55,6 +53,12 @@ export function StandingsTable({
         <tbody>
           {rows.map((row) => {
             const active = isTeamFavorite(row.teamId)
+            const teamRef: FavoriteTeam = {
+              id: row.teamId,
+              name: row.team,
+              shortName: row.shortName,
+              leagueId,
+            }
             return (
               <tr key={`${row.rank}-${row.teamId}`} className="border-t border-white/10">
                 <td className="px-3 py-2 tabular-nums text-mist/80">{row.rank}</td>
@@ -63,18 +67,21 @@ export function StandingsTable({
                     active={active}
                     size="sm"
                     label={row.shortName}
-                    onToggle={() =>
-                      onToggleTeam({
-                        id: row.teamId,
-                        name: row.team,
-                        shortName: row.shortName,
-                        leagueId,
-                      })
-                    }
+                    onToggle={() => onToggleTeam(teamRef)}
                   />
                 </td>
                 <td className="px-3 py-2 font-semibold text-cream">
-                  {row.shortName}
+                  {onOpenTeam ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenTeam(teamRef)}
+                      className="text-left underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {row.shortName}
+                    </button>
+                  ) : (
+                    row.shortName
+                  )}
                   {row.note ? (
                     <span className="mt-0.5 block text-[0.6rem] font-medium normal-case tracking-normal text-mist/55">
                       {row.note}

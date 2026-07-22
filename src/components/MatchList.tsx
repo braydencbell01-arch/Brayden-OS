@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getLeague } from '../lib/leagues'
+import type { FavoriteTeam } from '../lib/favorites'
 import { formatKickoffTime } from '../lib/dates'
 import type { Match } from '../lib/matches'
 import { useMatchDetailStats } from '../lib/stats/useMatchDetailStats'
@@ -27,12 +28,50 @@ function Score({ match }: { match: Match }) {
   )
 }
 
+function TeamNameButton({
+  match,
+  side,
+  onOpenTeam,
+}: {
+  match: Match
+  side: 'home' | 'away'
+  onOpenTeam?: (team: FavoriteTeam) => void
+}) {
+  const team = side === 'home' ? match.home : match.away
+  const align = side === 'home' ? 'text-right' : 'text-left'
+
+  if (!onOpenTeam) {
+    return (
+      <p className={`${align} text-sm font-semibold text-cream sm:text-base`}>{team.shortName}</p>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        onOpenTeam({
+          id: team.id,
+          name: team.name,
+          shortName: team.shortName,
+          leagueId: match.leagueId,
+        })
+      }
+      className={`${align} text-sm font-semibold text-cream underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
+    >
+      {team.shortName}
+    </button>
+  )
+}
+
 function ExpandableMatchRow({
   match,
   showLeague = false,
+  onOpenTeam,
 }: {
   match: Match
   showLeague?: boolean
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   const [open, setOpen] = useState(false)
   const league = getLeague(match.leagueId)
@@ -41,13 +80,13 @@ function ExpandableMatchRow({
 
   return (
     <article className="border border-white/10 bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        className="w-full px-4 py-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
-      >
-        <div className="mb-2 flex items-center justify-between gap-3">
+      <div className="px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          className="mb-2 flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
+        >
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {showLeague ? league.short : match.venue || league.country}
           </p>
@@ -60,18 +99,14 @@ function ExpandableMatchRow({
             {status}
             <span className="ml-2 text-mist/50">{open ? '▴' : '▾'} stats</span>
           </p>
-        </div>
+        </button>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <p className="text-right text-sm font-semibold text-cream sm:text-base">
-            {match.home.shortName}
-          </p>
+          <TeamNameButton match={match} side="home" onOpenTeam={onOpenTeam} />
           <Score match={match} />
-          <p className="text-left text-sm font-semibold text-cream sm:text-base">
-            {match.away.shortName}
-          </p>
+          <TeamNameButton match={match} side="away" onOpenTeam={onOpenTeam} />
         </div>
-      </button>
+      </div>
 
       {open && (
         <div className="px-4 pb-3">
@@ -91,10 +126,12 @@ export function MatchList({
   matches,
   showLeague = false,
   emptyLabel,
+  onOpenTeam,
 }: {
   matches: Match[]
   showLeague?: boolean
   emptyLabel: string
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (matches.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
@@ -104,7 +141,7 @@ export function MatchList({
     <ul className="flex flex-col gap-2">
       {matches.map((match) => (
         <li key={match.id}>
-          <ExpandableMatchRow match={match} showLeague={showLeague} />
+          <ExpandableMatchRow match={match} showLeague={showLeague} onOpenTeam={onOpenTeam} />
         </li>
       ))}
     </ul>

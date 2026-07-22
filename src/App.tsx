@@ -5,6 +5,7 @@ import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
 import { MatchList } from './components/MatchList'
 import { StandingsTable } from './components/StandingsTable'
+import { TeamProfileScreen } from './components/TeamProfileScreen'
 import {
   addDays,
   CALENDAR_RADIUS_DAYS,
@@ -12,7 +13,7 @@ import {
   startOfDay,
   toDateKey,
 } from './lib/dates'
-import { useFavorites, type FavoritesApi } from './lib/favorites'
+import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favorites'
 import { LEAGUES, type League, type LeagueId } from './lib/leagues'
 import {
   dateKeysForFavorites,
@@ -24,7 +25,7 @@ import {
 import { useLeagueStandings } from './lib/stats/useLeagueStandings'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
-type Screen = 'home' | 'league' | 'favorites'
+type Screen = 'home' | 'league' | 'favorites' | 'team'
 
 function formatUpdatedAt(updatedAt: number | null): string {
   if (!updatedAt) return 'Waiting for first sync'
@@ -67,6 +68,7 @@ function HomeScreen({
   onSelectDate,
   onJumpToToday,
   onOpenLeague,
+  onOpenTeam,
   onOpenFavorites,
   matches,
   loading,
@@ -82,6 +84,7 @@ function HomeScreen({
   onSelectDate: (date: Date) => void
   onJumpToToday: () => void
   onOpenLeague: (id: LeagueId) => void
+  onOpenTeam: (team: FavoriteTeam) => void
   onOpenFavorites: () => void
   matches: Match[]
   loading: boolean
@@ -188,6 +191,7 @@ function HomeScreen({
             <MatchList
               matches={dayMatches}
               showLeague
+              onOpenTeam={onOpenTeam}
               emptyLabel="No matches on this date. Try another day or jump to Today."
             />
           )}
@@ -260,6 +264,7 @@ function LeagueScreen({
   error,
   favorites,
   onBack,
+  onOpenTeam,
   onOpenFavorites,
   reduce,
 }: {
@@ -269,6 +274,7 @@ function LeagueScreen({
   error: string | null
   favorites: FavoritesApi
   onBack: () => void
+  onOpenTeam: (team: FavoriteTeam) => void
   onOpenFavorites: () => void
   reduce: boolean | null
 }) {
@@ -344,7 +350,7 @@ function LeagueScreen({
         >
           <div className="mb-3 px-1">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
-            <p className="mt-1 text-sm text-mist/80">Star a club between # and its name</p>
+            <p className="mt-1 text-sm text-mist/80">Tap a club name for its profile · star to favorite</p>
           </div>
           <StandingsTable
             rows={standings.rows}
@@ -353,6 +359,7 @@ function LeagueScreen({
             leagueId={league.id}
             isTeamFavorite={favorites.isTeamFavorite}
             onToggleTeam={favorites.toggleTeam}
+            onOpenTeam={onOpenTeam}
           />
         </motion.section>
 
@@ -388,7 +395,7 @@ function LeagueScreen({
                     </span>
                   )}
                 </div>
-                <MatchList matches={dayMatches} emptyLabel="No matches" />
+                <MatchList matches={dayMatches} onOpenTeam={onOpenTeam} emptyLabel="No matches" />
               </section>
             ))
           )}
@@ -406,6 +413,8 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [screen, setScreen] = useState<Screen>('home')
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
+  const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
+  const [teamReturnScreen, setTeamReturnScreen] = useState<Exclude<Screen, 'team'>>('home')
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
@@ -413,19 +422,57 @@ export default function App() {
 
   const openLeague = (id: LeagueId) => {
     setActiveLeagueId(id)
+    setActiveTeam(null)
     setScreen('league')
   }
 
-  const openFavorites = () => setScreen('favorites')
+  const openFavorites = () => {
+    setActiveTeam(null)
+    setScreen('favorites')
+  }
+
+  const openTeam = (team: FavoriteTeam) => {
+    if (screen !== 'team') {
+      setTeamReturnScreen(screen)
+    }
+    setActiveTeam(team)
+    setScreen('team')
+  }
+
+  const closeTeam = () => {
+    setActiveTeam(null)
+    setScreen(teamReturnScreen)
+  }
 
   const goHome = () => {
     setActiveLeagueId(null)
+    setActiveTeam(null)
     setScreen('home')
   }
 
   return (
     <AnimatePresence mode="wait">
-      {screen === 'favorites' ? (
+      {screen === 'team' && activeTeam ? (
+        <motion.div
+          key={`team-${activeTeam.id}`}
+          initial={reduce ? false : { opacity: 0, x: 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={reduce ? undefined : { opacity: 0, x: 40 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <TeamProfileScreen
+            team={activeTeam}
+            matches={matches}
+            loading={loading}
+            error={error}
+            favorites={favorites}
+            onBack={closeTeam}
+            onOpenTeam={openTeam}
+            onOpenFavorites={openFavorites}
+            reduce={reduce}
+          />
+        </motion.div>
+      ) : screen === 'favorites' ? (
         <motion.div
           key="favorites"
           initial={reduce ? false : { opacity: 0, y: 24 }}
@@ -437,6 +484,7 @@ export default function App() {
             favorites={favorites}
             onBack={goHome}
             onOpenLeague={openLeague}
+            onOpenTeam={openTeam}
             reduce={reduce}
           />
         </motion.div>
@@ -455,6 +503,7 @@ export default function App() {
             error={error}
             favorites={favorites}
             onBack={goHome}
+            onOpenTeam={openTeam}
             onOpenFavorites={openFavorites}
             reduce={reduce}
           />
@@ -472,6 +521,7 @@ export default function App() {
             onSelectDate={setSelectedDate}
             onJumpToToday={jumpToToday}
             onOpenLeague={openLeague}
+            onOpenTeam={openTeam}
             onOpenFavorites={openFavorites}
             matches={matches}
             loading={loading}

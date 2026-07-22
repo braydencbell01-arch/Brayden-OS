@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
-import type { FavoritesApi } from '../lib/favorites'
+import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { FavoriteStar } from './FavoriteStar'
 
 type FavoritesSection = 'leagues' | 'teams' | 'players'
@@ -10,11 +10,13 @@ export function FavoritesScreen({
   favorites,
   onBack,
   onOpenLeague,
+  onOpenTeam,
   reduce,
 }: {
   favorites: FavoritesApi
   onBack: () => void
   onOpenLeague: (id: LeagueId) => void
+  onOpenTeam: (team: FavoriteTeam) => void
   reduce: boolean | null
 }) {
   const [openSection, setOpenSection] = useState<FavoritesSection | null>('leagues')
@@ -163,7 +165,7 @@ export function FavoritesScreen({
                                   />
                                   <button
                                     type="button"
-                                    onClick={() => onOpenLeague(team.leagueId)}
+                                    onClick={() => onOpenTeam(team)}
                                     className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                   >
                                     <span>
@@ -174,7 +176,7 @@ export function FavoritesScreen({
                                         {league.short}
                                       </span>
                                     </span>
-                                    <span className="text-lime">→</span>
+                                    <span className="text-lime">Profile →</span>
                                   </button>
                                 </div>
                               </li>
