@@ -1,17 +1,29 @@
-/** Default forward horizon (+ upcoming league fixtures). */
+/** Default forward horizon for league upcoming when no discovery yet. */
 export const CALENDAR_RADIUS_DAYS = 100
 
 /** Days loaded behind today on first sync / calendar start. */
 export const CALENDAR_INITIAL_PAST_DAYS = 100
 
-/** Days shown ahead of today on the home calendar. */
-export const CALENDAR_FORWARD_DAYS = 100
+/** Days shown ahead of today before discovery / scroll extend. */
+export const CALENDAR_INITIAL_FORWARD_DAYS = 100
+
+/** @deprecated Prefer CALENDAR_INITIAL_FORWARD_DAYS — kept for older call sites. */
+export const CALENDAR_FORWARD_DAYS = CALENDAR_INITIAL_FORWARD_DAYS
 
 /** How many extra past days to append when scrolling near the start. */
 export const CALENDAR_PAST_CHUNK_DAYS = 60
 
-/** ESPN scoreboard fetch slice size for historical windows. */
+/** How many extra future days to append when scrolling near the end. */
+export const CALENDAR_FORWARD_CHUNK_DAYS = 60
+
+/** ESPN scoreboard fetch slice size for historical / future windows. */
 export const MATCH_FETCH_CHUNK_DAYS = 45
+
+/** Hard cap while probing ESPN for the last published fixture. */
+export const MATCH_FORWARD_DISCOVERY_MAX_DAYS = 400
+
+/** Stop probing after this many consecutive empty future chunks. */
+export const MATCH_FORWARD_EMPTY_CHUNKS_TO_STOP = 2
 
 export function startOfDay(date: Date): Date {
   const next = new Date(date)

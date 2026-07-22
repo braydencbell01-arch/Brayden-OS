@@ -71,6 +71,7 @@ function HomeScreen({
   onSelectDate,
   onJumpToToday,
   onNeedMatchRange,
+  knownForwardDays,
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
@@ -89,6 +90,7 @@ function HomeScreen({
   onSelectDate: (date: Date) => void
   onJumpToToday: () => void
   onNeedMatchRange: (from: Date, to: Date) => void
+  knownForwardDays: number
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
@@ -182,6 +184,7 @@ function HomeScreen({
           onJumpToToday={onJumpToToday}
           onNeedRange={onNeedMatchRange}
           favoriteDateKeys={favoriteDateKeys}
+          minForwardDays={knownForwardDays}
           reduce={reduce}
         />
 
@@ -279,8 +282,18 @@ function HomeScreen({
 export default function App() {
   const reduce = useReducedMotion()
   const favorites = useFavorites()
-  const { matches, loading, error, updatedAt, refreshing, hasLive, refresh, ensureRange, ensureDate } =
-    useLiveBigFiveMatches()
+  const {
+    matches,
+    loading,
+    error,
+    updatedAt,
+    refreshing,
+    hasLive,
+    knownForwardDays,
+    refresh,
+    ensureRange,
+    ensureDate,
+  } = useLiveBigFiveMatches()
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [screen, setScreen] = useState<Screen>('home')
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
@@ -442,6 +455,7 @@ export default function App() {
             onSelectDate={handleSelectDate}
             onJumpToToday={jumpToToday}
             onNeedMatchRange={handleNeedMatchRange}
+            knownForwardDays={knownForwardDays}
             onOpenLeague={openLeague}
             onOpenTeam={openTeam}
             onOpenPlayer={openPlayer}

@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import {
   addDays,
   buildCalendarRange,
-  CALENDAR_FORWARD_DAYS,
+  CALENDAR_FORWARD_CHUNK_DAYS,
+  CALENDAR_INITIAL_FORWARD_DAYS,
   CALENDAR_INITIAL_PAST_DAYS,
   CALENDAR_PAST_CHUNK_DAYS,
   isSameDay,
@@ -17,6 +18,7 @@ export function CalendarStrip({
   onJumpToToday,
   onNeedRange,
   favoriteDateKeys,
+  minForwardDays = CALENDAR_INITIAL_FORWARD_DAYS,
   reduce,
 }: {
   selected: Date
@@ -25,17 +27,21 @@ export function CalendarStrip({
   /** Fired when the visible calendar needs fixtures for an expanded past/future span. */
   onNeedRange?: (from: Date, to: Date) => void
   favoriteDateKeys: Set<string>
+  /** At least this many days ahead of today (from discovered fixtures / season scan). */
+  minForwardDays?: number
   reduce: boolean | null
 }) {
   const today = useMemo(() => startOfDay(new Date()), [])
   const [pastDays, setPastDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
+  const [extraForwardDays, setExtraForwardDays] = useState(0)
   const extendingRef = useRef(false)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
   const isSelectedToday = isSameDay(selected, today)
 
+  const forwardDays = Math.max(CALENDAR_INITIAL_FORWARD_DAYS, minForwardDays) + extraForwardDays
   const rangeStart = useMemo(() => addDays(today, -pastDays), [today, pastDays])
-  const rangeEnd = useMemo(() => addDays(today, CALENDAR_FORWARD_DAYS), [today])
+  const rangeEnd = useMemo(() => addDays(today, forwardDays), [today, forwardDays])
   const days = useMemo(() => buildCalendarRange(rangeStart, rangeEnd), [rangeStart, rangeEnd])
 
   useEffect(() => {
@@ -50,32 +56,55 @@ export function CalendarStrip({
     scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
   }, [selected])
 
+  const extendPast = () => {
+    if (extendingRef.current) return
+    const scroller = scrollerRef.current
+    if (!scroller) {
+      setPastDays((current) => current + CALENDAR_PAST_CHUNK_DAYS)
+      return
+    }
+
+    extendingRef.current = true
+    const prevWidth = scroller.scrollWidth
+    const prevLeft = scroller.scrollLeft
+    setPastDays((current) => current + CALENDAR_PAST_CHUNK_DAYS)
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const delta = scroller.scrollWidth - prevWidth
+        scroller.scrollLeft = prevLeft + delta
+        extendingRef.current = false
+      })
+    })
+  }
+
+  const extendForward = () => {
+    if (extendingRef.current) return
+    extendingRef.current = true
+    setExtraForwardDays((current) => current + CALENDAR_FORWARD_CHUNK_DAYS)
+    requestAnimationFrame(() => {
+      extendingRef.current = false
+    })
+  }
+
   useEffect(() => {
     const scroller = scrollerRef.current
     if (!scroller) return
 
-    const maybeExtendPast = () => {
+    const onScroll = () => {
       if (extendingRef.current) return
-      if (scroller.scrollLeft > 120) return
-
-      extendingRef.current = true
-      const prevWidth = scroller.scrollWidth
-      const prevLeft = scroller.scrollLeft
-
-      setPastDays((current) => current + CALENDAR_PAST_CHUNK_DAYS)
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const delta = scroller.scrollWidth - prevWidth
-          scroller.scrollLeft = prevLeft + delta
-          extendingRef.current = false
-        })
-      })
+      if (scroller.scrollLeft < 120) {
+        extendPast()
+        return
+      }
+      const remaining = scroller.scrollWidth - scroller.clientWidth - scroller.scrollLeft
+      if (remaining < 160) extendForward()
     }
 
-    scroller.addEventListener('scroll', maybeExtendPast, { passive: true })
-    return () => scroller.removeEventListener('scroll', maybeExtendPast)
-  }, [])
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => scroller.removeEventListener('scroll', onScroll)
+    // extendPast/extendForward close over latest setters; rebind when extents change.
+  }, [pastDays, extraForwardDays, forwardDays])
 
   return (
     <section aria-label="Match calendar" className="relative">
@@ -83,7 +112,7 @@ export function CalendarStrip({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
           <p className="mt-1 text-sm text-mist/80">
-            Swipe back for older match days · yellow = favorites
+            Swipe for any known match day · yellow = favorites
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -119,21 +148,7 @@ export function CalendarStrip({
       >
         <button
           type="button"
-          onClick={() => {
-            const scroller = scrollerRef.current
-            if (!scroller || extendingRef.current) return
-            extendingRef.current = true
-            const prevWidth = scroller.scrollWidth
-            const prevLeft = scroller.scrollLeft
-            setPastDays((current) => current + CALENDAR_PAST_CHUNK_DAYS)
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                const delta = scroller.scrollWidth - prevWidth
-                scroller.scrollLeft = prevLeft + delta
-                extendingRef.current = false
-              })
-            })
-          }}
+          onClick={extendPast}
           className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-3 py-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           aria-label="Load earlier match days"
         >
@@ -168,7 +183,9 @@ export function CalendarStrip({
               >
                 {weekday}
               </span>
-              <span className="mt-1 block font-display text-3xl leading-none tracking-wide">{dayNum}</span>
+              <span className="mt-1 block font-display text-3xl leading-none tracking-wide">
+                {dayNum}
+              </span>
               {isToday ? (
                 <span
                   className={`mt-1 block text-[0.6rem] font-bold uppercase tracking-[0.12em] ${active ? 'text-ink/80' : 'text-lime'}`}
@@ -191,6 +208,15 @@ export function CalendarStrip({
             </button>
           )
         })}
+
+        <button
+          type="button"
+          onClick={extendForward}
+          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-3 py-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          aria-label="Load later match days"
+        >
+          Later
+        </button>
       </motion.div>
     </section>
   )

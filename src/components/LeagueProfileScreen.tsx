@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react'
 import {
-  addDays,
-  CALENDAR_RADIUS_DAYS,
   formatMatchDayHeading,
   startOfDay,
   toDateKey,
@@ -48,10 +46,9 @@ export function LeagueProfileScreen({
   reduce: boolean | null
 }) {
   const today = useMemo(() => startOfDay(new Date()), [])
-  const horizon = useMemo(() => addDays(today, CALENDAR_RADIUS_DAYS), [today])
   const leagueMatches = useMemo(
-    () => matchesForLeagueFrom(matches, league.id, today, horizon),
-    [matches, league.id, today, horizon],
+    () => matchesForLeagueFrom(matches, league.id, today),
+    [matches, league.id, today],
   )
   const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
   const standings = useLeagueStandings(league.id)
@@ -142,6 +139,7 @@ export function LeagueProfileScreen({
 
         <ProfileAccordion
           title="Fixtures"
+          subtitle="All known fixtures from today forward"
           open={openSection === 'fixtures'}
           onToggle={() => toggleSection('fixtures')}
           meta={loading ? '…' : String(leagueMatches.length)}
@@ -151,7 +149,9 @@ export function LeagueProfileScreen({
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
           ) : grouped.length === 0 ? (
-            <p className="text-sm text-mist/70">No upcoming {league.name} matches scheduled.</p>
+            <p className="text-sm text-mist/70">
+              No upcoming {league.name} matches known yet.
+            </p>
           ) : (
             <div className="flex flex-col gap-5">
               {grouped.map(({ dateKey, matches: dayMatches }) => (

@@ -184,7 +184,7 @@ export function TeamProfileScreen({
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
           ) : upcomingGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">No upcoming matches in the current window.</p>
+            <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
           ) : (
             <div className="flex flex-col gap-5">
               {upcomingGrouped.map(({ dateKey, matches: dayMatches }) => (

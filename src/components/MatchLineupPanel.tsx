@@ -56,10 +56,12 @@ function LineupPlayerCard({
         {player.shortName}
       </span>
       <span className={`font-display text-lg leading-none tracking-wide tabular-nums ${ratingClass(player.rating)}`}>
-        {player.rating != null ? player.rating.toFixed(1) : '—'}
+        {player.rating != null ? player.rating.toFixed(1) : 'N/A'}
       </span>
       <span className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
-        {player.positionAbbrev}
+        {player.positionAbbrev && player.positionAbbrev !== '—'
+          ? player.positionAbbrev
+          : 'Not available'}
         {player.jersey ? ` · ${player.jersey}` : ''}
       </span>
     </button>
@@ -73,35 +75,43 @@ function SideBlock({
   side: MatchLineupSide
   onOpenPlayer?: (player: MatchLineupPlayer) => void
 }) {
+  const empty = side.starters.length === 0 && side.bench.length === 0
+
   return (
     <div>
       <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
         {side.teamName}
         <span className="ml-2 text-mist/55">{side.homeAway}</span>
       </p>
-      {side.starters.length > 0 && (
-        <div className="mb-3">
-          <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/60">
-            Starting XI
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {side.starters.map((player) => (
-              <LineupPlayerCard key={player.id} player={player} onOpenPlayer={onOpenPlayer} />
-            ))}
-          </div>
-        </div>
-      )}
-      {side.bench.length > 0 && (
-        <div>
-          <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/60">
-            Used substitutes
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {side.bench.map((player) => (
-              <LineupPlayerCard key={player.id} player={player} onOpenPlayer={onOpenPlayer} />
-            ))}
-          </div>
-        </div>
+      {empty ? (
+        <p className="text-xs text-mist/65">Not available</p>
+      ) : (
+        <>
+          {side.starters.length > 0 && (
+            <div className="mb-3">
+              <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/60">
+                Starting XI
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {side.starters.map((player) => (
+                  <LineupPlayerCard key={player.id} player={player} onOpenPlayer={onOpenPlayer} />
+                ))}
+              </div>
+            </div>
+          )}
+          {side.bench.length > 0 && (
+            <div>
+              <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/60">
+                Used substitutes
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {side.bench.map((player) => (
+                  <LineupPlayerCard key={player.id} player={player} onOpenPlayer={onOpenPlayer} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -115,11 +125,21 @@ export function MatchLineupPanel({
   onOpenPlayer?: (player: MatchLineupPlayer) => void
 }) {
   if (lineups.length === 0) {
-    return <p className="text-xs text-mist/65">Lineups are not available for this match yet.</p>
+    return <p className="text-xs text-mist/65">Not available</p>
   }
 
   const home = lineups.find((side) => side.homeAway === 'home')
   const away = lineups.find((side) => side.homeAway === 'away')
+
+  if (!home && !away) {
+    return <p className="text-xs text-mist/65">Not available</p>
+  }
+
+  const homeEmpty = home != null && home.starters.length === 0 && home.bench.length === 0
+  const awayEmpty = away != null && away.starters.length === 0 && away.bench.length === 0
+  if ((homeEmpty || !home) && (awayEmpty || !away)) {
+    return <p className="text-xs text-mist/65">Not available</p>
+  }
 
   return (
     <div className="flex flex-col gap-5">
