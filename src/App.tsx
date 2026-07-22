@@ -3,30 +3,17 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarStrip } from './components/CalendarStrip'
 import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
+import { LeagueProfileScreen } from './components/LeagueProfileScreen'
 import { MatchList } from './components/MatchList'
-import { StandingsTable } from './components/StandingsTable'
 import {
   PlayerProfileScreen,
   type PlayerNavRef,
 } from './components/PlayerProfileScreen'
 import { TeamProfileScreen } from './components/TeamProfileScreen'
-import {
-  addDays,
-  CALENDAR_RADIUS_DAYS,
-  formatMatchDayHeading,
-  startOfDay,
-  toDateKey,
-} from './lib/dates'
+import { startOfDay } from './lib/dates'
 import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favorites'
-import { LEAGUES, type League, type LeagueId } from './lib/leagues'
-import {
-  dateKeysForFavorites,
-  groupMatchesByDate,
-  matchesForLeagueFrom,
-  matchesOnDate,
-  type Match,
-} from './lib/matches'
-import { useLeagueStandings } from './lib/stats/useLeagueStandings'
+import { LEAGUES, type LeagueId } from './lib/leagues'
+import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 
 type Screen = 'home' | 'league' | 'favorites' | 'team' | 'player'
@@ -218,7 +205,7 @@ function HomeScreen({
             className="mb-4"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Leagues</p>
-            <p className="mt-1 text-sm text-mist/80">Star a league, then open it for upcoming fixtures</p>
+            <p className="mt-1 text-sm text-mist/80">Tap a league to open its profile</p>
           </motion.div>
 
           <div className="flex flex-col gap-3">
@@ -257,7 +244,7 @@ function HomeScreen({
                       </span>
                     </span>
                     <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
-                      {league.short} →
+                      Profile →
                     </span>
                   </button>
                 </motion.div>
@@ -265,161 +252,6 @@ function HomeScreen({
             })}
           </div>
         </section>
-      </div>
-    </div>
-  )
-}
-
-function LeagueScreen({
-  league,
-  matches,
-  loading,
-  error,
-  favorites,
-  onBack,
-  onOpenTeam,
-  onOpenPlayer,
-  onOpenFavorites,
-  reduce,
-}: {
-  league: League
-  matches: Match[]
-  loading: boolean
-  error: string | null
-  favorites: FavoritesApi
-  onBack: () => void
-  onOpenTeam: (team: FavoriteTeam) => void
-  onOpenPlayer: (player: PlayerNavRef) => void
-  onOpenFavorites: () => void
-  reduce: boolean | null
-}) {
-  const today = useMemo(() => startOfDay(new Date()), [])
-  const horizon = useMemo(() => addDays(today, CALENDAR_RADIUS_DAYS), [today])
-  const leagueMatches = useMemo(
-    () => matchesForLeagueFrom(matches, league.id, today, horizon),
-    [matches, league.id, today, horizon],
-  )
-  const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
-  const standings = useLeagueStandings(league.id)
-  const leagueFavorited = favorites.isLeagueFavorite(league.id)
-
-  return (
-    <div className="relative min-h-dvh overflow-x-hidden">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(20,107,74,0.5), transparent 55%), linear-gradient(180deg, #06261c 0%, #0b3d2e 100%)',
-        }}
-      />
-      <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
-
-      <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-6 md:max-w-xl md:px-6">
-        <div className="mb-8 flex items-center justify-between gap-3">
-          <motion.button
-            type="button"
-            initial={reduce ? false : { opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.35 }}
-            onClick={onBack}
-            className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-          >
-            <span aria-hidden>←</span> Back to home
-          </motion.button>
-          <FavoritesLink onOpen={onOpenFavorites} />
-        </div>
-
-        <motion.header
-          initial={reduce ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="border-b border-white/10 pb-6"
-        >
-          <div className="flex items-start gap-2">
-            <FavoriteStar
-              active={leagueFavorited}
-              label={league.name}
-              onToggle={() => favorites.toggleLeague(league.id)}
-            />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime">
-                {league.country}
-              </p>
-              <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
-                {league.name}
-              </h1>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-mist/80">
-            Table + upcoming fixtures
-            {!loading && !error ? ` · ${leagueMatches.length} matches` : ''}
-          </p>
-        </motion.header>
-
-        <motion.section
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
-          className="mt-8"
-          aria-label={`${league.name} standings`}
-        >
-          <div className="mb-3 px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
-            <p className="mt-1 text-sm text-mist/80">Tap a club name for its profile · star to favorite</p>
-          </div>
-          <StandingsTable
-            rows={standings.rows}
-            loading={standings.loading}
-            error={standings.error}
-            leagueId={league.id}
-            isTeamFavorite={favorites.isTeamFavorite}
-            onToggleTeam={favorites.toggleTeam}
-            onOpenTeam={onOpenTeam}
-          />
-        </motion.section>
-
-        <motion.div
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.45, delay: reduce ? 0 : 0.15 }}
-          className="mt-10 flex flex-1 flex-col gap-6"
-        >
-          <div className="px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Fixtures</p>
-            <p className="mt-1 text-sm text-mist/80">Tap a match for lineups, ratings, and key moments</p>
-          </div>
-
-          {loading ? (
-            <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : error ? (
-            <p className="text-sm text-mist/80">{error}</p>
-          ) : grouped.length === 0 ? (
-            <p className="text-sm text-mist/70">
-              No upcoming {league.name} matches scheduled.
-            </p>
-          ) : (
-            grouped.map(({ dateKey, matches: dayMatches }) => (
-              <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                <div className="mb-2 flex items-baseline justify-between px-1">
-                  <h2 className="font-display text-2xl tracking-wide text-cream">
-                    {formatMatchDayHeading(dateKey)}
-                  </h2>
-                  {dateKey === toDateKey(today) && (
-                    <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
-                      Today
-                    </span>
-                  )}
-                </div>
-                <MatchList
-                  matches={dayMatches}
-                  onOpenTeam={onOpenTeam}
-                  onOpenPlayer={onOpenPlayer}
-                  emptyLabel="No matches"
-                />
-              </section>
-            ))
-          )}
-        </motion.div>
       </div>
     </div>
   )
@@ -519,6 +351,7 @@ export default function App() {
             onBack={closeOverlay}
             onOpenTeam={openTeam}
             onOpenPlayer={openPlayer}
+            onOpenLeague={openLeague}
             onOpenFavorites={openFavorites}
             reduce={reduce}
           />
@@ -548,7 +381,7 @@ export default function App() {
           exit={reduce ? undefined : { opacity: 0, x: 40 }}
           transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
-          <LeagueScreen
+          <LeagueProfileScreen
             league={activeLeague}
             matches={matches}
             loading={loading}

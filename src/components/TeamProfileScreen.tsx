@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { getLeague } from '../lib/leagues'
+import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   groupMatchesByDate,
@@ -42,6 +42,7 @@ export function TeamProfileScreen({
   onBack,
   onOpenTeam,
   onOpenPlayer,
+  onOpenLeague,
   onOpenFavorites,
   reduce,
 }: {
@@ -53,6 +54,7 @@ export function TeamProfileScreen({
   onBack: () => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
+  onOpenLeague: (id: LeagueId) => void
   onOpenFavorites: () => void
   reduce: boolean | null
 }) {
@@ -131,9 +133,13 @@ export function TeamProfileScreen({
               }
             />
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime">
-                {league.name}
-              </p>
+              <button
+                type="button"
+                onClick={() => onOpenLeague(team.leagueId)}
+                className="text-left text-xs font-semibold uppercase tracking-[0.2em] text-lime underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              >
+                {league.name} · Profile →
+              </button>
               <h1 className="mt-2 font-display text-5xl tracking-[0.04em] text-cream sm:text-6xl">
                 {displayName}
               </h1>

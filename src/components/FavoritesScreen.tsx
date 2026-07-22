@@ -151,7 +151,7 @@ export function FavoritesScreen({
                                       {league.country}
                                     </span>
                                   </span>
-                                  <span className="text-lime">{league.short} →</span>
+                                  <span className="text-lime">Profile →</span>
                                 </button>
                               </div>
                             </li>
