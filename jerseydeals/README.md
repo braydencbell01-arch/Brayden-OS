@@ -2,8 +2,14 @@
 
 Separate storefront landing page for **Jersey Deals** (sibling project to Brayden Stats in this repo).
 
-**Permanent live link (always the latest deployed version):**  
-https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+## Permanent live links
+
+| App | URL |
+|-----|-----|
+| **Jersey Deals** (this project) | https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/ |
+| Brayden Stats (repo root app) | https://braydencbell01-arch.github.io/Brayden-OS/ |
+
+The Jersey Deals URL always serves **this** landing page (logo, youth apparel, shop the sale) — not Brayden Stats. Pushes to `Brayden-OS` rebuild and publish both apps via the root deploy workflow.
 
 ## What’s on the page
 
@@ -36,3 +42,5 @@ cd jerseydeals
 npm run build
 npm run preview
 ```
+
+Vite `base` is `/Brayden-OS/jerseydeals/` so assets resolve correctly on GitHub Pages.
