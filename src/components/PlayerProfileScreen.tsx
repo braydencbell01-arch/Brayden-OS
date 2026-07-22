@@ -188,7 +188,7 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Recent ratings"
-              subtitle="Brayden Rating · last matches"
+              subtitle="Brayden Rating Latest Matches"
               open={openSection === 'ratings'}
               onToggle={() => toggle('ratings')}
               meta={
@@ -198,7 +198,7 @@ export function PlayerProfileScreen({
               {profile.recentRatings.length === 0 ? (
                 <p className="text-sm text-mist/70">Not enough recent matches to rate yet.</p>
               ) : (
-                <ul className="flex flex-col gap-1.5">
+                <ul className="scrollbar-hide flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-0.5">
                   {profile.recentRatings.map((row) => (
                     <li
                       key={row.eventId}
@@ -222,7 +222,7 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Transfer history"
-              subtitle="Clubs and national team kept separate"
+              subtitle="Club And National Team"
               open={openSection === 'transfers'}
               onToggle={() => toggle('transfers')}
               meta={transferCount ? String(transferCount) : undefined}

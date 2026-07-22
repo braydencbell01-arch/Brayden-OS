@@ -648,6 +648,209 @@ function parseGameLogRatings(
     .filter((row): row is PlayerRecentMatchRating => row != null)
 }
 
+const MAX_RECENT_MATCH_RATINGS = 80
+const EVENTLOG_FETCH_CONCURRENCY = 6
+
+type EspnCoreEventLogItem = {
+  played?: boolean
+  event?: { $ref?: string }
+  statistics?: { $ref?: string }
+  lineupEntry?: { $ref?: string }
+}
+
+type EspnCoreEventLogPage = {
+  events?: {
+    count?: number
+    pageIndex?: number
+    pageCount?: number
+    items?: EspnCoreEventLogItem[]
+  }
+}
+
+type EspnCoreStatSplit = {
+  splits?: {
+    categories?: Array<{
+      stats?: Array<{ name?: string; value?: number; displayValue?: string }>
+    }>
+  }
+}
+
+type EspnCoreLineupEntry = {
+  starter?: boolean
+}
+
+function httpsRef(ref: string): string {
+  return ref.replace(/^http:\/\//i, 'https://')
+}
+
+function eventIdFromRef(ref: string | undefined): string | null {
+  if (!ref) return null
+  const match = ref.match(/\/events\/(\d+)/)
+  return match?.[1] ?? null
+}
+
+function readCoreStatValue(
+  categories: NonNullable<NonNullable<EspnCoreStatSplit['splits']>['categories']>,
+  name: string,
+): number {
+  for (const category of categories) {
+    for (const stat of category.stats ?? []) {
+      if (stat.name !== name) continue
+      if (typeof stat.value === 'number' && Number.isFinite(stat.value)) return stat.value
+      const n = Number(stat.displayValue)
+      if (Number.isFinite(n)) return n
+    }
+  }
+  return 0
+}
+
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R | null>,
+): Promise<R[]> {
+  const slots: Array<R | null> = Array.from({ length: items.length }, () => null)
+  let index = 0
+
+  async function worker() {
+    while (index < items.length) {
+      const current = index
+      index += 1
+      slots[current] = await mapper(items[current])
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(concurrency, Math.max(items.length, 1)) }, () =>
+    worker(),
+  )
+  await Promise.all(workers)
+  return slots.filter((value): value is R => value != null)
+}
+
+async function fetchAthleteEventLogItems(leagueEspnCode: string, playerId: string): Promise<EspnCoreEventLogItem[]> {
+  const collected: EspnCoreEventLogItem[] = []
+  let pageIndex = 1
+  let pageCount = 1
+
+  while (pageIndex <= pageCount && collected.length < MAX_RECENT_MATCH_RATINGS) {
+    const url = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${leagueEspnCode}/athletes/${playerId}/eventlog`,
+    )
+    url.searchParams.set('limit', '50')
+    url.searchParams.set('page', String(pageIndex))
+    const res = await fetch(url)
+    if (!res.ok) break
+    const data = (await res.json()) as EspnCoreEventLogPage
+    const page = data.events
+    pageCount = Math.max(1, page?.pageCount ?? 1)
+    const items = page?.items ?? []
+    if (items.length === 0) break
+    collected.push(...items)
+    pageIndex += 1
+  }
+
+  return collected.slice(0, MAX_RECENT_MATCH_RATINGS)
+}
+
+async function ratingFromEventLogItem(
+  item: EspnCoreEventLogItem,
+  positionAbbrev?: string,
+): Promise<PlayerRecentMatchRating | null> {
+  if (item.played === false) return null
+  const eventId = eventIdFromRef(item.event?.$ref)
+  const statsRef = item.statistics?.$ref
+  if (!eventId || !statsRef) return null
+
+  const lineupRef = item.lineupEntry?.$ref
+  const [statsRes, lineupRes] = await Promise.all([
+    fetch(httpsRef(statsRef)),
+    lineupRef ? fetch(httpsRef(lineupRef)) : Promise.resolve(null),
+  ])
+  if (!statsRes.ok) return null
+
+  const statsJson = (await statsRes.json()) as EspnCoreStatSplit
+  const categories = statsJson.splits?.categories ?? []
+  if (categories.length === 0) return null
+
+  let starter = false
+  if (lineupRes?.ok) {
+    const lineupJson = (await lineupRes.json()) as EspnCoreLineupEntry
+    starter = Boolean(lineupJson.starter)
+  }
+
+  const appearances = readCoreStatValue(categories, 'appearances')
+  if (!starter && appearances <= 0) return null
+
+  const stats: MatchPlayerStats = {
+    appearances: Math.max(1, appearances || 1),
+    starter,
+    totalGoals: readCoreStatValue(categories, 'totalGoals'),
+    goalAssists: readCoreStatValue(categories, 'goalAssists'),
+    totalShots: readCoreStatValue(categories, 'totalShots'),
+    shotsOnTarget: readCoreStatValue(categories, 'shotsOnTarget'),
+    foulsCommitted: readCoreStatValue(categories, 'foulsCommitted'),
+    foulsSuffered: readCoreStatValue(categories, 'foulsSuffered'),
+    yellowCards: readCoreStatValue(categories, 'yellowCards'),
+    redCards: readCoreStatValue(categories, 'redCards'),
+    offsides: readCoreStatValue(categories, 'offsides'),
+    ownGoals: readCoreStatValue(categories, 'ownGoals'),
+    saves: readCoreStatValue(categories, 'saves'),
+    goalsConceded: readCoreStatValue(categories, 'goalsConceded'),
+    shotsFaced: readCoreStatValue(categories, 'shotsFaced'),
+  }
+
+  const breakdown = rateMatchPerformance(stats, positionGroupFromAbbrev(positionAbbrev), {
+    minutesPlayed: 90,
+    live: false,
+  })
+  if (!breakdown) return null
+
+  return {
+    eventId,
+    rating: breakdown.rating,
+    goals: stats.totalGoals,
+    assists: stats.goalAssists,
+    starter,
+  }
+}
+
+async function fetchExpandedRecentRatings(
+  leagueEspnCode: string,
+  playerId: string,
+  positionAbbrev: string | undefined,
+  fallback: PlayerRecentMatchRating[],
+): Promise<PlayerRecentMatchRating[]> {
+  try {
+    const items = await fetchAthleteEventLogItems(leagueEspnCode, playerId)
+    const played = items.filter((item) => item.played !== false)
+    if (played.length === 0) return fallback
+
+    const expanded = await mapPool(played, EVENTLOG_FETCH_CONCURRENCY, (item) =>
+      ratingFromEventLogItem(item, positionAbbrev),
+    )
+
+    if (expanded.length === 0) return fallback
+
+    const byId = new Map<string, PlayerRecentMatchRating>()
+    for (const row of [...expanded, ...fallback]) {
+      if (!byId.has(row.eventId)) byId.set(row.eventId, row)
+    }
+    // Prefer event-log order (typically newest → oldest), then any overview-only leftovers.
+    const ordered: PlayerRecentMatchRating[] = []
+    for (const row of expanded) {
+      const found = byId.get(row.eventId)
+      if (found) {
+        ordered.push(found)
+        byId.delete(row.eventId)
+      }
+    }
+    for (const row of byId.values()) ordered.push(row)
+    return ordered
+  } catch {
+    return fallback
+  }
+}
+
 function isNationalTeamHistoryEntry(stint: {
   logo?: string
   slug?: string
@@ -719,7 +922,13 @@ export async function fetchPlayerProfile(
   const name = athlete.displayName || athlete.fullName || 'Unknown'
   const shortName = athlete.shortName || name
   const positionAbbrev = athlete.position?.abbreviation
-  const recentRatings = parseGameLogRatings(overviewJson, positionAbbrev)
+  const overviewRatings = parseGameLogRatings(overviewJson, positionAbbrev)
+  const recentRatings = await fetchExpandedRecentRatings(
+    league.espnCode,
+    playerId,
+    positionAbbrev,
+    overviewRatings,
+  )
   const averageRating = rateSeasonForm(recentRatings.map((row) => row.rating))
   const seasonStats = buildOrderedSeasonStats(overviewJson)
 
