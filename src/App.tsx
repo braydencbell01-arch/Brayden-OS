@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BottomNav, type BottomTab } from './components/BottomNav'
 import { CalendarStrip } from './components/CalendarStrip'
 import { FavoritesScreen } from './components/FavoritesScreen'
+import { HomeSearch } from './components/HomeSearch'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
 import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
@@ -63,6 +64,7 @@ function HomeScreen({
   onJumpToToday,
   onNeedMatchRange,
   knownForwardDays,
+  onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
   matches,
@@ -80,6 +82,7 @@ function HomeScreen({
   onJumpToToday: () => void
   onNeedMatchRange: (from: Date, to: Date) => void
   knownForwardDays: number
+  onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   matches: Match[]
@@ -121,9 +124,18 @@ function HomeScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-6 md:max-w-xl md:px-6">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <BrandMark />
         </div>
+
+        <HomeSearch
+          matches={matches}
+          favoriteTeams={favorites.teams}
+          favoritePlayers={favorites.players}
+          onOpenLeague={onOpenLeague}
+          onOpenTeam={onOpenTeam}
+          onOpenPlayer={onOpenPlayer}
+        />
 
         <header className="mb-8">
           <motion.p
@@ -447,6 +459,7 @@ export default function App() {
               onJumpToToday={jumpToToday}
               onNeedMatchRange={handleNeedMatchRange}
               knownForwardDays={knownForwardDays}
+              onOpenLeague={openLeague}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               matches={matches}
