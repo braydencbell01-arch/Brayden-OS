@@ -198,3 +198,42 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
 export function dateKeysWithMatches(matches: Match[]): Set<string> {
   return new Set(matches.map((match) => match.dateKey))
 }
+
+export function dateFromKey(dateKey: string): Date {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  return startOfDay(new Date(y, m - 1, d))
+}
+
+/** Next calendar day with fixtures on/after the selected date (inclusive). */
+export function findNextMatchDate(matches: Match[], from: Date): Date | null {
+  const fromKey = toDateKey(startOfDay(from))
+  const keys = Array.from(dateKeysWithMatches(matches)).sort()
+  const next = keys.find((key) => key >= fromKey)
+  return next ? dateFromKey(next) : null
+}
+
+/** Previous calendar day with fixtures before the selected date. */
+export function findPreviousMatchDate(matches: Match[], before: Date): Date | null {
+  const beforeKey = toDateKey(startOfDay(before))
+  const keys = Array.from(dateKeysWithMatches(matches)).sort()
+  const prev = [...keys].reverse().find((key) => key < beforeKey)
+  return prev ? dateFromKey(prev) : null
+}
+
+export function upcomingMatchDays(
+  matches: Match[],
+  from: Date,
+  limit = 4,
+): Array<{ dateKey: string; count: number }> {
+  const fromKey = toDateKey(startOfDay(from))
+  const counts = new Map<string, number>()
+  for (const match of matches) {
+    if (match.dateKey < fromKey) continue
+    counts.set(match.dateKey, (counts.get(match.dateKey) ?? 0) + 1)
+  }
+  return Array.from(counts.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(0, limit)
+    .map(([dateKey, count]) => ({ dateKey, count }))
+}
+
