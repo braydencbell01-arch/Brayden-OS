@@ -145,5 +145,7 @@ export type PlayerProfile = {
   clubHistory: PlayerClubStint[]
   /** National / country teams only. */
   nationalHistory: PlayerClubStint[]
+  /** Label for the season stats block, e.g. "2025-26 English Premier League". */
+  seasonStatsLabel?: string
   fetchedAt: number
 }

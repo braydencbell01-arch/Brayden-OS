@@ -526,7 +526,11 @@ type EspnOverviewPayload = {
   statistics?: {
     displayNames?: string[]
     names?: string[]
-    splits?: Array<{ displayName?: string; stats?: string[] }>
+    splits?: Array<{
+      displayName?: string
+      leagueSlug?: string
+      stats?: string[]
+    }>
   }
   gameLog?: {
     statistics?: Array<{
@@ -534,6 +538,21 @@ type EspnOverviewPayload = {
       events?: Array<{ eventId?: string; stats?: string[] }>
     }>
   }
+}
+
+type EspnAthleteStatsPayload = {
+  categories?: Array<{
+    names?: string[]
+    displayNames?: string[]
+    statistics?: Array<{
+      leagueSlug?: string
+      stats?: string[]
+      season?: {
+        year?: number
+        type?: { name?: string }
+      }
+    }>
+  }>
 }
 
 /** Season stats grid order (left→right, top→bottom). */
@@ -550,40 +569,110 @@ const SEASON_STAT_ORDER: Array<{ key: string; label: string }> = [
   { key: 'redCards', label: 'Red cards' },
 ]
 
-function buildOrderedSeasonStats(overview: EspnOverviewPayload): PlayerSeasonStatLine[] {
-  const names = overview.statistics?.names ?? []
-  const labels = overview.statistics?.displayNames ?? []
-  const values = overview.statistics?.splits?.[0]?.stats ?? []
+/** Map ESPN overview keys + athlete stats abbreviations onto our order keys. */
+const SEASON_STAT_ALIASES: Record<string, string> = {
+  totalGoals: 'totalGoals',
+  G: 'totalGoals',
+  goalAssists: 'goalAssists',
+  A: 'goalAssists',
+  starts: 'starts',
+  STRT: 'starts',
+  offsides: 'offsides',
+  OF: 'offsides',
+  totalShots: 'totalShots',
+  SHOT: 'totalShots',
+  shotsOnTarget: 'shotsOnTarget',
+  SOG: 'shotsOnTarget',
+  foulsCommitted: 'foulsCommitted',
+  FC: 'foulsCommitted',
+  foulsSuffered: 'foulsSuffered',
+  FA: 'foulsSuffered',
+  yellowCards: 'yellowCards',
+  YC: 'yellowCards',
+  redCards: 'redCards',
+  RC: 'redCards',
+}
+
+function buildOrderedSeasonStatsFromArrays(
+  names: string[],
+  labels: string[],
+  values: string[],
+): PlayerSeasonStatLine[] {
   if (names.length === 0 || values.length === 0) return []
 
-  const byKey = new Map<string, { label: string; value: string }>()
+  const byKey = new Map<string, string>()
   names.forEach((name, index) => {
     if (!name) return
-    byKey.set(name, {
-      label: labels[index] || name,
-      value: values[index] || '0',
-    })
+    const key = SEASON_STAT_ALIASES[name] || name
+    byKey.set(key, values[index] || '0')
   })
 
   const ordered: PlayerSeasonStatLine[] = []
   const used = new Set<string>()
 
   for (const { key, label } of SEASON_STAT_ORDER) {
-    const found = byKey.get(key)
-    if (!found) continue
-    ordered.push({ label, value: found.value })
+    if (!byKey.has(key)) continue
+    ordered.push({ label, value: byKey.get(key) || '0' })
     used.add(key)
   }
 
-  // Keep any extra ESPN stats after the preferred grid (stable API order).
-  names.forEach((name) => {
-    if (!name || used.has(name)) return
-    const found = byKey.get(name)
-    if (!found) return
-    ordered.push({ label: found.label, value: found.value })
+  names.forEach((name, index) => {
+    if (!name) return
+    const key = SEASON_STAT_ALIASES[name] || name
+    if (used.has(key)) return
+    used.add(key)
+    ordered.push({ label: labels[index] || name, value: values[index] || '0' })
   })
 
   return ordered
+}
+
+function buildOrderedSeasonStatsFromOverview(
+  overview: EspnOverviewPayload,
+  leagueSlug: string,
+): PlayerSeasonStatLine[] {
+  const names = overview.statistics?.names ?? []
+  const labels = overview.statistics?.displayNames ?? []
+  const splits = overview.statistics?.splits ?? []
+  const preferred =
+    splits.find((split) => split.leagueSlug === leagueSlug) ||
+    splits.find((split) => (split.displayName || '').toLowerCase().includes('premier')) ||
+    null
+  // Do not fall back to splits[0] — that is often a national-team friendly, not club season.
+  if (!preferred?.stats?.length) return []
+  return buildOrderedSeasonStatsFromArrays(names, labels, preferred.stats)
+}
+
+function buildOrderedSeasonStatsFromAthleteStats(
+  payload: EspnAthleteStatsPayload,
+  leagueSlug: string,
+): { stats: PlayerSeasonStatLine[]; seasonLabel: string | null } {
+  const category = payload.categories?.[0]
+  const names = category?.names ?? []
+  const labels = category?.displayNames ?? []
+  const rows = category?.statistics ?? []
+  const row =
+    rows.find((item) => item.leagueSlug === leagueSlug) ||
+    rows[0] ||
+    null
+  if (!row?.stats?.length || names.length === 0) {
+    return { stats: [], seasonLabel: null }
+  }
+  return {
+    stats: buildOrderedSeasonStatsFromArrays(names, labels, row.stats),
+    seasonLabel: row.season?.type?.name || (row.season?.year ? String(row.season.year) : null),
+  }
+}
+
+async function fetchAthleteLeagueSeasonStats(
+  playerId: string,
+  leagueSlug: string,
+): Promise<{ stats: PlayerSeasonStatLine[]; seasonLabel: string | null }> {
+  const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/stats?league=${encodeURIComponent(leagueSlug)}`
+  const res = await fetch(url)
+  if (!res.ok) return { stats: [], seasonLabel: null }
+  const payload = (await res.json()) as EspnAthleteStatsPayload
+  return buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug)
 }
 
 function parseGameLogRatings(
@@ -695,12 +784,13 @@ export async function fetchPlayerProfile(
   playerId: string,
 ): Promise<PlayerProfile> {
   const league = getLeague(leagueId)
-  const [athleteRes, bioRes, overviewRes] = await Promise.all([
+  const [athleteRes, bioRes, overviewRes, seasonStatsBundle] = await Promise.all([
     fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}`),
     fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/bio`),
     fetch(
       `https://site.api.espn.com/apis/common/v3/sports/soccer/${league.espnCode}/athletes/${playerId}/overview`,
     ),
+    fetchAthleteLeagueSeasonStats(playerId, league.espnCode),
   ])
 
   if (!athleteRes.ok) {
@@ -721,7 +811,16 @@ export async function fetchPlayerProfile(
   const positionAbbrev = athlete.position?.abbreviation
   const recentRatings = parseGameLogRatings(overviewJson, positionAbbrev)
   const averageRating = rateSeasonForm(recentRatings.map((row) => row.rating))
-  const seasonStats = buildOrderedSeasonStats(overviewJson)
+
+  // Prefer dedicated league season totals. Overview splits[0] is often a national-team
+  // friendly window, not the full club season for this league.
+  const seasonStats =
+    seasonStatsBundle.stats.length > 0
+      ? seasonStatsBundle.stats
+      : buildOrderedSeasonStatsFromOverview(overviewJson, league.espnCode)
+  const seasonStatsLabel =
+    seasonStatsBundle.seasonLabel ||
+    (seasonStats.length > 0 ? `${league.name} season` : undefined)
 
   const clubHistory: PlayerClubStint[] = []
   const nationalHistory: PlayerClubStint[] = []
@@ -756,6 +855,7 @@ export async function fetchPlayerProfile(
     teamLogoUrl: athlete.team?.logos?.[0]?.href,
     leagueId,
     seasonStats,
+    seasonStatsLabel,
     averageRating,
     recentRatings,
     clubHistory,

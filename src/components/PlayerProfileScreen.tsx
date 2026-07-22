@@ -166,12 +166,15 @@ export function PlayerProfileScreen({
           <div className="mt-6 flex flex-col gap-3">
             <ProfileAccordion
               title="Season stats"
+              subtitle={profile.seasonStatsLabel || undefined}
               open={openSection === 'stats'}
               onToggle={() => toggle('stats')}
               meta={profile.seasonStats.length ? String(profile.seasonStats.length) : undefined}
             >
               {profile.seasonStats.length === 0 ? (
-                <p className="text-sm text-mist/70">No season split for this league yet.</p>
+                <p className="text-sm text-mist/70">
+                  No full-season stats for this league yet.
+                </p>
               ) : (
                 <ul className="grid grid-cols-2 gap-2">
                   {profile.seasonStats.map((stat) => (
