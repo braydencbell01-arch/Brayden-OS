@@ -214,8 +214,10 @@ export async function searchEspnSoccer(
       relatedSlugs.map(leagueIdFromEspnCode).find(Boolean) ||
       leagueIdFromEspnCode(item.league) ||
       leagueIdFromEspnCode(item.defaultLeagueSlug) ||
-      // Placeholder — resolved from athlete team on click if needed.
-      ('premier-league' as LeagueId)
+      null
+
+    // Skip unresolved leagues — avoid fake Premier League defaults in results.
+    if (!leagueId) continue
 
     const relatedLabel =
       (item.leagueRelationships ?? []).find((rel) => leagueIdFromEspnCode(rel.core?.slug))
@@ -226,7 +228,7 @@ export async function searchEspnSoccer(
       kind: 'player',
       player: {
         id: item.id,
-        leagueId: leagueId as LeagueId,
+        leagueId,
         name: item.displayName,
         shortName: item.shortName || item.displayName,
         photoUrl: playerHeadshotUrl(item.id),

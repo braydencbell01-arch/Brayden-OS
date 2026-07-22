@@ -117,6 +117,7 @@ export function HomeSearch({
   useEffect(() => {
     const q = query.trim()
     if (q.length < 2) {
+      requestId.current += 1
       setRemote({ teams: [], players: [] })
       setLoadingRemote(false)
       return

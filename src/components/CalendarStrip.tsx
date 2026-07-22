@@ -11,6 +11,7 @@ import {
   startOfDay,
   toDateKey,
 } from '../lib/dates'
+import { useToday } from '../lib/useToday'
 
 export function CalendarStrip({
   selected,
@@ -31,7 +32,7 @@ export function CalendarStrip({
   minForwardDays?: number
   reduce: boolean | null
 }) {
-  const today = useMemo(() => startOfDay(new Date()), [])
+  const today = useToday()
   const [pastDays, setPastDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const [extraForwardDays, setExtraForwardDays] = useState(0)
   const extendingRef = useRef(false)

@@ -95,6 +95,21 @@ export function positionGroupFromAbbrev(abbrev: string | undefined | null): Play
   const a = (abbrev || '').toUpperCase()
   if (!a) return 'UNK'
   if (a === 'G' || a === 'GK') return 'GK'
+  // Midfield before CD* so CDM is not treated as a centre-back.
+  if (
+    a === 'CDM' ||
+    a === 'RDM' ||
+    a === 'LDM' ||
+    a.startsWith('CM') ||
+    a.startsWith('DM') ||
+    a.startsWith('AM') ||
+    a === 'LM' ||
+    a === 'RM' ||
+    a === 'MF' ||
+    a === 'M'
+  ) {
+    return 'MID'
+  }
   if (
     a.startsWith('CB') ||
     a.startsWith('CD') ||
@@ -109,19 +124,23 @@ export function positionGroupFromAbbrev(abbrev: string | undefined | null): Play
     return 'DEF'
   }
   if (
-    a.startsWith('CM') ||
-    a.startsWith('DM') ||
-    a.startsWith('AM') ||
-    a === 'LM' ||
-    a === 'RM' ||
-    a === 'MF' ||
-    a === 'M' ||
-    a.includes('M')
+    a.startsWith('CF') ||
+    a === 'ST' ||
+    a === 'F' ||
+    a === 'FW' ||
+    a === 'SS' ||
+    a === 'LW' ||
+    a === 'RW' ||
+    a === 'WF' ||
+    a === 'LWF' ||
+    a === 'RWF' ||
+    a === 'LCF' ||
+    a === 'RCF'
   ) {
-    if (a.startsWith('CF') || a === 'ST' || a === 'F' || a === 'FW' || a === 'SS') return 'FWD'
-    return 'MID'
+    return 'FWD'
   }
-  if (a.startsWith('CF') || a === 'ST' || a === 'F' || a === 'FW' || a === 'SS') return 'FWD'
+  if (a.includes('M')) return 'MID'
+  if (a.includes('F') || a.includes('W')) return 'FWD'
   return 'UNK'
 }
 
@@ -195,9 +214,8 @@ export function rateMatchPerformance(
   let defending = 0
   if (position === 'DEF') {
     defending += Math.min(stats.goalsConceded, 5) * W.defGoalConceded
-  } else if (position === 'GK') {
-    defending += Math.min(stats.goalsConceded, 5) * (W.defGoalConceded * 0.5)
   }
+  // Keepers already take gkGoalConceded in goalkeeping — do not double-count.
 
   if (position === 'GK') {
     attack *= 0.2

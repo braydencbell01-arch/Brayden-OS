@@ -37,10 +37,12 @@ function statusLabel(match: Match): string {
   if (match.status === 'scheduled') {
     return match.kickoffTimeKnown ? formatKickoffTime(match.kickoff) : 'Not available'
   }
+  if (match.status === 'postponed') return match.statusText || 'PPD'
+  // Prefer ESPN clock / AET / PEN detail over a blunt LIVE/FT label.
+  if (match.statusText?.trim()) return match.statusText
   if (match.status === 'live') return 'LIVE'
   if (match.status === 'finished') return 'FT'
-  if (match.status === 'postponed') return 'PPD'
-  return match.statusText || 'Not available'
+  return 'Not available'
 }
 
 function Score({ match }: { match: Match }) {
@@ -48,11 +50,16 @@ function Score({ match }: { match: Match }) {
   if (!showScore) {
     return <span className="font-display text-lg tracking-wide text-mist/50">vs</span>
   }
+  const home = match.home.score
+  const away = match.away.score
+  if (home == null || away == null) {
+    return <span className="font-display text-lg tracking-wide text-mist/50">—</span>
+  }
   return (
     <span className="font-display text-2xl tracking-wide text-cream tabular-nums">
-      {match.home.score ?? 0}
+      {home}
       <span className="mx-1 text-mist/50">–</span>
-      {match.away.score ?? 0}
+      {away}
     </span>
   )
 }

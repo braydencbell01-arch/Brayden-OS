@@ -70,12 +70,31 @@ const STATUS_MAP: Record<string, MatchStatus> = {
   STATUS_HALFTIME: 'live',
   STATUS_FIRST_HALF: 'live',
   STATUS_SECOND_HALF: 'live',
+  STATUS_EXTRA_TIME: 'live',
+  STATUS_EXTRA_HALF_TIME: 'live',
+  STATUS_SHOOTOUT: 'live',
   STATUS_FULL_TIME: 'finished',
   STATUS_FINAL: 'finished',
+  STATUS_FINAL_AET: 'finished',
+  STATUS_FINAL_PEN: 'finished',
+  STATUS_AFTER_EXTRA_TIME: 'finished',
+  STATUS_AFTER_PEN: 'finished',
+  STATUS_SHOOTOUT_COMPLETE: 'finished',
+  STATUS_END_OF_EXTRATIME: 'finished',
   STATUS_POSTPONED: 'postponed',
   STATUS_CANCELED: 'postponed',
   STATUS_CANCELLED: 'postponed',
   STATUS_ABANDONED: 'other',
+}
+
+function mapStatus(status: EspnEvent['status'] | undefined): MatchStatus {
+  const type = status?.type
+  const mapped = type?.name ? STATUS_MAP[type.name] : undefined
+  if (mapped) return mapped
+  if (type?.completed || type?.state === 'post') return 'finished'
+  if (type?.state === 'in') return 'live'
+  if (type?.state === 'pre') return 'scheduled'
+  return 'other'
 }
 
 function parseScore(value: string | undefined, status: MatchStatus): number | null {
@@ -106,7 +125,7 @@ function normalizeEvent(event: EspnEvent, leagueId: LeagueId): Match | null {
   if (!kickoff || !event.id) return null
 
   const statusName = competition?.status?.type?.name || event.status?.type?.name || ''
-  const status = STATUS_MAP[statusName] ?? 'other'
+  const status = mapStatus(competition?.status ?? event.status)
   const statusText =
     competition?.status?.type?.shortDetail ||
     event.status?.type?.shortDetail ||
@@ -194,6 +213,8 @@ export function matchesForLeagueFrom(
       if (match.leagueId !== leagueId) return false
       if (match.dateKey < fromKey) return false
       if (toKey != null && match.dateKey > toKey) return false
+      // League "upcoming" should not list finished / postponed games.
+      if (match.status === 'finished' || match.status === 'postponed') return false
       return true
     })
     .sort((a, b) => a.kickoff.localeCompare(b.kickoff))

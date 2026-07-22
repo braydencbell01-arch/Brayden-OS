@@ -8,7 +8,8 @@ import {
   type Match,
   type TeamFormResult,
 } from '../lib/matches'
-import { formatMatchDayHeading, startOfDay, toDateKey } from '../lib/dates'
+import { formatMatchDayHeading } from '../lib/dates'
+import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
@@ -59,7 +60,7 @@ export function TeamProfileScreen({
 }) {
   const league = getLeague(team.leagueId)
   const standings = useLeagueStandings(team.leagueId)
-  const todayKey = useMemo(() => toDateKey(startOfDay(new Date())), [])
+  const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<'upcoming' | 'recent' | null>('upcoming')
 
   const standing = useMemo(

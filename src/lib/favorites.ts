@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { LeagueId } from './leagues'
+import { LEAGUES, type LeagueId } from './leagues'
 
 const STORAGE_KEY = 'brayden-stats-favorites-v1'
+const KNOWN_LEAGUE_IDS = new Set<string>(LEAGUES.map((league) => league.id))
 
 export type FavoriteTeam = {
   id: string
@@ -35,16 +36,39 @@ const EMPTY: FavoritesState = {
   players: [],
 }
 
+function isLeagueId(value: unknown): value is LeagueId {
+  return typeof value === 'string' && KNOWN_LEAGUE_IDS.has(value)
+}
+
 function readStorage(): FavoritesState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return EMPTY
     const parsed = JSON.parse(raw) as Partial<FavoritesState>
-    return {
-      leagues: Array.isArray(parsed.leagues) ? (parsed.leagues as LeagueId[]) : [],
-      teams: Array.isArray(parsed.teams) ? parsed.teams : [],
-      players: Array.isArray(parsed.players) ? parsed.players : [],
-    }
+    const leagues = Array.isArray(parsed.leagues)
+      ? parsed.leagues.filter(isLeagueId)
+      : []
+    const teams = Array.isArray(parsed.teams)
+      ? parsed.teams.filter(
+          (team): team is FavoriteTeam =>
+            Boolean(team) &&
+            typeof team.id === 'string' &&
+            typeof team.name === 'string' &&
+            typeof team.shortName === 'string' &&
+            isLeagueId(team.leagueId),
+        )
+      : []
+    const players = Array.isArray(parsed.players)
+      ? parsed.players.filter(
+          (player): player is FavoritePlayer =>
+            Boolean(player) &&
+            typeof player.id === 'string' &&
+            typeof player.name === 'string' &&
+            typeof player.shortName === 'string' &&
+            isLeagueId(player.leagueId),
+        )
+      : []
+    return { leagues, teams, players }
   } catch {
     return EMPTY
   }
@@ -55,15 +79,15 @@ function writeStorage(state: FavoritesState) {
 }
 
 export function useFavorites() {
-  const [state, setState] = useState<FavoritesState>(EMPTY)
+  const [state, setState] = useState<FavoritesState>(() => readStorage())
 
   useEffect(() => {
-    setState(readStorage())
-  }, [])
-
-  const persist = useCallback((next: FavoritesState) => {
-    setState(next)
-    writeStorage(next)
+    // Re-sync if another tab mutated storage.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) setState(readStorage())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
 
   const leagueIds = useMemo(() => new Set(state.leagues), [state.leagues])
@@ -95,35 +119,40 @@ export function useFavorites() {
     [playerIds],
   )
 
-  const toggleLeague = useCallback(
-    (id: LeagueId) => {
-      const leagues = leagueIds.has(id)
-        ? state.leagues.filter((leagueId) => leagueId !== id)
-        : [...state.leagues, id]
-      persist({ ...state, leagues })
-    },
-    [leagueIds, persist, state],
-  )
+  const toggleLeague = useCallback((id: LeagueId) => {
+    setState((prev) => {
+      const leagues = prev.leagues.includes(id)
+        ? prev.leagues.filter((leagueId) => leagueId !== id)
+        : [...prev.leagues, id]
+      const next = { ...prev, leagues }
+      writeStorage(next)
+      return next
+    })
+  }, [])
 
-  const toggleTeam = useCallback(
-    (team: FavoriteTeam) => {
-      const teams = teamIds.has(team.id)
-        ? state.teams.filter((item) => item.id !== team.id)
-        : [...state.teams, team]
-      persist({ ...state, teams })
-    },
-    [persist, state, teamIds],
-  )
+  const toggleTeam = useCallback((team: FavoriteTeam) => {
+    setState((prev) => {
+      const exists = prev.teams.some((item) => item.id === team.id)
+      const teams = exists
+        ? prev.teams.filter((item) => item.id !== team.id)
+        : [...prev.teams, team]
+      const next = { ...prev, teams }
+      writeStorage(next)
+      return next
+    })
+  }, [])
 
-  const togglePlayer = useCallback(
-    (player: FavoritePlayer) => {
-      const players = playerIds.has(player.id)
-        ? state.players.filter((item) => item.id !== player.id)
-        : [...state.players, player]
-      persist({ ...state, players })
-    },
-    [persist, playerIds, state],
-  )
+  const togglePlayer = useCallback((player: FavoritePlayer) => {
+    setState((prev) => {
+      const exists = prev.players.some((item) => item.id === player.id)
+      const players = exists
+        ? prev.players.filter((item) => item.id !== player.id)
+        : [...prev.players, player]
+      const next = { ...prev, players }
+      writeStorage(next)
+      return next
+    })
+  }, [])
 
   return {
     leagues: state.leagues,
