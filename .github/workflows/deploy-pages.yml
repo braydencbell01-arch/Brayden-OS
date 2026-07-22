@@ -1,36 +1,72 @@
-name: Deploy Brayden Stats to jerseydeals/
+name: Deploy GitHub Pages
 
 on:
   push:
     branches:
       - Brayden-OS
-      - cursor/calendar-range-today-button-30ef
-      - cursor/deploy-to-jerseydeals-url-30ef
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: jerseydeals-pages
+  group: pages-deploy
   cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
-      - name: Deploy to gh-pages/jerseydeals
-        env:
-          GIT_AUTHOR_NAME: Brayden Stats Deploy
-          GIT_AUTHOR_EMAIL: deploy@brayden-stats.local
-          GIT_COMMITTER_NAME: Brayden Stats Deploy
-          GIT_COMMITTER_EMAIL: deploy@brayden-stats.local
-        run: bash scripts/deploy-gh-pages.sh
+
+      - name: Build Brayden Stats (site root)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Jersey Deals (/jerseydeals/)
+        working-directory: jerseydeals
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble Pages site
+        run: |
+          # Dual permanent URLs (never swap these):
+          #   Brayden Stats  → https://braydencbell01-arch.github.io/Brayden-OS/
+          #   Jersey Deals   → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+          mkdir -p site
+          # Stats build (root vite base /Brayden-OS/) → site root
+          cp -a dist/. site/
+          # Jersey Deals build ONLY (base /Brayden-OS/jerseydeals/) → site/jerseydeals/
+          # Do not copy Stats dist into jerseydeals/
+          mkdir -p site/jerseydeals
+          cp -a jerseydeals/dist/. site/jerseydeals/
+          # Guard: jerseydeals must be Jersey Deals, not Brayden Stats
+          if ! grep -q 'Jersey Deals' site/jerseydeals/index.html; then
+            echo "ERROR: site/jerseydeals/index.html is not Jersey Deals" >&2
+            exit 1
+          fi
+          if ! grep -q 'Brayden Stats' site/index.html; then
+            echo "ERROR: site/index.html is not Brayden Stats" >&2
+            exit 1
+          fi
+          # SPA fallbacks
+          cp site/index.html site/404.html
+          cp site/jerseydeals/index.html site/jerseydeals/404.html
+          touch site/.nojekyll
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true

@@ -1,12 +1,21 @@
+# Brayden-OS
+
+Two **separate** projects with two permanent GitHub Pages URLs:
+
+| App | Source | Permanent live URL |
+|-----|--------|--------------------|
+| **Brayden Stats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
+| **Jersey Deals** | [`jerseydeals/`](./jerseydeals) | https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/ |
+
+Do not publish Brayden Stats into `/jerseydeals/`, or Jersey Deals into the site root.
+
+---
+
 # Brayden Stats
 
 Interactive soccer stats app shell — player ratings, pay-per-stat insights, and league screens.
 
-## Live site
-
-**https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/**
-
-Deploys update only the `jerseydeals/` folder on the `gh-pages` branch so other work at the Pages root is left alone.
+**Permanent live link:** https://braydencbell01-arch.github.io/Brayden-OS/
 
 ## What's included
 
@@ -29,9 +38,9 @@ npm install
 npm run dev
 ```
 
-## Build & deploy
+## Build & deploy (Brayden Stats only)
 
 ```bash
 npm run build
-npm run deploy:pages   # publishes to the live jerseydeals/ URL above
+npm run deploy:pages   # updates Pages root; preserves /jerseydeals/
 ```

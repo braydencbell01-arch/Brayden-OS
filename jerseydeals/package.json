@@ -1,5 +1,5 @@
 {
-  "name": "brayden-stats",
+  "name": "jerseydeals",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -7,9 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview",
-    "deploy:pages": "bash scripts/deploy-gh-pages.sh",
-    "deploy:pages": "bash scripts/deploy-gh-pages.sh"
+    "preview": "vite preview"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",
