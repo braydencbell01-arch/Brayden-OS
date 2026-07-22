@@ -104,12 +104,14 @@ function ExpandableMatchRow({
   match,
   showLeague = false,
   isFavorite = false,
+  flat = false,
   onOpenTeam,
   onOpenPlayer,
 }: {
   match: Match
   showLeague?: boolean
   isFavorite?: boolean
+  flat?: boolean
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
@@ -120,17 +122,24 @@ function ExpandableMatchRow({
 
   return (
     <article
-      className={[
-        'border bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]',
-        isFavorite ? 'border-star/35' : 'border-white/10',
-      ].join(' ')}
+      className={
+        flat
+          ? [
+              'border-b border-white/10 transition last:border-b-0 hover:bg-white/[0.03]',
+              isFavorite ? 'bg-star/[0.04]' : '',
+            ].join(' ')
+          : [
+              'border bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]',
+              isFavorite ? 'border-star/35' : 'border-white/10',
+            ].join(' ')
+      }
     >
-      <div className="px-4 py-3">
+      <div className={flat ? 'px-3 py-2.5' : 'px-4 py-3'}>
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
-          className="mb-2 flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
+          className="mb-1.5 flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
         >
           <p className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
@@ -157,7 +166,7 @@ function ExpandableMatchRow({
       </div>
 
       {open && (
-        <div className="px-4 pb-3">
+        <div className={flat ? 'border-t border-white/10 px-3 pb-3 pt-1' : 'px-4 pb-3'}>
           <MatchStatsPanel
             stats={stats}
             loading={loading}
@@ -178,6 +187,7 @@ function ExpandableMatchRow({
 export function MatchList({
   matches,
   showLeague = false,
+  flat = false,
   emptyLabel,
   onOpenTeam,
   onOpenPlayer,
@@ -187,6 +197,8 @@ export function MatchList({
 }: {
   matches: Match[]
   showLeague?: boolean
+  /** Divider rows instead of nested bordered cards (for league shells). */
+  flat?: boolean
   emptyLabel: string
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
@@ -203,12 +215,13 @@ export function MatchList({
   const playerTeamIds = favoritePlayerTeamIds ?? new Set<string>()
 
   return (
-    <ul className="flex flex-col gap-2">
+    <ul className={flat ? 'flex flex-col' : 'flex flex-col gap-2'}>
       {matches.map((match) => (
         <li key={match.id}>
           <ExpandableMatchRow
             match={match}
             showLeague={showLeague}
+            flat={flat}
             isFavorite={isFavoriteMatch(match, leagueIds, teamIds, playerTeamIds)}
             onOpenTeam={onOpenTeam}
             onOpenPlayer={onOpenPlayer}

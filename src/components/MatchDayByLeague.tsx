@@ -94,10 +94,11 @@ function LeagueDropdown({
       </button>
 
       {open ? (
-        <div id={panelId} className="border-t border-white/10 px-2 pb-2 pt-2">
+        <div id={panelId} className="border-t border-white/10">
           <MatchList
             matches={matches}
             showLeague={false}
+            flat
             onOpenTeam={onOpenTeam}
             onOpenPlayer={onOpenPlayer}
             favoriteLeagueIds={favoriteLeagueIds}

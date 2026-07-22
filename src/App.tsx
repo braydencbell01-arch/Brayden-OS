@@ -41,9 +41,9 @@ function BrandMark({ className = '' }: { className?: string }) {
     <img
       src={`${import.meta.env.BASE_URL}logo-mark.svg`}
       alt="BrayStats"
-      width={32}
-      height={32}
-      className={`h-8 w-8 shrink-0 rounded-lg ${className}`}
+      width={28}
+      height={28}
+      className={`h-7 w-7 shrink-0 rounded-md ${className}`}
     />
   )
 }
@@ -124,7 +124,7 @@ function HomeScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-3 flex items-center gap-3">
           <BrandMark />
         </div>
 
@@ -137,12 +137,12 @@ function HomeScreen({
           onOpenPlayer={onOpenPlayer}
         />
 
-        <header className="mb-8">
+        <header className="mb-5">
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="text-xs font-semibold uppercase tracking-[0.22em] text-lime"
+            className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-lime/90"
           >
             Football intelligence
           </motion.p>
@@ -150,7 +150,7 @@ function HomeScreen({
             initial={reduce ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-2 font-display text-6xl leading-[0.9] tracking-[0.04em] text-cream sm:text-7xl"
+            className="mt-1.5 font-display text-5xl leading-[0.9] tracking-[0.04em] text-cream sm:text-6xl"
           >
             BrayStats
           </motion.h1>
@@ -158,18 +158,18 @@ function HomeScreen({
             initial={reduce ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: reduce ? 0 : 0.14 }}
-            className="mt-3 max-w-md text-base text-mist/90"
+            className="mt-2 max-w-md text-sm text-mist/85"
           >
             Player ratings from match stats, and what clubs pay per goal, assist, and more.
           </motion.p>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
             <span>{formatUpdatedAt(updatedAt)}</span>
-            {hasLive && <span className="text-lime">Live polling</span>}
-            {refreshing && <span>Syncing…</span>}
+            {hasLive && <span className="text-lime/80">· Live</span>}
+            {refreshing && <span>· Syncing…</span>}
             <button
               type="button"
               onClick={onRefresh}
-              className="border border-white/15 px-2 py-1 text-mist transition hover:border-lime/50 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              className="text-mist/60 underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
             >
               Refresh
             </button>
@@ -186,15 +186,15 @@ function HomeScreen({
           reduce={reduce}
         />
 
-        <section className="mt-8" aria-label="Fixtures for selected date">
-          <div className="mb-3 flex items-end justify-between gap-3 px-1">
+        <section className="mt-6" aria-label="Fixtures for selected date">
+          <div className="mb-2.5 flex items-end justify-between gap-3 px-1">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-lime/80">
                 Match day
               </p>
-              <p className="mt-1 text-sm text-mist/80">{dayLabel}</p>
+              <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
             </div>
-            <p className="font-display text-xl tracking-wide text-cream/80">
+            <p className="font-display text-lg tracking-wide text-cream/80">
               {loading ? '…' : `${dayMatches.length}`}
             </p>
           </div>

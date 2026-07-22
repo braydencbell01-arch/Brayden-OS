@@ -182,17 +182,17 @@ export function HomeSearch({
   }
 
   return (
-    <div ref={rootRef} className="relative z-20 mb-5">
+    <div ref={rootRef} className="relative z-20 mb-3.5">
       <label className="sr-only" htmlFor="home-search">
         Search leagues, teams, and players
       </label>
-      <div className="flex items-center gap-2 border border-white/15 bg-white/[0.04] px-3 py-2.5 focus-within:border-lime/50">
+      <div className="flex items-center gap-2 border-b border-white/12 bg-transparent px-0.5 py-1.5 focus-within:border-lime/45">
         <svg
-          width="16"
-          height="16"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           aria-hidden
-          className="shrink-0 text-mist/70"
+          className="shrink-0 text-mist/55"
         >
           <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
           <path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -205,7 +205,7 @@ export function HomeSearch({
           onFocus={() => setFocused(true)}
           placeholder="Search leagues, teams, players"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-sm text-cream outline-none placeholder:text-mist/45"
+          className="min-w-0 flex-1 bg-transparent text-[0.8125rem] text-cream outline-none placeholder:text-mist/40"
         />
         {query ? (
           <button
@@ -214,7 +214,7 @@ export function HomeSearch({
               setQuery('')
               setRemote({ teams: [], players: [] })
             }}
-            className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime"
+            className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/60 transition hover:text-lime"
           >
             Clear
           </button>
