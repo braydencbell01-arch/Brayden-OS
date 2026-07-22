@@ -123,22 +123,28 @@ function HomeScreen({
         </div>
 
         <header className="mb-8">
-          <motion.p
+          <motion.div
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="text-xs font-semibold uppercase tracking-[0.22em] text-lime"
+            className="flex items-center gap-3"
           >
-            Soccer intelligence
-          </motion.p>
-          <motion.h1
-            initial={reduce ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-2 font-display text-6xl leading-[0.9] tracking-[0.04em] text-cream sm:text-7xl"
-          >
-            Brayden Stats
-          </motion.h1>
+            <img
+              src={`${import.meta.env.BASE_URL}logo-mark.svg`}
+              alt=""
+              width={56}
+              height={56}
+              className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-lime">
+                Soccer intelligence
+              </p>
+              <h1 className="mt-1 font-display text-5xl leading-[0.9] tracking-[0.04em] text-cream sm:text-7xl">
+                Brayden Stats
+              </h1>
+            </div>
+          </motion.div>
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
