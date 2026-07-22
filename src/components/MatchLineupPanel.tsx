@@ -1,14 +1,6 @@
 import type { MatchLineupPlayer, MatchLineupSide } from '../lib/stats/types'
+import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { PlayerAvatar } from './PlayerAvatar'
-
-function ratingClass(rating: number | null): string {
-  if (rating == null) return 'text-mist/50'
-  if (rating >= 8) return 'text-lime'
-  if (rating >= 6.5) return 'text-star'
-  if (rating >= 5) return 'text-cream'
-  if (rating >= 3.5) return 'text-mist/80'
-  return 'text-red-300/90'
-}
 
 function LineupPlayerCard({
   player,
@@ -33,7 +25,12 @@ function LineupPlayerCard({
       <span className="line-clamp-2 min-h-[2rem] text-[0.65rem] font-semibold leading-tight text-cream">
         {player.shortName}
       </span>
-      <span className={`font-display text-lg leading-none tracking-wide tabular-nums ${ratingClass(player.rating)}`}>
+      <span
+        className={`font-display text-lg leading-none tracking-wide tabular-nums ${
+          player.rating == null ? 'text-mist/50' : ''
+        }`}
+        style={ratingColorStyle(player.rating)}
+      >
         {player.rating != null ? player.rating.toFixed(1) : 'N/A'}
       </span>
       <span className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-mist/55">

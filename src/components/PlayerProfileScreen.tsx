@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getLeague } from '../lib/leagues'
 import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
+import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { usePlayerProfile } from '../lib/stats/usePlayerProfile'
 import type { MatchLineupPlayer } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
@@ -24,15 +25,6 @@ export type PlayerNavRef = {
   teamId?: string
   teamName?: string
   position?: string
-}
-
-function ratingTone(rating: number | null): string {
-  if (rating == null) return 'text-mist/50'
-  if (rating >= 8) return 'text-lime'
-  if (rating >= 6.5) return 'text-star'
-  if (rating >= 5) return 'text-cream'
-  if (rating >= 3.5) return 'text-mist/80'
-  return 'text-red-300/90'
 }
 
 export function PlayerProfileScreen({
@@ -121,9 +113,11 @@ export function PlayerProfileScreen({
           <ProfileMetricsRow>
             <ProfileMetric
               label="Avg rating"
-              accent
               value={
-                <span className={ratingTone(profile.averageRating)}>
+                <span
+                  className={profile.averageRating == null ? 'text-mist/50' : ''}
+                  style={ratingColorStyle(profile.averageRating)}
+                >
                   {profile.averageRating != null ? profile.averageRating.toFixed(1) : '—'}
                 </span>
               }
@@ -213,7 +207,8 @@ export function PlayerProfileScreen({
                         {row.assists ? ` · ${row.assists}A` : ''}
                       </span>
                       <span
-                        className={`font-display text-2xl tabular-nums ${ratingTone(row.rating)}`}
+                        className="font-display text-2xl tabular-nums"
+                        style={ratingColorStyle(row.rating)}
                       >
                         {row.rating.toFixed(1)}
                       </span>
