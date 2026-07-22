@@ -75,7 +75,11 @@ function readStorage(): FavoritesState {
 }
 
 function writeStorage(state: FavoritesState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Quota / private mode — keep in-memory favorites for this session.
+  }
 }
 
 export function useFavorites() {

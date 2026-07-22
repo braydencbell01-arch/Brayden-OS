@@ -44,7 +44,7 @@ export function MatchStatsPanel({
           Lineups + ratings
         </p>
         <p className="mb-3 text-xs text-mist/65">
-          Tap a player for their profile. Ratings start at 5.0 and average out over the match.
+          Tap a player for their profile. Ratings start at 5.0 from a 50/100 performance floor.
         </p>
         <MatchLineupPanel lineups={stats.lineups} onOpenPlayer={onOpenPlayer} />
       </div>

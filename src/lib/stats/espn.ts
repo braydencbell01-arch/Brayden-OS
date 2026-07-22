@@ -972,10 +972,9 @@ function buildOrderedSeasonStatsFromOverview(
   const labels = overview.statistics?.displayNames ?? []
   const splits = overview.statistics?.splits ?? []
   const preferred =
-    splits.find((split) => split.leagueSlug === leagueSlug) ||
-    splits.find((split) => (split.displayName || '').toLowerCase().includes('premier')) ||
-    null
-  // Do not fall back to splits[0] — that is often a national-team friendly, not club season.
+    splits.find((split) => split.leagueSlug === leagueSlug) || null
+  // Do not fall back to an unrelated league (e.g. Premier) or splits[0]
+  // — those are often national-team friendlies or the wrong competition.
   if (!preferred?.stats?.length) return []
   return buildOrderedSeasonStatsFromArrays(names, labels, preferred.stats)
 }
@@ -1089,7 +1088,7 @@ function parseGameLogRatings(
         yellowCards: num('yellowCards'),
         redCards: num('redCards'),
         offsides: num('offsides'),
-        ownGoals: 0,
+        ownGoals: num('ownGoals'),
         saves: num('saves'),
         goalsConceded: num('goalsConceded'),
         shotsFaced: num('shotsFaced'),
@@ -1633,13 +1632,16 @@ export async function fetchPlayerProfile(
   playerId: string,
 ): Promise<{ profile: PlayerProfile; ratingsCursor: PlayerRatingsCursor }> {
   const league = getLeague(leagueId)
+  const emptySeason = { stats: [] as PlayerSeasonStatLine[], seasonLabel: null as string | null }
   const [athleteRes, bioRes, overviewRes, seasonStatsBundle] = await Promise.all([
     fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}`),
-    fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/bio`),
+    fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/bio`).catch(
+      () => null,
+    ),
     fetch(
       `https://site.api.espn.com/apis/common/v3/sports/soccer/${league.espnCode}/athletes/${playerId}/overview`,
-    ),
-    fetchAthleteLeagueSeasonStats(playerId, league.espnCode),
+    ).catch(() => null),
+    fetchAthleteLeagueSeasonStats(playerId, league.espnCode).catch(() => emptySeason),
   ])
 
   if (!athleteRes.ok) {
@@ -1647,10 +1649,10 @@ export async function fetchPlayerProfile(
   }
 
   const athleteJson = (await athleteRes.json()) as EspnAthletePayload
-  const bioJson = bioRes.ok ? ((await bioRes.json()) as EspnBioPayload) : { teamHistory: [] }
-  const overviewJson = overviewRes.ok
-    ? ((await overviewRes.json()) as EspnOverviewPayload)
-    : {}
+  const bioJson =
+    bioRes && bioRes.ok ? ((await bioRes.json()) as EspnBioPayload) : { teamHistory: [] }
+  const overviewJson =
+    overviewRes && overviewRes.ok ? ((await overviewRes.json()) as EspnOverviewPayload) : {}
 
   const athlete = athleteJson.athlete
   if (!athlete?.id) throw new Error('Player not found')

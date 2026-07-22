@@ -124,6 +124,7 @@ export function HomeSearch({
     }
 
     const id = ++requestId.current
+    setRemote({ teams: [], players: [] })
     setLoadingRemote(true)
     const timer = window.setTimeout(() => {
       void searchEspnSoccer(q)

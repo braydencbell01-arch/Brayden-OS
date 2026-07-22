@@ -276,7 +276,8 @@ export async function resolvePlayerNavFromSearch(
 
     return {
       id: athlete.id,
-      leagueId: hit.player.leagueId || fromSlug,
+      // Prefer the athlete's current club league when the search hit had a weak/wrong slug.
+      leagueId: fromSlug || hit.player.leagueId,
       name: athlete.displayName || hit.player.name,
       shortName: athlete.shortName || hit.player.shortName,
       photoUrl: athlete.headshot?.href || hit.player.photoUrl || playerHeadshotUrl(athlete.id),

@@ -9,9 +9,15 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!enabled || !teamId) return
+    if (!enabled || !teamId) {
+      setData(null)
+      setError(null)
+      setLoading(false)
+      return
+    }
 
     let cancelled = false
+    setData(null)
     setLoading(true)
     setError(null)
 

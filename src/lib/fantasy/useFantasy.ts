@@ -60,7 +60,11 @@ function readStore(): FantasyStoreState {
 }
 
 function writeStore(state: FantasyStoreState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Quota / private mode — keep in-memory fantasy state for this session.
+  }
 }
 
 export function useFantasy() {

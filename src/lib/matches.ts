@@ -213,7 +213,8 @@ export function matchesForLeagueFrom(
   return matches
     .filter((match) => {
       if (match.leagueId !== leagueId) return false
-      if (match.dateKey < fromKey) return false
+      // Keep live games that spilled past midnight even when from=today.
+      if (match.dateKey < fromKey && match.status !== 'live') return false
       if (toKey != null && match.dateKey > toKey) return false
       // League "upcoming" should not list finished / postponed games.
       if (match.status === 'finished' || match.status === 'postponed') return false
@@ -344,7 +345,13 @@ export function splitTeamFixtures(
   const teamMatches = matchesForTeam(matches, teamId)
   const recent = teamMatches
     .filter((match) => match.dateKey < todayKey || match.status === 'finished')
-    .filter((match) => match.status === 'finished' || match.status === 'postponed')
+    .filter(
+      (match) =>
+        match.status === 'finished' ||
+        match.status === 'postponed' ||
+        // Abandoned / misc past fixtures should still appear in Recent.
+        (match.status === 'other' && match.dateKey < todayKey),
+    )
     .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
   const upcoming = teamMatches
     .filter(

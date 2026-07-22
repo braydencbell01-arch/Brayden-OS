@@ -8,12 +8,16 @@ export function TeamRosterPanel({
   loading,
   error,
   leagueId,
+  teamId,
+  teamName,
   onOpenPlayer,
 }: {
   data: TeamRoster | null
   loading: boolean
   error: string | null
   leagueId: LeagueId
+  teamId?: string
+  teamName?: string
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
   if (loading && !data) {
@@ -57,6 +61,8 @@ export function TeamRosterPanel({
                         photoUrl: player.photoUrl,
                         jersey: player.jersey,
                         position: player.positionAbbrev,
+                        teamId,
+                        teamName,
                       })
                     }
                     className={`flex w-full items-center gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 text-left outline-none transition ${

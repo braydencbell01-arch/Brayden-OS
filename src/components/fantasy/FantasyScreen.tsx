@@ -498,6 +498,10 @@ function DraftOrderEditor({ fantasy }: { fantasy: FantasyApi }) {
   const league = fantasy.activeLeague!
   const [order, setOrder] = useState(league.draftOrder)
 
+  useEffect(() => {
+    setOrder(league.draftOrder)
+  }, [league.draftOrder])
+
   return (
     <div className="mt-3 space-y-2">
       <p className="text-xs text-mist/55">Use arrows to reorder before starting.</p>

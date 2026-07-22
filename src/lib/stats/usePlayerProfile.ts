@@ -79,13 +79,17 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   useEffect(() => {
     if (!leagueId || !playerId) {
       requestId.current += 1
+      loadMoreLock.current = false
       setProfile(null)
       setError(null)
       setLoading(false)
+      setLoadingMoreRatings(false)
       setHasMoreRatings(false)
       ratingsCursor.current = null
       return
     }
+    loadMoreLock.current = false
+    setLoadingMoreRatings(false)
     setProfile(null)
     void load(leagueId, playerId)
   }, [leagueId, playerId, load])

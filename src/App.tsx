@@ -318,13 +318,14 @@ export default function App() {
   const openTeam = (team: FavoriteTeam) => {
     if (screen === 'team' && activeTeam && activeTeam.id !== team.id) {
       previousTeamRef.current = activeTeam
-    } else if (screen !== 'team' && screen !== 'player') {
+    } else if (isTabScreen(screen)) {
+      // Only reset the opponent stack when opening from a bottom tab.
+      // Opening a club from a league profile must keep previousTeamRef so
+      // Team → opponent → League → other club → Back still restores the stack.
       previousTeamRef.current = null
-      if (isTabScreen(screen)) {
-        leagueReturnTeamRef.current = null
-        setReturnTab(screen)
-        setActiveTab(screen)
-      }
+      leagueReturnTeamRef.current = null
+      setReturnTab(screen)
+      setActiveTab(screen)
     }
     setActivePlayer(null)
     setActiveTeam(team)
@@ -435,9 +436,7 @@ export default function App() {
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               onOpenLeague={openLeague}
-              onNeedPastRange={(from, to) => {
-                void ensureRange(from, to)
-              }}
+              onNeedPastRange={(from, to) => ensureRange(from, to)}
               reduce={reduce}
             />
           </motion.div>
