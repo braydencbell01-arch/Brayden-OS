@@ -276,7 +276,7 @@ export async function resolvePlayerNavFromSearch(
 
     return {
       id: athlete.id,
-      leagueId: fromSlug || hit.player.leagueId,
+      leagueId: hit.player.leagueId || fromSlug,
       name: athlete.displayName || hit.player.name,
       shortName: athlete.shortName || hit.player.shortName,
       photoUrl: athlete.headshot?.href || hit.player.photoUrl || playerHeadshotUrl(athlete.id),

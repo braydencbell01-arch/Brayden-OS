@@ -61,12 +61,13 @@ export function CalendarStrip({
     return true
   }
 
-  // Keep the selected day (usually today) centered. The strip starts ~100 days in
-  // the past (April when today is July); without this re-center, range rebuilds
-  // from fixture discovery reset scrollLeft to 0 and strand the user in April.
+  // Center on first paint and when the selected day changes — not when the
+  // range grows (discovery / Later), or scrolling ahead yanks back to today.
   useLayoutEffect(() => {
     const selectedChanged = prevSelectedKeyRef.current !== selectedKey
     prevSelectedKeyRef.current = selectedKey
+    if (hasCenteredRef.current && !selectedChanged) return
+
     const behavior: ScrollBehavior =
       hasCenteredRef.current && selectedChanged ? 'smooth' : 'auto'
 
@@ -79,7 +80,7 @@ export function CalendarStrip({
       if (scrollSelectedIntoView('auto')) hasCenteredRef.current = true
     })
     return () => window.cancelAnimationFrame(id)
-  }, [selectedKey, days, pastDays, forwardDays])
+  }, [selectedKey, days])
 
   const extendPast = () => {
     if (extendingRef.current) return
@@ -107,9 +108,18 @@ export function CalendarStrip({
     if (extendingRef.current) return
     extendingRef.current = true
     setExtraForwardDays((current) => current + CALENDAR_FORWARD_CHUNK_DAYS)
+    // Forward growth appends to the end; keep scrollLeft so we don't jump.
     requestAnimationFrame(() => {
       extendingRef.current = false
     })
+  }
+
+  const handleTodayClick = () => {
+    if (!isSelectedToday) {
+      onJumpToToday()
+      return
+    }
+    scrollSelectedIntoView('smooth')
   }
 
   useEffect(() => {
@@ -147,16 +157,13 @@ export function CalendarStrip({
           </p>
           <button
             type="button"
-            onClick={onJumpToToday}
-            disabled={isSelectedToday}
+            onClick={handleTodayClick}
             className={[
               'rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition outline-none',
               'focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
-              isSelectedToday
-                ? 'cursor-default border-white/10 text-mist/40'
-                : 'border-lime/50 bg-lime/15 text-lime hover:bg-lime hover:text-ink',
+              'border-lime/50 bg-lime/15 text-lime hover:bg-lime hover:text-ink',
             ].join(' ')}
-            aria-label="Jump to today"
+            aria-label={isSelectedToday ? 'Center calendar on today' : 'Jump to today'}
           >
             Today
           </button>
