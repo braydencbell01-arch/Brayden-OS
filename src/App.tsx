@@ -381,6 +381,7 @@ export default function App() {
     setActivePlayer(null)
     setActiveLeagueId(id)
     setScreen('league-profile')
+    window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
   const openTeam = (team: FavoriteTeam) => {
@@ -397,6 +398,7 @@ export default function App() {
     setActivePlayer(null)
     setActiveTeam(team)
     setScreen('team')
+    window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
   const openPlayer = (player: PlayerNavRef) => {
@@ -410,6 +412,7 @@ export default function App() {
     }
     setActivePlayer(player)
     setScreen('player')
+    window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
   const closeOverlay = () => {
