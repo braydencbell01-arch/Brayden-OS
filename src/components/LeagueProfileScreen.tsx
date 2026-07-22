@@ -205,7 +205,7 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Leaders"
+          title="Stat leaders"
           open={openSection === 'stats'}
           onToggle={() => toggleSection('stats')}
         >
