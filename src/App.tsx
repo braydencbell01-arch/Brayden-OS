@@ -146,7 +146,7 @@ function HomeScreen({
             transition={{ duration: 0.45 }}
             className="text-xs font-semibold uppercase tracking-[0.22em] text-lime"
           >
-            Soccer intelligence
+            Football intelligence
           </motion.p>
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: 18 }}
