@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-sans: "Outfit", sans-serif;
+  --font-comic: "Comic Sans MS", "Comic Sans", "Chalkboard SE", "Comic Neue", cursive;
+
+  --color-navy: #0a1628;
+  --color-navy-deep: #06101c;
+  --color-crimson: #c8102e;
+  --color-crimson-hot: #e11d3a;
+  --color-chalk: #f7f5f2;
+  --color-mist: #ebe7e1;
+  --color-muted: #5a6470;
+  --color-white: #ffffff;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    font-family: var(--font-sans);
+    color: var(--color-navy);
+    background: var(--color-chalk);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-comic {
+    font-family: var(--font-comic);
+  }
+}
