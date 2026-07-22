@@ -1,0 +1,33 @@
+---
+description: Brayden-OS multi-agent guardrails — dual apps, roles, merge-before-deploy
+alwaysApply: true
+---
+
+# Brayden-OS multi-agent rules
+
+## Dual products
+
+- **Brayden Stats** lives at repo root → https://braydencbell01-arch.github.io/Brayden-OS/
+- **Jersey Deals** lives in `jerseydeals/` → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+- Never deploy one product into the other’s URL path.
+
+## Roles on Brayden Stats
+
+- **Designer**: UI, layout, motion, league labels/copy, user-facing empty/loading text only.
+- **Other agents**: fixtures, scores, favorites, APIs, data — do not redesign or drop designer league labels without coordinating.
+
+## Never wipe teammate work
+
+1. Start from latest `Brayden-OS`.
+2. Merge into `Brayden-OS` before considering work done.
+3. Do not publish a feature branch to `gh-pages` as the final step without merging first — other agents redeploying from `Brayden-OS` will overwrite it.
+4. When updating Pages, preserve the other product’s folder (Stats root vs `jerseydeals/`).
+
+## After Brayden Stats tasks
+
+Always give the user both links, labeled:
+
+- Brayden Stats: https://braydencbell01-arch.github.io/Brayden-OS/
+- Jersey Deals: https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+
+See `AGENTS.md` for the full checklist.
