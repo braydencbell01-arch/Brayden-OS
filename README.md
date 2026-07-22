@@ -1,3 +1,14 @@
+# Brayden-OS
+
+Monorepo-style workspace with two independent Vite apps:
+
+| Path | App |
+|------|-----|
+| `/` (repo root) | **Brayden Stats** — soccer stats app shell |
+| [`jerseydeals/`](./jerseydeals) | **Jersey Deals** — storefront landing page |
+
+---
+
 # Brayden Stats
 
 Interactive soccer stats app shell — player ratings, pay-per-stat insights, and the top five European leagues.
@@ -27,4 +38,16 @@ npm run dev
 ```bash
 npm run build
 npm run preview
+```
+
+---
+
+# Jersey Deals
+
+Separate project — see [`jerseydeals/README.md`](./jerseydeals/README.md).
+
+```bash
+cd jerseydeals
+npm install
+npm run dev
 ```
