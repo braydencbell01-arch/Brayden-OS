@@ -4,13 +4,13 @@ import { CalendarStrip } from './components/CalendarStrip'
 import { FavoriteStar } from './components/FavoriteStar'
 import { FavoritesScreen } from './components/FavoritesScreen'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
-import { MatchList } from './components/MatchList'
+import { MatchDayByLeague } from './components/MatchDayByLeague'
 import {
   PlayerProfileScreen,
   type PlayerNavRef,
 } from './components/PlayerProfileScreen'
 import { TeamProfileScreen } from './components/TeamProfileScreen'
-import { startOfDay } from './lib/dates'
+import { startOfDay, toDateKey } from './lib/dates'
 import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favorites'
 import { LEAGUES, type LeagueId } from './lib/leagues'
 import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
@@ -193,11 +193,14 @@ function HomeScreen({
           ) : error ? (
             <p className="text-sm text-mist/80">{error}</p>
           ) : (
-            <MatchList
+            <MatchDayByLeague
               matches={dayMatches}
-              showLeague
+              dateKey={toDateKey(selectedDate)}
               onOpenTeam={onOpenTeam}
               onOpenPlayer={onOpenPlayer}
+              favoriteLeagueIds={favorites.leagueIds}
+              favoriteTeamIds={favorites.teamIds}
+              favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
               emptyLabel="No matches on this date. Try another day or jump to Today."
             />
           )}
