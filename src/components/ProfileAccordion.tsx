@@ -25,14 +25,12 @@ export function ProfileAccordion({
   open,
   onToggle,
   children,
-  meta,
 }: {
   title: string
   subtitle?: string
   open: boolean
   onToggle: () => void
   children: ReactNode
-  meta?: string
 }) {
   const panelId = useId()
 
@@ -53,9 +51,6 @@ export function ProfileAccordion({
             </p>
           ) : null}
         </div>
-        {meta ? (
-          <span className="font-display text-lg tracking-wide text-cream/85 tabular-nums">{meta}</span>
-        ) : null}
         <Chevron open={open} />
       </button>
 

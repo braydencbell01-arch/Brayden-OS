@@ -124,7 +124,6 @@ export function LeagueProfileScreen({
           title="Standings"
           open={openSection === 'table'}
           onToggle={() => toggleSection('table')}
-          meta={standings.rows.length ? String(standings.rows.length) : undefined}
         >
           <StandingsTable
             rows={standings.rows}
@@ -142,7 +141,6 @@ export function LeagueProfileScreen({
           subtitle="All known fixtures from today forward"
           open={openSection === 'fixtures'}
           onToggle={() => toggleSection('fixtures')}
-          meta={loading ? '…' : String(leagueMatches.length)}
         >
           {loading ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
