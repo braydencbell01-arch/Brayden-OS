@@ -31,7 +31,10 @@ export type MatchLineupPlayer = {
   name: string
   shortName: string
   jersey?: string
+  /** Real player headshot (preferred). */
   photoUrl: string
+  /** Kit graphic used when the headshot is missing. */
+  jerseyUrl?: string
   positionAbbrev: string
   starter: boolean
   rating: number | null
@@ -114,6 +117,7 @@ export type PlayerProfile = {
   name: string
   shortName: string
   photoUrl: string
+  jerseyUrl?: string
   jersey?: string
   age?: number
   height?: string

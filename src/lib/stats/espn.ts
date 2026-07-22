@@ -153,9 +153,13 @@ function readNumericStat(stats: EspnStat[] | undefined, name: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
-export function playerPhotoUrl(playerId: string, jerseyUrl?: string): string {
-  if (jerseyUrl) return jerseyUrl
+export function playerHeadshotUrl(playerId: string): string {
   return `https://a.espncdn.com/i/headshots/soccer/players/full/${playerId}.png`
+}
+
+/** @deprecated Prefer playerHeadshotUrl + separate jerseyUrl */
+export function playerPhotoUrl(playerId: string, _jerseyUrl?: string): string {
+  return playerHeadshotUrl(playerId)
 }
 
 function parseElapsedMinutes(summary: EspnSummary, live: boolean): number {
@@ -230,7 +234,8 @@ function buildLineups(
             name,
             shortName,
             jersey: entry.jersey,
-            photoUrl: playerPhotoUrl(id, jerseyUrl),
+            photoUrl: playerHeadshotUrl(id),
+            jerseyUrl,
             positionAbbrev,
             starter: Boolean(entry.starter),
             rating: breakdown?.rating ?? null,
@@ -493,6 +498,7 @@ type EspnAthletePayload = {
     displayHeight?: string
     displayWeight?: string
     citizenship?: string
+    headshot?: { href?: string }
     position?: { displayName?: string; abbreviation?: string }
     team?: {
       id?: string
@@ -670,7 +676,7 @@ export async function fetchPlayerProfile(
     id: athlete.id,
     name,
     shortName,
-    photoUrl: playerPhotoUrl(athlete.id),
+    photoUrl: athlete.headshot?.href || playerHeadshotUrl(athlete.id),
     jersey: athlete.jersey,
     age: athlete.age,
     height: athlete.displayHeight,

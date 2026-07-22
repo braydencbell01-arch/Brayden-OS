@@ -15,6 +15,8 @@ export type FavoritePlayer = {
   name: string
   shortName: string
   photoUrl?: string
+  jerseyUrl?: string
+  jersey?: string
   position?: string
   leagueId: LeagueId
   teamId?: string

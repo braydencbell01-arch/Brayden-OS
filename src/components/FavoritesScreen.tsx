@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { FavoriteStar } from './FavoriteStar'
+import { PlayerAvatar } from './PlayerAvatar'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
 type FavoritesSection = 'leagues' | 'teams' | 'players'
@@ -36,6 +37,8 @@ export function FavoritesScreen({
     name: player.name,
     shortName: player.shortName,
     photoUrl: player.photoUrl,
+    jerseyUrl: player.jerseyUrl,
+    jersey: player.jersey,
     teamId: player.teamId,
     teamName: player.teamName,
     position: player.position,
@@ -216,16 +219,13 @@ export function FavoritesScreen({
                                   label={player.name}
                                   onToggle={() => favorites.togglePlayer(player)}
                                 />
-                                {player.photoUrl ? (
-                                  <img
-                                    src={player.photoUrl}
-                                    alt=""
-                                    className="h-9 w-9 rounded-full object-cover bg-pitch"
-                                    loading="lazy"
-                                  />
-                                ) : (
-                                  <div className="h-9 w-9 rounded-full bg-white/10" />
-                                )}
+                                <PlayerAvatar
+                                  name={player.name}
+                                  photoUrl={player.photoUrl}
+                                  jerseyUrl={player.jerseyUrl}
+                                  jersey={player.jersey}
+                                  size="sm"
+                                />
                                 <button
                                   type="button"
                                   onClick={() => onOpenPlayer(toNav(player))}

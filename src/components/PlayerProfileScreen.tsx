@@ -4,6 +4,7 @@ import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
 import { usePlayerProfile } from '../lib/stats/usePlayerProfile'
 import type { MatchLineupPlayer } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
+import { PlayerAvatar } from './PlayerAvatar'
 import { ProfileAccordion } from './ProfileAccordion'
 import {
   ProfileHeader,
@@ -18,36 +19,11 @@ export type PlayerNavRef = {
   name?: string
   shortName?: string
   photoUrl?: string
+  jerseyUrl?: string
+  jersey?: string
   teamId?: string
   teamName?: string
   position?: string
-}
-
-function ProfilePhoto({ src, name }: { src: string; name: string }) {
-  const [failed, setFailed] = useState(false)
-  const initials = name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-  if (failed) {
-    return (
-      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-white/15 bg-pitch font-display text-2xl text-lime">
-        {initials || '•'}
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={src}
-      alt=""
-      className="h-20 w-20 shrink-0 rounded-full border border-white/15 object-cover bg-pitch"
-      onError={() => setFailed(true)}
-    />
-  )
 }
 
 function ratingTone(rating: number | null): string {
@@ -83,6 +59,8 @@ export function PlayerProfileScreen({
     name: profile?.name || player.name || 'Player',
     shortName: profile?.shortName || player.shortName || player.name || 'Player',
     photoUrl: profile?.photoUrl || player.photoUrl,
+    jerseyUrl: profile?.jerseyUrl || player.jerseyUrl,
+    jersey: profile?.jersey || player.jersey,
     position: profile?.position || player.position,
     leagueId: player.leagueId,
     teamId: profile?.teamId || player.teamId,
@@ -115,7 +93,15 @@ export function PlayerProfileScreen({
                 onToggle={() => favorites.togglePlayer(favoritePayload)}
               />
             }
-            trailing={<ProfilePhoto src={profile.photoUrl} name={profile.name} />}
+            trailing={
+              <PlayerAvatar
+                name={profile.name}
+                photoUrl={profile.photoUrl}
+                jerseyUrl={profile.jerseyUrl || player.jerseyUrl}
+                jersey={profile.jersey || player.jersey}
+                size="lg"
+              />
+            }
             eyebrow={
               <>
                 {league.short}

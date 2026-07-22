@@ -25,6 +25,8 @@ function toPlayerNav(player: MatchLineupPlayer): PlayerNavRef {
     name: player.name,
     shortName: player.shortName,
     photoUrl: player.photoUrl,
+    jerseyUrl: player.jerseyUrl,
+    jersey: player.jersey,
     teamId: player.teamId,
     teamName: player.teamName,
     position: player.positionAbbrev,

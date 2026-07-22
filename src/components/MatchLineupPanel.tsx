@@ -1,33 +1,5 @@
-import { useState } from 'react'
 import type { MatchLineupPlayer, MatchLineupSide } from '../lib/stats/types'
-
-function PlayerPhoto({ player }: { player: MatchLineupPlayer }) {
-  const [failed, setFailed] = useState(false)
-  const initials = player.shortName
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-  if (failed) {
-    return (
-      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-pitch text-[0.7rem] font-bold text-lime">
-        {initials || '•'}
-      </div>
-    )
-  }
-
-  return (
-    <img
-      src={player.photoUrl}
-      alt=""
-      className="h-12 w-12 rounded-full border border-white/15 object-cover bg-pitch"
-      loading="lazy"
-      onError={() => setFailed(true)}
-    />
-  )
-}
+import { PlayerAvatar } from './PlayerAvatar'
 
 function ratingClass(rating: number | null): string {
   if (rating == null) return 'text-mist/50'
@@ -51,7 +23,13 @@ function LineupPlayerCard({
       onClick={() => onOpenPlayer?.(player)}
       className="flex w-[4.75rem] flex-col items-center gap-1 rounded-xl border border-white/10 bg-white/[0.04] px-1.5 py-2 text-center outline-none transition hover:border-lime/40 focus-visible:ring-2 focus-visible:ring-lime"
     >
-      <PlayerPhoto player={player} />
+      <PlayerAvatar
+        name={player.name}
+        photoUrl={player.photoUrl}
+        jerseyUrl={player.jerseyUrl}
+        jersey={player.jersey}
+        size="md"
+      />
       <span className="line-clamp-2 min-h-[2rem] text-[0.65rem] font-semibold leading-tight text-cream">
         {player.shortName}
       </span>
