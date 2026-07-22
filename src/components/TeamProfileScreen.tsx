@@ -184,13 +184,13 @@ export function TeamProfileScreen({
         ) : standings.error && !standing ? (
           <p className="text-sm text-mist/80">{standings.error}</p>
         ) : standing ? (
-          <dl className="grid grid-cols-4 gap-3 border border-white/10 px-3 py-3.5 text-center sm:grid-cols-7">
+          <dl className="grid grid-cols-4 gap-3 border-y border-white/10 px-0 py-3 text-center sm:grid-cols-7">
             {tableCells.map(([label, value]) => (
               <div key={label}>
                 <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
                   {label}
                 </dt>
-                <dd className="mt-1 font-display text-2xl tracking-wide text-cream tabular-nums">
+                <dd className="mt-1 font-display text-xl tracking-wide text-cream tabular-nums">
                   {value}
                 </dd>
               </div>
@@ -246,6 +246,7 @@ export function TeamProfileScreen({
                         </h2>
                         <MatchList
                           matches={dayMatches}
+                          flat
                           onOpenTeam={onOpenTeam}
                           onOpenPlayer={onOpenPlayer}
                           favoriteLeagueIds={favorites.leagueIds}
@@ -286,6 +287,7 @@ export function TeamProfileScreen({
                     </h2>
                     <MatchList
                       matches={dayMatches}
+                      flat
                       onOpenTeam={onOpenTeam}
                       onOpenPlayer={onOpenPlayer}
                       favoriteLeagueIds={favorites.leagueIds}

@@ -104,20 +104,35 @@ export function BottomNav({
       <div className="mx-auto grid max-w-lg grid-cols-5 md:max-w-xl">
         {TABS.map((tab) => {
           const isActive = tab.id === active
+          const isPlaceholder = tab.id === 'stats'
+          const emphasize = isActive && !isPlaceholder
           return (
             <button
               key={tab.id}
               type="button"
               onClick={() => onSelect(tab.id)}
               aria-current={isActive ? 'page' : undefined}
+              aria-label={isPlaceholder ? 'Stats, coming soon' : undefined}
               className={`flex flex-col items-center gap-0.5 px-1 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime ${
-                isActive ? 'text-lime' : 'text-mist/55 hover:text-mist/90'
+                emphasize
+                  ? 'text-lime'
+                  : isActive
+                    ? 'text-mist/65'
+                    : isPlaceholder
+                      ? 'text-mist/40 hover:text-mist/70'
+                      : 'text-mist/55 hover:text-mist/90'
               }`}
             >
-              {tab.icon(isActive)}
+              {tab.icon(emphasize)}
               <span
                 className={`text-[0.58rem] font-semibold uppercase tracking-[0.08em] ${
-                  isActive ? 'text-lime' : 'text-mist/55'
+                  emphasize
+                    ? 'text-lime'
+                    : isActive
+                      ? 'text-mist/65'
+                      : isPlaceholder
+                        ? 'text-mist/40'
+                        : 'text-mist/55'
                 }`}
               >
                 {tab.label}

@@ -27,7 +27,9 @@ export function PlaceholderScreen({
         >
           {title}
         </motion.h1>
-        <p className="mt-3 text-sm text-mist/70">Coming soon</p>
+        <p className="mt-3 max-w-xs text-center text-sm text-mist/70">
+          Ratings and leaders live on Home, Leagues, and profiles.
+        </p>
       </div>
     </div>
   )

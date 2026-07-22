@@ -174,6 +174,7 @@ export function LeagueProfileScreen({
                         </div>
                         <MatchList
                           matches={dayMatches}
+                          flat
                           onOpenTeam={onOpenTeam}
                           onOpenPlayer={onOpenPlayer}
                           favoriteLeagueIds={favorites.leagueIds}

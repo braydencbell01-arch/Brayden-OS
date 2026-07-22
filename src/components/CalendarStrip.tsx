@@ -146,20 +146,22 @@ export function CalendarStrip({
     <section aria-label="Match calendar" className="relative">
       <div className="mb-3 flex items-end justify-between gap-3 px-1">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
-          <p className="mt-1 text-sm text-mist/80">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-lime/80">
+            Calendar
+          </p>
+          <p className="mt-0.5 text-sm text-mist/80">
             Swipe for any known match day · yellow = favorites
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <p className="font-display text-2xl tracking-wide text-cream/90">
+          <p className="font-display text-xl tracking-wide text-cream/90">
             {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
           </p>
           <button
             type="button"
             onClick={handleTodayClick}
             className={[
-              'rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition outline-none',
+              'border px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition outline-none',
               'focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
               'border-lime/50 bg-lime/15 text-lime hover:bg-lime hover:text-ink',
             ].join(' ')}
@@ -206,10 +208,10 @@ export function CalendarStrip({
               aria-selected={active}
               onClick={() => onSelect(startOfDay(day))}
               className={[
-                'snap-center shrink-0 rounded-2xl px-3 py-3 text-center transition outline-none',
+                'snap-center shrink-0 px-3 py-3 text-center transition outline-none',
                 'min-w-[4.25rem] border focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
                 active
-                  ? 'border-lime bg-lime text-ink shadow-[0_0_0_1px_rgba(200,245,66,0.35)]'
+                  ? 'border-lime bg-lime text-ink'
                   : 'border-white/10 bg-white/5 text-cream hover:border-lime/40 hover:bg-white/10',
               ].join(' ')}
             >
@@ -231,9 +233,7 @@ export function CalendarStrip({
                 <span
                   className={[
                     'mt-2 mx-auto block h-1.5 w-1.5 rounded-full',
-                    active
-                      ? 'bg-ink/70'
-                      : 'bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]',
+                    active ? 'bg-ink/70' : 'bg-star',
                   ].join(' ')}
                   aria-hidden
                 />

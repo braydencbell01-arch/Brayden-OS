@@ -66,7 +66,9 @@ export function ProfileHeader({
         {star}
         <div className="min-w-0 flex-1">
           {eyebrow ? (
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-lime">{eyebrow}</div>
+            <div className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-mist/60">
+              {eyebrow}
+            </div>
           ) : null}
           <h1 className="mt-1.5 font-display text-[clamp(2.4rem,9vw,3.5rem)] leading-[0.92] tracking-[0.03em] text-cream">
             {title}
@@ -92,7 +94,7 @@ export function ProfileMetric({
     <div className="min-w-0 text-center">
       <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/55">{label}</p>
       <div
-        className={`mt-1 font-display text-3xl tracking-wide tabular-nums ${
+        className={`mt-1 font-display text-2xl tracking-wide tabular-nums ${
           accent ? 'text-star' : 'text-cream'
         }`}
       >
@@ -104,7 +106,7 @@ export function ProfileMetric({
 
 export function ProfileMetricsRow({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-5 grid grid-cols-3 gap-x-3 gap-y-4 border border-white/10 px-3 py-3.5">
+    <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3 border-y border-white/10 px-0 py-3">
       {children}
     </div>
   )
