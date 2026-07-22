@@ -137,12 +137,35 @@ export function PlayerProfileScreen({
                 </span>
               }
             />
+            <ProfileMetric
+              label="Club"
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {profile.teamName || '—'}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="Height"
+              value={
+                <span className="block text-2xl leading-8 text-cream">
+                  {profile.height || '—'}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="Weight"
+              value={
+                <span className="block text-2xl leading-8 text-cream">
+                  {profile.weight || '—'}
+                </span>
+              }
+            />
           </ProfileMetricsRow>
 
           <div className="mt-6 flex flex-col gap-3">
             <ProfileAccordion
               title="Season stats"
-              subtitle={profile.height || profile.weight ? `${profile.height || '—'} · ${profile.weight || '—'}` : undefined}
               open={openSection === 'stats'}
               onToggle={() => toggle('stats')}
               meta={profile.seasonStats.length ? String(profile.seasonStats.length) : undefined}
