@@ -1,0 +1,57 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - Brayden-OS
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build Brayden Stats (site root)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Jersey Deals (/jerseydeals/)
+        working-directory: jerseydeals
+        run: |
+          npm ci
+          npm run build
+
+      - name: Assemble Pages site
+        run: |
+          mkdir -p site
+          cp -a dist/. site/
+          mkdir -p site/jerseydeals
+          cp -a jerseydeals/dist/. site/jerseydeals/
+          # SPA fallbacks
+          cp site/index.html site/404.html
+          cp site/jerseydeals/index.html site/jerseydeals/404.html
+          touch site/.nojekyll
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
