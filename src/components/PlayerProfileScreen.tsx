@@ -65,9 +65,6 @@ export function PlayerProfileScreen({
     setOpenSection((current) => (current === section ? null : section))
   }
 
-  const transferCount =
-    (profile?.clubHistory.length ?? 0) + (profile?.nationalHistory.length ?? 0)
-
   return (
     <ProfileShell onBack={onBack} onOpenFavorites={onOpenFavorites} reduce={reduce}>
       {loading && !profile ? (
@@ -163,7 +160,6 @@ export function PlayerProfileScreen({
               subtitle={profile.seasonStatsLabel || undefined}
               open={openSection === 'stats'}
               onToggle={() => toggle('stats')}
-              meta={profile.seasonStats.length ? String(profile.seasonStats.length) : undefined}
             >
               {profile.seasonStats.length === 0 ? (
                 <p className="text-sm text-mist/70">
@@ -188,9 +184,6 @@ export function PlayerProfileScreen({
               subtitle="Brayden Rating Latest Matches"
               open={openSection === 'ratings'}
               onToggle={() => toggle('ratings')}
-              meta={
-                profile.recentRatings.length ? String(profile.recentRatings.length) : undefined
-              }
             >
               {profile.recentRatings.length === 0 ? (
                 <p className="text-sm text-mist/70">Not enough recent matches to rate yet.</p>
@@ -223,7 +216,6 @@ export function PlayerProfileScreen({
               subtitle="Club And National Team"
               open={openSection === 'transfers'}
               onToggle={() => toggle('transfers')}
-              meta={transferCount ? String(transferCount) : undefined}
             >
               <div className="flex flex-col gap-5">
                 <section aria-label="Club transfer history">
