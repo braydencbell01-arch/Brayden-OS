@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
-import { groupMatchesByLeague, type Match } from '../lib/matches'
+import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matches'
 import { MatchList } from './MatchList'
 
 function Chevron({ open }: { open: boolean }) {
@@ -23,25 +23,46 @@ function Chevron({ open }: { open: boolean }) {
   )
 }
 
+function FavoriteDot() {
+  return (
+    <span
+      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]"
+      aria-hidden
+    />
+  )
+}
+
 function LeagueDropdown({
   leagueId,
   matches,
   open,
   onToggle,
   onOpenTeam,
+  favoriteLeagueIds,
+  favoriteTeamIds,
 }: {
   leagueId: LeagueId
   matches: Match[]
   open: boolean
   onToggle: () => void
   onOpenTeam?: (team: FavoriteTeam) => void
+  favoriteLeagueIds: Set<string>
+  favoriteTeamIds: Set<string>
 }) {
   const league = getLeague(leagueId)
   const panelId = useId()
   const liveCount = matches.filter((match) => match.status === 'live').length
+  const hasFavorite = matches.some((match) =>
+    isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds),
+  )
 
   return (
-    <div className="overflow-hidden border border-white/10 bg-pitch/40">
+    <div
+      className={[
+        'overflow-hidden border bg-pitch/40',
+        hasFavorite ? 'border-star/30' : 'border-white/10',
+      ].join(' ')}
+    >
       <button
         type="button"
         aria-expanded={open}
@@ -50,7 +71,10 @@ function LeagueDropdown({
         className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime"
       >
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-cream sm:text-base">{league.name}</p>
+          <p className="flex items-center gap-2 truncate text-sm font-semibold text-cream sm:text-base">
+            {hasFavorite ? <FavoriteDot /> : null}
+            <span className="truncate">{league.name}</span>
+          </p>
           <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
             {league.country}
             {liveCount > 0 ? (
@@ -70,6 +94,8 @@ function LeagueDropdown({
             matches={matches}
             showLeague={false}
             onOpenTeam={onOpenTeam}
+            favoriteLeagueIds={favoriteLeagueIds}
+            favoriteTeamIds={favoriteTeamIds}
             emptyLabel="No matches in this league."
           />
         </div>
@@ -83,15 +109,21 @@ export function MatchDayByLeague({
   dateKey,
   onOpenTeam,
   emptyLabel,
+  favoriteLeagueIds,
+  favoriteTeamIds,
 }: {
   matches: Match[]
   /** Reset open panels when the selected calendar day changes */
   dateKey: string
   onOpenTeam?: (team: FavoriteTeam) => void
   emptyLabel: string
+  favoriteLeagueIds?: Set<string>
+  favoriteTeamIds?: Set<string>
 }) {
   const groups = useMemo(() => groupMatchesByLeague(matches), [matches])
   const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
+  const leagueIds = favoriteLeagueIds ?? new Set<string>()
+  const teamIds = favoriteTeamIds ?? new Set<string>()
 
   useEffect(() => {
     setOpenIds(new Set())
@@ -118,6 +150,8 @@ export function MatchDayByLeague({
             })
           }
           onOpenTeam={onOpenTeam}
+          favoriteLeagueIds={leagueIds}
+          favoriteTeamIds={teamIds}
         />
       ))}
     </div>

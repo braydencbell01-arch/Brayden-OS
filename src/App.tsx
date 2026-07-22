@@ -193,6 +193,8 @@ function HomeScreen({
               matches={dayMatches}
               dateKey={toDateKey(startOfDay(selectedDate))}
               onOpenTeam={onOpenTeam}
+              favoriteLeagueIds={favorites.leagueIds}
+              favoriteTeamIds={favorites.teamIds}
               emptyLabel="No matches on this date. Try another day or jump to Today."
             />
           )}
@@ -396,7 +398,13 @@ function LeagueScreen({
                     </span>
                   )}
                 </div>
-                <MatchList matches={dayMatches} onOpenTeam={onOpenTeam} emptyLabel="No matches" />
+                <MatchList
+                  matches={dayMatches}
+                  onOpenTeam={onOpenTeam}
+                  favoriteLeagueIds={favorites.leagueIds}
+                  favoriteTeamIds={favorites.teamIds}
+                  emptyLabel="No matches"
+                />
               </section>
             ))
           )}
