@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matches'
@@ -136,14 +136,33 @@ export function MatchDayByLeague({
     () => groupMatchesByLeague(matches, favoriteLeagueIds),
     [matches, favoriteLeagueIds],
   )
-  const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
   const leagueIds = favoriteLeagueIds ?? new Set<string>()
   const teamIds = favoriteTeamIds ?? new Set<string>()
   const playerTeamIds = favoritePlayerTeamIds ?? new Set<string>()
 
-  useEffect(() => {
-    setOpenIds(new Set())
-  }, [dateKey])
+  const defaultOpenIds = useMemo(() => {
+    const next = new Set<LeagueId>()
+    for (const group of groups) {
+      const hasLive = group.matches.some((match) => match.status === 'live')
+      const hasFavorite = group.matches.some((match) =>
+        isFavoriteMatch(match, leagueIds, teamIds, playerTeamIds),
+      )
+      if (hasLive || hasFavorite || leagueIds.has(group.leagueId)) {
+        next.add(group.leagueId)
+      }
+    }
+    // Quiet days: open the first league so the screen isn't only headers.
+    if (next.size === 0 && groups[0]) next.add(groups[0].leagueId)
+    return next
+  }, [groups, leagueIds, teamIds, playerTeamIds])
+
+  const [openIds, setOpenIds] = useState<Set<LeagueId>>(defaultOpenIds)
+  const [openForDate, setOpenForDate] = useState(dateKey)
+
+  if (openForDate !== dateKey) {
+    setOpenForDate(dateKey)
+    setOpenIds(defaultOpenIds)
+  }
 
   if (groups.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { getLeague, type LeagueId } from '../lib/leagues'
+import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam } from '../lib/favorites'
 import type { Match } from '../lib/matches'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -110,9 +110,15 @@ export function HomeSearch({
   )
 
   const hasQuery = query.trim().length > 0
-  const showPanel = focused && hasQuery
+  const showPanel = focused
   const total =
     hits.leagues.length + hits.teams.length + hits.players.length
+
+  const quickLeagues = useMemo(() => LEAGUES.slice(0, 5), [])
+  const quickTeams = useMemo(() => favoriteTeams.slice(0, 4), [favoriteTeams])
+  const quickPlayers = useMemo(() => favoritePlayers.slice(0, 4), [favoritePlayers])
+  const hasQuickHits =
+    quickLeagues.length > 0 || quickTeams.length > 0 || quickPlayers.length > 0
 
   useEffect(() => {
     const q = query.trim()
@@ -198,10 +204,10 @@ export function HomeSearch({
       <label className="sr-only" htmlFor="home-search">
         Search leagues, teams, and players
       </label>
-      <div className="flex items-center gap-2 border-b border-white/12 bg-transparent px-0.5 py-1.5 focus-within:border-lime/45">
+      <div className="flex min-h-11 items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.05] px-3 py-2 focus-within:border-lime/45 focus-within:bg-white/[0.07]">
         <svg
-          width="14"
-          height="14"
+          width="16"
+          height="16"
           viewBox="0 0 24 24"
           aria-hidden
           className="shrink-0 text-mist/55"
@@ -217,7 +223,7 @@ export function HomeSearch({
           onFocus={() => setFocused(true)}
           placeholder="Search leagues, teams, players"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-[0.8125rem] text-cream outline-none placeholder:text-mist/40"
+          className="min-w-0 flex-1 bg-transparent text-sm text-cream outline-none placeholder:text-mist/40"
         />
         {query ? (
           <button
@@ -239,59 +245,127 @@ export function HomeSearch({
           role="listbox"
           aria-label="Search results"
         >
-          {total === 0 && !loadingRemote ? (
-            <p className="px-3 py-3 text-sm text-mist/70">No matches for “{query.trim()}”.</p>
-          ) : null}
-          {loadingRemote ? (
-            <p className="px-3 py-2 text-xs text-mist/60">Searching…</p>
-          ) : null}
+          {!hasQuery ? (
+            <>
+              <p className="px-3 py-2.5 text-xs text-mist/65">
+                Type a club, league, or player — or jump from the shortcuts below.
+              </p>
+              {hasQuickHits ? (
+                <>
+                  {quickPlayers.length > 0 ? (
+                    <ResultSection title="Your players">
+                      {quickPlayers.map((player) => (
+                        <ResultButton
+                          key={player.id}
+                          label={player.name}
+                          meta={player.teamName || getLeague(player.leagueId).short}
+                          onClick={() => {
+                            onOpenPlayer({
+                              id: player.id,
+                              leagueId: player.leagueId,
+                              name: player.name,
+                              shortName: player.shortName,
+                              photoUrl: player.photoUrl,
+                              jerseyUrl: player.jerseyUrl,
+                              jersey: player.jersey,
+                              teamId: player.teamId,
+                              teamName: player.teamName,
+                              position: player.position,
+                            })
+                            clearAndClose()
+                          }}
+                        />
+                      ))}
+                    </ResultSection>
+                  ) : null}
+                  {quickTeams.length > 0 ? (
+                    <ResultSection title="Your teams">
+                      {quickTeams.map((team) => (
+                        <ResultButton
+                          key={team.id}
+                          label={team.name}
+                          meta={getLeague(team.leagueId).short}
+                          onClick={() => {
+                            onOpenTeam(team)
+                            clearAndClose()
+                          }}
+                        />
+                      ))}
+                    </ResultSection>
+                  ) : null}
+                  <ResultSection title="Popular leagues">
+                    {quickLeagues.map((league) => (
+                      <ResultButton
+                        key={league.id}
+                        label={league.name}
+                        meta={`${league.short} · ${league.country}`}
+                        onClick={() => {
+                          onOpenLeague(league.id)
+                          clearAndClose()
+                        }}
+                      />
+                    ))}
+                  </ResultSection>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <>
+              {total === 0 && !loadingRemote ? (
+                <p className="px-3 py-3 text-sm text-mist/70">No matches for “{query.trim()}”.</p>
+              ) : null}
+              {loadingRemote ? (
+                <p className="px-3 py-2 text-xs text-mist/60">Searching…</p>
+              ) : null}
 
-          {hits.leagues.length > 0 ? (
-            <ResultSection title="Leagues">
-              {hits.leagues.map((hit) => (
-                <ResultButton
-                  key={hit.league.id}
-                  label={hit.league.name}
-                  meta={`${hit.league.short} · ${hit.league.country}`}
-                  onClick={() => void handleHit(hit)}
-                />
-              ))}
-            </ResultSection>
-          ) : null}
+              {hits.leagues.length > 0 ? (
+                <ResultSection title="Leagues">
+                  {hits.leagues.map((hit) => (
+                    <ResultButton
+                      key={hit.league.id}
+                      label={hit.league.name}
+                      meta={`${hit.league.short} · ${hit.league.country}`}
+                      onClick={() => void handleHit(hit)}
+                    />
+                  ))}
+                </ResultSection>
+              ) : null}
 
-          {hits.teams.length > 0 ? (
-            <ResultSection title="Teams">
-              {hits.teams.map((hit) => (
-                <ResultButton
-                  key={hit.team.id}
-                  label={hit.team.name}
-                  meta={getLeague(hit.team.leagueId).short}
-                  onClick={() => void handleHit(hit)}
-                />
-              ))}
-            </ResultSection>
-          ) : null}
+              {hits.teams.length > 0 ? (
+                <ResultSection title="Teams">
+                  {hits.teams.map((hit) => (
+                    <ResultButton
+                      key={hit.team.id}
+                      label={hit.team.name}
+                      meta={getLeague(hit.team.leagueId).short}
+                      onClick={() => void handleHit(hit)}
+                    />
+                  ))}
+                </ResultSection>
+              ) : null}
 
-          {hits.players.length > 0 ? (
-            <ResultSection title="Players">
-              {hits.players.map((hit) => (
-                <ResultButton
-                  key={hit.player.id}
-                  label={
-                    openingPlayerId === hit.player.id
-                      ? `${hit.player.name || hit.player.shortName}…`
-                      : hit.player.name || hit.player.shortName || 'Player'
-                  }
-                  meta={
-                    hit.subtitle ||
-                    hit.player.teamName ||
-                    getLeague(hit.player.leagueId).short
-                  }
-                  onClick={() => void handleHit(hit)}
-                />
-              ))}
-            </ResultSection>
-          ) : null}
+              {hits.players.length > 0 ? (
+                <ResultSection title="Players">
+                  {hits.players.map((hit) => (
+                    <ResultButton
+                      key={hit.player.id}
+                      label={
+                        openingPlayerId === hit.player.id
+                          ? `${hit.player.name || hit.player.shortName}…`
+                          : hit.player.name || hit.player.shortName || 'Player'
+                      }
+                      meta={
+                        hit.subtitle ||
+                        hit.player.teamName ||
+                        getLeague(hit.player.leagueId).short
+                      }
+                      onClick={() => void handleHit(hit)}
+                    />
+                  ))}
+                </ResultSection>
+              ) : null}
+            </>
+          )}
         </div>
       ) : null}
     </div>

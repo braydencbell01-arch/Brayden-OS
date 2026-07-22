@@ -130,8 +130,15 @@ export function PlayerProfileScreen({
   onBack: () => void
   reduce: boolean | null
 }) {
-  const { profile, loading, error, reload, loadMoreRatings, loadingMoreRatings, hasMoreRatings } =
-    usePlayerProfile(player.leagueId, player.id)
+  const {
+    profile,
+    loading,
+    error,
+    reload,
+    loadMoreRatings,
+    loadingMoreRatings,
+    hasMoreRatings,
+  } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'transfers' | null>(
     null,
@@ -161,12 +168,12 @@ export function PlayerProfileScreen({
       {loading && !profile ? (
         <p className="text-sm text-mist/70">Loading player…</p>
       ) : error && !profile ? (
-        <div className="space-y-2">
+        <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
           <p className="text-sm text-mist/80">{error}</p>
           <button
             type="button"
             onClick={() => void reload(player.leagueId, player.id)}
-            className="text-xs font-semibold text-lime underline-offset-2 hover:underline"
+            className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
           >
             Retry
           </button>

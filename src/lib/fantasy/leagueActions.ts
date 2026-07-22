@@ -1,5 +1,18 @@
 import { applyDraftPick, setDraftOrder, startDraft, tickDraftClock } from './draft'
-import { ensureLegalStarters, suggestStarters, validateStarters } from './lineup'
+import {
+  activateFromIr as activateFromIrLineup,
+  ensureLegalStarters,
+  moveToIr as moveToIrLineup,
+  suggestStarters,
+  validateStarters,
+} from './lineup'
+import { pushActivity } from './activity'
+import {
+  nominatePlayer as nominateAuctionPlayer,
+  placeBid as placeAuctionBid,
+  startAuctionDraft,
+  tickAuctionClock,
+} from './auction'
 import { buildRegularSeasonMatchups, resolveSeriesWinners, seedPlayoffs } from './schedule'
 import { estimateGwPoints } from './scoring'
 import type { FantasyPlayer } from './types'
@@ -7,14 +20,18 @@ import {
   ALLOWED_DRAFT_CLOCKS,
   ALLOWED_TEAM_COUNTS,
   DEFAULT_DRAFT_CLOCK_SECONDS,
+  DEFAULT_AUCTION_BUDGET,
   DEFAULT_ROSTER_SPOTS,
   DEFAULT_STARTER_SPOTS,
+  DEFAULT_TRADE_VETO_HOURS,
   PLAYOFF_START_GW,
   POSITION_LIMITS,
   SEASON_GWS,
+  type DraftMode,
   type FantasyLeague,
   type FantasyMember,
   type FantasyPosition,
+  type ScoringPreset,
   type TradeOffer,
 } from './types'
 import { canAddPosition } from './lineup'
@@ -50,6 +67,9 @@ function blankMember(
     draftSlot: null,
     roster: [],
     starters: [],
+    draftQueue: [],
+    ir: [],
+    auctionBudget: DEFAULT_AUCTION_BUDGET,
     autodraft: false,
     wins: 0,
     losses: 0,
@@ -61,11 +81,15 @@ function blankMember(
 
 /** Migrate older local/cloud leagues to FF-style defaults. */
 export function normalizeLeague(raw: FantasyLeague): FantasyLeague {
+  const leagueAuctionBudget = raw.auctionBudget || DEFAULT_AUCTION_BUDGET
   const members = (raw.members ?? []).map((m) => ({
     ...m,
     autodraft: Boolean(m.autodraft),
     roster: m.roster ?? [],
     starters: m.starters ?? [],
+    draftQueue: m.draftQueue ?? [],
+    ir: (m.ir ?? []).slice(0, 2),
+    auctionBudget: m.auctionBudget ?? leagueAuctionBudget,
     wins: m.wins ?? 0,
     losses: m.losses ?? 0,
     ties: m.ties ?? 0,
@@ -78,11 +102,23 @@ export function normalizeLeague(raw: FantasyLeague): FantasyLeague {
     members,
     rosterSpots: raw.rosterSpots || DEFAULT_ROSTER_SPOTS,
     starterSpots: raw.starterSpots || DEFAULT_STARTER_SPOTS,
+    draftMode: raw.draftMode ?? 'snake',
+    scoringPreset: raw.scoringPreset ?? 'classic',
+    activity: (raw.activity ?? []).slice(0, 80),
+    tradeVetoHours: raw.tradeVetoHours ?? DEFAULT_TRADE_VETO_HOURS,
+    autoScore: raw.autoScore ?? true,
+    lineupLockedGws: raw.lineupLockedGws ?? [],
+    auctionBudget: leagueAuctionBudget,
+    auctionNomPlayerId: raw.auctionNomPlayerId,
+    auctionHighBid: raw.auctionHighBid,
+    auctionHighBidderId: raw.auctionHighBidderId,
+    auctionBidDeadlineAt: raw.auctionBidDeadlineAt,
+    auctionNominatingMemberId: raw.auctionNominatingMemberId,
     draftClockSeconds: raw.draftClockSeconds || DEFAULT_DRAFT_CLOCK_SECONDS,
     waiverOrder: raw.waiverOrder ?? members.map((m) => m.id),
     waiverClaims: raw.waiverClaims ?? [],
     waiverPool: raw.waiverPool ?? [],
-    trades: raw.trades ?? [],
+    trades: (raw.trades ?? []).map((t) => ({ ...t, vetoVotes: t.vetoVotes ?? [] })),
     matchups: raw.matchups ?? [],
     playoffs: raw.playoffs ?? [],
     draftPicks: raw.draftPicks ?? [],
@@ -100,6 +136,9 @@ export function createLeague(input: {
   teamCount: number
   rosterSpots?: number
   draftClockSeconds?: number
+  draftMode?: DraftMode
+  scoringPreset?: ScoringPreset
+  quickFillBots?: boolean
   currentGw?: number
 }): FantasyLeague {
   if (!ALLOWED_TEAM_COUNTS.includes(input.teamCount as (typeof ALLOWED_TEAM_COUNTS)[number])) {
@@ -111,8 +150,25 @@ export function createLeague(input: {
   }
   const now = Date.now()
   const commissioner = blankMember(input.commissionerId, input.commissionerName, true, now)
+  let members: FantasyMember[] = [commissioner]
+  if (input.quickFillBots) {
+    let botIndex = 1
+    while (members.length < input.teamCount) {
+      const id = `bot_${botIndex}`
+      botIndex += 1
+      if (id === input.commissionerId) continue
+      members.push({
+        ...blankMember(id, `CPU Manager ${members.length}`, false, now),
+        autodraft: true,
+      })
+    }
+  }
+  const draftOrder = input.quickFillBots ? members.map((m) => m.id) : []
+  if (input.quickFillBots) {
+    members = members.map((m, i) => ({ ...m, draftSlot: i + 1 }))
+  }
 
-  return {
+  const league: FantasyLeague = {
     id: uid('lg'),
     inviteCode: inviteCode(),
     name: input.name.trim() || 'FPL League',
@@ -123,14 +179,21 @@ export function createLeague(input: {
     teamCount: input.teamCount,
     rosterSpots: input.rosterSpots ?? DEFAULT_ROSTER_SPOTS,
     starterSpots: DEFAULT_STARTER_SPOTS,
+    draftMode: input.draftMode ?? 'snake',
+    scoringPreset: input.scoringPreset ?? 'classic',
+    activity: [],
+    tradeVetoHours: DEFAULT_TRADE_VETO_HOURS,
+    autoScore: true,
+    lineupLockedGws: [],
+    auctionBudget: DEFAULT_AUCTION_BUDGET,
     draftClockSeconds: clock,
-    phase: 'lobby',
-    members: [commissioner],
-    draftOrder: [],
+    phase: input.quickFillBots ? 'draft_setup' : 'lobby',
+    members,
+    draftOrder,
     draftPicks: [],
     draftPickIndex: 0,
     trades: [],
-    waiverOrder: [commissioner.id],
+    waiverOrder: members.map((m) => m.id),
     waiverClaims: [],
     waiverPool: [],
     matchups: [],
@@ -140,6 +203,7 @@ export function createLeague(input: {
     playoffStartGw: PLAYOFF_START_GW,
     seasonGws: SEASON_GWS,
   }
+  return pushActivity(league, 'league_created', `${league.name} created`, commissioner.id)
 }
 
 export function joinLeague(
@@ -155,12 +219,12 @@ export function joinLeague(
     throw new Error('Draft already started — joining is closed')
   }
   const member = blankMember(memberId, name, false, Date.now())
-  return {
+  return pushActivity({
     ...league,
     members: [...league.members, member],
     waiverOrder: [...league.waiverOrder, member.id],
     updatedAt: Date.now(),
-  }
+  }, 'member_joined', `${member.name} joined the league`, member.id)
 }
 
 export function setMemberAutodraft(
@@ -168,11 +232,26 @@ export function setMemberAutodraft(
   memberId: string,
   autodraft: boolean,
 ): FantasyLeague {
-  return {
+  return pushActivity({
     ...league,
     members: league.members.map((m) => (m.id === memberId ? { ...m, autodraft } : m)),
     updatedAt: Date.now(),
-  }
+  }, 'autodraft', `Autodraft ${autodraft ? 'enabled' : 'disabled'}`, memberId)
+}
+
+export function setDraftQueue(
+  league: FantasyLeague,
+  memberId: string,
+  queue: number[],
+): FantasyLeague {
+  const uniqueQueue = [...new Set(queue)]
+  return pushActivity({
+    ...league,
+    members: league.members.map((m) =>
+      m.id === memberId ? { ...m, draftQueue: uniqueQueue } : m,
+    ),
+    updatedAt: Date.now(),
+  }, 'draft_queue', 'Draft queue updated', memberId)
 }
 
 export function setDraftClockSeconds(league: FantasyLeague, seconds: number): FantasyLeague {
@@ -195,6 +274,7 @@ export function randomizeDraftOrder(league: FantasyLeague): FantasyLeague {
 }
 
 export function beginDraft(league: FantasyLeague): FantasyLeague {
+  if (league.draftMode === 'auction') return startAuctionDraft(league)
   return startDraft(league)
 }
 
@@ -211,7 +291,27 @@ export function runDraftTick(
   league: FantasyLeague,
   catalog: Map<number, FantasyPlayer>,
 ): FantasyLeague {
+  if (league.draftMode === 'auction') return tickAuctionClock(league, catalog)
   return tickDraftClock(league, catalog)
+}
+
+export function nominatePlayer(
+  league: FantasyLeague,
+  memberId: string,
+  playerId: number,
+  catalog: Map<number, FantasyPlayer>,
+  openingBid?: number,
+): FantasyLeague {
+  return nominateAuctionPlayer(league, memberId, playerId, catalog, openingBid)
+}
+
+export function placeBid(
+  league: FantasyLeague,
+  memberId: string,
+  amount: number,
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  return placeAuctionBid(league, memberId, amount, catalog)
 }
 
 export function addFreeAgent(
@@ -260,7 +360,12 @@ export function addFreeAgent(
     waiverPool.push(dropPlayerId)
   }
 
-  return { ...league, members, waiverPool, updatedAt: Date.now() }
+  return pushActivity(
+    { ...league, members, waiverPool, updatedAt: Date.now() },
+    'free_agent_add',
+    `Added player #${playerId}`,
+    memberId,
+  )
 }
 
 export function setStarters(
@@ -275,7 +380,7 @@ export function setStarters(
     if (err) throw new Error(err)
     return { ...m, starters: starterIds }
   })
-  return { ...league, members, updatedAt: Date.now() }
+  return pushActivity({ ...league, members, updatedAt: Date.now() }, 'lineup_set', 'Lineup updated', memberId)
 }
 
 export function autoSetStarters(
@@ -318,37 +423,22 @@ export function proposeTrade(
     requestPlayerIds,
     status: 'pending',
     createdAt: Date.now(),
+    vetoVotes: [],
   }
-  return { ...league, trades: [trade, ...league.trades], updatedAt: Date.now() }
+  return pushActivity(
+    { ...league, trades: [trade, ...league.trades], updatedAt: Date.now() },
+    'trade_proposed',
+    'Trade proposed',
+    fromMemberId,
+  )
 }
 
-export function resolveTrade(
+function completeTrade(
   league: FantasyLeague,
-  tradeId: string,
-  actorId: string,
-  decision: 'accepted' | 'rejected' | 'canceled',
+  trade: TradeOffer,
   catalog: Map<number, FantasyPlayer>,
+  now = Date.now(),
 ): FantasyLeague {
-  const trade = league.trades.find((t) => t.id === tradeId)
-  if (!trade || trade.status !== 'pending') throw new Error('Trade not found')
-
-  if (decision === 'canceled' && actorId !== trade.fromMemberId) {
-    throw new Error('Only the proposer can cancel')
-  }
-  if ((decision === 'accepted' || decision === 'rejected') && actorId !== trade.toMemberId) {
-    throw new Error('Only the recipient can accept or reject')
-  }
-
-  if (decision !== 'accepted') {
-    return {
-      ...league,
-      trades: league.trades.map((t) =>
-        t.id === tradeId ? { ...t, status: decision, resolvedAt: Date.now() } : t,
-      ),
-      updatedAt: Date.now(),
-    }
-  }
-
   const members = league.members.map((m) => ({ ...m, roster: [...m.roster], starters: [...m.starters] }))
   const from = members.find((m) => m.id === trade.fromMemberId)!
   const to = members.find((m) => m.id === trade.toMemberId)!
@@ -391,10 +481,117 @@ export function resolveTrade(
     ...league,
     members,
     trades: league.trades.map((t) =>
-      t.id === tradeId ? { ...t, status: 'accepted', resolvedAt: Date.now() } : t,
+      t.id === trade.id ? { ...t, status: 'accepted', resolvedAt: now } : t,
+    ),
+    updatedAt: now,
+  }
+}
+
+export function resolveTrade(
+  league: FantasyLeague,
+  tradeId: string,
+  actorId: string,
+  decision: 'accepted' | 'rejected' | 'canceled',
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  const trade = league.trades.find((t) => t.id === tradeId)
+  if (!trade || trade.status !== 'pending') throw new Error('Trade not found')
+
+  if (decision === 'canceled' && actorId !== trade.fromMemberId) {
+    throw new Error('Only the proposer can cancel')
+  }
+  if ((decision === 'accepted' || decision === 'rejected') && actorId !== trade.toMemberId) {
+    throw new Error('Only the recipient can accept or reject')
+  }
+
+  const now = Date.now()
+  if (decision !== 'accepted') {
+    return pushActivity({
+      ...league,
+      trades: league.trades.map((t) =>
+        t.id === tradeId ? { ...t, status: decision, resolvedAt: now } : t,
+      ),
+      updatedAt: now,
+    }, `trade_${decision}`, `Trade ${decision}`, actorId)
+  }
+
+  // Touch catalog to keep accept-time validation for unknown players before veto clock starts.
+  for (const id of [...trade.offerPlayerIds, ...trade.requestPlayerIds]) {
+    if (!catalog.get(id)) throw new Error('Trade includes unknown player')
+  }
+
+  const vetoDeadlineAt = now + (league.tradeVetoHours || DEFAULT_TRADE_VETO_HOURS) * 60 * 60 * 1000
+  return pushActivity({
+    ...league,
+    trades: league.trades.map((t) =>
+      t.id === tradeId
+        ? {
+            ...t,
+            status: 'veto_pending',
+            acceptedAt: now,
+            vetoDeadlineAt,
+            vetoVotes: [],
+          }
+        : t,
+    ),
+    updatedAt: now,
+  }, 'trade_veto_pending', 'Trade accepted - veto window opened', actorId)
+}
+
+export function voteTradeVeto(
+  league: FantasyLeague,
+  tradeId: string,
+  memberId: string,
+): FantasyLeague {
+  const trade = league.trades.find((t) => t.id === tradeId)
+  if (!trade || trade.status !== 'veto_pending') throw new Error('Trade is not in veto review')
+  if (memberId === trade.fromMemberId || memberId === trade.toMemberId) {
+    throw new Error('Trade parties cannot vote to veto')
+  }
+  if (!league.members.some((m) => m.id === memberId)) throw new Error('Manager not found')
+  const votes = trade.vetoVotes ?? []
+  if (votes.includes(memberId)) return league
+
+  return pushActivity({
+    ...league,
+    trades: league.trades.map((t) =>
+      t.id === tradeId ? { ...t, vetoVotes: [...votes, memberId] } : t,
     ),
     updatedAt: Date.now(),
+  }, 'trade_veto_vote', 'Trade veto vote submitted', memberId)
+}
+
+function tradeIsVetoed(league: FantasyLeague, trade: TradeOffer): boolean {
+  const votes = trade.vetoVotes?.length ?? 0
+  if (votes <= 0) return false
+  const nonPartyCount = league.members.filter(
+    (m) => m.id !== trade.fromMemberId && m.id !== trade.toMemberId,
+  ).length
+  const majority = Math.max(1, Math.ceil(nonPartyCount / 2))
+  return votes >= 2 || votes >= majority
+}
+
+export function tickTradeVetoes(
+  league: FantasyLeague,
+  catalog: Map<number, FantasyPlayer>,
+  now = Date.now(),
+): FantasyLeague {
+  let next = league
+  for (const trade of next.trades.filter((t) => t.status === 'veto_pending')) {
+    if (tradeIsVetoed(next, trade)) {
+      next = pushActivity({
+        ...next,
+        trades: next.trades.map((t) =>
+          t.id === trade.id ? { ...t, status: 'vetoed', resolvedAt: now } : t,
+        ),
+        updatedAt: now,
+      }, 'trade_vetoed', 'Trade vetoed')
+      continue
+    }
+    if ((trade.vetoDeadlineAt ?? 0) > now) continue
+    next = pushActivity(completeTrade(next, trade, catalog, now), 'trade_completed', 'Trade completed')
   }
+  return next
 }
 
 function sidePoints(
@@ -408,7 +605,7 @@ function sidePoints(
     if (typeof stored === 'number') return sum + stored
     const player = catalog.get(id)
     if (!player) return sum
-    return sum + estimateGwPoints(player, true)
+    return sum + estimateGwPoints(player, true, league.scoringPreset)
   }, 0)
 }
 
@@ -489,6 +686,9 @@ export function scoreGameweek(
     members: [...stats.values()],
     matchups,
     currentGw: Math.max(working.currentGw, gw),
+    lineupLockedGws: working.lineupLockedGws.includes(gw)
+      ? working.lineupLockedGws
+      : [...working.lineupLockedGws, gw],
     updatedAt: Date.now(),
   }
 
@@ -500,12 +700,77 @@ export function scoreGameweek(
     next = resolveSeriesWinners(next)
   }
 
+  return pushActivity(next, 'gameweek_scored', `GW ${gw} scored`)
+}
+
+export function lockLineupForGw(league: FantasyLeague, gw: number): FantasyLeague {
+  if (league.lineupLockedGws.includes(gw)) return league
+  return pushActivity({
+    ...league,
+    lineupLockedGws: [...league.lineupLockedGws, gw],
+    updatedAt: Date.now(),
+  }, 'lineup_locked', `GW ${gw} lineups locked`)
+}
+
+export function autoProcessDueGameweeks(
+  league: FantasyLeague,
+  catalog: Map<number, FantasyPlayer>,
+  currentGwFromCatalog: number,
+): FantasyLeague {
+  if (!league.autoScore) return league
+  let next = league
+  if (currentGwFromCatalog > 0 && !next.lineupLockedGws.includes(currentGwFromCatalog)) {
+    next = lockLineupForGw(next, currentGwFromCatalog)
+  }
+  const dueGws = [
+    ...new Set(
+      next.matchups
+        .filter((mu) => !mu.scored && mu.gw < currentGwFromCatalog)
+        .map((mu) => mu.gw)
+        .sort((a, b) => a - b),
+    ),
+  ]
+  for (const gw of dueGws) {
+    next = scoreGameweek(next, gw, catalog)
+  }
   return next
+}
+
+export function moveToIr(
+  league: FantasyLeague,
+  memberId: string,
+  playerId: number,
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  const player = catalog.get(playerId)
+  return pushActivity(
+    moveToIrLineup(league, memberId, playerId, catalog),
+    'ir_move',
+    `${player?.webName ?? 'Player'} moved to IR`,
+    memberId,
+  )
+}
+
+export function activateFromIr(
+  league: FantasyLeague,
+  memberId: string,
+  playerId: number,
+  catalog: Map<number, FantasyPlayer>,
+): FantasyLeague {
+  const player = catalog.get(playerId)
+  return pushActivity(
+    activateFromIrLineup(league, memberId, playerId, catalog),
+    'ir_activate',
+    `${player?.webName ?? 'Player'} activated from IR`,
+    memberId,
+  )
 }
 
 export {
   setDraftOrder,
   startDraft,
+  startAuctionDraft,
+  tickAuctionClock,
   submitWaiverClaim,
   cancelWaiverClaim,
   processWaiverClaims,

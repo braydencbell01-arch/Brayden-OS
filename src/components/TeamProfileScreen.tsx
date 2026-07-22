@@ -76,7 +76,7 @@ export function TeamProfileScreen({
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
     'upcoming' | 'recent' | 'roster' | null
-  >(null)
+  >('upcoming')
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const recentScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
