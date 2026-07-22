@@ -267,10 +267,12 @@ export function useFantasy() {
     if (!id) return
     const league = store.leagues[id]
     if (!league?.syncBlobId) return
-    if (!['lobby', 'draft_setup', 'drafting'].includes(league.phase)) return
+    // Keep multi-manager leagues fresh through the season (not only draft).
+    if (league.phase === 'complete') return
+    const intervalMs = ['lobby', 'draft_setup', 'drafting'].includes(league.phase) ? 2500 : 8000
     const timer = window.setInterval(() => {
       void refreshActive()
-    }, 2500)
+    }, intervalMs)
     return () => window.clearInterval(timer)
   }, [refreshActive, store.activeLeagueId, store.leagues])
 
@@ -371,7 +373,7 @@ export function useFantasy() {
     },
     dropPlayer: (playerId: number) => {
       if (!me) throw new Error('You are not in this league')
-      return updateActive((l) => dropToWaivers(l, me.id, playerId))
+      return updateActive((l) => dropToWaivers(l, me.id, playerId, playerMap))
     },
     submitClaim: (addPlayerId: number, dropPlayerId: number | null) => {
       if (!me) throw new Error('You are not in this league')

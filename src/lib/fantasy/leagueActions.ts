@@ -1,5 +1,5 @@
 import { applyDraftPick, setDraftOrder, startDraft, tickDraftClock } from './draft'
-import { suggestStarters, validateStarters } from './lineup'
+import { ensureLegalStarters, suggestStarters, validateStarters } from './lineup'
 import { buildRegularSeasonMatchups, resolveSeriesWinners, seedPlayoffs } from './schedule'
 import { estimateGwPoints } from './scoring'
 import type { FantasyPlayer } from './types'
@@ -250,7 +250,7 @@ export function addFreeAgent(
     }
 
     roster = [...roster, playerId]
-    const starters = m.starters.filter((id) => roster.includes(id))
+    const starters = ensureLegalStarters(m.starters, roster, league.starterSpots, catalog)
     return { ...m, roster, starters }
   })
 
@@ -353,6 +353,13 @@ export function resolveTrade(
   const from = members.find((m) => m.id === trade.fromMemberId)!
   const to = members.find((m) => m.id === trade.toMemberId)!
 
+  if (trade.offerPlayerIds.some((id) => !from.roster.includes(id))) {
+    throw new Error('Trade is stale — offered players are no longer on the proposer roster')
+  }
+  if (trade.requestPlayerIds.some((id) => !to.roster.includes(id))) {
+    throw new Error('Trade is stale — requested players are no longer on the recipient roster')
+  }
+
   for (const id of trade.offerPlayerIds) {
     from.roster = from.roster.filter((x) => x !== id)
     from.starters = from.starters.filter((x) => x !== id)
@@ -376,6 +383,9 @@ export function resolveTrade(
       }
     }
   }
+
+  from.starters = ensureLegalStarters(from.starters, from.roster, league.starterSpots, catalog)
+  to.starters = ensureLegalStarters(to.starters, to.roster, league.starterSpots, catalog)
 
   return {
     ...league,
@@ -414,12 +424,18 @@ export function scoreGameweek(
     if (mu.gw !== gw) return mu
     const homeMember = working.members.find((m) => m.id === mu.home.memberId)
     const awayMember = working.members.find((m) => m.id === mu.away.memberId)
-    const homeStarters = homeMember?.starters?.length
-      ? homeMember.starters
-      : suggestStarters(homeMember?.roster ?? [], working.starterSpots, catalog)
-    const awayStarters = awayMember?.starters?.length
-      ? awayMember.starters
-      : suggestStarters(awayMember?.roster ?? [], working.starterSpots, catalog)
+    const homeRoster = homeMember?.roster ?? []
+    const awayRoster = awayMember?.roster ?? []
+    const homeRaw = homeMember?.starters ?? []
+    const awayRaw = awayMember?.starters ?? []
+    const homeStarters =
+      validateStarters(homeRaw, homeRoster, working.starterSpots, catalog) === null
+        ? homeRaw
+        : suggestStarters(homeRoster, working.starterSpots, catalog)
+    const awayStarters =
+      validateStarters(awayRaw, awayRoster, working.starterSpots, catalog) === null
+        ? awayRaw
+        : suggestStarters(awayRoster, working.starterSpots, catalog)
 
     const homePts = sidePoints(homeStarters, gw, working, catalog)
     const awayPts = sidePoints(awayStarters, gw, working, catalog)

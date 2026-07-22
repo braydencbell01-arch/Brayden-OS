@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { fetchTeamRoster } from './espn'
 import type { TeamRoster } from './types'
@@ -7,6 +7,11 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
   const [data, setData] = useState<TeamRoster | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
+
+  const reload = useCallback(() => {
+    setReloadToken((token) => token + 1)
+  }, [])
 
   useEffect(() => {
     if (!enabled || !teamId) {
@@ -38,7 +43,7 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
     return () => {
       cancelled = true
     }
-  }, [leagueId, teamId, enabled])
+  }, [leagueId, teamId, enabled, reloadToken])
 
-  return { data, loading, error }
+  return { data, loading, error, reload }
 }

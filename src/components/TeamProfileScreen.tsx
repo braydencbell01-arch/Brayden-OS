@@ -266,6 +266,8 @@ export function TeamProfileScreen({
         >
           {loading && recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading results…</p>
+          ) : error && recentGrouped.length === 0 ? (
+            <p className="text-sm text-mist/80">{error}</p>
           ) : recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">No recent results in the current window.</p>
           ) : (
@@ -323,6 +325,7 @@ export function TeamProfileScreen({
             teamId={team.id}
             teamName={displayName}
             onOpenPlayer={onOpenPlayer}
+            onRetry={roster.reload}
           />
         </ProfileAccordion>
       </div>

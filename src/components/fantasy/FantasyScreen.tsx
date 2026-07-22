@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { snakeMemberForPick, totalDraftPicks } from '../../lib/fantasy/draft'
+import { validateStarters } from '../../lib/fantasy/lineup'
 import { standingsRank, seriesAggregate } from '../../lib/fantasy/schedule'
 import { SCORING_BLURB } from '../../lib/fantasy/scoring'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
@@ -341,10 +342,15 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
         <div className="mt-3 flex gap-2">
           <FantasyButton
             onClick={() => {
-              void navigator.clipboard.writeText(invite).then(() => {
-                setCopied(true)
-                window.setTimeout(() => setCopied(false), 1500)
-              })
+              void navigator.clipboard
+                .writeText(invite)
+                .then(() => {
+                  setCopied(true)
+                  window.setTimeout(() => setCopied(false), 1500)
+                })
+                .catch(() => {
+                  alert('Copy failed — long-press the invite code to copy it.')
+                })
             }}
           >
             {copied ? 'Copied' : 'Copy invite'}
@@ -733,6 +739,13 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
 
   if (!me) return <p className="text-sm text-mist/70">Join this league to manage a roster.</p>
 
+  const lineupIssue = validateStarters(
+    me.starters,
+    me.roster,
+    league.starterSpots,
+    fantasy.playerMap,
+  )
+
   const toggle = (id: number) => {
     setStarters((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id)
@@ -750,6 +763,11 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
           .join(', ')}
         ).
       </p>
+      {lineupIssue ? (
+        <p className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-100/90">
+          Lineup incomplete — {lineupIssue}. Use Optimize XI or save a full starting XI before scoring.
+        </p>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <FantasyButton
           variant="ghost"

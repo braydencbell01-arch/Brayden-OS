@@ -118,7 +118,7 @@ function ExpandableMatchRow({
   const [open, setOpen] = useState(false)
   const league = getLeague(match.leagueId)
   const status = statusLabel(match)
-  const { stats, loading, error } = useMatchDetailStats(open ? match : null)
+  const { stats, loading, error, reload } = useMatchDetailStats(open ? match : null)
 
   return (
     <article
@@ -172,6 +172,7 @@ function ExpandableMatchRow({
             loading={loading}
             error={error}
             scheduled={match.status === 'scheduled'}
+            onRetry={reload}
             onOpenPlayer={
               onOpenPlayer
                 ? (player) => onOpenPlayer(toPlayerNav(player))

@@ -11,6 +11,7 @@ export function TeamRosterPanel({
   teamId,
   teamName,
   onOpenPlayer,
+  onRetry,
 }: {
   data: TeamRoster | null
   loading: boolean
@@ -19,13 +20,27 @@ export function TeamRosterPanel({
   teamId?: string
   teamName?: string
   onOpenPlayer?: (player: PlayerNavRef) => void
+  onRetry?: () => void
 }) {
   if (loading && !data) {
     return <p className="text-sm text-mist/70">Loading roster…</p>
   }
 
   if (error && !data) {
-    return <p className="text-sm text-mist/80">{error}</p>
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-mist/80">{error}</p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-xs font-semibold text-lime underline-offset-2 hover:underline"
+          >
+            Retry
+          </button>
+        ) : null}
+      </div>
+    )
   }
 
   if (!data || data.groups.length === 0) {

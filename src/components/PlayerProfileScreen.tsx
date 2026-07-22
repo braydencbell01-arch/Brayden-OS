@@ -130,7 +130,7 @@ export function PlayerProfileScreen({
   onBack: () => void
   reduce: boolean | null
 }) {
-  const { profile, loading, error, loadMoreRatings, loadingMoreRatings, hasMoreRatings } =
+  const { profile, loading, error, reload, loadMoreRatings, loadingMoreRatings, hasMoreRatings } =
     usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'transfers' | null>(
@@ -161,7 +161,16 @@ export function PlayerProfileScreen({
       {loading && !profile ? (
         <p className="text-sm text-mist/70">Loading player…</p>
       ) : error && !profile ? (
-        <p className="text-sm text-mist/80">{error}</p>
+        <div className="space-y-2">
+          <p className="text-sm text-mist/80">{error}</p>
+          <button
+            type="button"
+            onClick={() => void reload(player.leagueId, player.id)}
+            className="text-xs font-semibold text-lime underline-offset-2 hover:underline"
+          >
+            Retry
+          </button>
+        </div>
       ) : profile ? (
         <>
           <ProfileHeader

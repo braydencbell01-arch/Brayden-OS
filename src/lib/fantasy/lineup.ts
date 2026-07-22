@@ -76,6 +76,18 @@ export function suggestStarters(
   return chosen.slice(0, starterSpots)
 }
 
+/** Keep a legal XI after roster changes; refill from bench when incomplete. */
+export function ensureLegalStarters(
+  starters: number[],
+  roster: number[],
+  starterSpots: number,
+  catalog: Map<number, FantasyPlayer>,
+): number[] {
+  const kept = starters.filter((id) => roster.includes(id))
+  if (validateStarters(kept, roster, starterSpots, catalog) === null) return kept
+  return suggestStarters(roster, starterSpots, catalog)
+}
+
 export function canAddPosition(
   roster: number[],
   pos: FantasyPosition,
