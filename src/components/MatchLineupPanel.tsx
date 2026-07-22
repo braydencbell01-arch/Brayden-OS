@@ -77,7 +77,7 @@ function SideBlock({
           {side.bench.length > 0 && (
             <div>
               <p className="mb-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/60">
-                Used substitutes
+                Substitutes
               </p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {side.bench.map((player) => (
