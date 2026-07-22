@@ -1,20 +1,19 @@
-# JerseyDeals
+# Brayden Stats
 
-Storefront landing page for **Jersey Deals** — jerseys and sports attire sold direct (Shopify / Square URL plugs into the CTAs).
+Interactive soccer stats app shell — player ratings, pay-per-stat insights, and the top five European leagues.
 
-## What’s on the page
+## What's included
 
-- Top-left **Jersey Deals** wordmark (matches logo type)
-- Centered logo
-- Two black photo placeholders: **youth apparel** and **shop the sale** (Comic Sans labels until real photos land)
-- Featured gear, buy-direct story, and **Enter the storefront** CTAs
+- **Home**: Brayden Stats branding, horizontally scrollable match calendar, league list
+- **Leagues**: Premier League, La Liga, Bundesliga, Serie A, Ligue 1 — each opens its own screen
+- Built as a mobile-friendly web app you can wrap later (Capacitor / PWA / native shell)
 
 ## Stack
 
 - Vite + React + TypeScript
 - Tailwind CSS v4
 - Framer Motion
-- Fonts: Barlow Condensed, Outfit, Comic Neue (Comic Sans fallback)
+- Fonts: Bebas Neue, Manrope
 
 ## Develop
 
@@ -22,8 +21,6 @@ Storefront landing page for **Jersey Deals** — jerseys and sports attire sold 
 npm install
 npm run dev
 ```
-
-Set `STOREFRONT_URL` in `src/App.tsx` to your live Shopify or Square store link.
 
 ## Build
 
