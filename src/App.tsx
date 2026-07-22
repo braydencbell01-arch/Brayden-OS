@@ -40,7 +40,7 @@ function BrandMark({ className = '' }: { className?: string }) {
   return (
     <img
       src={`${import.meta.env.BASE_URL}logo-mark.svg`}
-      alt="Brayden Stats"
+      alt="BrayStats"
       width={32}
       height={32}
       className={`h-8 w-8 shrink-0 rounded-lg ${className}`}
@@ -152,7 +152,7 @@ function HomeScreen({
             transition={{ duration: 0.6, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
             className="mt-2 font-display text-6xl leading-[0.9] tracking-[0.04em] text-cream sm:text-7xl"
           >
-            Brayden Stats
+            BrayStats
           </motion.h1>
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 14 }}

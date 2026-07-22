@@ -1,6 +1,6 @@
 # Jersey Deals
 
-Separate storefront landing page for **Jersey Deals** (sibling project to Brayden Stats in this repo).
+Separate storefront landing page for **Jersey Deals** (sibling project to BrayStats in this repo).
 
 **Permanent live link (always the latest deployed version):**  
 https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
