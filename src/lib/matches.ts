@@ -4,6 +4,7 @@ import { dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
 
 export type MatchTeam = {
+  id: string
   name: string
   shortName: string
   abbreviation: string
@@ -28,6 +29,7 @@ type EspnCompetitor = {
   score?: string
   winner?: boolean
   team?: {
+    id?: string
     displayName?: string
     shortDisplayName?: string
     abbreviation?: string
@@ -82,8 +84,10 @@ function parseScore(value: string | undefined, status: MatchStatus): number | nu
 
 function mapCompetitor(comp: EspnCompetitor | undefined, status: MatchStatus): MatchTeam {
   const team = comp?.team
+  const name = team?.displayName || team?.name || 'TBD'
   return {
-    name: team?.displayName || team?.name || 'TBD',
+    id: team?.id || name.toLowerCase().replace(/\s+/g, '-'),
+    name,
     shortName: team?.shortDisplayName || team?.abbreviation || team?.name || 'TBD',
     abbreviation: team?.abbreviation || '—',
     score: parseScore(comp?.score, status),
@@ -197,4 +201,23 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
 
 export function dateKeysWithMatches(matches: Match[]): Set<string> {
   return new Set(matches.map((match) => match.dateKey))
+}
+
+export function dateKeysForFavorites(
+  matches: Match[],
+  favoriteLeagueIds: Set<string>,
+  favoriteTeamIds: Set<string>,
+): Set<string> {
+  if (favoriteLeagueIds.size === 0 && favoriteTeamIds.size === 0) {
+    return new Set()
+  }
+
+  const keys = new Set<string>()
+  for (const match of matches) {
+    const leagueFav = favoriteLeagueIds.has(match.leagueId)
+    const teamFav =
+      favoriteTeamIds.has(match.home.id) || favoriteTeamIds.has(match.away.id)
+    if (leagueFav || teamFav) keys.add(match.dateKey)
+  }
+  return keys
 }

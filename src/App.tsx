@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CalendarStrip } from './components/CalendarStrip'
+import { FavoriteStar } from './components/FavoriteStar'
+import { FavoritesScreen } from './components/FavoritesScreen'
 import { MatchList } from './components/MatchList'
 import { StandingsTable } from './components/StandingsTable'
 import {
@@ -10,9 +12,10 @@ import {
   startOfDay,
   toDateKey,
 } from './lib/dates'
+import { useFavorites, type FavoritesApi } from './lib/favorites'
 import { LEAGUES, type League, type LeagueId } from './lib/leagues'
 import {
-  dateKeysWithMatches,
+  dateKeysForFavorites,
   groupMatchesByDate,
   matchesForLeagueFrom,
   matchesOnDate,
@@ -20,6 +23,8 @@ import {
 } from './lib/matches'
 import { useLeagueStandings } from './lib/stats/useLeagueStandings'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
+
+type Screen = 'home' | 'league' | 'favorites'
 
 function formatUpdatedAt(updatedAt: number | null): string {
   if (!updatedAt) return 'Waiting for first sync'
@@ -30,11 +35,39 @@ function formatUpdatedAt(updatedAt: number | null): string {
   })}`
 }
 
+function FavoritesLink({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="inline-flex items-center gap-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-mist/80 transition hover:text-star focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-star focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
+    >
+      Favorites
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        aria-hidden
+        className="text-star drop-shadow-[0_0_6px_rgba(255,216,74,0.8)]"
+      >
+        <path
+          d="M12 2.8l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 16.7 6.6 19.6l1-6.1-4.4-4.3 6.1-.9L12 2.8z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  )
+}
+
 function HomeScreen({
   selectedDate,
   onSelectDate,
   onJumpToToday,
   onOpenLeague,
+  onOpenFavorites,
   matches,
   loading,
   error,
@@ -42,12 +75,14 @@ function HomeScreen({
   refreshing,
   hasLive,
   onRefresh,
+  favorites,
   reduce,
 }: {
   selectedDate: Date
   onSelectDate: (date: Date) => void
   onJumpToToday: () => void
   onOpenLeague: (id: LeagueId) => void
+  onOpenFavorites: () => void
   matches: Match[]
   loading: boolean
   error: string | null
@@ -55,10 +90,14 @@ function HomeScreen({
   refreshing: boolean
   hasLive: boolean
   onRefresh: () => void
+  favorites: FavoritesApi
   reduce: boolean | null
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
-  const matchDateKeys = useMemo(() => dateKeysWithMatches(matches), [matches])
+  const favoriteDateKeys = useMemo(
+    () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
+    [matches, favorites.leagueIds, favorites.teamIds],
+  )
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
     month: 'long',
@@ -77,6 +116,10 @@ function HomeScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-6 md:max-w-xl md:px-6">
+        <div className="mb-4 flex justify-end">
+          <FavoritesLink onOpen={onOpenFavorites} />
+        </div>
+
         <header className="mb-8">
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 10 }}
@@ -120,7 +163,7 @@ function HomeScreen({
           selected={selectedDate}
           onSelect={onSelectDate}
           onJumpToToday={onJumpToToday}
-          matchDateKeys={matchDateKeys}
+          favoriteDateKeys={favoriteDateKeys}
           reduce={reduce}
         />
 
@@ -158,38 +201,51 @@ function HomeScreen({
             className="mb-4"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Leagues</p>
-            <p className="mt-1 text-sm text-mist/80">Open a league for the next 100 days</p>
+            <p className="mt-1 text-sm text-mist/80">Star a league, then open it for the next 100 days</p>
           </motion.div>
 
           <div className="flex flex-col gap-3">
-            {LEAGUES.map((league, i) => (
-              <motion.button
-                key={league.id}
-                type="button"
-                initial={reduce ? false : { opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5,
-                  delay: reduce ? 0 : 0.22 + i * 0.07,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                whileTap={reduce ? undefined : { scale: 0.985 }}
-                onClick={() => onOpenLeague(league.id)}
-                className="group flex w-full items-center justify-between border border-white/10 bg-gradient-to-r from-pitch/80 to-turf/40 px-5 py-4 text-left outline-none transition hover:border-lime/50 hover:from-turf/50 hover:to-pitch/70 focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-              >
-                <span>
-                  <span className="block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
-                    {league.name}
-                  </span>
-                  <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
-                    {league.country}
-                  </span>
-                </span>
-                <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
-                  {league.short} →
-                </span>
-              </motion.button>
-            ))}
+            {LEAGUES.map((league, i) => {
+              const favorited = favorites.isLeagueFavorite(league.id)
+              return (
+                <motion.div
+                  key={league.id}
+                  initial={reduce ? false : { opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    delay: reduce ? 0 : 0.22 + i * 0.07,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  className="flex items-stretch border border-white/10 bg-gradient-to-r from-pitch/80 to-turf/40 transition hover:border-lime/50"
+                >
+                  <div className="flex items-center px-2">
+                    <FavoriteStar
+                      active={favorited}
+                      label={league.name}
+                      onToggle={() => favorites.toggleLeague(league.id)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onOpenLeague(league.id)}
+                    className="group flex min-w-0 flex-1 items-center justify-between px-3 py-4 text-left outline-none transition hover:from-turf/50 focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
+                  >
+                    <span>
+                      <span className="block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
+                        {league.name}
+                      </span>
+                      <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
+                        {league.country}
+                      </span>
+                    </span>
+                    <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
+                      {league.short} →
+                    </span>
+                  </button>
+                </motion.div>
+              )
+            })}
           </div>
         </section>
       </div>
@@ -202,14 +258,18 @@ function LeagueScreen({
   matches,
   loading,
   error,
+  favorites,
   onBack,
+  onOpenFavorites,
   reduce,
 }: {
   league: League
   matches: Match[]
   loading: boolean
   error: string | null
+  favorites: FavoritesApi
   onBack: () => void
+  onOpenFavorites: () => void
   reduce: boolean | null
 }) {
   const today = useMemo(() => startOfDay(new Date()), [])
@@ -220,6 +280,7 @@ function LeagueScreen({
   )
   const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
   const standings = useLeagueStandings(league.id)
+  const leagueFavorited = favorites.isLeagueFavorite(league.id)
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -233,16 +294,19 @@ function LeagueScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-10 pt-6 md:max-w-xl md:px-6">
-        <motion.button
-          type="button"
-          initial={reduce ? false : { opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35 }}
-          onClick={onBack}
-          className="mb-8 inline-flex w-fit items-center gap-2 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-        >
-          <span aria-hidden>←</span> Back to home
-        </motion.button>
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            initial={reduce ? false : { opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35 }}
+            onClick={onBack}
+            className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
+          >
+            <span aria-hidden>←</span> Back to home
+          </motion.button>
+          <FavoritesLink onOpen={onOpenFavorites} />
+        </div>
 
         <motion.header
           initial={reduce ? false : { opacity: 0, y: 16 }}
@@ -250,10 +314,21 @@ function LeagueScreen({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="border-b border-white/10 pb-6"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime">{league.country}</p>
-          <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
-            {league.name}
-          </h1>
+          <div className="flex items-start gap-2">
+            <FavoriteStar
+              active={leagueFavorited}
+              label={league.name}
+              onToggle={() => favorites.toggleLeague(league.id)}
+            />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lime">
+                {league.country}
+              </p>
+              <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
+                {league.name}
+              </h1>
+            </div>
+          </div>
           <p className="mt-3 text-sm text-mist/80">
             Table + fixtures for the next {CALENDAR_RADIUS_DAYS} days
             {!loading && !error ? ` · ${leagueMatches.length} matches` : ''}
@@ -269,12 +344,15 @@ function LeagueScreen({
         >
           <div className="mb-3 px-1">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
-            <p className="mt-1 text-sm text-mist/80">Live standings from ESPN</p>
+            <p className="mt-1 text-sm text-mist/80">Star a club between # and its name</p>
           </div>
           <StandingsTable
             rows={standings.rows}
             loading={standings.loading}
             error={standings.error}
+            leagueId={league.id}
+            isTeamFavorite={favorites.isTeamFavorite}
+            onToggleTeam={favorites.toggleTeam}
           />
         </motion.section>
 
@@ -322,18 +400,47 @@ function LeagueScreen({
 
 export default function App() {
   const reduce = useReducedMotion()
+  const favorites = useFavorites()
   const { matches, loading, error, updatedAt, refreshing, hasLive, refresh } =
     useLiveBigFiveMatches()
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
+  const [screen, setScreen] = useState<Screen>('home')
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
   const jumpToToday = () => setSelectedDate(startOfDay(new Date()))
 
+  const openLeague = (id: LeagueId) => {
+    setActiveLeagueId(id)
+    setScreen('league')
+  }
+
+  const openFavorites = () => setScreen('favorites')
+
+  const goHome = () => {
+    setActiveLeagueId(null)
+    setScreen('home')
+  }
+
   return (
     <AnimatePresence mode="wait">
-      {activeLeague ? (
+      {screen === 'favorites' ? (
+        <motion.div
+          key="favorites"
+          initial={reduce ? false : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <FavoritesScreen
+            favorites={favorites}
+            onBack={goHome}
+            onOpenLeague={openLeague}
+            reduce={reduce}
+          />
+        </motion.div>
+      ) : screen === 'league' && activeLeague ? (
         <motion.div
           key={activeLeague.id}
           initial={reduce ? false : { opacity: 0, x: 40 }}
@@ -346,7 +453,9 @@ export default function App() {
             matches={matches}
             loading={loading}
             error={error}
-            onBack={() => setActiveLeagueId(null)}
+            favorites={favorites}
+            onBack={goHome}
+            onOpenFavorites={openFavorites}
             reduce={reduce}
           />
         </motion.div>
@@ -362,7 +471,8 @@ export default function App() {
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             onJumpToToday={jumpToToday}
-            onOpenLeague={setActiveLeagueId}
+            onOpenLeague={openLeague}
+            onOpenFavorites={openFavorites}
             matches={matches}
             loading={loading}
             error={error}
@@ -370,6 +480,7 @@ export default function App() {
             refreshing={refreshing}
             hasLive={hasLive}
             onRefresh={refresh}
+            favorites={favorites}
             reduce={reduce}
           />
         </motion.div>
