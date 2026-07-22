@@ -34,7 +34,8 @@ function ratingClass(rating: number | null): string {
   if (rating >= 8) return 'text-lime'
   if (rating >= 6.5) return 'text-star'
   if (rating >= 5) return 'text-cream'
-  return 'text-mist/70'
+  if (rating >= 3.5) return 'text-mist/80'
+  return 'text-red-300/90'
 }
 
 function LineupPlayerCard({

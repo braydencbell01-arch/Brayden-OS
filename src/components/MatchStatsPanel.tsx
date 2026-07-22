@@ -39,7 +39,8 @@ export function MatchStatsPanel({
           Lineups + ratings
         </p>
         <p className="mb-3 text-xs text-mist/65">
-          Tap a player for their profile. Ratings start at 5.0 and average out over the match.
+          Tap a player for their profile. Brayden Rating = match performance out of 100, shown as /10
+          (e.g. 26/100 → 2.6).
         </p>
         <MatchLineupPanel lineups={stats.lineups} onOpenPlayer={onOpenPlayer} />
       </div>

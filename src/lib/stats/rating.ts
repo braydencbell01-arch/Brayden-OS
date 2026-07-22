@@ -1,15 +1,15 @@
 /**
- * Brayden Rating v0 — live-aware, time-averaged match rating.
+ * Brayden Rating — performance % mapped straight onto 0–10.
  *
- * Scale: 0–10, clipped.
+ * Core rule:
+ *   rating = performance100 / 10
+ * so a **26/100** performance is **2.6**, an **83/100** is **8.3**, etc.
  *
- * Model:
- * - Every player who appears starts at base **5.0**
- * - Stats produce an “end-of-game” delta (e.g. a goal ≈ **+1.0** at 90′)
- * - During the match that delta is stretched by time:
- *     liveDelta = endGameDelta * (90 / minutesSoFar)
- *   So a 1st-minute goal spikes close to **10**, then as minutes and other
- *   stats accumulate the rating averages back toward a calmer final number.
+ * `performance100` is a 0–100 quality score for the match:
+ * - Neutral floor for anyone who appeared: **50** (→ 5.0)
+ * - Actions push that score up or down on a **wide** scale so good/bad
+ *   games actually separate (not clustered around 6–7)
+ * - Live matches use the same math on stats so far (no artificial spike-to-10)
  *
  * Season form = recency-weighted average of recent match ratings.
  */
@@ -40,39 +40,55 @@ export type RateMatchOptions = {
 }
 
 export type RatingBreakdown = {
+  /** Final Brayden Rating (0–10) = performance100 / 10 */
   rating: number
+  /** Match performance out of 100 — rating is this ÷ 10 */
+  performance100: number
+  /** Neutral floor before actions (50) */
   base: number
-  endGameDelta: number
-  liveDelta: number
+  /** Net action points on the 0–100 scale */
+  contribution: number
   minutesUsed: number
-  timeFactor: number
   attack: number
   creation: number
   discipline: number
   goalkeeping: number
   defending: number
   notes: string[]
+  /** @deprecated kept for older call sites — same as contribution */
+  endGameDelta: number
+  /** @deprecated always 1 under the linear model */
+  liveDelta: number
+  /** @deprecated always 1 under the linear model */
+  timeFactor: number
 }
 
-const CLIP_MIN = 1
+const CLIP_MIN = 0
 const CLIP_MAX = 10
+const PERF_MIN = 0
+const PERF_MAX = 100
+const NEUTRAL = 50
 const FULL_TIME = 90
 const MIN_MINUTES = 1
 
+/**
+ * Weights are on the **0–100 performance** scale.
+ * Divide by 10 to see the rating swing (goal ≈ +1.8 rating).
+ */
 const W = {
-  goal: 1.0,
-  assist: 0.7,
-  shotOnTarget: 0.12,
-  shotOffTarget: 0.03,
-  foulCommitted: -0.04,
-  foulSuffered: 0.015,
-  yellow: -0.25,
-  red: -1.0,
-  ownGoal: -0.9,
-  offside: -0.02,
-  save: 0.22,
-  gkGoalConceded: -0.3,
-  defGoalConceded: -0.1,
+  goal: 18,
+  assist: 12,
+  shotOnTarget: 3.2,
+  shotOffTarget: 0.9,
+  foulCommitted: -2.5,
+  foulSuffered: 0.9,
+  yellow: -10,
+  red: -35,
+  ownGoal: -25,
+  offside: -1.5,
+  save: 4.5,
+  gkGoalConceded: -12,
+  defGoalConceded: -5,
 } as const
 
 export function positionGroupFromAbbrev(abbrev: string | undefined | null): PlayerPositionGroup {
@@ -109,8 +125,12 @@ export function positionGroupFromAbbrev(abbrev: string | undefined | null): Play
   return 'UNK'
 }
 
-function clip(n: number): number {
+function clipRating(n: number): number {
   return Math.round(Math.min(CLIP_MAX, Math.max(CLIP_MIN, n)) * 10) / 10
+}
+
+function clipPerformance(n: number): number {
+  return Math.round(Math.min(PERF_MAX, Math.max(PERF_MIN, n)) * 10) / 10
 }
 
 function round2(n: number): number {
@@ -125,6 +145,11 @@ function resolveMinutes(options?: RateMatchOptions): number {
   return FULL_TIME
 }
 
+/** Convert 0–100 performance → 0–10 rating (26 → 2.6). */
+export function ratingFromPerformance100(performance100: number): number {
+  return clipRating(performance100 / 10)
+}
+
 export function rateMatchPerformance(
   stats: MatchPlayerStats,
   position: PlayerPositionGroup,
@@ -133,21 +158,21 @@ export function rateMatchPerformance(
   if (!stats.appearances || stats.appearances <= 0) return null
 
   const notes: string[] = []
-  const base = 5.0
+  const base = NEUTRAL
   const minutesUsed = resolveMinutes(options)
   if (stats.starter === false) notes.push('Came off the bench')
   if (options?.live) notes.push(`Live @ ${Math.round(minutesUsed)}′`)
 
   let attack = 0
   const goalWeight =
-    position === 'FWD' ? W.goal : position === 'MID' ? W.goal + 0.05 : W.goal + 0.1
+    position === 'FWD' ? W.goal : position === 'MID' ? W.goal + 1 : W.goal + 2
   attack += stats.totalGoals * goalWeight
-  attack += Math.min(stats.shotsOnTarget, 8) * W.shotOnTarget
-  attack += Math.min(Math.max(stats.totalShots - stats.shotsOnTarget, 0), 8) * W.shotOffTarget
+  attack += Math.min(stats.shotsOnTarget, 10) * W.shotOnTarget
+  attack += Math.min(Math.max(stats.totalShots - stats.shotsOnTarget, 0), 10) * W.shotOffTarget
   if (stats.totalGoals > 0) notes.push(`${stats.totalGoals} goal(s)`)
 
   let creation = 0
-  creation += stats.goalAssists * (position === 'MID' ? W.assist + 0.05 : W.assist)
+  creation += stats.goalAssists * (position === 'MID' ? W.assist + 1 : W.assist)
   if (stats.goalAssists > 0) notes.push(`${stats.goalAssists} assist(s)`)
 
   let discipline = 0
@@ -158,10 +183,11 @@ export function rateMatchPerformance(
   discipline += stats.ownGoals * W.ownGoal
   discipline += Math.min(stats.offsides, 5) * W.offside
   if (stats.redCards > 0) notes.push('Red card')
+  if (stats.ownGoals > 0) notes.push('Own goal')
 
   let goalkeeping = 0
   if (position === 'GK') {
-    goalkeeping += Math.min(stats.saves, 12) * W.save
+    goalkeeping += Math.min(stats.saves, 14) * W.save
     goalkeeping += stats.goalsConceded * W.gkGoalConceded
     if (stats.saves > 0) notes.push(`${stats.saves} save(s)`)
   }
@@ -180,28 +206,27 @@ export function rateMatchPerformance(
     goalkeeping = 0
   }
 
-  const endGameDelta = attack + creation + discipline + goalkeeping + defending
-  const timeFactor = FULL_TIME / minutesUsed
-  const liveDelta = endGameDelta * timeFactor
-  const rating = clip(base + liveDelta)
+  const contribution = attack + creation + discipline + goalkeeping + defending
+  const performance100 = clipPerformance(base + contribution)
+  const rating = ratingFromPerformance100(performance100)
 
-  if (options?.live && minutesUsed < FULL_TIME) {
-    notes.push(`Averaging toward ~${clip(base + endGameDelta)} by FT`)
-  }
+  notes.push(`Performance ${performance100.toFixed(0)}/100 → ${rating.toFixed(1)}`)
 
   return {
     rating,
+    performance100,
     base,
-    endGameDelta: round2(endGameDelta),
-    liveDelta: round2(liveDelta),
+    contribution: round2(contribution),
     minutesUsed: round2(minutesUsed),
-    timeFactor: round2(timeFactor),
     attack: round2(attack),
     creation: round2(creation),
     discipline: round2(discipline),
     goalkeeping: round2(goalkeeping),
     defending: round2(defending),
     notes,
+    endGameDelta: round2(contribution),
+    liveDelta: round2(contribution),
+    timeFactor: 1,
   }
 }
 
@@ -216,11 +241,11 @@ export function rateSeasonForm(matchRatings: number[], maxGames = 8): number | n
     total += rating * weight
     weightSum += weight
   })
-  return clip(total / weightSum)
+  return clipRating(total / weightSum)
 }
 
 export const RATING_ROADMAP = {
-  v0: 'Time-averaged ESPN match stats; base 5.0; live spike then settle by FT',
+  v0: 'Linear 0–100 performance → rating/10 (26/100 = 2.6); wide action weights',
   v1: 'True per-player minutes from feed (not just match clock)',
   v2: 'Blend xG/xA overperformance from FootyStats/Big Balls/API-Football',
   v3: 'Progressive actions + duel rates from FBref-style weekly enrichment',
