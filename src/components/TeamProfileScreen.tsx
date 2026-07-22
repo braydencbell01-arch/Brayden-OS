@@ -164,7 +164,7 @@ export function TeamProfileScreen({
           <button
             type="button"
             onClick={() => onOpenLeague(team.leagueId)}
-            className="text-left underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            className="profile-link text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
             {league.name}
           </button>

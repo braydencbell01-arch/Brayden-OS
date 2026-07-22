@@ -109,7 +109,7 @@ export function LeagueProfileScreen({
                     leagueId: league.id,
                   })
                 }
-                className="text-lg font-semibold text-lime underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
               >
                 {leader.shortName}
               </button>

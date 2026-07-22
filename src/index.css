@@ -63,4 +63,16 @@
   .pt-screen {
     padding-top: max(1.75rem, calc(env(safe-area-inset-top, 0px) + 0.85rem));
   }
+
+  /* Always-on underline for text that opens a league/team/player profile. */
+  .profile-link {
+    text-decoration-line: underline;
+    text-underline-offset: 0.16em;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  }
+
+  .profile-link:hover {
+    text-decoration-color: currentColor;
+  }
 }
