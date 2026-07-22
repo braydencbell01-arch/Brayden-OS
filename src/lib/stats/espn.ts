@@ -6,6 +6,9 @@ import {
   type MatchPlayerStats,
 } from './rating'
 import type {
+  LeaderCategory,
+  LeaderEntry,
+  LeagueLeaders,
   MatchDetailStats,
   MatchLineupPlayer,
   MatchLineupSide,
@@ -295,9 +298,37 @@ function readStat(entry: EspnStandingEntry, name: string): number {
   return Number.isFinite(n) ? n : 0
 }
 
-export async function fetchLeagueStandings(leagueId: LeagueId): Promise<StandingRow[]> {
+type EspnSiteLeaderAthlete = {
+  id?: string
+  displayName?: string
+  shortName?: string
+}
+
+type EspnSiteLeader = {
+  displayValue?: string
+  shortDisplayValue?: string
+  value?: number
+  athlete?: EspnSiteLeaderAthlete
+}
+
+type EspnSiteStatisticsResponse = {
+  season?: { year?: number; displayName?: string }
+  stats?: Array<{
+    name?: string
+    displayName?: string
+    leaders?: EspnSiteLeader[]
+  }>
+}
+
+async function fetchStandingsForSeason(
+  leagueId: LeagueId,
+  season?: number,
+): Promise<StandingRow[]> {
   const league = getLeague(leagueId)
-  const url = `https://site.api.espn.com/apis/v2/sports/soccer/${league.espnCode}/standings`
+  const url = new URL(
+    `https://site.api.espn.com/apis/v2/sports/soccer/${league.espnCode}/standings`,
+  )
+  if (season != null) url.searchParams.set('season', String(season))
   const res = await fetch(url)
   if (!res.ok) {
     throw new Error(`Could not load ${league.name} table (${res.status})`)
@@ -320,10 +351,135 @@ export async function fetchLeagueStandings(leagueId: LeagueId): Promise<Standing
         lost: readStat(entry, 'losses'),
         goalDiff: readStat(entry, 'pointDifferential'),
         points: readStat(entry, 'points'),
+        goalsFor: readStat(entry, 'pointsFor'),
+        goalsAgainst: readStat(entry, 'pointsAgainst'),
         note: entry.note?.description,
       }
     })
     .sort((a, b) => a.rank - b.rank || b.points - a.points)
+}
+
+export async function fetchLeagueStandings(leagueId: LeagueId): Promise<StandingRow[]> {
+  return fetchStandingsForSeason(leagueId)
+}
+
+function teamLeadersFromStandings(rows: StandingRow[], limit: number): LeaderCategory[] {
+  const played = rows.filter((row) => row.played > 0)
+  if (played.length === 0) return []
+
+  const byPoints = [...played].sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff)
+  const byGoals = [...played].sort((a, b) => b.goalsFor - a.goalsFor || b.goalDiff - a.goalDiff)
+  const byDiff = [...played].sort((a, b) => b.goalDiff - a.goalDiff || b.points - a.points)
+
+  const toEntries = (list: StandingRow[], valueOf: (row: StandingRow) => number): LeaderEntry[] =>
+    list.slice(0, limit).map((row, index) => ({
+      rank: index + 1,
+      id: row.teamId,
+      name: row.team,
+      shortName: row.shortName,
+      value: valueOf(row),
+      displayValue: String(valueOf(row)),
+    }))
+
+  return [
+    { id: 'team-points', label: 'Points', kind: 'team' as const, leaders: toEntries(byPoints, (r) => r.points) },
+    {
+      id: 'team-goals',
+      label: 'Goals scored',
+      kind: 'team' as const,
+      leaders: toEntries(byGoals, (r) => r.goalsFor),
+    },
+    {
+      id: 'team-gd',
+      label: 'Goal difference',
+      kind: 'team' as const,
+      leaders: toEntries(byDiff, (r) => r.goalDiff),
+    },
+  ].filter((category) => category.leaders.length > 0)
+}
+
+function playerLeadersFromSiteStats(
+  stats: EspnSiteStatisticsResponse['stats'],
+  limit: number,
+): LeaderCategory[] {
+  const wanted = [
+    { name: 'goalsLeaders', label: 'Top scorers' },
+    { name: 'assistsLeaders', label: 'Top assists' },
+  ]
+
+  return wanted
+    .map(({ name, label }) => {
+      const block = stats?.find((item) => item.name === name)
+      const leaders = (block?.leaders ?? []).slice(0, limit).map((leader, index) => {
+        const athlete = leader.athlete
+        const nameText = athlete?.displayName || 'Unknown'
+        return {
+          rank: index + 1,
+          id: athlete?.id || `${name}-${index}`,
+          name: nameText,
+          shortName: athlete?.shortName || nameText,
+          value: typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0,
+          displayValue: leader.shortDisplayValue || leader.displayValue || String(leader.value ?? '—'),
+        }
+      })
+      return {
+        id: name,
+        label,
+        kind: 'player' as const,
+        leaders,
+      }
+    })
+    .filter((category) => category.leaders.length > 0)
+}
+
+export async function fetchLeagueLeaders(
+  leagueId: LeagueId,
+  limit = 8,
+): Promise<LeagueLeaders> {
+  const league = getLeague(leagueId)
+  const nowYear = new Date().getUTCFullYear()
+  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+
+  let season = nowYear
+  let seasonLabel = String(nowYear)
+  let playerCategories: LeaderCategory[] = []
+  let teamCategories: LeaderCategory[] = []
+
+  for (const year of yearsToTry) {
+    const url = new URL(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/statistics`,
+    )
+    url.searchParams.set('season', String(year))
+    const res = await fetch(url)
+    if (!res.ok) continue
+    const data = (await res.json()) as EspnSiteStatisticsResponse
+    const players = playerLeadersFromSiteStats(data.stats, limit)
+    if (players.length === 0) continue
+
+    season = data.season?.year ?? year
+    seasonLabel = data.season?.displayName || `${year} season`
+    playerCategories = players
+
+    try {
+      const standings = await fetchStandingsForSeason(leagueId, year)
+      teamCategories = teamLeadersFromStandings(standings, limit)
+    } catch {
+      teamCategories = []
+    }
+    break
+  }
+
+  if (playerCategories.length === 0 && teamCategories.length === 0) {
+    throw new Error(`No ${league.name} stats leaders available yet`)
+  }
+
+  return {
+    leagueId,
+    season,
+    seasonLabel,
+    categories: [...playerCategories, ...teamCategories],
+    fetchedAt: Date.now(),
+  }
 }
 
 type EspnAthletePayload = {

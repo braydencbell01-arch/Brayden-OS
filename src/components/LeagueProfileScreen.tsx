@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   addDays,
@@ -14,10 +14,13 @@ import {
   matchesForLeagueFrom,
   type Match,
 } from '../lib/matches'
+import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { FavoriteStar } from './FavoriteStar'
+import { LeagueStatsPanel } from './LeagueStatsPanel'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
+import { ProfileAccordion } from './ProfileAccordion'
 import { StandingsTable } from './StandingsTable'
 
 export function LeagueProfileScreen({
@@ -52,6 +55,14 @@ export function LeagueProfileScreen({
   const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
   const standings = useLeagueStandings(league.id)
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
+
+  const [openSection, setOpenSection] = useState<'table' | 'fixtures' | 'stats' | null>('table')
+  const statsEnabled = openSection === 'stats'
+  const leaders = useLeagueLeaders(league.id, statsEnabled)
+
+  const toggleSection = (section: 'table' | 'fixtures' | 'stats') => {
+    setOpenSection((current) => (current === section ? null : section))
+  }
 
   const leader = standings.rows[0] ?? null
   const clubCount = standings.rows.length
@@ -172,79 +183,87 @@ export function LeagueProfileScreen({
           </div>
         </motion.section>
 
-        <motion.section
+        <motion.div
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.45, delay: reduce ? 0 : 0.1 }}
-          className="mt-8"
-          aria-label={`${league.name} standings`}
+          className="mt-8 flex flex-col gap-3"
         >
-          <div className="mb-3 px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Table</p>
-            <p className="mt-1 text-sm text-mist/80">
-              Tap a club name for its profile · star to favorite
-            </p>
-          </div>
-          <StandingsTable
-            rows={standings.rows}
-            loading={standings.loading}
-            error={standings.error}
-            leagueId={league.id}
-            isTeamFavorite={favorites.isTeamFavorite}
-            onToggleTeam={favorites.toggleTeam}
-            onOpenTeam={onOpenTeam}
-          />
-        </motion.section>
+          <ProfileAccordion
+            title="Standings"
+            subtitle="Table · tap a club for its profile"
+            open={openSection === 'table'}
+            onToggle={() => toggleSection('table')}
+            meta={standings.rows.length ? String(standings.rows.length) : undefined}
+          >
+            <StandingsTable
+              rows={standings.rows}
+              loading={standings.loading}
+              error={standings.error}
+              leagueId={league.id}
+              isTeamFavorite={favorites.isTeamFavorite}
+              onToggleTeam={favorites.toggleTeam}
+              onOpenTeam={onOpenTeam}
+            />
+          </ProfileAccordion>
 
-        <motion.section
-          initial={reduce ? false : { opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.45, delay: reduce ? 0 : 0.15 }}
-          className="mt-10"
-          aria-label="Upcoming fixtures"
-        >
-          <div className="mb-3 px-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">
-              Fixtures
-            </p>
-            <p className="mt-1 text-sm text-mist/80">
-              Tap a match for lineups, ratings, and key moments
-            </p>
-          </div>
+          <ProfileAccordion
+            title="Upcoming matches"
+            subtitle="Fixtures in the current window"
+            open={openSection === 'fixtures'}
+            onToggle={() => toggleSection('fixtures')}
+            meta={loading ? '…' : String(leagueMatches.length)}
+          >
+            {loading ? (
+              <p className="text-sm text-mist/70">Loading fixtures…</p>
+            ) : error ? (
+              <p className="text-sm text-mist/80">{error}</p>
+            ) : grouped.length === 0 ? (
+              <p className="text-sm text-mist/70">
+                No upcoming {league.name} matches scheduled.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {grouped.map(({ dateKey, matches: dayMatches }) => (
+                  <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                    <div className="mb-2 flex items-baseline justify-between px-1">
+                      <h2 className="font-display text-2xl tracking-wide text-cream">
+                        {formatMatchDayHeading(dateKey)}
+                      </h2>
+                      {dateKey === toDateKey(today) && (
+                        <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
+                          Today
+                        </span>
+                      )}
+                    </div>
+                    <MatchList
+                      matches={dayMatches}
+                      onOpenTeam={onOpenTeam}
+                      onOpenPlayer={onOpenPlayer}
+                      favoriteLeagueIds={favorites.leagueIds}
+                      favoriteTeamIds={favorites.teamIds}
+                      favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
+                      emptyLabel="No matches"
+                    />
+                  </section>
+                ))}
+              </div>
+            )}
+          </ProfileAccordion>
 
-          {loading ? (
-            <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : error ? (
-            <p className="text-sm text-mist/80">{error}</p>
-          ) : grouped.length === 0 ? (
-            <p className="text-sm text-mist/70">
-              No upcoming {league.name} matches scheduled.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-6">
-              {grouped.map(({ dateKey, matches: dayMatches }) => (
-                <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                  <div className="mb-2 flex items-baseline justify-between px-1">
-                    <h2 className="font-display text-2xl tracking-wide text-cream">
-                      {formatMatchDayHeading(dateKey)}
-                    </h2>
-                    {dateKey === toDateKey(today) && (
-                      <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
-                        Today
-                      </span>
-                    )}
-                  </div>
-                  <MatchList
-                    matches={dayMatches}
-                    onOpenTeam={onOpenTeam}
-                    onOpenPlayer={onOpenPlayer}
-                    emptyLabel="No matches"
-                  />
-                </section>
-              ))}
-            </div>
-          )}
-        </motion.section>
+          <ProfileAccordion
+            title="Stats"
+            subtitle="Player and team leaders"
+            open={openSection === 'stats'}
+            onToggle={() => toggleSection('stats')}
+          >
+            <LeagueStatsPanel
+              data={leaders.data}
+              loading={leaders.loading}
+              error={leaders.error}
+            />
+          </ProfileAccordion>
+        </motion.div>
       </div>
     </div>
   )

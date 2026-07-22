@@ -199,8 +199,40 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
     .map(([dateKey, dayMatches]) => ({ dateKey, matches: dayMatches }))
 }
 
+export function groupMatchesByLeague(
+  matches: Match[],
+): Array<{ leagueId: LeagueId; matches: Match[] }> {
+  const map = new Map<LeagueId, Match[]>()
+  for (const match of matches) {
+    const list = map.get(match.leagueId)
+    if (list) list.push(match)
+    else map.set(match.leagueId, [match])
+  }
+
+  return LEAGUES.filter((league) => map.has(league.id)).map((league) => ({
+    leagueId: league.id,
+    matches: (map.get(league.id) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
+  }))
+}
+
 export function dateKeysWithMatches(matches: Match[]): Set<string> {
   return new Set(matches.map((match) => match.dateKey))
+}
+
+/** True when the match is in a favorited league or features a favorited team. */
+export function isFavoriteMatch(
+  match: Match,
+  favoriteLeagueIds: Set<string>,
+  favoriteTeamIds: Set<string>,
+  favoritePlayerTeamIds: Set<string> = new Set(),
+): boolean {
+  if (favoriteLeagueIds.has(match.leagueId)) return true
+  return (
+    favoriteTeamIds.has(match.home.id) ||
+    favoriteTeamIds.has(match.away.id) ||
+    favoritePlayerTeamIds.has(match.home.id) ||
+    favoritePlayerTeamIds.has(match.away.id)
+  )
 }
 
 export function dateKeysForFavorites(
@@ -219,13 +251,9 @@ export function dateKeysForFavorites(
 
   const keys = new Set<string>()
   for (const match of matches) {
-    const leagueFav = favoriteLeagueIds.has(match.leagueId)
-    const teamFav =
-      favoriteTeamIds.has(match.home.id) ||
-      favoriteTeamIds.has(match.away.id) ||
-      favoritePlayerTeamIds.has(match.home.id) ||
-      favoritePlayerTeamIds.has(match.away.id)
-    if (leagueFav || teamFav) keys.add(match.dateKey)
+    if (isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds, favoritePlayerTeamIds)) {
+      keys.add(match.dateKey)
+    }
   }
   return keys
 }
