@@ -41,7 +41,7 @@ export function CalendarStrip({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
           <p className="mt-1 text-sm text-mist/80">
-            ±{CALENDAR_RADIUS_DAYS} days · yellow = favorites
+            Swipe for match days · yellow = favorites
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -201,7 +201,7 @@ function HomeScreen({
             className="mb-4"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Leagues</p>
-            <p className="mt-1 text-sm text-mist/80">Star a league, then open it for the next 100 days</p>
+            <p className="mt-1 text-sm text-mist/80">Star a league, then open it for upcoming fixtures</p>
           </motion.div>
 
           <div className="flex flex-col gap-3">
@@ -330,7 +330,7 @@ function LeagueScreen({
             </div>
           </div>
           <p className="mt-3 text-sm text-mist/80">
-            Table + fixtures for the next {CALENDAR_RADIUS_DAYS} days
+            Table + upcoming fixtures
             {!loading && !error ? ` · ${leagueMatches.length} matches` : ''}
           </p>
         </motion.header>
@@ -373,7 +373,7 @@ function LeagueScreen({
             <p className="text-sm text-mist/80">{error}</p>
           ) : grouped.length === 0 ? (
             <p className="text-sm text-mist/70">
-              No scheduled {league.name} matches in the next {CALENDAR_RADIUS_DAYS} days.
+              No upcoming {league.name} matches scheduled.
             </p>
           ) : (
             grouped.map(({ dateKey, matches: dayMatches }) => (
