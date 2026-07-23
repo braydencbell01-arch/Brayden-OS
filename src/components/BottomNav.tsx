@@ -91,9 +91,12 @@ const TABS: Array<{
 export function BottomNav({
   active,
   onSelect,
+  favoritesCount = 0,
 }: {
   active: BottomTab
   onSelect: (tab: BottomTab) => void
+  /** When greater than 0, Favorites tab shows a small count cue. */
+  favoritesCount?: number
 }) {
   return (
     <nav
@@ -104,35 +107,34 @@ export function BottomNav({
       <div className="mx-auto grid max-w-lg grid-cols-5 md:max-w-xl">
         {TABS.map((tab) => {
           const isActive = tab.id === active
-          const isPlaceholder = tab.id === 'stats'
-          const emphasize = isActive && !isPlaceholder
+          const showFavBadge = tab.id === 'favorites' && favoritesCount > 0
           return (
             <button
               key={tab.id}
               type="button"
               onClick={() => onSelect(tab.id)}
               aria-current={isActive ? 'page' : undefined}
-              aria-label={isPlaceholder ? 'Stats, coming soon' : undefined}
-              className={`flex flex-col items-center gap-0.5 px-1 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime ${
-                emphasize
-                  ? 'text-lime'
-                  : isActive
-                    ? 'text-mist/65'
-                    : isPlaceholder
-                      ? 'text-mist/40 hover:text-mist/70'
-                      : 'text-mist/55 hover:text-mist/90'
+              aria-label={
+                showFavBadge ? `Favorites, ${favoritesCount} saved` : undefined
+              }
+              className={`relative flex flex-col items-center gap-0.5 px-1 py-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime ${
+                isActive ? 'text-lime' : 'text-mist/55 hover:text-mist/90'
               }`}
             >
-              {tab.icon(emphasize)}
+              <span className="relative">
+                {tab.icon(isActive)}
+                {showFavBadge ? (
+                  <span
+                    className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-star px-1 text-[0.5rem] font-bold leading-none text-ink"
+                    aria-hidden
+                  >
+                    {favoritesCount > 9 ? '9+' : favoritesCount}
+                  </span>
+                ) : null}
+              </span>
               <span
                 className={`text-[0.58rem] font-semibold uppercase tracking-[0.08em] ${
-                  emphasize
-                    ? 'text-lime'
-                    : isActive
-                      ? 'text-mist/65'
-                      : isPlaceholder
-                        ? 'text-mist/40'
-                        : 'text-mist/55'
+                  isActive ? 'text-lime' : 'text-mist/55'
                 }`}
               >
                 {tab.label}

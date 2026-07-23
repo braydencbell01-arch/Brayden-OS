@@ -11,6 +11,7 @@ export function StandingsTable({
   isTeamFavorite,
   onToggleTeam,
   onOpenTeam,
+  onRetry,
 }: {
   rows: StandingRow[]
   loading: boolean
@@ -19,13 +20,33 @@ export function StandingsTable({
   isTeamFavorite: (teamId: string) => boolean
   onToggleTeam: (team: FavoriteTeam) => void
   onOpenTeam?: (team: FavoriteTeam) => void
+  onRetry?: () => void
 }) {
-  if (loading) {
-    return <p className="text-sm text-mist/70">Loading table…</p>
+  if (loading && rows.length === 0) {
+    return (
+      <div className="space-y-2" aria-label="Loading table">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div key={index} className="h-9 animate-pulse rounded bg-white/[0.06]" />
+        ))}
+      </div>
+    )
   }
 
-  if (error) {
-    return <p className="text-sm text-mist/80">{error}</p>
+  if (error && rows.length === 0) {
+    return (
+      <div className="border border-white/10 bg-white/[0.03] px-3 py-3">
+        <p className="text-sm text-mist/80">{error}</p>
+        {onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+          >
+            Retry
+          </button>
+        ) : null}
+      </div>
+    )
   }
 
   if (rows.length === 0) {
@@ -75,7 +96,7 @@ export function StandingsTable({
                     <button
                       type="button"
                       onClick={() => onOpenTeam(teamRef)}
-                      className="text-left underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
                       {row.shortName}
                     </button>

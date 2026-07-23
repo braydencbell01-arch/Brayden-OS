@@ -93,7 +93,7 @@ function TeamNameButton({
           leagueId: match.leagueId,
         })
       }
-      className={`${align} text-sm font-semibold text-cream underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
+      className={`${align} profile-link text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
     >
       {team.shortName}
     </button>
@@ -119,6 +119,8 @@ function ExpandableMatchRow({
   const league = getLeague(match.leagueId)
   const status = statusLabel(match)
   const { stats, loading, error } = useMatchDetailStats(open ? match : null)
+  const expandLabel =
+    match.status === 'scheduled' ? 'Details' : match.status === 'live' ? 'Live' : 'Lineups'
 
   return (
     <article
@@ -134,34 +136,50 @@ function ExpandableMatchRow({
             ].join(' ')
       }
     >
-      <div className={flat ? 'px-3 py-2.5' : 'px-4 py-3'}>
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-          className="mb-1.5 flex w-full items-center justify-between gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
-        >
-          <p className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen((value) => !value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setOpen((value) => !value)
+          }
+        }}
+        aria-expanded={open}
+        className={[
+          'w-full cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime',
+          flat ? 'px-3 py-2.5' : 'px-4 py-3',
+        ].join(' ')}
+      >
+        <div className="mb-1.5 flex w-full items-center justify-between gap-3">
+          <p className="flex min-w-0 items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
-            <span>
-              {showLeague ? league.short : match.venue || 'Not available'}
+            <span className="truncate">
+              {showLeague ? league.short : match.venue || league.short}
             </span>
           </p>
           <p
             className={[
-              'text-[0.65rem] font-bold uppercase tracking-[0.14em]',
+              'shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.14em]',
               match.status === 'live' ? 'text-lime' : 'text-mist/80',
             ].join(' ')}
           >
             {status}
-            <span className="ml-2 text-mist/50">{open ? '▴' : '▾'} lineup</span>
+            <span className="ml-2 text-mist/50">
+              {open ? '▴' : '▾'} {expandLabel}
+            </span>
           </p>
-        </button>
+        </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <TeamNameButton match={match} side="home" onOpenTeam={onOpenTeam} />
+          <div onClick={(event) => event.stopPropagation()}>
+            <TeamNameButton match={match} side="home" onOpenTeam={onOpenTeam} />
+          </div>
           <Score match={match} />
-          <TeamNameButton match={match} side="away" onOpenTeam={onOpenTeam} />
+          <div onClick={(event) => event.stopPropagation()}>
+            <TeamNameButton match={match} side="away" onOpenTeam={onOpenTeam} />
+          </div>
         </div>
       </div>
 

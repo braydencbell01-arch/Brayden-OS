@@ -22,14 +22,14 @@ export function ProfileShell({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
-        <div className="mb-7 flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-30 -mx-5 mb-7 border-b border-white/10 bg-pitch-deep/90 px-5 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md md:-mx-6 md:px-6">
           <motion.button
             type="button"
             initial={reduce ? false : { opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35 }}
             onClick={onBack}
-            className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
+            className="inline-flex min-h-11 w-fit items-center gap-2 pr-3 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
           >
             <span aria-hidden>←</span> Back
           </motion.button>

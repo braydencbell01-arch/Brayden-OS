@@ -144,14 +144,12 @@ export function CalendarStrip({
 
   return (
     <section aria-label="Match calendar" className="relative">
-      <div className="mb-3 flex items-end justify-between gap-3 px-1">
+      <div className="mb-2 flex items-end justify-between gap-3 px-1">
         <div>
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-lime/80">
             Calendar
           </p>
-          <p className="mt-0.5 text-sm text-mist/80">
-            Swipe for any known match day · yellow = favorites
-          </p>
+          <p className="mt-0.5 text-[0.7rem] text-mist/65">Yellow = favorites</p>
         </div>
         <div className="flex items-center gap-2">
           <p className="font-display text-xl tracking-wide text-cream/90">

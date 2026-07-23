@@ -1,4 +1,6 @@
 export type FantasyPosition = 'GKP' | 'DEF' | 'MID' | 'FWD'
+export type DraftMode = 'snake' | 'auction'
+export type ScoringPreset = 'classic' | 'offense' | 'clean_sheet'
 
 export type LeaguePhase =
   | 'lobby'
@@ -44,6 +46,10 @@ export type FantasyMember = {
   draftSlot: number | null
   roster: number[]
   starters: number[]
+  draftQueue?: number[]
+  /** Injured reserve stash. IR players are not counted in roster length. */
+  ir?: number[]
+  auctionBudget?: number
   /** When on, picks fire automatically on your turn (season-proj best fit). */
   autodraft: boolean
   wins: number
@@ -69,9 +75,13 @@ export type TradeOffer = {
   toMemberId: string
   offerPlayerIds: number[]
   requestPlayerIds: number[]
-  status: 'pending' | 'accepted' | 'rejected' | 'canceled'
+  status: 'pending' | 'veto_pending' | 'accepted' | 'rejected' | 'canceled' | 'vetoed'
   createdAt: number
   resolvedAt?: number
+  acceptedAt?: number
+  vetoDeadlineAt?: number
+  /** Member ids voting to veto. Trade parties cannot vote. */
+  vetoVotes?: string[]
 }
 
 export type WaiverClaim = {
@@ -112,6 +122,14 @@ export type PlayoffSeries = {
   winnerId?: string
 }
 
+export type ActivityEvent = {
+  id: string
+  at: number
+  type: string
+  message: string
+  memberId?: string
+}
+
 export type FantasyLeague = {
   id: string
   inviteCode: string
@@ -124,6 +142,18 @@ export type FantasyLeague = {
   teamCount: number
   rosterSpots: number
   starterSpots: number
+  draftMode: DraftMode
+  scoringPreset: ScoringPreset
+  activity: ActivityEvent[]
+  tradeVetoHours: number
+  autoScore: boolean
+  lineupLockedGws: number[]
+  auctionBudget: number
+  auctionNomPlayerId?: number
+  auctionHighBid?: number
+  auctionHighBidderId?: string
+  auctionBidDeadlineAt?: number
+  auctionNominatingMemberId?: string
   /** Seconds on the clock per draft pick (FF-style). */
   draftClockSeconds: number
   /** When the current pick expires and autodraft fires. */
@@ -169,6 +199,10 @@ export const SEASON_GWS = 38
 export const PLAYOFF_START_GW = 29
 export const SEMI_GWS = [29, 30, 31, 32, 33] as const
 export const FINAL_GWS = [34, 35, 36, 37, 38] as const
+export const MAX_IR_SLOTS = 2
+export const DEFAULT_TRADE_VETO_HOURS = 24
+export const DEFAULT_AUCTION_BUDGET = 200
+export const ACTIVITY_LIMIT = 80
 
 /** Max on full roster (must sum to DEFAULT_ROSTER_SPOTS). */
 export const POSITION_LIMITS: Record<FantasyPosition, number> = {
@@ -178,7 +212,17 @@ export const POSITION_LIMITS: Record<FantasyPosition, number> = {
   FWD: 4,
 }
 
-/** Starter formation bands (must be able to sum to 11). */
+/**
+ * American-style XI:
+ * - 1 GKP
+ * - 3-5 DEF
+ * - 2-4 MID rigid slots
+ * - 1-2 FWD rigid slots
+ * - exactly 1 FLEX, and FLEX must be MID or FWD
+ *
+ * STARTER_MIN/MAX describe the rigid positional bands; lineup validation applies
+ * STARTER_FLEX_SLOTS on top, so effective caps are MID 5 and FWD 3.
+ */
 export const STARTER_MIN: Record<FantasyPosition, number> = {
   GKP: 1,
   DEF: 3,
@@ -189,6 +233,9 @@ export const STARTER_MIN: Record<FantasyPosition, number> = {
 export const STARTER_MAX: Record<FantasyPosition, number> = {
   GKP: 1,
   DEF: 5,
-  MID: 5,
-  FWD: 3,
+  MID: 4,
+  FWD: 2,
 }
+
+export const STARTER_FLEX_SLOTS = 1
+export const FLEX_POSITIONS: FantasyPosition[] = ['MID', 'FWD']

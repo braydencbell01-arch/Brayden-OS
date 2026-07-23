@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion'
-import { FavoriteStar } from './FavoriteStar'
 import { leaguesInDisplayOrder, type LeagueId } from '../lib/leagues'
 import type { FavoritesApi } from '../lib/favorites'
 
-export function LeaguesScreen({
+/**
+ * Stats tab hub — jumps into league profiles where standings, player stats,
+ * and stat leaders live (instead of a dead “coming soon” screen).
+ */
+export function StatsScreen({
   favorites,
   onOpenLeague,
   reduce,
@@ -33,9 +36,9 @@ export function LeaguesScreen({
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-mist/60"
+            className="text-xs font-semibold uppercase tracking-[0.22em] text-lime"
           >
-            Competitions
+            Numbers
           </motion.p>
           <motion.h1
             initial={reduce ? false : { opacity: 0, y: 14 }}
@@ -43,28 +46,26 @@ export function LeaguesScreen({
             transition={{ duration: 0.5, delay: reduce ? 0 : 0.05, ease: [0.22, 1, 0.36, 1] }}
             className="mt-2 font-display text-5xl tracking-[0.04em] text-cream sm:text-6xl"
           >
-            Leagues
+            Stats
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Favorites stay on top. Star a league to pin it on Match day.
+            Open a league for standings, player stats, and stat leaders.
           </p>
         </header>
 
         {favoriteLeagues.length > 0 ? (
           <section className="mb-6" aria-label="Favorite leagues">
             <p className="mb-2 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-star/90">
-              Favorites
+              Your leagues
             </p>
-            <div className="flex flex-col gap-3">
-              {favoriteLeagues.map((league, i) => (
-                <LeagueRow
+            <div className="flex flex-col gap-2">
+              {favoriteLeagues.map((league) => (
+                <LeagueStatsRow
                   key={league.id}
-                  league={league}
+                  name={league.name}
+                  country={league.country}
                   favorited
-                  index={i}
-                  reduce={reduce}
-                  onOpen={() => onOpenLeague(league.id)}
-                  onToggleFavorite={() => favorites.toggleLeague(league.id)}
+                  onClick={() => onOpenLeague(league.id)}
                 />
               ))}
             </div>
@@ -77,17 +78,23 @@ export function LeaguesScreen({
               All leagues
             </p>
           ) : null}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {(favoriteLeagues.length > 0 ? otherLeagues : leagues).map((league, i) => (
-              <LeagueRow
+              <motion.div
                 key={league.id}
-                league={league}
-                favorited={favorites.isLeagueFavorite(league.id)}
-                index={i}
-                reduce={reduce}
-                onOpen={() => onOpenLeague(league.id)}
-                onToggleFavorite={() => favorites.toggleLeague(league.id)}
-              />
+                initial={reduce ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.35,
+                  delay: reduce ? 0 : Math.min(i, 12) * 0.03,
+                }}
+              >
+                <LeagueStatsRow
+                  name={league.name}
+                  country={league.country}
+                  onClick={() => onOpenLeague(league.id)}
+                />
+              </motion.div>
             ))}
           </div>
         </section>
@@ -96,56 +103,38 @@ export function LeaguesScreen({
   )
 }
 
-function LeagueRow({
-  league,
+function LeagueStatsRow({
+  name,
+  country,
   favorited,
-  index,
-  reduce,
-  onOpen,
-  onToggleFavorite,
+  onClick,
 }: {
-  league: { id: LeagueId; name: string; country: string }
-  favorited: boolean
-  index: number
-  reduce: boolean | null
-  onOpen: () => void
-  onToggleFavorite: () => void
+  name: string
+  country: string
+  favorited?: boolean
+  onClick: () => void
 }) {
   return (
-    <motion.div
-      layout={!reduce}
-      initial={reduce ? false : { opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.45,
-        delay: reduce ? 0 : 0.06 + Math.min(index, 10) * 0.04,
-        ease: [0.22, 1, 0.36, 1],
-      }}
+    <button
+      type="button"
+      onClick={onClick}
       className={[
-        'flex items-stretch border bg-gradient-to-r from-pitch/80 to-turf/40 transition hover:border-lime/50',
-        favorited ? 'border-star/35' : 'border-white/10',
+        'flex w-full items-center justify-between gap-3 border px-3 py-3.5 text-left transition outline-none',
+        'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime',
+        favorited
+          ? 'border-star/35 bg-star/[0.07] hover:border-star/55'
+          : 'border-white/10 bg-pitch/40 hover:border-lime/40',
       ].join(' ')}
     >
-      <div className="flex items-center px-2">
-        <FavoriteStar active={favorited} label={league.name} onToggle={onToggleFavorite} />
-      </div>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="group flex min-w-0 flex-1 items-center justify-between px-3 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
-      >
-        <span>
-          <span className="profile-link block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
-            {league.name}
-          </span>
-          <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
-            {league.country}
-          </span>
+      <span className="min-w-0">
+        <span className="profile-link block truncate font-display text-2xl tracking-[0.04em] text-cream sm:text-3xl">
+          {name}
         </span>
-        <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
-          Profile →
+        <span className="mt-0.5 block text-[0.65rem] font-medium uppercase tracking-[0.14em] text-mist/65">
+          {country} · Standings · Leaders
         </span>
-      </button>
-    </motion.div>
+      </span>
+      <span className="shrink-0 text-lime">→</span>
+    </button>
   )
 }
