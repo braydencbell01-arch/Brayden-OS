@@ -36,7 +36,11 @@ function read(): AppSettings {
 }
 
 function write(next: AppSettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  } catch {
+    // Quota / private mode — keep in-memory preferences for this session.
+  }
 }
 
 export function loadSettings(): AppSettings {

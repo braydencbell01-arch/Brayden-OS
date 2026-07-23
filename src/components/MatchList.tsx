@@ -131,7 +131,11 @@ function ExpandableMatchRow({
   const status = statusLabel(match)
   const { stats, loading, error } = useMatchDetailStats(open ? match : null)
   const expandLabel =
-    match.status === 'scheduled' ? 'Details' : match.status === 'live' ? 'Live' : 'Lineups'
+    match.status === 'live'
+      ? 'Live'
+      : match.status === 'finished'
+        ? 'Lineups'
+        : 'Details'
   const leagueLabel = showLeague
     ? league.short
     : missingLong(match.venue)
@@ -206,18 +210,22 @@ function ExpandableMatchRow({
               showPrediction={loadSettings().showPredictions}
             />
           ) : null}
-          <MatchStatsPanel
-            stats={stats}
-            loading={loading}
-            error={error}
-            scheduled={match.status === 'scheduled'}
-            onOpenPlayer={
-              onOpenPlayer
-                ? (player) => onOpenPlayer(toPlayerNav(player))
-                : undefined
-            }
-            onOpenTeam={onOpenTeam}
-          />
+          {match.status === 'postponed' ? (
+            <p className="mt-3 text-xs text-mist/65">This match has been postponed.</p>
+          ) : (
+            <MatchStatsPanel
+              stats={stats}
+              loading={loading}
+              error={error}
+              scheduled={match.status === 'scheduled'}
+              onOpenPlayer={
+                onOpenPlayer
+                  ? (player) => onOpenPlayer(toPlayerNav(player))
+                  : undefined
+              }
+              onOpenTeam={onOpenTeam}
+            />
+          )}
         </div>
       )}
     </article>

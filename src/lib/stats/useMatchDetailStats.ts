@@ -50,7 +50,7 @@ export function useMatchDetailStats(match: Match | null) {
       return
     }
 
-    if (matchStatus === 'scheduled') {
+    if (matchStatus === 'postponed') {
       requestId.current += 1
       setStats(null)
       setError(null)

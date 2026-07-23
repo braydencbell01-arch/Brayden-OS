@@ -236,7 +236,7 @@ function HomeScreen({
             </div>
           </div>
 
-          {loading || (refreshing && dayMatches.length === 0 && !error) ? (
+          {loading || (refreshing && dayMatches.length === 0 && !error && !updatedAt) ? (
             <div className="space-y-2" aria-label="Loading fixtures">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-14 animate-pulse rounded bg-white/[0.06]" />
@@ -458,8 +458,9 @@ export default function App() {
       setActiveTeam(null)
       setActivePlayer(null)
     } else if (screen === 'player' && activeTeam) {
+      // Team → player → league: Back should restore player, then club.
       leagueReturnTeamRef.current = activeTeam
-      leagueReturnPlayerRef.current = null
+      leagueReturnPlayerRef.current = activePlayer
       setActiveTeam(null)
       setActivePlayer(null)
     } else if (screen === 'player' && activePlayer) {
@@ -691,26 +692,27 @@ export default function App() {
   }
 
   const closeLeagueProfile = () => {
+    const returnPlayer = leagueReturnPlayerRef.current
     const returnTeam = leagueReturnTeamRef.current
+    if (returnPlayer) {
+      // Prefer restoring the player first (Team → Player → League → Back).
+      leagueReturnPlayerRef.current = null
+      leagueReturnTeamRef.current = null
+      setActiveLeagueId(teamOriginLeagueRef.current)
+      setActiveTeam(returnTeam)
+      setActivePlayer(returnPlayer)
+      setScreen('player')
+      writeHash({ kind: 'player', player: returnPlayer })
+      return
+    }
     if (returnTeam) {
       leagueReturnTeamRef.current = null
-      leagueReturnPlayerRef.current = null
       setActivePlayer(null)
       setActiveTeam(returnTeam)
       // Restore the league this club was opened from (if any), not the nested hop.
       setActiveLeagueId(teamOriginLeagueRef.current)
       setScreen('team')
       writeHash({ kind: 'team', team: returnTeam })
-      return
-    }
-    const returnPlayer = leagueReturnPlayerRef.current
-    if (returnPlayer) {
-      leagueReturnPlayerRef.current = null
-      setActiveLeagueId(null)
-      setActiveTeam(null)
-      setActivePlayer(returnPlayer)
-      setScreen('player')
-      writeHash({ kind: 'player', player: returnPlayer })
       return
     }
     setActivePlayer(null)

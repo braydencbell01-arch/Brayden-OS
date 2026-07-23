@@ -893,6 +893,10 @@ export function getLeague(id: LeagueId): League {
   return league
 }
 
+export function isKnownLeagueId(id: string): id is LeagueId {
+  return LEAGUES.some((item) => item.id === id)
+}
+
 export function isInternationalLeague(id: LeagueId): boolean {
   return getLeague(id).kind === 'international'
 }

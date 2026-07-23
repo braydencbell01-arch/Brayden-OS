@@ -18,17 +18,6 @@ export function MatchStatsPanel({
   onOpenPlayer?: (player: MatchLineupPlayer) => void
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
-  if (scheduled) {
-    return (
-      <p className="mt-3 text-xs text-mist/65">
-        Lineups usually post closer to kickoff.
-        <span className="mt-1 block text-mist/55">
-          Ratings and full match stats unlock once the match starts.
-        </span>
-      </p>
-    )
-  }
-
   if (loading && !stats) {
     return (
       <div className="mt-3 space-y-2" aria-label="Loading match details">
@@ -43,6 +32,19 @@ export function MatchStatsPanel({
     return <p className="mt-3 text-xs text-mist/70">{error}</p>
   }
 
+  const hasLineups = Boolean(stats && stats.lineups.length > 0)
+
+  if (scheduled && !hasLineups) {
+    return (
+      <p className="mt-3 text-xs text-mist/65">
+        Lineups usually post closer to kickoff.
+        <span className="mt-1 block text-mist/55">
+          Ratings and full match stats unlock once the match starts.
+        </span>
+      </p>
+    )
+  }
+
   if (!stats) {
     return <p className="mt-3 text-xs text-mist/65">{MISSING_LONG}</p>
   }
@@ -51,10 +53,12 @@ export function MatchStatsPanel({
     <div className="mt-3 border-t border-white/10 pt-3">
       <div className="mb-4">
         <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
-          Lineups + ratings
+          {scheduled ? 'Confirmed lineups' : 'Lineups + ratings'}
         </p>
         <p className="mb-3 text-xs text-mist/65">
-          Tap a player for their profile. Ratings start at 5.0 and average out over the match.
+          {scheduled
+            ? 'Tap a player for their profile. Ratings unlock once the match starts.'
+            : 'Tap a player for their profile. Ratings start at 5.0 and average out over the match.'}
         </p>
         <MatchLineupPanel
           lineups={stats.lineups}
@@ -63,7 +67,7 @@ export function MatchStatsPanel({
         />
       </div>
 
-      {stats.lines.length > 0 ? (
+      {!scheduled && stats.lines.length > 0 ? (
         <ul className="flex flex-col gap-1.5 border-t border-white/10 pt-3">
           {stats.lines.map((line) => (
             <li
@@ -82,9 +86,9 @@ export function MatchStatsPanel({
             </li>
           ))}
         </ul>
-      ) : (
+      ) : !scheduled && stats.lines.length === 0 ? (
         <p className="text-xs text-mist/65">{MISSING_LONG}</p>
-      )}
+      ) : null}
 
       {stats.moments.length > 0 && (
         <ul className="mt-3 flex flex-col gap-1.5 border-t border-white/10 pt-3">

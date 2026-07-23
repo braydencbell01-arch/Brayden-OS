@@ -32,9 +32,11 @@ export function buildPreMatchBriefing(
   let homeWins = 0
   let awayWins = 0
   let draws = 0
-  const h2h = h2hMatches.map((m) => {
-    const homeScore = m.home.score ?? 0
-    const awayScore = m.away.score ?? 0
+  const h2h = h2hMatches
+    .filter((m) => m.home.score != null && m.away.score != null)
+    .map((m) => {
+    const homeScore = m.home.score!
+    const awayScore = m.away.score!
     let winnerId: string | null = null
     if (homeScore === awayScore) draws += 1
     else if (homeScore > awayScore) {

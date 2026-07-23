@@ -85,7 +85,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       if (selectedSeason === year) return
       setSelectedSeason(year)
       setStatsLoading(true)
-      const req = requestId.current
+      const req = ++requestId.current
       fetchPlayerSeasonStatsForYear(profile.leagueId, playerId, year)
         .then((bundle) => {
           if (requestId.current !== req) return
