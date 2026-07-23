@@ -1,5 +1,5 @@
 import { compareLeaguesForDisplay, internationalLeagues, LEAGUES, type LeagueId } from './leagues'
-import { dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
+import { addDays, dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
 
@@ -172,7 +172,10 @@ async function fetchLeagueScoreboard(
   from: Date,
   to: Date,
 ): Promise<Match[]> {
-  const range = `${formatEspnDate(from)}-${formatEspnDate(to)}`
+  // Pad ±1 day so local-midnight vs ESPN day-boundary skew doesn't drop edge fixtures.
+  const paddedFrom = addDays(startOfDay(from), -1)
+  const paddedTo = addDays(startOfDay(to), 1)
+  const range = `${formatEspnDate(paddedFrom)}-${formatEspnDate(paddedTo)}`
   const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/scoreboard?dates=${range}&limit=400`
   const res = await fetch(url)
   if (!res.ok) {

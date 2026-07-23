@@ -98,6 +98,7 @@ function StandingGroupTable({
                 </td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.played}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.won}</td>
+                <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.drawn}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.lost}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}

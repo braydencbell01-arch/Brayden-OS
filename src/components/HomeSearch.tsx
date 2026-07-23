@@ -130,6 +130,8 @@ export function HomeSearch({
     }
 
     const id = ++requestId.current
+    // Drop previous ESPN hits immediately so typing never mixes stale remote rows.
+    setRemote({ teams: [], players: [] })
     setLoadingRemote(true)
     const timer = window.setTimeout(() => {
       void searchEspnSoccer(q)

@@ -190,35 +190,40 @@ export function useLiveBigFiveMatches() {
   }, [bumpKnownForward, expandLoadedBounds, fetchAndMerge])
 
   const loadCore = useCallback(
-    async (silent: boolean) => {
-      const today = startOfDay(new Date())
-      const from = addDays(today, -CALENDAR_INITIAL_PAST_DAYS)
-      const to = addDays(today, CORE_FORWARD_REFRESH_DAYS)
+    (silent: boolean) => {
+      const run = async () => {
+        const today = startOfDay(new Date())
+        const from = addDays(today, -CALENDAR_INITIAL_PAST_DAYS)
+        const to = addDays(today, CORE_FORWARD_REFRESH_DAYS)
 
-      if (!silent) setLoading(true)
-      else setRefreshing(true)
-      setError(null)
+        if (!silent) setLoading(true)
+        else setRefreshing(true)
+        setError(null)
 
-      try {
-        await fetchAndMerge(from, to)
-        expandLoadedBounds(from, to)
+        try {
+          await fetchAndMerge(from, to)
+          expandLoadedBounds(from, to)
 
-        if (!discoveryStartedRef.current) {
-          setRefreshing(true)
-          try {
-            await discoverForwardHorizon()
-            discoveryStartedRef.current = true
-          } finally {
-            setRefreshing(false)
+          if (!discoveryStartedRef.current) {
+            setRefreshing(true)
+            try {
+              await discoverForwardHorizon()
+              discoveryStartedRef.current = true
+            } finally {
+              setRefreshing(false)
+            }
           }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Could not load fixtures')
+          if (!hasLoadedRef.current) setMatches([])
+        } finally {
+          setLoading(false)
+          setRefreshing(false)
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not load fixtures')
-        if (!hasLoadedRef.current) setMatches([])
-      } finally {
-        setLoading(false)
-        setRefreshing(false)
       }
+
+      queueRef.current = queueRef.current.then(run, run)
+      return queueRef.current
     },
     [discoverForwardHorizon, expandLoadedBounds, fetchAndMerge],
   )
