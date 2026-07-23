@@ -133,9 +133,12 @@ function PlayerPick({
       ) : (
         <>
           <input
+            id={`compare-search-${label.toLowerCase().replace(/\s+/g, '-')}`}
+            name={`compare-search-${label.toLowerCase().replace(/\s+/g, '-')}`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search player…"
+            autoComplete="off"
             className="mt-2 w-full rounded-lg border border-white/15 bg-pitch px-3 py-2 text-sm text-cream outline-none focus:border-lime/45"
           />
           {loading ? <p className="mt-1 text-xs text-mist/55">Searching…</p> : null}
