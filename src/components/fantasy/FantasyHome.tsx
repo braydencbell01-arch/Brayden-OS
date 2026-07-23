@@ -12,6 +12,7 @@ import {
   STARTER_MIN,
 } from '../../lib/fantasy/types'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
+import type { PlayerNavRef } from '../PlayerProfileScreen'
 import {
   FantasyButton,
   FantasyInput,
@@ -20,6 +21,7 @@ import {
   FantasyTitle,
   phaseLabel,
 } from './FantasyChrome'
+import { FantasyResearchPanel } from './FantasyResearchPanel'
 
 type HomeMode = 'menu' | 'create' | 'join'
 
@@ -70,11 +72,16 @@ function isFullBlobInvite(invite: string): boolean {
 export function FantasyHome({
   fantasy,
   reduce,
+  onOpenPlayer,
+  initialResearchTab,
 }: {
   fantasy: FantasyApi
   reduce: boolean | null
+  onOpenPlayer?: (player: PlayerNavRef) => void
+  initialResearchTab?: 'value' | 'compare'
 }) {
   const [mode, setMode] = useState<HomeMode>(fantasy.pendingInvite ? 'join' : 'menu')
+  const [researchOpen, setResearchOpen] = useState(Boolean(initialResearchTab))
   const [name, setName] = useState(fantasy.identity.displayName)
   const [leagueName, setLeagueName] = useState('American FF League')
   const [teamCount, setTeamCount] = useState(8)
@@ -195,6 +202,36 @@ export function FantasyHome({
               Join with invite
             </FantasyButton>
           </div>
+
+          <div className="mt-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
+                  Draft research
+                </h2>
+                <p className="mt-1 text-xs text-mist/60">
+                  FPL value board and player compare — moved here from Stats.
+                </p>
+              </div>
+              <FantasyButton
+                variant="ghost"
+                className="shrink-0"
+                onClick={() => setResearchOpen((open) => !open)}
+              >
+                {researchOpen ? 'Hide' : 'Open'}
+              </FantasyButton>
+            </div>
+            {researchOpen ? (
+              <div className="mt-4">
+                <FantasyResearchPanel
+                  catalog={fantasy.catalog}
+                  onOpenPlayer={onOpenPlayer}
+                  initialTab={initialResearchTab ?? 'value'}
+                />
+              </div>
+            ) : null}
+          </div>
+
           {!fantasy.catalog && !fantasy.catalogError ? (
             <p className="text-xs text-mist/55">Loading player catalog…</p>
           ) : null}

@@ -26,9 +26,20 @@ import {
 import { FantasyCommissionerChecklist } from './FantasyCommissionerChecklist'
 import { FantasyHome } from './FantasyHome'
 import { FantasyMatchupCenter } from './FantasyMatchupCenter'
+import { FantasyResearchPanel } from './FantasyResearchPanel'
 import { downloadLeagueJson, parseLeagueImport } from '../../lib/fantasy/exportImport'
+import type { PlayerNavRef } from '../PlayerProfileScreen'
 
-type HubTab = 'home' | 'draft' | 'roster' | 'matchup' | 'waivers' | 'trades' | 'standings' | 'bracket'
+type HubTab =
+  | 'home'
+  | 'draft'
+  | 'roster'
+  | 'matchup'
+  | 'waivers'
+  | 'trades'
+  | 'standings'
+  | 'bracket'
+  | 'research'
 
 function playerLabel(p: FantasyPlayer | undefined, id: number): string {
   if (!p) return `#${id}`
@@ -72,19 +83,50 @@ function shareInviteText(league: FantasyLeague): string {
 export function FantasyScreen({
   fantasy,
   reduce,
+  onOpenPlayer,
+  initialResearchTab,
 }: {
   fantasy: FantasyApi
   reduce: boolean | null
+  onOpenPlayer?: (player: PlayerNavRef) => void
+  initialResearchTab?: 'value' | 'compare'
 }) {
   if (!fantasy.activeLeague) {
-    return <FantasyHome fantasy={fantasy} reduce={reduce} />
+    return (
+      <FantasyHome
+        fantasy={fantasy}
+        reduce={reduce}
+        onOpenPlayer={onOpenPlayer}
+        initialResearchTab={initialResearchTab}
+      />
+    )
   }
-  return <FantasyLeagueHub key={fantasy.activeLeague.id} fantasy={fantasy} reduce={reduce} />
+  return (
+    <FantasyLeagueHub
+      key={fantasy.activeLeague.id}
+      fantasy={fantasy}
+      reduce={reduce}
+      onOpenPlayer={onOpenPlayer}
+      initialResearchTab={initialResearchTab}
+    />
+  )
 }
 
-function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: boolean | null }) {
+function FantasyLeagueHub({
+  fantasy,
+  reduce,
+  onOpenPlayer,
+  initialResearchTab,
+}: {
+  fantasy: FantasyApi
+  reduce: boolean | null
+  onOpenPlayer?: (player: PlayerNavRef) => void
+  initialResearchTab?: 'value' | 'compare'
+}) {
   const league = fantasy.activeLeague!
-  const [tab, setTab] = useState<HubTab>(() => defaultTab(league))
+  const [tab, setTab] = useState<HubTab>(() =>
+    initialResearchTab ? 'research' : defaultTab(league),
+  )
 
   const draftPhase =
     league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting'
@@ -93,6 +135,7 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
     { id: 'draft', label: 'Draft', hidden: !draftPhase },
     { id: 'matchup', label: 'Matchup', hidden: draftPhase },
     { id: 'roster', label: 'Roster' },
+    { id: 'research', label: 'Research' },
     { id: 'waivers', label: 'Waivers', hidden: draftPhase },
     { id: 'trades', label: 'Trades', hidden: draftPhase },
     { id: 'standings', label: 'Table', hidden: draftPhase },
@@ -158,6 +201,18 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
         <FantasyMatchupCenter fantasy={fantasy} onOpenBracket={() => setTab('bracket')} />
       ) : null}
       {tab === 'roster' ? <RosterPanel fantasy={fantasy} /> : null}
+      {tab === 'research' ? (
+        <div className="space-y-3">
+          <p className="text-sm text-mist/70">
+            FPL value and compare tools for draft, waivers, and trades.
+          </p>
+          <FantasyResearchPanel
+            catalog={fantasy.catalog}
+            onOpenPlayer={onOpenPlayer}
+            initialTab={initialResearchTab ?? 'value'}
+          />
+        </div>
+      ) : null}
       {tab === 'waivers' ? <WaiversPanel fantasy={fantasy} /> : null}
       {tab === 'trades' ? <TradesPanel fantasy={fantasy} /> : null}
       {tab === 'standings' ? <StandingsPanel fantasy={fantasy} onOpenBracket={() => setTab('bracket')} /> : null}

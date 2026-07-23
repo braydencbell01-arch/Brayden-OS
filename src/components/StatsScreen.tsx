@@ -1,19 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { FavoritesApi } from '../lib/favorites'
 import { getLeague, LEAGUES, leaguesInDisplayOrder, type LeagueId } from '../lib/leagues'
-import { loadFplCatalog, type FplCatalog } from '../lib/fantasy/fplData'
-import { computePayPerStat, formatMillions, formatPounds } from '../lib/payPerStat'
-import { useEffect } from 'react'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { PlayerComparePanel } from './PlayerComparePanel'
 import { PredictionGamePanel } from './PredictionGamePanel'
 import type { Match } from '../lib/matches'
 
-type StatsTab = 'pulse' | 'value' | 'compare' | 'predict' | 'leagues'
+type StatsTab = 'pulse' | 'compare' | 'predict' | 'leagues'
 
 /**
- * Stats hub — Brayden intelligence surface (not a second Leagues list).
+ * Stats hub — real football intelligence (not Fantasy / FPL tools).
  */
 export function StatsScreen({
   favorites,
@@ -21,47 +18,21 @@ export function StatsScreen({
   onOpenLeague,
   onOpenPlayer,
   reduce,
+  initialTab = 'pulse',
 }: {
   favorites: FavoritesApi
   matches: Match[]
   onOpenLeague: (id: LeagueId) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
+  initialTab?: StatsTab
 }) {
-  const [tab, setTab] = useState<StatsTab>('pulse')
-  const [catalog, setCatalog] = useState<FplCatalog | null>(null)
+  const [tab, setTab] = useState<StatsTab>(initialTab)
   const leagues = leaguesInDisplayOrder(favorites.leagueIds)
   const favoriteLeagues = leagues.filter((league) => favorites.isLeagueFavorite(league.id))
 
-  useEffect(() => {
-    void loadFplCatalog()
-      .then(setCatalog)
-      .catch(() => setCatalog(null))
-  }, [])
-
-  const valueLeaders = useMemo(() => {
-    if (!catalog) return []
-    return catalog.players
-      .filter((p) => p.totalPoints > 40)
-      .map((p) => {
-        // Approximate G/A from FPL isn't split — use points as efficiency signal.
-        const pps = computePayPerStat({
-          cost: p.cost,
-          goals: Math.max(1, Math.round(p.totalPoints / 12)),
-          assists: Math.max(0, Math.round(p.totalPoints / 25)),
-          totalPoints: p.totalPoints,
-          name: p.webName,
-        })
-        return { player: p, pps }
-      })
-      .filter((row) => row.pps.perPoint != null)
-      .sort((a, b) => (a.pps.perPoint ?? 0) - (b.pps.perPoint ?? 0))
-      .slice(0, 8)
-  }, [catalog])
-
   const tabs: Array<{ id: StatsTab; label: string }> = [
     { id: 'pulse', label: 'Pulse' },
-    { id: 'value', label: 'Value' },
     { id: 'compare', label: 'Compare' },
     { id: 'predict', label: 'Predict' },
     { id: 'leagues', label: 'Leagues' },
@@ -96,7 +67,7 @@ export function StatsScreen({
             Stats
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Ratings pulse, value estimates, comparisons, and quick predictions.
+            Ratings pulse, head-to-head season stats, and quick predictions.
           </p>
         </header>
 
@@ -188,46 +159,14 @@ export function StatsScreen({
           </div>
         ) : null}
 
-        {tab === 'value' ? (
-          <section className="border border-white/10 bg-white/[0.03] px-4 py-4">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
-              Pay-per-stat (FPL price)
-            </h2>
-            <p className="mt-2 text-xs text-mist/60">
-              £m FPL cost ÷ estimated output. Not Transfermarkt market value.
-            </p>
-            {!catalog ? (
-              <p className="mt-3 text-sm text-mist/70">Loading Premier League catalog…</p>
-            ) : (
-              <ul className="mt-3 flex flex-col gap-2">
-                {valueLeaders.map(({ player, pps }) => (
-                  <li
-                    key={player.id}
-                    className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
-                  >
-                    <span>
-                      <span className="block text-sm font-semibold text-cream">{player.webName}</span>
-                      <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                        {player.teamShort} · {formatMillions(player.cost)} · {player.totalPoints} pts
-                      </span>
-                    </span>
-                    <span className="text-right text-xs text-lime">
-                      {pps.perPoint != null ? `${formatPounds(pps.perPoint)}/pt` : '—'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ) : null}
-
         {tab === 'compare' ? (
-          <PlayerComparePanel catalog={catalog} onOpenPlayer={onOpenPlayer} />
+          <PlayerComparePanel
+            favoritePlayers={favorites.players}
+            onOpenPlayer={onOpenPlayer}
+          />
         ) : null}
 
-        {tab === 'predict' ? (
-          <PredictionGamePanel matches={matches} />
-        ) : null}
+        {tab === 'predict' ? <PredictionGamePanel matches={matches} /> : null}
 
         {tab === 'leagues' ? (
           <div className="flex flex-col gap-2">
