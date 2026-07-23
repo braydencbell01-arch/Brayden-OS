@@ -224,15 +224,19 @@ function CareerSeasonsPanel({
       {seasons.map((row) => (
         <li
           key={row.id}
-          className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] items-center gap-2 border border-white/10 px-3 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.1fr)_auto_auto]"
+          className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] items-center gap-2 border border-white/10 px-3 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto]"
         >
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-cream">{row.seasonLabel}</p>
+            <p className="truncate text-sm font-semibold text-cream">{row.clubName}</p>
             <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-              {row.clubName}
+              {row.leagueName}
+              <span className="text-mist/40"> · </span>
+              {row.seasonYear}
             </p>
           </div>
           <p className="text-sm tabular-nums text-mist/85">
+            <span className="font-semibold text-cream">{row.matchesPlayed}</span> MP
+            <span className="mx-1.5 text-mist/35">·</span>
             <span className="font-semibold text-cream">{row.goals}</span> G
             <span className="mx-1.5 text-mist/35">·</span>
             <span className="font-semibold text-cream">{row.assists}</span> A
@@ -454,7 +458,7 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Career"
-              subtitle="Season · club · goals · assists · avg rating"
+              subtitle="Club · league · matches · goals · assists · avg rating"
               open={openSection === 'career'}
               onToggle={() => toggle('career')}
             >

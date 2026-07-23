@@ -151,6 +151,8 @@ export type PlayerCareerSeason = {
   clubId: string
   clubName: string
   leagueSlug: string
+  leagueName: string
+  matchesPlayed: number
   goals: number
   assists: number
   averageRating: number | null
