@@ -1112,7 +1112,7 @@ export default function App() {
         </section>
 
         {/* Full inventory */}
-        <section id="inventory" className="bg-chalk py-20 md:py-28">
+        <section id="inventory" className="scroll-mt-36 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Catalog</p>
