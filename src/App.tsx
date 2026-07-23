@@ -81,7 +81,6 @@ function HomeScreen({
   hasLive,
   onRefresh,
   favorites,
-  showPredictions,
   reduce,
 }: {
   selectedDate: Date
@@ -101,11 +100,11 @@ function HomeScreen({
   hasLive: boolean
   onRefresh: () => void
   favorites: FavoritesApi
-  showPredictions: boolean
   reduce: boolean | null
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
   const favoriteDateKeys = useMemo(
+    // League + team favorites only — never fold player club IDs into this set.
     () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
     [matches, favorites.leagueIds, favorites.teamIds],
   )
@@ -199,9 +198,7 @@ function HomeScreen({
         </div>
 
         <MyMatchday
-          matches={matches}
           favorites={favorites}
-          showPredictions={showPredictions}
           onOpenTeam={onOpenTeam}
           onOpenPlayer={onOpenPlayer}
           onOpenLeague={onOpenLeague}
@@ -215,7 +212,7 @@ function HomeScreen({
               </p>
               <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
               <p className="mt-1 text-[0.65rem] text-mist/55">
-                Star leagues to pin them here · yellow calendar dots mark favorites
+                Star leagues or clubs to yellow fixtures · yellow calendar dots mark favorites
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -344,7 +341,6 @@ export default function App() {
   const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(() => !loadSettings().onboardingDone)
-  const [settings, setSettings] = useState(() => loadSettings())
   /** Bottom tab to restore when overlays fully close (never overwritten by league→team). */
   const [returnTab, setReturnTab] = useState<BottomTab>('home')
   /** Club stack so Team → opponent → … → Back unwinds correctly. */
@@ -542,7 +538,6 @@ export default function App() {
   }
 
   const closeSettings = () => {
-    setSettings(loadSettings())
     setShowSettings(false)
     if (isTabScreen(screen)) {
       writeHash({ kind: 'tab', tab: screen })
@@ -889,7 +884,6 @@ export default function App() {
               hasLive={hasLive}
               onRefresh={refresh}
               favorites={favorites}
-              showPredictions={settings.showPredictions}
               reduce={reduce}
             />
           </motion.div>
@@ -912,12 +906,10 @@ export default function App() {
       {showOnboarding ? (
         <OnboardingOverlay
           onDone={() => {
-            setSettings(loadSettings())
             setShowOnboarding(false)
           }}
           onPickLeague={(id) => {
             saveSettings({ preferredLeagueId: id, onboardingDone: true })
-            setSettings(loadSettings())
             openLeague(id)
           }}
         />

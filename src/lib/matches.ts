@@ -292,14 +292,22 @@ export function dateKeysWithMatches(matches: Match[]): Set<string> {
   return new Set(matches.map((match) => match.dateKey))
 }
 
-/** True when the match is in a favorited league or features a favorited team. */
+/**
+ * True when the match should get yellow Home / Match day chrome.
+ * Only favorited **leagues** and **teams** qualify — never favorite players
+ * (or their clubs via player.teamId).
+ */
 export function isFavoriteMatch(
   match: Match,
   favoriteLeagueIds: Set<string>,
   favoriteTeamIds: Set<string>,
 ): boolean {
   if (favoriteLeagueIds.has(match.leagueId)) return true
-  return favoriteTeamIds.has(match.home.id) || favoriteTeamIds.has(match.away.id)
+  if (!match.home.id && !match.away.id) return false
+  return (
+    (Boolean(match.home.id) && favoriteTeamIds.has(match.home.id)) ||
+    (Boolean(match.away.id) && favoriteTeamIds.has(match.away.id))
+  )
 }
 
 export function dateKeysForFavorites(

@@ -76,8 +76,8 @@ export function FavoritesScreen({
             Favorites
           </h1>
           <p className="mt-3 text-sm text-mist/80">
-            Star leagues and clubs for calendar dots and Match day. Star players to keep them
-            handy in Favorites and search.
+            Star leagues and clubs for calendar dots and Match day yellow. Star players to keep them
+            handy in Favorites and search — players never light up fixtures.
           </p>
         </motion.header>
 
@@ -85,7 +85,7 @@ export function FavoritesScreen({
           <div className="mb-5 border border-star/25 bg-star/10 px-4 py-4">
             <p className="text-sm font-semibold text-cream">Nothing starred yet</p>
             <p className="mt-1 text-sm text-mist/75">
-              Start with a league — yellow calendar dots and faster match days follow from there.
+              Start with a league or club — yellow calendar dots mark those fixtures only.
             </p>
             <button
               type="button"
