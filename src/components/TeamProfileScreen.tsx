@@ -165,10 +165,7 @@ export function TeamProfileScreen({
     if (club?.foundedYear) rows.push(['Founded', String(club.foundedYear)])
 
     if (club?.trophyCount != null) {
-      rows.push([
-        'Trophies',
-        `${club.trophyCount}${club.trophySource ? ' · major titles' : ''}`,
-      ])
+      rows.push(['Trophies', String(club.trophyCount)])
     } else if (!isNational && !facts.loading) {
       rows.push(['Trophies', MISSING_LONG])
     }
@@ -254,7 +251,7 @@ export function TeamProfileScreen({
         ) : null}
         {facts.data?.trophyCount != null && facts.data.trophySource ? (
           <p className="mt-2 text-[0.65rem] text-mist/45">
-            Trophy total estimated from public records ({facts.data.trophySource}).
+            Career trophies from Wikipedia ({facts.data.trophySource}).
           </p>
         ) : null}
 
