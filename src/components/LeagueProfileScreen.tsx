@@ -53,7 +53,7 @@ export function LeagueProfileScreen({
 
   const [openSection, setOpenSection] = useState<
     'table' | 'fixtures' | 'player-stats' | 'stats' | null
-  >('table')
+  >(null)
   const statsEnabled = openSection === 'stats'
   const playerStatsEnabled = openSection === 'player-stats'
   const leaders = useLeagueLeaders(league.id, statsEnabled)

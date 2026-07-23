@@ -76,7 +76,7 @@ export function TeamProfileScreen({
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
     'upcoming' | 'recent' | 'roster' | null
-  >('upcoming')
+  >(null)
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const recentScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
@@ -324,6 +324,9 @@ export function TeamProfileScreen({
             loading={roster.loading}
             error={roster.error}
             leagueId={team.leagueId}
+            teamId={team.id}
+            teamName={displayName}
+            favorites={favorites}
             onOpenPlayer={onOpenPlayer}
           />
         </ProfileAccordion>
