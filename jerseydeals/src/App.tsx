@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
@@ -17,8 +17,10 @@ import {
   formatPrice,
   isSquareCatalog,
   isYouthListing,
+  listingImages,
   listingSize,
   lowestSalePrice,
+  matchesListingQuery,
   matchesPriceFilter,
   pickFeatured,
   pickNewDrops,
@@ -126,6 +128,112 @@ const FAQ = [
   },
 ]
 
+function ProductGallery({
+  item,
+  tone = 'dark',
+}: {
+  item: Listing
+  tone?: 'dark' | 'light'
+}) {
+  const photos = listingImages(item)
+  const [active, setActive] = useState(0)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  const go = (dir: -1 | 1) => {
+    const el = trackRef.current
+    if (!el) return
+    const next = Math.min(photos.length - 1, Math.max(0, active + dir))
+    el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
+    setActive(next)
+  }
+
+  if (photos.length === 0) {
+    return (
+      <div className="flex h-full min-h-[100%] items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
+        <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative h-full">
+      <div
+        ref={trackRef}
+        className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+        onScroll={(event) => {
+          const el = event.currentTarget
+          const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
+          setActive(Math.min(Math.max(index, 0), photos.length - 1))
+        }}
+        role="region"
+        aria-label={`${shortTitle(item.title)} photos`}
+      >
+        {photos.map((src, index) => (
+          <div key={`${item.id}-${index}`} className="relative h-full min-w-full shrink-0 snap-center">
+            <img
+              src={src}
+              alt={index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`}
+              className="h-full w-full object-cover select-none"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              draggable={false}
+            />
+          </div>
+        ))}
+      </div>
+      {photos.length > 1 ? (
+        <>
+          <button
+            type="button"
+            aria-label="Previous photo"
+            disabled={active === 0}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              go(-1)
+            }}
+            className="absolute left-2 top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-lg leading-none text-navy shadow disabled:opacity-35"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label="Next photo"
+            disabled={active === photos.length - 1}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              go(1)
+            }}
+            className="absolute right-2 top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-lg leading-none text-navy shadow disabled:opacity-35"
+          >
+            ›
+          </button>
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+            {photos.map((_, index) => (
+              <span
+                key={`dot-${index}`}
+                className={`h-1.5 w-1.5 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition ${
+                  index === active ? 'bg-white' : 'bg-white/45'
+                }`}
+                aria-hidden
+              />
+            ))}
+          </div>
+          <p
+            className={`pointer-events-none absolute left-3 top-3 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] ${
+              tone === 'dark' ? 'bg-navy-deep/70 text-white' : 'bg-navy-deep/70 text-white'
+            }`}
+          >
+            {active + 1}/{photos.length}
+          </p>
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 function ProductLink({
   item,
   reduce,
@@ -140,35 +248,32 @@ function ProductLink({
   const condition = conditionLabel(item.title)
   return (
     <motion.li {...fadeUp(reduce, delay)}>
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => track('product_click', { id: item.id, tag: item.tag })}
-        className={`group block outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
-          tone === 'dark' ? 'focus-visible:ring-offset-navy' : 'focus-visible:ring-offset-chalk'
+      <div
+        className={`group outline-none ${
+          tone === 'dark' ? '' : ''
         }`}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-navy-deep">
-          {item.image ? (
-            <img
-              src={item.image}
-              alt=""
-              className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.045]"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
-              <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
-            </div>
-          )}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 bg-gradient-to-t from-navy-deep/90 to-transparent p-4 opacity-0 transition duration-400 group-hover:translate-y-0 group-hover:opacity-100">
+          <ProductGallery item={item} tone={tone} />
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('product_click', { id: item.id, tag: item.tag })}
+            className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-12 opacity-0 transition duration-300 group-hover:opacity-100 focus-visible:opacity-100"
+          >
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
               Shop →
             </span>
-          </div>
+          </a>
         </div>
-        <div className="mt-4">
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'title' })}
+          className="mt-4 block outline-none focus-visible:ring-2 focus-visible:ring-crimson"
+        >
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p
               className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${
@@ -205,8 +310,8 @@ function ProductLink({
               {item.note}
             </span>
           </p>
-        </div>
-      </a>
+        </a>
+      </div>
     </motion.li>
   )
 }
@@ -225,6 +330,7 @@ export default function App() {
   const [brandFilter, setBrandFilter] = useState('All')
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
   const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)
 
   useEffect(() => {
     initAnalytics()
@@ -295,27 +401,27 @@ export default function App() {
   }, [listings])
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
     return listings.filter((item) => {
       if (tagFilter !== 'All' && item.tag !== tagFilter) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
       if (!matchesPriceFilter(item, priceFilter)) return false
-      if (!q) return true
-      return (
-        item.title.toLowerCase().includes(q) ||
-        item.tag.toLowerCase().includes(q) ||
-        (item.brand || '').toLowerCase().includes(q) ||
-        item.note.toLowerCase().includes(q)
-      )
+      return matchesListingQuery(item, deferredQuery)
     })
-  }, [listings, tagFilter, sizeFilter, brandFilter, priceFilter, query])
+  }, [listings, tagFilter, sizeFilter, brandFilter, priceFilter, deferredQuery])
+
+  const deferredHint = useMemo(() => {
+    const q = deferredQuery.trim()
+    if (!q) return `${listings.length} items`
+    return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
+  }, [deferredQuery, filtered.length, listings.length])
 
   function goInventory(next?: {
     tag?: string
     brand?: string
     price?: PriceFilterId
     reset?: boolean
+    focusSearch?: boolean
   }) {
     if (next?.reset) {
       setSizeFilter('All')
@@ -329,6 +435,9 @@ export default function App() {
     if (next?.price !== undefined) setPriceFilter(next.price)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      if (next?.focusSearch) {
+        document.getElementById('sticky-search')?.focus()
+      }
     })
   }
 
@@ -405,6 +514,59 @@ export default function App() {
             {shopLabel(catalog)}
           </a>
         </div>
+
+        <div
+          className={`border-t transition ${
+            navSolid ? 'border-navy/10 bg-chalk/95' : 'border-white/10 bg-navy-deep/55 backdrop-blur-md'
+          }`}
+        >
+          <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2.5 md:px-8">
+            <label className="relative min-w-0 flex-1">
+              <span className="sr-only">Search kits</span>
+              <input
+                id="sticky-search"
+                type="search"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                }}
+                onFocus={() => {
+                  document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    goInventory({ focusSearch: true })
+                  }
+                }}
+                placeholder="Search club, kit, size, brand…"
+                className={`w-full border px-4 py-2.5 text-sm outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
+                  navSolid
+                    ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
+                    : 'border-white/20 bg-white/10 text-white placeholder:text-white/55'
+                }`}
+              />
+            </label>
+            <p
+              className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] sm:block ${
+                navSolid ? 'text-muted' : 'text-white/55'
+              }`}
+            >
+              {deferredHint}
+            </p>
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${
+                  navSolid ? 'text-crimson' : 'text-crimson-hot'
+                }`}
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+        </div>
       </header>
 
       <main id="top">
@@ -424,7 +586,7 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/45" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-28 md:justify-center md:px-8 md:pb-28">
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-36 md:justify-center md:px-8 md:pb-28 md:pt-40">
             <motion.div
               className="max-w-2xl"
               initial={reduce ? false : { opacity: 0.001, y: 26 }}
@@ -964,16 +1126,9 @@ export default function App() {
 
             {loadState === 'ready' && listings.length > 0 && (
               <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-6">
-                <label className="block max-w-xl">
-                  <span className="sr-only">Search inventory</span>
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search club, kit, size…"
-                    className="w-full border border-navy/12 bg-white px-4 py-3.5 text-base text-navy outline-none transition placeholder:text-muted/70 focus:border-navy/40"
-                  />
-                </label>
+                <p className="text-sm text-muted">
+                  Use the search bar at the top · {deferredHint}
+                </p>
 
                 <div className="space-y-3">
                   <p className="eyebrow text-muted">Type</p>

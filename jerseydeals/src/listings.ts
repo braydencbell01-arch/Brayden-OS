@@ -5,6 +5,8 @@ export type Listing = {
   currency: string
   url: string
   image: string
+  /** All product photos; first entry is the main/cover image. */
+  images?: string[]
   quantity: number
   tag: string
   note: string
@@ -12,6 +14,7 @@ export type Listing = {
   brand?: string
   source?: 'ebay' | 'square' | string
   itemId?: string
+  sku?: string
   category?: string
 }
 
@@ -149,6 +152,34 @@ export function sortSizes(sizes: string[]) {
   })
 }
 
+export function listingImages(item: Listing): string[] {
+  const fromArray = (item.images || []).filter(Boolean)
+  if (fromArray.length > 0) {
+    // Main/cover image first, then the rest left-to-right.
+    if (item.image && fromArray[0] !== item.image) {
+      return [item.image, ...fromArray.filter((url) => url !== item.image)]
+    }
+    return fromArray
+  }
+  return item.image ? [item.image] : []
+}
+
+export function listingSearchText(item: Listing) {
+  return [item.title, item.tag, item.brand, item.note, item.size, item.category, item.sku]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+export function matchesListingQuery(item: Listing, rawQuery: string) {
+  const q = rawQuery.trim().toLowerCase()
+  if (!q) return true
+  const hay = listingSearchText(item)
+  const tokens = q.split(/\s+/).filter(Boolean)
+  return tokens.every((token) => hay.includes(token))
+}
+
 export function isSquareCatalog(catalog: ListingsPayload | null | undefined) {
   return catalog?.source === 'square' || Boolean(catalog?.listings?.some((l) => l.source === 'square'))
 }
+

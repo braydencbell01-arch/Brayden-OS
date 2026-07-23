@@ -217,6 +217,50 @@ for (const obj of catalogObjects) {
   }
 }
 
+// Resolve any IMAGE ids referenced by items but missing from ListCatalog page set
+const missingImageIds = new Set()
+for (const item of items) {
+  for (const id of item.item_data?.image_ids || []) {
+    if (!images.has(id)) missingImageIds.add(id)
+  }
+  for (const variation of item.item_data?.variations || []) {
+    for (const id of variation.item_variation_data?.image_ids || variation.image_ids || []) {
+      if (!images.has(id)) missingImageIds.add(id)
+    }
+  }
+}
+
+if (missingImageIds.size > 0) {
+  const ids = [...missingImageIds]
+  for (let i = 0; i < ids.length; i += 100) {
+    const chunk = ids.slice(i, i + 100)
+    const data = await square('/v2/catalog/batch-retrieve', {
+      method: 'POST',
+      body: { object_ids: chunk, include_related_objects: false },
+    })
+    for (const obj of data.objects || []) {
+      if (obj.type === 'IMAGE' && obj.image_data?.url) images.set(obj.id, obj.image_data.url)
+    }
+  }
+  console.log(`Resolved ${images.size} catalog images (${missingImageIds.size} fetched by id)`)
+}
+
+function imagesForItem(item) {
+  const data = item.item_data || {}
+  const ids = [...(data.image_ids || [])]
+  for (const variation of data.variations || []) {
+    for (const id of variation.item_variation_data?.image_ids || variation.image_ids || []) {
+      if (!ids.includes(id)) ids.push(id)
+    }
+  }
+  const urls = []
+  for (const id of ids) {
+    const url = images.get(id)
+    if (url && !urls.includes(url)) urls.push(url)
+  }
+  return urls
+}
+
 const variationIds = []
 for (const item of items) {
   for (const v of item.item_data?.variations || []) {
@@ -234,8 +278,8 @@ for (const item of items) {
 
   const name = data.name || 'Untitled'
   const description = data.description_plaintext || data.description || ''
-  const imageId = (data.image_ids || [])[0]
-  const image = imageId ? images.get(imageId) || '' : ''
+  const itemImages = imagesForItem(item)
+  const image = itemImages[0] || ''
   const categoryName = (data.categories || [])
     .map((c) => categories.get(c.id) || c.id)
     .filter(Boolean)[0]
@@ -260,15 +304,18 @@ for (const item of items) {
     const { note, size } = inferSize(haystack, vdata.name, name)
     const price = moneyToNumber(vdata.price_money)
     const currency = vdata.price_money?.currency || 'USD'
+    const sku = vdata.sku || ''
 
     listings.push({
       id: variation.id || item.id,
       itemId: item.id,
+      sku,
       title,
       price,
       currency,
       url: productUrl(item.id, name, seoPermalink, ecomUri),
       image,
+      images: itemImages,
       quantity,
       tag: inferTag(haystack),
       note,

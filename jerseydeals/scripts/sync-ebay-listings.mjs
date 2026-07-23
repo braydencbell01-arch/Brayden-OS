@@ -95,7 +95,54 @@ function eachItem(xml) {
 
 function upscaleImage(url) {
   if (!url) return url
-  return url.replace(/s-l(64|96|140|225)\.jpg/i, 's-l500.jpg')
+  return url
+    .replace(/s-l(64|96|140|225)\.jpg/i, 's-l500.jpg')
+    .replace(/\$_\d+\.JPG/i, '$$_57.JPG')
+}
+
+function collectEbayImages(itemXml) {
+  const urls = []
+  const re = /<PictureURL>([^<]+)<\/PictureURL>/gi
+  let m
+  while ((m = re.exec(itemXml))) {
+    const url = upscaleImage(decodeXml(m[1].trim()))
+    if (url && !urls.includes(url)) urls.push(url)
+  }
+  const gallery = upscaleImage(decodeXml(xmlText(itemXml, 'PictureDetails>GalleryURL')))
+  if (gallery && !urls.includes(gallery)) urls.unshift(gallery)
+  return urls
+}
+
+async function enrichListingPictures(listings) {
+  const out = []
+  const concurrency = 5
+  for (let i = 0; i < listings.length; i += concurrency) {
+    const chunk = listings.slice(i, i + concurrency)
+    const enriched = await Promise.all(
+      chunk.map(async (listing) => {
+        try {
+          const xml = await tradingCall(
+            'GetItem',
+            `
+  <ErrorLanguage>en_US</ErrorLanguage>
+  <ItemID>${listing.id}</ItemID>
+  <DetailLevel>ReturnAll</DetailLevel>`,
+          )
+          const ack = xmlText(xml, 'Ack')
+          if (ack !== 'Success' && ack !== 'Warning') return listing
+          const images = collectEbayImages(xml)
+          if (images.length === 0) return listing
+          return { ...listing, image: images[0], images }
+        } catch (err) {
+          console.warn(`GetItem pictures failed for ${listing.id}: ${err.message}`)
+          return listing
+        }
+      }),
+    )
+    out.push(...enriched)
+    console.log(`Enriched pictures ${Math.min(i + concurrency, listings.length)}/${listings.length}`)
+  }
+  return out
 }
 
 function inferTag(title) {
@@ -223,6 +270,12 @@ async function fetchActiveListings() {
         currency,
         url: decodeXml(xmlText(item, 'ListingDetails>ViewItemURL')),
         image: upscaleImage(decodeXml(xmlText(item, 'PictureDetails>GalleryURL'))),
+        images: (() => {
+          const imgs = collectEbayImages(item)
+          const gallery = upscaleImage(decodeXml(xmlText(item, 'PictureDetails>GalleryURL')))
+          if (gallery && !imgs.includes(gallery)) imgs.unshift(gallery)
+          return imgs
+        })(),
         quantity: Number.parseInt(qtyRaw, 10) || 1,
         tag: inferTag(title),
         note,
@@ -235,7 +288,7 @@ async function fetchActiveListings() {
     page += 1
   }
 
-  return listings
+  return enrichListingPictures(listings)
 }
 
 async function fetchSeller() {
