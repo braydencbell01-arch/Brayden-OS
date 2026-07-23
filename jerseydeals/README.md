@@ -132,7 +132,9 @@ cd jerseydeals
 npm run square:buyable-checkout
 ```
 
-This creates a Square **Payment Link** per item (asks for shipping address), points `listings.json` at those links, and injects a Square Online snippet that adds **Buy now — secure checkout** on product pages.
+This creates a Square **Payment Link** per item (asks for shipping address), stores them on `checkoutUrl`, and injects a Square Online snippet with **Buy now** + **View cart** (`/s/cart`).
+
+The Jersey Deals landing page has its own **Add to cart** drawer: shoppers can bag kits here, then **Checkout on Square** (Payment Link). Use **Open Square cart** for the native Square Online cart once Shipping is enabled in the Dashboard.
 
 ### Polish Square Online storefront + catalog copy
 
