@@ -2119,7 +2119,25 @@ async function ratingFromEventLogItem(
 }
 
 function emptyRatingsCursor(): PlayerRatingsCursor {
-  return { seasons: [], seasonIndex: 0, page: 1, pageCount: 0, done: true }
+  return { seasons: [], seasonIndex: 0, page: 0, pageCount: 0, done: true }
+}
+
+/** Newest match first; undated rows sort after dated ones, then by event id. */
+export function sortRatingsNewestFirst(
+  rows: PlayerRecentMatchRating[],
+): PlayerRecentMatchRating[] {
+  return rows.slice().sort((a, b) => {
+    const ta = a.date ? Date.parse(a.date) : NaN
+    const tb = b.date ? Date.parse(b.date) : NaN
+    const aDated = Number.isFinite(ta)
+    const bDated = Number.isFinite(tb)
+    if (aDated && bDated && ta !== tb) return tb - ta
+    if (aDated !== bDated) return aDated ? -1 : 1
+    const ida = Number(a.eventId)
+    const idb = Number(b.eventId)
+    if (Number.isFinite(ida) && Number.isFinite(idb) && ida !== idb) return idb - ida
+    return b.eventId.localeCompare(a.eventId)
+  })
 }
 
 export async function createPlayerRatingsCursor(
@@ -2131,14 +2149,16 @@ export async function createPlayerRatingsCursor(
   return {
     seasons,
     seasonIndex: 0,
-    page: 1,
-    pageCount: 1,
+    // Discover pageCount for the newest season on the first batch fetch.
+    page: 0,
+    pageCount: 0,
     done: false,
   }
 }
 
 /**
  * Pull the next batch of rated appearances (across season pages) for infinite scroll.
+ * Returns newest matches first so previous-ratings lists stay chronological.
  */
 export async function fetchNextPlayerRatingsBatch(
   leagueEspnCode: string,
@@ -2159,40 +2179,62 @@ export async function fetchNextPlayerRatingsBatch(
 
   while (ratings.length < RATINGS_BATCH_TARGET && seasonIndex < cursor.seasons.length) {
     const seasonYear = cursor.seasons[seasonIndex]!
+
+    // ESPN pages are oldest→newest; start each season on the last page.
+    if (page === 0) {
+      const probe = await fetchEventLogPage(leagueEspnCode, seasonYear, playerId, 1)
+      pageCount = probe.pageCount
+      if (probe.items.length === 0 || pageCount === 0) {
+        seasonIndex += 1
+        page = 0
+        pageCount = 0
+        continue
+      }
+      page = pageCount
+    }
+
     const result = await fetchEventLogPage(leagueEspnCode, seasonYear, playerId, page)
-    pageCount = result.pageCount
+    pageCount = result.pageCount || pageCount
 
     if (result.items.length === 0 || pageCount === 0) {
       seasonIndex += 1
-      page = 1
-      pageCount = 1
+      page = 0
+      pageCount = 0
       continue
     }
 
-    const played = result.items.filter((item) => item.played !== false)
+    // Newest within the page first (API order is chronological ascending).
+    const played = result.items.filter((item) => item.played !== false).slice().reverse()
     const expanded = await mapPool(played, EVENTLOG_FETCH_CONCURRENCY, (item) =>
       ratingFromEventLogItem(item, positionAbbrev, leagueEspnCode),
     )
 
+    let filledBatch = false
     for (const row of expanded) {
       if (seen.has(row.eventId)) continue
       seen.add(row.eventId)
       ratings.push(row)
-      if (ratings.length >= RATINGS_BATCH_TARGET) break
+      if (ratings.length >= RATINGS_BATCH_TARGET) {
+        filledBatch = true
+        break
+      }
     }
 
-    if (page >= pageCount) {
+    // Stay on this page when the batch filled mid-page; excludeIds skip already-seen rows next time.
+    if (filledBatch) break
+
+    if (page <= 1) {
       seasonIndex += 1
-      page = 1
-      pageCount = 1
+      page = 0
+      pageCount = 0
     } else {
-      page += 1
+      page -= 1
     }
   }
 
   const done = seasonIndex >= cursor.seasons.length
   return {
-    ratings,
+    ratings: sortRatingsNewestFirst(ratings),
     cursor: {
       seasons: cursor.seasons,
       seasonIndex,
@@ -2208,11 +2250,12 @@ async function enrichOverviewRatings(
   rows: PlayerRecentMatchRating[],
   playerTeamId?: string,
 ): Promise<PlayerRecentMatchRating[]> {
-  return mapPool(rows, EVENTLOG_FETCH_CONCURRENCY, async (row) => {
+  const enriched = await mapPool(rows, EVENTLOG_FETCH_CONCURRENCY, async (row) => {
     if (row.opponent && row.date) return row
     const meta = await fetchMatchMeta(leagueEspnCode, row.eventId, playerTeamId)
     return { ...row, ...meta }
   })
+  return sortRatingsNewestFirst(enriched)
 }
 
 async function fetchExpandedRecentRatings(
