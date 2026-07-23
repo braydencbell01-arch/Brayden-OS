@@ -121,6 +121,19 @@ Requires Square + eBay secrets. Then run `npm run sync:square` so `listings.json
 
 **Square Online “Out of stock”:** Catalog API cannot enable online Shipping fulfillment. In Square Dashboard → Online → Shipping / Item fulfillment, enable **Shipping** (and assign the Jersey Deals location), then bulk-enable Shipping on items. Until that is set, the `.square.site` storefront can show Out of stock even when Inventory API qty is 1.
 
+### Polish Square Online storefront + catalog copy
+
+Makes the `.square.site` store look less like the default template:
+
+```bash
+cd jerseydeals
+npm run square:polish-catalog     # cleaner titles + buyer-facing descriptions
+npm run square:polish-storefront  # brand CSS/JS snippet (hero copy, trust bar, crimson CTAs)
+npm run sync:square               # refresh listings.json after catalog polish
+```
+
+`square:polish-storefront` upserts the Square Snippets API (preserves the buy-now payment-link map). It cannot change Square’s theme editor settings (logo upload, native colors) — do those in Square Dashboard → Online → Website if needed.
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
