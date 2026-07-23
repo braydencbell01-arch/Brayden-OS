@@ -134,6 +134,16 @@ export type TeamRoster = {
   fetchedAt: number
 }
 
+/** Top players on a single club across meaningful season stats. */
+export type TeamStatLeaders = {
+  leagueId: LeagueId
+  teamId: string
+  season: number
+  seasonLabel: string
+  categories: LeaderCategory[]
+  fetchedAt: number
+}
+
 export type PlayerClubStint = {
   teamId: string
   teamName: string
