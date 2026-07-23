@@ -69,6 +69,45 @@ function moneyAmount(price) {
   return Math.round(Number(price) * 100)
 }
 
+async function fetchEbayPrimaryImage(itemId) {
+  const app = process.env.EBAY_APP_ID
+  const cert = process.env.EBAY_CERT_ID
+  const dev = process.env.EBAY_DEV_ID
+  const token = process.env.EBAY_USER_TOKEN
+  if (!app || !cert || !dev || !token) return ''
+
+  const body = `<?xml version="1.0" encoding="utf-8"?>
+<GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <RequesterCredentials>
+    <eBayAuthToken>${token}</eBayAuthToken>
+  </RequesterCredentials>
+  <ItemID>${itemId}</ItemID>
+  <DetailLevel>ReturnAll</DetailLevel>
+</GetItemRequest>`
+
+  const res = await fetch('https://api.ebay.com/ws/api.dll', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/xml',
+      'X-EBAY-API-COMPATIBILITY-LEVEL': '1271',
+      'X-EBAY-API-DEV-NAME': dev,
+      'X-EBAY-API-APP-NAME': app,
+      'X-EBAY-API-CERT-NAME': cert,
+      'X-EBAY-API-CALL-NAME': 'GetItem',
+      'X-EBAY-API-SITEID': '0',
+    },
+    body,
+  })
+  const text = await res.text()
+  if (!res.ok) throw new Error(`GetItem HTTP ${res.status}`)
+  const match = text.match(/<PictureURL>([^<]+)<\/PictureURL>/i)
+  if (!match) return ''
+  return match[1]
+    .trim()
+    .replace(/s-l(64|96|140|225|300)\.jpg/i, 's-l1600.jpg')
+    .replace(/\/\$_\d+\.JPG/i, '/$_57.JPG')
+}
+
 async function primaryLocationId() {
   if (LOCATION_OVERRIDE) return LOCATION_OVERRIDE
   const data = await square('/v2/locations')
@@ -112,8 +151,6 @@ async function upsertListing(listing, locationId) {
     listing.brand ? `Brand: ${listing.brand}` : '',
     listing.tag ? `Type: ${listing.tag}` : '',
     listing.note ? `Size: ${listing.note}` : '',
-    `POS: ${abbreviation}`,
-    listing.url ? `Imported from eBay: ${listing.url}` : '',
   ]
     .filter(Boolean)
     .join('\n')
@@ -246,36 +283,52 @@ async function upsertListing(listing, locationId) {
     },
   })
 
-  // Image
-  if (!SKIP_IMAGES && listing.image && itemId) {
-    try {
-      const imgRes = await fetch(listing.image)
-      if (imgRes.ok) {
-        const buf = Buffer.from(await imgRes.arrayBuffer())
-        const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
-        const form = new FormData()
-        form.append(
-          'request',
-          new Blob(
-            [
-              JSON.stringify({
-                idempotency_key: `img-${listing.id}`,
-                object_id: itemId,
-                is_primary: true,
-                image: {
-                  name: listing.title.slice(0, 50),
-                  caption: listing.note || '',
-                },
-              }),
-            ],
-            { type: 'application/json' },
-          ),
-        )
-        form.append('file', new Blob([buf], { type: contentType }), `${listing.id}.jpg`)
-        await square('/v2/catalog/images', { method: 'POST', body: form })
+  // Image — prefer listing.image, else pull primary photo from eBay item id
+  if (!SKIP_IMAGES && itemId) {
+    let imageUrl = listing.image || ''
+    if (!imageUrl && listing.id) {
+      try {
+        imageUrl = await fetchEbayPrimaryImage(String(listing.id))
+      } catch (err) {
+        console.warn(`  ebay image lookup skip ${sku}: ${err.message}`)
       }
-    } catch (err) {
-      console.warn(`  image skip ${sku}: ${err.message}`)
+    }
+    if (imageUrl) {
+      try {
+        const imgRes = await fetch(imageUrl, {
+          headers: { 'User-Agent': 'JerseyDealsSquareSync/1.0' },
+        })
+        if (imgRes.ok) {
+          const buf = Buffer.from(await imgRes.arrayBuffer())
+          const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
+          const form = new FormData()
+          form.append(
+            'request',
+            new Blob(
+              [
+                JSON.stringify({
+                  idempotency_key: randomUUID(),
+                  object_id: itemId,
+                  is_primary: true,
+                  image: {
+                    type: 'IMAGE',
+                    id: `#img_${listing.id}`,
+                    image_data: {
+                      name: listing.title.slice(0, 50),
+                      caption: listing.note || '',
+                    },
+                  },
+                }),
+              ],
+              { type: 'application/json' },
+            ),
+          )
+          form.append('file', new Blob([buf], { type: contentType }), `${listing.id}.jpg`)
+          await square('/v2/catalog/images', { method: 'POST', body: form })
+        }
+      } catch (err) {
+        console.warn(`  image skip ${sku}: ${err.message}`)
+      }
     }
   }
 

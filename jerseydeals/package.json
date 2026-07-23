@@ -12,7 +12,8 @@
     "sync:square": "node scripts/sync-square-catalog.mjs",
     "sync:inventory": "node scripts/sync-inventory.mjs",
     "push:square": "node scripts/push-listings-to-square.mjs",
-    "square:pos-abbrevs": "node scripts/update-square-pos-abbrevs.mjs"
+    "square:pos-abbrevs": "node scripts/update-square-pos-abbrevs.mjs",
+    "square:fix-stock-images": "node scripts/fix-square-stock-and-images.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",
