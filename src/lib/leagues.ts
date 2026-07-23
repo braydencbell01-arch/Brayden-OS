@@ -4,6 +4,10 @@ export type LeagueId =
   | 'serie-a'
   | 'bundesliga'
   | 'ligue-1'
+  | 'uefa-champions'
+  | 'uefa-europa'
+  | 'uefa-conference'
+  | 'conmebol-libertadores'
   | 'fifa-world'
   | 'fifa-friendly'
   | 'uefa-nations'
@@ -31,7 +35,7 @@ export type LeagueId =
   | 'czech-first-league'
   | 'cyprus-first-division'
 
-export type LeagueKind = 'domestic' | 'international'
+export type LeagueKind = 'domestic' | 'international' | 'continental'
 
 export type League = {
   id: LeagueId
@@ -96,6 +100,42 @@ export const LEAGUES: League[] = [
     country: 'France',
     espnCode: 'fra.1',
     kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'uefa-champions',
+    name: 'UEFA Champions League',
+    short: 'UCL',
+    country: 'Europe',
+    espnCode: 'uefa.champions',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'uefa-europa',
+    name: 'UEFA Europa League',
+    short: 'UEL',
+    country: 'Europe',
+    espnCode: 'uefa.europa',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'uefa-conference',
+    name: 'UEFA Conference League',
+    short: 'UECL',
+    country: 'Europe',
+    espnCode: 'uefa.europa.conf',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'conmebol-libertadores',
+    name: 'Copa Libertadores',
+    short: 'LIB',
+    country: 'South America',
+    espnCode: 'conmebol.libertadores',
+    kind: 'continental',
     hasStandings: true,
   },
   {
@@ -344,8 +384,16 @@ export function isInternationalLeague(id: LeagueId): boolean {
   return getLeague(id).kind === 'international'
 }
 
+export function isContinentalLeague(id: LeagueId): boolean {
+  return getLeague(id).kind === 'continental'
+}
+
 export function internationalLeagues(): League[] {
   return LEAGUES.filter((league) => league.kind === 'international')
+}
+
+export function continentalLeagues(): League[] {
+  return LEAGUES.filter((league) => league.kind === 'continental')
 }
 
 export function domesticLeagues(): League[] {
