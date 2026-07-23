@@ -97,15 +97,9 @@ function HomeScreen({
   reduce: boolean | null
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
-  /** Clubs + clubs of favorited players — calendar dots and Match day highlights. */
-  const calendarFavoriteTeamIds = useMemo(() => {
-    const ids = new Set(favorites.teamIds)
-    for (const id of favorites.favoritePlayerTeamIds) ids.add(id)
-    return ids
-  }, [favorites.teamIds, favorites.favoritePlayerTeamIds])
   const favoriteDateKeys = useMemo(
-    () => dateKeysForFavorites(matches, favorites.leagueIds, calendarFavoriteTeamIds),
-    [matches, favorites.leagueIds, calendarFavoriteTeamIds],
+    () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
+    [matches, favorites.leagueIds, favorites.teamIds],
   )
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
@@ -196,7 +190,7 @@ function HomeScreen({
               </p>
               <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
               <p className="mt-1 text-[0.65rem] text-mist/55">
-                Star leagues, clubs, or players · yellow dots mark their match days
+                Star leagues to pin them here · yellow calendar dots mark favorites
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -283,7 +277,7 @@ function HomeScreen({
                     onOpenPlayer={onOpenPlayer}
                     onOpenLeague={onOpenLeague}
                     favoriteLeagueIds={favorites.leagueIds}
-                    favoriteTeamIds={calendarFavoriteTeamIds}
+                    favoriteTeamIds={favorites.teamIds}
                     emptyLabel="No matches on this date. Try another day or jump to Today."
                   />
                 )
