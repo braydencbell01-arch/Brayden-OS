@@ -24,6 +24,7 @@ import {
   ProfileShell,
 } from './ProfileShell'
 import { SeasonPicker } from './SeasonPicker'
+import { buildHash, shareUrlForHash } from '../lib/hashRoute'
 
 export type PlayerNavRef = {
   id: string
@@ -731,6 +732,33 @@ export function PlayerProfileScreen({
               </>
             }
           />
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const hash = buildHash({
+                  kind: 'player',
+                  player: {
+                    id: player.id,
+                    leagueId: player.leagueId,
+                    name: profile.name,
+                    shortName: profile.shortName,
+                    teamId: profile.teamId,
+                    teamName: profile.teamName,
+                    position: profile.position,
+                  },
+                })
+                const url = shareUrlForHash(hash)
+                void navigator.clipboard.writeText(url).catch(() => {
+                  window.prompt('Copy profile link', url)
+                })
+              }}
+              className="rounded-full border border-white/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist transition hover:border-lime/40 hover:text-lime"
+            >
+              Copy link
+            </button>
+          </div>
 
           {alsoPlaysFor ? (
             <button
