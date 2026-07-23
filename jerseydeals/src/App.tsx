@@ -12,8 +12,19 @@ import {
   PROMO_BAR,
   SALE_HEADLINE,
   SALE_URGENCY,
+  SQUARE_CART_URL,
   SQUARE_STORE_URL,
 } from './config'
+import {
+  addListingToCart,
+  cartCount,
+  clearCart,
+  readCart,
+  removeCartLine,
+  setCartLineQuantity,
+  type CartState,
+} from './cart'
+import { CartDrawer } from './Cart'
 import {
   clubsInStock,
   conditionLabel,
@@ -25,6 +36,7 @@ import {
   kitType,
   listingBuyUrl,
   listingImages,
+  listingProductPageUrl,
   listingSize,
   lowestSalePrice,
   matchesListingQuery,
@@ -351,14 +363,19 @@ function ProductLink({
   reduce,
   delay,
   tone = 'dark',
+  storeUrl,
+  onAddToCart,
 }: {
   item: Listing
   reduce: boolean | null
   delay: number
   tone?: 'dark' | 'light'
+  storeUrl: string
+  onAddToCart: (item: Listing) => void
 }) {
   const condition = conditionLabel(item.title)
   const buyUrl = listingBuyUrl(item)
+  const productUrl = listingProductPageUrl(item, storeUrl) || buyUrl
   const kit = kitType(item)
   const onSale = isSaleListing(item)
   return (
@@ -380,25 +397,17 @@ function ProductLink({
               Only 1 left
             </span>
           )}
-          <a
-            href={buyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('product_click', { id: item.id, tag: item.tag })}
-            className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-12 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
-          >
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
-              Shop →
-            </span>
-          </a>
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-12 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={() => onAddToCart(item)}
+              className="w-full bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream"
+            >
+              Add to cart
+            </button>
+          </div>
         </div>
-        <a
-          href={buyUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'title' })}
-          className="mt-4 block outline-none focus-visible:ring-2 focus-visible:ring-crimson"
-        >
+        <div className="mt-4 block">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p
               className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${
@@ -421,13 +430,17 @@ function ProductLink({
               </span>
             ) : null}
           </div>
-          <h3
-            className={`mt-1.5 text-[0.95rem] font-medium leading-snug md:text-base ${
+          <a
+            href={productUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'title' })}
+            className={`mt-1.5 block text-[0.95rem] font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson md:text-base ${
               tone === 'dark' ? 'text-white/95' : 'text-navy'
             }`}
           >
             {shortTitle(item.title)}
-          </h3>
+          </a>
           <p className="mt-2 flex items-baseline gap-2">
             <span
               className={`font-display text-2xl font-bold tracking-wide md:text-3xl ${
@@ -440,7 +453,29 @@ function ProductLink({
               {item.note}
             </span>
           </p>
-        </a>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => onAddToCart(item)}
+              className={`text-[0.65rem] font-bold uppercase tracking-[0.14em] ${
+                tone === 'dark' ? 'text-cream' : 'text-crimson'
+              }`}
+            >
+              Add to cart
+            </button>
+            <a
+              href={buyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })}
+              className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${
+                tone === 'dark' ? 'text-white/55' : 'text-muted'
+              }`}
+            >
+              Buy now
+            </a>
+          </div>
+        </div>
       </div>
     </motion.li>
   )
@@ -463,6 +498,9 @@ export default function App() {
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [cart, setCart] = useState<CartState>(() => readCart())
+  const [cartOpen, setCartOpen] = useState(false)
+  const [cartToast, setCartToast] = useState<string | null>(null)
   const [trendingFilter, setTrendingFilter] = useState<'All' | 'Youth' | 'Training' | 'Jerseys' | 'Sale'>('All')
 
   useEffect(() => {
@@ -478,6 +516,19 @@ export default function App() {
       document.body.style.overflow = previous
     }
   }, [menuOpen])
+
+  useEffect(() => {
+    const sync = () => setCart(readCart())
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'jerseydeals.cart.v1') sync()
+    }
+    window.addEventListener('jerseydeals:cart', sync as EventListener)
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('jerseydeals:cart', sync as EventListener)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -509,6 +560,18 @@ export default function App() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  const itemCount = cartCount(cart)
+
+  function handleAddToCart(item: Listing) {
+    const productUrl = listingProductPageUrl(item, SQUARE_STORE_URL)
+    const next = addListingToCart(item, productUrl || undefined)
+    setCart(next)
+    setCartOpen(true)
+    setCartToast(`Added · ${shortTitle(item.title)}`)
+    track('add_to_cart', { id: item.id, tag: item.tag })
+    window.setTimeout(() => setCartToast(null), 2200)
+  }
 
   const shopUrl = primaryShopUrl(catalog)
   const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
@@ -668,6 +731,24 @@ export default function App() {
             ))}
           </nav>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-label={`Open cart, ${itemCount} items`}
+              onClick={() => {
+                setCartOpen(true)
+                track('cart_open', { place: 'header', items: itemCount })
+              }}
+              className={`relative px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] transition ${
+                navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
+              }`}
+            >
+              Cart
+              {itemCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+                  {itemCount}
+                </span>
+              ) : null}
+            </button>
             <a
               href={shopUrl}
               target="_blank"
@@ -1096,7 +1177,7 @@ export default function App() {
             {newDrops.length > 0 ? (
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {newDrops.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" storeUrl={shopUrl} onAddToCart={handleAddToCart} />
                 ))}
               </ul>
             ) : (
@@ -1141,7 +1222,7 @@ export default function App() {
                 return filtered.length > 0 ? (
                   <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                     {filtered.slice(0, 8).map((item, i) => (
-                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" />
+                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" storeUrl={shopUrl} onAddToCart={handleAddToCart} />
                     ))}
                   </ul>
                 ) : (
@@ -1208,7 +1289,7 @@ export default function App() {
               </motion.div>
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {trainingPicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" storeUrl={shopUrl} onAddToCart={handleAddToCart} />
                 ))}
               </ul>
             </div>
@@ -1248,7 +1329,7 @@ export default function App() {
             {featured.length > 0 && (
               <ul className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} storeUrl={shopUrl} onAddToCart={handleAddToCart} />
                 ))}
               </ul>
             )}
@@ -1422,7 +1503,7 @@ export default function App() {
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {salePicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} storeUrl={shopUrl} onAddToCart={handleAddToCart} />
                 ))}
               </ul>
             </div>
@@ -1630,6 +1711,8 @@ export default function App() {
                     reduce={reduce}
                     delay={Math.min(i, 8) * 0.04}
                     tone="light"
+                    storeUrl={shopUrl}
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </ul>
@@ -2076,17 +2159,43 @@ export default function App() {
           showSticky ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
         }`}
       >
-        <a
-          href={shopUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => track('cta_click', { place: 'sticky_mobile' })}
-          className="flex w-full items-center justify-center gap-3 bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
-        >
-          <img src={LOGO_SRC.sm} alt="" className="h-6 w-6 rounded-full" width={24} height={24} />
-          {shopLabel(catalog)}
-        </a>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setCartOpen(true)
+              track('cart_open', { place: 'sticky_mobile', items: itemCount })
+            }}
+            className="flex flex-1 items-center justify-center gap-2 bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
+          >
+            Cart{itemCount > 0 ? ` · ${itemCount}` : ''}
+          </button>
+          <a
+            href={SQUARE_CART_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('cart_open_square', { place: 'sticky_mobile' })}
+            className="flex flex-1 items-center justify-center bg-navy px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
+          >
+            Square cart
+          </a>
+        </div>
       </div>
+
+      <CartDrawer
+        open={cartOpen}
+        cart={cart}
+        onClose={() => setCartOpen(false)}
+        onChangeQty={(id, quantity) => setCart(setCartLineQuantity(id, quantity))}
+        onRemove={(id) => setCart(removeCartLine(id))}
+        onClear={() => setCart(clearCart())}
+      />
+
+      {cartToast ? (
+        <div className="fixed bottom-24 left-1/2 z-[56] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg md:bottom-6">
+          {cartToast}
+        </div>
+      ) : null}
 
       {/* Mobile nav drawer */}
       {menuOpen && (

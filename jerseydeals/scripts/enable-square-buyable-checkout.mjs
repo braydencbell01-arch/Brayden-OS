@@ -186,13 +186,22 @@ font:600 14px/1.2 system-ui,sans-serif;text-decoration:none!important;border:0;c
   function ensureBuyButton(url){
     if(!url) return;
     if(document.getElementById('jd-buy-now-btn')) return;
+    var wrap=document.createElement('div');
+    wrap.id='jd-buy-now-btn';
+    wrap.style.cssText='display:flex;flex-wrap:wrap;gap:.6rem;margin:.75rem 0 1rem';
     var btn=document.createElement('a');
-    btn.id='jd-buy-now-btn';
     btn.className='jd-buy-now';
     btn.href=url;
     btn.target='_blank';
     btn.rel='noopener noreferrer';
     btn.textContent='Buy now — secure checkout';
+    var cart=document.createElement('a');
+    cart.className='jd-buy-now';
+    cart.href='/s/cart';
+    cart.textContent='View cart';
+    cart.style.background='#0b223f';
+    wrap.appendChild(btn);
+    wrap.appendChild(cart);
     var host=document.querySelector('[class*="product"], main, #content, body');
     var price=null;
     var all=document.querySelectorAll('body *');
@@ -200,9 +209,21 @@ font:600 14px/1.2 system-ui,sans-serif;text-decoration:none!important;border:0;c
       var t=(all[i].textContent||'').trim();
       if(/^\\$\\d/.test(t) && t.length<12){ price=all[i]; break; }
     }
-    if(price && price.parentNode){ price.parentNode.insertBefore(btn, price.nextSibling); }
-    else if(host){ host.insertBefore(btn, host.firstChild); }
-    else { document.body.appendChild(btn); }
+    if(price && price.parentNode){ price.parentNode.insertBefore(wrap, price.nextSibling); }
+    else if(host){ host.insertBefore(wrap, host.firstChild); }
+    else { document.body.appendChild(wrap); }
+  }
+  function ensureCartNav(){
+    if(document.getElementById('jd-cart-nav')) return;
+    var header=document.querySelector('header,[class*="header"],[data-ux="Header"]');
+    if(!header) return;
+    var a=document.createElement('a');
+    a.id='jd-cart-nav';
+    a.href='/s/cart';
+    a.textContent='Cart';
+    a.setAttribute('aria-label','Open cart');
+    a.style.cssText='margin-left:auto;display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .9rem;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-weight:600;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:#fff';
+    header.appendChild(a);
   }
   function patchCards(){
     var anchors=document.querySelectorAll('a[href*="/product/"]');
@@ -220,6 +241,7 @@ font:600 14px/1.2 system-ui,sans-serif;text-decoration:none!important;border:0;c
   }
   function run(){
     hideOos(document);
+    ensureCartNav();
     var link=findLink();
     if(link) ensureBuyButton(link);
     patchCards();
@@ -312,14 +334,17 @@ if (existsSync(LISTINGS_PATH)) {
       byVariationId[listing.id] || (listing.itemId ? byItemId[listing.itemId] : '') || ''
     if (checkout) {
       listing.checkoutUrl = checkout
-      listing.url = checkout
+      // Preserve Square Online product page on `url` when present.
+      if (!listing.url || /square\.link/i.test(listing.url)) {
+        // leave as-is if we don't have a better PDP; sync:square rebuilds product URLs
+      }
       updated += 1
     }
   }
-  listings.checkoutMode = 'square-payment-links'
+  listings.checkoutMode = 'square-online-cart+payment-links'
   listings.syncedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
   writeFileSync(LISTINGS_PATH, `${JSON.stringify(listings, null, 2)}\n`)
-  console.log(`Updated ${updated} listings.json URLs to payment links`)
+  console.log(`Updated ${updated} listings.json checkoutUrl fields (product URLs preserved)`)
 }
 
 const snippet = buildSnippet(byItemId, byVariationId)
