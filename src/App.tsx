@@ -124,34 +124,25 @@ function HomeScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
-        <div className="mb-3 flex items-center gap-3">
-          <BrandMark />
-        </div>
-
         <header className="mb-4">
-          <motion.p
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-            className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-lime/90"
-          >
-            Football intelligence
-          </motion.p>
-          <motion.h1
-            initial={reduce ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-1.5 font-display text-5xl leading-[0.9] tracking-[0.04em] text-cream sm:text-6xl"
-          >
-            BrayStats
-          </motion.h1>
+          <div className="flex items-center gap-3">
+            <BrandMark />
+            <motion.h1
+              initial={reduce ? false : { opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display text-5xl leading-[0.9] tracking-[0.04em] text-cream sm:text-6xl"
+            >
+              BrayStats
+            </motion.h1>
+          </div>
           <motion.p
             initial={reduce ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: reduce ? 0 : 0.14 }}
             className="mt-2 max-w-md text-sm text-mist/85"
           >
-            Search any league, club, or player — then dig into ratings, tables, and match days.
+            Player ratings, match stats, and league, club, and player information.
           </motion.p>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
             <span>{formatUpdatedAt(updatedAt)}</span>

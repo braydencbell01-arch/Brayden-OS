@@ -37,7 +37,6 @@ export function FavoriteStar({
         height={dim}
         viewBox="0 0 24 24"
         aria-hidden
-        className={active ? 'drop-shadow-[0_0_8px_rgba(255,216,74,0.95)]' : undefined}
       >
         <path
           d="M12 2.8l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 16.7 6.6 19.6l1-6.1-4.4-4.3 6.1-.9L12 2.8z"

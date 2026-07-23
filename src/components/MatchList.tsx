@@ -11,7 +11,7 @@ import type { PlayerNavRef } from './PlayerProfileScreen'
 function FavoriteDot({ label }: { label: string }) {
   return (
     <span
-      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]"
+      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-star"
       title={label}
       aria-label={label}
     />

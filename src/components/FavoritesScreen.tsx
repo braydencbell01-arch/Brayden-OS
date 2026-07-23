@@ -72,11 +72,13 @@ export function FavoritesScreen({
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="mb-8 border-b border-white/10 pb-6"
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-star">Your picks</p>
-          <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-star/90">
+            Your picks
+          </p>
+          <h1 className="mt-2 font-display text-5xl tracking-[0.04em] text-cream sm:text-6xl">
             Favorites
           </h1>
-          <p className="mt-3 text-sm text-mist/80">
+          <p className="mt-2 text-sm text-mist/80">
             Star leagues, clubs, and players to pin Match day, calendar dots, and Stats.
           </p>
         </motion.header>

@@ -33,7 +33,7 @@ export function LeaguesScreen({
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-xs font-semibold uppercase tracking-[0.22em] text-lime"
+            className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-mist/60"
           >
             Competitions
           </motion.p>
