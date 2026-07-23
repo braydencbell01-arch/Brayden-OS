@@ -134,11 +134,13 @@ function RecentRatingsList({
   rows,
   hasMore,
   loadingMore,
+  loadError,
   onLoadMore,
 }: {
   rows: PlayerRecentMatchRating[]
   hasMore: boolean
   loadingMore: boolean
+  loadError: string | null
   onLoadMore: () => void
 }) {
   const scrollerRef = useRef<HTMLUListElement | null>(null)
@@ -196,7 +198,21 @@ function RecentRatingsList({
         )
       })}
       <li ref={sentinelRef} className="list-none py-1 text-center text-[11px] text-mist/50">
-        {loadingMore ? 'Loading more ratings…' : hasMore ? 'Scroll for more' : 'End of ratings'}
+        {loadError ? (
+          <button
+            type="button"
+            onClick={onLoadMore}
+            className="text-star underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          >
+            {loadError} · Retry
+          </button>
+        ) : loadingMore ? (
+          'Loading more ratings…'
+        ) : hasMore ? (
+          'Scroll for more'
+        ) : (
+          'End of ratings'
+        )}
       </li>
     </ul>
   )
@@ -394,6 +410,7 @@ export function PlayerProfileScreen({
     loadMoreRatings,
     loadingMoreRatings,
     hasMoreRatings,
+    ratingsMoreError,
   } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<
@@ -421,11 +438,29 @@ export function PlayerProfileScreen({
   }
 
   const favorited = favorites.isPlayerFavorite(player.id)
+  const { upsertPlayer } = favorites
   const nationality = profile?.citizenship || profile?.represents || null
   const positionLabel = profile?.position || player.position || null
   const teamId = profile?.teamId || player.teamId
   const teamName = profile?.teamName || player.teamName
   const canOpenClub = Boolean(onOpenTeam && teamId && teamName && /^\d+$/.test(teamId))
+
+  // Refresh stored favorite metadata (teamId, photo, …) once the profile loads.
+  useEffect(() => {
+    if (!profile || !favorited) return
+    upsertPlayer({
+      id: player.id,
+      name: profile.name || player.name || 'Player',
+      shortName: profile.shortName || player.shortName || player.name || 'Player',
+      photoUrl: profile.photoUrl || player.photoUrl,
+      jerseyUrl: profile.jerseyUrl || player.jerseyUrl,
+      jersey: profile.jersey || player.jersey,
+      position: profile.position || player.position,
+      leagueId: player.leagueId,
+      teamId: profile.teamId || player.teamId,
+      teamName: profile.teamName || player.teamName,
+    })
+  }, [profile, favorited, player, upsertPlayer])
 
   const openCurrentClub = () => {
     if (!canOpenClub || !teamId || !teamName) return
@@ -602,6 +637,7 @@ export function PlayerProfileScreen({
                   rows={profile.recentRatings}
                   hasMore={hasMoreRatings}
                   loadingMore={loadingMoreRatings}
+                  loadError={ratingsMoreError}
                   onLoadMore={() => {
                     void loadMoreRatings()
                   }}
