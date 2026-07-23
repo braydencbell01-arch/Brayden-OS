@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getLeague } from '../lib/leagues'
+import { getLeague, isInternationalLeague } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { formatKickoffTime } from '../lib/dates'
 import { isFavoriteMatch, type Match } from '../lib/matches'
@@ -91,6 +91,7 @@ function TeamNameButton({
           name: team.name,
           shortName: team.shortName,
           leagueId: match.leagueId,
+          kind: isInternationalLeague(match.leagueId) ? 'national' : 'club',
         })
       }
       className={`${align} profile-link text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}

@@ -1,4 +1,4 @@
-import { compareLeaguesForDisplay, LEAGUES, type LeagueId } from './leagues'
+import { compareLeaguesForDisplay, internationalLeagues, LEAGUES, type LeagueId } from './leagues'
 import { dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
@@ -28,7 +28,7 @@ export type Match = {
 
 type EspnCompetitor = {
   homeAway?: string
-  score?: string
+  score?: string | number | { value?: number; displayValue?: string }
   winner?: boolean
   team?: {
     id?: string
@@ -97,9 +97,21 @@ function mapStatus(status: EspnEvent['status'] | undefined): MatchStatus {
   return 'other'
 }
 
-function parseScore(value: string | undefined, status: MatchStatus): number | null {
+function parseScore(
+  value: EspnCompetitor['score'] | undefined,
+  status: MatchStatus,
+): number | null {
   if (status === 'scheduled') return null
   if (value == null || value === '') return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  if (typeof value === 'object') {
+    if (typeof value.value === 'number' && Number.isFinite(value.value)) return value.value
+    if (value.displayValue != null && value.displayValue !== '') {
+      const n = Number(value.displayValue)
+      return Number.isFinite(n) ? n : null
+    }
+    return null
+  }
   const n = Number(value)
   return Number.isFinite(n) ? n : null
 }
@@ -356,4 +368,49 @@ export function splitTeamFixtures(
     .sort((a, b) => a.kickoff.localeCompare(b.kickoff))
 
   return { recent, upcoming }
+}
+
+/**
+ * Pull a national side's fixtures from ESPN team schedules across international comps.
+ * Used to fill gaps when the Match Day scoreboard window is sparse.
+ */
+export async function fetchNationalTeamSchedules(
+  teamId: string,
+  preferredLeagueId?: LeagueId,
+): Promise<Match[]> {
+  const preferred = preferredLeagueId ? LEAGUES.find((league) => league.id === preferredLeagueId) : null
+  const codes = [
+    ...(preferred?.kind === 'international' ? [preferred] : []),
+    ...internationalLeagues().filter((league) => league.id !== preferred?.id),
+  ]
+
+  const results = await Promise.allSettled(
+    codes.map(async (league) => {
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/schedule`
+      const res = await fetch(url)
+      if (!res.ok) return [] as Match[]
+      const data = (await res.json()) as EspnScoreboard
+      return (data.events ?? [])
+        .map((event) => normalizeEvent(event, league.id))
+        .filter((match): match is Match => match != null)
+    }),
+  )
+
+  const byEvent = new Map<string, Match>()
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+    for (const match of result.value) {
+      if (!byEvent.has(match.espnEventId)) byEvent.set(match.espnEventId, match)
+    }
+  }
+
+  return [...byEvent.values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+}
+
+/** Merge Match Day cache with schedule extras; cache rows win on id collisions. */
+export function mergeTeamMatches(primary: Match[], extras: Match[]): Match[] {
+  const byEvent = new Map<string, Match>()
+  for (const match of extras) byEvent.set(match.espnEventId, match)
+  for (const match of primary) byEvent.set(match.espnEventId, match)
+  return [...byEvent.values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
 }

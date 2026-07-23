@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { getLeague, type LeagueId } from '../lib/leagues'
+import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   groupMatchesByDate,
+  mergeTeamMatches,
   recentFormForTeam,
   splitTeamFixtures,
   type Match,
@@ -17,6 +18,7 @@ import {
 } from '../lib/dates'
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
+import { useNationalTeamSchedule } from '../lib/stats/useNationalTeamSchedule'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
@@ -72,6 +74,8 @@ export function TeamProfileScreen({
   reduce: boolean | null
 }) {
   const league = getLeague(team.leagueId)
+  const isNational =
+    team.kind === 'national' || isInternationalLeague(team.leagueId)
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
@@ -83,17 +87,26 @@ export function TeamProfileScreen({
 
   const rosterEnabled = openSection === 'roster'
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
+  const nationalSchedule = useNationalTeamSchedule(team.id, team.leagueId, isNational)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
     [standings.rows, team.id],
   )
 
-  const form = useMemo(() => recentFormForTeam(matches, team.id, 5), [matches, team.id])
+  const teamMatches = useMemo(
+    () => (isNational ? mergeTeamMatches(matches, nationalSchedule.data) : matches),
+    [isNational, matches, nationalSchedule.data],
+  )
+
+  const form = useMemo(
+    () => recentFormForTeam(teamMatches, team.id, 5),
+    [teamMatches, team.id],
+  )
 
   const { recent, upcoming } = useMemo(
-    () => splitTeamFixtures(matches, team.id, todayKey),
-    [matches, team.id, todayKey],
+    () => splitTeamFixtures(teamMatches, team.id, todayKey),
+    [teamMatches, team.id, todayKey],
   )
 
   const upcomingGrouped = useMemo(() => groupMatchesByDate(upcoming), [upcoming])
@@ -103,6 +116,7 @@ export function TeamProfileScreen({
   )
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
+  const fixturesLoading = loading || (isNational && nationalSchedule.loading)
 
   const toggle = (section: 'upcoming' | 'recent' | 'roster') => {
     setOpenSection((current) => (current === section ? null : section))
@@ -156,6 +170,7 @@ export function TeamProfileScreen({
                 name: displayName,
                 shortName: team.shortName,
                 leagueId: team.leagueId,
+                kind: isNational ? 'national' : 'club',
               })
             }
           />
@@ -166,22 +181,26 @@ export function TeamProfileScreen({
             onClick={() => onOpenLeague(team.leagueId)}
             className="profile-link text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
-            {league.name}
+            {isNational ? `National team · ${league.name}` : league.name}
           </button>
         }
         title={displayName}
         meta={
           <>
             {team.shortName}
-            {standing ? ` · #${standing.rank} · ${standing.points} pts` : ''}
+            {standing
+              ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''} · ${standing.points} pts`
+              : isNational
+                ? ' · International'
+                : ''}
           </>
         }
       />
 
       <section className="mt-6" aria-label="Season table line">
-        {standings.loading && !standing ? (
+        {league.hasStandings && standings.loading && !standing ? (
           <p className="text-sm text-mist/70">Loading table…</p>
-        ) : standings.error && !standing ? (
+        ) : league.hasStandings && standings.error && !standing ? (
           <p className="text-sm text-mist/80">{standings.error}</p>
         ) : standing ? (
           <dl className="grid grid-cols-4 gap-3 border border-white/10 px-3 py-3.5 text-center sm:grid-cols-7">
@@ -197,10 +216,21 @@ export function TeamProfileScreen({
             ))}
           </dl>
         ) : (
-          <p className="text-sm text-mist/70">No table row yet for this club.</p>
+          <p className="text-sm text-mist/70">
+            {isNational
+              ? league.hasStandings
+                ? 'No group-table row for this side in the current competition window.'
+                : 'Friendlies and some tournaments do not publish a live table.'
+              : 'No table row yet for this club.'}
+          </p>
         )}
 
         {standing?.note ? <p className="mt-2 text-xs text-mist/60">{standing.note}</p> : null}
+        {standing?.group ? (
+          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
+            {standing.group}
+          </p>
+        ) : null}
 
         <div className="mt-4">
           <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
@@ -224,17 +254,17 @@ export function TeamProfileScreen({
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
         >
-          {loading && upcomingGrouped.length === 0 ? (
+          {fixturesLoading && upcomingGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading fixtures…</p>
           ) : (
             <>
-              {error && upcomingGrouped.length === 0 ? (
-                <p className="text-sm text-mist/80">{error}</p>
+              {(error || nationalSchedule.error) && upcomingGrouped.length === 0 ? (
+                <p className="text-sm text-mist/80">{error || nationalSchedule.error}</p>
               ) : null}
-              {error && upcomingGrouped.length > 0 ? (
-                <p className="mb-3 text-sm text-mist/70">{error}</p>
+              {(error || nationalSchedule.error) && upcomingGrouped.length > 0 ? (
+                <p className="mb-3 text-sm text-mist/70">{error || nationalSchedule.error}</p>
               ) : null}
-              {!error || upcomingGrouped.length > 0 ? (
+              {(!error && !nationalSchedule.error) || upcomingGrouped.length > 0 ? (
                 upcomingGrouped.length === 0 ? (
                   <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
                 ) : (
@@ -268,7 +298,7 @@ export function TeamProfileScreen({
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
         >
-          {loading && recentGrouped.length === 0 ? (
+          {fixturesLoading && recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading results…</p>
           ) : recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">No recent results in the current window.</p>
@@ -297,25 +327,27 @@ export function TeamProfileScreen({
                 ))}
               </div>
 
-              <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
-                <button
-                  type="button"
-                  onClick={loadEarlierResults}
-                  disabled={refreshing}
-                  className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
-                >
-                  {refreshing
-                    ? 'Loading earlier…'
-                    : `Load earlier results · ${pastHorizonDays}+ days`}
-                </button>
-              </div>
+              {!isNational ? (
+                <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
+                  <button
+                    type="button"
+                    onClick={loadEarlierResults}
+                    disabled={refreshing}
+                    className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
+                  >
+                    {refreshing
+                      ? 'Loading earlier…'
+                      : `Load earlier results · ${pastHorizonDays}+ days`}
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
         </ProfileAccordion>
 
         <ProfileAccordion
           title="Squad"
-          subtitle="Full roster by position"
+          subtitle={isNational ? 'Current camp / tournament squad' : 'Full roster by position'}
           open={openSection === 'roster'}
           onToggle={() => toggle('roster')}
         >

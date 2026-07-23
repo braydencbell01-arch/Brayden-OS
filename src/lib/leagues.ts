@@ -4,6 +4,12 @@ export type LeagueId =
   | 'serie-a'
   | 'bundesliga'
   | 'ligue-1'
+  | 'fifa-world'
+  | 'fifa-friendly'
+  | 'uefa-nations'
+  | 'uefa-euro'
+  | 'fifa-worldq'
+  | 'conmebol-america'
   | 'brasileirao'
   | 'liga-mx'
   | 'mls'
@@ -25,12 +31,17 @@ export type LeagueId =
   | 'czech-first-league'
   | 'cyprus-first-division'
 
+export type LeagueKind = 'domestic' | 'international'
+
 export type League = {
   id: LeagueId
   name: string
   short: string
   country: string
   espnCode: string
+  kind: LeagueKind
+  /** False for friendlies / comps without a meaningful table. */
+  hasStandings: boolean
 }
 
 /**
@@ -48,6 +59,8 @@ export const LEAGUES: League[] = [
     short: 'ENG',
     country: 'England',
     espnCode: 'eng.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'la-liga',
@@ -55,6 +68,8 @@ export const LEAGUES: League[] = [
     short: 'ESP',
     country: 'Spain',
     espnCode: 'esp.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'serie-a',
@@ -62,6 +77,8 @@ export const LEAGUES: League[] = [
     short: 'ITA',
     country: 'Italy',
     espnCode: 'ita.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'bundesliga',
@@ -69,6 +86,8 @@ export const LEAGUES: League[] = [
     short: 'GER',
     country: 'Germany',
     espnCode: 'ger.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'ligue-1',
@@ -76,6 +95,62 @@ export const LEAGUES: League[] = [
     short: 'FRA',
     country: 'France',
     espnCode: 'fra.1',
+    kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'fifa-world',
+    name: 'FIFA World Cup',
+    short: 'WC',
+    country: 'International',
+    espnCode: 'fifa.world',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'fifa-friendly',
+    name: 'International Friendlies',
+    short: 'FR',
+    country: 'International',
+    espnCode: 'fifa.friendly',
+    kind: 'international',
+    hasStandings: false,
+  },
+  {
+    id: 'uefa-nations',
+    name: 'UEFA Nations League',
+    short: 'UNL',
+    country: 'Europe',
+    espnCode: 'uefa.nations',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'uefa-euro',
+    name: 'UEFA European Championship',
+    short: 'EURO',
+    country: 'Europe',
+    espnCode: 'uefa.euro',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'fifa-worldq',
+    name: 'World Cup Qualifying',
+    short: 'WCQ',
+    country: 'International',
+    espnCode: 'fifa.worldq',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'conmebol-america',
+    name: 'Copa América',
+    short: 'CA',
+    country: 'South America',
+    espnCode: 'conmebol.america',
+    kind: 'international',
+    hasStandings: true,
   },
   {
     id: 'brasileirao',
@@ -83,6 +158,8 @@ export const LEAGUES: League[] = [
     short: 'BRA',
     country: 'Brazil',
     espnCode: 'bra.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'liga-mx',
@@ -90,6 +167,8 @@ export const LEAGUES: League[] = [
     short: 'MEX',
     country: 'Mexico',
     espnCode: 'mex.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'mls',
@@ -97,6 +176,8 @@ export const LEAGUES: League[] = [
     short: 'USA',
     country: 'USA',
     espnCode: 'usa.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'liga-profesional',
@@ -104,6 +185,8 @@ export const LEAGUES: League[] = [
     short: 'ARG',
     country: 'Argentina',
     espnCode: 'arg.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'eredivisie',
@@ -111,6 +194,8 @@ export const LEAGUES: League[] = [
     short: 'NED',
     country: 'Netherlands',
     espnCode: 'ned.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'primeira-liga',
@@ -118,6 +203,8 @@ export const LEAGUES: League[] = [
     short: 'POR',
     country: 'Portugal',
     espnCode: 'por.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'belgian-pro-league',
@@ -125,6 +212,8 @@ export const LEAGUES: League[] = [
     short: 'BEL',
     country: 'Belgium',
     espnCode: 'bel.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'turkish-super-lig',
@@ -132,6 +221,8 @@ export const LEAGUES: League[] = [
     short: 'TUR',
     country: 'Turkey',
     espnCode: 'tur.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'austrian-bundesliga',
@@ -139,6 +230,8 @@ export const LEAGUES: League[] = [
     short: 'AUT',
     country: 'Austria',
     espnCode: 'aut.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'swiss-super-league',
@@ -146,6 +239,8 @@ export const LEAGUES: League[] = [
     short: 'SUI',
     country: 'Switzerland',
     espnCode: 'sui.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'scottish-premiership',
@@ -153,6 +248,8 @@ export const LEAGUES: League[] = [
     short: 'SCO',
     country: 'Scotland',
     espnCode: 'sco.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'superliga',
@@ -160,6 +257,8 @@ export const LEAGUES: League[] = [
     short: 'DEN',
     country: 'Denmark',
     espnCode: 'den.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'allsvenskan',
@@ -167,6 +266,8 @@ export const LEAGUES: League[] = [
     short: 'SWE',
     country: 'Sweden',
     espnCode: 'swe.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'eliteserien',
@@ -174,6 +275,8 @@ export const LEAGUES: League[] = [
     short: 'NOR',
     country: 'Norway',
     espnCode: 'nor.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'j1-league',
@@ -181,6 +284,8 @@ export const LEAGUES: League[] = [
     short: 'JPN',
     country: 'Japan',
     espnCode: 'jpn.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'chinese-super-league',
@@ -188,6 +293,8 @@ export const LEAGUES: League[] = [
     short: 'CHN',
     country: 'China',
     espnCode: 'chn.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'saudi-pro-league',
@@ -195,6 +302,8 @@ export const LEAGUES: League[] = [
     short: 'KSA',
     country: 'Saudi Arabia',
     espnCode: 'ksa.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'a-league',
@@ -202,6 +311,8 @@ export const LEAGUES: League[] = [
     short: 'AUS',
     country: 'Australia',
     espnCode: 'aus.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'czech-first-league',
@@ -209,6 +320,8 @@ export const LEAGUES: League[] = [
     short: 'CZE',
     country: 'Czechia',
     espnCode: 'cze.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
   {
     id: 'cyprus-first-division',
@@ -216,6 +329,8 @@ export const LEAGUES: League[] = [
     short: 'CYP',
     country: 'Cyprus',
     espnCode: 'cyp.1',
+    kind: 'domestic',
+    hasStandings: true,
   },
 ]
 
@@ -223,6 +338,18 @@ export function getLeague(id: LeagueId): League {
   const league = LEAGUES.find((item) => item.id === id)
   if (!league) throw new Error(`Unknown league: ${id}`)
   return league
+}
+
+export function isInternationalLeague(id: LeagueId): boolean {
+  return getLeague(id).kind === 'international'
+}
+
+export function internationalLeagues(): League[] {
+  return LEAGUES.filter((league) => league.kind === 'international')
+}
+
+export function domesticLeagues(): League[] {
+  return LEAGUES.filter((league) => league.kind === 'domestic')
 }
 
 const LEAGUE_IMPORTANCE_RANK = new Map(LEAGUES.map((league, index) => [league.id, index]))

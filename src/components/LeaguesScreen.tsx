@@ -1,6 +1,13 @@
 import { motion } from 'framer-motion'
 import { FavoriteStar } from './FavoriteStar'
-import { leaguesInDisplayOrder, type LeagueId } from '../lib/leagues'
+import {
+  compareLeaguesForDisplay,
+  domesticLeagues,
+  internationalLeagues,
+  leaguesInDisplayOrder,
+  type League,
+  type LeagueId,
+} from '../lib/leagues'
 import type { FavoritesApi } from '../lib/favorites'
 
 export function LeaguesScreen({
@@ -14,7 +21,14 @@ export function LeaguesScreen({
 }) {
   const leagues = leaguesInDisplayOrder(favorites.leagueIds)
   const favoriteLeagues = leagues.filter((league) => favorites.isLeagueFavorite(league.id))
-  const otherLeagues = leagues.filter((league) => !favorites.isLeagueFavorite(league.id))
+  const sortByDisplay = (a: League, b: League) =>
+    compareLeaguesForDisplay(a.id, b.id, favorites.leagueIds)
+  const international = internationalLeagues()
+    .filter((league) => !favorites.isLeagueFavorite(league.id))
+    .sort(sortByDisplay)
+  const domestic = domesticLeagues()
+    .filter((league) => !favorites.isLeagueFavorite(league.id))
+    .sort(sortByDisplay)
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -46,7 +60,8 @@ export function LeaguesScreen({
             Leagues
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Favorites stay on top. Star a league to pin it on Match day.
+            Domestic leagues and international tournaments. Star a competition to pin it on Match
+            day.
           </p>
         </header>
 
@@ -71,14 +86,33 @@ export function LeaguesScreen({
           </section>
         ) : null}
 
-        <section aria-label="All leagues">
-          {favoriteLeagues.length > 0 ? (
+        {international.length > 0 ? (
+          <section className="mb-6" aria-label="International competitions">
             <p className="mb-2 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
-              All leagues
+              International
             </p>
-          ) : null}
+            <div className="flex flex-col gap-3">
+              {international.map((league, i) => (
+                <LeagueRow
+                  key={league.id}
+                  league={league}
+                  favorited={favorites.isLeagueFavorite(league.id)}
+                  index={i}
+                  reduce={reduce}
+                  onOpen={() => onOpenLeague(league.id)}
+                  onToggleFavorite={() => favorites.toggleLeague(league.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <section aria-label="Domestic leagues">
+          <p className="mb-2 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+            Domestic
+          </p>
           <div className="flex flex-col gap-3">
-            {(favoriteLeagues.length > 0 ? otherLeagues : leagues).map((league, i) => (
+            {domestic.map((league, i) => (
               <LeagueRow
                 key={league.id}
                 league={league}
@@ -104,7 +138,7 @@ function LeagueRow({
   onOpen,
   onToggleFavorite,
 }: {
-  league: { id: LeagueId; name: string; country: string }
+  league: League
   favorited: boolean
   index: number
   reduce: boolean | null

@@ -65,6 +65,8 @@ export type StandingRow = {
   goalsFor: number
   goalsAgainst: number
   note?: string
+  /** Group-stage label (e.g. "Group A") when the competition uses multiple tables. */
+  group?: string
 }
 
 export type LeaderEntry = {

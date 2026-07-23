@@ -50,10 +50,11 @@ export function LeagueProfileScreen({
   const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
   const standings = useLeagueStandings(league.id)
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
+  const isInternational = league.kind === 'international'
 
   const [openSection, setOpenSection] = useState<
     'table' | 'fixtures' | 'player-stats' | 'stats' | null
-  >('table')
+  >(league.hasStandings ? 'table' : 'fixtures')
   const statsEnabled = openSection === 'stats'
   const playerStatsEnabled = openSection === 'player-stats'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
@@ -89,7 +90,7 @@ export function LeagueProfileScreen({
 
       <ProfileMetricsRow>
         <ProfileMetric
-          label="Clubs"
+          label={isInternational ? 'Teams' : 'Clubs'}
           value={standings.loading ? '…' : clubCount || '—'}
         />
         <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
@@ -107,6 +108,7 @@ export function LeagueProfileScreen({
                     name: leader.team,
                     shortName: leader.shortName,
                     leagueId: league.id,
+                    kind: isInternational ? 'national' : 'club',
                   })
                 }
                 className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
@@ -121,22 +123,24 @@ export function LeagueProfileScreen({
       </ProfileMetricsRow>
 
       <div className="mt-6 flex flex-col gap-3">
-        <ProfileAccordion
-          title="Standings"
-          open={openSection === 'table'}
-          onToggle={() => toggleSection('table')}
-        >
-          <StandingsTable
-            rows={standings.rows}
-            loading={standings.loading}
-            error={standings.error}
-            leagueId={league.id}
-            isTeamFavorite={favorites.isTeamFavorite}
-            onToggleTeam={favorites.toggleTeam}
-            onOpenTeam={onOpenTeam}
-            onRetry={() => void standings.reload()}
-          />
-        </ProfileAccordion>
+        {league.hasStandings ? (
+          <ProfileAccordion
+            title="Standings"
+            open={openSection === 'table'}
+            onToggle={() => toggleSection('table')}
+          >
+            <StandingsTable
+              rows={standings.rows}
+              loading={standings.loading}
+              error={standings.error}
+              leagueId={league.id}
+              isTeamFavorite={favorites.isTeamFavorite}
+              onToggleTeam={favorites.toggleTeam}
+              onOpenTeam={onOpenTeam}
+              onRetry={() => void standings.reload()}
+            />
+          </ProfileAccordion>
+        ) : null}
 
         <ProfileAccordion
           title="Upcoming games"
