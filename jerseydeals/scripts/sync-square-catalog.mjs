@@ -385,16 +385,17 @@ if (existsSync(LINKS_PATH) && listings.length > 0) {
       const checkout = byVar.get(listing.id) || byItem.get(listing.itemId) || ''
       if (checkout) {
         listing.checkoutUrl = checkout
-        listing.url = checkout
+        // Keep listing.url as the Square Online product page so the site can
+        // use Add to cart + /s/cart; Payment Links remain on checkoutUrl.
         patched += 1
       }
     }
     if (patched > 0) {
-      payload.checkoutMode = 'square-payment-links'
+      payload.checkoutMode = 'square-online-cart+payment-links'
       payload.listings = listings
       payload.count = listings.length
       writeFileSync(OUT, `${JSON.stringify(payload, null, 2)}\n`)
-      console.log(`Merged ${patched} Square Payment Link checkout URLs`)
+      console.log(`Merged ${patched} Square Payment Link checkout URLs (product URLs preserved)`)
     }
   } catch (err) {
     console.warn(`checkout-links merge skipped: ${err.message}`)

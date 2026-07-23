@@ -6,6 +6,11 @@ export const SQUARE_STORE_URL =
   (import.meta.env.VITE_SQUARE_STORE_URL as string | undefined)?.trim() ||
   'https://jerseydealsofficial.square.site'
 
+/** Square Online cart (Weebly path). */
+export const SQUARE_CART_URL =
+  (import.meta.env.VITE_SQUARE_CART_URL as string | undefined)?.trim() ||
+  `${SQUARE_STORE_URL.replace(/\/$/, '')}/s/cart`
+
 /** Secondary marketplace channel. */
 export const EBAY_SELLER = 'jerseydealsofficial'
 export const EBAY_SELLER_URL = `https://www.ebay.com/usr/${EBAY_SELLER}`

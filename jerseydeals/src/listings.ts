@@ -6,6 +6,8 @@ export type Listing = {
   url: string
   /** Square Payment Link checkout when Online shipping isn't configured */
   checkoutUrl?: string
+  /** Square Online product page (supports store cart when shipping is enabled) */
+  productUrl?: string
   image: string
   /** All product photos; first entry is the main/cover image. */
   images?: string[]
@@ -65,6 +67,24 @@ export function formatPrice(price: number | null, currency: string) {
 /** Prefer Payment Link checkout when present (Square Online shipping workaround). */
 export function listingBuyUrl(item: Listing) {
   return (item.checkoutUrl || item.url || '').trim()
+}
+
+function slugifyListingTitle(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
+
+/** Square Online PDP URL when we know the catalog item id. */
+export function listingProductPageUrl(item: Listing, storeUrl: string) {
+  if (item.productUrl && item.productUrl.trim()) return item.productUrl.trim()
+  if (item.url && /\/product\//i.test(item.url)) return item.url.trim()
+  if (!item.itemId || !storeUrl) return ''
+  const slug = slugifyListingTitle(item.title) || 'item'
+  return `${storeUrl.replace(/\/$/, '')}/product/${slug}/${item.itemId}`
 }
 
 export function shortTitle(title: string) {
