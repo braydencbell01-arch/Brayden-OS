@@ -2122,14 +2122,17 @@ function emptyRatingsCursor(): PlayerRatingsCursor {
   return { seasons: [], seasonIndex: 0, page: 0, pageCount: 0, done: true }
 }
 
-/** Newest match first; falls back to ESPN event id when dates are missing. */
+/** Newest match first; undated rows sort after dated ones, then by event id. */
 export function sortRatingsNewestFirst(
   rows: PlayerRecentMatchRating[],
 ): PlayerRecentMatchRating[] {
   return rows.slice().sort((a, b) => {
     const ta = a.date ? Date.parse(a.date) : NaN
     const tb = b.date ? Date.parse(b.date) : NaN
-    if (Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return tb - ta
+    const aDated = Number.isFinite(ta)
+    const bDated = Number.isFinite(tb)
+    if (aDated && bDated && ta !== tb) return tb - ta
+    if (aDated !== bDated) return aDated ? -1 : 1
     const ida = Number(a.eventId)
     const idb = Number(b.eventId)
     if (Number.isFinite(ida) && Number.isFinite(idb) && ida !== idb) return idb - ida
