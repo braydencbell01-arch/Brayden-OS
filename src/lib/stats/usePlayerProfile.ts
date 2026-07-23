@@ -126,6 +126,14 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     (year: number) => {
       if (!playerId || !profile) return
       if (selectedSeason === year) return
+      const previousSeason = selectedSeason
+      const previousStats = {
+        seasonStats: profile.seasonStats,
+        seasonStatsLabel: profile.seasonStatsLabel,
+        seasonYear: profile.seasonYear,
+        previousSeasonStats: profile.previousSeasonStats,
+        previousSeasonStatsLabel: profile.previousSeasonStatsLabel,
+      }
       setSelectedSeason(year)
       setStatsLoading(true)
       const req = requestId.current
@@ -133,7 +141,10 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
         .then((bundle) => {
           if (requestId.current !== req) return
           // Keep picker honest — only accept rows for the requested year.
-          if (bundle.seasonYear != null && bundle.seasonYear !== year) return
+          if (bundle.seasonYear != null && bundle.seasonYear !== year) {
+            setSelectedSeason(previousSeason)
+            return
+          }
           setProfile((current) => {
             if (!current) return current
             return {
@@ -147,7 +158,13 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
           })
         })
         .catch(() => {
-          // Keep prior stats visible; picker still reflects the attempted year.
+          // Revert picker + keep prior stats so the UI stays consistent.
+          if (requestId.current !== req) return
+          setSelectedSeason(previousSeason)
+          setProfile((current) => {
+            if (!current) return current
+            return { ...current, ...previousStats }
+          })
         })
         .finally(() => {
           if (requestId.current === req) setStatsLoading(false)

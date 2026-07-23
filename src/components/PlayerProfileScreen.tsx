@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode, Fragment } from 'react'
 import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
-import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
+import { isInternationalLeague, LEAGUES, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
@@ -566,7 +566,7 @@ export function PlayerProfileScreen({
     statsLoading,
   } = usePlayerProfile(player.leagueId, player.id)
   const displayLeagueId = profile?.leagueId || player.leagueId
-  const league = getLeague(displayLeagueId)
+  const league = LEAGUES.find((item) => item.id === displayLeagueId) ?? null
   const [openSection, setOpenSection] = useState<
     'stats' | 'ratings' | 'career' | 'transfers' | null
   >(null)
@@ -628,11 +628,17 @@ export function PlayerProfileScreen({
 
   const openAlsoPlaysFor = () => {
     if (!alsoPlaysFor || !onOpenTeam) return
+    // Prefer an international competition already in context; friendlies are a last resort.
+    const leagueId = isInternationalLeague(player.leagueId)
+      ? player.leagueId
+      : isInternationalLeague(displayLeagueId)
+        ? displayLeagueId
+        : 'fifa-friendly'
     onOpenTeam({
       id: alsoPlaysFor.teamId,
       name: alsoPlaysFor.teamName,
       shortName: alsoPlaysFor.teamName,
-      leagueId: 'fifa-friendly',
+      leagueId,
       kind: 'national',
     })
   }
@@ -656,7 +662,14 @@ export function PlayerProfileScreen({
             Retry
           </button>
         </div>
-      ) : profile ? (
+      ) : profile && !league ? (
+        <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
+          <p className="text-sm text-mist/80">
+            This player link points at an unknown competition. Open them again from search or a
+            match lineup.
+          </p>
+        </div>
+      ) : profile && league ? (
         <>
           <ProfileHeader
             reduce={reduce}
@@ -741,7 +754,7 @@ export function PlayerProfileScreen({
                   kind: 'player',
                   player: {
                     id: player.id,
-                    leagueId: player.leagueId,
+                    leagueId: profile.leagueId || player.leagueId,
                     name: profile.name,
                     shortName: profile.shortName,
                     teamId: profile.teamId,

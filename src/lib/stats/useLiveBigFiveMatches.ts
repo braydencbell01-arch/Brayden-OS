@@ -90,6 +90,8 @@ export function useLiveBigFiveMatches() {
           failedLeagues.length > 3 ? '…' : ''
         }). Pull to refresh or reopen the day.`,
       )
+    } else {
+      setError(null)
     }
     return { data, complete }
   }, [])

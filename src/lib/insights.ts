@@ -23,6 +23,8 @@ export function buildPreMatchBriefing(
     .filter(
       (m) =>
         m.status === 'finished' &&
+        m.home.score != null &&
+        m.away.score != null &&
         ((m.home.id === match.home.id && m.away.id === match.away.id) ||
           (m.home.id === match.away.id && m.away.id === match.home.id)),
     )
@@ -33,8 +35,8 @@ export function buildPreMatchBriefing(
   let awayWins = 0
   let draws = 0
   const h2h = h2hMatches.map((m) => {
-    const homeScore = m.home.score ?? 0
-    const awayScore = m.away.score ?? 0
+    const homeScore = m.home.score as number
+    const awayScore = m.away.score as number
     let winnerId: string | null = null
     if (homeScore === awayScore) draws += 1
     else if (homeScore > awayScore) {
@@ -135,8 +137,9 @@ export function buildTeamSeasonStory(
     const result = teamResult(match, teamId)
     if (!result) continue
     const isHome = match.home.id === teamId
-    const forScore = isHome ? match.home.score! : match.away.score!
-    const against = isHome ? match.away.score! : match.home.score!
+    const forScore = isHome ? match.home.score : match.away.score
+    const against = isHome ? match.away.score : match.home.score
+    if (forScore == null || against == null) continue
     const opp = isHome ? match.away.shortName : match.home.shortName
     const margin = forScore - against
 
