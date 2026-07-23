@@ -27,6 +27,7 @@ import { CartDrawer } from './Cart'
 import {
   clubsInStock,
   conditionLabel,
+  dedupeListingsByTitle,
   formatPrice,
   inferClub,
   isAdultListing,
@@ -46,13 +47,18 @@ import {
   pickSaleItems,
   pickTrending,
   PRICE_FILTERS,
+  pushRecentlyViewed,
+  readRecentlyViewed,
   shortTitle,
+  SORT_OPTIONS,
+  sortListings,
   sortSizes,
   TAG_ORDER,
   type ClubInfo,
   type Listing,
   type ListingsPayload,
   type PriceFilterId,
+  type SortId,
 } from './listings'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
@@ -196,13 +202,6 @@ function fadeUp(reduce: boolean | null, delay = 0) {
   }
 }
 
-function primaryShopUrl(catalog: ListingsPayload | null) {
-  if (SQUARE_STORE_URL) return SQUARE_STORE_URL
-  if (isSquareCatalog(catalog) && catalog?.shopUrl) return catalog.shopUrl
-  return catalog?.shopUrl ?? EBAY_SHOP_URL
-}
-
-
 function FilterChip({
   active,
   label,
@@ -240,7 +239,7 @@ const FAQ = [
   {
     q: 'How do I pay?',
     a: SQUARE_STORE_URL
-      ? 'Checkout on our Square storefront with card. You can still buy select stock on eBay with eBay buyer protection.'
+      ? 'Add kits to your cart here, then checkout on Square’s secure Payment Links with card. Select stock is also on eBay with buyer protection.'
       : 'Checkout on eBay with card, PayPal, or other eBay payment options — buyer protection included. A Square direct storefront is coming next.',
   },
   {
@@ -359,32 +358,36 @@ function ProductLink({
   reduce,
   delay,
   tone = 'dark',
-  storeUrl,
   onAddToCart,
+  onQuickView,
 }: {
   item: Listing
   reduce: boolean | null
   delay: number
   tone?: 'dark' | 'light'
-  storeUrl: string
   onAddToCart: (item: Listing) => void
+  onQuickView: (item: Listing) => void
 }) {
   const condition = conditionLabel(item.title)
   const buyUrl = listingBuyUrl(item)
-  const productUrl = listingProductPageUrl(item, storeUrl) || buyUrl
   const kit = kitType(item)
   const onSale = isSaleListing(item)
+  const size = listingSize(item)
+  const muted = tone === 'dark' ? 'text-white/45' : 'text-muted'
+  const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
+  const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
+  const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
+
   return (
     <motion.li {...fadeUp(reduce, delay)}>
-      <div
-        className={`group outline-none ${
-          tone === 'dark' ? '' : ''
-        }`}
-      >
-        <div
-          className={`relative aspect-square overflow-hidden ${
+      <div className="group outline-none">
+        <button
+          type="button"
+          onClick={() => onQuickView(item)}
+          className={`relative block aspect-square w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-crimson ${
             tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
           }`}
+          aria-label={`Quick view ${shortTitle(item.title)}`}
         >
           <ProductGallery item={item} tone={tone} />
           {onSale && (
@@ -397,71 +400,51 @@ function ProductLink({
               Only 1 left
             </span>
           )}
-          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+            <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
+              Quick view
+            </span>
+          </div>
+        </button>
+        <div className="mt-4 block">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{item.tag}</p>
+            {size && size !== 'Other' ? (
+              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{size}</span>
+            ) : null}
+            {kit !== 'Other' ? (
+              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{kit}</span>
+            ) : null}
+            {condition === 'Pre-owned' ? (
+              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{condition}</span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => onQuickView(item)}
+            className={`mt-1.5 block text-left text-[0.95rem] font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson md:text-base ${titleTone}`}
+          >
+            {shortTitle(item.title)}
+          </button>
+          <p className="mt-2 flex items-baseline gap-2">
+            <span className={`font-display text-2xl font-bold tracking-wide md:text-[1.65rem] ${priceTone}`}>
+              {formatPrice(item.price, item.currency)}
+            </span>
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
             <button
               type="button"
               onClick={() => onAddToCart(item)}
-              className="w-full bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream"
+              className={`text-[0.65rem] font-bold uppercase tracking-[0.14em] ${accent}`}
             >
               Add to cart
             </button>
-          </div>
-        </div>
-        <div className="mt-4 block">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p
-              className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${
-                tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
-              }`}
-            >
-              {item.tag}
-            </p>
-            <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
-              {condition}
-            </span>
-            {kit !== 'Other' && (
-              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
-                {kit}
-              </span>
-            )}
-            {item.brand ? (
-              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
-                {item.brand}
-              </span>
-            ) : null}
-          </div>
-          <a
-            href={productUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'title' })}
-            className={`mt-1.5 block text-[0.95rem] font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson md:text-base ${
-              tone === 'dark' ? 'text-white/95' : 'text-navy'
-            }`}
-          >
-            {shortTitle(item.title)}
-          </a>
-          <p className="mt-2 flex items-baseline gap-2">
-            <span
-              className={`font-display text-2xl font-bold tracking-wide md:text-3xl ${
-                tone === 'dark' ? 'text-white' : 'text-navy'
-              }`}
-            >
-              {formatPrice(item.price, item.currency)}
-            </span>
-            <span className={`text-sm ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
-              {item.note}
-            </span>
-          </p>
-          <div className="mt-3 flex flex-wrap gap-3">
             <button
               type="button"
-              onClick={() => onAddToCart(item)}
-              className={`text-[0.65rem] font-bold uppercase tracking-[0.14em] ${
-                tone === 'dark' ? 'text-cream' : 'text-crimson'
-              }`}
+              onClick={() => onQuickView(item)}
+              className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${muted}`}
             >
-              Add to cart
+              Details
             </button>
             {buyUrl ? (
               <a
@@ -469,9 +452,7 @@ function ProductLink({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })}
-                className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${
-                  tone === 'dark' ? 'text-white/55' : 'text-muted'
-                }`}
+                className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
               >
                 Buy now
               </a>
@@ -480,6 +461,154 @@ function ProductLink({
         </div>
       </div>
     </motion.li>
+  )
+}
+
+function QuickViewModal({
+  item,
+  onClose,
+  onAddToCart,
+}: {
+  item: Listing
+  onClose: () => void
+  onAddToCart: (item: Listing) => void
+}) {
+  const buyUrl = listingBuyUrl(item)
+  const condition = conditionLabel(item.title)
+  const kit = kitType(item)
+  const size = listingSize(item)
+  const club = inferClub(item.title)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle')
+
+  useEffect(() => {
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = previous
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+
+  async function shareListing() {
+    const url = buyUrl || window.location.href
+    const title = shortTitle(item.title)
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url, text: `${title} — Jersey Deals` })
+        track('share_listing', { id: item.id, mode: 'native' })
+        return
+      }
+    } catch {
+      /* user cancelled */
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareStatus('copied')
+      track('share_listing', { id: item.id, mode: 'clipboard' })
+      window.setTimeout(() => setShareStatus('idle'), 1800)
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[58] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label="Product quick view">
+      <button type="button" className="absolute inset-0 bg-navy-deep/60" aria-label="Close quick view" onClick={onClose} />
+      <div className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-cream shadow-2xl sm:max-h-[88dvh] sm:flex-row">
+        <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:h-auto sm:w-[48%]">
+          <ProductGallery item={item} tone="light" />
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 sm:p-7">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-crimson">{item.tag}</p>
+              <h2 className="mt-2 font-display text-3xl font-bold uppercase leading-tight tracking-wide text-navy">
+                {shortTitle(item.title)}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-9 w-9 shrink-0 place-items-center text-navy transition hover:text-crimson"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="mt-4 font-display text-3xl font-bold text-navy">{formatPrice(item.price, item.currency)}</p>
+          <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+            {size && size !== 'Other' ? (
+              <div>
+                <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Size</dt>
+                <dd className="mt-0.5 font-semibold text-navy">{size}</dd>
+              </div>
+            ) : null}
+            {item.brand ? (
+              <div>
+                <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Brand</dt>
+                <dd className="mt-0.5 font-semibold text-navy">{item.brand}</dd>
+              </div>
+            ) : null}
+            {club ? (
+              <div>
+                <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Club</dt>
+                <dd className="mt-0.5 font-semibold text-navy">{club.name}</dd>
+              </div>
+            ) : null}
+            {kit !== 'Other' ? (
+              <div>
+                <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Kit</dt>
+                <dd className="mt-0.5 font-semibold text-navy">{kit}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Condition</dt>
+              <dd className="mt-0.5 font-semibold text-navy">{condition}</dd>
+            </div>
+            <div>
+              <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Stock</dt>
+              <dd className="mt-0.5 font-semibold text-navy">
+                {item.quantity <= 1 ? 'Only 1 left' : `${item.quantity} available`}
+              </dd>
+            </div>
+          </dl>
+          <div className="mt-auto flex flex-col gap-2 pt-8">
+            <button
+              type="button"
+              onClick={() => {
+                onAddToCart(item)
+                onClose()
+              }}
+              className="w-full bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot"
+            >
+              Add to cart
+            </button>
+            {buyUrl ? (
+              <a
+                href={buyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'quick_view_buy' })}
+                className="flex w-full items-center justify-center border border-navy/20 px-4 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-navy transition hover:border-navy"
+              >
+                Buy now on Square
+              </a>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void shareListing()}
+              className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted hover:text-crimson"
+            >
+              {shareStatus === 'copied' ? 'Link copied' : 'Share listing'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -505,6 +634,11 @@ export default function App() {
   const [cartToast, setCartToast] = useState<string | null>(null)
   const [trendingFilter, setTrendingFilter] = useState<'All' | 'Youth' | 'Training' | 'Jerseys' | 'Sale'>('All')
   const [clubFilter, setClubFilter] = useState<string>('All')
+  const [sortBy, setSortBy] = useState<SortId>('featured')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [quickView, setQuickView] = useState<Listing | null>(null)
+  const [recentIds, setRecentIds] = useState<string[]>(() => readRecentlyViewed())
+  const urlHydrated = useRef(false)
 
   useEffect(() => {
     initAnalytics()
@@ -577,15 +711,21 @@ export default function App() {
     setCart(next)
     setCartOpen(true)
     setCartToast(`Added · ${shortTitle(item.title)}`)
+    setRecentIds(pushRecentlyViewed(item.id))
     track('add_to_cart', { id: item.id, tag: item.tag })
     window.setTimeout(() => setCartToast(null), 2200)
   }
 
-  const shopUrl = primaryShopUrl(catalog)
+  function handleQuickView(item: Listing) {
+    setQuickView(item)
+    setRecentIds(pushRecentlyViewed(item.id))
+    track('quick_view', { id: item.id, tag: item.tag })
+  }
+
   const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
   const ebayShop = catalog?.source === 'square' ? EBAY_SHOP_URL : catalog?.shopUrl ?? EBAY_SHOP_URL
   const ebaySeller = catalog?.source === 'square' ? EBAY_SELLER_URL : catalog?.sellerUrl ?? EBAY_SELLER_URL
-  const listings = useMemo(() => catalog?.listings ?? [], [catalog])
+  const listings = useMemo(() => dedupeListingsByTitle(catalog?.listings ?? []), [catalog])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 4), [listings])
   const salePicks = useMemo(() => pickSaleItems(listings, 4), [listings])
@@ -595,10 +735,13 @@ export default function App() {
   )
   const saleFloor = lowestSalePrice(listings)
   const youthCount = listings.filter(isYouthListing).length
-  const adultCount = useMemo(() => listings.filter(isAdultListing).length, [listings])
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const trendingPicks = useMemo(() => pickTrending(listings, 8), [listings])
   const channelLabel = onSquare ? 'Square' : 'eBay'
+  const recentlyViewed = useMemo(() => {
+    const map = new Map(listings.map((item) => [item.id, item]))
+    return recentIds.map((id) => map.get(id)).filter((item): item is Listing => Boolean(item)).slice(0, 4)
+  }, [listings, recentIds])
 
   const availableTags = useMemo(() => {
     const present = new Set(listings.map((item) => item.tag))
@@ -606,7 +749,7 @@ export default function App() {
   }, [listings])
 
   const availableSizes = useMemo(() => {
-    const present = new Set(listings.map(listingSize))
+    const present = new Set(listings.map(listingSize).filter((size) => size && size !== 'Other'))
     return sortSizes([...present])
   }, [listings])
 
@@ -617,7 +760,7 @@ export default function App() {
   }, [listings])
 
   const filtered = useMemo(() => {
-    return listings.filter((item) => {
+    const rows = listings.filter((item) => {
       if (tagFilter !== 'All' && item.tag !== tagFilter) return false
       if (audienceFilter === 'Adult' && !isAdultListing(item)) return false
       if (audienceFilter === 'Youth' && !isYouthListing(item)) return false
@@ -627,7 +770,51 @@ export default function App() {
       if (!matchesPriceFilter(item, priceFilter)) return false
       return matchesListingQuery(item, deferredQuery)
     })
-  }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery])
+    return sortListings(rows, sortBy)
+  }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+
+  const activeFilterChips = useMemo(() => {
+    const chips: { key: string; label: string; clear: () => void }[] = []
+    if (audienceFilter !== 'All') {
+      chips.push({
+        key: 'audience',
+        label: audienceFilter === 'Adult' ? "Men's / adult" : 'Youth',
+        clear: () => setAudienceFilter('All'),
+      })
+    }
+    if (tagFilter !== 'All') chips.push({ key: 'tag', label: tagFilter, clear: () => setTagFilter('All') })
+    if (priceFilter !== 'All') {
+      chips.push({
+        key: 'price',
+        label: PRICE_FILTERS.find((row) => row.id === priceFilter)?.label ?? priceFilter,
+        clear: () => setPriceFilter('All'),
+      })
+    }
+    if (sizeFilter !== 'All') chips.push({ key: 'size', label: sizeFilter, clear: () => setSizeFilter('All') })
+    if (brandFilter !== 'All') chips.push({ key: 'brand', label: brandFilter, clear: () => setBrandFilter('All') })
+    if (clubFilter !== 'All') {
+      chips.push({
+        key: 'club',
+        label: clubsData.find((c) => c.id === clubFilter)?.name ?? clubFilter,
+        clear: () => setClubFilter('All'),
+      })
+    }
+    if (deferredQuery.trim()) {
+      chips.push({ key: 'q', label: `“${deferredQuery.trim()}”`, clear: () => setQuery('') })
+    }
+    return chips
+  }, [audienceFilter, tagFilter, priceFilter, sizeFilter, brandFilter, clubFilter, deferredQuery, clubsData])
+
+  function clearAllFilters() {
+    setTagFilter('All')
+    setSizeFilter('All')
+    setBrandFilter('All')
+    setPriceFilter('All')
+    setAudienceFilter('All')
+    setClubFilter('All')
+    setQuery('')
+    setSortBy('featured')
+  }
 
   const deferredHint = useMemo(() => {
     const q = deferredQuery.trim()
@@ -654,6 +841,7 @@ export default function App() {
       setTagFilter('All')
       setAudienceFilter('All')
       setClubFilter('All')
+      setSortBy('featured')
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
@@ -661,6 +849,7 @@ export default function App() {
     if (next?.query !== undefined) setQuery(next.query)
     if (next?.audience !== undefined) setAudienceFilter(next.audience)
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
+    setFiltersOpen(true)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       if (next?.focusSearch) {
@@ -668,6 +857,44 @@ export default function App() {
       }
     })
   }
+
+  useEffect(() => {
+    if (urlHydrated.current) return
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('q')
+    const audience = params.get('audience')
+    const tag = params.get('tag')
+    const size = params.get('size')
+    const brand = params.get('brand')
+    const price = params.get('price')
+    const club = params.get('club')
+    const sort = params.get('sort')
+    if (q) setQuery(q)
+    if (audience === 'Adult' || audience === 'Youth' || audience === 'All') setAudienceFilter(audience)
+    if (tag) setTagFilter(tag)
+    if (size) setSizeFilter(size)
+    if (brand) setBrandFilter(brand)
+    if (price && PRICE_FILTERS.some((row) => row.id === price)) setPriceFilter(price as PriceFilterId)
+    if (club) setClubFilter(club)
+    if (sort && SORT_OPTIONS.some((row) => row.id === sort)) setSortBy(sort as SortId)
+    urlHydrated.current = true
+  }, [])
+
+  useEffect(() => {
+    if (!urlHydrated.current) return
+    const params = new URLSearchParams()
+    if (query.trim()) params.set('q', query.trim())
+    if (audienceFilter !== 'All') params.set('audience', audienceFilter)
+    if (tagFilter !== 'All') params.set('tag', tagFilter)
+    if (sizeFilter !== 'All') params.set('size', sizeFilter)
+    if (brandFilter !== 'All') params.set('brand', brandFilter)
+    if (priceFilter !== 'All') params.set('price', priceFilter)
+    if (clubFilter !== 'All') params.set('club', clubFilter)
+    if (sortBy !== 'featured') params.set('sort', sortBy)
+    const next = params.toString()
+    const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
+    window.history.replaceState(null, '', url)
+  }, [query, audienceFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
 
   const heroImage = asset('hero-jersey.jpg')
 
@@ -687,11 +914,10 @@ export default function App() {
   const navLinks = [
     { href: '#shop', label: 'Shop' },
     { href: '#new-drops', label: 'New' },
-    { href: '#audience', label: 'Youth' },
     { href: '#clubs', label: 'Clubs' },
     { href: '#sale', label: 'Sale' },
-    { href: '#brands', label: 'Brands' },
     { href: '#inventory', label: 'Inventory' },
+    { href: '#size-guide', label: 'Sizing' },
   ]
 
   return (
@@ -705,10 +931,10 @@ export default function App() {
       </div>
 
       <a
-        href="#featured"
+        href="#inventory"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
       >
-        Skip to featured gear
+        Skip to inventory
       </a>
 
       <header
@@ -867,14 +1093,11 @@ export default function App() {
               transition={{ duration: 0.8, ease }}
             >
               <BrandMark size="hero" className="drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]" />
-              <p className="mt-6 font-brand text-sm font-bold uppercase tracking-[0.22em] text-cream">
+              <h1 className="mt-6 max-w-xl font-display text-5xl font-bold uppercase leading-[0.9] tracking-wide text-cream sm:text-6xl md:text-7xl">
                 Jersey Deals
-              </p>
-              <div className="brand-rule mt-3" aria-hidden />
-              <h1 className="mt-5 max-w-xl font-display text-4xl font-bold uppercase leading-[0.92] tracking-wide text-cream sm:text-5xl md:text-6xl">
-                The modern kit shop.
               </h1>
-              <p className="mt-5 max-w-md font-brand text-base leading-relaxed text-cream/80 md:text-lg">
+              <div className="brand-rule mt-4" aria-hidden />
+              <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/80 md:text-lg">
                 Club kits, youth sizes, and sale jerseys — photographed from our inventory and sold
                 direct.
               </p>
@@ -1085,85 +1308,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Audience paths */}
-        <section id="audience" className="scroll-mt-44 bg-white py-20 md:py-28">
-          <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="eyebrow text-crimson">Browse by audience</p>
-              <div className="brand-rule mt-3" aria-hidden />
-              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                Who's shopping?
-              </h2>
-              <p className="mt-3 font-brand text-lg text-muted">
-                Men's and adult kits or youth and kids sizes — filter your path.
-              </p>
-            </motion.div>
-            <div className="mt-12 grid gap-5 md:grid-cols-2">
-              <motion.button
-                type="button"
-                onClick={() => {
-                  track('audience_click', { audience: 'mens' })
-                  goInventory({ audience: 'Adult', reset: true })
-                }}
-                {...fadeUp(reduce, 0.05)}
-                className="group relative min-h-[300px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-              >
-                <img
-                  src={asset('product-home.jpg')}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
-                  <p className="eyebrow text-white/70">Adult</p>
-                  <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-5xl">
-                    Men's kits
-                  </p>
-                  <p className="mt-3 text-sm text-white/75">
-                    {adultCount > 0
-                      ? `${adultCount} adult listings in stock.`
-                      : 'Club jerseys, training tops, and more.'}
-                  </p>
-                  <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                    Shop men's →
-                  </span>
-                </div>
-              </motion.button>
-
-              <motion.button
-                type="button"
-                onClick={() => {
-                  track('audience_click', { audience: 'youth' })
-                  goInventory({ audience: 'Youth', reset: true })
-                }}
-                {...fadeUp(reduce, 0.1)}
-                className="group relative min-h-[300px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-              >
-                <img
-                  src={asset('category-youth.jpg')}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
-                  <p className="eyebrow text-white/70">Kids</p>
-                  <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-5xl">
-                    Youth sizes
-                  </p>
-                  <p className="mt-3 text-sm text-white/75">
-                    {youthCount > 0
-                      ? `${youthCount} youth listings ready to ship.`
-                      : 'Kids and youth kits sized and ready to ship.'}
-                  </p>
-                  <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                    Shop youth →
-                  </span>
-                </div>
-              </motion.button>
-            </div>
-          </div>
-        </section>
-
         {/* New drops */}
         <section id="new-drops" className="scroll-mt-44 bg-white py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
@@ -1195,7 +1339,7 @@ export default function App() {
             {newDrops.length > 0 ? (
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {newDrops.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" storeUrl={shopUrl} onAddToCart={handleAddToCart} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
                 ))}
               </ul>
             ) : (
@@ -1240,7 +1384,7 @@ export default function App() {
                 return filtered.length > 0 ? (
                   <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                     {filtered.slice(0, 8).map((item, i) => (
-                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" storeUrl={shopUrl} onAddToCart={handleAddToCart} />
+                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
                     ))}
                   </ul>
                 ) : (
@@ -1307,7 +1451,7 @@ export default function App() {
               </motion.div>
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {trainingPicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" storeUrl={shopUrl} onAddToCart={handleAddToCart} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
                 ))}
               </ul>
             </div>
@@ -1323,7 +1467,7 @@ export default function App() {
                 Featured gear
               </h2>
               <p className="mt-4 text-lg text-white/65">
-                Editor picks from live inventory — tap any kit to checkout.
+                Editor picks from live inventory — quick view details, then add to cart.
               </p>
             </motion.div>
 
@@ -1347,7 +1491,7 @@ export default function App() {
             {featured.length > 0 && (
               <ul className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} storeUrl={shopUrl} onAddToCart={handleAddToCart} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
                 ))}
               </ul>
             )}
@@ -1523,7 +1667,7 @@ export default function App() {
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {salePicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} storeUrl={shopUrl} onAddToCart={handleAddToCart} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
                 ))}
               </ul>
             </div>
@@ -1583,134 +1727,194 @@ export default function App() {
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Catalog</p>
               <div className="brand-rule mt-3" aria-hidden />
-              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+              <h2 className="mt-4 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
                 Full inventory
               </h2>
               <p className="mt-3 font-brand text-lg text-muted">
-                Filter live stock by type, size, brand, and price — then checkout on {channelLabel}.
+                Filter live stock, add to cart, then checkout securely on {channelLabel}.
               </p>
             </motion.div>
 
+            {recentlyViewed.length > 0 ? (
+              <motion.div {...fadeUp(reduce, 0.05)} className="mt-12 border-b border-navy/10 pb-12">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="eyebrow text-crimson">Continue</p>
+                    <h3 className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-navy">
+                      Recently viewed
+                    </h3>
+                  </div>
+                </div>
+                <ul className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+                  {recentlyViewed.map((item, i) => (
+                    <ProductLink
+                      key={`recent-${item.id}`}
+                      item={item}
+                      reduce={reduce}
+                      delay={i * 0.04}
+                      tone="light"
+                      onAddToCart={handleAddToCart}
+                      onQuickView={handleQuickView}
+                    />
+                  ))}
+                </ul>
+              </motion.div>
+            ) : null}
+
             {loadState === 'ready' && listings.length > 0 && (
-              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-6">
-                <p className="text-sm text-muted">
-                  Use the search bar at the top · {deferredHint}
-                </p>
-
-                <div className="space-y-3">
-                  <p className="eyebrow text-muted">Audience</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(
-                      [
-                        { id: 'All', label: 'All' },
-                        { id: 'Adult', label: "Men's / adult" },
-                        { id: 'Youth', label: 'Youth' },
-                      ] as const
-                    ).map((option) => (
-                      <FilterChip
-                        key={option.id}
-                        label={option.label}
-                        active={audienceFilter === option.id}
-                        onClick={() => setAudienceFilter(option.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="eyebrow text-muted">Type</p>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterChip label="All" active={tagFilter === 'All'} onClick={() => setTagFilter('All')} />
-                    {availableTags.map((tag) => (
-                      <FilterChip
-                        key={tag}
-                        label={tag}
-                        active={tagFilter === tag}
-                        onClick={() => setTagFilter(tag)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="eyebrow text-muted">Price</p>
-                  <div className="flex flex-wrap gap-2">
-                    {PRICE_FILTERS.map((range) => (
-                      <FilterChip
-                        key={range.id}
-                        label={range.label}
-                        active={priceFilter === range.id}
-                        onClick={() => {
-                          setPriceFilter(range.id)
-                          track('price_filter', { range: range.id })
+              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted">
+                    Showing {filtered.length} of {listings.length}
+                    {deferredHint.includes('result') ? ` · ${deferredHint}` : ''}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                      Sort
+                      <select
+                        value={sortBy}
+                        onChange={(e) => {
+                          setSortBy(e.target.value as SortId)
+                          track('sort_change', { sort: e.target.value })
                         }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {availableSizes.length > 1 && (
-                  <div className="space-y-3">
-                    <p className="eyebrow text-muted">Size</p>
-                    <div className="flex flex-wrap gap-2">
-                      <FilterChip
-                        label="All"
-                        active={sizeFilter === 'All'}
-                        onClick={() => setSizeFilter('All')}
-                      />
-                      {availableSizes.map((size) => (
-                        <FilterChip
-                          key={size}
-                          label={size}
-                          active={sizeFilter === size}
-                          onClick={() => setSizeFilter(size)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {availableBrands.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="eyebrow text-muted">Brand</p>
-                    <div className="flex flex-wrap gap-2">
-                      <FilterChip
-                        label="All"
-                        active={brandFilter === 'All'}
-                        onClick={() => setBrandFilter('All')}
-                      />
-                      {availableBrands.map((brand) => (
-                        <FilterChip
-                          key={brand}
-                          label={brand}
-                          active={brandFilter === brand}
-                          onClick={() => setBrandFilter(brand)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {clubFilter !== 'All' && (
-                  <div className="flex items-center gap-3">
-                    <p className="eyebrow text-muted">Club</p>
+                        className="border border-navy/15 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30"
+                      >
+                        {SORT_OPTIONS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <button
                       type="button"
-                      onClick={() => setClubFilter('All')}
-                      className="border border-navy bg-navy px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy/80"
+                      className="border border-navy/15 px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy md:hidden"
+                      aria-expanded={filtersOpen}
+                      onClick={() => setFiltersOpen((open) => !open)}
                     >
-                      {clubsData.find((c) => c.id === clubFilter)?.name ?? clubFilter} ✕
+                      {filtersOpen ? 'Hide filters' : 'Filters'}
+                      {activeFilterChips.length > 0 ? ` · ${activeFilterChips.length}` : ''}
                     </button>
                   </div>
-                )}
+                </div>
 
-                <p className="text-sm text-muted">
-                  Showing {filtered.length} of {listings.length}
-                  {catalog?.source ? ` · ${catalog.source}` : ''}
-                  {priceFilter !== 'All'
-                    ? ` · ${PRICE_FILTERS.find((row) => row.id === priceFilter)?.label}`
-                    : ''}
-                </p>
+                {activeFilterChips.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {activeFilterChips.map((chip) => (
+                      <button
+                        key={chip.key}
+                        type="button"
+                        onClick={chip.clear}
+                        className="border border-navy bg-navy px-3 py-1.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy/80"
+                      >
+                        {chip.label} ✕
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                ) : null}
+
+                <div className={`space-y-5 ${filtersOpen ? 'block' : 'hidden md:block'}`}>
+                  <div className="space-y-3">
+                    <p className="eyebrow text-muted">Audience</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(
+                        [
+                          { id: 'All', label: 'All' },
+                          { id: 'Adult', label: "Men's / adult" },
+                          { id: 'Youth', label: 'Youth' },
+                        ] as const
+                      ).map((option) => (
+                        <FilterChip
+                          key={option.id}
+                          label={option.label}
+                          active={audienceFilter === option.id}
+                          onClick={() => setAudienceFilter(option.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="eyebrow text-muted">Type</p>
+                    <div className="flex flex-wrap gap-2">
+                      <FilterChip label="All" active={tagFilter === 'All'} onClick={() => setTagFilter('All')} />
+                      {availableTags.map((tag) => (
+                        <FilterChip
+                          key={tag}
+                          label={tag}
+                          active={tagFilter === tag}
+                          onClick={() => setTagFilter(tag)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="eyebrow text-muted">Price</p>
+                    <div className="flex flex-wrap gap-2">
+                      {PRICE_FILTERS.map((range) => (
+                        <FilterChip
+                          key={range.id}
+                          label={range.label}
+                          active={priceFilter === range.id}
+                          onClick={() => {
+                            setPriceFilter(range.id)
+                            track('price_filter', { range: range.id })
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {availableSizes.length > 1 && (
+                    <div className="space-y-3">
+                      <p className="eyebrow text-muted">Size</p>
+                      <div className="flex flex-wrap gap-2">
+                        <FilterChip
+                          label="All"
+                          active={sizeFilter === 'All'}
+                          onClick={() => setSizeFilter('All')}
+                        />
+                        {availableSizes.map((size) => (
+                          <FilterChip
+                            key={size}
+                            label={size}
+                            active={sizeFilter === size}
+                            onClick={() => setSizeFilter(size)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {availableBrands.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="eyebrow text-muted">Brand</p>
+                      <div className="flex flex-wrap gap-2">
+                        <FilterChip
+                          label="All"
+                          active={brandFilter === 'All'}
+                          onClick={() => setBrandFilter('All')}
+                        />
+                        {availableBrands.map((brand) => (
+                          <FilterChip
+                            key={brand}
+                            label={brand}
+                            active={brandFilter === brand}
+                            onClick={() => setBrandFilter(brand)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
 
@@ -1732,24 +1936,17 @@ export default function App() {
             )}
 
             {loadState === 'ready' && filtered.length === 0 && (
-              <p className="mt-12 text-muted">
-                No listings match those filters.{' '}
+              <div className="mt-12 border border-navy/10 bg-white px-6 py-10 text-center">
+                <p className="font-display text-2xl font-bold uppercase text-navy">No kits match</p>
+                <p className="mt-2 text-muted">Try clearing filters or searching a different club or size.</p>
                 <button
                   type="button"
-                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
-                  onClick={() => {
-                    setTagFilter('All')
-                    setSizeFilter('All')
-                    setBrandFilter('All')
-                    setPriceFilter('All')
-                    setAudienceFilter('All')
-                    setClubFilter('All')
-                    setQuery('')
-                  }}
+                  className="mt-6 bg-crimson px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
+                  onClick={clearAllFilters}
                 >
-                  Clear filters
+                  Clear all filters
                 </button>
-              </p>
+              </div>
             )}
 
             {filtered.length > 0 && (
@@ -1761,8 +1958,8 @@ export default function App() {
                     reduce={reduce}
                     delay={Math.min(i, 8) * 0.04}
                     tone="light"
-                    storeUrl={shopUrl}
                     onAddToCart={handleAddToCart}
+                    onQuickView={handleQuickView}
                   />
                 ))}
               </ul>
@@ -1799,7 +1996,7 @@ export default function App() {
                   </a>
                   {catalog ? ` with ${catalog.count} live listings` : ''}.
                   {onSquare
-                    ? ' Pay by card on Square — eBay remains available as a second channel.'
+                    ? ' Pay by card on Square Payment Links — eBay remains available as a second channel.'
                     : ' Checkout on eBay today — Square direct payments are next.'}
                 </p>
                 <ul className="mt-10 space-y-6 border-l border-navy/10 pl-6">
@@ -1807,7 +2004,7 @@ export default function App() {
                     {
                       dt: onSquare ? 'Square checkout' : 'Trusted checkout',
                       dd: onSquare
-                        ? 'Pay with card on our storefront — money goes to us directly.'
+                        ? 'Add to cart here, then pay with card on Square’s secure Payment Links.'
                         : 'Buy on eBay with buyer protection on the same seller account.',
                     },
                     {
@@ -1880,7 +2077,7 @@ export default function App() {
                 {
                   title: onSquare ? 'Square checkout' : 'Secure card checkout',
                   copy: onSquare
-                    ? 'Pay by card on our Square storefront — encrypted and direct.'
+                    ? 'Pay by card on Square Payment Links — encrypted and direct.'
                     : 'Pay securely by card — encrypted and direct.',
                 },
                 {
@@ -1917,17 +2114,17 @@ export default function App() {
                 {
                   step: '01',
                   title: 'Browse live stock',
-                  copy: 'Filter by youth, training, jerseys, size, or brand on this page.',
+                  copy: 'Filter by youth, training, jerseys, size, club, or brand on this page.',
                 },
                 {
                   step: '02',
-                  title: 'Open the listing',
-                  copy: `Tap any kit for full photos and details on ${channelLabel}.`,
+                  title: 'Add to cart',
+                  copy: 'Quick-view any kit, then add it to your bag or buy now on Square.',
                 },
                 {
                   step: '03',
                   title: 'Checkout & ship',
-                  copy: 'Pay secure, then we ship from US inventory to your door.',
+                  copy: 'Pay securely on Square Payment Links — we ship from US inventory.',
                 },
               ].map((item, i) => (
                 <motion.li key={item.step} {...fadeUp(reduce, i * 0.08)}>
@@ -2156,7 +2353,7 @@ export default function App() {
                 </a>
               </li>
               <li>
-                <a href="#audience" className="hover:text-white">
+                <a href="#shop" className="hover:text-white">
                   Youth sizes
                 </a>
               </li>
@@ -2190,7 +2387,7 @@ export default function App() {
                     rel="noopener noreferrer"
                     className="hover:text-white"
                   >
-                    Square store
+                    Secure checkout
                   </a>
                 </li>
               ) : null}
@@ -2244,6 +2441,14 @@ export default function App() {
         onRemove={(id) => setCart(removeCartLine(id))}
         onClear={() => setCart(clearCart())}
       />
+
+      {quickView ? (
+        <QuickViewModal
+          item={quickView}
+          onClose={() => setQuickView(null)}
+          onAddToCart={handleAddToCart}
+        />
+      ) : null}
 
       {cartToast ? (
         <div className="fixed bottom-24 left-1/2 z-[56] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg md:bottom-6">

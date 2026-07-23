@@ -31,6 +31,9 @@ export const SALE_URGENCY = '$25 & under · while stock lasts'
 /** Top promo bar — keep short so it stays one line under the fixed header offset. */
 export const PROMO_BAR = 'Ships from US · Sale $25 & under · Secure checkout'
 
+/** Soft free-shipping goal shown in the cart drawer (Payment Links are per-item). */
+export const FREE_SHIPPING_THRESHOLD = 75
+
 export const FAMILY_NOTE = 'Family-run shop — real photos, sizes, and shipping from our inventory.'
 
 /** Newsletter incentive copy (mailto signup — no backend list). */

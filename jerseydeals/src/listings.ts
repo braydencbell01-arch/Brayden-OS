@@ -333,3 +333,69 @@ export function listingsMatchingClub(listings: Listing[], clubId: string) {
   if (!club) return []
   return listings.filter((item) => club.pattern.test(item.title))
 }
+
+export const SORT_OPTIONS = [
+  { id: 'featured', label: 'Featured' },
+  { id: 'newest', label: 'Newest' },
+  { id: 'price-asc', label: 'Price: low to high' },
+  { id: 'price-desc', label: 'Price: high to low' },
+  { id: 'name', label: 'Name A–Z' },
+] as const
+
+export type SortId = (typeof SORT_OPTIONS)[number]['id']
+
+export function sortListings(listings: Listing[], sort: SortId): Listing[] {
+  const copy = [...listings]
+  switch (sort) {
+    case 'price-asc':
+      return copy.sort((a, b) => (a.price ?? Number.POSITIVE_INFINITY) - (b.price ?? Number.POSITIVE_INFINITY))
+    case 'price-desc':
+      return copy.sort((a, b) => (b.price ?? Number.NEGATIVE_INFINITY) - (a.price ?? Number.NEGATIVE_INFINITY))
+    case 'name':
+      return copy.sort((a, b) => shortTitle(a.title).localeCompare(shortTitle(b.title)))
+    case 'newest':
+    case 'featured':
+    default:
+      return copy
+  }
+}
+
+/** Drop exact duplicate titles so the grid doesn't show twin cards. */
+export function dedupeListingsByTitle(listings: Listing[]): Listing[] {
+  const seen = new Set<string>()
+  const out: Listing[] = []
+  for (const item of listings) {
+    const key = item.title.trim().toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(item)
+  }
+  return out
+}
+
+const RECENT_KEY = 'jerseydeals.recent.v1'
+const RECENT_MAX = 8
+
+export function readRecentlyViewed(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((id): id is string => typeof id === 'string').slice(0, RECENT_MAX)
+  } catch {
+    return []
+  }
+}
+
+export function pushRecentlyViewed(id: string): string[] {
+  if (typeof window === 'undefined') return []
+  const next = [id, ...readRecentlyViewed().filter((row) => row !== id)].slice(0, RECENT_MAX)
+  try {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    /* ignore quota */
+  }
+  return next
+}
