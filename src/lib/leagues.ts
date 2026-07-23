@@ -52,7 +52,8 @@ export type League = {
  * Display / Match day order: most important competitions first.
  * Favorited leagues are pinned above this order via `leaguesInDisplayOrder`.
  *
- * Only include leagues with a working ESPN scoreboard slug.
+ * Only include competitions with a working ESPN scoreboard slug.
+ * Continental entries are club cups (UCL etc.) — not national-team tournaments.
  * ESPN does not serve Serbian SuperLiga (or POL/CRO/UKR domestic leagues).
  * Chinese Super League is included via chn.1.
  */
