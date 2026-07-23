@@ -8,12 +8,21 @@ export type LeagueId =
   | 'uefa-europa'
   | 'uefa-conference'
   | 'conmebol-libertadores'
+  | 'conmebol-sudamericana'
+  | 'caf-champions'
+  | 'afc-champions'
+  | 'concacaf-champions'
+  | 'fifa-club-world-cup'
+  | 'uefa-super-cup'
   | 'fifa-world'
   | 'fifa-friendly'
   | 'uefa-nations'
   | 'uefa-euro'
   | 'fifa-worldq'
   | 'conmebol-america'
+  | 'caf-nations'
+  | 'afc-asian-cup'
+  | 'concacaf-gold'
   | 'brasileirao'
   | 'liga-mx'
   | 'mls'
@@ -32,6 +41,11 @@ export type LeagueId =
   | 'chinese-super-league'
   | 'saudi-pro-league'
   | 'a-league'
+  | 'eng-championship'
+  | 'esp-segunda'
+  | 'ita-serie-b'
+  | 'ger-2-bundesliga'
+  | 'fra-ligue-2'
   | 'czech-first-league'
   | 'cyprus-first-division'
 
@@ -46,6 +60,8 @@ export type League = {
   kind: LeagueKind
   /** False for friendlies / comps without a meaningful table. */
   hasStandings: boolean
+  /** When false, skipped in bulk Match day scoreboard polls (still searchable/favoritable). Default true. */
+  matchDayPoll?: boolean
 }
 
 /**
@@ -140,6 +156,62 @@ export const LEAGUES: League[] = [
     hasStandings: true,
   },
   {
+    id: 'conmebol-sudamericana',
+    name: 'Copa Sudamericana',
+    short: 'SUD',
+    country: 'South America',
+    espnCode: 'conmebol.sudamericana',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'caf-champions',
+    name: 'CAF Champions League',
+    short: 'CAF',
+    country: 'Africa',
+    espnCode: 'caf.champions',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'afc-champions',
+    name: 'AFC Champions League Elite',
+    short: 'AFC',
+    country: 'Asia',
+    espnCode: 'afc.champions',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'concacaf-champions',
+    name: 'CONCACAF Champions Cup',
+    short: 'CCC',
+    country: 'North America',
+    espnCode: 'concacaf.champions_cup',
+    kind: 'continental',
+    hasStandings: false,
+    matchDayPoll: false,
+  },
+  {
+    id: 'fifa-club-world-cup',
+    name: 'FIFA Club World Cup',
+    short: 'CWC',
+    country: 'International',
+    espnCode: 'fifa.cwc',
+    kind: 'continental',
+    hasStandings: true,
+  },
+  {
+    id: 'uefa-super-cup',
+    name: 'UEFA Super Cup',
+    short: 'USC',
+    country: 'Europe',
+    espnCode: 'uefa.super_cup',
+    kind: 'continental',
+    hasStandings: false,
+    matchDayPoll: false,
+  },
+  {
     id: 'fifa-world',
     name: 'FIFA World Cup',
     short: 'WC',
@@ -190,6 +262,33 @@ export const LEAGUES: League[] = [
     short: 'CA',
     country: 'South America',
     espnCode: 'conmebol.america',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'caf-nations',
+    name: 'Africa Cup of Nations',
+    short: 'AFCON',
+    country: 'Africa',
+    espnCode: 'caf.nations',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'afc-asian-cup',
+    name: 'AFC Asian Cup',
+    short: 'AAC',
+    country: 'Asia',
+    espnCode: 'afc.asian.cup',
+    kind: 'international',
+    hasStandings: true,
+  },
+  {
+    id: 'concacaf-gold',
+    name: 'CONCACAF Gold Cup',
+    short: 'GOLD',
+    country: 'North America',
+    espnCode: 'concacaf.gold',
     kind: 'international',
     hasStandings: true,
   },
@@ -352,6 +451,51 @@ export const LEAGUES: League[] = [
     short: 'AUS',
     country: 'Australia',
     espnCode: 'aus.1',
+    kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'eng-championship',
+    name: 'EFL Championship',
+    short: 'ENG2',
+    country: 'England',
+    espnCode: 'eng.2',
+    kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'esp-segunda',
+    name: 'La Liga 2',
+    short: 'ESP2',
+    country: 'Spain',
+    espnCode: 'esp.2',
+    kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'ita-serie-b',
+    name: 'Serie B',
+    short: 'ITA2',
+    country: 'Italy',
+    espnCode: 'ita.2',
+    kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'ger-2-bundesliga',
+    name: '2. Bundesliga',
+    short: 'GER2',
+    country: 'Germany',
+    espnCode: 'ger.2',
+    kind: 'domestic',
+    hasStandings: true,
+  },
+  {
+    id: 'fra-ligue-2',
+    name: 'Ligue 2',
+    short: 'FRA2',
+    country: 'France',
+    espnCode: 'fra.2',
     kind: 'domestic',
     hasStandings: true,
   },

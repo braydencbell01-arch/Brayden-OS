@@ -22,7 +22,6 @@ import {
 } from '../lib/dates'
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
-import { seasonSnapshotFacts } from '../lib/stats/teamFacts'
 import { teamXgForName } from '../lib/stats/fotmob'
 import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
 import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
@@ -33,7 +32,7 @@ import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
-import { ProfileHeader, ProfileShell } from './ProfileShell'
+import { ProfileHeader, ProfileMetric, ProfileMetricsRow, ProfileShell } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
 import { TeamRosterPanel } from './TeamRosterPanel'
 import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
@@ -99,9 +98,9 @@ export function TeamProfileScreen({
   const loadingMoreRef = useRef(false)
 
   const rosterEnabled = openSection === 'roster'
-  const leadersEnabled = openSection === 'leaders'
+  const leadersEnabled = true
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
-  const leaders = useTeamStatLeaders(team.leagueId, team.id, leadersEnabled)
+  const leaders = useTeamStatLeaders(team.leagueId, team.id, !isNational && leadersEnabled)
   const schedule = useTeamSchedule(team.id, team.leagueId, true)
   const expectedGoals = useLeagueExpectedGoals(team.leagueId, !isNational)
 
@@ -184,6 +183,25 @@ export function TeamProfileScreen({
       .slice(0, 5)
   }, [expectedGoals.data, displayName])
 
+  const competitionIds = useMemo(() => {
+    const ids = new Set<LeagueId>()
+    ids.add(team.leagueId)
+    for (const match of teamMatches) {
+      if (match.home.id === team.id || match.away.id === team.id) {
+        ids.add(match.leagueId)
+      }
+    }
+    return [...ids]
+  }, [team.id, team.leagueId, teamMatches])
+
+  const topScorers = useMemo(() => {
+    const goalsBoard =
+      leaders.data?.categories.find((category) =>
+        /goal/i.test(category.id) || /goal/i.test(category.label),
+      ) || leaders.data?.categories[0]
+    return goalsBoard?.leaders.slice(0, 3) ?? []
+  }, [leaders.data])
+
   const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster' | 'leaders') => {
     setOpenSection((current) => (current === section ? null : section))
   }
@@ -245,7 +263,6 @@ export function TeamProfileScreen({
 
     rows.push([isNational ? 'Competition' : 'League', club?.leagueName || league.name])
 
-    // Club identity — skip Nation/City and league-table cells for national sides.
     if (!isNational) {
       rows.push(['Country', club?.country || league.country])
       if (club?.city) rows.push(['City', club.city])
@@ -264,29 +281,9 @@ export function TeamProfileScreen({
       rows.push(['Trophies', MISSING_LONG])
     }
 
-    if (!isNational) {
-      if (club?.standingSummary) {
-        rows.push(['Season line', club.standingSummary])
-      }
-
-      for (const cell of seasonSnapshotFacts(standing)) {
-        if (club?.standingSummary && (cell[0] === 'Table place' || cell[0] === 'Points')) continue
-        rows.push(cell)
-      }
-
-      if (homeAway.home.played > 0 || homeAway.away.played > 0) {
-        rows.push(['Home', formatSideRecord(homeAway.home)])
-        rows.push(['Away', formatSideRecord(homeAway.away)])
-      }
-    }
-
-    if (teamXg) {
-      rows.push(['xG for', teamXg.xg.toFixed(1)])
-      if (teamXg.goals != null) rows.push(['Goals vs xG', String(teamXg.goals)])
-      if (teamXg.overperformance != null) {
-        const delta = teamXg.overperformance
-        rows.push(['G − xG', `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`])
-      }
+    if (!isNational && (homeAway.home.played > 0 || homeAway.away.played > 0)) {
+      rows.push(['Home', formatSideRecord(homeAway.home)])
+      rows.push(['Away', formatSideRecord(homeAway.away)])
     }
 
     return rows
@@ -297,8 +294,6 @@ export function TeamProfileScreen({
     isNational,
     league.country,
     league.name,
-    standing,
-    teamXg,
   ])
 
   return (
@@ -319,6 +314,16 @@ export function TeamProfileScreen({
               })
             }
           />
+        }
+        trailing={
+          facts.data?.logoUrl ? (
+            <img
+              src={facts.data.logoUrl}
+              alt=""
+              className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+              loading="lazy"
+            />
+          ) : undefined
         }
         eyebrow={
           <button
@@ -349,6 +354,91 @@ export function TeamProfileScreen({
         <p className="mt-4 border border-lime/30 bg-lime/10 px-3 py-2 text-sm font-semibold text-lime">
           {standing.group}
         </p>
+      ) : null}
+
+      {!isNational ? (
+        <ProfileMetricsRow>
+          <ProfileMetric
+            label="Pos"
+            value={standings.loading && !standing ? '…' : standing ? `#${standing.rank}` : '—'}
+          />
+          <ProfileMetric
+            label="Pts"
+            value={standings.loading && !standing ? '…' : standing ? standing.points : '—'}
+            accent
+          />
+          <ProfileMetric
+            label="GD"
+            value={
+              standings.loading && !standing
+                ? '…'
+                : standing
+                  ? standing.goalDiff > 0
+                    ? `+${standing.goalDiff}`
+                    : String(standing.goalDiff)
+                  : '—'
+            }
+          />
+          <ProfileMetric
+            label="Record"
+            value={
+              <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                {standing
+                  ? `${standing.won}W-${standing.drawn}D-${standing.lost}L`
+                  : '—'}
+              </span>
+            }
+          />
+          <ProfileMetric
+            label="xG"
+            value={
+              <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                {expectedGoals.loading && !teamXg
+                  ? '…'
+                  : teamXg
+                    ? teamXg.xg.toFixed(1)
+                    : '—'}
+              </span>
+            }
+          />
+          <ProfileMetric
+            label="G − xG"
+            value={
+              <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                {teamXg?.overperformance != null
+                  ? `${teamXg.overperformance > 0 ? '+' : ''}${teamXg.overperformance.toFixed(1)}`
+                  : '—'}
+              </span>
+            }
+          />
+        </ProfileMetricsRow>
+      ) : null}
+
+      {competitionIds.length > 1 ? (
+        <div className="mt-4" aria-label="Competitions">
+          <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
+            Competitions
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {competitionIds.map((id) => {
+              const item = getLeague(id)
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onOpenLeague(id)}
+                  className={`border px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
+                    id === team.leagueId
+                      ? 'border-lime/45 bg-lime/15 text-lime'
+                      : 'border-white/12 bg-white/[0.03] text-mist/80 hover:border-lime/35 hover:text-lime'
+                  }`}
+                >
+                  {item.short}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       ) : null}
 
       <section className="mt-6" aria-label={isNational ? 'Team facts' : 'Club facts'}>
@@ -448,6 +538,51 @@ export function TeamProfileScreen({
                 ))}
               </div>
             ) : null}
+          </div>
+        ) : null}
+
+        {!isNational && (topScorers.length > 0 || leaders.loading) ? (
+          <div className="mt-5 border border-white/10 bg-white/[0.03] px-3.5 py-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                Top scorers
+              </p>
+              <button
+                type="button"
+                onClick={() => toggle('leaders')}
+                className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/60 transition hover:text-lime"
+              >
+                All leaders
+              </button>
+            </div>
+            {leaders.loading && topScorers.length === 0 ? (
+              <p className="mt-2 text-sm text-mist/70">Loading scorers…</p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {topScorers.map((leader) => (
+                  <li key={leader.id} className="flex items-baseline justify-between gap-3 text-sm">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenPlayer({
+                          id: leader.id,
+                          leagueId: team.leagueId,
+                          name: leader.name,
+                          shortName: leader.shortName,
+                          jersey: leader.jersey,
+                          teamId: leader.teamId || team.id,
+                          teamName: leader.teamName || displayName,
+                        })
+                      }
+                      className="profile-link min-w-0 truncate text-left font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {leader.name}
+                    </button>
+                    <span className="shrink-0 tabular-nums text-lime">{leader.displayValue}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         ) : null}
 

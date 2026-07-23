@@ -15,6 +15,7 @@ export type TeamClubFacts = {
   stadium?: string
   foundedYear?: number
   standingSummary?: string
+  logoUrl?: string
   isNational: boolean
   /** Best-effort major trophy total from public encyclopedic sources. */
   trophyCount?: number
@@ -31,6 +32,7 @@ type EspnSiteTeamPayload = {
     nickname?: string
     location?: string
     standingSummary?: string
+    logos?: Array<{ href?: string; rel?: string[] }>
     defaultLeague?: { name?: string; shortName?: string }
   }
 }
@@ -193,6 +195,7 @@ export async function fetchTeamClubFacts(
     stadium: coreJson.venue?.fullName || sportsDb.stadium,
     foundedYear: sportsDb.foundedYear,
     standingSummary: siteTeam?.standingSummary,
+    logoUrl: siteTeam?.logos?.[0]?.href,
     isNational,
     trophyCount: wiki.count ?? undefined,
     trophySource: wiki.source,

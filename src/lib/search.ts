@@ -102,7 +102,10 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
       (league.kind === 'international' && includesQuery('national', q)) ||
       (league.kind === 'continental' && includesQuery('continental', q)) ||
       (league.kind === 'continental' && includesQuery('champions', q)) ||
-      (league.kind === 'continental' && includesQuery('europa', q)),
+      (league.kind === 'continental' && includesQuery('europa', q)) ||
+      (league.kind === 'continental' && includesQuery('libertadores', q)) ||
+      (league.kind === 'continental' && includesQuery('sudamericana', q)) ||
+      (includesQuery('championship', q) && league.id === 'eng-championship'),
   ).map((league) => ({ kind: 'league' as const, league }))
 }
 
