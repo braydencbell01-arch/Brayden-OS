@@ -39,7 +39,78 @@ function formatMatchDate(iso: string | undefined): string | null {
   })
 }
 
-function ratingMatchLabel(row: PlayerRecentMatchRating): string {
+function SoccerBallIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9.25" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 6.2 14.6 8.1 13.7 11.2h-3.4L9.4 8.1 12 6.2Z"
+        fill="currentColor"
+        opacity="0.9"
+      />
+      <path
+        d="M8.2 12.4 9.4 15.4 7.2 17.6M15.8 12.4 14.6 15.4 16.8 17.6M7.2 17.6h9.6M6.4 10.2 8.2 12.4M17.6 10.2 15.8 12.4"
+        stroke="currentColor"
+        strokeWidth="1.35"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/** Cleat / boot mark used for assists. */
+function CleatIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M4.5 14.2c1.2-1.1 2.8-1.7 5.1-1.7h5.2c1.7 0 3 .4 4.1 1.3.7.6 1.1 1.4 1.1 2.3v.6c0 .7-.6 1.3-1.3 1.3H8.4c-1.6 0-3-.7-4-1.9-.5-.7-.6-1.3.1-1.9Z"
+        fill="currentColor"
+      />
+      <path
+        d="M9.2 12.5V9.8c0-1.5.9-2.8 2.3-3.3l3.2-1.1c.7-.2 1.4.3 1.4 1v2.4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8.2 19.2v1M11.2 19.4v1M14.2 19.4v1M17.1 19.2v1"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+function repeatIcons(count: number, Icon: typeof SoccerBallIcon, label: string) {
+  const n = Math.max(0, Math.min(8, Math.floor(count)))
+  if (n === 0) return null
+  return (
+    <span className="inline-flex items-center gap-0.5 text-lime" title={`${n} ${label}`} aria-label={`${n} ${label}`}>
+      {Array.from({ length: n }, (_, i) => (
+        <Icon key={i} className="shrink-0" />
+      ))}
+    </span>
+  )
+}
+
+function ratingMatchMeta(row: PlayerRecentMatchRating): string {
   const vs =
     row.opponentAbbrev || row.opponent
       ? `vs ${row.opponentAbbrev || row.opponent}`
@@ -47,14 +118,9 @@ function ratingMatchLabel(row: PlayerRecentMatchRating): string {
   const side =
     row.homeAway === 'home' ? 'H' : row.homeAway === 'away' ? 'A' : null
   const date = formatMatchDate(row.date)
-  const bits = [
-    vs ? (side ? `${vs} (${side})` : vs) : null,
-    date,
-    row.starter ? 'Started' : 'Sub',
-    row.goals ? `${row.goals}G` : null,
-    row.assists ? `${row.assists}A` : null,
-  ].filter(Boolean)
-  return bits.join(' · ')
+  return [vs ? (side ? `${vs} (${side})` : vs) : null, date, row.starter ? 'Started' : 'Sub']
+    .filter(Boolean)
+    .join(' · ')
 }
 
 function RecentRatingsList({
@@ -96,22 +162,32 @@ function RecentRatingsList({
       ref={scrollerRef}
       className="flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-1"
     >
-      {rows.map((row) => (
-        <li
-          key={row.eventId}
-          className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
-        >
-          <span className="min-w-0 flex-1 text-xs leading-snug text-mist/75">
-            {ratingMatchLabel(row)}
-          </span>
-          <span
-            className="shrink-0 font-display text-2xl tabular-nums"
-            style={ratingColorStyle(row.rating)}
+      {rows.map((row) => {
+        const goals = repeatIcons(row.goals, SoccerBallIcon, 'goals')
+        const assists = repeatIcons(row.assists, CleatIcon, 'assists')
+        return (
+          <li
+            key={row.eventId}
+            className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
           >
-            {row.rating.toFixed(1)}
-          </span>
-        </li>
-      ))}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs leading-snug text-mist/75">{ratingMatchMeta(row)}</p>
+              {goals || assists ? (
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  {goals}
+                  {assists}
+                </div>
+              ) : null}
+            </div>
+            <span
+              className="shrink-0 font-display text-2xl tabular-nums"
+              style={ratingColorStyle(row.rating)}
+            >
+              {row.rating.toFixed(1)}
+            </span>
+          </li>
+        )
+      })}
       <li ref={sentinelRef} className="list-none py-1 text-center text-[11px] text-mist/50">
         {loadingMore ? 'Loading more ratings…' : hasMore ? 'Scroll for more' : 'End of ratings'}
       </li>
