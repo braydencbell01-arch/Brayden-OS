@@ -92,6 +92,17 @@ npm run push:square
 
 Or run GitHub Action **Push listings to Square** (workflow_dispatch). Then run **Sync Jersey Deals inventory**.
 
+### Update Square POS titles (club abbreviations)
+
+Sets each item’s Square POS abbreviation from the club name (e.g. Manchester City → `MC`):
+
+```bash
+cd jerseydeals
+npm run square:pos-abbrevs
+```
+
+Or run GitHub Action **Update Square POS abbreviations**.
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
