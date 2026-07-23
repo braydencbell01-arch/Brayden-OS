@@ -23,6 +23,14 @@ alwaysApply: true
 3. Do not publish a feature branch to `gh-pages` as the final step without merging first — other agents redeploying from `Brayden-OS` will overwrite it.
 4. When updating Pages, preserve the other product’s folder (Stats root vs `jerseydeals/`).
 
+## Done means on Brayden-OS
+
+- A user-visible change is **not done** until it is on `origin/Brayden-OS`.
+- Keep PRs **mergeable**; merge/rebase `origin/Brayden-OS` before claiming finished.
+- Prefer **small focused PRs** for user-requested copy — do not leave them stranded only on a large conflicted polish PR.
+- Before saying “done” / “updated”, verify with `git show origin/Brayden-OS:…`.
+- If the PR is still open, say clearly that live updates only after merge.
+
 ## After BrayStats tasks
 
 Always give the user both links, labeled:
