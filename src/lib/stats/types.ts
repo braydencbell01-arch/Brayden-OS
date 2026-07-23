@@ -236,6 +236,10 @@ export type PlayerProfile = {
   age?: number
   height?: string
   weight?: string
+  /** ESPN display date of birth when available (e.g. 24/6/1987). */
+  dateOfBirth?: string
+  /** National flag image from ESPN when available. */
+  flagUrl?: string
   citizenship?: string
   /**
    * Country shown near the player name: active national team if capped,
@@ -249,6 +253,8 @@ export type PlayerProfile = {
   teamId?: string
   teamName?: string
   teamLogoUrl?: string
+  /** Compact season chips from ESPN athlete statsSummary (e.g. Starts, Goals). */
+  seasonSummary?: Array<{ label: string; value: string }>
   leagueId: LeagueId
   seasonStats: PlayerSeasonStatLine[]
   averageRating: number | null

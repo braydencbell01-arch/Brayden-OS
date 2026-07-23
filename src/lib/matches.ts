@@ -189,8 +189,9 @@ async function fetchLeagueScoreboard(
 }
 
 export async function fetchBigFiveWindow(from: Date, to: Date): Promise<Match[]> {
+  const pollLeagues = LEAGUES.filter((league) => league.matchDayPoll !== false)
   const results = await Promise.allSettled(
-    LEAGUES.map((league) => fetchLeagueScoreboard(league.id, league.espnCode, from, to)),
+    pollLeagues.map((league) => fetchLeagueScoreboard(league.id, league.espnCode, from, to)),
   )
 
   const matches: Match[] = []
@@ -200,13 +201,13 @@ export async function fetchBigFiveWindow(from: Date, to: Date): Promise<Match[]>
     if (result.status === 'fulfilled') {
       matches.push(...result.value)
     } else {
-      errors.push(LEAGUES[index].name)
+      errors.push(pollLeagues[index].name)
     }
   })
 
   // Only fail hard when every league request failed. Empty windows (future
   // discovery) or partial ESPN outages must not blank Match day.
-  if (errors.length === LEAGUES.length) {
+  if (errors.length === pollLeagues.length) {
     throw new Error(`Could not load fixtures for ${errors.join(', ')}`)
   }
 

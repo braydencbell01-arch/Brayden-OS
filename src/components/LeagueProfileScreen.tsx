@@ -80,10 +80,10 @@ export function LeagueProfileScreen({
     'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | 'xg' | null
   >(null)
   const statsEnabled = openSection === 'stats'
-  const playerStatsEnabled = openSection === 'player-stats'
   const xgEnabled = openSection === 'xg'
+  // Warm player leaderboards for the top-scorer metric even when the accordion is closed.
   const leaders = useLeagueLeaders(league.id, statsEnabled)
-  const playerStats = useLeaguePlayerStats(league.id, playerStatsEnabled)
+  const playerStats = useLeaguePlayerStats(league.id, true)
   const expectedGoals = useLeagueExpectedGoals(league.id, xgEnabled)
 
   const toggleSection = (
@@ -94,6 +94,10 @@ export function LeagueProfileScreen({
 
   const leader = standings.rows[0] ?? null
   const clubCount = standings.rows.length
+  const topScorer =
+    playerStats.data?.rows.find((row) => /goal/i.test(row.label))?.player ||
+    playerStats.data?.rows[0]?.player ||
+    null
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce}>
@@ -142,6 +146,34 @@ export function LeagueProfileScreen({
                 className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
               >
                 {leader.shortName}
+              </button>
+            ) : (
+              MISSING_SHORT
+            )
+          }
+        />
+        <ProfileMetric
+          label="Top scorer"
+          value={
+            playerStats.loading && !topScorer ? (
+              '…'
+            ) : topScorer ? (
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenPlayer({
+                    id: topScorer.id,
+                    leagueId: league.id,
+                    name: topScorer.name,
+                    shortName: topScorer.shortName,
+                    jersey: topScorer.jersey,
+                    teamId: topScorer.teamId,
+                    teamName: topScorer.teamName,
+                  })
+                }
+                className="profile-link block truncate text-lg font-semibold leading-8 text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              >
+                {topScorer.shortName || topScorer.name}
               </button>
             ) : (
               MISSING_SHORT
@@ -274,7 +306,7 @@ export function LeagueProfileScreen({
 
         <ProfileAccordion
           title="Player stats"
-          subtitle="Top scorers and category boards"
+          subtitle="Scorers, assists, shots, cards, and more"
           open={openSection === 'player-stats'}
           onToggle={() => toggleSection('player-stats')}
         >
@@ -289,8 +321,8 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Stat leaders"
-          subtitle="Players and teams"
+          title="Team leaders"
+          subtitle="Table-derived and category boards"
           open={openSection === 'stats'}
           onToggle={() => toggleSection('stats')}
         >

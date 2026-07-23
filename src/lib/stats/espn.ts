@@ -1156,9 +1156,11 @@ type EspnAthletePayload = {
     age?: number
     displayHeight?: string
     displayWeight?: string
+    displayDOB?: string
     citizenship?: string
     displayBirthPlace?: string
     citizenshipCountry?: { abbreviation?: string }
+    flag?: { href?: string; alt?: string }
     headshot?: { href?: string }
     position?: { displayName?: string; abbreviation?: string }
     team?: {
@@ -1166,6 +1168,14 @@ type EspnAthletePayload = {
       displayName?: string
       shortDisplayName?: string
       logos?: Array<{ href?: string }>
+    }
+    statsSummary?: {
+      displayName?: string
+      statistics?: Array<{
+        name?: string
+        displayName?: string
+        displayValue?: string
+      }>
     }
   }
 }
@@ -1236,12 +1246,15 @@ type EspnAthleteGameLogPayload = {
 
 /** Season stats grid order (left→right, top→bottom). */
 const SEASON_STAT_ORDER: Array<{ key: string; label: string }> = [
+  { key: 'appearances', label: 'Appearances' },
+  { key: 'starts', label: 'Starts' },
+  { key: 'minutes', label: 'Minutes' },
   { key: 'totalGoals', label: 'Goals' },
   { key: 'goalAssists', label: 'Assists' },
-  { key: 'starts', label: 'Starts' },
-  { key: 'appearances', label: 'Appearances' },
   { key: 'totalShots', label: 'Shots' },
   { key: 'shotsOnTarget', label: 'Shots on goal' },
+  { key: 'saves', label: 'Saves' },
+  { key: 'goalsConceded', label: 'Goals conceded' },
   { key: 'foulsCommitted', label: 'Fouls committed' },
   { key: 'foulsSuffered', label: 'Fouls suffered' },
   { key: 'yellowCards', label: 'Yellow cards' },
@@ -1262,6 +1275,9 @@ const SEASON_STAT_ALIASES: Record<string, string> = {
   appearances: 'appearances',
   APP: 'appearances',
   gamesPlayed: 'appearances',
+  minutes: 'minutes',
+  MIN: 'minutes',
+  playingTime: 'minutes',
   offsides: 'offsides',
   OF: 'offsides',
   totalShots: 'totalShots',
@@ -1276,6 +1292,10 @@ const SEASON_STAT_ALIASES: Record<string, string> = {
   YC: 'yellowCards',
   redCards: 'redCards',
   RC: 'redCards',
+  saves: 'saves',
+  SV: 'saves',
+  goalsConceded: 'goalsConceded',
+  GC: 'goalsConceded',
 }
 
 function buildOrderedSeasonStatsFromArrays(
@@ -2316,6 +2336,13 @@ export async function fetchPlayerProfile(
   const origin = countryOfOrigin(athlete)
   const represents = nationalSide?.teamName || origin
   const representsNationalTeam = Boolean(nationalSide)
+  const seasonSummary = (athlete.statsSummary?.statistics ?? [])
+    .filter((stat) => stat.displayName && stat.displayValue)
+    .slice(0, 6)
+    .map((stat) => ({
+      label: stat.displayName!,
+      value: stat.displayValue!,
+    }))
 
   return {
     profile: {
@@ -2327,6 +2354,8 @@ export async function fetchPlayerProfile(
       age: athlete.age,
       height: athlete.displayHeight,
       weight: athlete.displayWeight,
+      dateOfBirth: athlete.displayDOB?.trim() || undefined,
+      flagUrl: athlete.flag?.href,
       citizenship: athlete.citizenship || origin || undefined,
       represents,
       representsNationalTeam,
@@ -2335,6 +2364,7 @@ export async function fetchPlayerProfile(
       teamId: athlete.team?.id,
       teamName: athlete.team?.displayName || athlete.team?.shortDisplayName,
       teamLogoUrl: athlete.team?.logos?.[0]?.href,
+      seasonSummary: seasonSummary.length > 0 ? seasonSummary : undefined,
       leagueId,
       seasonStats,
       seasonStatsLabel,
