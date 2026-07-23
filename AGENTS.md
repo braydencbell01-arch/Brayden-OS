@@ -70,3 +70,15 @@ Before finishing a design task:
 - [ ] Verified on `origin/Brayden-OS` (not only the feature branch)
 - [ ] Live Stats URL verified after merge/deploy
 - [ ] Both permanent links given to the user, labeled
+
+## Cursor Cloud specific instructions
+
+Two independent Vite + React + TS apps, each its own npm project (separate `package-lock.json` + `node_modules`): **BrayStats** (repo root) and **Jersey Deals** (`jerseydeals/`). There are no npm workspaces, so install and run each directory separately. Node 22 matches CI. Dependency install is handled by the startup update script (`npm ci` in root and in `jerseydeals/`).
+
+Standard commands live in `package.json` (`dev`, `build`, `lint`, `preview`) — run them at the repo root for BrayStats and inside `jerseydeals/` for Jersey Deals.
+
+Non-obvious caveats:
+- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). Hitting `/` returns 404 — always use the base path.
+- Run the two dev servers on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`) since both default to 5173.
+- BrayStats fetches live data client-side from public ESPN/FotMob APIs (no keys/secrets). Data panels need outbound internet; the shell still renders offline but stays empty.
+- No automated test suite exists; `npm run lint` (oxlint) is the only check. `npm run build` runs `tsc -b` first, so it also type-checks.
