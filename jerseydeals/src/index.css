@@ -5,12 +5,15 @@
   --font-brand: "Libre Baskerville", Georgia, "Times New Roman", serif;
   --font-sans: "Outfit", sans-serif;
 
+  /* Logo palette: navy, jersey red, cream field */
   --color-navy: #0b223f;
   --color-navy-deep: #06101c;
   --color-crimson: #d7282f;
   --color-crimson-hot: #e83a40;
-  --color-chalk: #f3f5f7;
-  --color-mist: #e4e9ef;
+  --color-cream: #fcf5e9;
+  --color-cream-deep: #f3e8d4;
+  --color-chalk: #fcf5e9;
+  --color-mist: #f3e8d4;
   --color-muted: #5a6470;
   --color-white: #ffffff;
 }
@@ -25,7 +28,10 @@
     min-width: 320px;
     font-family: var(--font-sans);
     color: var(--color-navy);
-    background: var(--color-chalk);
+    background:
+      radial-gradient(ellipse 90% 50% at 0% 0%, color-mix(in srgb, var(--color-crimson) 7%, transparent), transparent 55%),
+      radial-gradient(ellipse 70% 40% at 100% 10%, color-mix(in srgb, var(--color-navy) 6%, transparent), transparent 50%),
+      var(--color-cream);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -37,6 +43,13 @@
   ::selection {
     background: color-mix(in srgb, var(--color-crimson) 28%, transparent);
     color: var(--color-navy-deep);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    text-wrap: balance;
   }
 }
 
@@ -54,10 +67,24 @@
   }
 
   .eyebrow {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.22em;
+    font-family: var(--font-brand);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
+  }
+
+  .brand-rule {
+    height: 3px;
+    width: 3.5rem;
+    background: linear-gradient(90deg, var(--color-crimson), var(--color-navy));
+  }
+
+  .brand-panel {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--color-cream) 92%, white), var(--color-cream)),
+      var(--color-cream);
+    border: 1px solid color-mix(in srgb, var(--color-navy) 10%, transparent);
   }
 
   .marquee-track {
