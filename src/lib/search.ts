@@ -1,4 +1,4 @@
-import { LEAGUES, isInternationalLeague, type League, type LeagueId } from './leagues'
+import { LEAGUES, isContinentalLeague, isInternationalLeague, type League, type LeagueId } from './leagues'
 import type { FavoritePlayer, FavoriteTeam } from './favorites'
 import type { Match } from './matches'
 import type { PlayerNavRef } from '../components/PlayerProfileScreen'
@@ -93,7 +93,10 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
       includesQuery(league.short, q) ||
       includesQuery(league.country, q) ||
       (league.kind === 'international' && includesQuery('international', q)) ||
-      (league.kind === 'international' && includesQuery('national', q)),
+      (league.kind === 'international' && includesQuery('national', q)) ||
+      (league.kind === 'continental' && includesQuery('continental', q)) ||
+      (league.kind === 'continental' && includesQuery('champions', q)) ||
+      (league.kind === 'continental' && includesQuery('europa', q)),
   ).map((league) => ({ kind: 'league' as const, league }))
 }
 
@@ -109,6 +112,10 @@ function preferTeamLeagueId(current: LeagueId, next: LeagueId): LeagueId {
   }
   // Prefer international context when a national side also appears in friendlies/cups.
   if (isInternationalLeague(next) && !isInternationalLeague(current)) return next
+  if (isInternationalLeague(current) && !isInternationalLeague(next)) return current
+  // Club contexts: prefer domestic league over continental cup as the primary profile.
+  if (isContinentalLeague(current) && !isContinentalLeague(next)) return next
+  if (!isContinentalLeague(current) && isContinentalLeague(next)) return current
   return current
 }
 
