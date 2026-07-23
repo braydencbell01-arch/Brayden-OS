@@ -128,7 +128,7 @@ export function BottomNav({
                     className="absolute -right-2 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-star px-1 text-[0.5rem] font-bold leading-none text-ink"
                     aria-hidden
                   >
-                    {favoritesCount > 9 ? '9+' : favoritesCount}
+                    {favoritesCount > 99 ? '99+' : favoritesCount}
                   </span>
                 ) : null}
               </span>
