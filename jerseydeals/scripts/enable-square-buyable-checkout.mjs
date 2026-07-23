@@ -329,4 +329,19 @@ console.log(`Done. created=${created} reused=${reused} failed=${failed}`)
 console.log(
   'Square Online now gets a Buy Now bridge via snippet. Jersey Deals listings point at Payment Links.',
 )
+
+// Re-apply brand storefront polish so this script does not wipe navy/crimson CSS + hero copy.
+try {
+  const { spawnSync } = await import('node:child_process')
+  const polish = spawnSync(process.execPath, [join(__dirname, 'polish-square-storefront.mjs')], {
+    stdio: 'inherit',
+    env: process.env,
+  })
+  if (polish.status !== 0) {
+    console.warn('storefront polish follow-up failed; run: npm run square:polish-storefront')
+  }
+} catch (err) {
+  console.warn(`storefront polish follow-up skipped: ${err.message}`)
+}
+
 if (failed > 0) process.exit(1)
