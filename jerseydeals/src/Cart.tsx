@@ -79,7 +79,7 @@ export function CartDrawer({
                   <img
                     src={line.image}
                     alt=""
-                    className="h-20 w-20 shrink-0 object-cover object-top"
+                    className="h-20 w-20 shrink-0 bg-mist object-contain object-center"
                     loading="lazy"
                   />
                   <div className="min-w-0 flex-1">

@@ -298,7 +298,7 @@ function ProductGallery({
             <SafeImage
               src={src}
               alt={index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`}
-              className="h-full w-full object-cover object-top select-none"
+              className="h-full w-full object-contain object-center select-none"
               loading={index === 0 ? 'eager' : 'lazy'}
               decoding="async"
               draggable={false}
@@ -381,7 +381,11 @@ function ProductLink({
           tone === 'dark' ? '' : ''
         }`}
       >
-        <div className="relative aspect-square overflow-hidden bg-navy-deep">
+        <div
+          className={`relative aspect-square overflow-hidden ${
+            tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
+          }`}
+        >
           <ProductGallery item={item} tone={tone} />
           {onSale && (
             <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
@@ -1435,17 +1439,17 @@ export default function App() {
                       }}
                       className="group relative w-full overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden">
+                      <div className="relative aspect-[4/3] overflow-hidden bg-navy-deep">
                         <img
                           src={club.image}
                           alt={club.name}
-                          className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-[1.05]"
+                          className="h-full w-full object-contain object-center transition duration-700 group-hover:scale-[1.03]"
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.src = FALLBACK_IMAGE
                           }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 to-navy-deep/10" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
                       </div>
                       <div className="absolute inset-x-0 bottom-0 p-3 text-left">
                         <p className="font-display text-sm font-bold uppercase leading-tight tracking-wide text-white">
