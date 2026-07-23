@@ -38,6 +38,7 @@ function FavoriteDot() {
 function LeagueDropdown({
   leagueId,
   matches,
+  allMatches,
   open,
   onToggle,
   onOpenTeam,
@@ -48,6 +49,7 @@ function LeagueDropdown({
 }: {
   leagueId: LeagueId
   matches: Match[]
+  allMatches?: Match[]
   open: boolean
   onToggle: () => void
   onOpenTeam?: (team: FavoriteTeam) => void
@@ -111,6 +113,7 @@ function LeagueDropdown({
         <div id={panelId} className="border-t border-white/10">
           <MatchList
             matches={matches}
+            allMatches={allMatches}
             showLeague={false}
             flat
             onOpenTeam={onOpenTeam}
@@ -128,6 +131,7 @@ function LeagueDropdown({
 
 export function MatchDayByLeague({
   matches,
+  allMatches,
   dateKey,
   onOpenTeam,
   onOpenPlayer,
@@ -137,6 +141,8 @@ export function MatchDayByLeague({
   favoriteTeamIds,
 }: {
   matches: Match[]
+  /** Broader pool for form/briefings (e.g. all loaded matches, not just the day). */
+  allMatches?: Match[]
   /** Reset open panels when the selected calendar day changes */
   dateKey: string
   onOpenTeam?: (team: FavoriteTeam) => void
@@ -170,6 +176,7 @@ export function MatchDayByLeague({
           key={leagueId}
           leagueId={leagueId}
           matches={leagueMatches}
+          allMatches={allMatches}
           open={openIds.has(leagueId)}
           onToggle={() =>
             setOpenIds((prev) => {

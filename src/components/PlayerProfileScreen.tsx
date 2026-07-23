@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode, Fragment } from 'react'
 import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
@@ -16,6 +16,7 @@ import type {
 import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
 import { ProfileAccordion } from './ProfileAccordion'
+import { RatingBreakdownPanel } from './RatingBreakdownPanel'
 import {
   ProfileHeader,
   ProfileMetric,
@@ -201,8 +202,8 @@ function RecentRatingsList({
           onOpenTeam && row.opponentId && /^\d+$/.test(row.opponentId),
         )
         return (
+          <Fragment key={row.eventId}>
           <li
-            key={row.eventId}
             className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
           >
             <div className="min-w-0 flex-1">
@@ -245,6 +246,25 @@ function RecentRatingsList({
               {row.rating.toFixed(1)}
             </span>
           </li>
+          {row.performance100 != null ? (
+            <li key={`${row.eventId}-why`} className="list-none px-1 pb-2">
+              <RatingBreakdownPanel
+                compact
+                breakdown={{
+                  rating: row.rating,
+                  performance100: row.performance100,
+                  attack: row.attack ?? 0,
+                  creation: row.creation ?? 0,
+                  discipline: row.discipline ?? 0,
+                  goalkeeping: row.goalkeeping ?? 0,
+                  defending: row.defending ?? 0,
+                  notes: row.notes ?? [],
+                  minutesUsed: row.minutes ?? 90,
+                }}
+              />
+            </li>
+          ) : null}
+        </Fragment>
         )
       })}
       <li ref={sentinelRef} className="list-none py-1 text-center text-[11px] text-mist/50">

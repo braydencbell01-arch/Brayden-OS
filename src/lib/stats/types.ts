@@ -215,6 +215,15 @@ export type PlayerRecentMatchRating = {
   homeAway?: 'home' | 'away'
   teamScore?: number | null
   opponentScore?: number | null
+  /** Performance /100 used for the Brayden Rating. */
+  performance100?: number
+  /** Category deltas for explainability. */
+  attack?: number
+  creation?: number
+  discipline?: number
+  goalkeeping?: number
+  defending?: number
+  notes?: string[]
 }
 
 /** Opaque cursor for paginating recent match ratings across seasons. */

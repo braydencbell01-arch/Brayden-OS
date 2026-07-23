@@ -598,6 +598,30 @@ function sidePoints(
   }, 0)
 }
 
+/** Persist official event points into playerGwPoints when a GW slot is still empty. */
+function seedOfficialGwPoints(
+  league: FantasyLeague,
+  gw: number,
+  catalog: Map<number, FantasyPlayer>,
+  playerIds: number[],
+): FantasyLeague {
+  let playerGwPoints = league.playerGwPoints
+  let changed = false
+  const gwKey = String(gw)
+  for (const id of playerIds) {
+    const idKey = String(id)
+    if (typeof playerGwPoints[idKey]?.[gwKey] === 'number') continue
+    const player = catalog.get(id)
+    if (!player || typeof player.eventPoints !== 'number') continue
+    if (!changed) {
+      playerGwPoints = { ...playerGwPoints }
+      changed = true
+    }
+    playerGwPoints[idKey] = { ...playerGwPoints[idKey], [gwKey]: player.eventPoints }
+  }
+  return changed ? { ...league, playerGwPoints } : league
+}
+
 export function scoreGameweek(
   league: FantasyLeague,
   gw: number,
@@ -605,6 +629,21 @@ export function scoreGameweek(
 ): FantasyLeague {
   // Process waivers before locking weekly scores (FF weekly wire)
   let working = processWaiverClaims(league, catalog)
+
+  const starterIdsForGw: number[] = []
+  for (const mu of working.matchups) {
+    if (mu.gw !== gw) continue
+    const homeMember = working.members.find((m) => m.id === mu.home.memberId)
+    const awayMember = working.members.find((m) => m.id === mu.away.memberId)
+    const homeStarters = homeMember?.starters?.length
+      ? homeMember.starters
+      : suggestStarters(homeMember?.roster ?? [], working.starterSpots, catalog)
+    const awayStarters = awayMember?.starters?.length
+      ? awayMember.starters
+      : suggestStarters(awayMember?.roster ?? [], working.starterSpots, catalog)
+    starterIdsForGw.push(...homeStarters, ...awayStarters)
+  }
+  working = seedOfficialGwPoints(working, gw, catalog, starterIdsForGw)
 
   const matchups = working.matchups.map((mu) => {
     if (mu.gw !== gw) return mu

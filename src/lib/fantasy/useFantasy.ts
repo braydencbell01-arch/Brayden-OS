@@ -490,6 +490,9 @@ export function useFantasy() {
     loadDemoLeague,
     join,
     joinByBlob,
+    importLeague: (league: FantasyLeague) => {
+      persistLeague(normalizeLeague(league), true)
+    },
     refreshActive,
     randomizeOrder: () => updateActive(randomizeDraftOrder),
     setOrder: (order: string[]) => updateActive((l) => setDraftOrder(l, order)),

@@ -7,7 +7,9 @@ import { isFavoriteMatch, type Match } from '../lib/matches'
 import type { MatchLineupPlayer } from '../lib/stats/types'
 import { useMatchDetailStats } from '../lib/stats/useMatchDetailStats'
 import { MatchStatsPanel } from './MatchStatsPanel'
+import { PreMatchBriefingPanel } from './PreMatchBriefingPanel'
 import type { PlayerNavRef } from './PlayerProfileScreen'
+import { loadSettings } from '../lib/settings'
 
 function FavoriteDot({ label }: { label: string }) {
   return (
@@ -107,6 +109,7 @@ function TeamNameButton({
 
 function ExpandableMatchRow({
   match,
+  allMatches,
   showLeague = false,
   isFavorite = false,
   flat = false,
@@ -115,6 +118,7 @@ function ExpandableMatchRow({
   onOpenLeague,
 }: {
   match: Match
+  allMatches: Match[]
   showLeague?: boolean
   isFavorite?: boolean
   flat?: boolean
@@ -195,6 +199,13 @@ function ExpandableMatchRow({
 
       {open && (
         <div className={flat ? 'border-t border-white/10 px-3 pb-3 pt-1' : 'px-4 pb-3'}>
+          {match.status === 'scheduled' || match.status === 'other' ? (
+            <PreMatchBriefingPanel
+              match={match}
+              allMatches={allMatches}
+              showPrediction={loadSettings().showPredictions}
+            />
+          ) : null}
           <MatchStatsPanel
             stats={stats}
             loading={loading}
@@ -215,6 +226,7 @@ function ExpandableMatchRow({
 
 export function MatchList({
   matches,
+  allMatches,
   showLeague = false,
   flat = false,
   emptyLabel,
@@ -225,6 +237,7 @@ export function MatchList({
   favoriteTeamIds,
 }: {
   matches: Match[]
+  allMatches?: Match[]
   showLeague?: boolean
   /** Divider rows instead of nested bordered cards (for league shells). */
   flat?: boolean
@@ -241,6 +254,7 @@ export function MatchList({
 
   const leagueIds = favoriteLeagueIds ?? new Set<string>()
   const teamIds = favoriteTeamIds ?? new Set<string>()
+  const briefingPool = allMatches ?? matches
 
   return (
     <ul className={flat ? 'flex flex-col' : 'flex flex-col gap-2'}>
@@ -248,6 +262,7 @@ export function MatchList({
         <li key={match.id}>
           <ExpandableMatchRow
             match={match}
+            allMatches={briefingPool}
             showLeague={showLeague}
             flat={flat}
             isFavorite={isFavoriteMatch(match, leagueIds, teamIds)}

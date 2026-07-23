@@ -1727,6 +1727,13 @@ function parseGameLogRatings(
         assists: stats.goalAssists,
         starter,
         minutes: Math.round(breakdown.minutesUsed),
+        performance100: breakdown.performance100,
+        attack: breakdown.attack,
+        creation: breakdown.creation,
+        discipline: breakdown.discipline,
+        goalkeeping: breakdown.goalkeeping,
+        defending: breakdown.defending,
+        notes: breakdown.notes,
       }
       return row
     })
