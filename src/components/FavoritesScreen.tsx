@@ -76,7 +76,8 @@ export function FavoritesScreen({
             Favorites
           </h1>
           <p className="mt-3 text-sm text-mist/80">
-            Star leagues, clubs, and players to pin Match day, calendar dots, and Stats.
+            Star leagues and clubs for calendar dots and Match day. Star players to keep them
+            handy in Favorites and search.
           </p>
         </motion.header>
 

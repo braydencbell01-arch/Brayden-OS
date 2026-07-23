@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { FavoriteStar } from './FavoriteStar'
 import {
   compareLeaguesForDisplay,
+  continentalLeagues,
   domesticLeagues,
   internationalLeagues,
   leaguesInDisplayOrder,
@@ -24,6 +25,9 @@ export function LeaguesScreen({
   const sortByDisplay = (a: League, b: League) =>
     compareLeaguesForDisplay(a.id, b.id, favorites.leagueIds)
   const international = internationalLeagues()
+    .filter((league) => !favorites.isLeagueFavorite(league.id))
+    .sort(sortByDisplay)
+  const continental = continentalLeagues()
     .filter((league) => !favorites.isLeagueFavorite(league.id))
     .sort(sortByDisplay)
   const domestic = domesticLeagues()
@@ -60,8 +64,8 @@ export function LeaguesScreen({
             Leagues
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Domestic leagues and international tournaments. Star a competition to pin it on Match
-            day.
+            Domestic leagues, continental cups, and international tournaments. Star a competition to
+            pin it on Match day.
           </p>
         </header>
 
@@ -93,6 +97,27 @@ export function LeaguesScreen({
             </p>
             <div className="flex flex-col gap-3">
               {international.map((league, i) => (
+                <LeagueRow
+                  key={league.id}
+                  league={league}
+                  favorited={favorites.isLeagueFavorite(league.id)}
+                  index={i}
+                  reduce={reduce}
+                  onOpen={() => onOpenLeague(league.id)}
+                  onToggleFavorite={() => favorites.toggleLeague(league.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {continental.length > 0 ? (
+          <section className="mb-6" aria-label="Continental club competitions">
+            <p className="mb-2 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+              Continental
+            </p>
+            <div className="flex flex-col gap-3">
+              {continental.map((league, i) => (
                 <LeagueRow
                   key={league.id}
                   league={league}

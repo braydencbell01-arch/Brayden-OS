@@ -52,10 +52,13 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         navigateFallback: '/Brayden-OS/index.html',
         // Jersey Deals is a sibling app under the same Pages host.
         navigateFallbackDenylist: [/^\/Brayden-OS\/jerseydeals/],
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff2}'],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
