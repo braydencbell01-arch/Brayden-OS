@@ -96,14 +96,6 @@ export function useFavorites() {
     () => new Set(state.players.map((player) => player.id)),
     [state.players],
   )
-  const favoritePlayerTeamIds = useMemo(() => {
-    const ids = new Set<string>()
-    for (const player of state.players) {
-      if (player.teamId) ids.add(player.teamId)
-    }
-    return ids
-  }, [state.players])
-
   const isLeagueFavorite = useCallback(
     (id: LeagueId) => leagueIds.has(id),
     [leagueIds],
@@ -161,7 +153,6 @@ export function useFavorites() {
     leagueIds,
     teamIds,
     playerIds,
-    favoritePlayerTeamIds,
     isLeagueFavorite,
     isTeamFavorite,
     isPlayerFavorite,

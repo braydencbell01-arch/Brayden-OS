@@ -262,34 +262,23 @@ export function isFavoriteMatch(
   match: Match,
   favoriteLeagueIds: Set<string>,
   favoriteTeamIds: Set<string>,
-  favoritePlayerTeamIds: Set<string> = new Set(),
 ): boolean {
   if (favoriteLeagueIds.has(match.leagueId)) return true
-  return (
-    favoriteTeamIds.has(match.home.id) ||
-    favoriteTeamIds.has(match.away.id) ||
-    favoritePlayerTeamIds.has(match.home.id) ||
-    favoritePlayerTeamIds.has(match.away.id)
-  )
+  return favoriteTeamIds.has(match.home.id) || favoriteTeamIds.has(match.away.id)
 }
 
 export function dateKeysForFavorites(
   matches: Match[],
   favoriteLeagueIds: Set<string>,
   favoriteTeamIds: Set<string>,
-  favoritePlayerTeamIds: Set<string> = new Set(),
 ): Set<string> {
-  if (
-    favoriteLeagueIds.size === 0 &&
-    favoriteTeamIds.size === 0 &&
-    favoritePlayerTeamIds.size === 0
-  ) {
+  if (favoriteLeagueIds.size === 0 && favoriteTeamIds.size === 0) {
     return new Set()
   }
 
   const keys = new Set<string>()
   for (const match of matches) {
-    if (isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds, favoritePlayerTeamIds)) {
+    if (isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds)) {
       keys.add(match.dateKey)
     }
   }
