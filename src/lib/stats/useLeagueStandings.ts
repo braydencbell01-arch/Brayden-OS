@@ -2,8 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { fetchLeagueStandings } from './espn'
 import type { StandingRow } from './types'
+import { useLeagueSeasons } from './useLeagueSeasons'
 
-export function useLeagueStandings(leagueId: LeagueId) {
+export function useLeagueStandings(leagueId: LeagueId, enabled = true) {
+  const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
+    leagueId,
+    enabled,
+    'all',
+  )
   const [rows, setRows] = useState<StandingRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -12,7 +18,7 @@ export function useLeagueStandings(leagueId: LeagueId) {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchLeagueStandings(leagueId)
+      const data = await fetchLeagueStandings(leagueId, selectedSeason ?? undefined)
       setRows(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load standings')
@@ -20,13 +26,16 @@ export function useLeagueStandings(leagueId: LeagueId) {
     } finally {
       setLoading(false)
     }
-  }, [leagueId])
+  }, [leagueId, selectedSeason])
 
   useEffect(() => {
+    if (!enabled) return
+    if (seasonsLoading) return
+
     let cancelled = false
     setLoading(true)
     setError(null)
-    void fetchLeagueStandings(leagueId)
+    void fetchLeagueStandings(leagueId, selectedSeason ?? undefined)
       .then((data) => {
         if (!cancelled) setRows(data)
       })
@@ -42,7 +51,16 @@ export function useLeagueStandings(leagueId: LeagueId) {
     return () => {
       cancelled = true
     }
-  }, [leagueId])
+  }, [leagueId, enabled, selectedSeason, seasonsLoading])
 
-  return { rows, loading, error, reload: load }
+  return {
+    rows,
+    loading,
+    error,
+    reload: load,
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectSeason,
+  }
 }

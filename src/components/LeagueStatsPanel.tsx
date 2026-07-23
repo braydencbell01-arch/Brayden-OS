@@ -1,8 +1,14 @@
 import type { LeagueId } from '../lib/leagues'
 import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
-import type { LeaderCategory, LeaderEntry, LeagueLeaders } from '../lib/stats/types'
+import type {
+  LeaderCategory,
+  LeaderEntry,
+  LeagueLeaders,
+  LeagueSeasonOption,
+} from '../lib/stats/types'
 import type { PlayerNavRef } from './PlayerProfileScreen'
+import { SeasonPicker } from './SeasonPicker'
 
 function LeadersTable({
   category,
@@ -120,6 +126,10 @@ export function LeagueStatsPanel({
   loading,
   error,
   leagueId,
+  seasons,
+  seasonsLoading,
+  selectedSeason,
+  onSelectSeason,
   onOpenPlayer,
   onOpenTeam,
 }: {
@@ -127,58 +137,75 @@ export function LeagueStatsPanel({
   loading: boolean
   error: string | null
   leagueId: LeagueId
+  seasons: LeagueSeasonOption[]
+  seasonsLoading: boolean
+  selectedSeason: number | null
+  onSelectSeason: (year: number) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
-  if (loading && !data) {
-    return <p className="text-sm text-mist/70">Loading stats leaders…</p>
-  }
-
-  if (error && !data) {
-    return <p className="text-sm text-mist/80">{error}</p>
-  }
-
-  if (!data || data.categories.length === 0) {
-    return <p className="text-sm text-mist/70">No stats leaders available for this league yet.</p>
-  }
-
-  const players = data.categories.filter((category) => category.kind === 'player')
-  const teams = data.categories.filter((category) => category.kind === 'team')
+  const players = data?.categories.filter((category) => category.kind === 'player') ?? []
+  const teams = data?.categories.filter((category) => category.kind === 'team') ?? []
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-        {data.seasonLabel}
-      </p>
+      <SeasonPicker
+        seasons={seasons}
+        selectedSeason={selectedSeason ?? data?.season ?? null}
+        loading={seasonsLoading}
+        onSelect={onSelectSeason}
+      />
 
-      {players.length > 0 ? (
-        <section aria-label="Player leaders" className="flex flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mist/70">Players</p>
-          {players.map((category) => (
-            <LeadersTable
-              key={category.id}
-              category={category}
-              leagueId={leagueId}
-              onOpenPlayer={onOpenPlayer}
-              onOpenTeam={onOpenTeam}
-            />
-          ))}
-        </section>
+      {loading && !data ? <p className="text-sm text-mist/70">Loading stats leaders…</p> : null}
+
+      {error && !data ? <p className="text-sm text-mist/80">{error}</p> : null}
+
+      {!loading && !error && (!data || data.categories.length === 0) ? (
+        <p className="text-sm text-mist/70">No stats leaders available for this league yet.</p>
       ) : null}
 
-      {teams.length > 0 ? (
-        <section aria-label="Team leaders" className="flex flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mist/70">Teams</p>
-          {teams.map((category) => (
-            <LeadersTable
-              key={category.id}
-              category={category}
-              leagueId={leagueId}
-              onOpenPlayer={onOpenPlayer}
-              onOpenTeam={onOpenTeam}
-            />
-          ))}
-        </section>
+      {data && data.categories.length > 0 ? (
+        <>
+          {loading ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/55">
+              Updating…
+            </p>
+          ) : (
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
+              {data.seasonLabel}
+            </p>
+          )}
+
+          {players.length > 0 ? (
+            <section aria-label="Player leaders" className="flex flex-col gap-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mist/70">Players</p>
+              {players.map((category) => (
+                <LeadersTable
+                  key={category.id}
+                  category={category}
+                  leagueId={leagueId}
+                  onOpenPlayer={onOpenPlayer}
+                  onOpenTeam={onOpenTeam}
+                />
+              ))}
+            </section>
+          ) : null}
+
+          {teams.length > 0 ? (
+            <section aria-label="Team leaders" className="flex flex-col gap-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-mist/70">Teams</p>
+              {teams.map((category) => (
+                <LeadersTable
+                  key={category.id}
+                  category={category}
+                  leagueId={leagueId}
+                  onOpenPlayer={onOpenPlayer}
+                  onOpenTeam={onOpenTeam}
+                />
+              ))}
+            </section>
+          ) : null}
+        </>
       ) : null}
     </div>
   )

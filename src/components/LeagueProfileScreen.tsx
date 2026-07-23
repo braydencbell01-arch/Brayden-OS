@@ -84,7 +84,9 @@ export function LeagueProfileScreen({
   const xgEnabled = openSection === 'xg'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
   const playerStats = useLeaguePlayerStats(league.id, playerStatsEnabled)
-  const expectedGoals = useLeagueExpectedGoals(league.id, xgEnabled)
+  const expectedGoals = useLeagueExpectedGoals(league.id, xgEnabled, {
+    withSeasonPicker: true,
+  })
 
   const toggleSection = (
     section: 'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | 'xg',
@@ -172,6 +174,10 @@ export function LeagueProfileScreen({
               onToggleTeam={favorites.toggleTeam}
               onOpenTeam={onOpenTeam}
               onRetry={() => void standings.reload()}
+              seasons={standings.seasons}
+              seasonsLoading={standings.seasonsLoading}
+              selectedSeason={standings.selectedSeason}
+              onSelectSeason={standings.selectSeason}
             />
           </ProfileAccordion>
         ) : null}
@@ -283,6 +289,10 @@ export function LeagueProfileScreen({
             loading={playerStats.loading}
             error={playerStats.error}
             leagueId={league.id}
+            seasons={playerStats.seasons}
+            seasonsLoading={playerStats.seasonsLoading}
+            selectedSeason={playerStats.selectedSeason}
+            onSelectSeason={playerStats.selectSeason}
             onOpenPlayer={onOpenPlayer}
             onOpenTeam={onOpenTeam}
           />
@@ -299,6 +309,10 @@ export function LeagueProfileScreen({
             loading={leaders.loading}
             error={leaders.error}
             leagueId={league.id}
+            seasons={leaders.seasons}
+            seasonsLoading={leaders.seasonsLoading}
+            selectedSeason={leaders.selectedSeason}
+            onSelectSeason={leaders.selectSeason}
             onOpenPlayer={onOpenPlayer}
             onOpenTeam={onOpenTeam}
           />
@@ -315,6 +329,10 @@ export function LeagueProfileScreen({
               data={expectedGoals.data}
               loading={expectedGoals.loading}
               error={expectedGoals.error}
+              seasons={expectedGoals.seasons}
+              seasonsLoading={expectedGoals.seasonsLoading}
+              selectedSeason={expectedGoals.selectedSeason}
+              onSelectSeason={expectedGoals.selectSeason}
             />
           </ProfileAccordion>
         ) : null}

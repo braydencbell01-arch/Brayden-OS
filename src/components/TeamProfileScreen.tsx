@@ -461,6 +461,10 @@ export function TeamProfileScreen({
             onOpenTeam={onOpenTeam}
             highlightedTeamId={team.id}
             onRetry={() => void standings.reload()}
+            seasons={standings.seasons}
+            seasonsLoading={standings.seasonsLoading}
+            selectedSeason={standings.selectedSeason}
+            onSelectSeason={standings.selectSeason}
           />
         </ProfileAccordion>
 
@@ -589,6 +593,10 @@ export function TeamProfileScreen({
             teamId={team.id}
             teamName={displayName}
             favorites={favorites}
+            seasons={roster.seasons}
+            seasonsLoading={roster.seasonsLoading}
+            selectedSeason={roster.selectedSeason}
+            onSelectSeason={roster.selectSeason}
             onOpenPlayer={onOpenPlayer}
           />
         </ProfileAccordion>

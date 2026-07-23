@@ -445,8 +445,11 @@ async function fetchStandingsForSeason(
   })
 }
 
-export async function fetchLeagueStandings(leagueId: LeagueId): Promise<StandingRow[]> {
-  return fetchStandingsForSeason(leagueId)
+export async function fetchLeagueStandings(
+  leagueId: LeagueId,
+  seasonYear?: number,
+): Promise<StandingRow[]> {
+  return fetchStandingsForSeason(leagueId, seasonYear)
 }
 
 type EspnTeamRosterAthlete = {
@@ -483,10 +486,17 @@ function jerseySortValue(jersey?: string): number {
 }
 
 /** Full squad, grouped by position (GK → DEF → MID → FWD). */
-export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promise<TeamRoster> {
+export async function fetchTeamRoster(
+  leagueId: LeagueId,
+  teamId: string,
+  seasonYear?: number,
+): Promise<TeamRoster> {
   const league = getLeague(leagueId)
   const nowYear = new Date().getUTCFullYear()
-  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2, null] as const
+  const yearsToTry =
+    seasonYear != null
+      ? ([seasonYear] as const)
+      : ([nowYear, nowYear - 1, nowYear - 2, null] as const)
   const codesToTry = [
     league.espnCode,
     ...(league.kind === 'international'
@@ -497,8 +507,8 @@ export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promi
   ]
 
   let athletes: EspnTeamRosterAthlete[] = []
-  let season = nowYear
-  let seasonLabel = String(nowYear)
+  let season = seasonYear ?? nowYear
+  let seasonLabel = String(seasonYear ?? nowYear)
   let resolvedLeagueId = leagueId
 
   outer: for (const espnCode of codesToTry) {
@@ -523,9 +533,11 @@ export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promi
 
   if (athletes.length === 0) {
     throw new Error(
-      league.kind === 'international'
-        ? `No roster available for this national team yet`
-        : `No roster available for this club yet`,
+      seasonYear != null
+        ? `No roster available for this side in that season`
+        : league.kind === 'international'
+          ? `No roster available for this national team yet`
+          : `No roster available for this club yet`,
     )
   }
 
@@ -660,13 +672,15 @@ function playerLeadersFromSiteStats(
 export async function fetchLeagueLeaders(
   leagueId: LeagueId,
   limit = 8,
+  seasonYear?: number,
 ): Promise<LeagueLeaders> {
   const league = getLeague(leagueId)
   const nowYear = new Date().getUTCFullYear()
-  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+  const yearsToTry =
+    seasonYear != null ? [seasonYear] : [nowYear, nowYear - 1, nowYear - 2]
 
-  let season = nowYear
-  let seasonLabel = String(nowYear)
+  let season = seasonYear ?? nowYear
+  let seasonLabel = String(seasonYear ?? nowYear)
   let playerCategories: LeaderCategory[] = []
   let teamCategories: LeaderCategory[] = []
 
@@ -695,7 +709,11 @@ export async function fetchLeagueLeaders(
   }
 
   if (playerCategories.length === 0 && teamCategories.length === 0) {
-    throw new Error(`No ${league.name} stats leaders available yet`)
+    throw new Error(
+      seasonYear != null
+        ? `No ${league.name} stats leaders for that season`
+        : `No ${league.name} stats leaders available yet`,
+    )
   }
 
   return {
@@ -769,14 +787,16 @@ async function fetchCoreNamed(ref: string | undefined): Promise<EspnCoreNamed | 
 export async function fetchLeaguePlayerStatsOverview(
   leagueId: LeagueId,
   limit = 5,
+  seasonYear?: number,
 ): Promise<LeaguePlayerStatsOverview> {
   const league = getLeague(leagueId)
   const nowYear = new Date().getUTCFullYear()
-  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+  const yearsToTry =
+    seasonYear != null ? [seasonYear] : [nowYear, nowYear - 1, nowYear - 2]
   const perCategoryCap = Math.max(1, Math.min(limit, 10))
 
   let payload: EspnCoreLeadersResponse | null = null
-  let season = nowYear
+  let season = seasonYear ?? nowYear
 
   for (const year of yearsToTry) {
     const url = new URL(
@@ -793,7 +813,11 @@ export async function fetchLeaguePlayerStatsOverview(
   }
 
   if (!payload?.categories?.length) {
-    throw new Error(`No ${league.name} player stats available yet`)
+    throw new Error(
+      seasonYear != null
+        ? `No ${league.name} player stats for that season`
+        : `No ${league.name} player stats available yet`,
+    )
   }
 
   const byName = new Map(
@@ -1030,6 +1054,7 @@ type EspnSeasonDetail = {
 }
 
 const leaderSeasonsCache = new Map<string, LeagueSeasonOption[]>()
+const allSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 
 /** Compact season chip: "2025-26" → "25/26"; calendar years stay as "2025". */
 export function formatSeasonShortLabel(year: number, abbreviation?: string): string {
@@ -1105,9 +1130,30 @@ async function seasonHasLeaders(espnCode: string, year: number): Promise<boolean
   }
 }
 
+/** All ESPN seasons for a league (newest first), with display labels. */
+export async function fetchLeagueSeasons(leagueId: LeagueId): Promise<LeagueSeasonOption[]> {
+  const cached = allSeasonsCache.get(leagueId)
+  if (cached) return cached
+
+  const league = getLeague(leagueId)
+  const years = await listLeagueSeasonYears(league.espnCode)
+  const options = await Promise.all(
+    years.map(async (year) => {
+      const labels = await fetchSeasonLabels(league.espnCode, year)
+      return {
+        year,
+        label: labels.label,
+        shortLabel: labels.shortLabel,
+      } satisfies LeagueSeasonOption
+    }),
+  )
+  allSeasonsCache.set(leagueId, options)
+  return options
+}
+
 /**
  * Seasons for a league that have ESPN leaderboard data (newest first).
- * Used by the team Stat Leaders season picker.
+ * Used by Stat Leaders / Player stats season pickers.
  */
 export async function fetchLeagueLeaderSeasons(
   leagueId: LeagueId,
@@ -1392,34 +1438,62 @@ async function fetchCoreSeasonAppearances(
 async function fetchAthleteLeagueSeasonStats(
   playerId: string,
   leagueSlug: string,
+  preferredYear?: number,
 ): Promise<{
   stats: PlayerSeasonStatLine[]
   seasonLabel: string | null
+  seasonYear: number | null
   previousStats: PlayerSeasonStatLine[]
   previousSeasonLabel: string | null
+  availableYears: number[]
 }> {
   const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/stats?league=${encodeURIComponent(leagueSlug)}`
   const res = await fetch(url)
   if (!res.ok) {
-    return { stats: [], seasonLabel: null, previousStats: [], previousSeasonLabel: null }
+    return {
+      stats: [],
+      seasonLabel: null,
+      seasonYear: null,
+      previousStats: [],
+      previousSeasonLabel: null,
+      availableYears: [],
+    }
   }
   const payload = (await res.json()) as EspnAthleteStatsPayload
+  const category = payload.categories?.[0]
+  const rows = category?.statistics ?? []
+  const availableYears = [
+    ...new Set(
+      rows
+        .filter((item) => item.leagueSlug === leagueSlug || item.leagueSlug?.includes('.'))
+        .map((item) => item.season?.year)
+        .filter((year): year is number => typeof year === 'number'),
+    ),
+  ].sort((a, b) => b - a)
 
-  // First pass: learn which season year the club-league row uses.
-  const preview = buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug)
+  const preview = buildOrderedSeasonStatsFromAthleteStats(
+    payload,
+    leagueSlug,
+    null,
+    preferredYear,
+  )
   let appearances: number | null = null
   if (preview.seasonYear != null) {
     appearances = await fetchCoreSeasonAppearances(leagueSlug, preview.seasonYear, playerId)
   }
 
-  const full = buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug, appearances)
+  const full = buildOrderedSeasonStatsFromAthleteStats(
+    payload,
+    leagueSlug,
+    appearances,
+    preferredYear,
+  )
 
   let previousStats: PlayerSeasonStatLine[] = []
   let previousSeasonLabel: string | null = null
   if (full.seasonYear != null) {
     const prevYear = full.seasonYear - 1
-    let prevApps: number | null = null
-    prevApps = await fetchCoreSeasonAppearances(leagueSlug, prevYear, playerId)
+    const prevApps = await fetchCoreSeasonAppearances(leagueSlug, prevYear, playerId)
     const previous = buildOrderedSeasonStatsFromAthleteStats(
       payload,
       leagueSlug,
@@ -1435,8 +1509,52 @@ async function fetchAthleteLeagueSeasonStats(
   return {
     stats: full.stats,
     seasonLabel: full.seasonLabel,
+    seasonYear: full.seasonYear,
     previousStats,
     previousSeasonLabel,
+    availableYears,
+  }
+}
+
+/** Season years available for a player's club-league season stats board. */
+export async function fetchPlayerSeasonOptions(
+  leagueId: LeagueId,
+  playerId: string,
+): Promise<LeagueSeasonOption[]> {
+  const league = getLeague(leagueId)
+  const bundle = await fetchAthleteLeagueSeasonStats(playerId, league.espnCode)
+  return Promise.all(
+    bundle.availableYears.map(async (year) => {
+      const labels = await fetchSeasonLabels(league.espnCode, year)
+      return {
+        year,
+        label: labels.label,
+        shortLabel: labels.shortLabel,
+      } satisfies LeagueSeasonOption
+    }),
+  )
+}
+
+/** Reload a player's season stats (+ prior year compare) for a chosen season. */
+export async function fetchPlayerSeasonStatsForYear(
+  leagueId: LeagueId,
+  playerId: string,
+  seasonYear?: number,
+): Promise<{
+  stats: PlayerSeasonStatLine[]
+  seasonLabel: string | null
+  seasonYear: number | null
+  previousStats: PlayerSeasonStatLine[]
+  previousSeasonLabel: string | null
+}> {
+  const league = getLeague(leagueId)
+  const bundle = await fetchAthleteLeagueSeasonStats(playerId, league.espnCode, seasonYear)
+  return {
+    stats: bundle.stats,
+    seasonLabel: bundle.seasonLabel,
+    seasonYear: bundle.seasonYear,
+    previousStats: bundle.previousStats,
+    previousSeasonLabel: bundle.previousSeasonLabel,
   }
 }
 
@@ -2338,6 +2456,8 @@ export async function fetchPlayerProfile(
       leagueId,
       seasonStats,
       seasonStatsLabel,
+      seasonYear: seasonStatsBundle.seasonYear,
+      availableSeasonYears: seasonStatsBundle.availableYears,
       previousSeasonStats: seasonStatsBundle.previousStats,
       previousSeasonStatsLabel: seasonStatsBundle.previousSeasonLabel || undefined,
       averageRating,
