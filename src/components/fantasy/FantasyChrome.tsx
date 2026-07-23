@@ -87,7 +87,7 @@ export function FantasyInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-cream outline-none ring-lime placeholder:text-mist/40 focus:ring-2 ${props.className ?? ''}`}
+      className={`w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-base text-cream outline-none ring-lime placeholder:text-mist/40 focus:ring-2 ${props.className ?? ''}`}
     />
   )
 }

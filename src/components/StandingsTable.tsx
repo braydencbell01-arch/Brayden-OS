@@ -12,6 +12,7 @@ export function StandingsTable({
   onToggleTeam,
   onOpenTeam,
   onRetry,
+  highlightedTeamId,
 }: {
   rows: StandingRow[]
   loading: boolean
@@ -21,6 +22,8 @@ export function StandingsTable({
   onToggleTeam: (team: FavoriteTeam) => void
   onOpenTeam?: (team: FavoriteTeam) => void
   onRetry?: () => void
+  /** When set, that club’s row is visually emphasized (e.g. team profile). */
+  highlightedTeamId?: string
 }) {
   if (loading && rows.length === 0) {
     return (
@@ -74,6 +77,7 @@ export function StandingsTable({
         <tbody>
           {rows.map((row) => {
             const active = isTeamFavorite(row.teamId)
+            const highlighted = highlightedTeamId != null && row.teamId === highlightedTeamId
             const teamRef: FavoriteTeam = {
               id: row.teamId,
               name: row.team,
@@ -81,8 +85,22 @@ export function StandingsTable({
               leagueId,
             }
             return (
-              <tr key={`${row.rank}-${row.teamId}`} className="border-t border-white/10">
-                <td className="px-3 py-2 tabular-nums text-mist/80">{row.rank}</td>
+              <tr
+                key={`${row.rank}-${row.teamId}`}
+                className={`border-t border-white/10 ${
+                  highlighted
+                    ? 'bg-lime/15 shadow-[inset_3px_0_0_0_#c8f542]'
+                    : ''
+                }`}
+                aria-current={highlighted ? 'true' : undefined}
+              >
+                <td
+                  className={`px-3 py-2 tabular-nums ${
+                    highlighted ? 'font-semibold text-lime' : 'text-mist/80'
+                  }`}
+                >
+                  {row.rank}
+                </td>
                 <td className="px-1 py-2 text-center">
                   <FavoriteStar
                     active={active}
@@ -91,8 +109,12 @@ export function StandingsTable({
                     onToggle={() => onToggleTeam(teamRef)}
                   />
                 </td>
-                <td className="px-3 py-2 font-semibold text-cream">
-                  {onOpenTeam ? (
+                <td
+                  className={`px-3 py-2 font-semibold ${
+                    highlighted ? 'text-lime' : 'text-cream'
+                  }`}
+                >
+                  {onOpenTeam && !highlighted ? (
                     <button
                       type="button"
                       onClick={() => onOpenTeam(teamRef)}
@@ -116,7 +138,13 @@ export function StandingsTable({
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
                 </td>
-                <td className="px-3 py-2 text-right font-bold tabular-nums text-lime">{row.points}</td>
+                <td
+                  className={`px-3 py-2 text-right font-bold tabular-nums ${
+                    highlighted ? 'text-cream' : 'text-lime'
+                  }`}
+                >
+                  {row.points}
+                </td>
               </tr>
             )
           })}

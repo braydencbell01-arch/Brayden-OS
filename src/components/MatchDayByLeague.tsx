@@ -140,47 +140,20 @@ export function MatchDayByLeague({
   const teamIds = favoriteTeamIds ?? new Set<string>()
   const playerTeamIds = favoritePlayerTeamIds ?? new Set<string>()
 
-  const defaultOpenIds = useMemo(() => {
-    const next = new Set<LeagueId>()
-    for (const group of groups) {
-      const hasLive = group.matches.some((match) => match.status === 'live')
-      const hasFavorite = group.matches.some((match) =>
-        isFavoriteMatch(match, leagueIds, teamIds, playerTeamIds),
-      )
-      if (hasLive || hasFavorite || leagueIds.has(group.leagueId)) {
-        next.add(group.leagueId)
-      }
-    }
-    // Quiet days: open the first league so the screen isn't only headers.
-    if (next.size === 0 && groups[0]) next.add(groups[0].leagueId)
-    return next
-  }, [groups, leagueIds, teamIds, playerTeamIds])
-
-  const [openIds, setOpenIds] = useState<Set<LeagueId>>(defaultOpenIds)
+  const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
   const [openForDate, setOpenForDate] = useState(dateKey)
 
   if (openForDate !== dateKey) {
     setOpenForDate(dateKey)
-    setOpenIds(defaultOpenIds)
+    setOpenIds(new Set())
   }
 
   if (groups.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
 
-  const hasPinned =
-    leagueIds.size > 0 ||
-    teamIds.size > 0 ||
-    playerTeamIds.size > 0 ||
-    groups.some((group) => group.matches.some((match) => match.status === 'live'))
-
   return (
     <div className="flex flex-col gap-2">
-      {hasPinned ? (
-        <p className="px-0.5 text-[0.65rem] text-mist/55">
-          Favorite leagues and live matches open first
-        </p>
-      ) : null}
       {groups.map(({ leagueId, matches: leagueMatches }) => (
         <LeagueDropdown
           key={leagueId}

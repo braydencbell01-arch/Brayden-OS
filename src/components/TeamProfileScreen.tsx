@@ -23,6 +23,7 @@ import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
 import { ProfileHeader, ProfileShell } from './ProfileShell'
+import { StandingsTable } from './StandingsTable'
 import { TeamRosterPanel } from './TeamRosterPanel'
 
 function FormDot({ result }: { result: TeamFormResult }) {
@@ -75,8 +76,8 @@ export function TeamProfileScreen({
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
-    'upcoming' | 'recent' | 'roster' | null
-  >('upcoming')
+    'table' | 'upcoming' | 'recent' | 'roster' | null
+  >(null)
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const recentScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
@@ -104,7 +105,7 @@ export function TeamProfileScreen({
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
 
-  const toggle = (section: 'upcoming' | 'recent' | 'roster') => {
+  const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster') => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -220,6 +221,25 @@ export function TeamProfileScreen({
 
       <div className="mt-6 flex flex-col gap-3">
         <ProfileAccordion
+          title="Table"
+          subtitle={league.name}
+          open={openSection === 'table'}
+          onToggle={() => toggle('table')}
+        >
+          <StandingsTable
+            rows={standings.rows}
+            loading={standings.loading}
+            error={standings.error}
+            leagueId={team.leagueId}
+            isTeamFavorite={favorites.isTeamFavorite}
+            onToggleTeam={favorites.toggleTeam}
+            onOpenTeam={onOpenTeam}
+            highlightedTeamId={team.id}
+            onRetry={() => void standings.reload()}
+          />
+        </ProfileAccordion>
+
+        <ProfileAccordion
           title="Upcoming games"
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
@@ -324,6 +344,9 @@ export function TeamProfileScreen({
             loading={roster.loading}
             error={roster.error}
             leagueId={team.leagueId}
+            teamId={team.id}
+            teamName={displayName}
+            favorites={favorites}
             onOpenPlayer={onOpenPlayer}
           />
         </ProfileAccordion>

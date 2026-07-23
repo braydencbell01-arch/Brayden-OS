@@ -1,5 +1,7 @@
+import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
 import type { LeagueId } from '../lib/leagues'
 import type { TeamRoster } from '../lib/stats/types'
+import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
@@ -8,12 +10,18 @@ export function TeamRosterPanel({
   loading,
   error,
   leagueId,
+  teamId,
+  teamName,
+  favorites,
   onOpenPlayer,
 }: {
   data: TeamRoster | null
   loading: boolean
   error: string | null
   leagueId: LeagueId
+  teamId: string
+  teamName: string
+  favorites: FavoritesApi
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
   if (loading && !data) {
@@ -43,8 +51,24 @@ export function TeamRosterPanel({
           <ul className="flex flex-col gap-1.5">
             {group.players.map((player) => {
               const clickable = Boolean(onOpenPlayer)
+              const favoritePayload: FavoritePlayer = {
+                id: player.id,
+                name: player.name,
+                shortName: player.shortName,
+                photoUrl: player.photoUrl,
+                jersey: player.jersey,
+                position: player.positionAbbrev !== '—' ? player.positionAbbrev : player.positionLabel,
+                leagueId,
+                teamId,
+                teamName,
+              }
+              const favorited = favorites.isPlayerFavorite(player.id)
+
               return (
-                <li key={player.id}>
+                <li
+                  key={player.id}
+                  className="flex items-center gap-1 border border-white/10 bg-white/[0.03] pr-1"
+                >
                   <button
                     type="button"
                     disabled={!clickable}
@@ -57,11 +81,13 @@ export function TeamRosterPanel({
                         photoUrl: player.photoUrl,
                         jersey: player.jersey,
                         position: player.positionAbbrev,
+                        teamId,
+                        teamName,
                       })
                     }
-                    className={`flex w-full items-center gap-3 border border-white/10 bg-white/[0.03] px-3 py-2 text-left outline-none transition ${
+                    className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left outline-none transition ${
                       clickable
-                        ? 'hover:border-lime/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime'
+                        ? 'hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime'
                         : 'cursor-default'
                     }`}
                   >
@@ -90,6 +116,12 @@ export function TeamRosterPanel({
                       {player.positionAbbrev !== '—' ? player.positionAbbrev : ''}
                     </span>
                   </button>
+                  <FavoriteStar
+                    active={favorited}
+                    size="sm"
+                    label={player.shortName || player.name}
+                    onToggle={() => favorites.togglePlayer(favoritePayload)}
+                  />
                 </li>
               )
             })}

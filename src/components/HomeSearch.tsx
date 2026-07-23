@@ -211,7 +211,7 @@ export function HomeSearch({
           onFocus={() => setFocused(true)}
           placeholder="Try Arsenal, Premier League, Messi…"
           autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-sm text-cream outline-none placeholder:text-mist/40"
+          className="min-w-0 flex-1 bg-transparent text-base text-cream outline-none placeholder:text-mist/40"
         />
         {query ? (
           <button

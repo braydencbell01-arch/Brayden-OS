@@ -1,4 +1,4 @@
-import { getLeague, type LeagueId } from '../leagues'
+import { getLeague, LEAGUES, type LeagueId } from '../leagues'
 import {
   positionGroupFromAbbrev,
   rateMatchPerformance,
@@ -871,6 +871,15 @@ type EspnOverviewPayload = {
 }
 
 type EspnAthleteStatsPayload = {
+  leagues?: Record<
+    string,
+    {
+      name?: string
+      displayName?: string
+      shortName?: string
+      abbreviation?: string
+    }
+  >
   categories?: Array<{
     names?: string[]
     displayNames?: string[]
@@ -881,7 +890,7 @@ type EspnAthleteStatsPayload = {
         year?: number
         displayName?: string
         shortDisplayName?: string
-        type?: { name?: string }
+        type?: { name?: string; slug?: string; id?: string }
       }
     }>
   }>
@@ -1718,7 +1727,7 @@ async function averageRatingFromSeasonGameLog(
 }
 
 /**
- * Club career by season: goals, assists, and Brayden average rating (from gamelog).
+ * Club career by season: matches, goals, assists, and Brayden average rating (from gamelog).
  * Skips national-team stints. Rating fetch is capped for responsiveness.
  */
 export async function fetchPlayerCareerSeasons(
@@ -1738,6 +1747,8 @@ export async function fetchPlayerCareerSeasons(
     const names = category?.names ?? []
     const goalsIdx = readStatIndex(names, ['G', 'totalGoals'])
     const assistsIdx = readStatIndex(names, ['A', 'goalAssists'])
+    const appsIdx = readStatIndex(names, ['APP', 'appearances', 'gamesPlayed'])
+    const startsIdx = readStatIndex(names, ['STRT', 'starts'])
     const rows = category?.statistics ?? []
     const mapped: PlayerCareerSeason[] = []
     for (const row of rows) {
@@ -1747,17 +1758,28 @@ export async function fetchPlayerCareerSeasons(
       // Skip country / national competition slugs without a club league pattern.
       const values = row.stats ?? []
       const seasonLabel =
-        row.season?.displayName ||
         row.season?.shortDisplayName ||
+        row.season?.displayName ||
         row.season?.type?.name ||
         String(year)
+      const leagueMeta = payload.leagues?.[leagueSlug]
+      const leagueName =
+        leagueMeta?.displayName ||
+        leagueMeta?.name ||
+        leagueMeta?.shortName ||
+        LEAGUES.find((league) => league.espnCode === leagueSlug)?.name ||
+        leagueSlug
+      const appearances = parseNumberStat(values, appsIdx)
+      const starts = parseNumberStat(values, startsIdx)
       mapped.push({
-        id: `${club.teamId}-${leagueSlug}-${year}`,
+        id: `${club.teamId}-${leagueSlug}-${year}-${row.season?.type?.slug || row.season?.type?.id || 'szn'}`,
         seasonYear: year,
         seasonLabel,
         clubId: club.teamId,
         clubName: club.teamName,
         leagueSlug,
+        leagueName,
+        matchesPlayed: appsIdx >= 0 ? appearances : starts,
         goals: parseNumberStat(values, goalsIdx),
         assists: parseNumberStat(values, assistsIdx),
         averageRating: null,
@@ -1771,30 +1793,39 @@ export async function fetchPlayerCareerSeasons(
     .sort(
       (a, b) =>
         b.seasonYear - a.seasonYear ||
+        b.matchesPlayed - a.matchesPlayed ||
         a.clubName.localeCompare(b.clubName) ||
         a.leagueSlug.localeCompare(b.leagueSlug),
     )
 
-  // Dedupe identical club/league/year rows (keep first).
+  // One row per club/league/year — prefer the busiest sample (usually regular season).
   const seen = new Set<string>()
   const unique = flat.filter((row) => {
-    if (seen.has(row.id)) return false
-    seen.add(row.id)
+    const key = `${row.clubId}-${row.leagueSlug}-${row.seasonYear}`
+    if (seen.has(key)) return false
+    seen.add(key)
     return true
   })
 
   const RATING_SEASON_CAP = 18
-  const withRatings = await mapPool(unique.slice(0, RATING_SEASON_CAP), 3, async (row) => {
-    const averageRating = await averageRatingFromSeasonGameLog(
-      playerId,
-      row.leagueSlug,
-      row.seasonYear,
-      positionAbbrev,
-    )
-    return { ...row, averageRating }
+  const withExtras = await mapPool(unique.slice(0, RATING_SEASON_CAP), 3, async (row) => {
+    const [averageRating, coreApps] = await Promise.all([
+      averageRatingFromSeasonGameLog(
+        playerId,
+        row.leagueSlug,
+        row.seasonYear,
+        positionAbbrev,
+      ),
+      fetchCoreSeasonAppearances(row.leagueSlug, row.seasonYear, playerId),
+    ])
+    return {
+      ...row,
+      averageRating,
+      matchesPlayed: coreApps ?? row.matchesPlayed,
+    }
   })
 
-  const ratedById = new Map(withRatings.map((row) => [row.id, row]))
+  const ratedById = new Map(withExtras.map((row) => [row.id, row]))
   return unique.map((row) => ratedById.get(row.id) ?? row)
 }
 
