@@ -39,7 +39,9 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       const data = await fetchPlayerProfile(league, id)
       if (requestId.current !== req) return
       setProfile(data.profile)
-      setSelectedSeason(data.profile.seasonYear ?? data.profile.availableSeasonYears?.[0] ?? null)
+      const newestYear =
+        data.profile.availableSeasonYears?.[0] ?? data.profile.seasonYear ?? null
+      setSelectedSeason(newestYear)
       ratingsCursor.current = data.ratingsCursor
       setHasMoreRatings(!data.ratingsCursor.done)
 
@@ -50,24 +52,65 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
         fetchPlayerSeasonOptions(data.profile.leagueId, id)
           .then((options) => {
             if (requestId.current !== req) return
-            setSeasons(options.length > 0 ? options : years.map((year) => ({
-              year,
-              label: `${year} season`,
-              shortLabel: formatSeasonShortLabel(year),
-            })))
+            const ordered =
+              options.length > 0
+                ? [...options].sort((a, b) => b.year - a.year)
+                : [...years]
+                    .sort((a, b) => b - a)
+                    .map((year) => ({
+                      year,
+                      label: `${year} season`,
+                      shortLabel: formatSeasonShortLabel(year),
+                    }))
+            setSeasons(ordered)
+            const top = ordered[0]?.year ?? null
+            if (top != null) setSelectedSeason(top)
           })
           .catch(() => {
             if (requestId.current !== req) return
             setSeasons(
-              years.map((year) => ({
-                year,
-                label: `${year} season`,
-                shortLabel: formatSeasonShortLabel(year),
-              })),
+              [...years]
+                .sort((a, b) => b - a)
+                .map((year) => ({
+                  year,
+                  label: `${year} season`,
+                  shortLabel: formatSeasonShortLabel(year),
+                })),
             )
           })
           .finally(() => {
             if (requestId.current === req) setSeasonsLoading(false)
+          })
+      }
+
+      // Keep season stats aligned with the newest year when profile loaded another.
+      if (
+        newestYear != null &&
+        data.profile.seasonYear != null &&
+        newestYear !== data.profile.seasonYear
+      ) {
+        setStatsLoading(true)
+        fetchPlayerSeasonStatsForYear(data.profile.leagueId, id, newestYear)
+          .then((bundle) => {
+            if (requestId.current !== req) return
+            if (bundle.seasonYear != null && bundle.seasonYear !== newestYear) return
+            setProfile((current) => {
+              if (!current) return current
+              return {
+                ...current,
+                seasonStats: bundle.stats,
+                seasonStatsLabel: bundle.seasonLabel || current.seasonStatsLabel,
+                seasonYear: bundle.seasonYear,
+                previousSeasonStats: bundle.previousStats,
+                previousSeasonStatsLabel: bundle.previousSeasonLabel || undefined,
+              }
+            })
+          })
+          .catch(() => {
+            /* keep initial profile stats */
+          })
+          .finally(() => {
+            if (requestId.current === req) setStatsLoading(false)
           })
       }
     } catch (err) {

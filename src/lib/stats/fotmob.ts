@@ -274,6 +274,7 @@ export async function fetchFotmobSeasonOptions(
       }
     }
   }
+  withXg.sort((a, b) => b.year - a.year)
   fotmobSeasonOptionsCache.set(leagueId, withXg)
   return withXg
 }

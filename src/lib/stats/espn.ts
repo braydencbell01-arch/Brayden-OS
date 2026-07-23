@@ -1156,23 +1156,6 @@ async function seasonHasLeaders(espnCode: string, year: number): Promise<boolean
   }
 }
 
-async function seasonHasStandings(espnCode: string, year: number): Promise<boolean> {
-  try {
-    const url = new URL(
-      `https://site.api.espn.com/apis/v2/sports/soccer/${espnCode}/standings`,
-    )
-    url.searchParams.set('season', String(year))
-    const res = await fetch(url)
-    if (!res.ok) return false
-    const data = (await res.json()) as EspnStandingsResponse
-    const entries = (data.children ?? []).flatMap((child) => child.standings?.entries ?? [])
-    if (entries.length === 0) return false
-    return entries.some((entry) => readStat(entry, 'gamesPlayed') > 0)
-  } catch {
-    return false
-  }
-}
-
 /** All ESPN seasons for a league (newest first), with display labels. */
 export async function fetchLeagueSeasons(leagueId: LeagueId): Promise<LeagueSeasonOption[]> {
   const cached = allSeasonsCache.get(leagueId)
@@ -1195,9 +1178,8 @@ export async function fetchLeagueSeasons(leagueId: LeagueId): Promise<LeagueSeas
 }
 
 /**
- * Seasons with a real league table (at least one club has played a match).
- * Empty/preseason shells are listed after seasons that have games, so the
- * default picker selection is the newest completed/in-progress table.
+ * ESPN seasons for a league table picker (newest / current / upcoming first).
+ * Chronological descending so the default selection is the current or upcoming season.
  */
 export async function fetchLeagueStandingSeasons(
   leagueId: LeagueId,
@@ -1209,37 +1191,7 @@ export async function fetchLeagueStandingSeasons(
   const league = getLeague(leagueId)
   if (!league.hasStandings) return []
 
-  const years = await listLeagueSeasonYears(league.espnCode)
-  if (years.length === 0) return []
-
-  const withData: number[] = []
-  const concurrency = 8
-  for (let i = 0; i < years.length; i += concurrency) {
-    const chunk = years.slice(i, i + concurrency)
-    const checks = await Promise.all(
-      chunk.map(async (year) => ((await seasonHasStandings(league.espnCode, year)) ? year : null)),
-    )
-    for (const year of checks) {
-      if (year != null) withData.push(year)
-    }
-  }
-
-  const withDataSet = new Set(withData)
-  const orderedYears = [
-    ...withData,
-    ...years.filter((year) => !withDataSet.has(year)),
-  ]
-
-  const options = await Promise.all(
-    orderedYears.map(async (year) => {
-      const labels = await fetchSeasonLabels(league.espnCode, year)
-      return {
-        year,
-        label: labels.label,
-        shortLabel: labels.shortLabel,
-      } satisfies LeagueSeasonOption
-    }),
-  )
+  const options = await fetchLeagueSeasons(leagueId)
   allSeasonsCache.set(cacheKey, options)
   return options
 }
@@ -1269,6 +1221,8 @@ export async function fetchLeagueLeaderSeasons(
       if (year != null) withData.push(year)
     }
   }
+
+  withData.sort((a, b) => b - a)
 
   const options = await Promise.all(
     withData.map(async (year) => {
