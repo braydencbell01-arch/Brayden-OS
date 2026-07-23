@@ -77,7 +77,7 @@ export function FavoritesScreen({
             Favorites
           </h1>
           <p className="mt-3 text-sm text-mist/80">
-            Starred leagues, teams, and players (via their club) drive the yellow dots on your calendar.
+            Star leagues, clubs, and players to pin Match day, calendar dots, and Stats.
           </p>
         </motion.header>
 
@@ -134,7 +134,7 @@ export function FavoritesScreen({
                           <button
                             type="button"
                             onClick={onBrowseLeagues}
-                            className="text-sm font-semibold text-lime underline-offset-2 hover:underline"
+                            className="profile-link text-sm font-semibold text-lime"
                           >
                             Go to Leagues →
                           </button>
@@ -155,7 +155,7 @@ export function FavoritesScreen({
                                   className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                 >
                                   <span>
-                                    <span className="block font-display text-2xl tracking-wide text-cream">
+                                    <span className="profile-link block font-display text-2xl tracking-wide text-cream">
                                       {league.name}
                                     </span>
                                     <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
@@ -183,7 +183,7 @@ export function FavoritesScreen({
                               if (favoriteLeagues[0]) onOpenLeague(favoriteLeagues[0].id)
                               else onBrowseLeagues()
                             }}
-                            className="text-sm font-semibold text-lime underline-offset-2 hover:underline"
+                            className="profile-link text-sm font-semibold text-lime"
                           >
                             {favoriteLeagues[0]
                               ? `Open ${favoriteLeagues[0].name} table →`
@@ -208,7 +208,7 @@ export function FavoritesScreen({
                                     className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                   >
                                     <span>
-                                      <span className="block text-sm font-semibold text-cream">
+                                      <span className="profile-link block text-sm font-semibold text-cream">
                                         {team.name}
                                       </span>
                                       <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
@@ -254,7 +254,7 @@ export function FavoritesScreen({
                                   className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                 >
                                   <span>
-                                    <span className="block text-sm font-semibold text-cream">
+                                    <span className="profile-link block text-sm font-semibold text-cream">
                                       {player.name}
                                     </span>
                                     <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">

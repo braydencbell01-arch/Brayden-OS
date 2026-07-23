@@ -98,7 +98,7 @@ export function TeamRosterPanel({
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block truncate text-sm font-semibold ${
-                          clickable ? 'text-cream underline-offset-2 hover:underline' : 'text-cream'
+                          clickable ? 'profile-link text-cream' : 'text-cream'
                         }`}
                       >
                         {player.name}

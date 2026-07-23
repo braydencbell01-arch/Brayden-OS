@@ -8,7 +8,7 @@ import { LeagueProfileScreen } from './components/LeagueProfileScreen'
 import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
 import { FantasyScreen } from './components/fantasy/FantasyScreen'
-import { PlaceholderScreen } from './components/PlaceholderScreen'
+import { StatsScreen } from './components/StatsScreen'
 import { useFantasy } from './lib/fantasy/useFantasy'
 import {
   PlayerProfileScreen,
@@ -151,7 +151,7 @@ function HomeScreen({
             transition={{ duration: 0.55, delay: reduce ? 0 : 0.14 }}
             className="mt-2 max-w-md text-sm text-mist/85"
           >
-            Player ratings from match stats, and what clubs pay per goal, assist, and more.
+            Search any league, club, or player — then dig into ratings, tables, and match days.
           </motion.p>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
             <span>{formatUpdatedAt(updatedAt)}</span>
@@ -194,6 +194,9 @@ function HomeScreen({
                 Match day
               </p>
               <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
+              <p className="mt-1 text-[0.65rem] text-mist/55">
+                Star leagues to pin them here · yellow calendar dots mark favorites
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -570,10 +573,10 @@ export default function App() {
             exit={reduce ? undefined : { opacity: 0, y: 24 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <PlaceholderScreen
-              title="Stats"
+            <StatsScreen
+              favorites={favorites}
+              onOpenLeague={openLeague}
               reduce={reduce}
-              onBrowseLeagues={() => selectTab('leagues')}
             />
           </motion.div>
         ) : screen === 'fantasy' ? (
@@ -617,7 +620,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <BottomNav active={navActive} onSelect={selectTab} />
+      <BottomNav
+        active={navActive}
+        onSelect={selectTab}
+        favoritesCount={
+          favorites.leagues.length + favorites.teams.length + favorites.players.length
+        }
+      />
     </>
   )
 }

@@ -93,7 +93,7 @@ function TeamNameButton({
           leagueId: match.leagueId,
         })
       }
-      className={`${align} text-sm font-semibold text-cream underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
+      className={`${align} profile-link text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
     >
       {team.shortName}
     </button>

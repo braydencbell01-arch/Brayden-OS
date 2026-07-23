@@ -96,7 +96,7 @@ export function StandingsTable({
                     <button
                       type="button"
                       onClick={() => onOpenTeam(teamRef)}
-                      className="text-left underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
                       {row.shortName}
                     </button>

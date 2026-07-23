@@ -160,7 +160,7 @@ export function TeamProfileScreen({
           <button
             type="button"
             onClick={() => onOpenLeague(team.leagueId)}
-            className="text-left underline-offset-2 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            className="profile-link text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
             {league.name}
           </button>
@@ -216,7 +216,7 @@ export function TeamProfileScreen({
 
       <div className="mt-6 flex flex-col gap-3">
         <ProfileAccordion
-          title="Upcoming"
+          title="Upcoming games"
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
         >
@@ -259,8 +259,8 @@ export function TeamProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Recent"
-          subtitle="Scroll for earlier results"
+          title="Results"
+          subtitle="Scroll for earlier games"
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
         >
@@ -312,8 +312,8 @@ export function TeamProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Roster"
-          subtitle="Full squad by position"
+          title="Squad"
+          subtitle="Full roster by position"
           open={openSection === 'roster'}
           onToggle={() => toggle('roster')}
         >

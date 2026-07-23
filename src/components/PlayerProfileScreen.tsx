@@ -303,8 +303,8 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
 
             <ProfileAccordion
-              title="Recent ratings"
-              subtitle="Brayden Rating · Scroll For Full History"
+              title="Match ratings"
+              subtitle="Brayden Rating · scroll for full history"
               open={openSection === 'ratings'}
               onToggle={() => toggle('ratings')}
             >
@@ -323,8 +323,8 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
 
             <ProfileAccordion
-              title="Transfer history"
-              subtitle="Club And National Team"
+              title="Career history"
+              subtitle="Club and national team"
               open={openSection === 'transfers'}
               onToggle={() => toggle('transfers')}
             >

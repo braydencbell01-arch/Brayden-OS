@@ -22,7 +22,12 @@ function LineupPlayerCard({
         jersey={player.jersey}
         size="md"
       />
-      <span className="line-clamp-2 min-h-[2rem] text-[0.65rem] font-semibold leading-tight text-cream">
+      <span
+        className={[
+          'line-clamp-2 min-h-[2rem] text-[0.65rem] font-semibold leading-tight text-cream',
+          onOpenPlayer ? 'profile-link' : '',
+        ].join(' ')}
+      >
         {player.shortName}
       </span>
       <span

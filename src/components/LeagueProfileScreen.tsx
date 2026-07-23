@@ -82,7 +82,7 @@ export function LeagueProfileScreen({
         meta={
           <>
             {league.short}
-            {!loading && !error ? ` · ${leagueMatches.length} upcoming` : ''}
+            {!loading && !error ? ` · ${leagueMatches.length} upcoming games` : ''}
           </>
         }
       />
@@ -92,7 +92,7 @@ export function LeagueProfileScreen({
           label="Clubs"
           value={standings.loading ? '…' : clubCount || '—'}
         />
-        <ProfileMetric label="Upcoming" value={loading ? '…' : leagueMatches.length} />
+        <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
         <ProfileMetric
           label="Leader"
           value={
@@ -109,7 +109,7 @@ export function LeagueProfileScreen({
                     leagueId: league.id,
                   })
                 }
-                className="text-lg font-semibold text-lime underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
               >
                 {leader.shortName}
               </button>
@@ -139,8 +139,7 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Fixtures"
-          subtitle="All known fixtures from today forward"
+          title="Upcoming games"
           open={openSection === 'fixtures'}
           onToggle={() => toggleSection('fixtures')}
         >
@@ -193,7 +192,6 @@ export function LeagueProfileScreen({
 
         <ProfileAccordion
           title="Player stats"
-          subtitle="Highest-ranked player in each category"
           open={openSection === 'player-stats'}
           onToggle={() => toggleSection('player-stats')}
         >
@@ -207,7 +205,7 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Leaders"
+          title="Stat leaders"
           open={openSection === 'stats'}
           onToggle={() => toggleSection('stats')}
         >
