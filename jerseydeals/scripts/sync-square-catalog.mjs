@@ -26,10 +26,10 @@ const HOST =
   ENV === 'sandbox' ? 'https://connect.squareupsandbox.com' : 'https://connect.squareup.com'
 const API_VERSION = '2025-10-16'
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN
-const STORE_URL = (process.env.SQUARE_STORE_URL || process.env.VITE_SQUARE_STORE_URL || '').replace(
-  /\/$/,
-  '',
-)
+const STORE_URL = (process.env.SQUARE_STORE_URL || process.env.VITE_SQUARE_STORE_URL || '')
+  .trim()
+  .replace(/\/$/, '')
+  .replace(/^http:\/\//i, 'https://')
 const LOCATION_ID = process.env.SQUARE_LOCATION_ID || ''
 const INCLUDE_ZERO = process.env.SQUARE_INCLUDE_ZERO === '1'
 
@@ -297,6 +297,14 @@ const payload = {
 }
 
 mkdirSync(dirname(OUT), { recursive: true })
+
+if (listings.length === 0 && process.env.SQUARE_ALLOW_EMPTY !== '1') {
+  console.warn(
+    '::warning title=Square catalog empty::No sellable Square items found. Leaving listings.json unchanged. Add products in Square Online / Items, then re-run sync. Set SQUARE_ALLOW_EMPTY=1 to force an empty write.',
+  )
+  process.exit(0)
+}
+
 writeFileSync(OUT, `${JSON.stringify(payload, null, 2)}\n`)
 console.log(`Wrote ${listings.length} Square listings → ${OUT}`)
 console.log(`Storefront: ${STORE_URL}`)
