@@ -272,7 +272,15 @@ export function rateMatchPerformance(
   }
 
   const contribution = attack + creation + discipline + goalkeeping + defending
-  const performance100 = clipPerformance(base + contribution)
+  // Scale non-scoring contribution by minutes so brief live subs aren't rated as full matches.
+  // Goals/assists/cards stay at full weight (already in contribution); apply factor to the rest
+  // via overall minute factor capped so a goal still registers strongly.
+  const minuteFactor = Math.min(1, Math.max(0.35, minutesUsed / FULL_TIME))
+  const scaledContribution =
+    stats.totalGoals > 0 || stats.goalAssists > 0 || stats.redCards > 0
+      ? contribution
+      : contribution * minuteFactor
+  const performance100 = clipPerformance(base + scaledContribution)
   const rating = ratingFromPerformance100(performance100)
 
   notes.push(`Performance ${performance100.toFixed(0)}/100 → ${rating.toFixed(1)}`)

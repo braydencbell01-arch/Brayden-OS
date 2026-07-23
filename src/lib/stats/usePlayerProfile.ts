@@ -42,11 +42,11 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       ratingsCursor.current = data.ratingsCursor
       setHasMoreRatings(!data.ratingsCursor.done)
 
-      // Build picker options in the background from years already known on the profile.
+      // Build picker options from the remapped club league, not the nav/cup id.
       const years = data.profile.availableSeasonYears ?? []
       if (years.length > 0) {
         setSeasonsLoading(true)
-        fetchPlayerSeasonOptions(league, id)
+        fetchPlayerSeasonOptions(data.profile.leagueId, id)
           .then((options) => {
             if (requestId.current !== req) return
             setSeasons(options.length > 0 ? options : years.map((year) => ({
@@ -80,14 +80,16 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
 
   const selectSeason = useCallback(
     (year: number) => {
-      if (!leagueId || !playerId || !profile) return
+      if (!playerId || !profile) return
       if (selectedSeason === year) return
       setSelectedSeason(year)
       setStatsLoading(true)
       const req = requestId.current
-      fetchPlayerSeasonStatsForYear(leagueId, playerId, year)
+      fetchPlayerSeasonStatsForYear(profile.leagueId, playerId, year)
         .then((bundle) => {
           if (requestId.current !== req) return
+          // Keep picker honest — only accept rows for the requested year.
+          if (bundle.seasonYear != null && bundle.seasonYear !== year) return
           setProfile((current) => {
             if (!current) return current
             return {
@@ -107,7 +109,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
           if (requestId.current === req) setStatsLoading(false)
         })
     },
-    [leagueId, playerId, profile, selectedSeason],
+    [playerId, profile, selectedSeason],
   )
 
   const loadMoreRatings = useCallback(async () => {

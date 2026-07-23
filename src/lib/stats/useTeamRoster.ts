@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
-import type { LeagueId } from '../leagues'
+import { getLeague, type LeagueId } from '../leagues'
 import { fetchTeamRoster } from './espn'
 import type { TeamRoster } from './types'
 import { useLeagueSeasons } from './useLeagueSeasons'
 
 export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled: boolean) {
+  // Prefer seasons with real tables so the default year is not an empty preseason shell.
+  const seasonMode = getLeague(leagueId).hasStandings ? 'standings' : 'all'
   const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
     leagueId,
     enabled && Boolean(teamId),
-    'all',
+    seasonMode,
   )
   const [data, setData] = useState<TeamRoster | null>(null)
   const [loading, setLoading] = useState(false)

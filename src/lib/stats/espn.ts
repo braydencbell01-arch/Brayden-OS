@@ -6,7 +6,7 @@ import {
   LEAGUES,
   type LeagueId,
 } from '../leagues'
-import { leagueIdFromTeamSlug } from '../search'
+import { leagueIdFromTeamSlug, resolveTeamDomesticLeagueId } from '../search'
 import {
   positionGroupFromAbbrev,
   rateMatchPerformance,
@@ -285,11 +285,25 @@ function buildLineups(
             ...stats,
             appearances: appeared ? Math.max(stats.appearances, 1) : 0,
           }
+          const minutesFromBox =
+            readNumericStat(entry.stats, 'minutes') ||
+            readNumericStat(entry.stats, 'minsPlayed') ||
+            readNumericStat(entry.stats, 'minutesPlayed')
+          const minutesPlayed =
+            minutesFromBox > 0
+              ? minutesFromBox
+              : entry.starter
+                ? live
+                  ? elapsedMinutes
+                  : 90
+                : live
+                  ? Math.max(1, Math.min(30, elapsedMinutes))
+                  : 45
           const breakdown = rateMatchPerformance(
             ratingStats,
             positionGroupFromAbbrev(positionAbbrev),
             {
-              minutesPlayed: live ? elapsedMinutes : 90,
+              minutesPlayed,
               live,
             },
           )
@@ -957,7 +971,7 @@ export async function fetchTeamStatLeaders(
     const url = new URL(
       `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`,
     )
-    url.searchParams.set('limit', '200')
+    url.searchParams.set('limit', '1000')
     const res = await fetch(url)
     if (!res.ok) continue
     const data = (await res.json()) as EspnCoreLeadersResponse
@@ -1467,11 +1481,8 @@ function buildOrderedSeasonStatsFromOverview(
   const names = overview.statistics?.names ?? []
   const labels = overview.statistics?.displayNames ?? []
   const splits = overview.statistics?.splits ?? []
-  const preferred =
-    splits.find((split) => split.leagueSlug === leagueSlug) ||
-    splits.find((split) => (split.displayName || '').toLowerCase().includes('premier')) ||
-    null
-  // Do not fall back to splits[0] — that is often a national-team friendly, not club season.
+  const preferred = splits.find((split) => split.leagueSlug === leagueSlug) || null
+  // Exact league only — never fall back to a similarly named competition.
   if (!preferred?.stats?.length) return []
   return buildOrderedSeasonStatsFromArrays(names, labels, preferred.stats)
 }
@@ -1486,11 +1497,7 @@ function buildOrderedSeasonStatsFromAthleteStats(
   const names = [...(category?.names ?? [])]
   const labels = [...(category?.displayNames ?? [])]
   const rows = category?.statistics ?? []
-  const leagueRows = rows.filter((item) => item.leagueSlug === leagueSlug)
-  const candidates =
-    leagueRows.length > 0
-      ? leagueRows
-      : rows.filter((item) => item.leagueSlug && item.leagueSlug.includes('.'))
+  const candidates = rows.filter((item) => item.leagueSlug === leagueSlug)
 
   const row =
     (preferredYear != null
@@ -1565,7 +1572,7 @@ async function fetchAthleteLeagueSeasonStats(
   const availableYears = [
     ...new Set(
       rows
-        .filter((item) => item.leagueSlug === leagueSlug || item.leagueSlug?.includes('.'))
+        .filter((item) => item.leagueSlug === leagueSlug)
         .map((item) => item.season?.year)
         .filter((year): year is number => typeof year === 'number'),
     ),
@@ -2352,6 +2359,22 @@ async function averageRatingFromSeasonGameLog(
         ]),
       ),
     }
+    // Skip DNP / unused-sub shells — all-zero lines rate as a false 5.0.
+    const touchedPitch =
+      stats.totalGoals > 0 ||
+      stats.goalAssists > 0 ||
+      stats.totalShots > 0 ||
+      stats.shotsOnTarget > 0 ||
+      stats.foulsCommitted > 0 ||
+      stats.foulsSuffered > 0 ||
+      stats.yellowCards > 0 ||
+      stats.redCards > 0 ||
+      stats.offsides > 0 ||
+      stats.saves > 0 ||
+      stats.shotsFaced > 0 ||
+      (stats.chancesCreated ?? 0) > 0 ||
+      (stats.successfulDribbles ?? 0) > 0
+    if (!touchedPitch) continue
     const breakdown = rateMatchPerformance(
       stats,
       positionGroupFromAbbrev(positionAbbrev),
@@ -2486,11 +2509,13 @@ export async function fetchPlayerProfile(
   if (!athlete?.id) throw new Error('Player not found')
 
   // Club players opened from internationals/continentals must load domestic season stats.
+  const needsDomesticRemap =
+    isInternationalLeague(leagueId) || isContinentalLeague(leagueId)
+  const fromTeam = needsDomesticRemap
+    ? await resolveTeamDomesticLeagueId(athlete.team?.id, athlete.team?.slug)
+    : null
   const fromSlug = leagueIdFromTeamSlug(athlete.team?.slug)
-  const effectiveLeagueId =
-    fromSlug && (isInternationalLeague(leagueId) || isContinentalLeague(leagueId))
-      ? fromSlug
-      : leagueId
+  const effectiveLeagueId = fromTeam || (fromSlug && needsDomesticRemap ? fromSlug : leagueId)
   const league = getLeague(effectiveLeagueId)
 
   const [bioRes, overviewRes, seasonStatsBundle] = await Promise.all([
@@ -2543,13 +2568,34 @@ export async function fetchPlayerProfile(
   const origin = countryOfOrigin(athlete)
   const represents = nationalSide?.teamName || origin
   const representsNationalTeam = Boolean(nationalSide)
-  const seasonSummary = (athlete.statsSummary?.statistics ?? [])
-    .filter((stat) => stat.displayName && stat.displayValue)
-    .slice(0, 6)
-    .map((stat) => ({
-      label: stat.displayName!,
-      value: stat.displayValue!,
-    }))
+  const summaryYear = (() => {
+    const label = athlete.statsSummary?.displayName || ''
+    const range = label.match(/(20\d{2})\s*[-/]\s*(?:\d{2}|20\d{2})/)
+    if (range) return Number(range[1])
+    const single = label.match(/(20\d{2})/)
+    return single ? Number(single[1]) : null
+  })()
+  const summaryStats = athlete.statsSummary?.statistics ?? []
+  const summaryAllZero =
+    summaryStats.length > 0 &&
+    summaryStats.every((stat) => {
+      const value = (stat.displayValue || '').trim()
+      return value === '' || /^0+(\s*\(.*\))?$/.test(value)
+    })
+  const summaryMatchesSeason =
+    seasonStatsBundle.seasonYear == null ||
+    summaryYear == null ||
+    summaryYear === seasonStatsBundle.seasonYear
+  const seasonSummary =
+    !summaryAllZero && summaryMatchesSeason
+      ? summaryStats
+          .filter((stat) => stat.displayName && stat.displayValue)
+          .slice(0, 6)
+          .map((stat) => ({
+            label: stat.displayName!,
+            value: stat.displayValue!,
+          }))
+      : []
 
   return {
     profile: {
