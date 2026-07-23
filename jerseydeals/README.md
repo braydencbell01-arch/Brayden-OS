@@ -9,8 +9,9 @@ https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
 
 - Top-left **Jersey Deals** wordmark (matches logo type)
 - Centered circular logo (`public/logo.png`)
-- Two black photo placeholders: **youth apparel** and **shop the sale**
-- Featured gear, buy-direct story, and **Enter the storefront** CTAs
+- Category tiles linking into the live eBay shop (youth + full catalog)
+- Featured gear pulled from active eBay listings (`public/listings.json`)
+- Privacy policy at `/privacy.html` (eBay OAuth / app settings)
 
 ## Stack
 
@@ -24,10 +25,24 @@ https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
 ```bash
 cd jerseydeals
 npm install
+npm run sync:ebay   # requires EBAY_* secrets in the environment
 npm run dev
 ```
 
-Set `STOREFRONT_URL` in `src/App.tsx` to your live Shopify or Square store link.
+### Sync live eBay listings
+
+```bash
+npm run sync:ebay
+```
+
+Requires:
+
+- `EBAY_APP_ID`
+- `EBAY_CERT_ID`
+- `EBAY_DEV_ID`
+- `EBAY_USER_TOKEN`
+
+Writes `public/listings.json` for the static GitHub Pages build. Re-run whenever inventory changes (the Auth’n’Auth user token also expires — refresh it in the eBay Developer portal when `HardExpirationWarning` appears).
 
 ## Build
 
