@@ -217,7 +217,12 @@ export type PlayerRecentMatchRating = {
   opponentScore?: number | null
 }
 
-/** Opaque cursor for paginating recent match ratings across seasons. */
+/**
+ * Opaque cursor for paginating previous match ratings across seasons.
+ * Seasons are newest-first; within a season `page` walks from last→first
+ * (ESPN eventlog pages are oldest-first). `page === 0` means the season
+ * still needs its pageCount discovered.
+ */
 export type PlayerRatingsCursor = {
   seasons: number[]
   seasonIndex: number

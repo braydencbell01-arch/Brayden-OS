@@ -876,8 +876,8 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
 
             <ProfileAccordion
-              title="Match ratings"
-              subtitle="Brayden Rating · scroll for full history"
+              title="Previous ratings"
+              subtitle="Brayden Rating · newest first"
               open={openSection === 'ratings'}
               onToggle={() => toggle('ratings')}
             >

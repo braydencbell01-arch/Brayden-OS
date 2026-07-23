@@ -3,6 +3,7 @@ import type { LeagueId } from '../leagues'
 import { getLeague } from '../leagues'
 import {
   fetchNextPlayerRatingsBatch,
+  sortRatingsNewestFirst,
   fetchPlayerProfile,
   fetchPlayerSeasonOptions,
   fetchPlayerSeasonStatsForYear,
@@ -140,7 +141,10 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
           if (appended.length === 0) return current
           return {
             ...current,
-            recentRatings: [...current.recentRatings, ...appended],
+            recentRatings: sortRatingsNewestFirst([
+              ...current.recentRatings,
+              ...appended,
+            ]),
           }
         })
       }
