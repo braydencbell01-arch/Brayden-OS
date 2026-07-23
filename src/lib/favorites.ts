@@ -9,6 +9,8 @@ export type FavoriteTeam = {
   name: string
   shortName: string
   leagueId: LeagueId
+  /** National sides (England, Brazil, …) vs club teams. */
+  kind?: 'club' | 'national'
 }
 
 export type FavoritePlayer = {

@@ -1,4 +1,4 @@
-import { LEAGUES, type League, type LeagueId } from './leagues'
+import { LEAGUES, isInternationalLeague, type League, type LeagueId } from './leagues'
 import type { FavoritePlayer, FavoriteTeam } from './favorites'
 import type { Match } from './matches'
 import type { PlayerNavRef } from '../components/PlayerProfileScreen'
@@ -32,17 +32,47 @@ const ESPN_CODE_TO_LEAGUE_ID: Record<string, LeagueId> = Object.fromEntries(
   LEAGUES.map((league) => [league.espnCode, league.id]),
 ) as Record<string, LeagueId>
 
+/** Prefer men's senior national comps when ESPN returns several league tags. */
+const NATIONAL_LEAGUE_PRIORITY: LeagueId[] = [
+  'fifa-world',
+  'uefa-nations',
+  'uefa-euro',
+  'fifa-worldq',
+  'conmebol-america',
+  'fifa-friendly',
+]
+
 export function leagueIdFromEspnCode(code?: string | null): LeagueId | null {
   if (!code) return null
   return ESPN_CODE_TO_LEAGUE_ID[code] ?? null
 }
 
-/** Map ESPN team slug prefixes like eng.arsenal → premier-league via eng.1 */
+/**
+ * Map ESPN club team slugs like eng.arsenal → premier-league via eng.1.
+ * Country-only slugs (eng, bra) are national sides — do not map to domestic leagues.
+ */
 export function leagueIdFromTeamSlug(slug?: string | null): LeagueId | null {
   if (!slug) return null
-  const prefix = slug.split('.')[0]?.toLowerCase()
+  const parts = slug.split('.')
+  if (parts.length < 2) return null
+  const prefix = parts[0]?.toLowerCase()
   if (!prefix) return null
   return leagueIdFromEspnCode(`${prefix}.1`)
+}
+
+function teamKindForLeague(leagueId: LeagueId): FavoriteTeam['kind'] {
+  return isInternationalLeague(leagueId) ? 'national' : 'club'
+}
+
+function pickBestLeagueId(candidates: Array<string | null | undefined>): LeagueId | null {
+  const resolved = candidates
+    .map((code) => leagueIdFromEspnCode(code))
+    .filter((id): id is LeagueId => Boolean(id))
+  if (resolved.length === 0) return null
+  for (const preferred of NATIONAL_LEAGUE_PRIORITY) {
+    if (resolved.includes(preferred)) return preferred
+  }
+  return resolved[0] ?? null
 }
 
 function normalizeQuery(value: string): string {
@@ -61,7 +91,9 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
     (league) =>
       includesQuery(league.name, q) ||
       includesQuery(league.short, q) ||
-      includesQuery(league.country, q),
+      includesQuery(league.country, q) ||
+      (league.kind === 'international' && includesQuery('international', q)) ||
+      (league.kind === 'international' && includesQuery('national', q)),
   ).map((league) => ({ kind: 'league' as const, league }))
 }
 
@@ -81,6 +113,7 @@ export function collectLocalTeams(
         name: side.name,
         shortName: side.shortName,
         leagueId: match.leagueId,
+        kind: teamKindForLeague(match.leagueId),
       })
     }
   }
@@ -180,9 +213,7 @@ export async function searchEspnSoccer(
   const seenTeams = new Set<string>()
   for (const item of teamJson.items ?? []) {
     if (item.type !== 'team' || item.sport !== 'soccer' || !item.id || !item.displayName) continue
-    const leagueId =
-      leagueIdFromEspnCode(item.defaultLeagueSlug) ||
-      leagueIdFromEspnCode(item.league)
+    const leagueId = pickBestLeagueId([item.defaultLeagueSlug, item.league])
     if (!leagueId) continue
     if (seenTeams.has(item.id)) continue
     seenTeams.add(item.id)
@@ -193,6 +224,7 @@ export async function searchEspnSoccer(
         name: item.displayName,
         shortName: item.abbreviation || item.name || item.displayName,
         leagueId,
+        kind: teamKindForLeague(leagueId),
       },
     })
     if (teams.length >= 10) break
@@ -210,11 +242,11 @@ export async function searchEspnSoccer(
     const relatedSlugs = (item.leagueRelationships ?? [])
       .map((rel) => rel.core?.slug)
       .filter(Boolean) as string[]
-    const leagueId =
-      relatedSlugs.map(leagueIdFromEspnCode).find(Boolean) ||
-      leagueIdFromEspnCode(item.league) ||
-      leagueIdFromEspnCode(item.defaultLeagueSlug) ||
-      null
+    const leagueId = pickBestLeagueId([
+      ...relatedSlugs,
+      item.league,
+      item.defaultLeagueSlug,
+    ])
 
     // Skip unresolved leagues — avoid fake Premier League defaults in results.
     if (!leagueId) continue
@@ -276,7 +308,7 @@ export async function resolvePlayerNavFromSearch(
 
     return {
       id: athlete.id,
-      leagueId: hit.player.leagueId || fromSlug,
+      leagueId: fromSlug || hit.player.leagueId,
       name: athlete.displayName || hit.player.name,
       shortName: athlete.shortName || hit.player.shortName,
       photoUrl: athlete.headshot?.href || hit.player.photoUrl || playerHeadshotUrl(athlete.id),

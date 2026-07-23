@@ -1,4 +1,4 @@
-import { getLeague, LEAGUES, type LeagueId } from '../leagues'
+import { getLeague, internationalLeagues, LEAGUES, type LeagueId } from '../leagues'
 import {
   positionGroupFromAbbrev,
   rateMatchPerformance,
@@ -99,6 +99,8 @@ type EspnStandingEntry = {
 
 type EspnStandingsResponse = {
   children?: Array<{
+    name?: string
+    abbreviation?: string
     standings?: { entries?: EspnStandingEntry[] }
   }>
 }
@@ -393,6 +395,8 @@ async function fetchStandingsForSeason(
   season?: number,
 ): Promise<StandingRow[]> {
   const league = getLeague(leagueId)
+  if (!league.hasStandings) return []
+
   const url = new URL(
     `https://site.api.espn.com/apis/v2/sports/soccer/${league.espnCode}/standings`,
   )
@@ -403,11 +407,14 @@ async function fetchStandingsForSeason(
   }
 
   const data = (await res.json()) as EspnStandingsResponse
-  const entries =
-    data.children?.flatMap((child) => child.standings?.entries ?? []) ?? []
+  const children = data.children ?? []
+  const multiGroup = children.filter((child) => (child.standings?.entries?.length ?? 0) > 0).length > 1
 
-  return entries
-    .map((entry, index) => {
+  const rows = children.flatMap((child) => {
+    const groupLabel = multiGroup
+      ? child.name || child.abbreviation || undefined
+      : undefined
+    return (child.standings?.entries ?? []).map((entry, index) => {
       const teamName = entry.team?.displayName || 'Unknown'
       return {
         rank: readStat(entry, 'rank') || index + 1,
@@ -423,9 +430,16 @@ async function fetchStandingsForSeason(
         goalsFor: readStat(entry, 'pointsFor'),
         goalsAgainst: readStat(entry, 'pointsAgainst'),
         note: entry.note?.description,
+        group: groupLabel,
       }
     })
-    .sort((a, b) => a.rank - b.rank || b.points - a.points)
+  })
+
+  return rows.sort((a, b) => {
+    const groupCmp = (a.group || '').localeCompare(b.group || '')
+    if (groupCmp !== 0) return groupCmp
+    return a.rank - b.rank || b.points - a.points
+  })
 }
 
 export async function fetchLeagueStandings(leagueId: LeagueId): Promise<StandingRow[]> {
@@ -465,34 +479,51 @@ function jerseySortValue(jersey?: string): number {
   return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER
 }
 
-/** Full club squad, grouped by position (GK → DEF → MID → FWD). */
+/** Full squad, grouped by position (GK → DEF → MID → FWD). */
 export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promise<TeamRoster> {
   const league = getLeague(leagueId)
   const nowYear = new Date().getUTCFullYear()
   const yearsToTry = [nowYear, nowYear - 1, nowYear - 2, null] as const
+  const codesToTry = [
+    league.espnCode,
+    ...(league.kind === 'international'
+      ? internationalLeagues()
+          .filter((item) => item.espnCode !== league.espnCode)
+          .map((item) => item.espnCode)
+      : []),
+  ]
 
   let athletes: EspnTeamRosterAthlete[] = []
   let season = nowYear
   let seasonLabel = String(nowYear)
+  let resolvedLeagueId = leagueId
 
-  for (const year of yearsToTry) {
-    const url = new URL(
-      `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/roster`,
-    )
-    if (year != null) url.searchParams.set('season', String(year))
-    const res = await fetch(url)
-    if (!res.ok) continue
-    const data = (await res.json()) as EspnTeamRosterResponse
-    const list = data.athletes ?? []
-    if (list.length === 0) continue
-    athletes = list
-    season = data.season?.year ?? year ?? nowYear
-    seasonLabel = data.season?.displayName || `${season} season`
-    break
+  outer: for (const espnCode of codesToTry) {
+    for (const year of yearsToTry) {
+      const url = new URL(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/teams/${encodeURIComponent(teamId)}/roster`,
+      )
+      if (year != null) url.searchParams.set('season', String(year))
+      const res = await fetch(url)
+      if (!res.ok) continue
+      const data = (await res.json()) as EspnTeamRosterResponse
+      const list = data.athletes ?? []
+      if (list.length === 0) continue
+      athletes = list
+      season = data.season?.year ?? year ?? nowYear
+      seasonLabel = data.season?.displayName || `${season} season`
+      const matched = LEAGUES.find((item) => item.espnCode === espnCode)
+      if (matched) resolvedLeagueId = matched.id
+      break outer
+    }
   }
 
   if (athletes.length === 0) {
-    throw new Error(`No roster available for this club yet`)
+    throw new Error(
+      league.kind === 'international'
+        ? `No roster available for this national team yet`
+        : `No roster available for this club yet`,
+    )
   }
 
   const buckets = new Map<string, TeamRosterPlayer[]>()
@@ -527,7 +558,7 @@ export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promi
   })
 
   return {
-    leagueId,
+    leagueId: resolvedLeagueId,
     teamId,
     season,
     seasonLabel,
