@@ -109,27 +109,27 @@ function statMap(stats: EspnStat[] | undefined): Map<string, string> {
   const map = new Map<string, string>()
   for (const stat of stats ?? []) {
     if (!stat.name) continue
-    map.set(stat.name, stat.displayValue ?? '—')
+    map.set(stat.name, stat.displayValue ?? '')
   }
   return map
 }
 
 function formatPossession(value: string): string {
-  if (!value || value === '—') return value || '—'
+  if (!value || value === '—') return value || ''
   return value.includes('%') ? value : `${value}%`
 }
 
 function buildStatLines(home: Map<string, string>, away: Map<string, string>): TeamMatchStatLine[] {
   return STAT_KEYS.map(({ key, label }) => {
-    const homeRaw = home.get(key) ?? '—'
-    const awayRaw = away.get(key) ?? '—'
+    const homeRaw = home.get(key) ?? ''
+    const awayRaw = away.get(key) ?? ''
     return {
       key,
       label,
       home: key === 'possessionPct' ? formatPossession(homeRaw) : homeRaw,
       away: key === 'possessionPct' ? formatPossession(awayRaw) : awayRaw,
     }
-  }).filter((line) => !(line.home === '—' && line.away === '—'))
+  }).filter((line) => line.home || line.away)
 }
 
 function classifyMoment(event: EspnKeyEvent): MatchMoment['kind'] {
@@ -259,14 +259,14 @@ function buildLineups(
   return (summary.rosters ?? [])
     .map((side) => {
       const teamId = side.team?.id || 'unknown'
-      const teamName = side.team?.displayName || side.team?.shortDisplayName || 'Team'
+      const teamName = side.team?.displayName || side.team?.shortDisplayName || ''
       const homeAway: 'home' | 'away' = side.homeAway === 'away' ? 'away' : 'home'
       const players = (side.roster ?? []).flatMap((entry) => {
           const id = entry.athlete?.id
           if (!id) return []
-          const name = entry.athlete?.displayName || 'Unknown'
+          const name = entry.athlete?.displayName || ''
           const shortName = entry.athlete?.shortName || name
-          const positionAbbrev = entry.position?.abbreviation || '—'
+          const positionAbbrev = entry.position?.abbreviation || ''
           const jerseyUrl = entry.athlete?.jerseyImages?.[0]?.href
           const stats = toMatchPlayerStats(entry)
           const appeared = playerAppearedOnPitch(entry, stats)
@@ -415,12 +415,12 @@ async function fetchStandingsForSeason(
       ? child.name || child.abbreviation || undefined
       : undefined
     return (child.standings?.entries ?? []).map((entry, index) => {
-      const teamName = entry.team?.displayName || 'Unknown'
+      const teamName = entry.team?.displayName || ''
       return {
         rank: readStat(entry, 'rank') || index + 1,
-        teamId: entry.team?.id || teamName.toLowerCase().replace(/\s+/g, '-'),
+        teamId: entry.team?.id || teamName.toLowerCase().replace(/\s+/g, '-') || `team-${index}`,
         team: teamName,
-        shortName: entry.team?.shortDisplayName || entry.team?.displayName || '—',
+        shortName: entry.team?.shortDisplayName || entry.team?.displayName || '',
         played: readStat(entry, 'gamesPlayed'),
         won: readStat(entry, 'wins'),
         drawn: readStat(entry, 'ties'),
@@ -529,7 +529,7 @@ export async function fetchTeamRoster(leagueId: LeagueId, teamId: string): Promi
   const buckets = new Map<string, TeamRosterPlayer[]>()
   for (const entry of athletes) {
     if (!entry.id || !entry.displayName) continue
-    const positionAbbrev = entry.position?.abbreviation || '—'
+    const positionAbbrev = entry.position?.abbreviation || ''
     const groupId = positionGroupFromAbbrev(positionAbbrev)
     const player: TeamRosterPlayer = {
       id: entry.id,
@@ -618,7 +618,7 @@ function playerLeadersFromSiteStats(
       const block = stats?.find((item) => item.name === name)
       const leaders = (block?.leaders ?? []).slice(0, limit).map((leader, index) => {
         const athlete = leader.athlete
-        const nameText = athlete?.displayName || 'Unknown'
+        const nameText = athlete?.displayName || ''
         const team =
           athlete?.team ||
           leader.team ||
@@ -632,7 +632,7 @@ function playerLeadersFromSiteStats(
           teamId: team?.id,
           teamName: team?.displayName || team?.shortDisplayName,
           value: typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0,
-          displayValue: leader.shortDisplayValue || leader.displayValue || String(leader.value ?? '—'),
+          displayValue: leader.shortDisplayValue || leader.displayValue || String(leader.value ?? ''),
         }
       })
       return {
@@ -816,7 +816,7 @@ export async function fetchLeaguePlayerStatsOverview(
     const teamId = idFromCoreRef(top.team?.$ref, 'teams')
     const athlete = athleteId ? athleteById.get(athleteId) : null
     const team = teamId ? teamById.get(teamId) : null
-    const name = athlete?.displayName || 'Unknown'
+    const name = athlete?.displayName || ''
     const value = typeof top.value === 'number' ? top.value : Number(top.value) || 0
     return {
       categoryId: category.name || name,
@@ -1661,7 +1661,7 @@ function mapTeamHistoryStint(stint: {
     teamId: stint.id || stint.displayName.toLowerCase().replace(/\s+/g, '-'),
     teamName: stint.displayName,
     logoUrl: stint.logo,
-    seasons: stint.seasons || '—',
+    seasons: stint.seasons || '',
     isActive: stint.isActive === true,
   }
 }
@@ -1887,7 +1887,7 @@ export async function fetchPlayerProfile(
   const athlete = athleteJson.athlete
   if (!athlete?.id) throw new Error('Player not found')
 
-  const name = athlete.displayName || athlete.fullName || 'Unknown'
+  const name = athlete.displayName || athlete.fullName || ''
   const shortName = athlete.shortName || name
   const positionAbbrev = athlete.position?.abbreviation
   const overviewRatings = parseGameLogRatings(overviewJson, positionAbbrev)

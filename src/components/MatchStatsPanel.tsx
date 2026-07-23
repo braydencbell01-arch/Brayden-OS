@@ -1,4 +1,5 @@
 import type { FavoriteTeam } from '../lib/favorites'
+import { MISSING_LONG, missingLong, missingShort } from '../lib/display'
 import type { MatchDetailStats, MatchLineupPlayer } from '../lib/stats/types'
 import { MatchLineupPanel } from './MatchLineupPanel'
 
@@ -43,7 +44,7 @@ export function MatchStatsPanel({
   }
 
   if (!stats) {
-    return <p className="mt-3 text-xs text-mist/65">Match details aren’t ready yet.</p>
+    return <p className="mt-3 text-xs text-mist/65">{MISSING_LONG}</p>
   }
 
   return (
@@ -70,19 +71,19 @@ export function MatchStatsPanel({
               className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs"
             >
               <span className="text-right font-semibold tabular-nums text-cream">
-                {line.home && line.home !== '—' ? line.home : 'Not available'}
+                {missingShort(line.home)}
               </span>
               <span className="min-w-[5.5rem] text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/65">
                 {line.label}
               </span>
               <span className="text-left font-semibold tabular-nums text-cream">
-                {line.away && line.away !== '—' ? line.away : 'Not available'}
+                {missingShort(line.away)}
               </span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-mist/65">Not available</p>
+        <p className="text-xs text-mist/65">{MISSING_LONG}</p>
       )}
 
       {stats.moments.length > 0 && (
@@ -95,9 +96,9 @@ export function MatchStatsPanel({
                   moment.kind === 'goal' ? 'text-lime' : 'text-mist/70',
                 ].join(' ')}
               >
-                {moment.clock || 'Not available'}
+                {missingShort(moment.clock)}
               </span>
-              <span>{moment.text || 'Not available'}</span>
+              <span>{missingLong(moment.text)}</span>
             </li>
           ))}
         </ul>

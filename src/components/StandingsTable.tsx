@@ -1,5 +1,6 @@
 import type { LeagueId } from '../lib/leagues'
 import { isInternationalLeague } from '../lib/leagues'
+import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
 import type { StandingRow } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
@@ -70,7 +71,7 @@ function StandingGroupTable({
                   <FavoriteStar
                     active={active}
                     size="sm"
-                    label={row.shortName}
+                    label={missingShort(row.shortName)}
                     onToggle={() => onToggleTeam(teamRef)}
                   />
                 </td>
@@ -85,10 +86,10 @@ function StandingGroupTable({
                       onClick={() => onOpenTeam(teamRef)}
                       className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
-                      {row.shortName}
+                      {missingShort(row.shortName)}
                     </button>
                   ) : (
-                    row.shortName
+                    missingShort(row.shortName)
                   )}
                   {row.note ? (
                     <span className="mt-0.5 block text-[0.6rem] font-medium normal-case tracking-normal text-mist/55">

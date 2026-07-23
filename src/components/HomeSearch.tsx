@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { MISSING_LONG, missingShort } from '../lib/display'
 import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam } from '../lib/favorites'
 import type { Match } from '../lib/matches'
@@ -339,13 +340,14 @@ export function HomeSearch({
                       key={hit.player.id}
                       label={
                         openingPlayerId === hit.player.id
-                          ? `${hit.player.name || hit.player.shortName}…`
-                          : hit.player.name || hit.player.shortName || 'Player'
+                          ? `${missingShort(hit.player.name || hit.player.shortName)}…`
+                          : missingShort(hit.player.name || hit.player.shortName)
                       }
                       meta={
                         hit.subtitle ||
                         hit.player.teamName ||
-                        getLeague(hit.player.leagueId).short
+                        getLeague(hit.player.leagueId).short ||
+                        MISSING_LONG
                       }
                       onClick={() => void handleHit(hit)}
                     />

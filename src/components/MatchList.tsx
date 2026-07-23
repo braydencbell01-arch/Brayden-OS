@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { formatKickoffTime } from '../lib/dates'
+import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { isFavoriteMatch, type Match } from '../lib/matches'
 import type { MatchLineupPlayer } from '../lib/stats/types'
 import { useMatchDetailStats } from '../lib/stats/useMatchDetailStats'
@@ -35,14 +36,14 @@ function toPlayerNav(player: MatchLineupPlayer): PlayerNavRef {
 
 function statusLabel(match: Match): string {
   if (match.status === 'scheduled') {
-    return match.kickoffTimeKnown ? formatKickoffTime(match.kickoff) : 'Not available'
+    return match.kickoffTimeKnown ? formatKickoffTime(match.kickoff) : MISSING_LONG
   }
-  if (match.status === 'postponed') return match.statusText || 'PPD'
+  if (match.status === 'postponed') return missingLong(match.statusText || 'PPD')
   // Prefer ESPN clock / AET / PEN detail over a blunt LIVE/FT label.
   if (match.statusText?.trim()) return match.statusText
   if (match.status === 'live') return 'LIVE'
   if (match.status === 'finished') return 'FT'
-  return 'Not available'
+  return MISSING_LONG
 }
 
 function Score({ match }: { match: Match }) {
@@ -53,7 +54,9 @@ function Score({ match }: { match: Match }) {
   const home = match.home.score
   const away = match.away.score
   if (home == null || away == null) {
-    return <span className="font-display text-lg tracking-wide text-mist/50">—</span>
+    return (
+      <span className="font-display text-lg tracking-wide text-mist/50">{MISSING_SHORT}</span>
+    )
   }
   return (
     <span className="font-display text-2xl tracking-wide text-cream tabular-nums">
@@ -75,10 +78,11 @@ function TeamNameButton({
 }) {
   const team = side === 'home' ? match.home : match.away
   const align = side === 'home' ? 'text-right' : 'text-left'
+  const label = missingShort(team.shortName)
 
   if (!onOpenTeam) {
     return (
-      <p className={`${align} text-sm font-semibold text-cream sm:text-base`}>{team.shortName}</p>
+      <p className={`${align} text-sm font-semibold text-cream sm:text-base`}>{label}</p>
     )
   }
 
@@ -96,7 +100,7 @@ function TeamNameButton({
       }
       className={`${align} profile-link text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
     >
-      {team.shortName}
+      {label}
     </button>
   )
 }
@@ -124,8 +128,9 @@ function ExpandableMatchRow({
   const { stats, loading, error } = useMatchDetailStats(open ? match : null)
   const expandLabel =
     match.status === 'scheduled' ? 'Details' : match.status === 'live' ? 'Live' : 'Lineups'
-  const showLeagueLabel = showLeague || !match.venue
-  const leagueLabel = showLeague ? league.short : match.venue || league.short
+  const leagueLabel = showLeague
+    ? league.short
+    : missingLong(match.venue)
 
   return (
     <article
@@ -160,7 +165,7 @@ function ExpandableMatchRow({
         <div className="mb-1.5 flex w-full items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
-            {showLeagueLabel && onOpenLeague ? (
+            {showLeague && onOpenLeague ? (
               <button
                 type="button"
                 onClick={(event) => {

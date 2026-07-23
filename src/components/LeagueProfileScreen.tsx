@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatMatchDayHeading, toDateKey } from '../lib/dates'
+import { MISSING_SHORT } from '../lib/display'
 import { useToday } from '../lib/useToday'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import type { League } from '../lib/leagues'
@@ -91,7 +92,7 @@ export function LeagueProfileScreen({
       <ProfileMetricsRow>
         <ProfileMetric
           label={isInternational ? 'Teams' : 'Clubs'}
-          value={standings.loading ? '…' : clubCount || '—'}
+          value={standings.loading ? '…' : clubCount || MISSING_SHORT}
         />
         <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
         <ProfileMetric
@@ -116,7 +117,7 @@ export function LeagueProfileScreen({
                 {leader.shortName}
               </button>
             ) : (
-              '—'
+              MISSING_SHORT
             )
           }
         />

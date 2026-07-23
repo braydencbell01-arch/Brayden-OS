@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { MISSING_LONG } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
@@ -170,7 +171,7 @@ export function TeamProfileScreen({
         `${club.trophyCount}${club.trophySource ? ' · major titles' : ''}`,
       ])
     } else if (!isNational && !facts.loading) {
-      rows.push(['Trophies', 'Not listed'])
+      rows.push(['Trophies', MISSING_LONG])
     }
 
     if (club?.standingSummary) {

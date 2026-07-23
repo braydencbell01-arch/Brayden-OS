@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { MISSING_SHORT } from '../../lib/display'
 import { snakeMemberForPick, totalDraftPicks } from '../../lib/fantasy/draft'
 import { suggestStartersDetailed } from '../../lib/fantasy/lineup'
 import { standingsRank } from '../../lib/fantasy/schedule'
@@ -44,7 +45,7 @@ function useNow(intervalMs = 1000): number {
 
 function useClockLabel(deadlineAt: number | undefined): string {
   const now = useNow(250)
-  if (!deadlineAt) return '--'
+  if (!deadlineAt) return MISSING_SHORT
   const left = Math.max(0, Math.ceil((deadlineAt - now) / 1000))
   const m = Math.floor(left / 60)
   const s = left % 60
@@ -959,7 +960,8 @@ function RosterSection({
                   {id === flexId ? <span className="ml-2 text-[10px] text-lime">FLEX</span> : null}
                 </p>
                 <p className="text-[11px] text-mist/50">
-                  Week {p?.weekProjection.toFixed(1) ?? '--'} - Season {p?.seasonProjection.toFixed(0) ?? '--'}
+                  Week {p?.weekProjection.toFixed(1) ?? MISSING_SHORT} - Season{' '}
+                  {p?.seasonProjection.toFixed(0) ?? MISSING_SHORT}
                   {p?.status && p.status !== 'a' ? ` - status ${p.status}` : ''}
                 </p>
               </div>
@@ -1331,11 +1333,14 @@ function TradeCard({ trade, fantasy, now }: { trade: TradeOffer; fantasy: Fantas
         {from?.name} -&gt; {to?.name} <span className="text-xs text-mist/50">({trade.status})</span>
       </p>
       <p className="mt-1 text-xs text-mist/60">
-        Offer: {trade.offerPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') || '--'}
+        Offer:{' '}
+        {trade.offerPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') ||
+          MISSING_SHORT}
       </p>
       <p className="text-xs text-mist/60">
         Request:{' '}
-        {trade.requestPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') || '--'}
+        {trade.requestPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') ||
+          MISSING_SHORT}
       </p>
       {trade.status === 'pending' ? (
         <div className="mt-2 flex gap-2">
