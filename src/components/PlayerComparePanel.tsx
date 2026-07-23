@@ -19,12 +19,17 @@ type Side = {
   error: string | null
 }
 
+function lowerIsBetter(label: string): boolean {
+  return /conceded|against|ga\b|cards|fouls committed|errors|offsides|own goals/i.test(label)
+}
+
 function StatRow({ label, a, b }: { label: string; a: string; b: string }) {
   const aNum = Number(a.replace(/[^0-9.-]/g, ''))
   const bNum = Number(b.replace(/[^0-9.-]/g, ''))
   const comparable = Number.isFinite(aNum) && Number.isFinite(bNum) && a !== b
-  const aWins = comparable && aNum > bNum
-  const bWins = comparable && bNum > aNum
+  const invert = lowerIsBetter(label)
+  const aWins = comparable && (invert ? aNum < bNum : aNum > bNum)
+  const bWins = comparable && (invert ? bNum < aNum : bNum > aNum)
 
   return (
     <div className="grid grid-cols-3 gap-2 border-b border-white/10 py-2 text-sm">
@@ -204,14 +209,26 @@ async function loadSide(nav: PlayerNavRef): Promise<Omit<Side, 'nav'>> {
 export function PlayerComparePanel({
   favoritePlayers,
   onOpenPlayer,
+  initialA,
+  initialB,
 }: {
   favoritePlayers: FavoritePlayer[]
   onOpenPlayer: (player: PlayerNavRef) => void
+  initialA?: PlayerNavRef | null
+  initialB?: PlayerNavRef | null
 }) {
-  const [navA, setNavA] = useState<PlayerNavRef | null>(null)
-  const [navB, setNavB] = useState<PlayerNavRef | null>(null)
+  const [navA, setNavA] = useState<PlayerNavRef | null>(initialA ?? null)
+  const [navB, setNavB] = useState<PlayerNavRef | null>(initialB ?? null)
   const [sideA, setSideA] = useState<Side | null>(null)
   const [sideB, setSideB] = useState<Side | null>(null)
+  const seededRef = useRef(false)
+
+  useEffect(() => {
+    if (seededRef.current) return
+    if (initialA) setNavA(initialA)
+    if (initialB) setNavB(initialB)
+    if (initialA || initialB) seededRef.current = true
+  }, [initialA, initialB])
 
   useEffect(() => {
     if (!navA) {

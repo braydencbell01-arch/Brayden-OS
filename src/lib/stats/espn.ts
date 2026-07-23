@@ -374,12 +374,16 @@ export async function fetchMatchDetailStats(
   }
 }
 
-function readStat(entry: EspnStandingEntry, name: string): number {
-  const found = entry.stats?.find((stat) => stat.name === name)
-  if (!found) return 0
-  if (typeof found.value === 'number' && Number.isFinite(found.value)) return found.value
-  const n = Number(found.displayValue)
-  return Number.isFinite(n) ? n : 0
+function readStat(entry: EspnStandingEntry, names: string | string[]): number {
+  const aliases = Array.isArray(names) ? names : [names]
+  for (const name of aliases) {
+    const found = entry.stats?.find((stat) => stat.name === name)
+    if (!found) continue
+    if (typeof found.value === 'number' && Number.isFinite(found.value)) return found.value
+    const n = Number(found.displayValue)
+    if (Number.isFinite(n)) return n
+  }
+  return 0
 }
 
 type EspnSiteLeaderAthlete = {
@@ -448,7 +452,7 @@ async function fetchStandingsForSeason(
         shortName: entry.team?.shortDisplayName || entry.team?.displayName || '',
         played: readStat(entry, 'gamesPlayed'),
         won: readStat(entry, 'wins'),
-        drawn: readStat(entry, 'ties'),
+        drawn: readStat(entry, ['ties', 'draws']),
         lost: readStat(entry, 'losses'),
         goalDiff: readStat(entry, 'pointDifferential'),
         points: readStat(entry, 'points'),

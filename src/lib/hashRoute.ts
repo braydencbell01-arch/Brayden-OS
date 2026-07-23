@@ -1,4 +1,5 @@
 import type { LeagueId } from './leagues'
+import { isLeagueId } from './leagues'
 import type { FavoriteTeam } from './favorites'
 import type { PlayerNavRef } from '../components/PlayerProfileScreen'
 
@@ -7,7 +8,7 @@ export type HashRoute =
   | { kind: 'league'; leagueId: LeagueId }
   | { kind: 'team'; team: FavoriteTeam }
   | { kind: 'player'; player: PlayerNavRef }
-  | { kind: 'compare'; a?: string; b?: string }
+  | { kind: 'compare'; a?: string; aLeague?: LeagueId; b?: string; bLeague?: LeagueId }
   | { kind: 'settings' }
   | { kind: 'fantasy-join'; blobId: string }
   | null
@@ -43,7 +44,14 @@ export function buildHash(route: Exclude<HashRoute, null>): string {
       position: route.player.position,
     })}`
   }
-  if (route.kind === 'compare') return `#compare=${qs({ a: route.a, b: route.b })}`
+  if (route.kind === 'compare') {
+    return `#compare=${qs({
+      a: route.a,
+      aLeague: route.aLeague,
+      b: route.b,
+      bLeague: route.bLeague,
+    })}`
+  }
   if (route.kind === 'settings') return '#settings'
   return `#fantasy-join=${route.blobId}`
 }
@@ -66,7 +74,9 @@ export function parseHash(hash: string): HashRoute {
   if (raw.startsWith('fantasy-join=')) {
     return { kind: 'fantasy-join', blobId: decodeURIComponent(raw.slice('fantasy-join='.length)) }
   }
-  if (raw === 'settings' || raw.startsWith('settings')) return { kind: 'settings' }
+  if (raw === 'settings' || raw.startsWith('settings?') || raw.startsWith('settings&')) {
+    return { kind: 'settings' }
+  }
   if (raw.startsWith('tab=')) {
     const tab = decodeURIComponent(raw.slice(4))
     if (
@@ -80,16 +90,18 @@ export function parseHash(hash: string): HashRoute {
     }
   }
   if (raw.startsWith('league=')) {
-    return { kind: 'league', leagueId: decodeURIComponent(raw.slice(7)) as LeagueId }
+    const leagueId = decodeURIComponent(raw.slice(7))
+    if (!isLeagueId(leagueId)) return null
+    return { kind: 'league', leagueId }
   }
   if (raw.startsWith('team=')) {
     const p = parseQs(raw.slice(5))
-    if (!p.id || !p.league || !p.name) return null
+    if (!p.id || !p.league || !p.name || !isLeagueId(p.league)) return null
     return {
       kind: 'team',
       team: {
         id: p.id,
-        leagueId: p.league as LeagueId,
+        leagueId: p.league,
         name: p.name,
         shortName: p.short || p.name,
         kind: p.kind === 'national' ? 'national' : 'club',
@@ -98,12 +110,12 @@ export function parseHash(hash: string): HashRoute {
   }
   if (raw.startsWith('player=')) {
     const p = parseQs(raw.slice(7))
-    if (!p.id || !p.league) return null
+    if (!p.id || !p.league || !isLeagueId(p.league)) return null
     return {
       kind: 'player',
       player: {
         id: p.id,
-        leagueId: p.league as LeagueId,
+        leagueId: p.league,
         name: p.name,
         shortName: p.short || p.name,
         teamId: p.teamId,
@@ -112,9 +124,15 @@ export function parseHash(hash: string): HashRoute {
       },
     }
   }
-  if (raw.startsWith('compare')) {
+  if (raw === 'compare' || raw.startsWith('compare=')) {
     const p = parseQs(raw.includes('=') ? raw.slice(raw.indexOf('=') + 1) : '')
-    return { kind: 'compare', a: p.a, b: p.b }
+    return {
+      kind: 'compare',
+      a: p.a,
+      aLeague: p.aLeague && isLeagueId(p.aLeague) ? p.aLeague : undefined,
+      b: p.b,
+      bLeague: p.bLeague && isLeagueId(p.bLeague) ? p.bLeague : undefined,
+    }
   }
   return null
 }

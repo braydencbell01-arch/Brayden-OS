@@ -335,6 +335,8 @@ export default function App() {
   const [statsInitialTab, setStatsInitialTab] = useState<'pulse' | 'compare' | 'predict' | 'leagues'>(
     'pulse',
   )
+  const [compareSeedA, setCompareSeedA] = useState<PlayerNavRef | null>(null)
+  const [compareSeedB, setCompareSeedB] = useState<PlayerNavRef | null>(null)
   const [fantasyResearchTab, setFantasyResearchTab] = useState<'value' | 'compare' | undefined>()
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
@@ -366,6 +368,10 @@ export default function App() {
     if (window.location.hash === next) return
     writingHashRef.current = true
     window.location.hash = next
+    // Clear even if hashchange never fires (some WebViews), without blocking the next real nav.
+    window.setTimeout(() => {
+      writingHashRef.current = false
+    }, 0)
   }, [])
 
   const jumpToToday = useCallback(() => {
@@ -622,6 +628,16 @@ export default function App() {
     if (route.kind === 'compare') {
       // Real-stats compare lives on Stats; FPL compare is under Fantasy → Research.
       setStatsInitialTab('compare')
+      setCompareSeedA(
+        route.a && route.aLeague
+          ? { id: route.a, leagueId: route.aLeague }
+          : null,
+      )
+      setCompareSeedB(
+        route.b && route.bLeague
+          ? { id: route.b, leagueId: route.bLeague }
+          : null,
+      )
       setActiveTab('stats')
       setActiveLeagueId(null)
       setActiveTeam(null)
@@ -841,6 +857,8 @@ export default function App() {
               onOpenPlayer={openPlayer}
               reduce={reduce}
               initialTab={statsInitialTab}
+              compareA={compareSeedA}
+              compareB={compareSeedB}
             />
           </motion.div>
         ) : screen === 'fantasy' ? (

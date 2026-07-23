@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { getLeague } from '../lib/leagues'
 import { predictMatch } from '../lib/insights'
 import type { Match } from '../lib/matches'
-import { toDateKey } from '../lib/dates'
+import { useTodayKey } from '../lib/useToday'
 
 const STORAGE_KEY = 'brayden-stats-predictions-v1'
 
@@ -22,7 +22,7 @@ function writePicks(store: PickStore) {
 
 export function PredictionGamePanel({ matches }: { matches: Match[] }) {
   const [picks, setPicks] = useState<PickStore>(() => readPicks())
-  const todayKey = toDateKey(new Date())
+  const todayKey = useTodayKey()
 
   const upcoming = useMemo(
     () =>

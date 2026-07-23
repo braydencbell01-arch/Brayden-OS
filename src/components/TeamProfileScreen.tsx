@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MISSING_LONG } from '../lib/display'
-import { getLeague, domesticCupsForCountry, isInternationalLeague, type LeagueId } from '../lib/leagues'
+import { getLeague, domesticCupsForCountry, isInternationalLeague, LEAGUES, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   formatSideRecord,
@@ -84,10 +84,10 @@ export function TeamProfileScreen({
   onNeedPastRange?: (from: Date, to: Date) => void | Promise<unknown>
   reduce: boolean | null
 }) {
-  const league = getLeague(team.leagueId)
+  const league = LEAGUES.find((item) => item.id === team.leagueId) ?? null
   const isNational =
     team.kind === 'national' ||
-    (team.kind == null && isInternationalLeague(team.leagueId))
+    (team.kind == null && league != null && isInternationalLeague(team.leagueId))
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
@@ -191,13 +191,13 @@ export function TeamProfileScreen({
         ids.add(match.leagueId)
       }
     }
-    if (!isNational) {
+    if (!isNational && league) {
       for (const cup of domesticCupsForCountry(league.country)) {
         ids.add(cup.id)
       }
     }
     return [...ids]
-  }, [team.id, team.leagueId, teamMatches, isNational, league.country])
+  }, [team.id, team.leagueId, teamMatches, isNational, league])
 
   const topScorers = useMemo(() => {
     const goalsBoard =
@@ -265,6 +265,7 @@ export function TeamProfileScreen({
   const factRows = useMemo(() => {
     const club = facts.data
     const rows: Array<[string, string]> = []
+    if (!league) return rows
 
     rows.push([isNational ? 'Competition' : 'League', club?.leagueName || league.name])
 
@@ -297,9 +298,21 @@ export function TeamProfileScreen({
     facts.loading,
     homeAway,
     isNational,
-    league.country,
-    league.name,
+    league,
   ])
+
+  if (!league) {
+    return (
+      <ProfileShell onBack={onBack} reduce={reduce}>
+        <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
+          <p className="text-sm text-mist/80">
+            This team link points at an unknown competition. Open them again from Match day or
+            search.
+          </p>
+        </div>
+      </ProfileShell>
+    )
+  }
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce}>

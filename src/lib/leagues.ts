@@ -887,6 +887,10 @@ export const LEAGUES: League[] = [
   }
 ]
 
+export function isLeagueId(id: string): id is LeagueId {
+  return LEAGUES.some((item) => item.id === id)
+}
+
 export function getLeague(id: LeagueId): League {
   const league = LEAGUES.find((item) => item.id === id)
   if (!league) throw new Error(`Unknown league: ${id}`)

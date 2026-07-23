@@ -199,7 +199,7 @@ function ExpandableMatchRow({
 
       {open && (
         <div className={flat ? 'border-t border-white/10 px-3 pb-3 pt-1' : 'px-4 pb-3'}>
-          {match.status === 'scheduled' || match.status === 'other' ? (
+          {match.status === 'scheduled' ? (
             <PreMatchBriefingPanel
               match={match}
               allMatches={allMatches}
