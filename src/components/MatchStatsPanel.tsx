@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import type { FavoriteTeam } from '../lib/favorites'
 import { MISSING_LONG, missingLong, missingShort } from '../lib/display'
 import type { MatchDetailStats, MatchLineupPlayer } from '../lib/stats/types'
-import { MatchLineupPanel } from './MatchLineupPanel'
+import {
+  LineupScoreModeToggle,
+  MatchLineupPanel,
+  type LineupScoreMode,
+} from './MatchLineupPanel'
 
 export function MatchStatsPanel({
   stats,
@@ -18,6 +23,8 @@ export function MatchStatsPanel({
   onOpenPlayer?: (player: MatchLineupPlayer) => void
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
+  const [scoreMode, setScoreMode] = useState<LineupScoreMode>('rating')
+
   if (scheduled) {
     return (
       <p className="mt-3 text-xs text-mist/65">
@@ -47,17 +54,28 @@ export function MatchStatsPanel({
     return <p className="mt-3 text-xs text-mist/65">{MISSING_LONG}</p>
   }
 
+  const showFplToggle = stats.leagueId === 'premier-league' && stats.lineups.length > 0
+  const activeMode = showFplToggle ? scoreMode : 'rating'
+
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
       <div className="mb-4">
-        <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
-          Lineups + ratings
-        </p>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
+            {activeMode === 'fpl' ? 'Lineups + FPL pts' : 'Lineups + ratings'}
+          </p>
+          {showFplToggle ? (
+            <LineupScoreModeToggle mode={scoreMode} onChange={setScoreMode} />
+          ) : null}
+        </div>
         <p className="mb-3 text-xs text-mist/65">
-          Tap a player for their profile. Ratings start at 5.0 and average out over the match.
+          {activeMode === 'fpl'
+            ? 'Estimated classic FPL points from this match (no bonus). Tap a player for their profile.'
+            : 'Tap a player for their profile. Ratings start at 5.0 and average out over the match.'}
         </p>
         <MatchLineupPanel
           lineups={stats.lineups}
+          scoreMode={activeMode}
           onOpenPlayer={onOpenPlayer}
           onOpenTeam={onOpenTeam}
         />

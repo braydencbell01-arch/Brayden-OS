@@ -38,6 +38,11 @@ export type MatchLineupPlayer = {
   positionAbbrev: string
   starter: boolean
   rating: number | null
+  /**
+   * Estimated classic FPL points for this match from ESPN stats (no BPS).
+   * Null when the player did not appear.
+   */
+  fplPoints?: number | null
   teamId: string
   teamName: string
   leagueId: LeagueId

@@ -11,6 +11,11 @@ import {
   STARTER_MAX,
   STARTER_MIN,
 } from '../../lib/fantasy/types'
+import {
+  fantasySyncBadgeClass,
+  fantasySyncKind,
+  fantasySyncLabel,
+} from '../../lib/fantasy/syncStatus'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
 import {
   FantasyButton,
@@ -128,26 +133,36 @@ export function FantasyHome({
                 Your leagues
               </h2>
               <ul className="space-y-2">
-                {fantasy.leagues.map((league) => (
-                  <li key={league.id}>
-                    <button
-                      type="button"
-                      onClick={() => fantasy.setActiveLeagueId(league.id)}
-                      className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-lime/40 hover:bg-white/[0.07]"
-                    >
-                      <span>
-                        <span className="block font-semibold text-cream">{league.name}</span>
-                        <span className="text-xs text-mist/60">
-                          {phaseLabel(league.phase)} · {league.draftMode} · {league.members.length}/
-                          {league.teamCount} · {league.draftClockSeconds || 90}s clock
+                {fantasy.leagues.map((league) => {
+                  const syncKind = fantasySyncKind(league)
+                  return (
+                    <li key={league.id}>
+                      <button
+                        type="button"
+                        onClick={() => fantasy.setActiveLeagueId(league.id)}
+                        className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-lime/40 hover:bg-white/[0.07]"
+                      >
+                        <span className="min-w-0">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-cream">{league.name}</span>
+                            <span
+                              className={`rounded-full border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${fantasySyncBadgeClass(syncKind)}`}
+                            >
+                              {fantasySyncLabel(syncKind)}
+                            </span>
+                          </span>
+                          <span className="mt-0.5 block text-xs text-mist/60">
+                            {phaseLabel(league.phase)} · {league.draftMode} · {league.members.length}/
+                            {league.teamCount} · {league.draftClockSeconds || 90}s clock
+                          </span>
                         </span>
-                      </span>
-                      <span className="text-lime" aria-hidden>
-                        →
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                        <span className="shrink-0 text-lime" aria-hidden>
+                          →
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ) : null}
@@ -176,6 +191,10 @@ export function FantasyHome({
               Join with invite
             </FantasyButton>
           </div>
+          <p className="text-[0.65rem] leading-snug text-mist/50">
+            Demo is local-only and read-only — you won&apos;t appear as a manager. Quick/custom
+            leagues try cloud sync so friends can join from other devices.
+          </p>
           {!fantasy.catalog && !fantasy.catalogError ? (
             <p className="text-xs text-mist/55">Loading player catalog…</p>
           ) : null}

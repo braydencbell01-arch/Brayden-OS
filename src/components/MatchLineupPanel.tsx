@@ -5,15 +5,21 @@ import type { MatchLineupPlayer, MatchLineupSide } from '../lib/stats/types'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { PlayerAvatar } from './PlayerAvatar'
 
+export type LineupScoreMode = 'rating' | 'fpl'
+
 function LineupPlayerCard({
   player,
+  scoreMode,
   onOpenPlayer,
 }: {
   player: MatchLineupPlayer
+  scoreMode: LineupScoreMode
   onOpenPlayer?: (player: MatchLineupPlayer) => void
 }) {
   const position = missingShort(player.positionAbbrev)
   const jersey = player.jersey ? missingShort(player.jersey) : null
+  const showFpl = scoreMode === 'fpl'
+  const fplPoints = player.fplPoints
 
   return (
     <button
@@ -36,14 +42,25 @@ function LineupPlayerCard({
       >
         {missingShort(player.shortName)}
       </span>
-      <span
-        className={`font-display text-lg leading-none tracking-wide tabular-nums ${
-          player.rating == null ? 'text-mist/50' : ''
-        }`}
-        style={ratingColorStyle(player.rating)}
-      >
-        {player.rating != null ? player.rating.toFixed(1) : MISSING_SHORT}
-      </span>
+      {showFpl ? (
+        <span
+          className={`font-display text-lg leading-none tracking-wide tabular-nums ${
+            fplPoints == null ? 'text-mist/50' : 'text-lime'
+          }`}
+          title={fplPoints == null ? undefined : 'Estimated classic FPL points (no BPS)'}
+        >
+          {fplPoints != null ? fplPoints : MISSING_SHORT}
+        </span>
+      ) : (
+        <span
+          className={`font-display text-lg leading-none tracking-wide tabular-nums ${
+            player.rating == null ? 'text-mist/50' : ''
+          }`}
+          style={ratingColorStyle(player.rating)}
+        >
+          {player.rating != null ? player.rating.toFixed(1) : MISSING_SHORT}
+        </span>
+      )}
       <span className="text-[0.55rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
         {position}
         {jersey ? ` · ${jersey}` : ''}
@@ -54,10 +71,12 @@ function LineupPlayerCard({
 
 function SideBlock({
   side,
+  scoreMode,
   onOpenPlayer,
   onOpenTeam,
 }: {
   side: MatchLineupSide
+  scoreMode: LineupScoreMode
   onOpenPlayer?: (player: MatchLineupPlayer) => void
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
@@ -101,7 +120,12 @@ function SideBlock({
               </p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {side.starters.map((player) => (
-                  <LineupPlayerCard key={player.id} player={player} onOpenPlayer={onOpenPlayer} />
+                  <LineupPlayerCard
+                    key={player.id}
+                    player={player}
+                    scoreMode={scoreMode}
+                    onOpenPlayer={onOpenPlayer}
+                  />
                 ))}
               </div>
             </div>
@@ -113,7 +137,12 @@ function SideBlock({
               </p>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {side.bench.map((player) => (
-                  <LineupPlayerCard key={player.id} player={player} onOpenPlayer={onOpenPlayer} />
+                  <LineupPlayerCard
+                    key={player.id}
+                    player={player}
+                    scoreMode={scoreMode}
+                    onOpenPlayer={onOpenPlayer}
+                  />
                 ))}
               </div>
             </div>
@@ -126,10 +155,12 @@ function SideBlock({
 
 export function MatchLineupPanel({
   lineups,
+  scoreMode = 'rating',
   onOpenPlayer,
   onOpenTeam,
 }: {
   lineups: MatchLineupSide[]
+  scoreMode?: LineupScoreMode
   onOpenPlayer?: (player: MatchLineupPlayer) => void
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
@@ -147,11 +178,60 @@ export function MatchLineupPanel({
   return (
     <div className="flex flex-col gap-4">
       {home ? (
-        <SideBlock side={home} onOpenPlayer={onOpenPlayer} onOpenTeam={onOpenTeam} />
+        <SideBlock
+          side={home}
+          scoreMode={scoreMode}
+          onOpenPlayer={onOpenPlayer}
+          onOpenTeam={onOpenTeam}
+        />
       ) : null}
       {away ? (
-        <SideBlock side={away} onOpenPlayer={onOpenPlayer} onOpenTeam={onOpenTeam} />
+        <SideBlock
+          side={away}
+          scoreMode={scoreMode}
+          onOpenPlayer={onOpenPlayer}
+          onOpenTeam={onOpenTeam}
+        />
       ) : null}
+    </div>
+  )
+}
+
+/** Segmented Rating | FPL pts control for Premier League match expand. */
+export function LineupScoreModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: LineupScoreMode
+  onChange: (mode: LineupScoreMode) => void
+}) {
+  return (
+    <div
+      className="inline-flex rounded-full border border-white/15 bg-black/20 p-0.5"
+      role="group"
+      aria-label="Lineup score mode"
+    >
+      {(
+        [
+          ['rating', 'Rating'],
+          ['fpl', 'FPL pts'],
+        ] as const
+      ).map(([value, label]) => {
+        const active = mode === value
+        return (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(value)}
+            className={`rounded-full px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] transition ${
+              active ? 'bg-lime text-ink' : 'text-mist/70 hover:text-cream'
+            }`}
+          >
+            {label}
+          </button>
+        )
+      })}
     </div>
   )
 }

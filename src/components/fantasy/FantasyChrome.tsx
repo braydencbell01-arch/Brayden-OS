@@ -57,6 +57,7 @@ export function FantasyButton({
   disabled,
   type = 'button',
   className = '',
+  title,
 }: {
   children: ReactNode
   onClick?: () => void
@@ -64,6 +65,7 @@ export function FantasyButton({
   disabled?: boolean
   type?: 'button' | 'submit'
   className?: string
+  title?: string
 }) {
   const styles =
     variant === 'primary'
@@ -75,6 +77,7 @@ export function FantasyButton({
     <button
       type={type}
       disabled={disabled}
+      title={title}
       onClick={onClick}
       className={`rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-40 ${styles} ${className}`}
     >

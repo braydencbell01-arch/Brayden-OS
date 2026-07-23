@@ -4,6 +4,12 @@ import { snakeMemberForPick, totalDraftPicks } from '../../lib/fantasy/draft'
 import { suggestStartersDetailed } from '../../lib/fantasy/lineup'
 import { standingsRank } from '../../lib/fantasy/schedule'
 import { scoringBlurb } from '../../lib/fantasy/scoringPresets'
+import {
+  fantasySyncBadgeClass,
+  fantasySyncBanner,
+  fantasySyncKind,
+  fantasySyncLabel,
+} from '../../lib/fantasy/syncStatus'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
 import type { FantasyLeague, FantasyPlayer, TradeOffer } from '../../lib/fantasy/types'
 import {
@@ -110,10 +116,13 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
     if (hidden) setTab(defaultTab(league))
   }, [league, tab, draftPhase])
 
+  const syncKind = fantasySyncKind(league)
+  const canCloudSync = Boolean(league.syncBlobId)
+
   return (
     <FantasyShell reduce={reduce}>
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <button
             type="button"
             onClick={() => fantasy.setActiveLeagueId(null)}
@@ -124,15 +133,48 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
           <h1 className="mt-2 font-display text-4xl tracking-[0.04em] text-cream sm:text-5xl">
             {league.name}
           </h1>
-          <p className="mt-1 text-xs text-mist/60">
-            Premier League - {phaseLabel(league.phase)} - {league.draftMode} - {league.scoringPreset} -{' '}
-            {league.members.length}/{league.teamCount} - {league.rosterSpots}-man
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-mist/60">
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] ${fantasySyncBadgeClass(syncKind)}`}
+            >
+              {fantasySyncLabel(syncKind)}
+            </span>
+            <span>
+              Premier League - {phaseLabel(league.phase)} - {league.draftMode} - {league.scoringPreset}{' '}
+              - {league.members.length}/{league.teamCount} - {league.rosterSpots}-man
+            </span>
           </p>
         </div>
-        <FantasyButton variant="ghost" onClick={() => void fantasy.refreshActive()}>
-          Sync
+        <FantasyButton
+          variant="ghost"
+          disabled={!canCloudSync || fantasy.syncing}
+          title={
+            canCloudSync
+              ? 'Pull the latest league state from the cloud'
+              : 'Cloud sync is not available for this league'
+          }
+          onClick={() => void fantasy.refreshActive()}
+        >
+          {fantasy.syncing ? 'Syncing…' : 'Sync'}
         </FantasyButton>
       </div>
+
+      <p
+        className={`mb-4 rounded-xl px-3 py-2 text-xs leading-relaxed ${
+          syncKind === 'synced'
+            ? 'bg-lime/10 text-lime/90'
+            : syncKind === 'demo'
+              ? 'bg-white/5 text-mist/75'
+              : 'bg-star/10 text-star'
+        }`}
+      >
+        {fantasySyncBanner(syncKind)}
+      </p>
+      {fantasy.syncError ? (
+        <p className="mb-4 rounded-xl bg-amber-500/15 px-3 py-2 text-sm text-amber-100">
+          {fantasy.syncError}
+        </p>
+      ) : null}
 
       <div className="scrollbar-hide -mx-1 mb-5 flex gap-1 overflow-x-auto px-1">
         {tabs
@@ -170,23 +212,46 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
   const isCommish = fantasy.me?.isCommissioner
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState<string | null>(null)
+  const syncKind = fantasySyncKind(league)
 
   return (
     <div className="space-y-5">
       <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-lime">Invite</h2>
-        <p className="mt-2 text-xs text-mist/55">Share the short code and link with managers.</p>
+        {syncKind === 'demo' ? (
+          <p className="mt-2 text-xs text-mist/55">
+            Demo invite codes are for show only — this league stays on your device.
+          </p>
+        ) : syncKind === 'synced' ? (
+          <p className="mt-2 text-xs text-mist/55">
+            Share the cloud link for other devices. The short code also works on phones that already
+            have this league saved.
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-mist/55">
+            This league is device-only. Short codes will not open it on a friend&apos;s phone until
+            cloud sync succeeds.
+          </p>
+        )}
         <div className="mt-3 rounded-2xl border border-lime/30 bg-lime/10 px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-lime">Code</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-lime">
+            {syncKind === 'synced' ? 'Local code' : 'Invite code'}
+          </p>
           <p className="font-display text-4xl tracking-[0.12em] text-cream">{league.inviteCode}</p>
         </div>
         {league.syncBlobId ? (
-          <p className="mt-2 break-all rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-mist/70">
-            {league.syncBlobId}
-          </p>
+          <div className="mt-2">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-mist/55">
+              Cloud link id
+            </p>
+            <p className="break-all rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-mist/70">
+              {league.syncBlobId}
+            </p>
+          </div>
         ) : null}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <FantasyButton
+            disabled={syncKind === 'demo'}
             onClick={() => {
               setCopyError(null)
               const text = shareInviteText(league)
@@ -201,7 +266,7 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
                 })
             }}
           >
-            {copied ? 'Copied' : 'Share invite'}
+            {copied ? 'Copied' : syncKind === 'synced' ? 'Share invite' : 'Copy invite'}
           </FantasyButton>
           {copyError ? <p className="text-xs text-star">{copyError}</p> : null}
         </div>
