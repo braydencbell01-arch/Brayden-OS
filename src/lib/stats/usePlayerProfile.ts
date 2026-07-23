@@ -23,11 +23,19 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const requestId = useRef(0)
+  // Dedicated generation for season-stats fetches so out-of-order responses
+  // (fast picker changes) can't overwrite the latest requested season.
+  const seasonStatsReq = useRef(0)
+  // Tracks whether the user manually picked a season, so the async season
+  // options resolution below doesn't snap the selection back to the newest year.
+  const userPickedSeason = useRef(false)
   const ratingsCursor = useRef<PlayerRatingsCursor | null>(null)
   const loadMoreLock = useRef(false)
 
   const load = useCallback(async (league: LeagueId, id: string) => {
     const req = ++requestId.current
+    seasonStatsReq.current += 1
+    userPickedSeason.current = false
     setLoading(true)
     setError(null)
     setRatingsMoreError(null)
@@ -64,7 +72,8 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
                     }))
             setSeasons(ordered)
             const top = ordered[0]?.year ?? null
-            if (top != null) setSelectedSeason(top)
+            // Don't override a season the user picked while options were loading.
+            if (top != null && !userPickedSeason.current) setSelectedSeason(top)
           })
           .catch(() => {
             if (requestId.current !== req) return
@@ -90,9 +99,10 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
         newestYear !== data.profile.seasonYear
       ) {
         setStatsLoading(true)
+        const statsReq = ++seasonStatsReq.current
         fetchPlayerSeasonStatsForYear(data.profile.leagueId, id, newestYear)
           .then((bundle) => {
-            if (requestId.current !== req) return
+            if (requestId.current !== req || seasonStatsReq.current !== statsReq) return
             if (bundle.seasonYear != null && bundle.seasonYear !== newestYear) return
             setProfile((current) => {
               if (!current) return current
@@ -110,7 +120,9 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
             /* keep initial profile stats */
           })
           .finally(() => {
-            if (requestId.current === req) setStatsLoading(false)
+            if (requestId.current === req && seasonStatsReq.current === statsReq) {
+              setStatsLoading(false)
+            }
           })
       }
     } catch (err) {
@@ -126,12 +138,15 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     (year: number) => {
       if (!playerId || !profile) return
       if (selectedSeason === year) return
+      userPickedSeason.current = true
       setSelectedSeason(year)
       setStatsLoading(true)
-      const req = requestId.current
+      // Bump the season-stats generation so a slower earlier request can't
+      // land after this one and show the wrong season.
+      const req = ++seasonStatsReq.current
       fetchPlayerSeasonStatsForYear(profile.leagueId, playerId, year)
         .then((bundle) => {
-          if (requestId.current !== req) return
+          if (seasonStatsReq.current !== req) return
           // Keep picker honest — only accept rows for the requested year.
           if (bundle.seasonYear != null && bundle.seasonYear !== year) return
           setProfile((current) => {
@@ -150,7 +165,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
           // Keep prior stats visible; picker still reflects the attempted year.
         })
         .finally(() => {
-          if (requestId.current === req) setStatsLoading(false)
+          if (seasonStatsReq.current === req) setStatsLoading(false)
         })
     },
     [playerId, profile, selectedSeason],
@@ -206,6 +221,8 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   useEffect(() => {
     if (!leagueId || !playerId) {
       requestId.current += 1
+      seasonStatsReq.current += 1
+      userPickedSeason.current = false
       setProfile(null)
       setError(null)
       setRatingsMoreError(null)
