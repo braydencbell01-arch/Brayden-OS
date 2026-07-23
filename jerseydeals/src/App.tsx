@@ -8,15 +8,21 @@ import {
   EBAY_SELLER_URL,
   EBAY_SHOP_URL,
   FAMILY_NOTE,
+  NEWSLETTER_INCENTIVE,
+  PROMO_BAR,
   SALE_HEADLINE,
   SALE_URGENCY,
   SQUARE_STORE_URL,
 } from './config'
 import {
+  clubsInStock,
   conditionLabel,
   formatPrice,
+  isAdultListing,
+  isSaleListing,
   isSquareCatalog,
   isYouthListing,
+  kitType,
   listingBuyUrl,
   listingImages,
   listingSize,
@@ -26,10 +32,12 @@ import {
   pickFeatured,
   pickNewDrops,
   pickSaleItems,
+  pickTrending,
   PRICE_FILTERS,
   shortTitle,
   sortSizes,
   TAG_ORDER,
+  type ClubInfo,
   type Listing,
   type ListingsPayload,
   type PriceFilterId,
@@ -248,6 +256,8 @@ function ProductLink({
 }) {
   const condition = conditionLabel(item.title)
   const buyUrl = listingBuyUrl(item)
+  const kit = kitType(item)
+  const onSale = isSaleListing(item)
   return (
     <motion.li {...fadeUp(reduce, delay)}>
       <div
@@ -257,6 +267,16 @@ function ProductLink({
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-navy-deep">
           <ProductGallery item={item} tone={tone} />
+          {onSale && (
+            <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
+              Sale
+            </span>
+          )}
+          {item.quantity === 1 && (
+            <span className="pointer-events-none absolute right-2 top-2 z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
+              Only 1 left
+            </span>
+          )}
           <a
             href={buyUrl}
             target="_blank"
@@ -287,6 +307,11 @@ function ProductLink({
             <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
               {condition}
             </span>
+            {kit !== 'Other' && (
+              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
+                {kit}
+              </span>
+            )}
             {item.brand ? (
               <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
                 {item.brand}
@@ -333,6 +358,8 @@ export default function App() {
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [trendingFilter, setTrendingFilter] = useState<'All' | 'Youth' | 'Training' | 'Jerseys' | 'Sale'>('All')
 
   useEffect(() => {
     initAnalytics()
@@ -384,6 +411,9 @@ export default function App() {
   )
   const saleFloor = lowestSalePrice(listings)
   const youthCount = listings.filter(isYouthListing).length
+  const adultCount = useMemo(() => listings.filter(isAdultListing).length, [listings])
+  const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
+  const trendingPicks = useMemo(() => pickTrending(listings, 8), [listings])
   const channelLabel = onSquare ? 'Square' : 'eBay'
 
   const availableTags = useMemo(() => {
@@ -422,6 +452,7 @@ export default function App() {
     tag?: string
     brand?: string
     price?: PriceFilterId
+    query?: string
     reset?: boolean
     focusSearch?: boolean
   }) {
@@ -435,6 +466,7 @@ export default function App() {
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
     if (next?.price !== undefined) setPriceFilter(next.price)
+    if (next?.query !== undefined) setQuery(next.query)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       if (next?.focusSearch) {
@@ -461,22 +493,32 @@ export default function App() {
   const navLinks = [
     { href: '#shop', label: 'Shop' },
     { href: '#new-drops', label: 'New' },
+    { href: '#audience', label: 'Youth' },
+    { href: '#clubs', label: 'Clubs' },
     { href: '#sale', label: 'Sale' },
-    { href: '#featured', label: 'Featured' },
+    { href: '#brands', label: 'Brands' },
     { href: '#inventory', label: 'Inventory' },
   ]
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
+      {/* Promo bar — always on top */}
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-crimson px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white">
+        <span>{PROMO_BAR}</span>
+        {saleFloor != null && (
+          <span className="hidden text-white/75 sm:inline">· From {formatPrice(saleFloor, 'USD')}</span>
+        )}
+      </div>
+
       <a
         href="#featured"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
       >
         Skip to featured gear
       </a>
 
       <header
-        className={`fixed inset-x-0 top-0 z-40 transition duration-300 ${
+        className={`fixed inset-x-0 top-9 z-40 transition duration-300 ${
           navSolid
             ? 'border-b border-navy/10 bg-chalk/95 text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] backdrop-blur-md'
             : 'bg-transparent text-white'
@@ -489,7 +531,7 @@ export default function App() {
           >
             Jersey Deals
           </a>
-          <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
+          <nav className="hidden items-center gap-6 xl:flex" aria-label="Primary">
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -502,19 +544,34 @@ export default function App() {
               </a>
             ))}
           </nav>
-          <a
-            href={shopUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('cta_click', { place: 'header' })}
-            className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
-              navSolid
-                ? 'bg-crimson text-white hover:bg-crimson-hot'
-                : 'border border-white/40 text-white hover:border-white hover:bg-white/10'
-            }`}
-          >
-            {shopLabel(catalog)}
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href={shopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('cta_click', { place: 'header' })}
+              className={`hidden px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition md:inline-flex ${
+                navSolid
+                  ? 'bg-crimson text-white hover:bg-crimson-hot'
+                  : 'border border-white/40 text-white hover:border-white hover:bg-white/10'
+              }`}
+            >
+              {shopLabel(catalog)}
+            </a>
+            <button
+              type="button"
+              aria-label="Open navigation menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(true)}
+              className="grid h-9 w-9 place-items-center xl:hidden"
+            >
+              <span className="flex flex-col gap-[5px]">
+                <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
+                <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
+                <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
+              </span>
+            </button>
+          </div>
         </div>
 
         <div
@@ -588,7 +645,7 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/45" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-36 md:justify-center md:px-8 md:pb-28 md:pt-40">
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-44 md:justify-center md:px-8 md:pb-28 md:pt-48">
             <motion.div
               className="max-w-2xl"
               initial={reduce ? false : { opacity: 0.001, y: 26 }}
@@ -800,6 +857,84 @@ export default function App() {
           </div>
         </section>
 
+        {/* Audience paths */}
+        <section id="audience" className="scroll-mt-36 bg-white py-20 md:py-28">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
+              <p className="eyebrow text-crimson">Browse by audience</p>
+              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                Who's shopping?
+              </h2>
+              <p className="mt-3 text-lg text-muted">
+                Men's and adult kits or youth and kids sizes — filter your path.
+              </p>
+            </motion.div>
+            <div className="mt-12 grid gap-5 md:grid-cols-2">
+              <motion.button
+                type="button"
+                onClick={() => {
+                  track('audience_click', { audience: 'mens' })
+                  goInventory({ query: "Men's", reset: true })
+                }}
+                {...fadeUp(reduce, 0.05)}
+                className="group relative min-h-[300px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+              >
+                <img
+                  src={asset('product-home.jpg')}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
+                  <p className="eyebrow text-white/70">Adult</p>
+                  <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-5xl">
+                    Men's kits
+                  </p>
+                  <p className="mt-3 text-sm text-white/75">
+                    {adultCount > 0
+                      ? `${adultCount} adult listings in stock.`
+                      : 'Club jerseys, training tops, and more.'}
+                  </p>
+                  <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                    Shop men's →
+                  </span>
+                </div>
+              </motion.button>
+
+              <motion.button
+                type="button"
+                onClick={() => {
+                  track('audience_click', { audience: 'youth' })
+                  goInventory({ tag: 'Youth', reset: true })
+                }}
+                {...fadeUp(reduce, 0.1)}
+                className="group relative min-h-[300px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+              >
+                <img
+                  src={asset('category-youth.jpg')}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
+                  <p className="eyebrow text-white/70">Kids</p>
+                  <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-5xl">
+                    Youth sizes
+                  </p>
+                  <p className="mt-3 text-sm text-white/75">
+                    {youthCount > 0
+                      ? `${youthCount} youth listings ready to ship.`
+                      : 'Kids and youth kits sized and ready to ship.'}
+                  </p>
+                  <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                    Shop youth →
+                  </span>
+                </div>
+              </motion.button>
+            </div>
+          </div>
+        </section>
+
         {/* New drops */}
         <section id="new-drops" className="bg-white py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
@@ -840,6 +975,51 @@ export default function App() {
             )}
           </div>
         </section>
+
+        {/* Trending now */}
+        {trendingPicks.length > 0 && (
+          <section id="trending" className="scroll-mt-36 bg-mist py-20 md:py-28">
+            <div className="mx-auto max-w-6xl px-5 md:px-8">
+              <motion.div
+                {...fadeUp(reduce)}
+                className="flex flex-col gap-4 border-b border-navy/10 pb-8 md:flex-row md:items-end md:justify-between"
+              >
+                <div>
+                  <p className="eyebrow text-crimson">Trending</p>
+                  <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                    Trending now
+                  </h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {(['All', 'Youth', 'Training', 'Jerseys', 'Sale'] as const).map((f) => (
+                    <FilterChip
+                      key={f}
+                      label={f}
+                      active={trendingFilter === f}
+                      onClick={() => setTrendingFilter(f)}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+              {(() => {
+                const filtered = trendingPicks.filter((item) => {
+                  if (trendingFilter === 'All') return true
+                  if (trendingFilter === 'Sale') return isSaleListing(item)
+                  return item.tag === trendingFilter
+                })
+                return filtered.length > 0 ? (
+                  <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+                    {filtered.slice(0, 8).map((item, i) => (
+                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-12 text-muted">No trending items match that filter.</p>
+                )
+              })()}
+            </div>
+          </section>
+        )}
 
         {/* Lookbook campaign */}
         <section className="relative min-h-[70svh] overflow-hidden bg-navy-deep text-white md:min-h-[80svh]">
@@ -970,7 +1150,7 @@ export default function App() {
 
         {/* Shop by brand */}
         {availableBrands.length > 0 && (
-          <section className="border-y border-navy/10 bg-white py-16 md:py-20">
+          <section id="brands" className="scroll-mt-36 border-y border-navy/10 bg-white py-16 md:py-20">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div {...fadeUp(reduce)}>
                 <p className="eyebrow text-crimson">Brands</p>
@@ -996,6 +1176,55 @@ export default function App() {
                       <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted transition group-hover:text-crimson">
                         Shop →
                       </span>
+                    </button>
+                  </motion.li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {/* Shop by club */}
+        {clubsData.length > 0 && (
+          <section id="clubs" className="scroll-mt-36 bg-chalk py-16 md:py-20">
+            <div className="mx-auto max-w-6xl px-5 md:px-8">
+              <motion.div {...fadeUp(reduce)}>
+                <p className="eyebrow text-crimson">Clubs</p>
+                <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                  Shop by club
+                </h2>
+                <p className="mt-3 text-lg text-muted">
+                  Click a club to filter our full inventory.
+                </p>
+              </motion.div>
+              <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {clubsData.map((club, i) => (
+                  <motion.li key={club.id} {...fadeUp(reduce, i * 0.04)}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        track('club_click', { club: club.id })
+                        goInventory({ query: club.name, reset: true })
+                      }}
+                      className="group relative w-full overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2"
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <img
+                          src={club.image}
+                          alt={club.name}
+                          className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 to-navy-deep/10" />
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 p-3 text-left">
+                        <p className="font-display text-sm font-bold uppercase leading-tight tracking-wide text-white">
+                          {club.name}
+                        </p>
+                        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/60">
+                          {club.count} {club.count === 1 ? 'listing' : 'listings'}
+                        </p>
+                      </div>
                     </button>
                   </motion.li>
                 ))}
@@ -1340,6 +1569,49 @@ export default function App() {
           </div>
         </section>
 
+        {/* Guarantees strip */}
+        <section aria-label="Our guarantees" className="bg-navy py-16 text-white md:py-20">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)} className="mb-10">
+              <p className="eyebrow text-crimson-hot">Why us</p>
+              <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
+                What you can count on
+              </h2>
+            </motion.div>
+            <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+              {[
+                {
+                  title: 'Ships from US',
+                  copy: 'All orders dispatch from our US inventory — no overseas delays.',
+                },
+                {
+                  title: 'Real photos',
+                  copy: 'Every listing photo is the actual item, not a stock image.',
+                },
+                {
+                  title: 'Square checkout',
+                  copy: 'Pay by card on our Square storefront — encrypted and direct.',
+                },
+                {
+                  title: 'Adult & youth',
+                  copy: 'Full size range from adult S through youth sizes — clearly labeled.',
+                },
+                {
+                  title: 'Family-run',
+                  copy: 'Small shop, real people behind every sale and shipment.',
+                },
+              ].map((point, i) => (
+                <motion.li key={point.title} {...fadeUp(reduce, i * 0.07)}>
+                  <p className="font-display text-xl font-bold uppercase tracking-wide text-white">
+                    {point.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-white/65">{point.copy}</p>
+                </motion.li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         {/* How it works */}
         <section aria-label="How shopping works" className="border-y border-navy/10 bg-chalk py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
@@ -1376,6 +1648,56 @@ export default function App() {
                 </motion.li>
               ))}
             </ol>
+          </div>
+        </section>
+
+        {/* Size guide */}
+        <section id="size-guide" className="scroll-mt-36 bg-white py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)}>
+              <p className="eyebrow text-crimson">Sizing</p>
+              <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                Size guide
+              </h2>
+              <p className="mt-3 text-lg text-muted">
+                All sizes are listed on each item. When between sizes, go up — especially for training and
+                pre-match tops.
+              </p>
+            </motion.div>
+            <div className="mt-10 grid gap-10 md:grid-cols-2">
+              <motion.div {...fadeUp(reduce, 0.06)}>
+                <p className="font-display text-2xl font-bold uppercase tracking-wide text-navy">Adult</p>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {['S', 'M', 'L', 'XL', 'XXL'].map((size) => (
+                    <li key={size}>
+                      <span className="block border border-navy/15 px-5 py-2.5 text-sm font-semibold text-navy">
+                        {size}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm text-muted">
+                  Most club kits run true to size. Pre-match and training tops can run slim — size up
+                  when layering.
+                </p>
+              </motion.div>
+              <motion.div {...fadeUp(reduce, 0.1)}>
+                <p className="font-display text-2xl font-bold uppercase tracking-wide text-navy">Youth</p>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {['Youth S', 'Youth M', 'Youth L', 'Youth XL', '9-12 YRS'].map((size) => (
+                    <li key={size}>
+                      <span className="block border border-navy/15 px-5 py-2.5 text-sm font-semibold text-navy">
+                        {size}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm text-muted">
+                  Youth sizes are designed for kids aged roughly 6–14. The size label on the garment
+                  is shown on every listing.
+                </p>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -1432,7 +1754,7 @@ export default function App() {
                   Restock alerts
                 </h2>
                 <p className="mt-4 max-w-xl text-white/65">
-                  Get notified when sale kits and youth sizes land.
+                  {NEWSLETTER_INCENTIVE} — get notified when sale kits and youth sizes land.
                 </p>
               </div>
               <form onSubmit={onEmailSubmit} className="flex flex-col gap-3 sm:flex-row">
@@ -1501,7 +1823,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-white/10 bg-navy-deep py-14 text-white/60">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr] md:px-8">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
               <img src={asset('favicon.svg')} alt="" className="h-9 w-9" width={36} height={36} />
@@ -1523,6 +1845,36 @@ export default function App() {
                   </a>
                 </li>
               ))}
+            </ul>
+          </div>
+          <div>
+            <p className="eyebrow text-white/40">Discover</p>
+            <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <a href="#clubs" className="hover:text-white">
+                  Shop by club
+                </a>
+              </li>
+              <li>
+                <a href="#brands" className="hover:text-white">
+                  Shop by brand
+                </a>
+              </li>
+              <li>
+                <a href="#audience" className="hover:text-white">
+                  Youth sizes
+                </a>
+              </li>
+              <li>
+                <a href="#size-guide" className="hover:text-white">
+                  Size guide
+                </a>
+              </li>
+              <li>
+                <a href="#trending" className="hover:text-white">
+                  Trending
+                </a>
+              </li>
             </ul>
           </div>
           <div>
@@ -1573,6 +1925,56 @@ export default function App() {
           {shopLabel(catalog)}
         </a>
       </div>
+
+      {/* Mobile nav drawer */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-[45] flex flex-col bg-chalk xl:hidden"
+          role="dialog"
+          aria-modal
+          aria-label="Navigation menu"
+        >
+          <div className="flex items-center justify-between border-b border-navy/10 px-5 py-4 pt-[calc(1rem+36px)]">
+            <span className="font-brand text-lg font-bold uppercase tracking-[0.12em] text-navy">
+              Jersey Deals
+            </span>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setMenuOpen(false)}
+              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+            >
+              <span className="text-xl leading-none">✕</span>
+            </button>
+          </div>
+          <nav className="flex flex-col divide-y divide-navy/10 overflow-y-auto px-5">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="py-4 text-sm font-semibold uppercase tracking-[0.18em] text-navy transition hover:text-crimson"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <div className="mt-auto border-t border-navy/10 p-5">
+            <a
+              href={shopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                track('cta_click', { place: 'mobile_menu' })
+                setMenuOpen(false)
+              }}
+              className="flex w-full items-center justify-center bg-crimson py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
+            >
+              {shopLabel(catalog)}
+            </a>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
