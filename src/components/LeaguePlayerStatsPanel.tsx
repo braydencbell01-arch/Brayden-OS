@@ -1,4 +1,5 @@
 import type { LeagueId } from '../lib/leagues'
+import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
 import type { LeaguePlayerStatsOverview } from '../lib/stats/types'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -69,10 +70,10 @@ export function LeaguePlayerStatsPanel({
                     }
                     className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                   >
-                    {row.player.name}
+                    {missingShort(row.player.name)}
                   </button>
                 ) : (
-                  <p className="truncate text-sm font-semibold text-cream">{row.player.name}</p>
+                  <p className="truncate text-sm font-semibold text-cream">{missingShort(row.player.name)}</p>
                 )}
                 {row.player.teamName ? (
                   teamClickable ? (
@@ -88,17 +89,17 @@ export function LeaguePlayerStatsPanel({
                       }
                       className="profile-link mt-0.5 block max-w-full truncate text-left text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
-                      {row.player.teamName}
+                      {missingShort(row.player.teamName)}
                     </button>
                   ) : (
                     <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-                      {row.player.teamName}
+                      {missingShort(row.player.teamName)}
                     </p>
                   )
                 ) : null}
               </div>
               <span className="font-display text-xl tracking-wide text-lime tabular-nums">
-                {row.player.displayValue}
+                {missingShort(row.player.displayValue)}
               </span>
             </li>
           )

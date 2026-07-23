@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { MISSING_SHORT } from '../../lib/display'
 import { seriesAggregate } from '../../lib/fantasy/schedule'
 import type { FantasyLeague, FantasyMember, FantasyPlayer, WeeklyMatchup } from '../../lib/fantasy/types'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
@@ -53,7 +54,7 @@ function MatchupTeamCard({
       }`}
     >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-mist/50">{label}</p>
-      <p className="mt-1 truncate text-lg font-bold text-cream">{member?.name ?? 'TBD'}</p>
+      <p className="mt-1 truncate text-lg font-bold text-cream">{member?.name ?? MISSING_SHORT}</p>
       <div className="mt-3 grid grid-cols-2 gap-2 text-center">
         <div className="rounded-xl bg-black/20 px-2 py-2">
           <p className="font-display text-3xl text-lime">{points.toFixed(1)}</p>

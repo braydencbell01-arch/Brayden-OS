@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
@@ -310,7 +311,7 @@ function CareerSeasonsPanel({
               style={ratingColorStyle(row.averageRating)}
               title="Average Brayden Rating"
             >
-              {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+              {row.averageRating != null ? row.averageRating.toFixed(1) : MISSING_SHORT}
             </p>
           </li>
         )
@@ -371,13 +372,15 @@ function ClubHistoryList({
                     })
                   }
                 >
-                  {stint.teamName}
+                  {missingShort(stint.teamName)}
                 </ProfileTextLink>
               ) : (
-                <p className="truncate text-sm font-semibold text-cream">{stint.teamName}</p>
+                <p className="truncate text-sm font-semibold text-cream">
+                  {missingShort(stint.teamName)}
+                </p>
               )}
               <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                {stint.seasons}
+                {missingShort(stint.seasons)}
               </p>
             </div>
           </li>
@@ -512,16 +515,18 @@ export function PlayerProfileScreen({
                 size="lg"
               />
             }
-            eyebrow={nationality || 'Nationality TBD'}
-            title={profile.name}
+            eyebrow={missingLong(nationality)}
+            title={missingShort(profile.name)}
             meta={
               <>
                 {canOpenClub ? (
-                  <ProfileTextLink onClick={openCurrentClub}>{teamName}</ProfileTextLink>
+                  <ProfileTextLink onClick={openCurrentClub}>
+                    {missingShort(teamName)}
+                  </ProfileTextLink>
                 ) : (
-                  teamName || 'Club TBD'
+                  missingLong(teamName)
                 )}
-                {positionLabel ? ` · ${positionLabel}` : ''}
+                {` · ${missingShort(positionLabel)}`}
                 {' · '}
                 {onOpenLeague ? (
                   <ProfileTextLink onClick={() => onOpenLeague(player.leagueId)}>
@@ -530,7 +535,7 @@ export function PlayerProfileScreen({
                 ) : (
                   league.short
                 )}
-                {profile.jersey ? ` · #${profile.jersey}` : ''}
+                {profile.jersey ? ` · #${missingShort(profile.jersey)}` : ''}
               </>
             }
           />
@@ -543,7 +548,9 @@ export function PlayerProfileScreen({
                   className={profile.averageRating == null ? 'text-mist/50' : ''}
                   style={ratingColorStyle(profile.averageRating)}
                 >
-                  {profile.averageRating != null ? profile.averageRating.toFixed(1) : '—'}
+                  {profile.averageRating != null
+                    ? profile.averageRating.toFixed(1)
+                    : MISSING_SHORT}
                 </span>
               }
             />
@@ -555,11 +562,11 @@ export function PlayerProfileScreen({
                     className="block truncate text-lg font-semibold leading-8 text-cream"
                     onClick={openCurrentClub}
                   >
-                    {teamName}
+                    {missingShort(teamName)}
                   </ProfileTextLink>
                 ) : (
                   <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                    {teamName || '—'}
+                    {missingShort(teamName)}
                   </span>
                 )
               }
@@ -568,7 +575,7 @@ export function PlayerProfileScreen({
               label="Nationality"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {nationality || '—'}
+                  {missingShort(nationality)}
                 </span>
               }
             />
@@ -576,16 +583,16 @@ export function PlayerProfileScreen({
               label="Position"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {positionLabel || '—'}
+                  {missingShort(positionLabel)}
                 </span>
               }
             />
-            <ProfileMetric label="Age" value={profile.age ?? '—'} />
+            <ProfileMetric label="Age" value={profile.age ?? MISSING_SHORT} />
             <ProfileMetric
               label="Height"
               value={
                 <span className="block text-2xl leading-8 text-cream">
-                  {profile.height || '—'}
+                  {missingShort(profile.height)}
                 </span>
               }
             />
@@ -593,7 +600,7 @@ export function PlayerProfileScreen({
               label="Weight"
               value={
                 <span className="block text-2xl leading-8 text-cream">
-                  {profile.weight || '—'}
+                  {missingShort(profile.weight)}
                 </span>
               }
             />

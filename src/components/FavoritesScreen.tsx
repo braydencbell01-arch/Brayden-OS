@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { missingShort } from '../lib/display'
 import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { FavoriteStar } from './FavoriteStar'
@@ -296,7 +297,7 @@ export function FavoritesScreen({
                                     className="profile-link text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                   >
                                     {getLeague(player.leagueId).short}
-                                    {player.position ? ` · ${player.position}` : ''}
+                                    {` · ${missingShort(player.position)}`}
                                   </button>
                                 </div>
                               </div>
