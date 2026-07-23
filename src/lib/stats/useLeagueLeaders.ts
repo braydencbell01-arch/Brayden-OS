@@ -15,7 +15,10 @@ export function useLeagueLeaders(leagueId: LeagueId, enabled: boolean) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
     if (seasonsLoading) return
 
     let cancelled = false

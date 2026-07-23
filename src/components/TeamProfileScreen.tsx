@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MISSING_LONG } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
@@ -85,7 +85,8 @@ export function TeamProfileScreen({
 }) {
   const league = getLeague(team.leagueId)
   const isNational =
-    team.kind === 'national' || isInternationalLeague(team.leagueId)
+    team.kind === 'national' ||
+    (team.kind == null && isInternationalLeague(team.leagueId))
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
@@ -205,18 +206,49 @@ export function TeamProfileScreen({
     setOpenSection((current) => (current === section ? null : section))
   }
 
+  const [pastExhausted, setPastExhausted] = useState(false)
+  const pendingPastCountRef = useRef<number | null>(null)
+  const matchCountRef = useRef(0)
+  matchCountRef.current = teamMatches.length
+
+  useEffect(() => {
+    setPastExhausted(false)
+    pendingPastCountRef.current = null
+    setPastHorizonDays(CALENDAR_INITIAL_PAST_DAYS)
+  }, [team.id])
+
+  useEffect(() => {
+    const pending = pendingPastCountRef.current
+    if (pending == null) return
+    if (teamMatches.length > pending) pendingPastCountRef.current = null
+  }, [teamMatches.length])
+
   const loadEarlierResults = useCallback(() => {
-    if (!onNeedPastRange || loadingMoreRef.current) return
+    if (!onNeedPastRange || loadingMoreRef.current || pastExhausted) return
     loadingMoreRef.current = true
     setLoadingEarlier(true)
+    const beforeCount = matchCountRef.current
+    pendingPastCountRef.current = beforeCount
     const next = pastHorizonDays + CALENDAR_PAST_CHUNK_DAYS
     setPastHorizonDays(next)
     const today = startOfDay(new Date())
     void Promise.resolve(onNeedPastRange(addDays(today, -next), today)).finally(() => {
       loadingMoreRef.current = false
       setLoadingEarlier(false)
+      // Wait for parent merge to commit; only exhaust if count never grew.
+      window.setTimeout(() => {
+        if (
+          pendingPastCountRef.current === beforeCount &&
+          matchCountRef.current <= beforeCount
+        ) {
+          setPastExhausted(true)
+        }
+        if (pendingPastCountRef.current === beforeCount) {
+          pendingPastCountRef.current = null
+        }
+      }, 450)
     })
-  }, [onNeedPastRange, pastHorizonDays])
+  }, [onNeedPastRange, pastExhausted, pastHorizonDays])
 
   const onRecentScroll = () => {
     const scroller = recentScrollRef.current
@@ -578,30 +610,32 @@ export function TeamProfileScreen({
       </section>
 
       <div className="mt-6 flex flex-col gap-3">
-        <ProfileAccordion
-          title="Table"
-          subtitle={
-            standing?.group ? `${standing.group} · ${league.name}` : league.name
-          }
-          open={openSection === 'table'}
-          onToggle={() => toggle('table')}
-        >
-          <StandingsTable
-            rows={standings.rows}
-            loading={standings.loading}
-            error={standings.error}
-            leagueId={team.leagueId}
-            isTeamFavorite={favorites.isTeamFavorite}
-            onToggleTeam={favorites.toggleTeam}
-            onOpenTeam={onOpenTeam}
-            highlightedTeamId={team.id}
-            onRetry={() => void standings.reload()}
-            seasons={standings.seasons}
-            seasonsLoading={standings.seasonsLoading}
-            selectedSeason={standings.selectedSeason}
-            onSelectSeason={standings.selectSeason}
-          />
-        </ProfileAccordion>
+        {league.hasStandings ? (
+          <ProfileAccordion
+            title="Table"
+            subtitle={
+              standing?.group ? `${standing.group} · ${league.name}` : league.name
+            }
+            open={openSection === 'table'}
+            onToggle={() => toggle('table')}
+          >
+            <StandingsTable
+              rows={standings.rows}
+              loading={standings.loading}
+              error={standings.error}
+              leagueId={team.leagueId}
+              isTeamFavorite={favorites.isTeamFavorite}
+              onToggleTeam={favorites.toggleTeam}
+              onOpenTeam={onOpenTeam}
+              highlightedTeamId={team.id}
+              onRetry={() => void standings.reload()}
+              seasons={standings.seasons}
+              seasonsLoading={standings.seasonsLoading}
+              selectedSeason={standings.selectedSeason}
+              onSelectSeason={standings.selectSeason}
+            />
+          </ProfileAccordion>
+        ) : null}
 
         <ProfileAccordion
           title="Upcoming Fixtures"
@@ -653,6 +687,10 @@ export function TeamProfileScreen({
         >
           {fixturesLoading && recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading results…</p>
+          ) : (error || schedule.error) && recentGrouped.length === 0 ? (
+            <div>
+              <p className="text-sm text-mist/80">{error || schedule.error}</p>
+            </div>
           ) : recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">No recent results in the current window.</p>
           ) : (
@@ -684,12 +722,14 @@ export function TeamProfileScreen({
                 <button
                   type="button"
                   onClick={loadEarlierResults}
-                  disabled={loadingEarlier || !onNeedPastRange}
+                  disabled={loadingEarlier || pastExhausted || !onNeedPastRange}
                   className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
                 >
                   {loadingEarlier
                     ? 'Loading earlier…'
-                    : `Load earlier results · ${pastHorizonDays}+ days`}
+                    : pastExhausted
+                      ? 'No earlier results in range'
+                      : `Load earlier results · ${pastHorizonDays}+ days`}
                 </button>
               </div>
             </div>

@@ -1,4 +1,12 @@
-import { getLeague, internationalLeagues, LEAGUES, type LeagueId } from '../leagues'
+import {
+  getLeague,
+  internationalLeagues,
+  isContinentalLeague,
+  isInternationalLeague,
+  LEAGUES,
+  type LeagueId,
+} from '../leagues'
+import { leagueIdFromTeamSlug } from '../search'
 import {
   positionGroupFromAbbrev,
   rateMatchPerformance,
@@ -503,6 +511,10 @@ export async function fetchTeamRoster(
       ? internationalLeagues()
           .filter((item) => item.espnCode !== league.espnCode)
           .map((item) => item.espnCode)
+      : []),
+    // Clubs opened from UCL/UEL often only roster under their domestic code.
+    ...(league.kind === 'continental'
+      ? LEAGUES.filter((item) => item.kind === 'domestic').map((item) => item.espnCode)
       : []),
   ]
 
@@ -1280,6 +1292,7 @@ type EspnAthletePayload = {
       id?: string
       displayName?: string
       shortDisplayName?: string
+      slug?: string
       logos?: Array<{ href?: string }>
     }
     statsSummary?: {
@@ -2461,9 +2474,26 @@ export async function fetchPlayerProfile(
   leagueId: LeagueId,
   playerId: string,
 ): Promise<{ profile: PlayerProfile; ratingsCursor: PlayerRatingsCursor }> {
-  const league = getLeague(leagueId)
-  const [athleteRes, bioRes, overviewRes, seasonStatsBundle] = await Promise.all([
-    fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}`),
+  const athleteRes = await fetch(
+    `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}`,
+  )
+  if (!athleteRes.ok) {
+    throw new Error(`Could not load player profile (${athleteRes.status})`)
+  }
+
+  const athleteJson = (await athleteRes.json()) as EspnAthletePayload
+  const athlete = athleteJson.athlete
+  if (!athlete?.id) throw new Error('Player not found')
+
+  // Club players opened from internationals/continentals must load domestic season stats.
+  const fromSlug = leagueIdFromTeamSlug(athlete.team?.slug)
+  const effectiveLeagueId =
+    fromSlug && (isInternationalLeague(leagueId) || isContinentalLeague(leagueId))
+      ? fromSlug
+      : leagueId
+  const league = getLeague(effectiveLeagueId)
+
+  const [bioRes, overviewRes, seasonStatsBundle] = await Promise.all([
     fetch(`https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/bio`),
     fetch(
       `https://site.api.espn.com/apis/common/v3/sports/soccer/${league.espnCode}/athletes/${playerId}/overview`,
@@ -2471,18 +2501,10 @@ export async function fetchPlayerProfile(
     fetchAthleteLeagueSeasonStats(playerId, league.espnCode),
   ])
 
-  if (!athleteRes.ok) {
-    throw new Error(`Could not load player profile (${athleteRes.status})`)
-  }
-
-  const athleteJson = (await athleteRes.json()) as EspnAthletePayload
   const bioJson = bioRes.ok ? ((await bioRes.json()) as EspnBioPayload) : { teamHistory: [] }
   const overviewJson = overviewRes.ok
     ? ((await overviewRes.json()) as EspnOverviewPayload)
     : {}
-
-  const athlete = athleteJson.athlete
-  if (!athlete?.id) throw new Error('Player not found')
 
   const name = athlete.displayName || athlete.fullName || ''
   const shortName = athlete.shortName || name
@@ -2550,7 +2572,7 @@ export async function fetchPlayerProfile(
       teamName: athlete.team?.displayName || athlete.team?.shortDisplayName,
       teamLogoUrl: athlete.team?.logos?.[0]?.href,
       seasonSummary: seasonSummary.length > 0 ? seasonSummary : undefined,
-      leagueId,
+      leagueId: effectiveLeagueId,
       seasonStats,
       seasonStatsLabel,
       seasonYear: seasonStatsBundle.seasonYear,

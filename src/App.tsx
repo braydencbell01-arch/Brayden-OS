@@ -162,7 +162,7 @@ function HomeScreen({
           </div>
         </header>
 
-        <div className="sticky top-0 z-30 -mx-5 mb-5 border-b border-white/10 bg-pitch-deep/92 px-5 pb-3 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md md:-mx-6 md:px-6">
+        <div className="sticky top-0 z-30 -mx-5 mb-5 border-b border-white/10 bg-pitch-deep/92 px-5 pb-3 pt-2 backdrop-blur-md md:-mx-6 md:px-6">
           <HomeSearch
             matches={matches}
             favoriteTeams={favorites.teams}
@@ -214,7 +214,7 @@ function HomeScreen({
             </div>
           </div>
 
-          {loading ? (
+          {loading || (refreshing && dayMatches.length === 0 && !error) ? (
             <div className="space-y-2" aria-label="Loading fixtures">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div key={index} className="h-14 animate-pulse rounded bg-white/[0.06]" />
@@ -318,6 +318,10 @@ export default function App() {
   const teamStackRef = useRef<FavoriteTeam[]>([])
   /** Team → League Back restores the club (separate from opponent stack). */
   const leagueReturnTeamRef = useRef<FavoriteTeam | null>(null)
+  /** Player → League Back restores the player when no club is underneath. */
+  const leagueReturnPlayerRef = useRef<PlayerNavRef | null>(null)
+  /** Player → Team Back restores the player when the club stack is empty. */
+  const teamReturnPlayerRef = useRef<PlayerNavRef | null>(null)
   /** League → Team keeps the origin league so Back can return past a nested league hop. */
   const teamOriginLeagueRef = useRef<LeagueId | null>(null)
   const todayKey = useTodayKey()
@@ -363,6 +367,8 @@ export default function App() {
     setActivePlayer(null)
     teamStackRef.current = []
     leagueReturnTeamRef.current = null
+    leagueReturnPlayerRef.current = null
+    teamReturnPlayerRef.current = null
     teamOriginLeagueRef.current = null
     setReturnTab(tab)
     setScreen(tab)
@@ -372,31 +378,55 @@ export default function App() {
     }
   }
 
+  // Deep-link #fantasy-join=… should land on Fantasy Home (join UI), not a league hub.
+  useEffect(() => {
+    if (!fantasy.pendingInvite) return
+    setActiveLeagueId(null)
+    if (screen !== 'fantasy') selectTab('fantasy')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to invite arrival
+  }, [fantasy.pendingInvite])
+
   const openLeague = (id: LeagueId) => {
     if (isTabScreen(screen)) {
       setReturnTab(screen)
       setActiveTab(screen)
       teamStackRef.current = []
       leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
       teamOriginLeagueRef.current = null
       setActiveTeam(null)
+      setActivePlayer(null)
     } else if (screen === 'team' && activeTeam) {
       // Team → league: keep the club so Back returns here instead of the tab.
       leagueReturnTeamRef.current = activeTeam
+      leagueReturnPlayerRef.current = null
       setActiveTeam(null)
+      setActivePlayer(null)
     } else if (screen === 'player' && activeTeam) {
       leagueReturnTeamRef.current = activeTeam
+      leagueReturnPlayerRef.current = null
       setActiveTeam(null)
+      setActivePlayer(null)
+    } else if (screen === 'player' && activePlayer) {
+      // Player opened without a club underneath (search / favorites).
+      leagueReturnPlayerRef.current = activePlayer
+      leagueReturnTeamRef.current = null
+      setActivePlayer(null)
     } else {
       setActiveTeam(null)
+      setActivePlayer(null)
     }
-    setActivePlayer(null)
     setActiveLeagueId(id)
     setScreen('league-profile')
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
   const openTeam = (team: FavoriteTeam) => {
+    if (screen === 'player' && activePlayer) {
+      // Leaving a player for a club — Back should restore the player when the stack ends.
+      teamReturnPlayerRef.current = activePlayer
+    }
     if (
       (screen === 'team' || screen === 'player') &&
       activeTeam &&
@@ -408,6 +438,8 @@ export default function App() {
       teamStackRef.current = []
       if (isTabScreen(screen)) {
         leagueReturnTeamRef.current = null
+        leagueReturnPlayerRef.current = null
+        teamReturnPlayerRef.current = null
         teamOriginLeagueRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
@@ -426,6 +458,8 @@ export default function App() {
       teamStackRef.current = []
       if (isTabScreen(screen)) {
         leagueReturnTeamRef.current = null
+        leagueReturnPlayerRef.current = null
+        teamReturnPlayerRef.current = null
         teamOriginLeagueRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
@@ -455,6 +489,15 @@ export default function App() {
       return
     }
 
+    const returnPlayer = teamReturnPlayerRef.current
+    if (returnPlayer) {
+      teamReturnPlayerRef.current = null
+      setActiveTeam(null)
+      setActivePlayer(returnPlayer)
+      setScreen('player')
+      return
+    }
+
     setActiveTeam(null)
     setActivePlayer(null)
     if (activeLeagueId) {
@@ -462,22 +505,34 @@ export default function App() {
       return
     }
     leagueReturnTeamRef.current = null
+    leagueReturnPlayerRef.current = null
     teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
   }
 
   const closeLeagueProfile = () => {
-    setActivePlayer(null)
     const returnTeam = leagueReturnTeamRef.current
     if (returnTeam) {
       leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      setActivePlayer(null)
       setActiveTeam(returnTeam)
       // Restore the league this club was opened from (if any), not the nested hop.
       setActiveLeagueId(teamOriginLeagueRef.current)
       setScreen('team')
       return
     }
+    const returnPlayer = leagueReturnPlayerRef.current
+    if (returnPlayer) {
+      leagueReturnPlayerRef.current = null
+      setActiveLeagueId(null)
+      setActiveTeam(null)
+      setActivePlayer(returnPlayer)
+      setScreen('player')
+      return
+    }
+    setActivePlayer(null)
     setActiveLeagueId(null)
     setActiveTeam(null)
     teamStackRef.current = []
@@ -497,7 +552,7 @@ export default function App() {
 
   return (
     <>
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="sync">
         {screen === 'player' && activePlayer ? (
           <motion.div
             key={`player-${activePlayer.id}`}

@@ -19,7 +19,10 @@ export function useTeamStatLeaders(
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!enabled || !teamId) return
+    if (!enabled || !teamId) {
+      setLoading(false)
+      return
+    }
     // Wait until seasons resolve so the first paint uses a known-good year when possible.
     if (seasonsLoading) return
 

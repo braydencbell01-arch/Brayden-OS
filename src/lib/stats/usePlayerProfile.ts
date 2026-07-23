@@ -120,7 +120,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     setRatingsMoreError(null)
     const req = requestId.current
     try {
-      const league = getLeague(leagueId)
+      const league = getLeague(profile.leagueId)
       const exclude = new Set(profile.recentRatings.map((row) => row.eventId))
       const batch = await fetchNextPlayerRatingsBatch(
         league.espnCode,
