@@ -98,6 +98,14 @@ export function useFavorites() {
     () => new Set(state.players.map((player) => player.id)),
     [state.players],
   )
+  /** Clubs linked to favorited players — used for calendar dots / Match day highlights. */
+  const favoritePlayerTeamIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const player of state.players) {
+      if (player.teamId) ids.add(player.teamId)
+    }
+    return ids
+  }, [state.players])
   const isLeagueFavorite = useCallback(
     (id: LeagueId) => leagueIds.has(id),
     [leagueIds],
@@ -148,6 +156,44 @@ export function useFavorites() {
     })
   }, [])
 
+  /** Refresh stored player fields when already favorited (e.g. after profile load). */
+  const upsertPlayer = useCallback((player: FavoritePlayer) => {
+    setState((prev) => {
+      const index = prev.players.findIndex((item) => item.id === player.id)
+      if (index < 0) return prev
+      const existing = prev.players[index]!
+      const merged: FavoritePlayer = {
+        ...existing,
+        ...player,
+        name: player.name || existing.name,
+        shortName: player.shortName || existing.shortName,
+        photoUrl: player.photoUrl || existing.photoUrl,
+        jerseyUrl: player.jerseyUrl || existing.jerseyUrl,
+        jersey: player.jersey || existing.jersey,
+        position: player.position || existing.position,
+        teamId: player.teamId || existing.teamId,
+        teamName: player.teamName || existing.teamName,
+        leagueId: player.leagueId || existing.leagueId,
+      }
+      const same =
+        merged.name === existing.name &&
+        merged.shortName === existing.shortName &&
+        merged.photoUrl === existing.photoUrl &&
+        merged.jerseyUrl === existing.jerseyUrl &&
+        merged.jersey === existing.jersey &&
+        merged.position === existing.position &&
+        merged.teamId === existing.teamId &&
+        merged.teamName === existing.teamName &&
+        merged.leagueId === existing.leagueId
+      if (same) return prev
+      const players = prev.players.slice()
+      players[index] = merged
+      const next = { ...prev, players }
+      writeStorage(next)
+      return next
+    })
+  }, [])
+
   return {
     leagues: state.leagues,
     teams: state.teams,
@@ -155,12 +201,14 @@ export function useFavorites() {
     leagueIds,
     teamIds,
     playerIds,
+    favoritePlayerTeamIds,
     isLeagueFavorite,
     isTeamFavorite,
     isPlayerFavorite,
     toggleLeague,
     toggleTeam,
     togglePlayer,
+    upsertPlayer,
   }
 }
 

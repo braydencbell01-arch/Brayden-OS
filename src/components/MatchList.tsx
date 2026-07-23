@@ -141,32 +141,14 @@ function ExpandableMatchRow({
             ].join(' ')
       }
     >
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            setOpen((value) => !value)
-          }
-        }}
-        aria-expanded={open}
-        className={[
-          'w-full cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime',
-          flat ? 'px-3 py-2.5' : 'px-4 py-3',
-        ].join(' ')}
-      >
+      <div className={flat ? 'px-3 py-2.5' : 'px-4 py-3'}>
         <div className="mb-1.5 flex w-full items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
             {showLeagueLabel && onOpenLeague ? (
               <button
                 type="button"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenLeague(match.leagueId)
-                }}
+                onClick={() => onOpenLeague(match.leagueId)}
                 className="profile-link truncate text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
               >
                 {leagueLabel}
@@ -175,9 +157,12 @@ function ExpandableMatchRow({
               <span className="truncate">{leagueLabel}</span>
             )}
           </p>
-          <p
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
             className={[
-              'shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.14em]',
+              'shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.14em] outline-none transition hover:text-lime focus-visible:ring-2 focus-visible:ring-lime',
               match.status === 'live' ? 'text-lime' : 'text-mist/80',
             ].join(' ')}
           >
@@ -185,17 +170,21 @@ function ExpandableMatchRow({
             <span className="ml-2 text-mist/50">
               {open ? '▴' : '▾'} {expandLabel}
             </span>
-          </p>
+          </button>
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div onClick={(event) => event.stopPropagation()}>
-            <TeamNameButton match={match} side="home" onOpenTeam={onOpenTeam} />
-          </div>
-          <Score match={match} />
-          <div onClick={(event) => event.stopPropagation()}>
-            <TeamNameButton match={match} side="away" onOpenTeam={onOpenTeam} />
-          </div>
+          <TeamNameButton match={match} side="home" onOpenTeam={onOpenTeam} />
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            aria-expanded={open}
+            aria-label={`${expandLabel} for ${match.home.shortName} vs ${match.away.shortName}`}
+            className="outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          >
+            <Score match={match} />
+          </button>
+          <TeamNameButton match={match} side="away" onOpenTeam={onOpenTeam} />
         </div>
       </div>
 
