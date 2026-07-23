@@ -7,6 +7,7 @@ import {
   type LeagueId,
 } from '../leagues'
 import { leagueIdFromTeamSlug } from '../search'
+import { estimateFplPointsFromEspn } from '../fantasy/espnFplEstimate'
 import {
   positionGroupFromAbbrev,
   rateMatchPerformance,
@@ -97,6 +98,11 @@ type EspnSummary = {
         period?: number
         type?: { name?: string; state?: string; detail?: string; shortDetail?: string }
       }
+      competitors?: Array<{
+        homeAway?: string
+        score?: string | number | { value?: number; displayValue?: string }
+        team?: { id?: string }
+      }>
     }>
   }
 }
@@ -267,11 +273,21 @@ function buildLineups(
   live: boolean,
   elapsedMinutes: number,
 ): MatchLineupSide[] {
+  const competitors = summary.header?.competitions?.[0]?.competitors ?? []
+  const homeGoals = parseCompetitorScore(
+    competitors.find((c) => c.homeAway === 'home')?.score,
+  )
+  const awayGoals = parseCompetitorScore(
+    competitors.find((c) => c.homeAway === 'away')?.score,
+  )
+
   return (summary.rosters ?? [])
     .map((side) => {
       const teamId = side.team?.id || 'unknown'
       const teamName = side.team?.displayName || side.team?.shortDisplayName || ''
       const homeAway: 'home' | 'away' = side.homeAway === 'away' ? 'away' : 'home'
+      const teamGoalsAgainst =
+        homeAway === 'home' ? awayGoals : homeAway === 'away' ? homeGoals : null
       const players = (side.roster ?? []).flatMap((entry) => {
           const id = entry.athlete?.id
           if (!id) return []
@@ -285,14 +301,11 @@ function buildLineups(
             ...stats,
             appearances: appeared ? Math.max(stats.appearances, 1) : 0,
           }
-          const breakdown = rateMatchPerformance(
-            ratingStats,
-            positionGroupFromAbbrev(positionAbbrev),
-            {
-              minutesPlayed: live ? elapsedMinutes : 90,
-              live,
-            },
-          )
+          const positionGroup = positionGroupFromAbbrev(positionAbbrev)
+          const breakdown = rateMatchPerformance(ratingStats, positionGroup, {
+            minutesPlayed: live ? elapsedMinutes : 90,
+            live,
+          })
           const player: MatchLineupPlayer = {
             id,
             name,
@@ -303,6 +316,21 @@ function buildLineups(
             positionAbbrev,
             starter: Boolean(entry.starter),
             rating: breakdown?.rating ?? null,
+            fplPoints: estimateFplPointsFromEspn({
+              positionGroup,
+              appeared,
+              starter: Boolean(entry.starter),
+              live,
+              elapsedMinutes,
+              goals: stats.totalGoals,
+              assists: stats.goalAssists,
+              yellowCards: stats.yellowCards,
+              redCards: stats.redCards,
+              ownGoals: stats.ownGoals,
+              saves: stats.saves,
+              goalsConceded: stats.goalsConceded,
+              teamGoalsAgainst,
+            }),
             teamId,
             teamName,
             leagueId,
