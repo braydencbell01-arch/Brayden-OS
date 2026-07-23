@@ -290,7 +290,12 @@ export default function App() {
     })
   }, [listings, tagFilter, sizeFilter, brandFilter, query])
 
-  function goShop(next?: { tag?: string; size?: string }) {
+  function goShop(next?: { tag?: string; size?: string; reset?: boolean }) {
+    if (next?.reset) {
+      setSizeFilter('All')
+      setBrandFilter('All')
+      setQuery('')
+    }
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.size !== undefined) setSizeFilter(next.size)
     requestAnimationFrame(() => {
@@ -402,7 +407,7 @@ export default function App() {
                 <motion.button
                   key={tile.label}
                   type="button"
-                  onClick={() => goShop({ tag: tile.tag })}
+                  onClick={() => goShop({ tag: tile.tag, reset: true })}
                   initial={reduce ? false : { opacity: 0, y: 28 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -490,7 +495,7 @@ export default function App() {
               <motion.div {...fadeUp(reduce, 0.2)} className="mt-10">
                 <button
                   type="button"
-                  onClick={() => goShop({ tag: 'All' })}
+                  onClick={() => goShop({ tag: 'All', reset: true })}
                   className="inline-flex rounded-md border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/5"
                 >
                   Browse all {catalog.count} listings
