@@ -8,7 +8,6 @@ import {
   EBAY_SELLER,
   EBAY_SELLER_URL,
   EBAY_SHOP_URL,
-  EBAY_YOUTH_URL,
   FAMILY_NOTE,
   SALE_HEADLINE,
   SALE_URGENCY,
@@ -17,11 +16,15 @@ import {
 import {
   conditionLabel,
   formatPrice,
+  isSquareCatalog,
   isYouthListing,
+  listingSize,
   lowestSalePrice,
   pickFeatured,
   pickNewDrops,
   shortTitle,
+  sortSizes,
+  TAG_ORDER,
   type Listing,
   type ListingsPayload,
 } from './listings'
@@ -41,11 +44,45 @@ function fadeUp(reduce: boolean | null, delay = 0) {
 
 function primaryShopUrl(catalog: ListingsPayload | null) {
   if (SQUARE_STORE_URL) return SQUARE_STORE_URL
+  if (isSquareCatalog(catalog) && catalog?.shopUrl) return catalog.shopUrl
   return catalog?.shopUrl ?? EBAY_SHOP_URL
 }
 
-function shopLabel() {
-  return SQUARE_STORE_URL ? 'Enter the storefront' : 'Shop on eBay'
+function shopLabel(catalog: ListingsPayload | null = null) {
+  if (SQUARE_STORE_URL || isSquareCatalog(catalog)) return 'Shop on Square'
+  return 'Shop on eBay'
+}
+
+function FilterChip({
+  active,
+  label,
+  onClick,
+  tone = 'light',
+}: {
+  active: boolean
+  label: string
+  onClick: () => void
+  tone?: 'light' | 'dark'
+}) {
+  const base =
+    tone === 'dark'
+      ? active
+        ? 'border-crimson-hot bg-crimson text-white'
+        : 'border-white/25 text-white/75 hover:border-white/50 hover:text-white'
+      : active
+        ? 'border-crimson bg-crimson text-white'
+        : 'border-navy/20 text-navy/75 hover:border-navy/45 hover:text-navy'
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`border px-3 py-1.5 text-sm font-semibold transition ${base}`}
+    >
+      {label}
+    </button>
+  )
 }
 
 const FAQ = [
@@ -126,6 +163,15 @@ function ProductLink({
             >
               {condition}
             </span>
+            {item.brand ? (
+              <span
+                className={`text-[0.65rem] font-semibold uppercase tracking-[0.12em] ${
+                  tone === 'dark' ? 'text-white/45' : 'text-muted'
+                }`}
+              >
+                {item.brand}
+              </span>
+            ) : null}
           </div>
           <h3
             className={`mt-1 text-lg font-semibold leading-snug ${
@@ -160,6 +206,10 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sent'>('idle')
   const [showSticky, setShowSticky] = useState(false)
+  const [tagFilter, setTagFilter] = useState('All')
+  const [sizeFilter, setSizeFilter] = useState('All')
+  const [brandFilter, setBrandFilter] = useState('All')
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     initAnalytics()
@@ -194,13 +244,59 @@ export default function App() {
   }, [])
 
   const shopUrl = primaryShopUrl(catalog)
-  const ebayShop = catalog?.shopUrl ?? EBAY_SHOP_URL
-  const ebaySeller = catalog?.sellerUrl ?? EBAY_SELLER_URL
-  const listings = catalog?.listings ?? []
-  const featured = pickFeatured(listings, 6)
-  const newDrops = pickNewDrops(listings, 3)
+  const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
+  const ebayShop = catalog?.source === 'square' ? EBAY_SHOP_URL : catalog?.shopUrl ?? EBAY_SHOP_URL
+  const ebaySeller = catalog?.source === 'square' ? EBAY_SELLER_URL : catalog?.sellerUrl ?? EBAY_SELLER_URL
+  const listings = useMemo(() => catalog?.listings ?? [], [catalog])
+  const featured = useMemo(() => pickFeatured(listings, 6), [listings])
+  const newDrops = useMemo(() => pickNewDrops(listings, 3), [listings])
   const saleFloor = lowestSalePrice(listings)
   const youthCount = listings.filter(isYouthListing).length
+  const channelLabel = onSquare ? 'Square' : 'eBay'
+
+  const availableTags = useMemo(() => {
+    const present = new Set(listings.map((item) => item.tag))
+    return TAG_ORDER.filter((tag) => present.has(tag))
+  }, [listings])
+
+  const availableSizes = useMemo(() => {
+    const present = new Set(listings.map(listingSize))
+    return sortSizes([...present])
+  }, [listings])
+
+  const availableBrands = useMemo(() => {
+    return [
+      ...new Set(listings.map((item) => item.brand).filter((brand): brand is string => Boolean(brand))),
+    ].sort((a, b) => a.localeCompare(b))
+  }, [listings])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return listings.filter((item) => {
+      if (tagFilter !== 'All' && item.tag !== tagFilter) return false
+      if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
+      if (brandFilter !== 'All' && item.brand !== brandFilter) return false
+      if (!q) return true
+      return (
+        item.title.toLowerCase().includes(q) ||
+        item.tag.toLowerCase().includes(q) ||
+        (item.brand || '').toLowerCase().includes(q) ||
+        item.note.toLowerCase().includes(q)
+      )
+    })
+  }, [listings, tagFilter, sizeFilter, brandFilter, query])
+
+  function goInventory(next?: { tag?: string; reset?: boolean }) {
+    if (next?.reset) {
+      setSizeFilter('All')
+      setBrandFilter('All')
+      setQuery('')
+    }
+    if (next?.tag !== undefined) setTagFilter(next.tag)
+    requestAnimationFrame(() => {
+      document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   const heroImage = useMemo(() => {
     return listings[0]?.image || asset('hero-jersey.jpg')
@@ -243,7 +339,7 @@ export default function App() {
             onClick={() => track('cta_click', { place: 'header' })}
             className="bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
           >
-            {shopLabel()}
+            {shopLabel(catalog)}
           </a>
         </div>
       </header>
@@ -292,14 +388,14 @@ export default function App() {
                   whileTap={reduce ? undefined : { scale: 0.98 }}
                   className="inline-flex bg-crimson px-6 py-3.5 text-base font-semibold text-white transition hover:bg-crimson-hot"
                 >
-                  {shopLabel()}
+                  {shopLabel(catalog)}
                 </motion.a>
                 <a
-                  href="#shop"
+                  href="#inventory"
                   onClick={() => track('cta_click', { place: 'hero_secondary' })}
                   className="inline-flex border border-white/35 px-6 py-3.5 text-base font-semibold text-white transition hover:border-white hover:bg-white/5"
                 >
-                  Browse categories
+                  Browse inventory
                 </a>
               </div>
             </motion.div>
@@ -338,58 +434,102 @@ export default function App() {
               {[
                 {
                   label: 'Youth apparel',
-                  href: EBAY_YOUTH_URL,
+                  onClick: () => {
+                    track('category_click', { category: 'category_youth' })
+                    goInventory({ tag: 'Youth', reset: true })
+                  },
                   image: asset('category-youth.jpg'),
                   copy:
                     youthCount > 0
                       ? `${youthCount} youth listings ready to ship.`
                       : 'Kids and youth kits sized and ready to ship.',
-                  event: 'category_youth',
                 },
                 {
                   label: SALE_HEADLINE,
-                  href: EBAY_SALE_URL,
+                  href: onSquare ? `${shopUrl}` : EBAY_SALE_URL,
                   image: asset('category-sale.jpg'),
                   copy:
                     saleFloor != null
                       ? `${SALE_URGENCY} · from ${formatPrice(saleFloor, 'USD')}`
                       : SALE_URGENCY,
                   event: 'category_sale',
+                  onClick: () => {
+                    track('category_click', { category: 'category_sale' })
+                    if (onSquare) {
+                      setTagFilter('All')
+                      setSizeFilter('All')
+                      setBrandFilter('All')
+                      setQuery('')
+                      // Show under-$25 by searching empty + user can scan; keep external for eBay sale sort
+                      requestAnimationFrame(() => {
+                        document
+                          .getElementById('inventory')
+                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                      })
+                    }
+                  },
+                  external: !onSquare,
                 },
                 {
                   label: 'Full catalog',
-                  href: ebayShop,
+                  onClick: () => {
+                    track('category_click', { category: 'category_all' })
+                    goInventory({ tag: 'All', reset: true })
+                  },
                   image: listings[2]?.image || asset('product-home.jpg'),
                   copy:
                     loadState === 'ready' && catalog
-                      ? `${catalog.count} active listings from @${catalog.seller}.`
+                      ? `${catalog.count} active listings${catalog.source ? ` via ${catalog.source}` : ''}.`
                       : 'Every active listing from Jersey Deals.',
-                  event: 'category_all',
                 },
-              ].map((tile, i) => (
-                <motion.a
-                  key={tile.label}
-                  href={tile.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('category_click', { category: tile.event })}
-                  {...fadeUp(reduce, 0.06 + i * 0.08)}
-                  className="group relative block min-h-[240px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
-                >
-                  <img
-                    src={tile.image}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/55 to-navy/15" />
-                  <div className="relative flex h-full flex-col justify-end p-6 md:p-7">
-                    <p className="font-display text-3xl font-bold uppercase tracking-wide text-white">
-                      {tile.label}
-                    </p>
-                    <p className="mt-2 max-w-sm text-sm text-white/75">{tile.copy}</p>
-                  </div>
-                </motion.a>
-              ))}
+              ].map((tile, i) => {
+                const className =
+                  'group relative block min-h-[240px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk'
+                const inner = (
+                  <>
+                    <img
+                      src={tile.image}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/55 to-navy/15" />
+                    <div className="relative flex h-full flex-col justify-end p-6 md:p-7">
+                      <p className="font-display text-3xl font-bold uppercase tracking-wide text-white">
+                        {tile.label}
+                      </p>
+                      <p className="mt-2 max-w-sm text-sm text-white/75">{tile.copy}</p>
+                    </div>
+                  </>
+                )
+
+                if (tile.external && tile.href) {
+                  return (
+                    <motion.a
+                      key={tile.label}
+                      href={tile.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={tile.onClick}
+                      {...fadeUp(reduce, 0.06 + i * 0.08)}
+                      className={className}
+                    >
+                      {inner}
+                    </motion.a>
+                  )
+                }
+
+                return (
+                  <motion.button
+                    key={tile.label}
+                    type="button"
+                    onClick={tile.onClick}
+                    {...fadeUp(reduce, 0.06 + i * 0.08)}
+                    className={`${className} w-full text-left`}
+                  >
+                    {inner}
+                  </motion.button>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -410,13 +550,13 @@ export default function App() {
                 </p>
               </div>
               <a
-                href={EBAY_NEWEST_URL}
+                href={onSquare ? shopUrl : EBAY_NEWEST_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track('cta_click', { place: 'new_drops_all' })}
                 className="text-sm font-semibold uppercase tracking-[0.14em] text-crimson hover:text-crimson-hot"
               >
-                See newest on eBay
+                See newest on {channelLabel}
               </a>
             </motion.div>
 
@@ -472,17 +612,160 @@ export default function App() {
             )}
 
             {catalog && catalog.count > featured.length && (
-              <motion.div {...fadeUp(reduce, 0.15)} className="mt-12">
+              <motion.div {...fadeUp(reduce, 0.15)} className="mt-12 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    track('cta_click', { place: 'featured_inventory' })
+                    goInventory({ tag: 'All', reset: true })
+                  }}
+                  className="inline-flex border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/5"
+                >
+                  Browse all {catalog.count} listings
+                </button>
                 <a
-                  href={ebayShop}
+                  href={shopUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => track('cta_click', { place: 'featured_all' })}
                   className="inline-flex border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/5"
                 >
-                  See all {catalog.count} listings on eBay
+                  Open {channelLabel} storefront
                 </a>
               </motion.div>
+            )}
+          </div>
+        </section>
+
+        {/* Full inventory filters */}
+        <section id="inventory" className="bg-chalk py-20 md:py-28">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
+              <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                Full inventory
+              </h2>
+              <p className="mt-3 text-lg text-muted">
+                Filter live stock by type, size, and brand — then checkout on {channelLabel}.
+              </p>
+            </motion.div>
+
+            {loadState === 'ready' && listings.length > 0 && (
+              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
+                <label className="block max-w-xl">
+                  <span className="sr-only">Search inventory</span>
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search club, kit, size…"
+                    className="w-full border border-navy/15 bg-white px-4 py-3 text-base text-navy outline-none transition placeholder:text-muted/70 focus:border-crimson/50 focus:ring-2 focus:ring-crimson/20"
+                  />
+                </label>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Type</p>
+                  <div className="flex flex-wrap gap-2">
+                    <FilterChip label="All" active={tagFilter === 'All'} onClick={() => setTagFilter('All')} />
+                    {availableTags.map((tag) => (
+                      <FilterChip
+                        key={tag}
+                        label={tag}
+                        active={tagFilter === tag}
+                        onClick={() => setTagFilter(tag)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {availableSizes.length > 1 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Size</p>
+                    <div className="flex flex-wrap gap-2">
+                      <FilterChip
+                        label="All"
+                        active={sizeFilter === 'All'}
+                        onClick={() => setSizeFilter('All')}
+                      />
+                      {availableSizes.map((size) => (
+                        <FilterChip
+                          key={size}
+                          label={size}
+                          active={sizeFilter === size}
+                          onClick={() => setSizeFilter(size)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {availableBrands.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Brand</p>
+                    <div className="flex flex-wrap gap-2">
+                      <FilterChip
+                        label="All"
+                        active={brandFilter === 'All'}
+                        onClick={() => setBrandFilter('All')}
+                      />
+                      {availableBrands.map((brand) => (
+                        <FilterChip
+                          key={brand}
+                          label={brand}
+                          active={brandFilter === brand}
+                          onClick={() => setBrandFilter(brand)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-sm text-muted">
+                  Showing {filtered.length} of {listings.length}
+                  {catalog?.source ? ` · source ${catalog.source}` : ''}
+                  {catalog?.syncedAt
+                    ? ` · synced ${new Date(catalog.syncedAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}`
+                    : ''}
+                </p>
+              </motion.div>
+            )}
+
+            {loadState === 'loading' && <p className="mt-12 text-muted">Loading inventory…</p>}
+
+            {loadState === 'ready' && filtered.length === 0 && (
+              <p className="mt-12 text-muted">
+                No listings match those filters.{' '}
+                <button
+                  type="button"
+                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  onClick={() => {
+                    setTagFilter('All')
+                    setSizeFilter('All')
+                    setBrandFilter('All')
+                    setQuery('')
+                  }}
+                >
+                  Clear filters
+                </button>
+              </p>
+            )}
+
+            {filtered.length > 0 && (
+              <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((item, i) => (
+                  <ProductLink
+                    key={item.id}
+                    item={item}
+                    reduce={reduce}
+                    delay={Math.min(i, 8) * 0.04}
+                    tone="light"
+                  />
+                ))}
+              </ul>
             )}
           </div>
         </section>
@@ -509,17 +792,17 @@ export default function App() {
                   @{catalog?.seller ?? EBAY_SELLER}
                 </a>
                 {catalog ? ` with ${catalog.count} live listings` : ''}.
-                {SQUARE_STORE_URL
-                  ? ' Pay by card on Square, or shop the same stock on eBay.'
-                  : ' Checkout on eBay today — Square direct payments are next.'}
+                {onSquare
+                  ? ' Pay by card on Square — eBay remains available as a second channel.'
+                  : ' Checkout on eBay today — connect Square credentials to switch the catalog to direct payments.'}
               </p>
             </motion.div>
 
             <dl className="mt-12 grid gap-10 md:grid-cols-3">
               {[
                 {
-                  dt: SQUARE_STORE_URL ? 'Square checkout' : 'Trusted checkout',
-                  dd: SQUARE_STORE_URL
+                  dt: onSquare ? 'Square checkout' : 'Trusted checkout',
+                  dd: onSquare
                     ? 'Pay with card on our Square storefront — money goes to us directly.'
                     : 'Buy on eBay with buyer protection on the same seller account.',
                 },
@@ -528,8 +811,10 @@ export default function App() {
                   dd: 'Photos, price, size, team, and stock on every listing — no mystery SKUs.',
                 },
                 {
-                  dt: 'Still on eBay',
-                  dd: 'Shop here for curated paths, or open the full eBay catalog anytime.',
+                  dt: onSquare ? 'Still on eBay' : 'Scaling to Square',
+                  dd: onSquare
+                    ? 'Shop here for curated paths, or open eBay anytime for marketplace reach.'
+                    : 'This site is ready for Square Catalog sync — add API secrets to go live direct.',
                 },
               ].map((item, i) => (
                 <motion.div key={item.dt} {...fadeUp(reduce, i * 0.08)}>
@@ -682,7 +967,7 @@ export default function App() {
               onClick={() => track('cta_click', { place: 'final' })}
               className="inline-flex shrink-0 bg-navy px-7 py-3.5 text-base font-semibold text-white transition hover:bg-navy-deep"
             >
-              {shopLabel()}
+              {shopLabel(catalog)}
             </a>
           </motion.div>
         </section>
@@ -731,7 +1016,7 @@ export default function App() {
           onClick={() => track('cta_click', { place: 'sticky_mobile' })}
           className="flex w-full items-center justify-center bg-crimson px-4 py-3 text-sm font-semibold text-white"
         >
-          {shopLabel()}
+          {shopLabel(catalog)}
         </a>
       </div>
     </div>

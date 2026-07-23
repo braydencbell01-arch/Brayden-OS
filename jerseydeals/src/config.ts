@@ -1,6 +1,7 @@
 /**
  * Storefront + contact config for Jersey Deals.
  * Set VITE_SQUARE_STORE_URL when the Square Online store is live.
+ * Prefer Square Catalog sync (`npm run sync:square`) once API credentials exist.
  */
 export const SQUARE_STORE_URL = (import.meta.env.VITE_SQUARE_STORE_URL as string | undefined)?.trim() || ''
 

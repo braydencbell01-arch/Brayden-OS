@@ -8,9 +8,10 @@ Storefront landing page for **Jersey Deals** (sibling to BrayStats in this repo)
 
 - Full-bleed hero (brand + offer + CTAs)
 - Category paths: youth, sale (under $25), full catalog
-- New drops + featured gear from live `listings.json` (eBay sync)
+- New drops + featured gear + **filterable full inventory** from `listings.json`
 - Condition labels, buy-direct trust, FAQ, restock email alerts
 - Sticky mobile shop CTA + lightweight analytics hooks
+- Privacy policy at `/privacy.html` (eBay OAuth / app settings)
 
 ## Config
 
@@ -18,18 +19,75 @@ Edit `src/config.ts` or set env vars when building:
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_SQUARE_STORE_URL` | Square Online storefront URL (when live, CTAs switch to Square) |
+| `VITE_SQUARE_STORE_URL` | Square Online storefront URL (CTAs switch to Square when set) |
 | `VITE_GA_ID` | Optional GA4 measurement ID |
 
-Until Square is set, primary checkout stays on eBay (`@jerseydealsofficial`).
+Until Square Catalog sync is configured, primary checkout stays on eBay (`@jerseydealsofficial`).
 
 ## Develop
 
 ```bash
 cd jerseydeals
 npm install
+npm run sync:inventory   # Square if secrets exist, else eBay
 npm run dev
 ```
+
+## Inventory sync
+
+### Prefer Square (direct checkout)
+
+```bash
+cd jerseydeals
+npm run sync:square
+# or
+npm run sync:inventory
+```
+
+Requires:
+
+| Secret | Purpose |
+|--------|---------|
+| `SQUARE_ACCESS_TOKEN` | Square API token with **ITEMS_READ** (+ **INVENTORY_READ** recommended) |
+| `SQUARE_STORE_URL` | Square Online base URL, e.g. `https://your-shop.square.site` |
+
+Optional:
+
+| Secret | Purpose |
+|--------|---------|
+| `SQUARE_ENVIRONMENT` | `production` (default) or `sandbox` |
+| `SQUARE_LOCATION_ID` | Limit inventory counts to one location |
+| `SQUARE_INCLUDE_ZERO` | Set `1` to keep zero-qty variations |
+
+**How to get a token**
+
+1. Open [Square Developer Dashboard](https://developer.squareup.com/apps)
+2. Create/select an application
+3. Credentials → copy the **Access token** (production or sandbox)
+4. Confirm **Items** (and Inventory) read permissions
+5. Add products in Square Online / Square Dashboard so Catalog isn’t empty
+6. Store secrets in GitHub Actions **and** local env / Cursor Cloud secrets
+
+Also set `VITE_SQUARE_STORE_URL` (same store URL) for production builds so CTAs stay on Square even before the next sync.
+
+### eBay fallback
+
+```bash
+cd jerseydeals
+npm run sync:ebay
+```
+
+Requires `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`, `EBAY_USER_TOKEN`.
+
+`npm run sync:inventory` uses Square when `SQUARE_ACCESS_TOKEN` + `SQUARE_STORE_URL` are present; otherwise eBay.
+
+### Scheduled sync (GitHub Actions)
+
+Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
+
+- Runs twice daily (UTC) and on manual `workflow_dispatch`
+- Updates `jerseydeals/public/listings.json` on `Brayden-OS`
+- Triggers the Pages deploy when inventory changed
 
 ## Build
 

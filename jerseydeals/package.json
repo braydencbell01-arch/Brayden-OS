@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "sync:ebay": "node scripts/sync-ebay-listings.mjs"
+    "sync:ebay": "node scripts/sync-ebay-listings.mjs",
+    "sync:square": "node scripts/sync-square-catalog.mjs",
+    "sync:inventory": "node scripts/sync-inventory.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",

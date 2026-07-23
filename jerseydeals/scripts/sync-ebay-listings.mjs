@@ -107,25 +107,60 @@ function inferTag(title) {
   return 'Apparel'
 }
 
-function inferNote(title) {
+function normalizeSizeWord(raw) {
+  const s = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+  if (/^extra\s+extra\s+large$|^xxl$/.test(s)) return 'XXL'
+  if (/^extra\s+large$|^xl$/.test(s)) return 'XL'
+  if (/^large$|^l$/.test(s)) return 'L'
+  if (/^medium$|^m$/.test(s)) return 'M'
+  if (/^small$|^s$/.test(s)) return 'S'
+  if (/^xs$|^extra\s+small$/.test(s)) return 'XS'
+  return s.toUpperCase()
+}
+
+function inferSize(title) {
   const yrs = title.match(/(\d{1,2}\s*[-–]\s*\d{1,2}\s*YRS?)/i)
-  if (yrs) return yrs[1].replace(/\s+/g, ' ')
+  if (yrs) {
+    const note = yrs[1].replace(/\s+/g, ' ')
+    return { note, size: note }
+  }
 
   const yth =
     title.match(/\bYth\s*(XXL|XL|XS|[SML])\b/i) ||
     title.match(/\bYouth\s+(Extra\s+Large|Large|Medium|Small|XXL|XL|XS|[SML])\b/i)
-  if (yth) return `Youth ${yth[1]}`.replace(/\s+/g, ' ')
+  if (yth) {
+    const size = `Youth ${normalizeSizeWord(yth[1])}`
+    return { note: size, size }
+  }
 
   // Prefer explicit size tokens that appear with size words (avoids matching "Men's")
   const withWord = title.match(
     /\b(XXL|XL|XS|[SML])\b\s+(?:Extra(?:\s+Extra)?\s+Large|Large|Medium|Small)\b/i,
   )
-  if (withWord) return `Size ${withWord[1].toUpperCase()}`
+  if (withWord) {
+    const size = normalizeSizeWord(withWord[1])
+    return { note: `Size ${size}`, size }
+  }
 
   const bare = title.match(/\b(XXL|XL|XS)\b/)
-  if (bare) return `Size ${bare[1].toUpperCase()}`
+  if (bare) {
+    const size = bare[1].toUpperCase()
+    return { note: `Size ${size}`, size }
+  }
 
-  return 'See listing'
+  return { note: 'See listing', size: 'Other' }
+}
+
+function inferBrand(title) {
+  const t = title.toLowerCase()
+  if (/\bnike\b/.test(t)) return 'Nike'
+  if (/\badidas\b/.test(t)) return 'Adidas'
+  if (/\bpuma\b/.test(t)) return 'Puma'
+  if (/\bunder\s*armour\b|\bua\b/.test(t)) return 'Under Armour'
+  return ''
 }
 
 function decodeXml(s) {
@@ -179,6 +214,7 @@ async function fetchActiveListings() {
         xmlText(item, 'SellingStatus>CurrentPrice') || xmlText(item, 'BuyItNowPrice')
       const currency = xmlAttr(priceFragment, 'currencyID') || 'USD'
       const qtyRaw = xmlText(item, 'QuantityAvailable') || xmlText(item, 'Quantity') || '1'
+      const { note, size } = inferSize(title)
 
       listings.push({
         id: xmlText(item, 'ItemID'),
@@ -189,7 +225,10 @@ async function fetchActiveListings() {
         image: upscaleImage(decodeXml(xmlText(item, 'PictureDetails>GalleryURL'))),
         quantity: Number.parseInt(qtyRaw, 10) || 1,
         tag: inferTag(title),
-        note: inferNote(title),
+        note,
+        size,
+        brand: inferBrand(title),
+        source: 'ebay',
       })
     }
 
@@ -212,6 +251,8 @@ if (!seller) {
   process.exit(1)
 }
 if (hardExpiration) {
+  // Surface in GitHub Actions UI when run under CI
+  console.warn(`::warning title=eBay token HardExpirationWarning::${hardExpiration}`)
   console.warn(`eBay user token HardExpirationWarning: ${hardExpiration}`)
 }
 
@@ -224,6 +265,7 @@ listings.sort((a, b) => {
 
 const payload = {
   syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+  source: 'ebay',
   seller,
   sellerUrl: `https://www.ebay.com/usr/${seller}`,
   shopUrl: `https://www.ebay.com/sch/i.html?_ssn=${encodeURIComponent(seller)}&_sop=10`,
