@@ -33,17 +33,30 @@ Stay in your lane. If a task needs another role’s files, coordinate or leave a
 
 User-visible work (copy, UI, bugs) fails if it only lives on a feature branch while the user checks the live site.
 
+### Agents merge and ship live themselves (default)
+
+Do **not** leave finished user-visible work sitting on an open PR waiting for the user to merge. When the change is ready and mergeable:
+
+1. Open/update the PR against `Brayden-OS` (for review history).
+2. **Merge it yourself** into `Brayden-OS` (merge the feature branch locally or via the host’s merge path, then `git push origin Brayden-OS`). Pushing `Brayden-OS` triggers GitHub Pages deploy.
+3. Wait for / confirm the Pages deploy, then verify the live URL.
+4. Only then tell the user it is live.
+
+Exceptions (say so plainly and stop): merge conflicts you cannot resolve, failing CI/build, or the user explicitly asked for a draft / review-only PR.
+
 **Before telling the user a change is done:**
 
 1. Confirm the PR against `Brayden-OS` is **mergeable** (no conflicts). If it conflicts, merge/rebase `origin/Brayden-OS` and resolve **before** claiming the work is finished.
 2. Prefer **small focused PRs** for user-requested copy or one-line fixes. Do **not** bury them only inside a large polish PR that can stall on conflicts.
-3. Verify the change exists on **`origin/Brayden-OS`** after merge, e.g.:
+3. **Merge into `Brayden-OS` and push** (see above) — do not stop at “PR opened.”
+4. Verify the change exists on **`origin/Brayden-OS`** after merge, e.g.:
    ```bash
    git fetch origin Brayden-OS
    git show origin/Brayden-OS:path/to/file | rg 'expected text or signal'
    ```
-4. When the PR is still open / unmerged, say so plainly:
-   - ✅ “On PR #N; live updates after merge into `Brayden-OS`.”
+5. Verify the live site (BrayStats and/or Jersey Deals) reflects the change after Pages rebuilds.
+6. If you are blocked from merging, say so plainly:
+   - ✅ “Blocked on X; not live yet.”
    - ❌ Do **not** say “updated”, “done”, or “pushed” in a way that implies the live site already has it.
 
 **Communication rule:** Never imply the live BrayStats/Jersey Deals URL reflects a change until that change is on `Brayden-OS` (and Pages has rebuilt from it).
