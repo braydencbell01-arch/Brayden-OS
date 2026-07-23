@@ -265,6 +265,10 @@ export type PlayerProfile = {
   nationalHistory: PlayerClubStint[]
   /** Label for the season stats block, e.g. "2025-26 English Premier League". */
   seasonStatsLabel?: string
+  /** ESPN season year currently shown in season stats. */
+  seasonYear?: number | null
+  /** Club-league season years with stats available for the picker. */
+  availableSeasonYears?: number[]
   /** Prior season totals for the same club league when available. */
   previousSeasonStats?: PlayerSeasonStatLine[]
   previousSeasonStatsLabel?: string

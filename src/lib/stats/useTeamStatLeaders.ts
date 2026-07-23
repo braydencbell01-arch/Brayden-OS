@@ -1,48 +1,22 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
-import { fetchLeagueLeaderSeasons, fetchTeamStatLeaders } from './espn'
-import type { LeagueSeasonOption, TeamStatLeaders } from './types'
+import { fetchTeamStatLeaders } from './espn'
+import type { TeamStatLeaders } from './types'
+import { useLeagueSeasons } from './useLeagueSeasons'
 
 export function useTeamStatLeaders(
   leagueId: LeagueId,
   teamId: string | null,
   enabled: boolean,
 ) {
+  const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
+    leagueId,
+    enabled && Boolean(teamId),
+    'leaders',
+  )
   const [data, setData] = useState<TeamStatLeaders | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [seasons, setSeasons] = useState<LeagueSeasonOption[]>([])
-  const [seasonsLoading, setSeasonsLoading] = useState(false)
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!enabled || !teamId) return
-
-    let cancelled = false
-    setSeasonsLoading(true)
-    setData(null)
-    setError(null)
-    setSelectedSeason(null)
-
-    fetchLeagueLeaderSeasons(leagueId)
-      .then((options) => {
-        if (cancelled) return
-        setSeasons(options)
-        setSelectedSeason(options[0]?.year ?? null)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setSeasons([])
-        setSelectedSeason(null)
-      })
-      .finally(() => {
-        if (!cancelled) setSeasonsLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [leagueId, teamId, enabled])
 
   useEffect(() => {
     if (!enabled || !teamId) return
@@ -57,7 +31,6 @@ export function useTeamStatLeaders(
       .then((leaders) => {
         if (cancelled) return
         setData(leaders)
-        setSelectedSeason((current) => current ?? leaders.season)
       })
       .catch((err) => {
         if (cancelled) return
@@ -72,10 +45,6 @@ export function useTeamStatLeaders(
       cancelled = true
     }
   }, [leagueId, teamId, enabled, selectedSeason, seasonsLoading])
-
-  const selectSeason = useCallback((year: number) => {
-    setSelectedSeason(year)
-  }, [])
 
   return {
     data,
