@@ -5,6 +5,8 @@ import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matche
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
+const EMPTY_ID_SET = new Set<string>()
+
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -148,15 +150,36 @@ export function MatchDayByLeague({
     () => groupMatchesByLeague(matches, favoriteLeagueIds),
     [matches, favoriteLeagueIds],
   )
-  const leagueIds = favoriteLeagueIds ?? new Set<string>()
-  const teamIds = favoriteTeamIds ?? new Set<string>()
+  const leagueIds = favoriteLeagueIds ?? EMPTY_ID_SET
+  const teamIds = favoriteTeamIds ?? EMPTY_ID_SET
 
-  const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
+  const defaultOpenIds = useMemo(() => {
+    const open = new Set<LeagueId>()
+    for (const group of groups) {
+      const hasFavoriteTeam = group.matches.some(
+        (match) => teamIds.has(match.home.id) || teamIds.has(match.away.id),
+      )
+      if (leagueIds.has(group.leagueId) || hasFavoriteTeam) {
+        open.add(group.leagueId)
+      }
+    }
+    if (open.size === 0 && groups.length > 0) {
+      // Always show something without an extra tap.
+      if (groups.length <= 4) {
+        for (const group of groups) open.add(group.leagueId)
+      } else {
+        open.add(groups[0]!.leagueId)
+      }
+    }
+    return open
+  }, [groups, leagueIds, teamIds])
+
+  const [openIds, setOpenIds] = useState<Set<LeagueId>>(defaultOpenIds)
   const [openForDate, setOpenForDate] = useState(dateKey)
 
   if (openForDate !== dateKey) {
     setOpenForDate(dateKey)
-    setOpenIds(new Set())
+    setOpenIds(defaultOpenIds)
   }
 
   if (groups.length === 0) {

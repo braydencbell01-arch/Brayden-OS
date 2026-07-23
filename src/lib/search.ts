@@ -97,6 +97,21 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
   ).map((league) => ({ kind: 'league' as const, league }))
 }
 
+function preferTeamLeagueId(current: LeagueId, next: LeagueId): LeagueId {
+  if (current === next) return current
+  if (isInternationalLeague(current) && isInternationalLeague(next)) {
+    const a = NATIONAL_LEAGUE_PRIORITY.indexOf(current)
+    const b = NATIONAL_LEAGUE_PRIORITY.indexOf(next)
+    if (a < 0 && b < 0) return current
+    if (a < 0) return next
+    if (b < 0) return current
+    return a <= b ? current : next
+  }
+  // Prefer international context when a national side also appears in friendlies/cups.
+  if (isInternationalLeague(next) && !isInternationalLeague(current)) return next
+  return current
+}
+
 export function collectLocalTeams(
   matches: Match[],
   favoriteTeams: FavoriteTeam[],
@@ -107,14 +122,28 @@ export function collectLocalTeams(
   }
   for (const match of matches) {
     for (const side of [match.home, match.away]) {
-      if (!side.id || byId.has(side.id)) continue
-      byId.set(side.id, {
-        id: side.id,
-        name: side.name,
-        shortName: side.shortName,
-        leagueId: match.leagueId,
-        kind: teamKindForLeague(match.leagueId),
-      })
+      if (!side.id) continue
+      const existing = byId.get(side.id)
+      if (!existing) {
+        byId.set(side.id, {
+          id: side.id,
+          name: side.name,
+          shortName: side.shortName,
+          leagueId: match.leagueId,
+          kind: teamKindForLeague(match.leagueId),
+        })
+        continue
+      }
+      // Favorites keep their stored league; otherwise upgrade to a better competition tag.
+      if (favoriteTeams.some((team) => team.id === side.id)) continue
+      const preferred = preferTeamLeagueId(existing.leagueId, match.leagueId)
+      if (preferred !== existing.leagueId) {
+        byId.set(side.id, {
+          ...existing,
+          leagueId: preferred,
+          kind: teamKindForLeague(preferred),
+        })
+      }
     }
   }
   return Array.from(byId.values())

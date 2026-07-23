@@ -28,7 +28,12 @@ export function FavoritesScreen({
   const isEmpty =
     favoriteLeagues.length === 0 && favorites.teams.length === 0 && favorites.players.length === 0
 
-  const [openSection, setOpenSection] = useState<FavoritesSection | null>(null)
+  const [openSection, setOpenSection] = useState<FavoritesSection | null>(() => {
+    if (favorites.leagues.length > 0) return 'leagues'
+    if (favorites.teams.length > 0) return 'teams'
+    if (favorites.players.length > 0) return 'players'
+    return null
+  })
 
   const toggleSection = (section: FavoritesSection) => {
     setOpenSection((current) => (current === section ? null : section))

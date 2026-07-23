@@ -86,7 +86,9 @@ export function HomeSearch({
     players: [],
   })
   const [loadingRemote, setLoadingRemote] = useState(false)
+  const [remoteError, setRemoteError] = useState<string | null>(null)
   const [openingPlayerId, setOpeningPlayerId] = useState<string | null>(null)
+  const [openPlayerError, setOpenPlayerError] = useState<string | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const requestId = useRef(0)
 
@@ -126,21 +128,27 @@ export function HomeSearch({
     if (q.length < 2) {
       requestId.current += 1
       setRemote({ teams: [], players: [] })
+      setRemoteError(null)
       setLoadingRemote(false)
       return
     }
 
     const id = ++requestId.current
+    // Drop previous ESPN hits immediately so typing never mixes stale remote rows.
+    setRemote({ teams: [], players: [] })
     setLoadingRemote(true)
+    setRemoteError(null)
     const timer = window.setTimeout(() => {
       void searchEspnSoccer(q)
         .then((result) => {
           if (requestId.current !== id) return
           setRemote(result)
+          setRemoteError(null)
         })
         .catch(() => {
           if (requestId.current !== id) return
           setRemote({ teams: [], players: [] })
+          setRemoteError('Search is temporarily unavailable. Local results still show.')
         })
         .finally(() => {
           if (requestId.current !== id) return
@@ -161,10 +169,24 @@ export function HomeSearch({
     return () => document.removeEventListener('mousedown', onPointerDown)
   }, [])
 
+  useEffect(() => {
+    if (!focused) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setFocused(false)
+        setOpenPlayerError(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [focused])
+
   const clearAndClose = () => {
     setQuery('')
     setFocused(false)
     setRemote({ teams: [], players: [] })
+    setRemoteError(null)
+    setOpenPlayerError(null)
   }
 
   const handleHit = async (hit: SearchHit) => {
@@ -179,10 +201,13 @@ export function HomeSearch({
       return
     }
     setOpeningPlayerId(hit.player.id)
+    setOpenPlayerError(null)
     try {
       const player = await resolvePlayerNavFromSearch(hit as SearchPlayerHit)
       onOpenPlayer(player)
       clearAndClose()
+    } catch {
+      setOpenPlayerError('Could not open that player. Try again.')
     } finally {
       setOpeningPlayerId(null)
     }
@@ -300,8 +325,18 @@ export function HomeSearch({
             </>
           ) : (
             <>
+              {remoteError ? (
+                <p className="px-3 py-2 text-xs text-mist/70">{remoteError}</p>
+              ) : null}
+              {openPlayerError ? (
+                <p className="px-3 py-2 text-xs text-star">{openPlayerError}</p>
+              ) : null}
               {total === 0 && !loadingRemote ? (
-                <p className="px-3 py-3 text-sm text-mist/70">No matches for “{query.trim()}”.</p>
+                <p className="px-3 py-3 text-sm text-mist/70">
+                  {remoteError
+                    ? `No local matches for “${query.trim()}”.`
+                    : `No matches for “${query.trim()}”.`}
+                </p>
               ) : null}
               {loadingRemote ? (
                 <p className="px-3 py-2 text-xs text-mist/60">Searching…</p>

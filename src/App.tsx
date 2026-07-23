@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BottomNav, type BottomTab } from './components/BottomNav'
 import { CalendarStrip } from './components/CalendarStrip'
@@ -20,6 +20,7 @@ import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favori
 import { LEAGUES, type LeagueId } from './lib/leagues'
 import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
+import { useTodayKey } from './lib/useToday'
 
 type Screen =
   | BottomTab
@@ -96,9 +97,15 @@ function HomeScreen({
   reduce: boolean | null
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
+  /** Clubs + clubs of favorited players — calendar dots and Match day highlights. */
+  const calendarFavoriteTeamIds = useMemo(() => {
+    const ids = new Set(favorites.teamIds)
+    for (const id of favorites.favoritePlayerTeamIds) ids.add(id)
+    return ids
+  }, [favorites.teamIds, favorites.favoritePlayerTeamIds])
   const favoriteDateKeys = useMemo(
-    () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
-    [matches, favorites.leagueIds, favorites.teamIds],
+    () => dateKeysForFavorites(matches, favorites.leagueIds, calendarFavoriteTeamIds),
+    [matches, favorites.leagueIds, calendarFavoriteTeamIds],
   )
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
@@ -189,7 +196,7 @@ function HomeScreen({
               </p>
               <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
               <p className="mt-1 text-[0.65rem] text-mist/55">
-                Star leagues to pin them here · yellow calendar dots mark favorites
+                Star leagues, clubs, or players · yellow dots mark their match days
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -276,7 +283,7 @@ function HomeScreen({
                     onOpenPlayer={onOpenPlayer}
                     onOpenLeague={onOpenLeague}
                     favoriteLeagueIds={favorites.leagueIds}
-                    favoriteTeamIds={favorites.teamIds}
+                    favoriteTeamIds={calendarFavoriteTeamIds}
                     emptyLabel="No matches on this date. Try another day or jump to Today."
                   />
                 )
@@ -313,18 +320,30 @@ export default function App() {
   const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
   /** Bottom tab to restore when overlays fully close (never overwritten by league→team). */
   const [returnTab, setReturnTab] = useState<BottomTab>('home')
-  /** One-level stack so Team → opponent → Back returns to the previous club. */
-  const previousTeamRef = useRef<FavoriteTeam | null>(null)
+  /** Club stack so Team → opponent → … → Back unwinds correctly. */
+  const teamStackRef = useRef<FavoriteTeam[]>([])
   /** Team → League Back restores the club (separate from opponent stack). */
   const leagueReturnTeamRef = useRef<FavoriteTeam | null>(null)
+  /** League → Team keeps the origin league so Back can return past a nested league hop. */
+  const teamOriginLeagueRef = useRef<LeagueId | null>(null)
+  const todayKey = useTodayKey()
+  const todayKeyRef = useRef(todayKey)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
-  const jumpToToday = () => {
+  const jumpToToday = useCallback(() => {
     const day = startOfDay(new Date())
     setSelectedDate(day)
     void ensureDate(day)
-  }
+  }, [ensureDate])
+
+  // Keep Home on “today” when the calendar day rolls over overnight.
+  useEffect(() => {
+    const previous = todayKeyRef.current
+    if (previous === todayKey) return
+    todayKeyRef.current = todayKey
+    if (toDateKey(selectedDate) === previous) jumpToToday()
+  }, [todayKey, selectedDate, jumpToToday])
 
   const handleSelectDate = useCallback(
     (date: Date) => {
@@ -348,8 +367,9 @@ export default function App() {
     setActiveLeagueId(null)
     setActiveTeam(null)
     setActivePlayer(null)
-    previousTeamRef.current = null
+    teamStackRef.current = []
     leagueReturnTeamRef.current = null
+    teamOriginLeagueRef.current = null
     setReturnTab(tab)
     setScreen(tab)
     // Fresh tab or re-tap active: jump to top so you aren't mid-scroll on a new view.
@@ -362,8 +382,9 @@ export default function App() {
     if (isTabScreen(screen)) {
       setReturnTab(screen)
       setActiveTab(screen)
-      previousTeamRef.current = null
+      teamStackRef.current = []
       leagueReturnTeamRef.current = null
+      teamOriginLeagueRef.current = null
       setActiveTeam(null)
     } else if (screen === 'team' && activeTeam) {
       // Team → league: keep the club so Back returns here instead of the tab.
@@ -382,14 +403,22 @@ export default function App() {
   }
 
   const openTeam = (team: FavoriteTeam) => {
-    if (screen === 'team' && activeTeam && activeTeam.id !== team.id) {
-      previousTeamRef.current = activeTeam
+    if (
+      (screen === 'team' || screen === 'player') &&
+      activeTeam &&
+      activeTeam.id !== team.id
+    ) {
+      // Team → opponent, or Player → another club: keep prior clubs for Back.
+      teamStackRef.current = [...teamStackRef.current, activeTeam]
     } else if (screen !== 'team' && screen !== 'player') {
-      previousTeamRef.current = null
+      teamStackRef.current = []
       if (isTabScreen(screen)) {
         leagueReturnTeamRef.current = null
+        teamOriginLeagueRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
+      } else if (screen === 'league-profile' && activeLeagueId) {
+        teamOriginLeagueRef.current = activeLeagueId
       }
     }
     setActivePlayer(null)
@@ -400,11 +429,14 @@ export default function App() {
 
   const openPlayer = (player: PlayerNavRef) => {
     if (screen !== 'team' && screen !== 'player') {
-      previousTeamRef.current = null
+      teamStackRef.current = []
       if (isTabScreen(screen)) {
         leagueReturnTeamRef.current = null
+        teamOriginLeagueRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
+      } else if (screen === 'league-profile' && activeLeagueId) {
+        teamOriginLeagueRef.current = activeLeagueId
       }
     }
     setActivePlayer(player)
@@ -420,10 +452,9 @@ export default function App() {
       return
     }
 
-    // Team → opponent → Back should restore the previous club.
-    if (previousTeamRef.current) {
-      const previous = previousTeamRef.current
-      previousTeamRef.current = null
+    // Unwind Team → opponent → … stack.
+    const previous = teamStackRef.current.pop()
+    if (previous) {
       setActivePlayer(null)
       setActiveTeam(previous)
       setScreen('team')
@@ -437,22 +468,26 @@ export default function App() {
       return
     }
     leagueReturnTeamRef.current = null
+    teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
   }
 
   const closeLeagueProfile = () => {
-    setActiveLeagueId(null)
     setActivePlayer(null)
     const returnTeam = leagueReturnTeamRef.current
     if (returnTeam) {
       leagueReturnTeamRef.current = null
       setActiveTeam(returnTeam)
+      // Restore the league this club was opened from (if any), not the nested hop.
+      setActiveLeagueId(teamOriginLeagueRef.current)
       setScreen('team')
       return
     }
+    setActiveLeagueId(null)
     setActiveTeam(null)
-    previousTeamRef.current = null
+    teamStackRef.current = []
+    teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
   }
@@ -505,9 +540,7 @@ export default function App() {
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               onOpenLeague={openLeague}
-              onNeedPastRange={(from, to) => {
-                void ensureRange(from, to)
-              }}
+              onNeedPastRange={(from, to) => ensureRange(from, to)}
               reduce={reduce}
             />
           </motion.div>

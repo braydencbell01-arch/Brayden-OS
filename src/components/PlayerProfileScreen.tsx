@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { MISSING_SHORT, missingLong, missingShort } from '../lib/display'
-import { getLeague, type LeagueId } from '../lib/leagues'
+import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
@@ -135,11 +135,13 @@ function RecentRatingsList({
   rows,
   hasMore,
   loadingMore,
+  loadError,
   onLoadMore,
 }: {
   rows: PlayerRecentMatchRating[]
   hasMore: boolean
   loadingMore: boolean
+  loadError: string | null
   onLoadMore: () => void
 }) {
   const scrollerRef = useRef<HTMLUListElement | null>(null)
@@ -197,7 +199,21 @@ function RecentRatingsList({
         )
       })}
       <li ref={sentinelRef} className="list-none py-1 text-center text-[11px] text-mist/50">
-        {loadingMore ? 'Loading more ratings…' : hasMore ? 'Scroll for more' : 'End of ratings'}
+        {loadError ? (
+          <button
+            type="button"
+            onClick={onLoadMore}
+            className="text-star underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          >
+            {loadError} · Retry
+          </button>
+        ) : loadingMore ? (
+          'Loading more ratings…'
+        ) : hasMore ? (
+          'Scroll for more'
+        ) : (
+          'End of ratings'
+        )}
       </li>
     </ul>
   )
@@ -266,6 +282,7 @@ function CareerSeasonsPanel({
                       name: row.clubName,
                       shortName: row.clubName,
                       leagueId,
+                      kind: isInternationalLeague(leagueId) ? 'national' : 'club',
                     })
                   }
                 >
@@ -307,16 +324,20 @@ function ClubHistoryList({
   stints,
   emptyLabel,
   leagueId,
+  kind = 'club',
   onOpenTeam,
 }: {
   stints: PlayerClubStint[]
   emptyLabel: string
   leagueId: LeagueId
+  kind?: FavoriteTeam['kind']
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (stints.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
+
+  const openLeagueId: LeagueId = kind === 'national' ? 'fifa-friendly' : leagueId
 
   return (
     <ul className="flex flex-col gap-1.5">
@@ -346,7 +367,8 @@ function ClubHistoryList({
                       id: stint.teamId,
                       name: stint.teamName,
                       shortName: stint.teamName,
-                      leagueId,
+                      leagueId: openLeagueId,
+                      kind,
                     })
                   }
                 >
@@ -391,6 +413,7 @@ export function PlayerProfileScreen({
     loadMoreRatings,
     loadingMoreRatings,
     hasMoreRatings,
+    ratingsMoreError,
   } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<
@@ -418,11 +441,29 @@ export function PlayerProfileScreen({
   }
 
   const favorited = favorites.isPlayerFavorite(player.id)
+  const { upsertPlayer } = favorites
   const nationality = profile?.citizenship || profile?.represents || null
   const positionLabel = profile?.position || player.position || null
   const teamId = profile?.teamId || player.teamId
   const teamName = profile?.teamName || player.teamName
   const canOpenClub = Boolean(onOpenTeam && teamId && teamName && /^\d+$/.test(teamId))
+
+  // Refresh stored favorite metadata (teamId, photo, …) once the profile loads.
+  useEffect(() => {
+    if (!profile || !favorited) return
+    upsertPlayer({
+      id: player.id,
+      name: profile.name || player.name || 'Player',
+      shortName: profile.shortName || player.shortName || player.name || 'Player',
+      photoUrl: profile.photoUrl || player.photoUrl,
+      jerseyUrl: profile.jerseyUrl || player.jerseyUrl,
+      jersey: profile.jersey || player.jersey,
+      position: profile.position || player.position,
+      leagueId: player.leagueId,
+      teamId: profile.teamId || player.teamId,
+      teamName: profile.teamName || player.teamName,
+    })
+  }, [profile, favorited, player, upsertPlayer])
 
   const openCurrentClub = () => {
     if (!canOpenClub || !teamId || !teamName) return
@@ -431,6 +472,7 @@ export function PlayerProfileScreen({
       name: teamName,
       shortName: teamName,
       leagueId: player.leagueId,
+      kind: isInternationalLeague(player.leagueId) ? 'national' : 'club',
     })
   }
 
@@ -602,6 +644,7 @@ export function PlayerProfileScreen({
                   rows={profile.recentRatings}
                   hasMore={hasMoreRatings}
                   loadingMore={loadingMoreRatings}
+                  loadError={ratingsMoreError}
                   onLoadMore={() => {
                     void loadMoreRatings()
                   }}
@@ -639,6 +682,7 @@ export function PlayerProfileScreen({
                     stints={profile.clubHistory}
                     emptyLabel="No club history listed yet."
                     leagueId={player.leagueId}
+                    kind="club"
                     onOpenTeam={onOpenTeam}
                   />
                 </section>
@@ -651,6 +695,7 @@ export function PlayerProfileScreen({
                     stints={profile.nationalHistory}
                     emptyLabel="No national team history listed yet."
                     leagueId={player.leagueId}
+                    kind="national"
                     onOpenTeam={onOpenTeam}
                   />
                 </section>

@@ -98,6 +98,18 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
     { id: 'bracket', label: 'Bracket', hidden: league.playoffs.length === 0 },
   ]
 
+  useEffect(() => {
+    const hidden =
+      (!draftPhase && tab === 'draft') ||
+      (draftPhase &&
+        (tab === 'matchup' ||
+          tab === 'waivers' ||
+          tab === 'trades' ||
+          tab === 'standings')) ||
+      (league.playoffs.length === 0 && tab === 'bracket')
+    if (hidden) setTab(defaultTab(league))
+  }, [league, tab, draftPhase])
+
   return (
     <FantasyShell reduce={reduce}>
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -157,6 +169,7 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
   const league = fantasy.activeLeague!
   const isCommish = fantasy.me?.isCommissioner
   const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState<string | null>(null)
 
   return (
     <div className="space-y-5">
@@ -172,17 +185,25 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
             {league.syncBlobId}
           </p>
         ) : null}
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <FantasyButton
             onClick={() => {
-              void navigator.clipboard.writeText(shareInviteText(league)).then(() => {
-                setCopied(true)
-                window.setTimeout(() => setCopied(false), 1500)
-              })
+              setCopyError(null)
+              const text = shareInviteText(league)
+              void navigator.clipboard
+                .writeText(text)
+                .then(() => {
+                  setCopied(true)
+                  window.setTimeout(() => setCopied(false), 1500)
+                })
+                .catch(() => {
+                  setCopyError('Clipboard blocked — copy the code above manually.')
+                })
             }}
           >
             {copied ? 'Copied' : 'Share invite'}
           </FantasyButton>
+          {copyError ? <p className="text-xs text-star">{copyError}</p> : null}
         </div>
       </section>
 
