@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { getLeague } from '../lib/leagues'
-import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { getLeague, type LeagueId } from '../lib/leagues'
+import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
+import { leagueIdFromEspnCode } from '../lib/search'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { usePlayerCareer } from '../lib/stats/usePlayerCareer'
 import { usePlayerProfile } from '../lib/stats/usePlayerProfile'
 import type {
   MatchLineupPlayer,
   PlayerCareerSeason,
+  PlayerClubStint,
   PlayerRecentMatchRating,
 } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
@@ -200,14 +202,38 @@ function RecentRatingsList({
   )
 }
 
+function ProfileTextLink({
+  children,
+  onClick,
+  className = '',
+}: {
+  children: ReactNode
+  onClick: () => void
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${className}`}
+    >
+      {children}
+    </button>
+  )
+}
+
 function CareerSeasonsPanel({
   seasons,
   loading,
   error,
+  fallbackLeagueId,
+  onOpenTeam,
 }: {
   seasons: PlayerCareerSeason[]
   loading: boolean
   error: string | null
+  fallbackLeagueId: LeagueId
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (loading && seasons.length === 0) {
     return <p className="text-sm text-mist/70">Loading career…</p>
@@ -221,37 +247,120 @@ function CareerSeasonsPanel({
 
   return (
     <ul className="flex flex-col gap-1.5">
-      {seasons.map((row) => (
-        <li
-          key={row.id}
-          className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] items-center gap-2 border border-white/10 px-3 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto]"
-        >
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-cream">{row.clubName}</p>
-            <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-              {row.leagueName}
-              <span className="text-mist/40"> · </span>
-              {row.seasonYear}
-            </p>
-          </div>
-          <p className="text-sm tabular-nums text-mist/85">
-            <span className="font-semibold text-cream">{row.matchesPlayed}</span> MP
-            <span className="mx-1.5 text-mist/35">·</span>
-            <span className="font-semibold text-cream">{row.goals}</span> G
-            <span className="mx-1.5 text-mist/35">·</span>
-            <span className="font-semibold text-cream">{row.assists}</span> A
-          </p>
-          <p
-            className={`text-right font-display text-2xl tabular-nums ${
-              row.averageRating == null ? 'text-mist/40' : ''
-            }`}
-            style={ratingColorStyle(row.averageRating)}
-            title="Average Brayden Rating"
+      {seasons.map((row) => {
+        const leagueId = leagueIdFromEspnCode(row.leagueSlug) || fallbackLeagueId
+        const canOpen = Boolean(onOpenTeam && row.clubId && /^\d+$/.test(row.clubId))
+        return (
+          <li
+            key={row.id}
+            className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] items-center gap-2 border border-white/10 px-3 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto]"
           >
-            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
-          </p>
-        </li>
-      ))}
+            <div className="min-w-0">
+              {canOpen ? (
+                <ProfileTextLink
+                  className="block truncate text-sm font-semibold text-cream"
+                  onClick={() =>
+                    onOpenTeam?.({
+                      id: row.clubId,
+                      name: row.clubName,
+                      shortName: row.clubName,
+                      leagueId,
+                    })
+                  }
+                >
+                  {row.clubName}
+                </ProfileTextLink>
+              ) : (
+                <p className="truncate text-sm font-semibold text-cream">{row.clubName}</p>
+              )}
+              <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
+                {row.leagueName}
+                <span className="text-mist/40"> · </span>
+                {row.seasonYear}
+              </p>
+            </div>
+            <p className="text-sm tabular-nums text-mist/85">
+              <span className="font-semibold text-cream">{row.matchesPlayed}</span> MP
+              <span className="mx-1.5 text-mist/35">·</span>
+              <span className="font-semibold text-cream">{row.goals}</span> G
+              <span className="mx-1.5 text-mist/35">·</span>
+              <span className="font-semibold text-cream">{row.assists}</span> A
+            </p>
+            <p
+              className={`text-right font-display text-2xl tabular-nums ${
+                row.averageRating == null ? 'text-mist/40' : ''
+              }`}
+              style={ratingColorStyle(row.averageRating)}
+              title="Average Brayden Rating"
+            >
+              {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+            </p>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function ClubHistoryList({
+  stints,
+  emptyLabel,
+  leagueId,
+  onOpenTeam,
+}: {
+  stints: PlayerClubStint[]
+  emptyLabel: string
+  leagueId: LeagueId
+  onOpenTeam?: (team: FavoriteTeam) => void
+}) {
+  if (stints.length === 0) {
+    return <p className="text-sm text-mist/70">{emptyLabel}</p>
+  }
+
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {stints.map((stint) => {
+        const canOpen = Boolean(onOpenTeam && stint.teamId && /^\d+$/.test(stint.teamId))
+        return (
+          <li
+            key={`${stint.teamId}-${stint.seasons}`}
+            className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
+          >
+            {stint.logoUrl ? (
+              <img
+                src={stint.logoUrl}
+                alt=""
+                className="h-7 w-7 object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <div className="h-7 w-7 rounded-full bg-white/10" />
+            )}
+            <div className="min-w-0 flex-1">
+              {canOpen ? (
+                <ProfileTextLink
+                  className="block truncate text-sm font-semibold text-cream"
+                  onClick={() =>
+                    onOpenTeam?.({
+                      id: stint.teamId,
+                      name: stint.teamName,
+                      shortName: stint.teamName,
+                      leagueId,
+                    })
+                  }
+                >
+                  {stint.teamName}
+                </ProfileTextLink>
+              ) : (
+                <p className="truncate text-sm font-semibold text-cream">{stint.teamName}</p>
+              )}
+              <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                {stint.seasons}
+              </p>
+            </div>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -260,11 +369,15 @@ export function PlayerProfileScreen({
   player,
   favorites,
   onBack,
+  onOpenTeam,
+  onOpenLeague,
   reduce,
 }: {
   player: PlayerNavRef
   favorites: FavoritesApi
   onBack: () => void
+  onOpenTeam?: (team: FavoriteTeam) => void
+  onOpenLeague?: (id: LeagueId) => void
   reduce: boolean | null
 }) {
   const {
@@ -304,6 +417,19 @@ export function PlayerProfileScreen({
   const favorited = favorites.isPlayerFavorite(player.id)
   const nationality = profile?.citizenship || profile?.represents || null
   const positionLabel = profile?.position || player.position || null
+  const teamId = profile?.teamId || player.teamId
+  const teamName = profile?.teamName || player.teamName
+  const canOpenClub = Boolean(onOpenTeam && teamId && teamName && /^\d+$/.test(teamId))
+
+  const openCurrentClub = () => {
+    if (!canOpenClub || !teamId || !teamName) return
+    onOpenTeam?.({
+      id: teamId,
+      name: teamName,
+      shortName: teamName,
+      leagueId: player.leagueId,
+    })
+  }
 
   const toggle = (section: 'stats' | 'ratings' | 'career' | 'transfers') => {
     setOpenSection((current) => (current === section ? null : section))
@@ -348,9 +474,20 @@ export function PlayerProfileScreen({
             title={profile.name}
             meta={
               <>
-                {profile.teamName || 'Club TBD'}
+                {canOpenClub ? (
+                  <ProfileTextLink onClick={openCurrentClub}>{teamName}</ProfileTextLink>
+                ) : (
+                  teamName || 'Club TBD'
+                )}
                 {positionLabel ? ` · ${positionLabel}` : ''}
-                {` · ${league.short}`}
+                {' · '}
+                {onOpenLeague ? (
+                  <ProfileTextLink onClick={() => onOpenLeague(player.leagueId)}>
+                    {league.short}
+                  </ProfileTextLink>
+                ) : (
+                  league.short
+                )}
                 {profile.jersey ? ` · #${profile.jersey}` : ''}
               </>
             }
@@ -371,9 +508,18 @@ export function PlayerProfileScreen({
             <ProfileMetric
               label="Club"
               value={
-                <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {profile.teamName || '—'}
-                </span>
+                canOpenClub ? (
+                  <ProfileTextLink
+                    className="block truncate text-lg font-semibold leading-8 text-cream"
+                    onClick={openCurrentClub}
+                  >
+                    {teamName}
+                  </ProfileTextLink>
+                ) : (
+                  <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                    {teamName || '—'}
+                  </span>
+                )
               }
             />
             <ProfileMetric
@@ -466,6 +612,8 @@ export function PlayerProfileScreen({
                 seasons={career.seasons}
                 loading={career.loading}
                 error={career.error}
+                fallbackLeagueId={player.leagueId}
+                onOpenTeam={onOpenTeam}
               />
             </ProfileAccordion>
 
@@ -480,74 +628,24 @@ export function PlayerProfileScreen({
                   <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
                     Clubs
                   </p>
-                  {profile.clubHistory.length === 0 ? (
-                    <p className="text-sm text-mist/70">No club history listed yet.</p>
-                  ) : (
-                    <ul className="flex flex-col gap-1.5">
-                      {profile.clubHistory.map((stint) => (
-                        <li
-                          key={`club-${stint.teamId}-${stint.seasons}`}
-                          className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
-                        >
-                          {stint.logoUrl ? (
-                            <img
-                              src={stint.logoUrl}
-                              alt=""
-                              className="h-7 w-7 object-contain"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-7 w-7 rounded-full bg-white/10" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-cream">
-                              {stint.teamName}
-                            </p>
-                            <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                              {stint.seasons}
-                            </p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <ClubHistoryList
+                    stints={profile.clubHistory}
+                    emptyLabel="No club history listed yet."
+                    leagueId={player.leagueId}
+                    onOpenTeam={onOpenTeam}
+                  />
                 </section>
 
                 <section aria-label="National team transfer history">
                   <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
                     National team
                   </p>
-                  {profile.nationalHistory.length === 0 ? (
-                    <p className="text-sm text-mist/70">No national team history listed yet.</p>
-                  ) : (
-                    <ul className="flex flex-col gap-1.5">
-                      {profile.nationalHistory.map((stint) => (
-                        <li
-                          key={`nat-${stint.teamId}-${stint.seasons}`}
-                          className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
-                        >
-                          {stint.logoUrl ? (
-                            <img
-                              src={stint.logoUrl}
-                              alt=""
-                              className="h-7 w-7 object-contain"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="h-7 w-7 rounded-full bg-white/10" />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-cream">
-                              {stint.teamName}
-                            </p>
-                            <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                              {stint.seasons}
-                            </p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <ClubHistoryList
+                    stints={profile.nationalHistory}
+                    emptyLabel="No national team history listed yet."
+                    leagueId={player.leagueId}
+                    onOpenTeam={onOpenTeam}
+                  />
                 </section>
               </div>
             </ProfileAccordion>

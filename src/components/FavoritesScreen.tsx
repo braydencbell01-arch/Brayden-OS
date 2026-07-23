@@ -200,21 +200,31 @@ export function FavoritesScreen({
                                     label={team.shortName}
                                     onToggle={() => favorites.toggleTeam(team)}
                                   />
-                                  <button
-                                    type="button"
-                                    onClick={() => onOpenTeam(team)}
-                                    className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                                  >
-                                    <span>
-                                      <span className="profile-link block text-sm font-semibold text-cream">
+                                  <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                                    <span className="min-w-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => onOpenTeam(team)}
+                                        className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                      >
                                         {team.name}
-                                      </span>
-                                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => onOpenLeague(team.leagueId)}
+                                        className="profile-link mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                      >
                                         {league.short}
-                                      </span>
+                                      </button>
                                     </span>
-                                    <span className="text-lime">Profile →</span>
-                                  </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenTeam(team)}
+                                      className="shrink-0 text-lime transition hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                    >
+                                      Profile →
+                                    </button>
+                                  </div>
                                 </div>
                               </li>
                             )
@@ -233,35 +243,57 @@ export function FavoritesScreen({
                         <ul className="flex flex-col gap-2">
                           {favorites.players.map((player) => (
                             <li key={player.id}>
-                              <div className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3">
-                                <FavoriteStar
-                                  active
-                                  label={player.name}
-                                  onToggle={() => favorites.togglePlayer(player)}
-                                />
-                                <PlayerAvatar
-                                  name={player.name}
-                                  photoUrl={player.photoUrl}
-                                  jerseyUrl={player.jerseyUrl}
-                                  jersey={player.jersey}
-                                  size="sm"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenPlayer(toNav(player))}
-                                  className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                                >
-                                  <span>
-                                    <span className="profile-link block text-sm font-semibold text-cream">
+                              <div className="border border-white/10 bg-white/[0.04]">
+                                <div className="flex items-center gap-2 px-3 py-3">
+                                  <FavoriteStar
+                                    active
+                                    label={player.name}
+                                    onToggle={() => favorites.togglePlayer(player)}
+                                  />
+                                  <PlayerAvatar
+                                    name={player.name}
+                                    photoUrl={player.photoUrl}
+                                    jerseyUrl={player.jerseyUrl}
+                                    jersey={player.jersey}
+                                    size="sm"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenPlayer(toNav(player))}
+                                    className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                  >
+                                    <span className="profile-link block truncate text-sm font-semibold text-cream">
                                       {player.name}
                                     </span>
-                                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
-                                      {player.teamName || getLeague(player.leagueId).short}
-                                      {player.position ? ` · ${player.position}` : ''}
-                                    </span>
-                                  </span>
-                                  <span className="text-lime">Profile →</span>
-                                </button>
+                                    <span className="shrink-0 text-lime">Profile →</span>
+                                  </button>
+                                </div>
+                                <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-white/10 px-3 py-2 pl-[3.25rem]">
+                                  {player.teamName && player.teamId ? (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        onOpenTeam({
+                                          id: player.teamId!,
+                                          name: player.teamName!,
+                                          shortName: player.teamName!,
+                                          leagueId: player.leagueId,
+                                        })
+                                      }
+                                      className="profile-link text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                    >
+                                      {player.teamName}
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenLeague(player.leagueId)}
+                                    className="profile-link text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                  >
+                                    {getLeague(player.leagueId).short}
+                                    {player.position ? ` · ${player.position}` : ''}
+                                  </button>
+                                </div>
                               </div>
                             </li>
                           ))}

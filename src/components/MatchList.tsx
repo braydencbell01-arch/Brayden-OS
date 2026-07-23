@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getLeague, isInternationalLeague } from '../lib/leagues'
+import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { formatKickoffTime } from '../lib/dates'
 import { isFavoriteMatch, type Match } from '../lib/matches'
@@ -108,6 +108,7 @@ function ExpandableMatchRow({
   flat = false,
   onOpenTeam,
   onOpenPlayer,
+  onOpenLeague,
 }: {
   match: Match
   showLeague?: boolean
@@ -115,6 +116,7 @@ function ExpandableMatchRow({
   flat?: boolean
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
+  onOpenLeague?: (id: LeagueId) => void
 }) {
   const [open, setOpen] = useState(false)
   const league = getLeague(match.leagueId)
@@ -122,6 +124,8 @@ function ExpandableMatchRow({
   const { stats, loading, error } = useMatchDetailStats(open ? match : null)
   const expandLabel =
     match.status === 'scheduled' ? 'Details' : match.status === 'live' ? 'Live' : 'Lineups'
+  const showLeagueLabel = showLeague || !match.venue
+  const leagueLabel = showLeague ? league.short : match.venue || league.short
 
   return (
     <article
@@ -156,9 +160,20 @@ function ExpandableMatchRow({
         <div className="mb-1.5 flex w-full items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
             {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
-            <span className="truncate">
-              {showLeague ? league.short : match.venue || league.short}
-            </span>
+            {showLeagueLabel && onOpenLeague ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenLeague(match.leagueId)
+                }}
+                className="profile-link truncate text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              >
+                {leagueLabel}
+              </button>
+            ) : (
+              <span className="truncate">{leagueLabel}</span>
+            )}
           </p>
           <p
             className={[
@@ -196,6 +211,7 @@ function ExpandableMatchRow({
                 ? (player) => onOpenPlayer(toPlayerNav(player))
                 : undefined
             }
+            onOpenTeam={onOpenTeam}
           />
         </div>
       )}
@@ -210,6 +226,7 @@ export function MatchList({
   emptyLabel,
   onOpenTeam,
   onOpenPlayer,
+  onOpenLeague,
   favoriteLeagueIds,
   favoriteTeamIds,
   favoritePlayerTeamIds,
@@ -221,6 +238,7 @@ export function MatchList({
   emptyLabel: string
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
+  onOpenLeague?: (id: LeagueId) => void
   favoriteLeagueIds?: Set<string>
   favoriteTeamIds?: Set<string>
   favoritePlayerTeamIds?: Set<string>
@@ -244,6 +262,7 @@ export function MatchList({
             isFavorite={isFavoriteMatch(match, leagueIds, teamIds, playerTeamIds)}
             onOpenTeam={onOpenTeam}
             onOpenPlayer={onOpenPlayer}
+            onOpenLeague={onOpenLeague}
           />
         </li>
       ))}

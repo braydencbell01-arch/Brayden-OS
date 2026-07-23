@@ -1,3 +1,4 @@
+import type { FavoriteTeam } from '../lib/favorites'
 import type { MatchDetailStats, MatchLineupPlayer } from '../lib/stats/types'
 import { MatchLineupPanel } from './MatchLineupPanel'
 
@@ -7,12 +8,14 @@ export function MatchStatsPanel({
   error,
   scheduled,
   onOpenPlayer,
+  onOpenTeam,
 }: {
   stats: MatchDetailStats | null
   loading: boolean
   error: string | null
   scheduled: boolean
   onOpenPlayer?: (player: MatchLineupPlayer) => void
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (scheduled) {
     return (
@@ -52,7 +55,11 @@ export function MatchStatsPanel({
         <p className="mb-3 text-xs text-mist/65">
           Tap a player for their profile. Ratings start at 5.0 and average out over the match.
         </p>
-        <MatchLineupPanel lineups={stats.lineups} onOpenPlayer={onOpenPlayer} />
+        <MatchLineupPanel
+          lineups={stats.lineups}
+          onOpenPlayer={onOpenPlayer}
+          onOpenTeam={onOpenTeam}
+        />
       </div>
 
       {stats.lines.length > 0 ? (
