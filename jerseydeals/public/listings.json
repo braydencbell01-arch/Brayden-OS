@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-07-23T15:41:09Z",
+  "syncedAt": "2026-07-23T17:31:24Z",
   "seller": "jerseydealsofficial",
   "sellerUrl": "https://www.ebay.com/usr/jerseydealsofficial",
   "shopUrl": "https://www.ebay.com/sch/i.html?_ssn=jerseydealsofficial&_sop=10",
@@ -14,7 +14,9 @@
       "image": "https://i.ebayimg.com/images/g/tRsAAeSwGtBpPNES/s-l500.jpg",
       "quantity": 1,
       "tag": "Jerseys",
-      "note": "Size XL"
+      "note": "Size XL",
+      "size": "XL",
+      "brand": "Adidas"
     },
     {
       "id": "800059395254",
@@ -25,7 +27,9 @@
       "image": "https://i.ebayimg.com/images/g/320AAeSw0k5qEf7X/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size XL"
+      "note": "Size XL",
+      "size": "XL",
+      "brand": "Puma"
     },
     {
       "id": "389366033549",
@@ -36,7 +40,9 @@
       "image": "https://i.ebayimg.com/images/g/M7EAAeSwwuJpPNVE/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size L"
+      "note": "Size L",
+      "size": "L",
+      "brand": "Nike"
     },
     {
       "id": "389350090839",
@@ -47,7 +53,9 @@
       "image": "https://i.ebayimg.com/images/g/brYAAeSweRNpQeh5/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size S"
+      "note": "Size S",
+      "size": "S",
+      "brand": "Adidas"
     },
     {
       "id": "389383931536",
@@ -58,7 +66,9 @@
       "image": "https://i.ebayimg.com/images/g/CLcAAeSwSgppQyjo/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma"
     },
     {
       "id": "389383967457",
@@ -69,7 +79,9 @@
       "image": "https://i.ebayimg.com/images/g/4d0AAeSwjXJpQyrJ/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma"
     },
     {
       "id": "389383911874",
@@ -80,7 +92,9 @@
       "image": "https://i.ebayimg.com/images/g/NvwAAeSwlFppQyd-/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Nike"
     },
     {
       "id": "800058609903",
@@ -91,7 +105,9 @@
       "image": "https://i.ebayimg.com/images/g/paoAAeSwdkBqEcSS/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma"
     },
     {
       "id": "800058538346",
@@ -102,7 +118,9 @@
       "image": "https://i.ebayimg.com/images/g/DusAAeSwKDVqEb9o/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size L"
+      "note": "Size L",
+      "size": "L",
+      "brand": "Puma"
     },
     {
       "id": "800058554457",
@@ -113,7 +131,9 @@
       "image": "https://i.ebayimg.com/images/g/lEEAAeSweJZqEcFC/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size S"
+      "note": "Size S",
+      "size": "S",
+      "brand": "Puma"
     },
     {
       "id": "800058757741",
@@ -124,7 +144,9 @@
       "image": "https://i.ebayimg.com/images/g/tBEAAeSwZLVqEdAs/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size L"
+      "note": "Size L",
+      "size": "L",
+      "brand": "Puma"
     },
     {
       "id": "800058807470",
@@ -135,7 +157,9 @@
       "image": "https://i.ebayimg.com/images/g/d60AAeSwmT1qEdNo/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size L"
+      "note": "Size L",
+      "size": "L",
+      "brand": "Puma"
     },
     {
       "id": "388851790862",
@@ -146,7 +170,9 @@
       "image": "https://i.ebayimg.com/images/g/O84AAeSwD11pPX4Q/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size S"
+      "note": "Size S",
+      "size": "S",
+      "brand": "Nike"
     },
     {
       "id": "800339659105",
@@ -157,7 +183,9 @@
       "image": "https://i.ebayimg.com/images/g/hu8AAeSwPMtpQySY/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas"
     },
     {
       "id": "389131863371",
@@ -168,7 +196,9 @@
       "image": "https://i.ebayimg.com/images/g/sSAAAeSwS-xp-ox1/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Nike"
     },
     {
       "id": "389131856395",
@@ -179,7 +209,9 @@
       "image": "https://i.ebayimg.com/images/g/JGcAAeSwILhp-nlp/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Nike"
     },
     {
       "id": "389980979451",
@@ -190,7 +222,9 @@
       "image": "https://i.ebayimg.com/images/g/4d0AAeSwjXJpQyrJ/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma"
     },
     {
       "id": "389350084218",
@@ -201,7 +235,9 @@
       "image": "https://i.ebayimg.com/images/g/400AAeSwrmRp-o1e/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma"
     },
     {
       "id": "389350079937",
@@ -212,7 +248,9 @@
       "image": "https://i.ebayimg.com/images/g/Y7wAAeSw7slpY~8a/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size L"
+      "note": "Size L",
+      "size": "L",
+      "brand": "Puma"
     },
     {
       "id": "389366069056",
@@ -223,7 +261,9 @@
       "image": "https://i.ebayimg.com/images/g/yLwAAeSwyShpPNgx/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas"
     },
     {
       "id": "389366085848",
@@ -234,7 +274,9 @@
       "image": "https://i.ebayimg.com/images/g/rQcAAeSw4VlpPNna/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth L"
+      "note": "Youth L",
+      "size": "Youth L",
+      "brand": "Nike"
     },
     {
       "id": "800058630043",
@@ -245,7 +287,9 @@
       "image": "https://i.ebayimg.com/images/g/4GsAAeSwN8dqEcby/s-l500.jpg",
       "quantity": 1,
       "tag": "Training",
-      "note": "Size S"
+      "note": "Size S",
+      "size": "S",
+      "brand": "Puma"
     },
     {
       "id": "389985124171",
@@ -256,7 +300,9 @@
       "image": "https://i.ebayimg.com/images/g/5ukAAeSwi69p-7kf/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas"
     },
     {
       "id": "800359830155",
@@ -267,7 +313,9 @@
       "image": "https://i.ebayimg.com/images/g/-SkAAeSwWEBqWlYi/s-l500.jpg",
       "quantity": 1,
       "tag": "Apparel",
-      "note": "See listing"
+      "note": "See listing",
+      "size": "Other",
+      "brand": ""
     },
     {
       "id": "800366775190",
@@ -278,7 +326,9 @@
       "image": "https://i.ebayimg.com/images/g/-9UAAeSwUXxqW9mY/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth L"
+      "note": "Youth L",
+      "size": "Youth L",
+      "brand": "Adidas"
     },
     {
       "id": "389985026255",
@@ -289,7 +339,9 @@
       "image": "https://i.ebayimg.com/images/g/9R8AAeSwm7lp-7B9/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas"
     },
     {
       "id": "800058667436",
@@ -300,7 +352,9 @@
       "image": "https://i.ebayimg.com/images/g/XP8AAeSw3cFqEclx/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas"
     },
     {
       "id": "389980721258",
@@ -311,7 +365,9 @@
       "image": "https://i.ebayimg.com/images/g/OdcAAeSwO~1p-nxt/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth XL"
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas"
     },
     {
       "id": "800058655528",
@@ -322,7 +378,9 @@
       "image": "https://i.ebayimg.com/images/g/4JMAAeSwOhNqEcgR/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth L"
+      "note": "Youth L",
+      "size": "Youth L",
+      "brand": "Nike"
     },
     {
       "id": "389383993536",
@@ -333,7 +391,9 @@
       "image": "https://i.ebayimg.com/images/g/LDYAAeSwwuJpQy8q/s-l500.jpg",
       "quantity": 1,
       "tag": "Apparel",
-      "note": "Size M"
+      "note": "Size M",
+      "size": "M",
+      "brand": ""
     },
     {
       "id": "388882596658",
@@ -344,7 +404,9 @@
       "image": "https://i.ebayimg.com/images/g/cqgAAeSwS1dp-niL/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "9-12 YRS"
+      "note": "9-12 YRS",
+      "size": "9-12 YRS",
+      "brand": ""
     },
     {
       "id": "389985059720",
@@ -355,7 +417,9 @@
       "image": "https://i.ebayimg.com/images/g/UyMAAeSwZqJp-7Kh/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth M"
+      "note": "Youth M",
+      "size": "Youth M",
+      "brand": "Adidas"
     },
     {
       "id": "800366857184",
@@ -366,7 +430,9 @@
       "image": "https://i.ebayimg.com/images/g/OZAAAeSwwnlqW96d/s-l500.jpg",
       "quantity": 1,
       "tag": "Youth",
-      "note": "Youth L"
+      "note": "Youth L",
+      "size": "Youth L",
+      "brand": "Nike"
     },
     {
       "id": "800359738314",
@@ -377,7 +443,9 @@
       "image": "https://i.ebayimg.com/images/g/zfIAAeSwQBhqWlB4/s-l500.jpg",
       "quantity": 1,
       "tag": "Apparel",
-      "note": "See listing"
+      "note": "See listing",
+      "size": "Other",
+      "brand": ""
     }
   ]
 }

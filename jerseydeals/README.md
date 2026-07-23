@@ -9,8 +9,8 @@ https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
 
 - Top-left **Jersey Deals** wordmark (matches logo type)
 - Centered circular logo (`public/logo.png`)
-- Category tiles linking into the live eBay shop (youth + full catalog)
-- Featured gear pulled from active eBay listings (`public/listings.json`)
+- Category tiles that jump into on-site inventory filters (youth + full catalog)
+- Featured gear + full filterable inventory from active eBay listings (`public/listings.json`)
 - Privacy policy at `/privacy.html` (eBay OAuth / app settings)
 
 ## Stack
@@ -32,6 +32,7 @@ npm run dev
 ### Sync live eBay listings
 
 ```bash
+cd jerseydeals
 npm run sync:ebay
 ```
 
@@ -42,7 +43,17 @@ Requires:
 - `EBAY_DEV_ID`
 - `EBAY_USER_TOKEN`
 
-Writes `public/listings.json` for the static GitHub Pages build. Re-run whenever inventory changes (the Auth’n’Auth user token also expires — refresh it in the eBay Developer portal when `HardExpirationWarning` appears).
+Writes `public/listings.json` for the static GitHub Pages build.
+
+### Scheduled sync (GitHub Actions)
+
+Workflow: `.github/workflows/sync-jerseydeals-ebay.yml`
+
+- Runs twice daily (UTC) and on manual `workflow_dispatch`
+- Updates `jerseydeals/public/listings.json` on `Brayden-OS`
+- Triggers the Pages deploy when inventory changed
+
+Add the same four `EBAY_*` values as **repository Actions secrets** so the scheduled job can authenticate. Refresh the Auth’n’Auth user token in the eBay Developer portal when `HardExpirationWarning` appears in the sync logs.
 
 ## Build
 

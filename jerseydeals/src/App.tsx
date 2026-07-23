@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 
 type Listing = {
@@ -11,6 +11,8 @@ type Listing = {
   quantity: number
   tag: string
   note: string
+  size?: string
+  brand?: string
 }
 
 type ListingsPayload = {
@@ -21,6 +23,25 @@ type ListingsPayload = {
   count: number
   listings: Listing[]
 }
+
+const TAG_ORDER = ['Youth', 'Training', 'Jerseys', 'Court / Sideline', 'Apparel'] as const
+
+const SIZE_ORDER = [
+  'XS',
+  'S',
+  'M',
+  'L',
+  'XL',
+  'XXL',
+  'Youth XS',
+  'Youth S',
+  'Youth M',
+  'Youth L',
+  'Youth XL',
+  'Youth XXL',
+  '9-12 YRS',
+  'Other',
+] as const
 
 const asset = (path: string) =>
   `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
@@ -45,19 +66,172 @@ function shortTitle(title: string) {
     .trim()
 }
 
+function listingSize(item: Listing) {
+  return item.size || item.note || 'Other'
+}
+
 function fadeUp(reduce: boolean | null, delay = 0) {
   return {
     initial: reduce ? false : { opacity: 0, y: 24 },
     whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, amount: 0.3 },
+    viewport: { once: true, amount: 0.25 },
     transition: { duration: 0.55, delay: reduce ? 0 : delay, ease: [0.22, 1, 0.36, 1] as const },
   }
+}
+
+function pickFeatured(listings: Listing[], limit = 6) {
+  const picked: Listing[] = []
+  const used = new Set<string>()
+  for (const tag of TAG_ORDER) {
+    const hit = listings.find((item) => item.tag === tag && !used.has(item.id))
+    if (hit) {
+      picked.push(hit)
+      used.add(hit.id)
+    }
+    if (picked.length >= limit) return picked
+  }
+  for (const item of listings) {
+    if (used.has(item.id)) continue
+    picked.push(item)
+    used.add(item.id)
+    if (picked.length >= limit) break
+  }
+  return picked
+}
+
+function sortSizes(sizes: string[]) {
+  return [...sizes].sort((a, b) => {
+    const ai = SIZE_ORDER.indexOf(a as (typeof SIZE_ORDER)[number])
+    const bi = SIZE_ORDER.indexOf(b as (typeof SIZE_ORDER)[number])
+    const av = ai === -1 ? 999 : ai
+    const bv = bi === -1 ? 999 : bi
+    if (av !== bv) return av - bv
+    return a.localeCompare(b)
+  })
+}
+
+function FilterChip({
+  active,
+  label,
+  onClick,
+  tone = 'light',
+}: {
+  active: boolean
+  label: string
+  onClick: () => void
+  tone?: 'light' | 'dark'
+}) {
+  const base =
+    tone === 'dark'
+      ? active
+        ? 'border-crimson-hot bg-crimson text-white'
+        : 'border-white/20 text-white/75 hover:border-white/45 hover:text-white'
+      : active
+        ? 'border-crimson bg-crimson text-white'
+        : 'border-navy/20 text-navy/75 hover:border-navy/45 hover:text-navy'
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-md border px-3 py-1.5 text-sm font-semibold transition ${base}`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function ListingCard({
+  item,
+  index,
+  reduce,
+  tone = 'dark',
+}: {
+  item: Listing
+  index: number
+  reduce: boolean | null
+  tone?: 'dark' | 'light'
+}) {
+  const isDark = tone === 'dark'
+  return (
+    <motion.li {...fadeUp(reduce, Math.min(index, 8) * 0.04)}>
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`block outline-none focus-visible:ring-2 focus-visible:ring-crimson ${
+          isDark
+            ? 'focus-visible:ring-offset-2 focus-visible:ring-offset-navy'
+            : 'focus-visible:ring-offset-2 focus-visible:ring-offset-chalk'
+        }`}
+      >
+        <div
+          className={`aspect-[4/5] overflow-hidden ${
+            isDark ? 'bg-black/40 ring-1 ring-white/10' : 'bg-mist ring-1 ring-navy/10'
+          }`}
+        >
+          {item.image ? (
+            <img
+              src={item.image}
+              alt=""
+              className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
+              loading={index < 3 ? 'eager' : 'lazy'}
+            />
+          ) : (
+            <div
+              className={`flex h-full items-center justify-center p-6 ${
+                isDark
+                  ? 'bg-gradient-to-br from-navy-deep to-navy'
+                  : 'bg-gradient-to-br from-mist to-chalk'
+              }`}
+            >
+              <span className={`font-comic text-xl ${isDark ? 'text-white/80' : 'text-navy/70'}`}>
+                {item.tag}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <p
+            className={`text-xs font-semibold uppercase tracking-[0.14em] ${
+              isDark ? 'text-crimson-hot' : 'text-crimson'
+            }`}
+          >
+            {item.tag}
+            {item.brand ? ` · ${item.brand}` : ''}
+          </p>
+          <h3
+            className={`mt-1 text-lg font-semibold leading-snug ${
+              isDark ? 'text-white' : 'text-navy'
+            }`}
+          >
+            {shortTitle(item.title)}
+          </h3>
+          <p className="mt-1 flex items-baseline gap-2">
+            <span
+              className={`font-display text-3xl font-bold tracking-wide ${
+                isDark ? 'text-white' : 'text-navy'
+              }`}
+            >
+              {formatPrice(item.price, item.currency)}
+            </span>
+            <span className={`text-sm ${isDark ? 'text-white/50' : 'text-muted'}`}>{item.note}</span>
+          </p>
+        </div>
+      </a>
+    </motion.li>
+  )
 }
 
 export default function App() {
   const reduce = useReducedMotion()
   const [catalog, setCatalog] = useState<ListingsPayload | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [tagFilter, setTagFilter] = useState<string>('All')
+  const [sizeFilter, setSizeFilter] = useState<string>('All')
+  const [brandFilter, setBrandFilter] = useState<string>('All')
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -80,18 +254,57 @@ export default function App() {
   }, [])
 
   const shopUrl = catalog?.shopUrl ?? 'https://www.ebay.com/usr/jerseydealsofficial'
-  const youthUrl = catalog
-    ? `${catalog.shopUrl}&_nkw=youth`
-    : 'https://www.ebay.com/sch/i.html?_ssn=jerseydealsofficial&_nkw=youth&_sop=10'
-  const featured = (catalog?.listings ?? []).slice(0, 6)
+  const listings = useMemo(() => catalog?.listings ?? [], [catalog])
+  const featured = useMemo(() => pickFeatured(listings, 6), [listings])
+
+  const availableTags = useMemo(() => {
+    const present = new Set(listings.map((item) => item.tag))
+    return TAG_ORDER.filter((tag) => present.has(tag))
+  }, [listings])
+
+  const availableSizes = useMemo(() => {
+    const present = new Set(listings.map(listingSize))
+    return sortSizes([...present])
+  }, [listings])
+
+  const availableBrands = useMemo(() => {
+    const present = [
+      ...new Set(listings.map((item) => item.brand).filter((brand): brand is string => Boolean(brand))),
+    ]
+    return present.sort((a, b) => a.localeCompare(b))
+  }, [listings])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return listings.filter((item) => {
+      if (tagFilter !== 'All' && item.tag !== tagFilter) return false
+      if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
+      if (brandFilter !== 'All' && item.brand !== brandFilter) return false
+      if (!q) return true
+      return (
+        item.title.toLowerCase().includes(q) ||
+        item.tag.toLowerCase().includes(q) ||
+        (item.brand || '').toLowerCase().includes(q) ||
+        item.note.toLowerCase().includes(q)
+      )
+    })
+  }, [listings, tagFilter, sizeFilter, brandFilter, query])
+
+  function goShop(next?: { tag?: string; size?: string }) {
+    if (next?.tag !== undefined) setTagFilter(next.tag)
+    if (next?.size !== undefined) setSizeFilter(next.size)
+    requestAnimationFrame(() => {
+      document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
       <a
-        href="#categories"
+        href="#shop"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
       >
-        Skip to categories
+        Skip to inventory
       </a>
 
       <header className="relative z-20 border-b border-navy/10 bg-chalk/90 backdrop-blur-sm">
@@ -102,14 +315,22 @@ export default function App() {
           >
             Jersey Deals
           </a>
-          <a
-            href={shopUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
-          >
-            Shop on eBay
-          </a>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href="#shop"
+              className="hidden rounded-md border border-navy/20 px-3 py-2 text-sm font-semibold text-navy transition hover:border-navy/40 sm:inline-flex"
+            >
+              Browse inventory
+            </a>
+            <a
+              href={shopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-md bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+            >
+              Shop on eBay
+            </a>
+          </div>
         </div>
       </header>
 
@@ -155,18 +376,18 @@ export default function App() {
               className="mt-6 flex flex-wrap items-center justify-center gap-3"
             >
               <a
+                href="#shop"
+                className="inline-flex rounded-md bg-crimson px-6 py-3 text-base font-semibold text-white transition hover:bg-crimson-hot"
+              >
+                Browse live inventory
+              </a>
+              <a
                 href={shopUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex rounded-md bg-crimson px-6 py-3 text-base font-semibold text-white transition hover:bg-crimson-hot"
-              >
-                Browse live listings
-              </a>
-              <a
-                href="#featured"
                 className="inline-flex rounded-md border border-navy/25 bg-white/60 px-6 py-3 text-base font-semibold text-navy transition hover:border-navy/50"
               >
-                Featured gear
+                Open eBay shop
               </a>
             </motion.div>
 
@@ -175,14 +396,13 @@ export default function App() {
               className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6"
             >
               {[
-                { label: 'youth apparel', href: youthUrl },
-                { label: 'shop the sale', href: shopUrl },
+                { label: 'youth apparel', tag: 'Youth' },
+                { label: 'shop the sale', tag: 'All' },
               ].map((tile, i) => (
-                <motion.a
+                <motion.button
                   key={tile.label}
-                  href={tile.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  type="button"
+                  onClick={() => goShop({ tag: tile.tag })}
                   initial={reduce ? false : { opacity: 0, y: 28 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{
@@ -197,7 +417,7 @@ export default function App() {
                     {tile.label}
                   </span>
                   <span className="pointer-events-none absolute inset-0 bg-crimson/0 transition group-hover:bg-crimson/15" />
-                </motion.a>
+                </motion.button>
               ))}
             </div>
             <p className="mt-4 text-center text-sm text-muted">
@@ -205,7 +425,7 @@ export default function App() {
                 ? `${catalog.count} active listings from @${catalog.seller}`
                 : loadState === 'loading'
                   ? 'Loading live inventory…'
-                  : 'Tap a category to browse our eBay shop.'}
+                  : 'Browse inventory below or open the eBay shop.'}
             </p>
           </div>
         </section>
@@ -220,7 +440,7 @@ export default function App() {
                 Live from eBay
               </h2>
               <p className="mt-3 max-w-xl text-white/70">
-                Pulled from our active Jersey Deals listings — tap any item to buy on eBay.
+                A quick mix across youth, training, and kits — tap any item to buy on eBay.
               </p>
             </motion.div>
 
@@ -261,58 +481,187 @@ export default function App() {
             {featured.length > 0 && (
               <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
-                  <motion.li key={item.id} {...fadeUp(reduce, i * 0.06)}>
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 focus-visible:ring-offset-navy"
-                    >
-                      <div className="aspect-[4/5] overflow-hidden bg-black/40 ring-1 ring-white/10">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt=""
-                            className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
-                            loading={i < 3 ? 'eager' : 'lazy'}
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
-                            <span className="font-comic text-xl text-white/80">{item.tag}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-4">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-crimson-hot">
-                          {item.tag}
-                        </p>
-                        <h3 className="mt-1 text-lg font-semibold leading-snug">
-                          {shortTitle(item.title)}
-                        </h3>
-                        <p className="mt-1 flex items-baseline gap-2">
-                          <span className="font-display text-3xl font-bold tracking-wide">
-                            {formatPrice(item.price, item.currency)}
-                          </span>
-                          <span className="text-sm text-white/50">{item.note}</span>
-                        </p>
-                      </div>
-                    </a>
-                  </motion.li>
+                  <ListingCard key={item.id} item={item} index={i} reduce={reduce} tone="dark" />
                 ))}
               </ul>
             )}
 
             {catalog && catalog.count > featured.length && (
               <motion.div {...fadeUp(reduce, 0.2)} className="mt-10">
+                <button
+                  type="button"
+                  onClick={() => goShop({ tag: 'All' })}
+                  className="inline-flex rounded-md border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/5"
+                >
+                  Browse all {catalog.count} listings
+                </button>
+              </motion.div>
+            )}
+          </div>
+        </section>
+
+        <section id="shop" className="relative overflow-hidden bg-chalk py-20 md:py-28">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-60"
+            style={{
+              background:
+                'radial-gradient(ellipse 50% 40% at 0% 0%, rgba(215,40,47,0.08), transparent 55%), radial-gradient(ellipse 45% 35% at 100% 20%, rgba(11,34,63,0.06), transparent)',
+            }}
+          />
+          <div className="relative mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
+              <p className="font-display text-lg font-semibold uppercase tracking-[0.18em] text-crimson">
+                Full inventory
+              </p>
+              <h2 className="mt-2 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                Filter. Find. Buy on eBay.
+              </h2>
+              <p className="mt-3 text-lg text-muted">
+                Every active Jersey Deals listing, searchable by type, size, and brand.
+              </p>
+            </motion.div>
+
+            {loadState === 'ready' && listings.length > 0 && (
+              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
+                <label className="block max-w-xl">
+                  <span className="sr-only">Search inventory</span>
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search club, kit, size…"
+                    className="w-full rounded-md border border-navy/15 bg-white/80 px-4 py-3 text-base text-navy outline-none transition placeholder:text-muted/70 focus:border-crimson/50 focus:ring-2 focus:ring-crimson/20"
+                  />
+                </label>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Type</p>
+                  <div className="flex flex-wrap gap-2">
+                    <FilterChip
+                      label="All"
+                      active={tagFilter === 'All'}
+                      onClick={() => setTagFilter('All')}
+                    />
+                    {availableTags.map((tag) => (
+                      <FilterChip
+                        key={tag}
+                        label={tag}
+                        active={tagFilter === tag}
+                        onClick={() => setTagFilter(tag)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {availableSizes.length > 1 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                      Size
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <FilterChip
+                        label="All"
+                        active={sizeFilter === 'All'}
+                        onClick={() => setSizeFilter('All')}
+                      />
+                      {availableSizes.map((size) => (
+                        <FilterChip
+                          key={size}
+                          label={size}
+                          active={sizeFilter === size}
+                          onClick={() => setSizeFilter(size)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {availableBrands.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                      Brand
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <FilterChip
+                        label="All"
+                        active={brandFilter === 'All'}
+                        onClick={() => setBrandFilter('All')}
+                      />
+                      {availableBrands.map((brand) => (
+                        <FilterChip
+                          key={brand}
+                          label={brand}
+                          active={brandFilter === brand}
+                          onClick={() => setBrandFilter(brand)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-sm text-muted">
+                  Showing {filtered.length} of {listings.length}
+                  {catalog?.syncedAt
+                    ? ` · synced ${new Date(catalog.syncedAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}`
+                    : ''}
+                </p>
+              </motion.div>
+            )}
+
+            {loadState === 'loading' && (
+              <p className="mt-12 text-muted">Loading inventory…</p>
+            )}
+
+            {loadState === 'error' && (
+              <p className="mt-12 text-muted">
+                Inventory is temporarily unavailable.{' '}
                 <a
                   href={shopUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex rounded-md border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/5"
+                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
                 >
-                  See all {catalog.count} listings on eBay
+                  Open the eBay shop
                 </a>
-              </motion.div>
+                .
+              </p>
+            )}
+
+            {loadState === 'ready' && filtered.length === 0 && (
+              <p className="mt-12 text-muted">
+                No listings match those filters.{' '}
+                <button
+                  type="button"
+                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  onClick={() => {
+                    setTagFilter('All')
+                    setSizeFilter('All')
+                    setBrandFilter('All')
+                    setQuery('')
+                  }}
+                >
+                  Clear filters
+                </button>
+              </p>
+            )}
+
+            {filtered.length > 0 && (
+              <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((item, i) => (
+                  <ListingCard
+                    key={item.id}
+                    item={item}
+                    index={i}
+                    reduce={reduce}
+                    tone="light"
+                  />
+                ))}
+              </ul>
             )}
           </div>
         </section>
@@ -356,7 +705,7 @@ export default function App() {
                 },
                 {
                   dt: 'Youth + mens',
-                  dd: 'Training tops, pre-match kits, and youth apparel — tap through for the full catalog.',
+                  dd: 'Training tops, pre-match kits, and youth apparel — filter above, then tap through to buy.',
                 },
               ].map((item, i) => (
                 <motion.div key={item.dt} {...fadeUp(reduce, i * 0.08)}>
@@ -380,17 +729,25 @@ export default function App() {
                 Ready to shop?
               </p>
               <p className="mt-2 max-w-md text-white/85">
-                Open the full Jersey Deals catalog on eBay for every size and listing.
+                Browse here, then checkout on eBay for every size and listing.
               </p>
             </div>
-            <a
-              href={shopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex shrink-0 rounded-md bg-navy px-6 py-3 text-base font-semibold text-white transition hover:bg-navy-deep"
-            >
-              Shop on eBay
-            </a>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="#shop"
+                className="inline-flex shrink-0 rounded-md border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/10"
+              >
+                Browse inventory
+              </a>
+              <a
+                href={shopUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex shrink-0 rounded-md bg-navy px-6 py-3 text-base font-semibold text-white transition hover:bg-navy-deep"
+              >
+                Shop on eBay
+              </a>
+            </div>
           </motion.div>
         </section>
       </main>
@@ -404,6 +761,9 @@ export default function App() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <a href="#shop" className="hover:text-white">
+              Inventory
+            </a>
             <a
               href={shopUrl}
               target="_blank"
