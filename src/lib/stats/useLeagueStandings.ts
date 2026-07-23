@@ -8,7 +8,7 @@ export function useLeagueStandings(leagueId: LeagueId, enabled = true) {
   const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
     leagueId,
     enabled,
-    'all',
+    'standings',
   )
   const [rows, setRows] = useState<StandingRow[]>([])
   const [loading, setLoading] = useState(true)

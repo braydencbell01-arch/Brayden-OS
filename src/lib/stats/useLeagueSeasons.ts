@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
-import { fetchLeagueLeaderSeasons, fetchLeagueSeasons } from './espn'
+import {
+  fetchLeagueLeaderSeasons,
+  fetchLeagueSeasons,
+  fetchLeagueStandingSeasons,
+} from './espn'
 import { fetchFotmobSeasonOptions } from './fotmob'
 import type { LeagueSeasonOption } from './types'
 
-export type LeagueSeasonMode = 'all' | 'leaders' | 'fotmob'
+export type LeagueSeasonMode = 'all' | 'standings' | 'leaders' | 'fotmob'
 
 /**
  * Shared season list + selection for league-scoped profile sections.
  * - `all`: every ESPN season for the league
+ * - `standings`: ESPN seasons ordered with played tables first
  * - `leaders`: ESPN seasons that have leaderboard data
- * - `fotmob`: FotMob seasons with advanced-stat season links (xG)
+ * - `fotmob`: FotMob seasons with xG boards
  */
 export function useLeagueSeasons(
   leagueId: LeagueId,
@@ -33,7 +38,9 @@ export function useLeagueSeasons(
         ? fetchLeagueLeaderSeasons
         : mode === 'fotmob'
           ? fetchFotmobSeasonOptions
-          : fetchLeagueSeasons
+          : mode === 'standings'
+            ? fetchLeagueStandingSeasons
+            : fetchLeagueSeasons
     load(leagueId)
       .then((options) => {
         if (cancelled) return

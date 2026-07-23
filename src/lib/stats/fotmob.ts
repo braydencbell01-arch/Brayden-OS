@@ -161,39 +161,35 @@ async function loadTopLists(
   if (!league) return null
 
   const links = league.stats?.seasonStatLinks ?? []
-  const preferredName =
-    preferredSeasonYear != null
-      ? links.find((l) => fotmobSeasonYear(l.Name) === preferredSeasonYear)?.Name
-      : undefined
+
+  if (preferredSeasonYear != null) {
+    const matching = links.filter(
+      (l) => l.RelativePath && fotmobSeasonYear(l.Name) === preferredSeasonYear,
+    )
+    for (const link of matching) {
+      const path = link.RelativePath!
+      const url = path.startsWith('http') ? path : `https://data.fotmob.com/${path.replace(/^\//, '')}`
+      const top = await fetchJson<FotmobTopStats>(url)
+      const lists = top?.TopLists ?? []
+      const xgList = lists.find((item) => item.StatName === 'expected_goals')
+      if (xgList?.StatList && xgList.StatList.length > 0) {
+        return {
+          lists,
+          seasonLabel: link.Name || league.details?.selectedSeason || 'Season',
+          seasonId: link.TournamentId || 0,
+        }
+      }
+    }
+    return null
+  }
+
   const ordered = [
-    ...links.filter((l) => preferredName && l.Name === preferredName),
-    ...links.filter((l) => preferredSeasonYear != null && fotmobSeasonYear(l.Name) === preferredSeasonYear),
     ...links.filter((l) => l.Name === league.details?.selectedSeason),
     ...links.filter((l) => l.Name === league.details?.latestSeason),
     ...links,
   ].filter((l, i, arr) => l.RelativePath && arr.findIndex((x) => x.RelativePath === l.RelativePath) === i)
 
-  const attempts = preferredSeasonYear != null ? ordered.slice(0, 2) : ordered.slice(0, 4)
-  for (const link of attempts) {
-    const path = link.RelativePath!
-    const url = path.startsWith('http') ? path : `https://data.fotmob.com/${path.replace(/^\//, '')}`
-    const top = await fetchJson<FotmobTopStats>(url)
-    const lists = top?.TopLists ?? []
-    const xgList = lists.find((item) => item.StatName === 'expected_goals')
-    if (xgList?.StatList && xgList.StatList.length > 0) {
-      return {
-        lists,
-        seasonLabel: link.Name || league.details?.selectedSeason || 'Season',
-        seasonId: link.TournamentId || 0,
-      }
-    }
-  }
-
-  // When a specific season was requested but has no xG board yet, do not silently
-  // fall through to another year — the picker should show an empty state.
-  if (preferredSeasonYear != null) return null
-
-  for (const link of ordered.slice(attempts.length, attempts.length + 4)) {
+  for (const link of ordered.slice(0, 6)) {
     const path = link.RelativePath!
     const url = path.startsWith('http') ? path : `https://data.fotmob.com/${path.replace(/^\//, '')}`
     const top = await fetchJson<FotmobTopStats>(url)
@@ -227,10 +223,15 @@ function fotmobSeasonShortLabel(name: string): string {
   return name
 }
 
-/** FotMob season links mapped onto shared LeagueSeasonOption shape. */
+const fotmobSeasonOptionsCache = new Map<string, LeagueSeasonOption[]>()
+
+/** FotMob season links that actually publish an xG board (newest first). */
 export async function fetchFotmobSeasonOptions(
   leagueId: LeagueId,
 ): Promise<LeagueSeasonOption[]> {
+  const cached = fotmobSeasonOptionsCache.get(leagueId)
+  if (cached) return cached
+
   const fotId = fotmobLeagueId(leagueId)
   if (fotId == null) return []
   const league = await fetchJson<FotmobLeaguePayload>(
@@ -238,21 +239,43 @@ export async function fetchFotmobSeasonOptions(
   )
   if (!league) return []
 
-  const options: LeagueSeasonOption[] = []
-  const seen = new Set<number>()
-  for (const link of league.stats?.seasonStatLinks ?? []) {
-    if (!link.Name || !link.RelativePath) continue
-    const year = fotmobSeasonYear(link.Name)
-    if (year == null || seen.has(year)) continue
-    // Verify the season actually has xG boards (cheap check on first link with that year).
-    seen.add(year)
-    options.push({
-      year,
-      label: link.Name,
-      shortLabel: fotmobSeasonShortLabel(link.Name),
-    })
+  const links = (league.stats?.seasonStatLinks ?? []).filter(
+    (link) => link.Name && link.RelativePath,
+  )
+  const withXg: LeagueSeasonOption[] = []
+  const concurrency = 4
+  for (let i = 0; i < links.length; i += concurrency) {
+    const chunk = links.slice(i, i + concurrency)
+    const checks = await Promise.all(
+      chunk.map(async (link) => {
+        const year = fotmobSeasonYear(link.Name)
+        if (year == null) return null
+        const path = link.RelativePath!
+        const url = path.startsWith('http')
+          ? path
+          : `https://data.fotmob.com/${path.replace(/^\//, '')}`
+        const top = await fetchJson<FotmobTopStats>(url)
+        const hasXg = Boolean(
+          top?.TopLists?.some(
+            (item) => item.StatName === 'expected_goals' && (item.StatList?.length ?? 0) > 0,
+          ),
+        )
+        if (!hasXg) return null
+        return {
+          year,
+          label: link.Name!,
+          shortLabel: fotmobSeasonShortLabel(link.Name!),
+        } satisfies LeagueSeasonOption
+      }),
+    )
+    for (const option of checks) {
+      if (option && !withXg.some((row) => row.year === option.year)) {
+        withXg.push(option)
+      }
+    }
   }
-  return options
+  fotmobSeasonOptionsCache.set(leagueId, withXg)
+  return withXg
 }
 
 function mapPlayerXg(row: FotmobStatRow, rank: number): ExpectedGoalsLeader {
