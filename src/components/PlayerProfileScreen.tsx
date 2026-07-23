@@ -522,10 +522,10 @@ function SeasonStatsCompare({
             <tr key={label} className="border-t border-white/10">
               <td className="px-3 py-2 font-semibold text-cream">{label}</td>
               <td className="px-3 py-2 text-right font-display text-lg tabular-nums text-lime">
-                {currentByLabel.get(label) ?? '—'}
+                {currentByLabel.get(label) ?? MISSING_SHORT}
               </td>
               <td className="px-3 py-2 text-right font-display text-lg tabular-nums text-mist/80">
-                {previousByLabel.get(label) ?? '—'}
+                {previousByLabel.get(label) ?? MISSING_SHORT}
               </td>
             </tr>
           ))}

@@ -113,7 +113,9 @@ function LeadersTable({
                 ) : null}
               </div>
               <span className="font-display text-xl tracking-wide text-lime tabular-nums">
-                {category.id === 'team-gd' && leader.value > 0 ? `+${leader.value}` : leader.value}
+                {category.id === 'team-gd' && leader.value > 0
+                  ? `+${leader.displayValue || leader.value}`
+                  : leader.displayValue || String(leader.value)}
               </span>
             </li>
           )

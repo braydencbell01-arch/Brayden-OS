@@ -170,16 +170,15 @@ export function TeamProfileScreen({
   )
   const teamPlayerXg = useMemo(() => {
     if (!expectedGoals.data) return []
-    const needle = displayName.toLowerCase()
+    const needle = displayName.toLowerCase().replace(/^afc\s+|^fc\s+/, '')
     return expectedGoals.data.playersXg
       .filter((row) => {
-        const teamName = (row.teamName || '').toLowerCase()
-        return (
-          teamName === needle ||
-          teamName.includes(needle) ||
-          needle.includes(teamName) ||
-          teamName.replace(/^afc\s+|^fc\s+/, '').includes(needle.replace(/^afc\s+|^fc\s+/, ''))
-        )
+        const teamName = (row.teamName || '').toLowerCase().replace(/^afc\s+|^fc\s+/, '')
+        if (!teamName) return false
+        if (teamName === needle) return true
+        // Require a long enough token so "City" / "United" don't steal another club's board.
+        if (needle.length < 6) return false
+        return teamName.includes(needle) || needle.includes(teamName)
       })
       .slice(0, 5)
   }, [expectedGoals.data, displayName])

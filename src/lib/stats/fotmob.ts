@@ -366,6 +366,21 @@ type FotmobSuggest = {
   }>
 }
 
+type FotmobStatItem = {
+  localizedTitleId?: string
+  title?: string
+  statValue?: string | number
+  value?: number
+}
+
+type FotmobStatsSection = {
+  statsSection?: {
+    items?: Array<{
+      items?: FotmobStatItem[]
+    }>
+  }
+}
+
 type FotmobPlayerPayload = {
   id?: number
   name?: string
@@ -373,34 +388,67 @@ type FotmobPlayerPayload = {
   marketValues?: {
     values?: Array<{ value?: number; currency?: string }>
   }
-  firstSeasonStats?: {
-    statsSection?: {
-      items?: Array<{
-        items?: Array<{
-          localizedTitleId?: string
-          title?: string
-          statValue?: string
-        }>
-      }>
-    }
+  firstSeasonStats?: FotmobStatsSection
+  mainLeague?: {
+    season?: string
+    leagueName?: string
+    leagueId?: number
+    stats?: FotmobStatItem[]
   }
-  mainLeague?: { season?: string; leagueName?: string }
+  primaryTeam?: { teamId?: number; teamName?: string }
+  statSeasons?: Array<{
+    seasonName?: string
+    tournaments?: Array<{
+      name?: string
+      tournamentId?: number
+      entryId?: string
+      hasDeepStats?: boolean
+    }>
+  }>
 }
 
-function readStatValue(
-  payload: FotmobPlayerPayload,
-  ids: string[],
-): number | null {
-  const groups = payload.firstSeasonStats?.statsSection?.items ?? []
-  for (const group of groups) {
-    for (const item of group.items ?? []) {
-      const key = (item.localizedTitleId || item.title || '').toLowerCase()
-      if (!ids.some((id) => key === id.toLowerCase() || key.includes(id.toLowerCase()))) continue
-      const n = Number(item.statValue)
-      if (Number.isFinite(n)) return n
-    }
+/** Exact id match only — never substring (`goals` must not hit `expected_goals`). */
+function readStatFromItems(items: FotmobStatItem[] | undefined, ids: string[]): number | null {
+  if (!items?.length) return null
+  const want = new Set(ids.map((id) => id.toLowerCase()))
+  for (const item of items) {
+    const key = (item.localizedTitleId || '').toLowerCase()
+    if (!key || !want.has(key)) continue
+    const raw = item.statValue ?? item.value
+    const n = typeof raw === 'number' ? raw : Number(raw)
+    if (Number.isFinite(n)) return n
   }
   return null
+}
+
+function readStatFromSections(
+  section: FotmobStatsSection | null | undefined,
+  ids: string[],
+): number | null {
+  const groups = section?.statsSection?.items ?? []
+  for (const group of groups) {
+    const hit = readStatFromItems(group.items, ids)
+    if (hit != null) return hit
+  }
+  return null
+}
+
+function mainLeagueEntryId(payload: FotmobPlayerPayload): string | null {
+  const season = payload.mainLeague?.season
+  const leagueId = payload.mainLeague?.leagueId
+  const leagueName = (payload.mainLeague?.leagueName || '').toLowerCase()
+  if (!season) return null
+  const seasonRow = (payload.statSeasons ?? []).find((row) => row.seasonName === season)
+  const tournaments = seasonRow?.tournaments ?? []
+  const byId =
+    leagueId != null
+      ? tournaments.find((t) => t.tournamentId === leagueId && t.entryId)
+      : null
+  if (byId?.entryId) return byId.entryId
+  const byName = tournaments.find(
+    (t) => t.entryId && leagueName && (t.name || '').toLowerCase() === leagueName,
+  )
+  return byName?.entryId ?? tournaments.find((t) => t.hasDeepStats && t.entryId)?.entryId ?? null
 }
 
 async function searchFotmobPlayerId(name: string): Promise<string | null> {
@@ -410,11 +458,23 @@ async function searchFotmobPlayerId(name: string): Promise<string | null> {
     `https://apigw.fotmob.com/searchapi/suggest?term=${encodeURIComponent(q)}`,
   )
   const options = data?.squadMemberSuggest?.[0]?.options ?? []
-  for (const option of options) {
-    const id = option.payload?.id ?? option.text?.split('|')[1]
-    if (id != null && String(id)) return String(id)
-  }
-  // Try last token (surname) if full name missed.
+  const qLower = q.toLowerCase()
+  const scored = options
+    .map((option) => {
+      const id = option.payload?.id ?? option.text?.split('|')[1]
+      const label = (option.payload?.name || option.text?.split('|')[0] || '').toLowerCase()
+      if (id == null || !label) return null
+      const exact = label === qLower
+      const starts = label.startsWith(qLower) || qLower.startsWith(label)
+      const includes = label.includes(qLower) || qLower.includes(label)
+      if (!exact && !starts && !includes) return null
+      return { id: String(id), score: exact ? 3 : starts ? 2 : 1 }
+    })
+    .filter((row): row is { id: string; score: number } => Boolean(row))
+    .sort((a, b) => b.score - a.score)
+  if (scored[0]) return scored[0].id
+
+  // Surname fallback only when a single strong full-name match appears.
   const parts = q.split(/\s+/).filter(Boolean)
   if (parts.length > 1) {
     const surname = parts[parts.length - 1]!
@@ -422,11 +482,14 @@ async function searchFotmobPlayerId(name: string): Promise<string | null> {
       `https://apigw.fotmob.com/searchapi/suggest?term=${encodeURIComponent(surname)}`,
     )
     const opts = again?.squadMemberSuggest?.[0]?.options ?? []
-    const match = opts.find((opt) =>
-      (opt.payload?.name || opt.text || '').toLowerCase().includes(q.toLowerCase().slice(0, 6)),
-    )
-    const id = match?.payload?.id ?? match?.text?.split('|')[1] ?? opts[0]?.payload?.id
-    if (id != null) return String(id)
+    const matches = opts.filter((opt) => {
+      const label = (opt.payload?.name || opt.text || '').toLowerCase()
+      return label === qLower || label.includes(qLower)
+    })
+    if (matches.length === 1) {
+      const id = matches[0]?.payload?.id ?? matches[0]?.text?.split('|')[1]
+      if (id != null) return String(id)
+    }
   }
   return null
 }
@@ -443,11 +506,25 @@ export async function fetchPlayerAdvancedExtras(
   )
   if (!payload) return null
 
-  const xg = readStatValue(payload, ['expected_goals', 'xg'])
-  const xgot = readStatValue(payload, ['expected_goals_on_target', 'xgot'])
-  const xa = readStatValue(payload, ['expected_assists', 'xa'])
-  const goals = readStatValue(payload, ['goals'])
-  const assists = readStatValue(payload, ['assists'])
+  // Prefer deep stats for the player's main club league season (not the default
+  // firstSeasonStats window, which is often a cup or short competition).
+  const entryId = mainLeagueEntryId(payload)
+  const deepStats = entryId
+    ? await fetchJson<FotmobStatsSection>(
+        `https://www.fotmob.com/api/data/playerStats?playerId=${encodeURIComponent(fotmobPlayerId)}&seasonId=${encodeURIComponent(entryId)}`,
+      )
+    : null
+
+  const section = deepStats?.statsSection ? deepStats : payload.firstSeasonStats
+  const xg = readStatFromSections(section, ['expected_goals'])
+  const xgot = readStatFromSections(section, ['expected_goals_on_target'])
+  const xa = readStatFromSections(section, ['expected_assists'])
+  const goals =
+    readStatFromSections(section, ['goals']) ??
+    readStatFromItems(payload.mainLeague?.stats, ['goals'])
+  const assists =
+    readStatFromSections(section, ['assists']) ??
+    readStatFromItems(payload.mainLeague?.stats, ['assists'])
   const values = payload.marketValues?.values ?? []
   const latest = values.length > 0 ? values[values.length - 1] : null
   const marketRaw = typeof latest?.value === 'number' ? latest.value : null
@@ -455,10 +532,13 @@ export async function fetchPlayerAdvancedExtras(
     payload.injuryInformation?.name ||
     payload.injuryInformation?.description ||
     null
+  const seasonLabel = payload.mainLeague?.season
+    ? `${payload.mainLeague.leagueName || 'League'} · ${payload.mainLeague.season}`
+    : payload.mainLeague?.leagueName
 
   return {
     fotmobPlayerId,
-    seasonLabel: payload.mainLeague?.season || payload.mainLeague?.leagueName,
+    seasonLabel,
     xg,
     xgot,
     xa,
@@ -478,18 +558,18 @@ export function teamXgForName(
   rows: TeamExpectedGoalsRow[],
   teamName: string,
 ): TeamExpectedGoalsRow | null {
-  const needle = teamName.trim().toLowerCase()
+  const needle = teamName.trim().toLowerCase().replace(/^afc\s+|^fc\s+/, '')
   if (!needle || rows.length === 0) return null
   const exact = rows.find((row) => row.name.toLowerCase() === needle)
   if (exact) return exact
-  const partial = rows.find(
-    (row) =>
-      row.name.toLowerCase().includes(needle) ||
-      needle.includes(row.name.toLowerCase()) ||
-      row.name
-        .toLowerCase()
-        .replace(/^afc\s+|^fc\s+|^\w+\s/, '')
-        .includes(needle.replace(/^afc\s+|^fc\s+/, '')),
+  const normalized = rows.map((row) => ({
+    row,
+    name: row.name.toLowerCase().replace(/^afc\s+|^fc\s+/, ''),
+  }))
+  const full = normalized.find(
+    (item) => item.name === needle || item.name.includes(needle) || needle.includes(item.name),
   )
-  return partial ?? null
+  // Avoid short ambiguous tokens like "city" / "united" matching the wrong club.
+  if (full && (needle.length >= 6 || full.name === needle)) return full.row
+  return null
 }

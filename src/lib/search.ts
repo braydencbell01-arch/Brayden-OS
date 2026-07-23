@@ -1,4 +1,12 @@
-import { LEAGUES, isContinentalLeague, isInternationalLeague, type League, type LeagueId } from './leagues'
+import {
+  LEAGUES,
+  domesticLeagues,
+  getLeague,
+  isContinentalLeague,
+  isInternationalLeague,
+  type League,
+  type LeagueId,
+} from './leagues'
 import type { FavoritePlayer, FavoriteTeam } from './favorites'
 import type { Match } from './matches'
 import type { PlayerNavRef } from '../components/PlayerProfileScreen'
@@ -50,6 +58,7 @@ export function leagueIdFromEspnCode(code?: string | null): LeagueId | null {
 /**
  * Map ESPN club team slugs like eng.arsenal → premier-league via eng.1.
  * Country-only slugs (eng, bra) are national sides — do not map to domestic leagues.
+ * Note: `{country}.1` is only a guess for top flight — prefer resolveTeamDomesticLeagueId.
  */
 export function leagueIdFromTeamSlug(slug?: string | null): LeagueId | null {
   if (!slug) return null
@@ -58,6 +67,49 @@ export function leagueIdFromTeamSlug(slug?: string | null): LeagueId | null {
   const prefix = parts[0]?.toLowerCase()
   if (!prefix) return null
   return leagueIdFromEspnCode(`${prefix}.1`)
+}
+
+/**
+ * Resolve a club's true domestic league via ESPN team defaultLeague
+ * (e.g. eng.swansea → Championship eng.2, not Premier League eng.1).
+ */
+export async function resolveTeamDomesticLeagueId(
+  teamId: string | undefined,
+  teamSlug: string | undefined,
+): Promise<LeagueId | null> {
+  const guess = leagueIdFromTeamSlug(teamSlug)
+  if (!teamId) return guess
+
+  const prefix = teamSlug?.split('.')[0]?.toLowerCase()
+  const candidates: LeagueId[] = []
+  if (guess) candidates.push(guess)
+  for (const league of domesticLeagues()) {
+    if (guess && league.id === guess) continue
+    if (prefix && league.espnCode.toLowerCase().startsWith(`${prefix}.`)) {
+      candidates.push(league.id)
+    }
+  }
+
+  for (const leagueId of candidates) {
+    const code = getLeague(leagueId).espnCode
+    try {
+      const res = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/teams/${encodeURIComponent(teamId)}`,
+      )
+      if (!res.ok) continue
+      const data = (await res.json()) as {
+        team?: { id?: string; defaultLeague?: { slug?: string } }
+      }
+      if (!data.team?.id) continue
+      const fromDefault = leagueIdFromEspnCode(data.team.defaultLeague?.slug)
+      if (fromDefault) return fromDefault
+      return leagueId
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return guess
 }
 
 /** Country-only ESPN team slugs (eng, bra) — national sides, not clubs. */
