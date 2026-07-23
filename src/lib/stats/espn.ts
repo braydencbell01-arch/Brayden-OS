@@ -25,6 +25,7 @@ import type {
   TeamRoster,
   TeamRosterGroup,
   TeamRosterPlayer,
+  TeamStatLeaders,
 } from './types'
 
 const STAT_KEYS: Array<{ key: string; label: string }> = [
@@ -812,6 +813,111 @@ export async function fetchLeaguePlayerStatsOverview(
     season,
     seasonLabel: `${season} season`,
     rows,
+    fetchedAt: Date.now(),
+  }
+}
+
+/**
+ * Top players on a club for each meaningful season stat (goals, assists, shots, cards, saves, …).
+ * Filters ESPN core league leaders down to the requested team.
+ */
+export async function fetchTeamStatLeaders(
+  leagueId: LeagueId,
+  teamId: string,
+  limit = 3,
+): Promise<TeamStatLeaders> {
+  const league = getLeague(leagueId)
+  const nowYear = new Date().getUTCFullYear()
+  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+  const perCategoryCap = Math.max(1, Math.min(limit, 8))
+
+  let payload: EspnCoreLeadersResponse | null = null
+  let season = nowYear
+
+  for (const year of yearsToTry) {
+    const url = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`,
+    )
+    url.searchParams.set('limit', '200')
+    const res = await fetch(url)
+    if (!res.ok) continue
+    const data = (await res.json()) as EspnCoreLeadersResponse
+    if (!data.categories?.length) continue
+    payload = data
+    season = year
+    break
+  }
+
+  if (!payload?.categories?.length) {
+    throw new Error(`No ${league.name} player stats available yet`)
+  }
+
+  const byName = new Map(
+    payload.categories
+      .filter((category) => category.name)
+      .map((category) => [category.name as string, category]),
+  )
+
+  const selected = PLAYER_STAT_CATEGORY_ORDER.map((name) => byName.get(name)).filter(
+    (category): category is NonNullable<typeof category> => Boolean(category?.leaders?.length),
+  )
+
+  const teamLeadersByCategory = selected.map((category) => {
+    const forTeam = (category.leaders ?? [])
+      .filter((leader) => idFromCoreRef(leader.team?.$ref, 'teams') === teamId)
+      .filter((leader) => {
+        const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
+        return value > 0
+      })
+      .slice(0, perCategoryCap)
+    return { category, leaders: forTeam }
+  }).filter((entry) => entry.leaders.length > 0)
+
+  if (teamLeadersByCategory.length === 0) {
+    throw new Error(`No stat leaders available for this club yet`)
+  }
+
+  const athleteRefs = new Map<string, string>()
+  for (const { leaders } of teamLeadersByCategory) {
+    for (const leader of leaders) {
+      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
+      if (athleteId && leader.athlete?.$ref) athleteRefs.set(athleteId, leader.athlete.$ref)
+    }
+  }
+
+  const athletes = await Promise.all(
+    [...athleteRefs.entries()].map(async ([id, ref]) => [id, await fetchCoreNamed(ref)] as const),
+  )
+  const athleteById = new Map(athletes)
+
+  const categories: LeaderCategory[] = teamLeadersByCategory.map(({ category, leaders }) => ({
+    id: category.name || 'stat',
+    label: category.displayName || category.shortDisplayName || category.name || 'Stat',
+    kind: 'player' as const,
+    leaders: leaders.map((leader, index) => {
+      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes') || `${category.name}-${index}`
+      const athlete = athleteId ? athleteById.get(athleteId) : null
+      const name = athlete?.displayName || 'Unknown'
+      const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
+      return {
+        rank: index + 1,
+        id: athleteId,
+        name,
+        shortName: athlete?.shortName || athlete?.shortDisplayName || name,
+        jersey: athlete?.jersey,
+        teamId,
+        value,
+        displayValue: String(value),
+      }
+    }),
+  }))
+
+  return {
+    leagueId,
+    teamId,
+    season,
+    seasonLabel: `${season} season`,
+    categories,
     fetchedAt: Date.now(),
   }
 }

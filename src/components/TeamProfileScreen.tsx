@@ -18,12 +18,14 @@ import {
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
+import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
 import { ProfileHeader, ProfileShell } from './ProfileShell'
 import { TeamRosterPanel } from './TeamRosterPanel'
+import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
 
 function FormDot({ result }: { result: TeamFormResult }) {
   const styles =
@@ -75,7 +77,7 @@ export function TeamProfileScreen({
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
-    'upcoming' | 'recent' | 'roster' | null
+    'upcoming' | 'recent' | 'leaders' | 'roster' | null
   >('upcoming')
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const recentScrollRef = useRef<HTMLDivElement>(null)
@@ -83,6 +85,8 @@ export function TeamProfileScreen({
 
   const rosterEnabled = openSection === 'roster'
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
+  const leadersEnabled = openSection === 'leaders'
+  const leaders = useTeamStatLeaders(team.leagueId, team.id, leadersEnabled)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
@@ -104,7 +108,7 @@ export function TeamProfileScreen({
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
 
-  const toggle = (section: 'upcoming' | 'recent' | 'roster') => {
+  const toggle = (section: 'upcoming' | 'recent' | 'leaders' | 'roster') => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -220,7 +224,7 @@ export function TeamProfileScreen({
 
       <div className="mt-6 flex flex-col gap-3">
         <ProfileAccordion
-          title="Upcoming"
+          title="Upcoming Fixtures"
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
         >
@@ -263,8 +267,7 @@ export function TeamProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Recent"
-          subtitle="Scroll for earlier results"
+          title="Past Fixtures"
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
         >
@@ -314,8 +317,21 @@ export function TeamProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
+          title="Stat Leaders"
+          open={openSection === 'leaders'}
+          onToggle={() => toggle('leaders')}
+        >
+          <TeamStatLeadersPanel
+            data={leaders.data}
+            loading={leaders.loading}
+            error={leaders.error}
+            leagueId={team.leagueId}
+            onOpenPlayer={onOpenPlayer}
+          />
+        </ProfileAccordion>
+
+        <ProfileAccordion
           title="Roster"
-          subtitle="Full squad by position"
           open={openSection === 'roster'}
           onToggle={() => toggle('roster')}
         >
