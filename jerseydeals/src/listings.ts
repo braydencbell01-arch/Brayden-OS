@@ -190,3 +190,113 @@ export function isSquareCatalog(catalog: ListingsPayload | null | undefined) {
   return catalog?.source === 'square' || Boolean(catalog?.listings?.some((l) => l.source === 'square'))
 }
 
+
+/** Clubs / nations we can detect from listing titles (longer names first). */
+export const CLUB_CATALOG = [
+  { id: 'manchester-city', name: 'Manchester City', pattern: /manchester\s*city|\bman\s*city\b|\bmcfc\b/i },
+  { id: 'manchester-united', name: 'Manchester United', pattern: /manchester\s*united|\bman\s*utd\b|\bmufc\b/i },
+  { id: 'paris-saint-germain', name: 'Paris Saint-Germain', pattern: /paris\s*saint[-\s]?germain|\bpsg\b/i },
+  { id: 'inter-miami', name: 'Inter Miami', pattern: /inter\s*miami\b/i },
+  { id: 'ac-milan', name: 'AC Milan', pattern: /\bac\s*milan\b/i },
+  { id: 'borussia-dortmund', name: 'Borussia Dortmund', pattern: /borussia\s*dortmund|\bdortmund\b|\bbvb\b/i },
+  { id: 'tottenham', name: 'Tottenham', pattern: /tottenham(?:\s*hotspur)?|\bspurs\b/i },
+  { id: 'liverpool', name: 'Liverpool', pattern: /liverpool(?:\s*fc)?|\blfc\b/i },
+  { id: 'real-madrid', name: 'Real Madrid', pattern: /real\s*madrid|\brma\b/i },
+  { id: 'barcelona', name: 'Barcelona', pattern: /fc\s*barcelona|\bbarcelona\b|\bbarca\b|\bfcb\b/i },
+  { id: 'chelsea', name: 'Chelsea', pattern: /chelsea(?:\s*fc)?|\bcfc\b/i },
+  { id: 'ajax', name: 'Ajax', pattern: /ajax(?:\s*amsterdam)?/i },
+  { id: 'germany', name: 'Germany', pattern: /germany(?:\s*national)?|\bdfb\b/i },
+  { id: 'syracuse', name: 'Syracuse', pattern: /syracuse(?:\s*orange)?/i },
+  { id: 'arsenal', name: 'Arsenal', pattern: /arsenal(?:\s*fc)?/i },
+  { id: 'bayern', name: 'Bayern Munich', pattern: /bayern(?:\s*munich)?/i },
+  { id: 'juventus', name: 'Juventus', pattern: /juventus|\bjuve\b/i },
+  { id: 'newcastle', name: 'Newcastle', pattern: /newcastle(?:\s*united)?/i },
+  { id: 'spain', name: 'Spain', pattern: /\bspain(?:\s*national)?\b|\bla\s*roja\b/i },
+  { id: 'argentina', name: 'Argentina', pattern: /\bargentina\b|\balbiceleste\b/i },
+  { id: 'mexico', name: 'Mexico', pattern: /\bmexico\b|\bel\s*tri\b/i },
+  { id: 'usa', name: 'USA', pattern: /\busa\b|united\s*states|\busmnt\b/i },
+] as const
+
+export type ClubInfo = {
+  id: string
+  name: string
+  count: number
+  image: string
+  sample: Listing
+}
+
+export function inferClub(title: string): { id: string; name: string } | null {
+  for (const club of CLUB_CATALOG) {
+    if (club.pattern.test(title)) return { id: club.id, name: club.name }
+  }
+  return null
+}
+
+export function clubsInStock(listings: Listing[]): ClubInfo[] {
+  const map = new Map<string, ClubInfo>()
+  for (const item of listings) {
+    const club = inferClub(item.title)
+    if (!club) continue
+    const existing = map.get(club.id)
+    if (existing) {
+      existing.count += 1
+      continue
+    }
+    map.set(club.id, {
+      id: club.id,
+      name: club.name,
+      count: 1,
+      image: item.image,
+      sample: item,
+    })
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
+
+export function isAdultListing(item: Listing) {
+  if (isYouthListing(item)) return false
+  return /\bmen'?s\b|\bwomen'?s\b/i.test(item.title) || item.tag === 'Jerseys' || item.tag === 'Training'
+}
+
+export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' | 'Training' | 'Other' {
+  const t = item.title
+  if (/pre-?match/i.test(t)) return 'Pre-match'
+  if (/\btraining\b|\bstrike\b/i.test(t)) return 'Training'
+  if (/\bthird\b/i.test(t)) return 'Third'
+  if (/\baway\b/i.test(t)) return 'Away'
+  if (/\bhome\b/i.test(t)) return 'Home'
+  if (item.tag === 'Training') return 'Training'
+  return 'Other'
+}
+
+export function pickTrending(listings: Listing[], count = 8) {
+  const sale = listings.filter((item) => isSaleListing(item))
+  const rest = listings.filter((item) => !isSaleListing(item))
+  const mixed: Listing[] = []
+  const used = new Set<string>()
+  const push = (item: Listing | undefined) => {
+    if (!item || used.has(item.id)) return
+    mixed.push(item)
+    used.add(item.id)
+  }
+  // Prefer variety: sale + brand spread + newest
+  for (const item of sale) {
+    push(item)
+    if (mixed.length >= Math.min(3, count)) break
+  }
+  for (const brand of ['Nike', 'Adidas', 'Puma']) {
+    push(rest.find((item) => item.brand === brand))
+    if (mixed.length >= count) break
+  }
+  for (const item of listings) {
+    push(item)
+    if (mixed.length >= count) break
+  }
+  return mixed.slice(0, count)
+}
+
+export function listingsMatchingClub(listings: Listing[], clubId: string) {
+  const club = CLUB_CATALOG.find((entry) => entry.id === clubId)
+  if (!club) return []
+  return listings.filter((item) => club.pattern.test(item.title))
+}

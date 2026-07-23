@@ -23,4 +23,11 @@ export const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_ID as string | undefin
 export const SALE_HEADLINE = 'Shop the sale'
 export const SALE_URGENCY = 'Under $25 · while stock lasts'
 
+/** Top promo bar — matches soccer retail announcement strips. */
+export const PROMO_BAR =
+  'Live kits · Ships from US inventory · Sale rack under $25 · Secure Square checkout'
+
 export const FAMILY_NOTE = 'Family-run shop — real photos, sizes, and shipping from our inventory.'
+
+/** Newsletter incentive copy (mailto signup — no backend list). */
+export const NEWSLETTER_INCENTIVE = 'Be first on restocks & sale drops'
