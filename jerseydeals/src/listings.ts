@@ -159,16 +159,28 @@ export function sortSizes(sizes: string[]) {
   })
 }
 
+function resolveListingImageUrl(url: string): string {
+  const trimmed = url.trim()
+  if (!trimmed) return trimmed
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) return trimmed
+  const base = import.meta.env.BASE_URL || '/'
+  return `${base}${trimmed.replace(/^\//, '')}`
+}
+
 export function listingImages(item: Listing): string[] {
   const fromArray = (item.images || []).filter(Boolean)
+  let urls: string[]
   if (fromArray.length > 0) {
     // Main/cover image first, then the rest left-to-right.
     if (item.image && fromArray[0] !== item.image) {
-      return [item.image, ...fromArray.filter((url) => url !== item.image)]
+      urls = [item.image, ...fromArray.filter((url) => url !== item.image)]
+    } else {
+      urls = fromArray
     }
-    return fromArray
+  } else {
+    urls = item.image ? [item.image] : []
   }
-  return item.image ? [item.image] : []
+  return urls.map(resolveListingImageUrl)
 }
 
 export function listingSearchText(item: Listing) {
@@ -246,7 +258,7 @@ export function clubsInStock(listings: Listing[]): ClubInfo[] {
       id: club.id,
       name: club.name,
       count: 1,
-      image: item.image,
+      image: resolveListingImageUrl(item.image),
       sample: item,
     })
   }

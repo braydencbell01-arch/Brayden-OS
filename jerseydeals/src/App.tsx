@@ -45,6 +45,53 @@ import {
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
+const FALLBACK_IMAGE = asset('product-home.jpg')
+
+type AudienceFilter = 'All' | 'Adult' | 'Youth'
+
+function SafeImage({
+  src,
+  alt,
+  className,
+  loading,
+  decoding,
+  draggable,
+}: {
+  src: string
+  alt: string
+  className?: string
+  loading?: 'eager' | 'lazy'
+  decoding?: 'async' | 'auto' | 'sync'
+  draggable?: boolean
+}) {
+  const [failed, setFailed] = useState(false)
+  if (failed || !src) {
+    return (
+      <div
+        className={`flex items-center justify-center bg-gradient-to-br from-navy-deep to-navy ${className ?? ''}`}
+        aria-hidden={alt ? undefined : true}
+        role={alt ? 'img' : undefined}
+        aria-label={alt || undefined}
+      >
+        <span className="px-4 text-center font-display text-lg uppercase tracking-wide text-white/55">
+          Photo unavailable
+        </span>
+      </div>
+    )
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading={loading}
+      decoding={decoding}
+      draggable={draggable}
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 const ease = [0.22, 1, 0.36, 1] as const
 
 const BRAND_MARQUEE = [
@@ -139,7 +186,6 @@ const FAQ = [
 
 function ProductGallery({
   item,
-  tone = 'dark',
 }: {
   item: Listing
   tone?: 'dark' | 'light'
@@ -158,7 +204,7 @@ function ProductGallery({
 
   if (photos.length === 0) {
     return (
-      <div className="flex h-full min-h-[100%] items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
         <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
       </div>
     )
@@ -180,10 +226,10 @@ function ProductGallery({
       >
         {photos.map((src, index) => (
           <div key={`${item.id}-${index}`} className="relative h-full min-w-full shrink-0 snap-center">
-            <img
+            <SafeImage
               src={src}
               alt={index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`}
-              className="h-full w-full object-cover select-none"
+              className="h-full w-full object-cover object-top select-none"
               loading={index === 0 ? 'eager' : 'lazy'}
               decoding="async"
               draggable={false}
@@ -230,11 +276,7 @@ function ProductGallery({
               />
             ))}
           </div>
-          <p
-            className={`pointer-events-none absolute left-3 top-3 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] ${
-              tone === 'dark' ? 'bg-navy-deep/70 text-white' : 'bg-navy-deep/70 text-white'
-            }`}
-          >
+          <p className="pointer-events-none absolute bottom-3 right-3 z-20 bg-navy-deep/70 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
             {active + 1}/{photos.length}
           </p>
         </>
@@ -265,7 +307,7 @@ function ProductLink({
           tone === 'dark' ? '' : ''
         }`}
       >
-        <div className="relative aspect-[3/4] overflow-hidden bg-navy-deep">
+        <div className="relative aspect-square overflow-hidden bg-navy-deep">
           <ProductGallery item={item} tone={tone} />
           {onSale && (
             <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
@@ -282,7 +324,7 @@ function ProductLink({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track('product_click', { id: item.id, tag: item.tag })}
-            className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-12 opacity-0 transition duration-300 group-hover:opacity-100 focus-visible:opacity-100"
+            className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-12 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
           >
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
               Shop →
@@ -353,6 +395,7 @@ export default function App() {
   const [showSticky, setShowSticky] = useState(false)
   const [navSolid, setNavSolid] = useState(false)
   const [tagFilter, setTagFilter] = useState('All')
+  const [audienceFilter, setAudienceFilter] = useState<AudienceFilter>('All')
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
@@ -365,6 +408,15 @@ export default function App() {
     initAnalytics()
     track('page_view', { page: 'landing' })
   }, [])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [menuOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -435,24 +487,28 @@ export default function App() {
   const filtered = useMemo(() => {
     return listings.filter((item) => {
       if (tagFilter !== 'All' && item.tag !== tagFilter) return false
+      if (audienceFilter === 'Adult' && !isAdultListing(item)) return false
+      if (audienceFilter === 'Youth' && !isYouthListing(item)) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
       if (!matchesPriceFilter(item, priceFilter)) return false
       return matchesListingQuery(item, deferredQuery)
     })
-  }, [listings, tagFilter, sizeFilter, brandFilter, priceFilter, deferredQuery])
+  }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, priceFilter, deferredQuery])
 
   const deferredHint = useMemo(() => {
     const q = deferredQuery.trim()
-    if (!q) return `${listings.length} items`
+    if (!q && audienceFilter === 'All') return `${listings.length} items`
+    if (!q) return `${filtered.length} ${audienceFilter.toLowerCase()} item${filtered.length === 1 ? '' : 's'}`
     return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
-  }, [deferredQuery, filtered.length, listings.length])
+  }, [deferredQuery, filtered.length, listings.length, audienceFilter])
 
   function goInventory(next?: {
     tag?: string
     brand?: string
     price?: PriceFilterId
     query?: string
+    audience?: AudienceFilter
     reset?: boolean
     focusSearch?: boolean
   }) {
@@ -462,11 +518,13 @@ export default function App() {
       setPriceFilter('All')
       setQuery('')
       setTagFilter('All')
+      setAudienceFilter('All')
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
     if (next?.price !== undefined) setPriceFilter(next.price)
     if (next?.query !== undefined) setQuery(next.query)
+    if (next?.audience !== undefined) setAudienceFilter(next.audience)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       if (next?.focusSearch) {
@@ -589,9 +647,6 @@ export default function App() {
                 onChange={(e) => {
                   setQuery(e.target.value)
                 }}
-                onFocus={() => {
-                  document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -628,7 +683,7 @@ export default function App() {
         </div>
       </header>
 
-      <main id="top">
+      <main id="top" className={showSticky ? 'pb-20 md:pb-0' : undefined}>
         {/* Hero */}
         <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
@@ -727,7 +782,7 @@ export default function App() {
         </section>
 
         {/* Editorial shop paths */}
-        <section id="shop" className="bg-chalk py-20 md:py-28">
+        <section id="shop" className="scroll-mt-40 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Collections</p>
@@ -836,9 +891,12 @@ export default function App() {
                 className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
               >
                 <img
-                  src={listings[2]?.image || asset('product-home.jpg')}
+                  src={asset('product-home.jpg')}
                   alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
+                  onError={(e) => {
+                    e.currentTarget.src = FALLBACK_IMAGE
+                  }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
                 <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
@@ -874,7 +932,7 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   track('audience_click', { audience: 'mens' })
-                  goInventory({ query: "Men's", reset: true })
+                  goInventory({ audience: 'Adult', reset: true })
                 }}
                 {...fadeUp(reduce, 0.05)}
                 className="group relative min-h-[300px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-white"
@@ -905,7 +963,7 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   track('audience_click', { audience: 'youth' })
-                  goInventory({ tag: 'Youth', reset: true })
+                  goInventory({ audience: 'Youth', reset: true })
                 }}
                 {...fadeUp(reduce, 0.1)}
                 className="group relative min-h-[300px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-white"
@@ -936,7 +994,7 @@ export default function App() {
         </section>
 
         {/* New drops */}
-        <section id="new-drops" className="bg-white py-20 md:py-28">
+        <section id="new-drops" className="scroll-mt-40 bg-white py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
               {...fadeUp(reduce)}
@@ -1052,7 +1110,7 @@ export default function App() {
 
         {/* Training edit */}
         {trainingPicks.length > 0 ? (
-          <section id="training" className="bg-mist py-20 md:py-28">
+          <section id="training" className="scroll-mt-40 bg-mist py-20 md:py-28">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div
                 {...fadeUp(reduce)}
@@ -1085,7 +1143,7 @@ export default function App() {
         ) : null}
 
         {/* Featured */}
-        <section id="featured" className="bg-navy py-20 text-white md:py-28">
+        <section id="featured" className="scroll-mt-40 bg-navy py-20 text-white md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson-hot">Selected</p>
@@ -1212,8 +1270,11 @@ export default function App() {
                         <img
                           src={club.image}
                           alt={club.name}
-                          className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
+                          className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-[1.05]"
                           loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = FALLBACK_IMAGE
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 to-navy-deep/10" />
                       </div>
@@ -1234,7 +1295,7 @@ export default function App() {
         )}
 
         {/* Sale campaign */}
-        <section id="sale" className="relative min-h-[68svh] overflow-hidden bg-navy-deep text-white">
+        <section id="sale" className="relative min-h-[68svh] scroll-mt-40 overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
             <img
               src={asset('category-sale.jpg')}
@@ -1308,9 +1369,9 @@ export default function App() {
             },
             {
               src: asset('product-hoodie.jpg'),
-              label: 'Sideline',
+              label: 'Apparel',
               onClick: () => {
-                track('category_click', { category: 'lookbook_sideline' })
+                track('category_click', { category: 'lookbook_apparel' })
                 goInventory({ tag: 'Apparel', reset: true })
               },
             },
@@ -1360,6 +1421,26 @@ export default function App() {
                 <p className="text-sm text-muted">
                   Use the search bar at the top · {deferredHint}
                 </p>
+
+                <div className="space-y-3">
+                  <p className="eyebrow text-muted">Audience</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(
+                      [
+                        { id: 'All', label: 'All' },
+                        { id: 'Adult', label: "Men's / adult" },
+                        { id: 'Youth', label: 'Youth' },
+                      ] as const
+                    ).map((option) => (
+                      <FilterChip
+                        key={option.id}
+                        label={option.label}
+                        active={audienceFilter === option.id}
+                        onClick={() => setAudienceFilter(option.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
 
                 <div className="space-y-3">
                   <p className="eyebrow text-muted">Type</p>
@@ -1702,7 +1783,7 @@ export default function App() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="bg-chalk py-20 md:py-28">
+        <section id="faq" className="scroll-mt-40 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-3xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)}>
               <p className="eyebrow text-crimson">Support</p>
@@ -1870,11 +1951,13 @@ export default function App() {
                   Size guide
                 </a>
               </li>
-              <li>
-                <a href="#trending" className="hover:text-white">
-                  Trending
-                </a>
-              </li>
+              {trendingPicks.length > 0 ? (
+                <li>
+                  <a href="#trending" className="hover:text-white">
+                    Trending
+                  </a>
+                </li>
+              ) : null}
             </ul>
           </div>
           <div>
