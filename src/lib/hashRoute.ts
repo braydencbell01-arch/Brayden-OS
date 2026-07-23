@@ -66,7 +66,7 @@ export function parseHash(hash: string): HashRoute {
   if (raw.startsWith('fantasy-join=')) {
     return { kind: 'fantasy-join', blobId: decodeURIComponent(raw.slice('fantasy-join='.length)) }
   }
-  if (raw === 'settings' || raw.startsWith('settings')) return { kind: 'settings' }
+  if (raw === 'settings') return { kind: 'settings' }
   if (raw.startsWith('tab=')) {
     const tab = decodeURIComponent(raw.slice(4))
     if (
@@ -112,7 +112,7 @@ export function parseHash(hash: string): HashRoute {
       },
     }
   }
-  if (raw.startsWith('compare')) {
+  if (raw === 'compare' || raw.startsWith('compare=')) {
     const p = parseQs(raw.includes('=') ? raw.slice(raw.indexOf('=') + 1) : '')
     return { kind: 'compare', a: p.a, b: p.b }
   }
