@@ -33,7 +33,11 @@ jobs:
 
       - name: Build Jersey Deals (/jerseydeals/)
         working-directory: jerseydeals
+        env:
+          VITE_SQUARE_STORE_URL: ${{ secrets.VITE_SQUARE_STORE_URL }}
+          VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
         run: |
+          export VITE_SQUARE_STORE_URL="${VITE_SQUARE_STORE_URL:-https://jerseydealsofficial.square.site}"
           npm ci
           npm run build
 
