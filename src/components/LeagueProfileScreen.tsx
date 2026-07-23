@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatMatchDayHeading, toDateKey } from '../lib/dates'
+import { MISSING_SHORT } from '../lib/display'
 import { useToday } from '../lib/useToday'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import type { League } from '../lib/leagues'
@@ -11,9 +12,11 @@ import {
   type Match,
 } from '../lib/matches'
 import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
+import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { FavoriteStar } from './FavoriteStar'
+import { LeagueExpectedGoalsPanel } from './LeagueExpectedGoalsPanel'
 import { LeagueFormTable } from './LeagueFormTable'
 import { LeaguePlayerStatsPanel } from './LeaguePlayerStatsPanel'
 import { LeagueSeasonTimeline } from './LeagueSeasonTimeline'
@@ -74,15 +77,17 @@ export function LeagueProfileScreen({
   )
 
   const [openSection, setOpenSection] = useState<
-    'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | null
+    'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | 'xg' | null
   >(null)
   const statsEnabled = openSection === 'stats'
   const playerStatsEnabled = openSection === 'player-stats'
+  const xgEnabled = openSection === 'xg'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
   const playerStats = useLeaguePlayerStats(league.id, playerStatsEnabled)
+  const expectedGoals = useLeagueExpectedGoals(league.id, xgEnabled)
 
   const toggleSection = (
-    section: 'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats',
+    section: 'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | 'xg',
   ) => {
     setOpenSection((current) => (current === section ? null : section))
   }
@@ -114,7 +119,7 @@ export function LeagueProfileScreen({
       <ProfileMetricsRow>
         <ProfileMetric
           label={isInternational ? 'Teams' : 'Clubs'}
-          value={standings.loading ? '…' : clubCount || '—'}
+          value={standings.loading ? '…' : clubCount || MISSING_SHORT}
         />
         <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
         <ProfileMetric
@@ -139,7 +144,7 @@ export function LeagueProfileScreen({
                 {leader.shortName}
               </button>
             ) : (
-              '—'
+              MISSING_SHORT
             )
           }
         />
@@ -298,6 +303,21 @@ export function LeagueProfileScreen({
             onOpenTeam={onOpenTeam}
           />
         </ProfileAccordion>
+
+        {expectedGoals.supported ? (
+          <ProfileAccordion
+            title="Expected goals"
+            subtitle="xG · xA · club chance quality"
+            open={openSection === 'xg'}
+            onToggle={() => toggleSection('xg')}
+          >
+            <LeagueExpectedGoalsPanel
+              data={expectedGoals.data}
+              loading={expectedGoals.loading}
+              error={expectedGoals.error}
+            />
+          </ProfileAccordion>
+        ) : null}
       </div>
     </ProfileShell>
   )

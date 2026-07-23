@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { MISSING_LONG } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
@@ -22,6 +23,8 @@ import {
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { seasonSnapshotFacts } from '../lib/stats/teamFacts'
+import { teamXgForName } from '../lib/stats/fotmob'
+import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
 import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { useTeamSchedule } from '../lib/stats/useTeamSchedule'
@@ -58,7 +61,6 @@ export function TeamProfileScreen({
   matches,
   loading,
   error,
-  refreshing,
   favorites,
   onBack,
   onOpenTeam,
@@ -71,6 +73,7 @@ export function TeamProfileScreen({
   matches: Match[]
   loading: boolean
   error: string | null
+  /** Kept for callers; earlier-results loading is tracked locally. */
   refreshing?: boolean
   favorites: FavoritesApi
   onBack: () => void
@@ -90,6 +93,7 @@ export function TeamProfileScreen({
     'table' | 'upcoming' | 'recent' | 'roster' | 'leaders' | null
   >(null)
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
+  const [loadingEarlier, setLoadingEarlier] = useState(false)
   const recentScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
 
@@ -98,6 +102,7 @@ export function TeamProfileScreen({
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
   const leaders = useTeamStatLeaders(team.leagueId, team.id, leadersEnabled)
   const schedule = useTeamSchedule(team.id, team.leagueId, true)
+  const expectedGoals = useLeagueExpectedGoals(team.leagueId, !isNational)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
@@ -155,6 +160,28 @@ export function TeamProfileScreen({
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
   const fixturesLoading = loading || schedule.loading
+  const teamXg = useMemo(
+    () =>
+      expectedGoals.data
+        ? teamXgForName(expectedGoals.data.teamsXg, displayName)
+        : null,
+    [expectedGoals.data, displayName],
+  )
+  const teamPlayerXg = useMemo(() => {
+    if (!expectedGoals.data) return []
+    const needle = displayName.toLowerCase()
+    return expectedGoals.data.playersXg
+      .filter((row) => {
+        const teamName = (row.teamName || '').toLowerCase()
+        return (
+          teamName === needle ||
+          teamName.includes(needle) ||
+          needle.includes(teamName) ||
+          teamName.replace(/^afc\s+|^fc\s+/, '').includes(needle.replace(/^afc\s+|^fc\s+/, ''))
+        )
+      })
+      .slice(0, 5)
+  }, [expectedGoals.data, displayName])
 
   const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster' | 'leaders') => {
     setOpenSection((current) => (current === section ? null : section))
@@ -163,11 +190,13 @@ export function TeamProfileScreen({
   const loadEarlierResults = useCallback(() => {
     if (!onNeedPastRange || loadingMoreRef.current) return
     loadingMoreRef.current = true
+    setLoadingEarlier(true)
     const next = pastHorizonDays + CALENDAR_PAST_CHUNK_DAYS
     setPastHorizonDays(next)
     const today = startOfDay(new Date())
     void Promise.resolve(onNeedPastRange(addDays(today, -next), today)).finally(() => {
       loadingMoreRef.current = false
+      setLoadingEarlier(false)
     })
   }, [onNeedPastRange, pastHorizonDays])
 
@@ -199,7 +228,7 @@ export function TeamProfileScreen({
         `${club.trophyCount}${club.trophySource ? ' · major titles' : ''}`,
       ])
     } else if (!isNational && !facts.loading) {
-      rows.push(['Trophies', 'Not listed'])
+      rows.push(['Trophies', MISSING_LONG])
     }
 
     if (club?.standingSummary) {
@@ -216,6 +245,15 @@ export function TeamProfileScreen({
       rows.push(['Away', formatSideRecord(homeAway.away)])
     }
 
+    if (teamXg) {
+      rows.push(['xG for', teamXg.xg.toFixed(1)])
+      if (teamXg.goals != null) rows.push(['Goals vs xG', String(teamXg.goals)])
+      if (teamXg.overperformance != null) {
+        const delta = teamXg.overperformance
+        rows.push(['G − xG', `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`])
+      }
+    }
+
     return rows
   }, [
     facts.data,
@@ -225,6 +263,7 @@ export function TeamProfileScreen({
     league.country,
     league.name,
     standing,
+    teamXg,
   ])
 
   return (
@@ -368,6 +407,28 @@ export function TeamProfileScreen({
             ) : null}
           </div>
         ) : null}
+
+        {teamPlayerXg.length > 0 ? (
+          <div className="mt-5 border border-white/10 bg-white/[0.03] px-3.5 py-3">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+              Squad xG leaders
+            </p>
+            <ul className="mt-2 flex flex-col gap-1.5">
+              {teamPlayerXg.map((row) => (
+                <li
+                  key={row.fotmobPlayerId}
+                  className="flex items-baseline justify-between gap-3 text-sm"
+                >
+                  <span className="min-w-0 truncate font-semibold text-cream">{row.name}</span>
+                  <span className="shrink-0 tabular-nums text-lime">
+                    {row.xg.toFixed(1)} xG
+                    {row.goals != null ? ` · ${row.goals} G` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -473,10 +534,10 @@ export function TeamProfileScreen({
                 <button
                   type="button"
                   onClick={loadEarlierResults}
-                  disabled={refreshing || !onNeedPastRange}
+                  disabled={loadingEarlier || !onNeedPastRange}
                   className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
                 >
-                  {refreshing
+                  {loadingEarlier
                     ? 'Loading earlier…'
                     : `Load earlier results · ${pastHorizonDays}+ days`}
                 </button>

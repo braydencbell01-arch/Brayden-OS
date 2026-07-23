@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
+import { usePlayerAdvancedExtras } from '../lib/stats/usePlayerAdvancedExtras'
 import { usePlayerCareer } from '../lib/stats/usePlayerCareer'
 import { usePlayerProfile } from '../lib/stats/usePlayerProfile'
 import type {
@@ -150,6 +152,7 @@ function RecentRatingsList({
   leagueId,
   hasMore,
   loadingMore,
+  loadError,
   onLoadMore,
   onOpenTeam,
 }: {
@@ -157,6 +160,7 @@ function RecentRatingsList({
   leagueId: LeagueId
   hasMore: boolean
   loadingMore: boolean
+  loadError: string | null
   onLoadMore: () => void
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
@@ -243,7 +247,21 @@ function RecentRatingsList({
         )
       })}
       <li ref={sentinelRef} className="list-none py-1 text-center text-[11px] text-mist/50">
-        {loadingMore ? 'Loading more ratings…' : hasMore ? 'Scroll for more' : 'End of ratings'}
+        {loadError ? (
+          <button
+            type="button"
+            onClick={onLoadMore}
+            className="text-star underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          >
+            {loadError} · Retry
+          </button>
+        ) : loadingMore ? (
+          'Loading more ratings…'
+        ) : hasMore ? (
+          'Scroll for more'
+        ) : (
+          'End of ratings'
+        )}
       </li>
     </ul>
   )
@@ -343,7 +361,7 @@ function CareerSeasonsPanel({
               style={ratingColorStyle(row.averageRating)}
               title="Average Brayden Rating"
             >
-              {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+              {row.averageRating != null ? row.averageRating.toFixed(1) : MISSING_SHORT}
             </p>
           </li>
         )
@@ -404,13 +422,15 @@ function ClubHistoryList({
                     })
                   }
                 >
-                  {stint.teamName}
+                  {missingShort(stint.teamName)}
                 </ProfileTextLink>
               ) : (
-                <p className="truncate text-sm font-semibold text-cream">{stint.teamName}</p>
+                <p className="truncate text-sm font-semibold text-cream">
+                  {missingShort(stint.teamName)}
+                </p>
               )}
               <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                {stint.seasons}
+                {missingShort(stint.seasons)}
                 {stint.isActive ? (
                   <span className="ml-2 text-lime">Active</span>
                 ) : null}
@@ -516,6 +536,7 @@ export function PlayerProfileScreen({
     loadMoreRatings,
     loadingMoreRatings,
     hasMoreRatings,
+    ratingsMoreError,
   } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<
@@ -534,6 +555,10 @@ export function PlayerProfileScreen({
     profile?.positionAbbrev || player.position,
     openSection === 'career',
     { national: true },
+  )
+  const advanced = usePlayerAdvancedExtras(
+    profile?.name || player.name || null,
+    Boolean(profile),
   )
 
   const favoritePayload: FavoritePlayer = {
@@ -637,20 +662,22 @@ export function PlayerProfileScreen({
                 ? profile.representsNationalTeam
                   ? `Represents ${represents}`
                   : represents
-                : 'Nationality TBD'
+                : missingLong(null)
             }
-            title={profile.name}
+            title={missingShort(profile.name)}
             meta={
               <>
                 {canOpenClub ? (
-                  <ProfileTextLink onClick={openCurrentClub}>{teamName}</ProfileTextLink>
+                  <ProfileTextLink onClick={openCurrentClub}>
+                    {missingShort(teamName)}
+                  </ProfileTextLink>
                 ) : (
-                  teamName || 'Club TBD'
+                  missingLong(teamName)
                 )}
                 {activeClubStint?.isActive ? (
                   <span className="text-mist/55"> · Active</span>
                 ) : null}
-                {positionLabel ? ` · ${positionLabel}` : ''}
+                {` · ${missingShort(positionLabel)}`}
                 {' · '}
                 {onOpenLeague ? (
                   <ProfileTextLink onClick={() => onOpenLeague(player.leagueId)}>
@@ -659,7 +686,7 @@ export function PlayerProfileScreen({
                 ) : (
                   league.short
                 )}
-                {profile.jersey ? ` · #${profile.jersey}` : ''}
+                {profile.jersey ? ` · #${missingShort(profile.jersey)}` : ''}
               </>
             }
           />
@@ -691,6 +718,12 @@ export function PlayerProfileScreen({
             </button>
           ) : null}
 
+          {advanced.data?.injury ? (
+            <p className="mt-3 border border-white/15 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-mist/80">
+              Injury · {advanced.data.injury}
+            </p>
+          ) : null}
+
           <ProfileMetricsRow>
             <ProfileMetric
               label="Avg rating"
@@ -699,7 +732,51 @@ export function PlayerProfileScreen({
                   className={profile.averageRating == null ? 'text-mist/50' : ''}
                   style={ratingColorStyle(profile.averageRating)}
                 >
-                  {profile.averageRating != null ? profile.averageRating.toFixed(1) : '—'}
+                  {profile.averageRating != null
+                    ? profile.averageRating.toFixed(1)
+                    : MISSING_SHORT}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="xG"
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {advanced.loading && advanced.data?.xg == null
+                    ? '…'
+                    : missingShort(
+                        advanced.data?.xg != null ? advanced.data.xg.toFixed(2) : null,
+                      )}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="xA"
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {advanced.loading && advanced.data?.xa == null
+                    ? '…'
+                    : missingShort(
+                        advanced.data?.xa != null ? advanced.data.xa.toFixed(2) : null,
+                      )}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="G − xG"
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {advanced.data?.goalsMinusXg != null
+                    ? `${advanced.data.goalsMinusXg > 0 ? '+' : ''}${advanced.data.goalsMinusXg.toFixed(2)}`
+                    : missingShort(null)}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="Value"
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {missingShort(advanced.data?.marketValue)}
                 </span>
               }
             />
@@ -711,11 +788,11 @@ export function PlayerProfileScreen({
                     className="block truncate text-lg font-semibold leading-8 text-cream"
                     onClick={openCurrentClub}
                   >
-                    {teamName}
+                    {missingShort(teamName)}
                   </ProfileTextLink>
                 ) : (
                   <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                    {teamName || '—'}
+                    {missingShort(teamName)}
                   </span>
                 )
               }
@@ -724,7 +801,7 @@ export function PlayerProfileScreen({
               label="Represents"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {represents || '—'}
+                  {missingShort(represents)}
                 </span>
               }
             />
@@ -732,16 +809,16 @@ export function PlayerProfileScreen({
               label="Position"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {positionLabel || '—'}
+                  {missingShort(positionLabel)}
                 </span>
               }
             />
-            <ProfileMetric label="Age" value={profile.age ?? '—'} />
+            <ProfileMetric label="Age" value={profile.age ?? MISSING_SHORT} />
             <ProfileMetric
               label="Height"
               value={
                 <span className="block text-2xl leading-8 text-cream">
-                  {profile.height || '—'}
+                  {missingShort(profile.height)}
                 </span>
               }
             />
@@ -749,7 +826,7 @@ export function PlayerProfileScreen({
               label="Weight"
               value={
                 <span className="block text-2xl leading-8 text-cream">
-                  {profile.weight || '—'}
+                  {missingShort(profile.weight)}
                 </span>
               }
             />
@@ -789,6 +866,7 @@ export function PlayerProfileScreen({
                   hasMore={hasMoreRatings}
                   loadingMore={loadingMoreRatings}
                   onOpenTeam={onOpenTeam}
+                  loadError={ratingsMoreError}
                   onLoadMore={() => {
                     void loadMoreRatings()
                   }}

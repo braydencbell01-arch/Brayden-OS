@@ -313,6 +313,6 @@ export const RATING_ROADMAP = {
   v0: 'Linear 0–100 performance → rating/10 (26/100 = 2.6); wide action weights',
   v1: 'True per-player minutes from feed (not just match clock)',
   v2: 'Wire chancesCreated + successfulDribbles once a richer feed is connected',
-  v3: 'Blend xG/xA overperformance from FootyStats/Big Balls/API-Football',
+  v3: 'Blend xG/xA overperformance from FotMob (wired on profiles)',
   v4: 'Progressive actions + duel rates from FBref-style weekly enrichment',
 } as const

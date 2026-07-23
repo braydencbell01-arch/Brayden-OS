@@ -5,6 +5,8 @@ import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matche
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
+const EMPTY_ID_SET = new Set<string>()
+
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -148,8 +150,8 @@ export function MatchDayByLeague({
     () => groupMatchesByLeague(matches, favoriteLeagueIds),
     [matches, favoriteLeagueIds],
   )
-  const leagueIds = favoriteLeagueIds ?? new Set<string>()
-  const teamIds = favoriteTeamIds ?? new Set<string>()
+  const leagueIds = favoriteLeagueIds ?? EMPTY_ID_SET
+  const teamIds = favoriteTeamIds ?? EMPTY_ID_SET
 
   const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
   const [openForDate, setOpenForDate] = useState(dateKey)

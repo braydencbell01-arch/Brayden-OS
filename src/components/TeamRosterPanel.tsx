@@ -1,3 +1,4 @@
+import { isMissing, MISSING_LONG, missingShort } from '../lib/display'
 import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
 import type { LeagueId } from '../lib/leagues'
 import type { TeamRoster } from '../lib/stats/types'
@@ -33,7 +34,7 @@ export function TeamRosterPanel({
   }
 
   if (!data || data.groups.length === 0) {
-    return <p className="text-sm text-mist/70">No roster available for this club yet.</p>
+    return <p className="text-sm text-mist/70">{MISSING_LONG}</p>
   }
 
   return (
@@ -57,7 +58,9 @@ export function TeamRosterPanel({
                 shortName: player.shortName,
                 photoUrl: player.photoUrl,
                 jersey: player.jersey,
-                position: player.positionAbbrev !== '—' ? player.positionAbbrev : player.positionLabel,
+                position: !isMissing(player.positionAbbrev)
+                  ? player.positionAbbrev
+                  : player.positionLabel,
                 leagueId,
                 teamId,
                 teamName,
@@ -98,7 +101,7 @@ export function TeamRosterPanel({
                       size="sm"
                     />
                     <span className="w-8 shrink-0 font-display text-lg tracking-wide text-mist/70 tabular-nums">
-                      {player.jersey || '—'}
+                      {missingShort(player.jersey)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span
@@ -106,14 +109,14 @@ export function TeamRosterPanel({
                           clickable ? 'profile-link text-cream' : 'text-cream'
                         }`}
                       >
-                        {player.name}
+                        {missingShort(player.name)}
                       </span>
                       <span className="block truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-                        {player.positionLabel}
+                        {missingShort(player.positionLabel)}
                       </span>
                     </span>
                     <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-lime/80">
-                      {player.positionAbbrev !== '—' ? player.positionAbbrev : ''}
+                      {missingShort(player.positionAbbrev)}
                     </span>
                   </button>
                   <FavoriteStar

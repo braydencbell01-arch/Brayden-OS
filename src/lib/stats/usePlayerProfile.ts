@@ -10,6 +10,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   const [error, setError] = useState<string | null>(null)
   const [loadingMoreRatings, setLoadingMoreRatings] = useState(false)
   const [hasMoreRatings, setHasMoreRatings] = useState(false)
+  const [ratingsMoreError, setRatingsMoreError] = useState<string | null>(null)
   const requestId = useRef(0)
   const ratingsCursor = useRef<PlayerRatingsCursor | null>(null)
   const loadMoreLock = useRef(false)
@@ -18,6 +19,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     const req = ++requestId.current
     setLoading(true)
     setError(null)
+    setRatingsMoreError(null)
     setHasMoreRatings(false)
     ratingsCursor.current = null
     try {
@@ -42,6 +44,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
 
     loadMoreLock.current = true
     setLoadingMoreRatings(true)
+    setRatingsMoreError(null)
     const req = requestId.current
     try {
       const league = getLeague(leagueId)
@@ -69,7 +72,9 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
         })
       }
     } catch {
-      // Keep what we have; user can scroll again.
+      if (requestId.current === req) {
+        setRatingsMoreError('Could not load more ratings')
+      }
     } finally {
       loadMoreLock.current = false
       if (requestId.current === req) setLoadingMoreRatings(false)
@@ -81,6 +86,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       requestId.current += 1
       setProfile(null)
       setError(null)
+      setRatingsMoreError(null)
       setLoading(false)
       setHasMoreRatings(false)
       ratingsCursor.current = null
@@ -98,5 +104,6 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     loadMoreRatings,
     loadingMoreRatings,
     hasMoreRatings,
+    ratingsMoreError,
   }
 }

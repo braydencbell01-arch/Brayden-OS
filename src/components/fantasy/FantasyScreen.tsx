@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { MISSING_SHORT } from '../../lib/display'
 import { snakeMemberForPick, totalDraftPicks } from '../../lib/fantasy/draft'
 import { suggestStartersDetailed } from '../../lib/fantasy/lineup'
 import { standingsRank } from '../../lib/fantasy/schedule'
@@ -44,7 +45,7 @@ function useNow(intervalMs = 1000): number {
 
 function useClockLabel(deadlineAt: number | undefined): string {
   const now = useNow(250)
-  if (!deadlineAt) return '--'
+  if (!deadlineAt) return MISSING_SHORT
   const left = Math.max(0, Math.ceil((deadlineAt - now) / 1000))
   const m = Math.floor(left / 60)
   const s = left % 60
@@ -96,6 +97,18 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
     { id: 'standings', label: 'Table', hidden: draftPhase },
     { id: 'bracket', label: 'Bracket', hidden: league.playoffs.length === 0 },
   ]
+
+  useEffect(() => {
+    const hidden =
+      (!draftPhase && tab === 'draft') ||
+      (draftPhase &&
+        (tab === 'matchup' ||
+          tab === 'waivers' ||
+          tab === 'trades' ||
+          tab === 'standings')) ||
+      (league.playoffs.length === 0 && tab === 'bracket')
+    if (hidden) setTab(defaultTab(league))
+  }, [league, tab, draftPhase])
 
   return (
     <FantasyShell reduce={reduce}>
@@ -156,6 +169,7 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
   const league = fantasy.activeLeague!
   const isCommish = fantasy.me?.isCommissioner
   const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState<string | null>(null)
 
   return (
     <div className="space-y-5">
@@ -171,17 +185,25 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
             {league.syncBlobId}
           </p>
         ) : null}
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <FantasyButton
             onClick={() => {
-              void navigator.clipboard.writeText(shareInviteText(league)).then(() => {
-                setCopied(true)
-                window.setTimeout(() => setCopied(false), 1500)
-              })
+              setCopyError(null)
+              const text = shareInviteText(league)
+              void navigator.clipboard
+                .writeText(text)
+                .then(() => {
+                  setCopied(true)
+                  window.setTimeout(() => setCopied(false), 1500)
+                })
+                .catch(() => {
+                  setCopyError('Clipboard blocked — copy the code above manually.')
+                })
             }}
           >
             {copied ? 'Copied' : 'Share invite'}
           </FantasyButton>
+          {copyError ? <p className="text-xs text-star">{copyError}</p> : null}
         </div>
       </section>
 
@@ -959,7 +981,8 @@ function RosterSection({
                   {id === flexId ? <span className="ml-2 text-[10px] text-lime">FLEX</span> : null}
                 </p>
                 <p className="text-[11px] text-mist/50">
-                  Week {p?.weekProjection.toFixed(1) ?? '--'} - Season {p?.seasonProjection.toFixed(0) ?? '--'}
+                  Week {p?.weekProjection.toFixed(1) ?? MISSING_SHORT} - Season{' '}
+                  {p?.seasonProjection.toFixed(0) ?? MISSING_SHORT}
                   {p?.status && p.status !== 'a' ? ` - status ${p.status}` : ''}
                 </p>
               </div>
@@ -1331,11 +1354,14 @@ function TradeCard({ trade, fantasy, now }: { trade: TradeOffer; fantasy: Fantas
         {from?.name} -&gt; {to?.name} <span className="text-xs text-mist/50">({trade.status})</span>
       </p>
       <p className="mt-1 text-xs text-mist/60">
-        Offer: {trade.offerPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') || '--'}
+        Offer:{' '}
+        {trade.offerPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') ||
+          MISSING_SHORT}
       </p>
       <p className="text-xs text-mist/60">
         Request:{' '}
-        {trade.requestPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') || '--'}
+        {trade.requestPlayerIds.map((id) => fantasy.playerMap.get(id)?.webName ?? id).join(', ') ||
+          MISSING_SHORT}
       </p>
       {trade.status === 'pending' ? (
         <div className="mt-2 flex gap-2">

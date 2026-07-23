@@ -1,8 +1,9 @@
 import { seriesAggregate } from '../../lib/fantasy/schedule'
+import { MISSING_SHORT } from '../../lib/display'
 import type { FantasyLeague, PlayoffSeries } from '../../lib/fantasy/types'
 
 function managerName(league: FantasyLeague, memberId: string | undefined): string {
-  if (!memberId) return 'TBD'
+  if (!memberId) return MISSING_SHORT
   return league.members.find((m) => m.id === memberId)?.name ?? memberId
 }
 

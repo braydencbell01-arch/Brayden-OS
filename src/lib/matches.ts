@@ -119,14 +119,15 @@ function parseScore(
 function mapCompetitor(comp: EspnCompetitor | undefined, status: MatchStatus): MatchTeam {
   const team = comp?.team
   const rawName = team?.displayName || team?.name
-  const name = rawName && rawName.trim() ? rawName : 'Not available'
+  const name = rawName && rawName.trim() && rawName !== 'TBD' ? rawName.trim() : ''
   const shortRaw = team?.shortDisplayName || team?.abbreviation || team?.name
-  const shortName = shortRaw && shortRaw.trim() && shortRaw !== 'TBD' ? shortRaw : 'Not available'
+  const shortName =
+    shortRaw && shortRaw.trim() && shortRaw !== 'TBD' ? shortRaw.trim() : ''
   return {
-    id: team?.id || name.toLowerCase().replace(/\s+/g, '-'),
-    name: name === 'TBD' ? 'Not available' : name,
-    shortName: shortName === 'TBD' ? 'Not available' : shortName,
-    abbreviation: team?.abbreviation || '—',
+    id: team?.id || (name || shortName || 'unknown').toLowerCase().replace(/\s+/g, '-'),
+    name,
+    shortName: shortName || name,
+    abbreviation: team?.abbreviation?.trim() || '',
     score: parseScore(comp?.score, status),
   }
 }

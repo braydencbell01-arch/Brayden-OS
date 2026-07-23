@@ -37,7 +37,7 @@ export const STAT_FEEDS: StatFeed[] = [
       'Season goal leaders (core API) + athlete game logs',
     ],
     gaps: [
-      'No xG / xA',
+      'xG / xA now filled via FotMob for covered leagues (see fotmob feed)',
       'No chances created / successful dribbles on match player lines (rating placeholders ready)',
       'No progressive passes / carries',
       'No reliable minutes played in match roster payload',
@@ -45,6 +45,26 @@ export const STAT_FEEDS: StatFeed[] = [
       'Unofficial/undocumented endpoints — treat as best-effort',
     ],
     notes: 'Primary feed today. Free, CORS-open, good enough for v1 ratings.',
+  },
+  {
+    id: 'fotmob-xg',
+    name: 'FotMob public data (xG / xA / value)',
+    tier: 'live-now',
+    auth: 'none',
+    updateStyle: 'On-demand when Expected goals / player profile opens',
+    whatWeCanGet: [
+      'Player season xG, xGOT, xA',
+      'Team season xG vs goals',
+      'League xG / xA leaderboards',
+      'Market value estimates',
+      'Injury labels when FotMob has them',
+    ],
+    gaps: [
+      'Coverage is league-dependent (Big 5 + several others)',
+      'Player match is by name search — collisions possible',
+      'Unofficial endpoints — best-effort',
+    ],
+    notes: 'Used for BrayStats Expected goals boards and player advanced metrics.',
   },
   {
     id: 'api-football',

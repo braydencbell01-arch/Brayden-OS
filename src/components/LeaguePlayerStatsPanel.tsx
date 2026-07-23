@@ -1,4 +1,5 @@
 import type { LeagueId } from '../lib/leagues'
+import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
 import type { LeaguePlayerStatsOverview } from '../lib/stats/types'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -80,10 +81,12 @@ export function LeaguePlayerStatsPanel({
                         }
                         className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                       >
-                        {leader.name}
+                        {missingShort(leader.name)}
                       </button>
                     ) : (
-                      <p className="truncate text-sm font-semibold text-cream">{leader.name}</p>
+                      <p className="truncate text-sm font-semibold text-cream">
+                        {missingShort(leader.name)}
+                      </p>
                     )}
                     {leader.teamName ? (
                       teamClickable ? (
@@ -99,17 +102,17 @@ export function LeaguePlayerStatsPanel({
                           }
                           className="profile-link mt-0.5 block max-w-full truncate text-left text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                         >
-                          {leader.teamName}
+                          {missingShort(leader.teamName)}
                         </button>
                       ) : (
                         <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-                          {leader.teamName}
+                          {missingShort(leader.teamName)}
                         </p>
                       )
                     ) : null}
                   </div>
                   <span className="font-display text-xl tracking-wide text-lime tabular-nums">
-                    {leader.displayValue}
+                    {missingShort(leader.displayValue)}
                   </span>
                 </li>
               )

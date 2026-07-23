@@ -64,6 +64,18 @@ export function useLiveBigFiveMatches() {
   const loadedToRef = useRef<Date | null>(null)
   const queueRef = useRef(Promise.resolve())
   const discoveryStartedRef = useRef(false)
+  /** Nested ensureRange / poll / discovery must not clear each other's Syncing… state. */
+  const refreshDepthRef = useRef(0)
+
+  const beginRefresh = useCallback(() => {
+    refreshDepthRef.current += 1
+    setRefreshing(true)
+  }, [])
+
+  const endRefresh = useCallback(() => {
+    refreshDepthRef.current = Math.max(0, refreshDepthRef.current - 1)
+    if (refreshDepthRef.current === 0) setRefreshing(false)
+  }, [])
 
   const fetchAndMerge = useCallback(async (from: Date, to: Date) => {
     const data = await fetchBigFiveWindow(from, to)
@@ -110,7 +122,7 @@ export function useLiveBigFiveMatches() {
 
         if (gaps.length === 0) return
 
-        setRefreshing(true)
+        beginRefresh()
         setError(null)
         try {
           for (const gap of gaps) {
@@ -126,14 +138,14 @@ export function useLiveBigFiveMatches() {
           setError(err instanceof Error ? err.message : 'Could not load fixtures')
           if (!hasLoadedRef.current) setMatches([])
         } finally {
-          setRefreshing(false)
+          endRefresh()
         }
       }
 
       queueRef.current = queueRef.current.then(run, run)
       return queueRef.current
     },
-    [bumpKnownForward, expandLoadedBounds, fetchAndMerge],
+    [beginRefresh, bumpKnownForward, endRefresh, expandLoadedBounds, fetchAndMerge],
   )
 
   const ensureDate = useCallback(
@@ -197,7 +209,7 @@ export function useLiveBigFiveMatches() {
         const to = addDays(today, CORE_FORWARD_REFRESH_DAYS)
 
         if (!silent) setLoading(true)
-        else setRefreshing(true)
+        else beginRefresh()
         setError(null)
 
         try {
@@ -205,12 +217,12 @@ export function useLiveBigFiveMatches() {
           expandLoadedBounds(from, to)
 
           if (!discoveryStartedRef.current) {
-            setRefreshing(true)
+            beginRefresh()
             try {
               await discoverForwardHorizon()
               discoveryStartedRef.current = true
             } finally {
-              setRefreshing(false)
+              endRefresh()
             }
           }
         } catch (err) {
@@ -218,14 +230,14 @@ export function useLiveBigFiveMatches() {
           if (!hasLoadedRef.current) setMatches([])
         } finally {
           setLoading(false)
-          setRefreshing(false)
+          if (silent) endRefresh()
         }
       }
 
       queueRef.current = queueRef.current.then(run, run)
       return queueRef.current
     },
-    [discoverForwardHorizon, expandLoadedBounds, fetchAndMerge],
+    [beginRefresh, discoverForwardHorizon, endRefresh, expandLoadedBounds, fetchAndMerge],
   )
 
   useEffect(() => {
