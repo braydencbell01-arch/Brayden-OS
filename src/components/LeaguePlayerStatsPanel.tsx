@@ -36,8 +36,8 @@ export function LeaguePlayerStatsPanel({
         {data.seasonLabel} · #1 in each category
       </p>
 
-      <ul className="flex flex-col gap-1.5">
-        {data.rows.map((row) => {
+      <ul className="flex flex-col">
+        {data.rows.map((row, index) => {
           const playerClickable = Boolean(
             onOpenPlayer && row.player.id && /^\d+$/.test(row.player.id),
           )
@@ -47,7 +47,9 @@ export function LeaguePlayerStatsPanel({
           return (
             <li
               key={row.categoryId}
-              className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-2.5 sm:grid-cols-[minmax(0,9rem)_1fr_auto]"
+              className={`grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-2 py-2.5 sm:grid-cols-[minmax(0,9rem)_1fr_auto] ${
+                index > 0 ? 'border-t border-white/[0.06]' : ''
+              }`}
             >
               <span className="truncate text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-lime/85">
                 {row.label}

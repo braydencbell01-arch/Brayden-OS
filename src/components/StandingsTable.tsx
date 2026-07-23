@@ -23,9 +23,9 @@ function StandingGroupTable({
   highlightedTeamId?: string
 }) {
   return (
-    <div className="overflow-x-auto border border-white/10">
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
-        <thead className="bg-white/5 text-[0.65rem] uppercase tracking-[0.12em] text-mist/65">
+        <thead className="border-b border-white/10 text-[0.65rem] uppercase tracking-[0.12em] text-mist/65">
           <tr>
             <th className="px-3 py-2 font-semibold">#</th>
             <th className="w-10 px-1 py-2 font-semibold">
@@ -168,13 +168,13 @@ export function StandingsTable({
 
   if (error && rows.length === 0) {
     return (
-      <div className="border border-white/10 bg-white/[0.03] px-3 py-3">
+      <div className="border-t border-white/10 pt-3">
         <p className="text-sm text-mist/80">{error}</p>
         {onRetry ? (
           <button
             type="button"
             onClick={onRetry}
-            className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+            className="mt-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
             Retry
           </button>

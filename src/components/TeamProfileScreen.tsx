@@ -26,7 +26,13 @@ import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
-import { ProfileHeader, ProfileShell } from './ProfileShell'
+import {
+  ProfileFactList,
+  ProfileHeader,
+  ProfileMetric,
+  ProfileMetricsRow,
+  ProfileShell,
+} from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
 import { TeamRosterPanel } from './TeamRosterPanel'
 
@@ -82,8 +88,8 @@ export function TeamProfileScreen({
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
-    'table' | 'upcoming' | 'recent' | 'roster' | null
-  >(null)
+    'about' | 'table' | 'upcoming' | 'recent' | 'roster' | null
+  >('upcoming')
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const recentScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
@@ -123,7 +129,7 @@ export function TeamProfileScreen({
   const displayName = standing?.team || team.name
   const fixturesLoading = loading || (isNational && nationalSchedule.loading)
 
-  const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster') => {
+  const toggle = (section: 'about' | 'table' | 'upcoming' | 'recent' | 'roster') => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -217,10 +223,9 @@ export function TeamProfileScreen({
         title={displayName}
         meta={
           <>
-            {team.shortName}
-            {facts.data?.country ? ` · ${facts.data.country}` : ` · ${league.country}`}
+            {facts.data?.country || league.country}
             {standing
-              ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''} · ${standing.points} pts`
+              ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''}`
               : isNational
                 ? ' · International'
                 : ''}
@@ -228,58 +233,56 @@ export function TeamProfileScreen({
         }
       />
 
-      <section className="mt-6" aria-label="Club facts">
-        {facts.loading && factRows.length <= 2 ? (
-          <p className="text-sm text-mist/70">Loading club facts…</p>
-        ) : null}
+      <ProfileMetricsRow>
+        <ProfileMetric
+          label="Pos"
+          value={standing ? String(standing.rank) : '—'}
+        />
+        <ProfileMetric
+          label="Pts"
+          value={standing ? String(standing.points) : '—'}
+        />
+        <ProfileMetric
+          label="Form"
+          value={
+            form.length === 0 ? (
+              '—'
+            ) : (
+              <span className="inline-flex gap-1" aria-label="Recent form">
+                {form.map((result, index) => (
+                  <FormDot key={`${result}-${index}`} result={result} />
+                ))}
+              </span>
+            )
+          }
+        />
+      </ProfileMetricsRow>
 
-        <dl className="border border-white/10">
-          {factRows.map(([label, value], index) => (
-            <div
-              key={`${label}-${index}`}
-              className={`flex items-baseline justify-between gap-4 px-3.5 py-2.5 ${
-                index > 0 ? 'border-t border-white/8' : ''
-              }`}
-            >
-              <dt className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-                {label}
-              </dt>
-              <dd className="min-w-0 text-right text-sm font-semibold text-cream">{value}</dd>
-            </div>
-          ))}
-        </dl>
+      <div className="mt-6">
+        <ProfileAccordion
+          title="About"
+          open={openSection === 'about'}
+          onToggle={() => toggle('about')}
+        >
+          {facts.loading && factRows.length <= 2 ? (
+            <p className="text-sm text-mist/70">Loading club facts…</p>
+          ) : null}
+          <ProfileFactList
+            rows={factRows.map(([label, value]) => [label, value])}
+          />
+          {facts.error ? (
+            <p className="mt-2 text-xs text-mist/55">Some club details could not be loaded.</p>
+          ) : null}
+          {facts.data?.trophyCount != null && facts.data.trophySource ? (
+            <p className="mt-2 text-[0.65rem] text-mist/45">
+              Trophy total estimated from public records ({facts.data.trophySource}).
+            </p>
+          ) : null}
+          {standing?.note ? <p className="mt-2 text-xs text-mist/60">{standing.note}</p> : null}
+        </ProfileAccordion>
 
-        {facts.error ? (
-          <p className="mt-2 text-xs text-mist/55">Some club details could not be loaded.</p>
-        ) : null}
-        {facts.data?.trophyCount != null && facts.data.trophySource ? (
-          <p className="mt-2 text-[0.65rem] text-mist/45">
-            Trophy total estimated from public records ({facts.data.trophySource}).
-          </p>
-        ) : null}
-
-        {standing?.note ? <p className="mt-2 text-xs text-mist/60">{standing.note}</p> : null}
-
-        <div className="mt-4">
-          <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-            Form
-          </p>
-          {form.length === 0 ? (
-            <p className="text-sm text-mist/70">No finished matches in the loaded window.</p>
-          ) : (
-            <div className="flex gap-1.5" aria-label="Recent form">
-              {form.map((result, index) => (
-                <FormDot key={`${result}-${index}`} result={result} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      <div className="mt-6 flex flex-col gap-3">
         <ProfileAccordion
           title="Table"
-          subtitle={league.name}
           open={openSection === 'table'}
           onToggle={() => toggle('table')}
         >
@@ -323,6 +326,7 @@ export function TeamProfileScreen({
                         </h2>
                         <MatchList
                           matches={dayMatches}
+                          flat
                           onOpenTeam={onOpenTeam}
                           onOpenPlayer={onOpenPlayer}
                           onOpenLeague={onOpenLeague}
@@ -341,7 +345,6 @@ export function TeamProfileScreen({
 
         <ProfileAccordion
           title="Results"
-          subtitle="Scroll for earlier games"
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
         >
@@ -363,6 +366,7 @@ export function TeamProfileScreen({
                     </h2>
                     <MatchList
                       matches={dayMatches}
+                      flat
                       onOpenTeam={onOpenTeam}
                       onOpenPlayer={onOpenPlayer}
                       onOpenLeague={onOpenLeague}
@@ -380,11 +384,11 @@ export function TeamProfileScreen({
                     type="button"
                     onClick={loadEarlierResults}
                     disabled={refreshing}
-                    className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
+                    className="w-full border border-dashed border-white/15 bg-transparent px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
                   >
                     {refreshing
                       ? 'Loading earlier…'
-                      : `Load earlier results · ${pastHorizonDays}+ days`}
+                      : `Load earlier · ${pastHorizonDays}+ days`}
                   </button>
                 </div>
               ) : null}
@@ -394,7 +398,6 @@ export function TeamProfileScreen({
 
         <ProfileAccordion
           title="Squad"
-          subtitle={isNational ? 'Current camp / tournament squad' : 'Full roster by position'}
           open={openSection === 'roster'}
           onToggle={() => toggle('roster')}
         >

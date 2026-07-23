@@ -27,14 +27,16 @@ function LeadersTable({
       <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
         {category.label}
       </p>
-      <ol className="flex flex-col gap-1.5">
-        {category.leaders.map((leader) => {
+      <ol className="flex flex-col">
+        {category.leaders.map((leader, index) => {
           const openPlayer = playerClickable(leader)
           const openTeamName = teamClickable(leader)
           return (
             <li
               key={`${category.id}-${leader.id}`}
-              className="grid grid-cols-[1.5rem_1fr_auto] items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-2"
+              className={`grid grid-cols-[1.5rem_1fr_auto] items-center gap-2 py-2 ${
+                index > 0 ? 'border-t border-white/[0.06]' : ''
+              }`}
             >
               <span className="font-display text-lg tracking-wide text-mist/70 tabular-nums">
                 {leader.rank}

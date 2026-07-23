@@ -54,7 +54,7 @@ export function LeagueProfileScreen({
 
   const [openSection, setOpenSection] = useState<
     'table' | 'fixtures' | 'player-stats' | 'stats' | null
-  >(null)
+  >(() => (league.hasStandings ? 'table' : 'fixtures'))
   const statsEnabled = openSection === 'stats'
   const playerStatsEnabled = openSection === 'player-stats'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
@@ -80,12 +80,7 @@ export function LeagueProfileScreen({
         }
         eyebrow={league.country}
         title={league.name}
-        meta={
-          <>
-            {league.short}
-            {!loading && !error ? ` · ${leagueMatches.length} upcoming games` : ''}
-          </>
-        }
+        meta={league.short}
       />
 
       <ProfileMetricsRow>
@@ -93,7 +88,7 @@ export function LeagueProfileScreen({
           label={isInternational ? 'Teams' : 'Clubs'}
           value={standings.loading ? '…' : clubCount || '—'}
         />
-        <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
+        <ProfileMetric label="Upcoming" value={loading ? '…' : leagueMatches.length} />
         <ProfileMetric
           label="Leader"
           value={
@@ -122,7 +117,7 @@ export function LeagueProfileScreen({
         />
       </ProfileMetricsRow>
 
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6">
         {league.hasStandings ? (
           <ProfileAccordion
             title="Standings"
@@ -178,6 +173,7 @@ export function LeagueProfileScreen({
                         </div>
                         <MatchList
                           matches={dayMatches}
+                          flat
                           onOpenTeam={onOpenTeam}
                           onOpenPlayer={onOpenPlayer}
                           favoriteLeagueIds={favorites.leagueIds}

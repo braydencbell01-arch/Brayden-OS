@@ -15,6 +15,7 @@ import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
 import { ProfileAccordion } from './ProfileAccordion'
 import {
+  ProfileFactList,
   ProfileHeader,
   ProfileMetric,
   ProfileMetricsRow,
@@ -167,15 +168,17 @@ function RecentRatingsList({
   return (
     <ul
       ref={scrollerRef}
-      className="flex max-h-80 flex-col gap-1.5 overflow-y-auto overscroll-contain pr-1"
+      className="flex max-h-80 flex-col overflow-y-auto overscroll-contain pr-1"
     >
-      {rows.map((row) => {
+      {rows.map((row, index) => {
         const goals = repeatIcons(row.goals, SoccerBallIcon, 'goals')
         const assists = repeatIcons(row.assists, CleatIcon, 'assists')
         return (
           <li
             key={row.eventId}
-            className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
+            className={`flex items-center justify-between gap-3 py-2.5 ${
+              index > 0 ? 'border-t border-white/[0.06]' : ''
+            }`}
           >
             <div className="min-w-0 flex-1">
               <p className="text-xs leading-snug text-mist/75">{ratingMatchMeta(row)}</p>
@@ -246,14 +249,16 @@ function CareerSeasonsPanel({
   }
 
   return (
-    <ul className="flex flex-col gap-1.5">
-      {seasons.map((row) => {
+    <ul className="flex flex-col">
+      {seasons.map((row, index) => {
         const leagueId = leagueIdFromEspnCode(row.leagueSlug) || fallbackLeagueId
         const canOpen = Boolean(onOpenTeam && row.clubId && /^\d+$/.test(row.clubId))
         return (
           <li
             key={row.id}
-            className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] items-center gap-2 border border-white/10 px-3 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto]"
+            className={`grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] items-center gap-2 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.3fr)_auto] ${
+              index > 0 ? 'border-t border-white/[0.06]' : ''
+            }`}
           >
             <div className="min-w-0">
               {canOpen ? (
@@ -318,13 +323,15 @@ function ClubHistoryList({
   }
 
   return (
-    <ul className="flex flex-col gap-1.5">
-      {stints.map((stint) => {
+    <ul className="flex flex-col">
+      {stints.map((stint, index) => {
         const canOpen = Boolean(onOpenTeam && stint.teamId && /^\d+$/.test(stint.teamId))
         return (
           <li
             key={`${stint.teamId}-${stint.seasons}`}
-            className="flex items-center gap-3 border border-white/10 px-3 py-2.5"
+            className={`flex items-center gap-3 py-2.5 ${
+              index > 0 ? 'border-t border-white/[0.06]' : ''
+            }`}
           >
             {stint.logoUrl ? (
               <img
@@ -391,8 +398,8 @@ export function PlayerProfileScreen({
   } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
   const [openSection, setOpenSection] = useState<
-    'stats' | 'ratings' | 'career' | 'transfers' | null
-  >(null)
+    'about' | 'stats' | 'ratings' | 'career' | 'transfers' | null
+  >('ratings')
 
   const career = usePlayerCareer(
     profile?.id ?? player.id,
@@ -431,21 +438,50 @@ export function PlayerProfileScreen({
     })
   }
 
-  const toggle = (section: 'stats' | 'ratings' | 'career' | 'transfers') => {
+  const toggle = (section: 'about' | 'stats' | 'ratings' | 'career' | 'transfers') => {
     setOpenSection((current) => (current === section ? null : section))
   }
+
+  const factRows: Array<[string, ReactNode]> = []
+  if (teamName) {
+    factRows.push([
+      'Club',
+      canOpenClub ? (
+        <ProfileTextLink key="club" onClick={openCurrentClub}>
+          {teamName}
+        </ProfileTextLink>
+      ) : (
+        teamName
+      ),
+    ])
+  }
+  if (nationality) factRows.push(['Nationality', nationality])
+  if (positionLabel) factRows.push(['Position', positionLabel])
+  if (profile?.height) factRows.push(['Height', profile.height])
+  if (profile?.weight) factRows.push(['Weight', profile.weight])
+  if (profile?.jersey) factRows.push(['Number', `#${profile.jersey}`])
+  factRows.push([
+    'League',
+    onOpenLeague ? (
+      <ProfileTextLink key="league" onClick={() => onOpenLeague(player.leagueId)}>
+        {league.short}
+      </ProfileTextLink>
+    ) : (
+      league.short
+    ),
+  ])
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce}>
       {loading && !profile ? (
         <p className="text-sm text-mist/70">Loading player…</p>
       ) : error && !profile ? (
-        <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
+        <div className="border-t border-white/10 pt-4">
           <p className="text-sm text-mist/80">{error}</p>
           <button
             type="button"
             onClick={() => void reload(player.leagueId, player.id)}
-            className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+            className="mt-3 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
             Retry
           </button>
@@ -505,59 +541,26 @@ export function PlayerProfileScreen({
                 </span>
               }
             />
-            <ProfileMetric
-              label="Club"
-              value={
-                canOpenClub ? (
-                  <ProfileTextLink
-                    className="block truncate text-lg font-semibold leading-8 text-cream"
-                    onClick={openCurrentClub}
-                  >
-                    {teamName}
-                  </ProfileTextLink>
-                ) : (
-                  <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                    {teamName || '—'}
-                  </span>
-                )
-              }
-            />
-            <ProfileMetric
-              label="Nationality"
-              value={
-                <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {nationality || '—'}
-                </span>
-              }
-            />
+            <ProfileMetric label="Age" value={profile.age ?? '—'} />
             <ProfileMetric
               label="Position"
               value={
-                <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {positionLabel || '—'}
-                </span>
-              }
-            />
-            <ProfileMetric label="Age" value={profile.age ?? '—'} />
-            <ProfileMetric
-              label="Height"
-              value={
-                <span className="block text-2xl leading-8 text-cream">
-                  {profile.height || '—'}
-                </span>
-              }
-            />
-            <ProfileMetric
-              label="Weight"
-              value={
-                <span className="block text-2xl leading-8 text-cream">
-                  {profile.weight || '—'}
+                <span className="block truncate text-[1.35rem] leading-8 text-cream sm:text-[1.65rem]">
+                  {profile.positionAbbrev || positionLabel || '—'}
                 </span>
               }
             />
           </ProfileMetricsRow>
 
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-6">
+            <ProfileAccordion
+              title="About"
+              open={openSection === 'about'}
+              onToggle={() => toggle('about')}
+            >
+              <ProfileFactList rows={factRows} />
+            </ProfileAccordion>
+
             <ProfileAccordion
               title="Season stats"
               subtitle={profile.seasonStatsLabel || undefined}
@@ -569,9 +572,9 @@ export function PlayerProfileScreen({
                   No full-season stats for this league yet.
                 </p>
               ) : (
-                <ul className="grid grid-cols-2 gap-2">
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-white/10 pt-3">
                   {profile.seasonStats.map((stat) => (
-                    <li key={stat.label} className="border border-white/10 px-3 py-2">
+                    <li key={stat.label}>
                       <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
                         {stat.label}
                       </p>
@@ -584,7 +587,6 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Match ratings"
-              subtitle="Brayden Rating · scroll for full history"
               open={openSection === 'ratings'}
               onToggle={() => toggle('ratings')}
             >
@@ -604,7 +606,6 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Career"
-              subtitle="Club · league · matches · goals · assists · avg rating"
               open={openSection === 'career'}
               onToggle={() => toggle('career')}
             >
@@ -619,13 +620,12 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Club history"
-              subtitle="Clubs and international sides"
               open={openSection === 'transfers'}
               onToggle={() => toggle('transfers')}
             >
               <div className="flex flex-col gap-5">
                 <section aria-label="Club transfer history">
-                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                  <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
                     Clubs
                   </p>
                   <ClubHistoryList
@@ -637,7 +637,7 @@ export function PlayerProfileScreen({
                 </section>
 
                 <section aria-label="National team transfer history">
-                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                  <p className="mb-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
                     National team
                   </p>
                   <ClubHistoryList

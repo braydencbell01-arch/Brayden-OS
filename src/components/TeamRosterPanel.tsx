@@ -48,8 +48,8 @@ export function TeamRosterPanel({
             {group.label}
             <span className="ml-2 text-mist/50">{group.players.length}</span>
           </p>
-          <ul className="flex flex-col gap-1.5">
-            {group.players.map((player) => {
+          <ul className="flex flex-col">
+            {group.players.map((player, index) => {
               const clickable = Boolean(onOpenPlayer)
               const favoritePayload: FavoritePlayer = {
                 id: player.id,
@@ -67,7 +67,9 @@ export function TeamRosterPanel({
               return (
                 <li
                   key={player.id}
-                  className="flex items-center gap-1 border border-white/10 bg-white/[0.03] pr-1"
+                  className={`flex items-center gap-1 ${
+                    index > 0 ? 'border-t border-white/[0.06]' : ''
+                  }`}
                 >
                   <button
                     type="button"
