@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
+import { inferClubAbbrev } from './lib/club-abbrev.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
@@ -106,10 +107,12 @@ async function upsertListing(listing, locationId) {
   const itemTempId = `#item_${listing.id}`
   const varTempId = `#var_${listing.id}`
   const variationName = listing.note || listing.size || 'Standard'
+  const abbreviation = inferClubAbbrev(listing.title)
   const description = [
     listing.brand ? `Brand: ${listing.brand}` : '',
     listing.tag ? `Type: ${listing.tag}` : '',
     listing.note ? `Size: ${listing.note}` : '',
+    `POS: ${abbreviation}`,
     listing.url ? `Imported from eBay: ${listing.url}` : '',
   ]
     .filter(Boolean)
@@ -160,6 +163,7 @@ async function upsertListing(listing, locationId) {
                 ...obj.item_data,
                 name: listing.title,
                 description,
+                abbreviation,
                 product_type: 'REGULAR',
               },
             },
@@ -182,6 +186,7 @@ async function upsertListing(listing, locationId) {
                 item_data: {
                   name: listing.title,
                   description,
+                  abbreviation,
                   product_type: 'REGULAR',
                   variations: [
                     {
