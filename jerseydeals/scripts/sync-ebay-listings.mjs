@@ -228,6 +228,7 @@ async function fetchActiveListings() {
         note,
         size,
         brand: inferBrand(title),
+        source: 'ebay',
       })
     }
 
@@ -264,6 +265,7 @@ listings.sort((a, b) => {
 
 const payload = {
   syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+  source: 'ebay',
   seller,
   sellerUrl: `https://www.ebay.com/usr/${seller}`,
   shopUrl: `https://www.ebay.com/sch/i.html?_ssn=${encodeURIComponent(seller)}&_sop=10`,
