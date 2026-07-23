@@ -1,222 +1,150 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { initAnalytics, track } from './analytics'
+import {
+  CONTACT_EMAIL,
+  EBAY_NEWEST_URL,
+  EBAY_SALE_URL,
+  EBAY_SELLER,
+  EBAY_SELLER_URL,
+  EBAY_SHOP_URL,
+  EBAY_YOUTH_URL,
+  FAMILY_NOTE,
+  SALE_HEADLINE,
+  SALE_URGENCY,
+  SQUARE_STORE_URL,
+} from './config'
+import {
+  conditionLabel,
+  formatPrice,
+  isYouthListing,
+  lowestSalePrice,
+  pickFeatured,
+  pickNewDrops,
+  shortTitle,
+  type Listing,
+  type ListingsPayload,
+} from './listings'
 
-type Listing = {
-  id: string
-  title: string
-  price: number | null
-  currency: string
-  url: string
-  image: string
-  quantity: number
-  tag: string
-  note: string
-  size?: string
-  brand?: string
-}
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
-type ListingsPayload = {
-  syncedAt: string
-  seller: string
-  sellerUrl: string
-  shopUrl: string
-  count: number
-  listings: Listing[]
-}
-
-const TAG_ORDER = ['Youth', 'Training', 'Jerseys', 'Court / Sideline', 'Apparel'] as const
-
-const SIZE_ORDER = [
-  'XS',
-  'S',
-  'M',
-  'L',
-  'XL',
-  'XXL',
-  'Youth XS',
-  'Youth S',
-  'Youth M',
-  'Youth L',
-  'Youth XL',
-  'Youth XXL',
-  '9-12 YRS',
-  'Other',
-] as const
-
-const asset = (path: string) =>
-  `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
-
-function formatPrice(price: number | null, currency: string) {
-  if (price == null || Number.isNaN(price)) return 'See listing'
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
-      maximumFractionDigits: 0,
-    }).format(price)
-  } catch {
-    return `$${price}`
-  }
-}
-
-function shortTitle(title: string) {
-  return title
-    .replace(/\b(Men'?s|Women'?s|Youth|Boys|Girls)\b/gi, '')
-    .replace(/\s{2,}/g, ' ')
-    .trim()
-}
-
-function listingSize(item: Listing) {
-  return item.size || item.note || 'Other'
-}
+const ease = [0.22, 1, 0.36, 1] as const
 
 function fadeUp(reduce: boolean | null, delay = 0) {
   return {
-    initial: reduce ? false : { opacity: 0, y: 24 },
+    initial: reduce ? false : { opacity: 0, y: 28 },
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true, amount: 0.25 },
-    transition: { duration: 0.55, delay: reduce ? 0 : delay, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.6, delay: reduce ? 0 : delay, ease },
   }
 }
 
-function pickFeatured(listings: Listing[], limit = 6) {
-  const picked: Listing[] = []
-  const used = new Set<string>()
-  for (const tag of TAG_ORDER) {
-    const hit = listings.find((item) => item.tag === tag && !used.has(item.id))
-    if (hit) {
-      picked.push(hit)
-      used.add(hit.id)
-    }
-    if (picked.length >= limit) return picked
-  }
-  for (const item of listings) {
-    if (used.has(item.id)) continue
-    picked.push(item)
-    used.add(item.id)
-    if (picked.length >= limit) break
-  }
-  return picked
+function primaryShopUrl(catalog: ListingsPayload | null) {
+  if (SQUARE_STORE_URL) return SQUARE_STORE_URL
+  return catalog?.shopUrl ?? EBAY_SHOP_URL
 }
 
-function sortSizes(sizes: string[]) {
-  return [...sizes].sort((a, b) => {
-    const ai = SIZE_ORDER.indexOf(a as (typeof SIZE_ORDER)[number])
-    const bi = SIZE_ORDER.indexOf(b as (typeof SIZE_ORDER)[number])
-    const av = ai === -1 ? 999 : ai
-    const bv = bi === -1 ? 999 : bi
-    if (av !== bv) return av - bv
-    return a.localeCompare(b)
-  })
+function shopLabel() {
+  return SQUARE_STORE_URL ? 'Enter the storefront' : 'Shop on eBay'
 }
 
-function FilterChip({
-  active,
-  label,
-  onClick,
-  tone = 'light',
-}: {
-  active: boolean
-  label: string
-  onClick: () => void
-  tone?: 'light' | 'dark'
-}) {
-  const base =
-    tone === 'dark'
-      ? active
-        ? 'border-crimson-hot bg-crimson text-white'
-        : 'border-white/20 text-white/75 hover:border-white/45 hover:text-white'
-      : active
-        ? 'border-crimson bg-crimson text-white'
-        : 'border-navy/20 text-navy/75 hover:border-navy/45 hover:text-navy'
+const FAQ = [
+  {
+    q: 'How does sizing work?',
+    a: 'Every listing shows adult or youth size in the title and details. If you are between sizes, size up for training tops and pre-match jerseys.',
+  },
+  {
+    q: 'Are these authentic kits?',
+    a: 'We sell branded club and national kits from our inventory with clear photos. Condition is listed on each item — new or pre-owned when noted.',
+  },
+  {
+    q: 'How do I pay?',
+    a: SQUARE_STORE_URL
+      ? 'Checkout on our Square storefront with card. You can still buy select stock on eBay with eBay buyer protection.'
+      : 'Checkout on eBay with card, PayPal, or other eBay payment options — buyer protection included. A Square direct storefront is coming next.',
+  },
+  {
+    q: 'Where do you ship from?',
+    a: 'Orders ship from our US inventory. Shipping speed and cost are shown at checkout on each listing.',
+  },
+  {
+    q: 'What is your return policy?',
+    a: 'Returns follow the policy on the listing checkout (Square or eBay). Message us before opening a case if something arrives not as described.',
+  },
+]
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-md border px-3 py-1.5 text-sm font-semibold transition ${base}`}
-    >
-      {label}
-    </button>
-  )
-}
-
-function ListingCard({
+function ProductLink({
   item,
-  index,
   reduce,
+  delay,
   tone = 'dark',
 }: {
   item: Listing
-  index: number
   reduce: boolean | null
+  delay: number
   tone?: 'dark' | 'light'
 }) {
-  const isDark = tone === 'dark'
+  const condition = conditionLabel(item.title)
   return (
-    <motion.li {...fadeUp(reduce, Math.min(index, 8) * 0.04)}>
+    <motion.li {...fadeUp(reduce, delay)}>
       <a
         href={item.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`block outline-none focus-visible:ring-2 focus-visible:ring-crimson ${
-          isDark
-            ? 'focus-visible:ring-offset-2 focus-visible:ring-offset-navy'
-            : 'focus-visible:ring-offset-2 focus-visible:ring-offset-chalk'
+        onClick={() => track('product_click', { id: item.id, tag: item.tag })}
+        className={`group block outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
+          tone === 'dark' ? 'focus-visible:ring-offset-navy' : 'focus-visible:ring-offset-chalk'
         }`}
       >
-        <div
-          className={`aspect-[4/5] overflow-hidden ${
-            isDark ? 'bg-black/40 ring-1 ring-white/10' : 'bg-mist ring-1 ring-navy/10'
-          }`}
-        >
+        <div className="aspect-[4/5] overflow-hidden bg-navy-deep">
           {item.image ? (
             <img
               src={item.image}
               alt=""
-              className="h-full w-full object-cover transition duration-500 hover:scale-[1.03]"
-              loading={index < 3 ? 'eager' : 'lazy'}
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              loading="lazy"
             />
           ) : (
-            <div
-              className={`flex h-full items-center justify-center p-6 ${
-                isDark
-                  ? 'bg-gradient-to-br from-navy-deep to-navy'
-                  : 'bg-gradient-to-br from-mist to-chalk'
-              }`}
-            >
-              <span className={`font-comic text-xl ${isDark ? 'text-white/80' : 'text-navy/70'}`}>
-                {item.tag}
-              </span>
+            <div className="flex h-full items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
+              <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
             </div>
           )}
         </div>
         <div className="mt-4">
-          <p
-            className={`text-xs font-semibold uppercase tracking-[0.14em] ${
-              isDark ? 'text-crimson-hot' : 'text-crimson'
-            }`}
-          >
-            {item.tag}
-            {item.brand ? ` · ${item.brand}` : ''}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p
+              className={`text-xs font-semibold uppercase tracking-[0.16em] ${
+                tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
+              }`}
+            >
+              {item.tag}
+            </p>
+            <span
+              className={`text-[0.65rem] font-semibold uppercase tracking-[0.12em] ${
+                tone === 'dark' ? 'text-white/45' : 'text-muted'
+              }`}
+            >
+              {condition}
+            </span>
+          </div>
           <h3
             className={`mt-1 text-lg font-semibold leading-snug ${
-              isDark ? 'text-white' : 'text-navy'
+              tone === 'dark' ? 'text-white' : 'text-navy'
             }`}
           >
             {shortTitle(item.title)}
           </h3>
-          <p className="mt-1 flex items-baseline gap-2">
+          <p className="mt-2 flex items-baseline gap-2">
             <span
               className={`font-display text-3xl font-bold tracking-wide ${
-                isDark ? 'text-white' : 'text-navy'
+                tone === 'dark' ? 'text-white' : 'text-navy'
               }`}
             >
               {formatPrice(item.price, item.currency)}
             </span>
-            <span className={`text-sm ${isDark ? 'text-white/50' : 'text-muted'}`}>{item.note}</span>
+            <span className={`text-sm ${tone === 'dark' ? 'text-white/45' : 'text-muted'}`}>
+              {item.note}
+            </span>
           </p>
         </div>
       </a>
@@ -228,10 +156,15 @@ export default function App() {
   const reduce = useReducedMotion()
   const [catalog, setCatalog] = useState<ListingsPayload | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [tagFilter, setTagFilter] = useState<string>('All')
-  const [sizeFilter, setSizeFilter] = useState<string>('All')
-  const [brandFilter, setBrandFilter] = useState<string>('All')
-  const [query, setQuery] = useState('')
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [email, setEmail] = useState('')
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sent'>('idle')
+  const [showSticky, setShowSticky] = useState(false)
+
+  useEffect(() => {
+    initAnalytics()
+    track('page_view', { page: 'landing' })
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -253,464 +186,350 @@ export default function App() {
     }
   }, [])
 
-  const shopUrl = catalog?.shopUrl ?? 'https://www.ebay.com/usr/jerseydealsofficial'
-  const listings = useMemo(() => catalog?.listings ?? [], [catalog])
-  const featured = useMemo(() => pickFeatured(listings, 6), [listings])
+  useEffect(() => {
+    const onScroll = () => setShowSticky(window.scrollY > window.innerHeight * 0.7)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-  const availableTags = useMemo(() => {
-    const present = new Set(listings.map((item) => item.tag))
-    return TAG_ORDER.filter((tag) => present.has(tag))
+  const shopUrl = primaryShopUrl(catalog)
+  const ebayShop = catalog?.shopUrl ?? EBAY_SHOP_URL
+  const ebaySeller = catalog?.sellerUrl ?? EBAY_SELLER_URL
+  const listings = catalog?.listings ?? []
+  const featured = pickFeatured(listings, 6)
+  const newDrops = pickNewDrops(listings, 3)
+  const saleFloor = lowestSalePrice(listings)
+  const youthCount = listings.filter(isYouthListing).length
+
+  const heroImage = useMemo(() => {
+    return listings[0]?.image || asset('hero-jersey.jpg')
   }, [listings])
 
-  const availableSizes = useMemo(() => {
-    const present = new Set(listings.map(listingSize))
-    return sortSizes([...present])
-  }, [listings])
-
-  const availableBrands = useMemo(() => {
-    const present = [
-      ...new Set(listings.map((item) => item.brand).filter((brand): brand is string => Boolean(brand))),
-    ]
-    return present.sort((a, b) => a.localeCompare(b))
-  }, [listings])
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return listings.filter((item) => {
-      if (tagFilter !== 'All' && item.tag !== tagFilter) return false
-      if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
-      if (brandFilter !== 'All' && item.brand !== brandFilter) return false
-      if (!q) return true
-      return (
-        item.title.toLowerCase().includes(q) ||
-        item.tag.toLowerCase().includes(q) ||
-        (item.brand || '').toLowerCase().includes(q) ||
-        item.note.toLowerCase().includes(q)
-      )
-    })
-  }, [listings, tagFilter, sizeFilter, brandFilter, query])
-
-  function goShop(next?: { tag?: string; size?: string; reset?: boolean }) {
-    if (next?.reset) {
-      setSizeFilter('All')
-      setBrandFilter('All')
-      setQuery('')
-    }
-    if (next?.tag !== undefined) setTagFilter(next.tag)
-    if (next?.size !== undefined) setSizeFilter(next.size)
-    requestAnimationFrame(() => {
-      document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
+  function onEmailSubmit(event: FormEvent) {
+    event.preventDefault()
+    const trimmed = email.trim()
+    if (!trimmed) return
+    track('email_signup_attempt', { has_square: Boolean(SQUARE_STORE_URL) })
+    const subject = encodeURIComponent('Jersey Deals restock alerts')
+    const body = encodeURIComponent(
+      `Please add me to restock / sale alerts.\n\nEmail: ${trimmed}\n`,
+    )
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`
+    setEmailStatus('sent')
   }
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
       <a
-        href="#shop"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
+        href="#featured"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
       >
-        Skip to inventory
+        Skip to featured gear
       </a>
 
-      <header className="relative z-20 border-b border-navy/10 bg-chalk/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 md:px-8">
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 md:px-8">
           <a
             href="#top"
-            className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-navy md:text-2xl"
+            className="font-brand text-lg font-bold uppercase tracking-[0.1em] text-white md:text-xl"
           >
             Jersey Deals
           </a>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="#shop"
-              className="hidden rounded-md border border-navy/20 px-3 py-2 text-sm font-semibold text-navy transition hover:border-navy/40 sm:inline-flex"
-            >
-              Browse inventory
-            </a>
-            <a
-              href={shopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
-            >
-              Shop on eBay
-            </a>
-          </div>
+          <a
+            href={shopUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('cta_click', { place: 'header' })}
+            className="bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+          >
+            {shopLabel()}
+          </a>
         </div>
       </header>
 
       <main id="top">
-        <section className="relative overflow-hidden bg-gradient-to-b from-chalk via-mist to-chalk">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-70"
-            style={{
-              background:
-                'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(200,16,46,0.12), transparent 60%), radial-gradient(ellipse 40% 35% at 100% 40%, rgba(10,22,40,0.08), transparent)',
-            }}
-          />
+        {/* Hero — brand, one headline, one line, CTAs, full-bleed kits */}
+        <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
+          <div className="absolute inset-0" aria-hidden>
+            <motion.img
+              key={heroImage}
+              src={heroImage}
+              alt=""
+              initial={reduce ? false : { scale: 1.08, opacity: 0.65 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: reduce ? 0 : 1.35, ease }}
+              className="h-full w-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/88 to-navy-deep/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/55" />
+          </div>
 
-          <div className="relative mx-auto flex max-w-5xl flex-col items-center px-5 pb-16 pt-10 md:px-8 md:pb-24 md:pt-14">
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-20 pt-24 md:justify-center md:px-8 md:pb-24 md:pt-20">
             <motion.div
-              initial={reduce ? false : { opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-[240px] sm:max-w-[280px] md:max-w-[320px]"
-            >
-              <img
-                src={asset('logo.png')}
-                alt="Jersey Deals logo"
-                className="mx-auto h-auto w-full"
-                width={1024}
-                height={1024}
-              />
-            </motion.div>
-
-            <motion.p
-              initial={reduce ? false : { opacity: 0, y: 16 }}
+              className="max-w-xl"
+              initial={reduce ? false : { opacity: 0.001, y: 22 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: reduce ? 0 : 0.15 }}
-              className="mt-6 max-w-md text-center text-base text-muted md:text-lg"
+              transition={{ duration: 0.7, ease }}
             >
-              Live jerseys and sports attire from our eBay shop — real photos, sizes, and prices.
-            </motion.p>
-
-            <motion.div
-              initial={reduce ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: reduce ? 0 : 0.25 }}
-              className="mt-6 flex flex-wrap items-center justify-center gap-3"
-            >
-              <a
-                href="#shop"
-                className="inline-flex rounded-md bg-crimson px-6 py-3 text-base font-semibold text-white transition hover:bg-crimson-hot"
-              >
-                Browse live inventory
-              </a>
-              <a
-                href={shopUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex rounded-md border border-navy/25 bg-white/60 px-6 py-3 text-base font-semibold text-navy transition hover:border-navy/50"
-              >
-                Open eBay shop
-              </a>
-            </motion.div>
-
-            <div
-              id="categories"
-              className="mt-12 grid w-full max-w-3xl grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6"
-            >
-              {[
-                { label: 'youth apparel', tag: 'Youth' },
-                { label: 'shop the sale', tag: 'All' },
-              ].map((tile, i) => (
-                <motion.button
-                  key={tile.label}
-                  type="button"
-                  onClick={() => goShop({ tag: tile.tag, reset: true })}
-                  initial={reduce ? false : { opacity: 0, y: 28 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.55,
-                    delay: reduce ? 0 : 0.35 + i * 0.1,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="group relative aspect-square w-full bg-black outline-none transition focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
-                  aria-label={tile.label}
+              <p className="font-brand text-4xl font-bold uppercase leading-[1.05] tracking-[0.06em] text-white sm:text-5xl md:text-6xl">
+                Jersey Deals
+              </p>
+              <h1 className="mt-4 font-display text-3xl font-bold uppercase leading-none tracking-wide text-white sm:text-4xl md:text-[2.75rem]">
+                Youth kits &amp; sale jerseys, sold direct.
+              </h1>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-white/75 md:text-lg">
+                Live stock with real photos and sizes — shop our catalog without the marketplace
+                runaround.
+              </p>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <motion.a
+                  href={shopUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track('cta_click', { place: 'hero_primary' })}
+                  whileHover={reduce ? undefined : { scale: 1.02 }}
+                  whileTap={reduce ? undefined : { scale: 0.98 }}
+                  className="inline-flex bg-crimson px-6 py-3.5 text-base font-semibold text-white transition hover:bg-crimson-hot"
                 >
-                  <span className="absolute inset-0 flex items-center justify-center p-4 text-center font-comic text-2xl font-bold lowercase text-white sm:text-3xl md:text-4xl">
-                    {tile.label}
-                  </span>
-                  <span className="pointer-events-none absolute inset-0 bg-crimson/0 transition group-hover:bg-crimson/15" />
-                </motion.button>
+                  {shopLabel()}
+                </motion.a>
+                <a
+                  href="#shop"
+                  onClick={() => track('cta_click', { place: 'hero_secondary' })}
+                  className="inline-flex border border-white/35 px-6 py-3.5 text-base font-semibold text-white transition hover:border-white hover:bg-white/5"
+                >
+                  Browse categories
+                </a>
+              </div>
+            </motion.div>
+          </div>
+
+          <a
+            href="#shop"
+            className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-white/55 transition hover:text-white"
+            aria-label="Scroll to shop"
+          >
+            <span className="flex flex-col items-center gap-2">
+              Scroll
+              <motion.span
+                aria-hidden
+                animate={reduce ? undefined : { y: [0, 6, 0] }}
+                transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+                className="block h-6 w-px bg-white/50"
+              />
+            </span>
+          </a>
+        </section>
+
+        {/* Categories */}
+        <section id="shop" className="bg-chalk py-20 md:py-28">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
+              <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                Start shopping
+              </h2>
+              <p className="mt-3 text-lg text-muted">
+                Youth sizes, sale racks, or the full live catalog — pick a path.
+              </p>
+            </motion.div>
+
+            <div className="mt-12 grid gap-4 md:grid-cols-3">
+              {[
+                {
+                  label: 'Youth apparel',
+                  href: EBAY_YOUTH_URL,
+                  image: asset('category-youth.jpg'),
+                  copy:
+                    youthCount > 0
+                      ? `${youthCount} youth listings ready to ship.`
+                      : 'Kids and youth kits sized and ready to ship.',
+                  event: 'category_youth',
+                },
+                {
+                  label: SALE_HEADLINE,
+                  href: EBAY_SALE_URL,
+                  image: asset('category-sale.jpg'),
+                  copy:
+                    saleFloor != null
+                      ? `${SALE_URGENCY} · from ${formatPrice(saleFloor, 'USD')}`
+                      : SALE_URGENCY,
+                  event: 'category_sale',
+                },
+                {
+                  label: 'Full catalog',
+                  href: ebayShop,
+                  image: listings[2]?.image || asset('product-home.jpg'),
+                  copy:
+                    loadState === 'ready' && catalog
+                      ? `${catalog.count} active listings from @${catalog.seller}.`
+                      : 'Every active listing from Jersey Deals.',
+                  event: 'category_all',
+                },
+              ].map((tile, i) => (
+                <motion.a
+                  key={tile.label}
+                  href={tile.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track('category_click', { category: tile.event })}
+                  {...fadeUp(reduce, 0.06 + i * 0.08)}
+                  className="group relative block min-h-[240px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
+                >
+                  <img
+                    src={tile.image}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/55 to-navy/15" />
+                  <div className="relative flex h-full flex-col justify-end p-6 md:p-7">
+                    <p className="font-display text-3xl font-bold uppercase tracking-wide text-white">
+                      {tile.label}
+                    </p>
+                    <p className="mt-2 max-w-sm text-sm text-white/75">{tile.copy}</p>
+                  </div>
+                </motion.a>
               ))}
             </div>
-            <p className="mt-4 text-center text-sm text-muted">
-              {loadState === 'ready' && catalog
-                ? `${catalog.count} active listings from @${catalog.seller}`
-                : loadState === 'loading'
-                  ? 'Loading live inventory…'
-                  : 'Browse inventory below or open the eBay shop.'}
-            </p>
           </div>
         </section>
 
+        {/* New drops */}
+        <section id="new-drops" className="border-y border-navy/10 bg-white py-16 md:py-20">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div
+              {...fadeUp(reduce)}
+              className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+            >
+              <div>
+                <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                  New drops
+                </h2>
+                <p className="mt-2 max-w-xl text-muted">
+                  Fresh from the rack — newest active listings first.
+                </p>
+              </div>
+              <a
+                href={EBAY_NEWEST_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('cta_click', { place: 'new_drops_all' })}
+                className="text-sm font-semibold uppercase tracking-[0.14em] text-crimson hover:text-crimson-hot"
+              >
+                See newest on eBay
+              </a>
+            </motion.div>
+
+            {newDrops.length > 0 ? (
+              <ul className="mt-10 grid gap-8 sm:grid-cols-3">
+                {newDrops.map((item, i) => (
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" />
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-8 text-muted">
+                {loadState === 'loading' ? 'Loading new drops…' : 'New drops appear when listings sync.'}
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Featured */}
         <section id="featured" className="bg-navy py-20 text-white md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div {...fadeUp(reduce)}>
-              <p className="font-display text-lg font-semibold uppercase tracking-[0.18em] text-crimson-hot">
+            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
+              <h2 className="font-display text-4xl font-bold uppercase tracking-wide md:text-6xl">
                 Featured gear
-              </p>
-              <h2 className="mt-2 font-display text-5xl font-bold uppercase tracking-wide md:text-6xl">
-                Live from eBay
               </h2>
-              <p className="mt-3 max-w-xl text-white/70">
-                A quick mix across youth, training, and kits — tap any item to buy on eBay.
+              <p className="mt-3 text-lg text-white/70">
+                Real SKUs from live inventory — tap any kit to buy. Condition noted on each item.
               </p>
             </motion.div>
 
-            {loadState === 'loading' && (
-              <p className="mt-12 text-white/60">Loading listings…</p>
-            )}
+            {loadState === 'loading' && <p className="mt-12 text-white/60">Loading listings…</p>}
 
             {loadState === 'error' && (
               <p className="mt-12 text-white/70">
                 Listings are temporarily unavailable.{' '}
                 <a
-                  href={shopUrl}
+                  href={ebayShop}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-crimson-hot underline-offset-4 hover:text-white"
                 >
                   Open the eBay shop
-                </a>
-                .
-              </p>
-            )}
-
-            {loadState === 'ready' && featured.length === 0 && (
-              <p className="mt-12 text-white/70">
-                No active listings right now.{' '}
-                <a
-                  href={shopUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline decoration-crimson-hot underline-offset-4 hover:text-white"
-                >
-                  Check the eBay shop
                 </a>
                 .
               </p>
             )}
 
             {featured.length > 0 && (
-              <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
-                  <ListingCard key={item.id} item={item} index={i} reduce={reduce} tone="dark" />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} />
                 ))}
               </ul>
             )}
 
             {catalog && catalog.count > featured.length && (
-              <motion.div {...fadeUp(reduce, 0.2)} className="mt-10">
-                <button
-                  type="button"
-                  onClick={() => goShop({ tag: 'All', reset: true })}
-                  className="inline-flex rounded-md border border-white/25 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/5"
-                >
-                  Browse all {catalog.count} listings
-                </button>
-              </motion.div>
-            )}
-          </div>
-        </section>
-
-        <section id="shop" className="relative overflow-hidden bg-chalk py-20 md:py-28">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-60"
-            style={{
-              background:
-                'radial-gradient(ellipse 50% 40% at 0% 0%, rgba(215,40,47,0.08), transparent 55%), radial-gradient(ellipse 45% 35% at 100% 20%, rgba(11,34,63,0.06), transparent)',
-            }}
-          />
-          <div className="relative mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="font-display text-lg font-semibold uppercase tracking-[0.18em] text-crimson">
-                Full inventory
-              </p>
-              <h2 className="mt-2 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                Filter. Find. Buy on eBay.
-              </h2>
-              <p className="mt-3 text-lg text-muted">
-                Every active Jersey Deals listing, searchable by type, size, and brand.
-              </p>
-            </motion.div>
-
-            {loadState === 'ready' && listings.length > 0 && (
-              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
-                <label className="block max-w-xl">
-                  <span className="sr-only">Search inventory</span>
-                  <input
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search club, kit, size…"
-                    className="w-full rounded-md border border-navy/15 bg-white/80 px-4 py-3 text-base text-navy outline-none transition placeholder:text-muted/70 focus:border-crimson/50 focus:ring-2 focus:ring-crimson/20"
-                  />
-                </label>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Type</p>
-                  <div className="flex flex-wrap gap-2">
-                    <FilterChip
-                      label="All"
-                      active={tagFilter === 'All'}
-                      onClick={() => setTagFilter('All')}
-                    />
-                    {availableTags.map((tag) => (
-                      <FilterChip
-                        key={tag}
-                        label={tag}
-                        active={tagFilter === tag}
-                        onClick={() => setTagFilter(tag)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {availableSizes.length > 1 && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                      Size
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <FilterChip
-                        label="All"
-                        active={sizeFilter === 'All'}
-                        onClick={() => setSizeFilter('All')}
-                      />
-                      {availableSizes.map((size) => (
-                        <FilterChip
-                          key={size}
-                          label={size}
-                          active={sizeFilter === size}
-                          onClick={() => setSizeFilter(size)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {availableBrands.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                      Brand
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      <FilterChip
-                        label="All"
-                        active={brandFilter === 'All'}
-                        onClick={() => setBrandFilter('All')}
-                      />
-                      {availableBrands.map((brand) => (
-                        <FilterChip
-                          key={brand}
-                          label={brand}
-                          active={brandFilter === brand}
-                          onClick={() => setBrandFilter(brand)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-sm text-muted">
-                  Showing {filtered.length} of {listings.length}
-                  {catalog?.syncedAt
-                    ? ` · synced ${new Date(catalog.syncedAt).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}`
-                    : ''}
-                </p>
-              </motion.div>
-            )}
-
-            {loadState === 'loading' && (
-              <p className="mt-12 text-muted">Loading inventory…</p>
-            )}
-
-            {loadState === 'error' && (
-              <p className="mt-12 text-muted">
-                Inventory is temporarily unavailable.{' '}
+              <motion.div {...fadeUp(reduce, 0.15)} className="mt-12">
                 <a
-                  href={shopUrl}
+                  href={ebayShop}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  onClick={() => track('cta_click', { place: 'featured_all' })}
+                  className="inline-flex border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/5"
                 >
-                  Open the eBay shop
+                  See all {catalog.count} listings on eBay
                 </a>
-                .
-              </p>
-            )}
-
-            {loadState === 'ready' && filtered.length === 0 && (
-              <p className="mt-12 text-muted">
-                No listings match those filters.{' '}
-                <button
-                  type="button"
-                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
-                  onClick={() => {
-                    setTagFilter('All')
-                    setSizeFilter('All')
-                    setBrandFilter('All')
-                    setQuery('')
-                  }}
-                >
-                  Clear filters
-                </button>
-              </p>
-            )}
-
-            {filtered.length > 0 && (
-              <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((item, i) => (
-                  <ListingCard
-                    key={item.id}
-                    item={item}
-                    index={i}
-                    reduce={reduce}
-                    tone="light"
-                  />
-                ))}
-              </ul>
+              </motion.div>
             )}
           </div>
         </section>
 
+        {/* Trust / buy direct */}
         <section id="buy-direct" className="relative overflow-hidden bg-mist py-20 md:py-28">
           <div
-            className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-crimson/10 blur-3xl"
+            className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-crimson/10 blur-3xl"
             aria-hidden
           />
           <div className="relative mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="font-display text-lg font-semibold uppercase tracking-[0.18em] text-crimson">
-                On eBay now
-              </p>
-              <h2 className="mt-2 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                Same shop. Live inventory.
+              <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                Buy direct. Real inventory.
               </h2>
               <p className="mt-4 text-lg text-muted">
-                Jersey Deals sells on eBay as{' '}
+                {FAMILY_NOTE} We sell as{' '}
                 <a
-                  href={catalog?.sellerUrl ?? shopUrl}
+                  href={ebaySeller}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
                 >
-                  @{catalog?.seller ?? 'jerseydealsofficial'}
+                  @{catalog?.seller ?? EBAY_SELLER}
                 </a>
-                . This page mirrors our active listings so you can browse here and checkout there.
+                {catalog ? ` with ${catalog.count} live listings` : ''}.
+                {SQUARE_STORE_URL
+                  ? ' Pay by card on Square, or shop the same stock on eBay.'
+                  : ' Checkout on eBay today — Square direct payments are next.'}
               </p>
             </motion.div>
 
             <dl className="mt-12 grid gap-10 md:grid-cols-3">
               {[
                 {
-                  dt: 'Live stock',
-                  dd: 'Titles, photos, sizes, and prices sync from our active eBay inventory.',
+                  dt: SQUARE_STORE_URL ? 'Square checkout' : 'Trusted checkout',
+                  dd: SQUARE_STORE_URL
+                    ? 'Pay with card on our Square storefront — money goes to us directly.'
+                    : 'Buy on eBay with buyer protection on the same seller account.',
                 },
                 {
-                  dt: 'Trusted checkout',
-                  dd: 'Buy on eBay with buyer protection — feedback score stays with the same seller account.',
+                  dt: 'Real product detail',
+                  dd: 'Photos, price, size, team, and stock on every listing — no mystery SKUs.',
                 },
                 {
-                  dt: 'Youth + mens',
-                  dd: 'Training tops, pre-match kits, and youth apparel — filter above, then tap through to buy.',
+                  dt: 'Still on eBay',
+                  dd: 'Shop here for curated paths, or open the full eBay catalog anytime.',
                 },
               ].map((item, i) => (
                 <motion.div key={item.dt} {...fadeUp(reduce, i * 0.08)}>
@@ -721,44 +540,156 @@ export default function App() {
                 </motion.div>
               ))}
             </dl>
+
+            {/* Social proof strip */}
+            <motion.div
+              {...fadeUp(reduce, 0.12)}
+              className="mt-14 flex flex-wrap items-baseline gap-x-8 gap-y-3 border-t border-navy/10 pt-8 text-sm text-muted"
+            >
+              <p>
+                <span className="font-display text-3xl font-bold text-navy">
+                  {catalog?.count ?? '—'}
+                </span>{' '}
+                active listings
+              </p>
+              <p>
+                Seller{' '}
+                <a
+                  href={ebaySeller}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-navy hover:text-crimson"
+                >
+                  @{catalog?.seller ?? EBAY_SELLER}
+                </a>
+              </p>
+              <p>Ships from US inventory</p>
+            </motion.div>
           </div>
         </section>
 
-        <section className="bg-crimson py-16 text-white md:py-20">
+        {/* FAQ */}
+        <section id="faq" className="bg-chalk py-20 md:py-28">
+          <div className="mx-auto max-w-3xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)}>
+              <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                Sizing, authenticity &amp; shipping
+              </h2>
+              <p className="mt-3 text-lg text-muted">Straight answers before you checkout.</p>
+            </motion.div>
+
+            <ul className="mt-10 divide-y divide-navy/10 border-y border-navy/10">
+              {FAQ.map((item, index) => {
+                const open = openFaq === index
+                return (
+                  <li key={item.q}>
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => {
+                        setOpenFaq(open ? null : index)
+                        track('faq_toggle', { question: item.q, open: !open })
+                      }}
+                      className="flex w-full items-baseline justify-between gap-4 py-5 text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson"
+                    >
+                      <span className="font-display text-xl font-bold uppercase tracking-wide text-navy md:text-2xl">
+                        {item.q}
+                      </span>
+                      <span className="font-display text-2xl text-crimson" aria-hidden>
+                        {open ? '−' : '+'}
+                      </span>
+                    </button>
+                    {open ? <p className="pb-5 leading-relaxed text-muted">{item.a}</p> : null}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </section>
+
+        {/* Email / restock */}
+        <section id="alerts" className="bg-navy py-20 text-white md:py-24">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div
+              {...fadeUp(reduce)}
+              className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-end"
+            >
+              <div>
+                <h2 className="font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
+                  Restock &amp; sale alerts
+                </h2>
+                <p className="mt-3 max-w-xl text-white/70">
+                  Drop your email and we will add you to restock notes when sale kits and youth sizes
+                  land.
+                </p>
+              </div>
+              <form onSubmit={onEmailSubmit} className="flex flex-col gap-3 sm:flex-row">
+                <label className="sr-only" htmlFor="restock-email">
+                  Email
+                </label>
+                <input
+                  id="restock-email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="you@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="min-w-0 flex-1 border border-white/20 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 outline-none focus:border-crimson"
+                />
+                <button
+                  type="submit"
+                  className="bg-crimson px-5 py-3 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+                >
+                  Get alerts
+                </button>
+              </form>
+            </motion.div>
+            {emailStatus === 'sent' ? (
+              <p className="mt-4 text-sm text-white/65">
+                Your email app should open — send it so we can add you.
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="relative overflow-hidden bg-crimson py-20 text-white md:py-24">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-30"
+            style={{
+              background:
+                'radial-gradient(ellipse 50% 80% at 100% 50%, rgba(11,34,63,0.55), transparent 60%)',
+            }}
+            aria-hidden
+          />
           <motion.div
             {...fadeUp(reduce)}
-            className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-5 md:flex-row md:items-center md:justify-between md:px-8"
+            className="relative mx-auto flex max-w-6xl flex-col items-start gap-8 px-5 md:flex-row md:items-center md:justify-between md:px-8"
           >
             <div>
-              <p className="font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
-                Ready to shop?
+              <p className="font-brand text-3xl font-bold uppercase tracking-[0.06em] md:text-4xl">
+                Jersey Deals
               </p>
-              <p className="mt-2 max-w-md text-white/85">
-                Browse here, then checkout on eBay for every size and listing.
+              <p className="mt-3 max-w-md text-lg text-white/90">
+                Ready to shop? Youth apparel, sale kits, and the full catalog are live.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <a
-                href="#shop"
-                className="inline-flex shrink-0 rounded-md border border-white/30 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/10"
-              >
-                Browse inventory
-              </a>
-              <a
-                href={shopUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex shrink-0 rounded-md bg-navy px-6 py-3 text-base font-semibold text-white transition hover:bg-navy-deep"
-              >
-                Shop on eBay
-              </a>
-            </div>
+            <a
+              href={shopUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('cta_click', { place: 'final' })}
+              className="inline-flex shrink-0 bg-navy px-7 py-3.5 text-base font-semibold text-white transition hover:bg-navy-deep"
+            >
+              {shopLabel()}
+            </a>
           </motion.div>
         </section>
       </main>
 
       <footer className="border-t border-white/10 bg-navy-deep py-10 text-white/60">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 md:flex-row md:items-center md:justify-between md:px-8">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-5 md:flex-row md:items-center md:justify-between md:px-8">
           <div className="flex items-center gap-3">
             <img src={asset('favicon.svg')} alt="" className="h-9 w-9" width={36} height={36} />
             <p className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-white">
@@ -766,17 +697,19 @@ export default function App() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <a href="#shop" className="hover:text-white">
-              Inventory
-            </a>
-            <a
-              href={shopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-white"
-            >
+            <a href={ebayShop} target="_blank" rel="noopener noreferrer" className="hover:text-white">
               eBay shop
             </a>
+            {SQUARE_STORE_URL ? (
+              <a
+                href={SQUARE_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-white"
+              >
+                Square store
+              </a>
+            ) : null}
             <a href={asset('privacy.html')} className="hover:text-white">
               Privacy
             </a>
@@ -784,6 +717,23 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Mobile sticky CTA */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-navy-deep/95 p-3 backdrop-blur md:hidden transition ${
+          showSticky ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
+        }`}
+      >
+        <a
+          href={shopUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track('cta_click', { place: 'sticky_mobile' })}
+          className="flex w-full items-center justify-center bg-crimson px-4 py-3 text-sm font-semibold text-white"
+        >
+          {shopLabel()}
+        </a>
+      </div>
     </div>
   )
 }

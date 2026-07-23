@@ -1,24 +1,28 @@
 # Jersey Deals
 
-Separate storefront landing page for **Jersey Deals** (sibling project to BrayStats in this repo).
+Storefront landing page for **Jersey Deals** (sibling to BrayStats in this repo).
 
-**Permanent live link (always the latest deployed version):**  
-https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+**Live:** https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
 
 ## What’s on the page
 
-- Top-left **Jersey Deals** wordmark (matches logo type)
-- Centered circular logo (`public/logo.png`)
-- Category tiles that jump into on-site inventory filters (youth + full catalog)
-- Featured gear + full filterable inventory from active eBay listings (`public/listings.json`)
+- Full-bleed hero (brand + offer + CTAs)
+- Category paths: youth, sale (under $25), full catalog
+- New drops + featured gear from live `listings.json` (eBay sync)
+- Condition labels, buy-direct trust, FAQ, restock email alerts
+- Sticky mobile shop CTA + lightweight analytics hooks
 - Privacy policy at `/privacy.html` (eBay OAuth / app settings)
 
-## Stack
+## Config
 
-- Vite + React + TypeScript
-- Tailwind CSS v4
-- Framer Motion
-- Fonts: Libre Baskerville, Barlow Condensed, Outfit, Comic Neue
+Edit `src/config.ts` or set env vars when building:
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_SQUARE_STORE_URL` | Square Online storefront URL (when live, CTAs switch to Square) |
+| `VITE_GA_ID` | Optional GA4 measurement ID |
+
+Until Square is set, primary checkout stays on eBay (`@jerseydealsofficial`).
 
 ## Develop
 
