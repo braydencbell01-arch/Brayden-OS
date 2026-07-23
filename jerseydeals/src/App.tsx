@@ -21,7 +21,6 @@ import {
   lowestSalePrice,
   pickFeatured,
   pickNewDrops,
-  pickSaleItems,
   shortTitle,
   sortSizes,
   TAG_ORDER,
@@ -33,21 +32,25 @@ const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-const CLUB_NAMES = [
-  'Inter Miami',
-  'Manchester City',
-  'Paris Saint-Germain',
-  'Manchester United',
-  'AC Milan',
-  'Borussia Dortmund',
-  'Tottenham Hotspur',
-  'Liverpool',
-  'Chelsea',
-  'Real Madrid',
-  'Barcelona',
-  'Germany',
-  'Syracuse',
-] as const
+const BRAND_MARQUEE = [
+  'Nike',
+  'Adidas',
+  'Puma',
+  'Club kits',
+  'National teams',
+  'Youth sizes',
+  'Training',
+  'Pre-match',
+  'Sale rack',
+]
+
+const SERVICE_POINTS = [
+  'Ships from US inventory',
+  'Secure card checkout',
+  'Real product photos',
+  'Adult & youth sizing',
+  'Authentic branded kits',
+]
 
 function fadeUp(reduce: boolean | null, delay = 0) {
   return {
@@ -59,44 +62,35 @@ function fadeUp(reduce: boolean | null, delay = 0) {
 }
 
 function primaryShopUrl(catalog: ListingsPayload | null) {
-  return SQUARE_STORE_URL || catalog?.shopUrl || EBAY_SHOP_URL
+  if (SQUARE_STORE_URL) return SQUARE_STORE_URL
+  if (isSquareCatalog(catalog) && catalog?.shopUrl) return catalog.shopUrl
+  return catalog?.shopUrl ?? EBAY_SHOP_URL
 }
 
-function shopLabel() {
-  return SQUARE_STORE_URL ? 'Shop on Square' : 'Shop now'
-}
-
-function clubsInStock(listings: Listing[]) {
-  const blob = listings.map((item) => item.title).join(' ').toLowerCase()
-  return CLUB_NAMES.filter((club) => blob.includes(club.toLowerCase()))
+function shopLabel(catalog: ListingsPayload | null = null) {
+  if (SQUARE_STORE_URL || isSquareCatalog(catalog)) return 'Shop now'
+  return 'Shop on eBay'
 }
 
 function FilterChip({
   active,
   label,
   onClick,
-  tone = 'light',
 }: {
   active: boolean
   label: string
   onClick: () => void
-  tone?: 'light' | 'dark'
 }) {
-  const base =
-    tone === 'dark'
-      ? active
-        ? 'border-crimson-hot bg-crimson text-white'
-        : 'border-white/25 text-white/75 hover:border-white/50 hover:text-white'
-      : active
-        ? 'border-crimson bg-crimson text-white'
-        : 'border-navy/15 bg-white text-navy/80 hover:border-navy/40 hover:text-navy'
-
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`border px-3.5 py-2 text-sm font-semibold transition ${base}`}
+      className={`border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+        active
+          ? 'border-navy bg-navy text-white'
+          : 'border-navy/15 text-navy/70 hover:border-navy/40 hover:text-navy'
+      }`}
     >
       {label}
     </button>
@@ -140,7 +134,6 @@ function ProductLink({
   tone?: 'dark' | 'light'
 }) {
   const condition = conditionLabel(item.title)
-  const light = tone === 'light'
   return (
     <motion.li {...fadeUp(reduce, delay)}>
       <a
@@ -149,7 +142,7 @@ function ProductLink({
         rel="noopener noreferrer"
         onClick={() => track('product_click', { id: item.id, tag: item.tag })}
         className={`group block outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
-          light ? 'focus-visible:ring-offset-chalk' : 'focus-visible:ring-offset-navy'
+          tone === 'dark' ? 'focus-visible:ring-offset-navy' : 'focus-visible:ring-offset-chalk'
         }`}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-navy-deep">
@@ -157,7 +150,7 @@ function ProductLink({
             <img
               src={item.image}
               alt=""
-              className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+              className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.045]"
               loading="lazy"
             />
           ) : (
@@ -165,33 +158,33 @@ function ProductLink({
               <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
             </div>
           )}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 bg-gradient-to-t from-navy-deep/90 to-transparent p-4 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white">
-              View listing
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 bg-gradient-to-t from-navy-deep/90 to-transparent p-4 opacity-0 transition duration-400 group-hover:translate-y-0 group-hover:opacity-100">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
+              Shop →
             </span>
           </div>
         </div>
         <div className="mt-4">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p
-              className={`text-[0.7rem] font-semibold uppercase tracking-[0.18em] ${
-                light ? 'text-crimson' : 'text-crimson-hot'
+              className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${
+                tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
               }`}
             >
               {item.tag}
             </p>
-            <span className={`text-[0.65rem] uppercase tracking-[0.12em] ${light ? 'text-muted' : 'text-white/45'}`}>
+            <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
               {condition}
             </span>
             {item.brand ? (
-              <span className={`text-[0.65rem] uppercase tracking-[0.12em] ${light ? 'text-muted' : 'text-white/45'}`}>
+              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
                 {item.brand}
               </span>
             ) : null}
           </div>
           <h3
-            className={`mt-1.5 text-[1.05rem] font-semibold leading-snug ${
-              light ? 'text-navy' : 'text-white'
+            className={`mt-1.5 text-[0.95rem] font-medium leading-snug md:text-base ${
+              tone === 'dark' ? 'text-white/95' : 'text-navy'
             }`}
           >
             {shortTitle(item.title)}
@@ -199,12 +192,14 @@ function ProductLink({
           <p className="mt-2 flex items-baseline gap-2">
             <span
               className={`font-display text-2xl font-bold tracking-wide md:text-3xl ${
-                light ? 'text-navy' : 'text-white'
+                tone === 'dark' ? 'text-white' : 'text-navy'
               }`}
             >
               {formatPrice(item.price, item.currency)}
             </span>
-            <span className={`text-sm ${light ? 'text-muted' : 'text-white/45'}`}>{item.note}</span>
+            <span className={`text-sm ${tone === 'dark' ? 'text-white/40' : 'text-muted'}`}>
+              {item.note}
+            </span>
           </p>
         </div>
       </a>
@@ -219,8 +214,8 @@ export default function App() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sent'>('idle')
-  const [scrolled, setScrolled] = useState(false)
   const [showSticky, setShowSticky] = useState(false)
+  const [navSolid, setNavSolid] = useState(false)
   const [tagFilter, setTagFilter] = useState('All')
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
@@ -254,8 +249,8 @@ export default function App() {
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY
-      setScrolled(y > 40)
-      setShowSticky(y > window.innerHeight * 0.75)
+      setShowSticky(y > window.innerHeight * 0.7)
+      setNavSolid(y > 48)
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -264,24 +259,14 @@ export default function App() {
 
   const shopUrl = primaryShopUrl(catalog)
   const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
-  const ebayShop = EBAY_SHOP_URL
-  const ebaySeller = catalog?.sellerUrl || EBAY_SELLER_URL
+  const ebayShop = catalog?.source === 'square' ? EBAY_SHOP_URL : catalog?.shopUrl ?? EBAY_SHOP_URL
+  const ebaySeller = catalog?.source === 'square' ? EBAY_SELLER_URL : catalog?.sellerUrl ?? EBAY_SELLER_URL
   const listings = useMemo(() => catalog?.listings ?? [], [catalog])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 4), [listings])
-  const salePicks = useMemo(() => pickSaleItems(listings, 4), [listings])
-  const trainingPicks = useMemo(
-    () => listings.filter((item) => item.tag === 'Training').slice(0, 4),
-    [listings],
-  )
   const saleFloor = lowestSalePrice(listings)
   const youthCount = listings.filter(isYouthListing).length
   const channelLabel = onSquare ? 'Square' : 'eBay'
-  const newestUrl = onSquare ? shopUrl : EBAY_SHOP_URL
-  const marqueeClubs = useMemo(() => {
-    const found = clubsInStock(listings)
-    return found.length > 0 ? found : [...CLUB_NAMES]
-  }, [listings])
 
   const availableTags = useMemo(() => {
     const present = new Set(listings.map((item) => item.tag))
@@ -315,21 +300,21 @@ export default function App() {
     })
   }, [listings, tagFilter, sizeFilter, brandFilter, query])
 
-  function goInventory(next?: { tag?: string; reset?: boolean }) {
+  function goInventory(next?: { tag?: string; brand?: string; reset?: boolean }) {
     if (next?.reset) {
       setSizeFilter('All')
       setBrandFilter('All')
       setQuery('')
+      setTagFilter('All')
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
+    if (next?.brand !== undefined) setBrandFilter(next.brand)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   }
 
-  const heroImage = useMemo(() => {
-    return listings[0]?.image || asset('hero-jersey.jpg')
-  }, [listings])
+  const heroImage = asset('hero-jersey.jpg')
 
   function onEmailSubmit(event: FormEvent) {
     event.preventDefault()
@@ -344,8 +329,12 @@ export default function App() {
     setEmailStatus('sent')
   }
 
-  const navLink =
-    'text-[0.7rem] font-semibold uppercase tracking-[0.16em] transition hover:text-crimson-hot'
+  const navLinks = [
+    { href: '#new-drops', label: 'New' },
+    { href: '#shop', label: 'Shop' },
+    { href: '#featured', label: 'Featured' },
+    { href: '#inventory', label: 'Inventory' },
+  ]
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
@@ -356,98 +345,82 @@ export default function App() {
         Skip to featured gear
       </a>
 
-      <div className="relative z-40 bg-navy-deep text-center text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-white/80">
-        <p className="px-4 py-2.5">
-          {loadState === 'ready' && catalog
-            ? `${catalog.count} live kits · Ships from US inventory`
-            : 'Live kits · Ships from US inventory'}
-        </p>
-      </div>
-
       <header
-        className={`sticky top-0 z-30 transition duration-300 ${
-          scrolled
-            ? 'border-b border-navy/10 bg-chalk/95 text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] backdrop-blur'
+        className={`fixed inset-x-0 top-0 z-40 transition duration-300 ${
+          navSolid
+            ? 'border-b border-navy/10 bg-chalk/95 text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] backdrop-blur-md'
             : 'bg-transparent text-white'
         }`}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 md:px-8">
           <a
             href="#top"
-            className={`font-brand text-lg font-bold uppercase tracking-[0.1em] md:text-xl ${
-              scrolled ? 'text-navy' : 'text-white'
-            }`}
+            className="font-brand text-lg font-bold uppercase tracking-[0.12em] md:text-xl"
           >
             Jersey Deals
           </a>
-          <nav className="hidden items-center gap-6 lg:flex" aria-label="Primary">
-            <a href="#shop" className={`${navLink} ${scrolled ? 'text-navy/70' : 'text-white/75'}`}>
-              Shop
-            </a>
-            <a href="#new-drops" className={`${navLink} ${scrolled ? 'text-navy/70' : 'text-white/75'}`}>
-              New
-            </a>
-            <button
-              type="button"
-              onClick={() => goInventory({ tag: 'Youth', reset: true })}
-              className={`${navLink} ${scrolled ? 'text-navy/70' : 'text-white/75'}`}
-            >
-              Youth
-            </button>
-            <a href="#sale" className={`${navLink} ${scrolled ? 'text-navy/70' : 'text-white/75'}`}>
-              Sale
-            </a>
-            <a href="#faq" className={`${navLink} ${scrolled ? 'text-navy/70' : 'text-white/75'}`}>
-              Help
-            </a>
+          <nav className="hidden items-center gap-7 md:flex" aria-label="Primary">
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className={`text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                  navSolid ? 'text-navy/70 hover:text-navy' : 'text-white/70 hover:text-white'
+                }`}
+              >
+                {link.label}
+              </a>
+            ))}
           </nav>
           <a
             href={shopUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track('cta_click', { place: 'header' })}
-            className="bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+            className={`px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+              navSolid
+                ? 'bg-crimson text-white hover:bg-crimson-hot'
+                : 'border border-white/40 text-white hover:border-white hover:bg-white/10'
+            }`}
           >
-            {shopLabel()}
+            {shopLabel(catalog)}
           </a>
         </div>
       </header>
 
       <main id="top">
         {/* Hero */}
-        <section className="relative -mt-[4.25rem] min-h-[100svh] overflow-hidden bg-navy-deep text-white">
+        <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
             <motion.img
               key={heroImage}
               src={heroImage}
               alt=""
-              initial={reduce ? false : { scale: 1.08, opacity: 0.65 }}
+              initial={reduce ? false : { scale: 1.1, opacity: 0.55 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: reduce ? 0 : 1.35, ease }}
-              className="h-full w-full object-cover object-[center_20%]"
+              transition={{ duration: reduce ? 0 : 1.6, ease }}
+              className="h-full w-full object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/85 to-navy-deep/35" />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/60" />
+            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/80 to-navy-deep/25" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/45" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-20 pt-36 md:justify-center md:px-8 md:pb-28 md:pt-28">
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-28 md:justify-center md:px-8 md:pb-28">
             <motion.div
-              className="max-w-xl"
-              initial={reduce ? false : { opacity: 0.001, y: 22 }}
+              className="max-w-2xl"
+              initial={reduce ? false : { opacity: 0.001, y: 26 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease }}
+              transition={{ duration: 0.8, ease }}
             >
-              <p className="font-brand text-4xl font-bold uppercase leading-[1.05] tracking-[0.06em] text-white sm:text-5xl md:text-6xl">
+              <p className="font-brand text-5xl font-bold uppercase leading-[0.95] tracking-[0.04em] text-white sm:text-6xl md:text-7xl">
                 Jersey Deals
               </p>
-              <h1 className="mt-5 font-display text-4xl font-bold uppercase leading-[0.95] tracking-wide text-white sm:text-5xl md:text-6xl">
-                Matchday kits.
-                <br />
-                Live stock.
+              <h1 className="mt-5 max-w-xl font-display text-4xl font-bold uppercase leading-[0.92] tracking-wide text-white sm:text-5xl md:text-6xl">
+                The modern kit shop.
               </h1>
-              <p className="mt-5 max-w-md text-base leading-relaxed text-white/75 md:text-lg">
-                Club jerseys, training tops, and youth apparel — photographed, sized, and ready to
-                ship from our US inventory.
+              <p className="mt-5 max-w-md text-base leading-relaxed text-white/72 md:text-lg">
+                Club kits, youth sizes, and sale jerseys — photographed from our inventory and sold
+                direct.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <motion.a
@@ -457,16 +430,16 @@ export default function App() {
                   onClick={() => track('cta_click', { place: 'hero_primary' })}
                   whileHover={reduce ? undefined : { scale: 1.02 }}
                   whileTap={reduce ? undefined : { scale: 0.98 }}
-                  className="inline-flex bg-crimson px-7 py-3.5 text-base font-semibold text-white transition hover:bg-crimson-hot"
+                  className="inline-flex bg-crimson px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
                 >
-                  {shopLabel()}
+                  {shopLabel(catalog)}
                 </motion.a>
                 <a
                   href="#shop"
                   onClick={() => track('cta_click', { place: 'hero_secondary' })}
-                  className="inline-flex border border-white/35 px-7 py-3.5 text-base font-semibold text-white transition hover:border-white hover:bg-white/5"
+                  className="inline-flex border border-white/35 px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:border-white hover:bg-white/5"
                 >
-                  Explore the collection
+                  Explore
                 </a>
               </div>
             </motion.div>
@@ -474,7 +447,7 @@ export default function App() {
 
           <a
             href="#shop"
-            className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-white/55 transition hover:text-white"
+            className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/50 transition hover:text-white"
             aria-label="Scroll to shop"
           >
             <span className="flex flex-col items-center gap-2">
@@ -483,183 +456,164 @@ export default function App() {
                 aria-hidden
                 animate={reduce ? undefined : { y: [0, 6, 0] }}
                 transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-                className="block h-6 w-px bg-white/50"
+                className="block h-7 w-px bg-white/45"
               />
             </span>
           </a>
         </section>
 
-        {/* Club marquee */}
-        <section aria-label="Clubs in stock" className="overflow-hidden border-y border-navy/10 bg-white py-4">
-          <div className="jd-marquee-track gap-10 px-6">
-            {[...marqueeClubs, ...marqueeClubs].map((club, i) => (
+        {/* Brand / category marquee */}
+        <section className="overflow-hidden border-y border-navy/10 bg-white py-4" aria-label="Highlights">
+          <div className="marquee-track gap-10 px-4">
+            {[...BRAND_MARQUEE, ...BRAND_MARQUEE].map((item, i) => (
               <span
-                key={`${club}-${i}`}
-                className="font-display text-xl font-bold uppercase tracking-[0.14em] text-navy/55 whitespace-nowrap"
+                key={`${item}-${i}`}
+                className="font-display text-lg font-bold uppercase tracking-[0.2em] text-navy/55 whitespace-nowrap"
               >
-                {club}
+                {item}
+                <span className="ml-10 text-crimson/70">◆</span>
               </span>
             ))}
           </div>
         </section>
 
-        {/* Collections */}
+        {/* Service strip */}
+        <section className="bg-navy text-white">
+          <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3.5 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/70 md:px-8 md:justify-between">
+            {SERVICE_POINTS.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Editorial shop paths */}
         <section id="shop" className="bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson">Collections</p>
-              <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+              <p className="eyebrow text-crimson">Collections</p>
+              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                 Shop the floor
               </h2>
               <p className="mt-3 text-lg text-muted">
-                Youth sizes, sale racks, or the full live catalog — pick a path.
+                Curated paths into live stock — the same approach high-end kit shops use on their home page.
               </p>
             </motion.div>
 
-            <div className="mt-12 grid gap-3 md:grid-cols-3">
-              {[
-                {
-                  label: 'Youth apparel',
-                  onClick: () => {
-                    track('category_click', { category: 'category_youth' })
-                    goInventory({ tag: 'Youth', reset: true })
-                  },
-                  image: asset('category-youth.jpg'),
-                  copy:
-                    youthCount > 0
-                      ? `${youthCount} youth listings ready to ship.`
-                      : 'Kids and youth kits sized and ready to ship.',
-                },
-                {
-                  label: SALE_HEADLINE,
-                  href: onSquare ? `${shopUrl}` : EBAY_SALE_URL,
-                  image: asset('category-sale.jpg'),
-                  copy:
-                    saleFloor != null
-                      ? `${SALE_URGENCY} · from ${formatPrice(saleFloor, 'USD')}`
-                      : SALE_URGENCY,
-                  onClick: () => {
-                    track('category_click', { category: 'category_sale' })
-                    if (onSquare) {
-                      setTagFilter('All')
-                      setSizeFilter('All')
-                      setBrandFilter('All')
-                      setQuery('')
-                      requestAnimationFrame(() => {
-                        document
-                          .getElementById('inventory')
-                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      })
-                    }
-                  },
-                  external: !onSquare,
-                },
-                {
-                  label: 'Full catalog',
-                  onClick: () => {
-                    track('category_click', { category: 'category_all' })
-                    goInventory({ tag: 'All', reset: true })
-                  },
-                  image: listings[2]?.image || asset('product-home.jpg'),
-                  copy:
-                    loadState === 'ready' && catalog
-                      ? `${catalog.count} active listings${catalog.source ? ` via ${catalog.source}` : ''}.`
-                      : 'Every active listing from Jersey Deals.',
-                },
-              ].map((tile, i) => {
-                const className =
-                  'group relative block min-h-[280px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:min-h-[340px]'
-                const inner = (
-                  <>
-                    <img
-                      src={tile.image}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                    <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
-                      <p className="font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
-                        {tile.label}
-                      </p>
-                      <p className="mt-2 max-w-sm text-sm text-white/75 md:text-base">{tile.copy}</p>
-                      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
-                        Shop now →
-                      </p>
-                    </div>
-                  </>
-                )
-
-                if (tile.external && tile.href) {
-                  return (
-                    <motion.a
-                      key={tile.label}
-                      href={tile.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={tile.onClick}
-                      {...fadeUp(reduce, 0.06 + i * 0.08)}
-                      className={className}
-                    >
-                      {inner}
-                    </motion.a>
-                  )
-                }
-
-                return (
-                  <motion.button
-                    key={tile.label}
-                    type="button"
-                    onClick={tile.onClick}
-                    {...fadeUp(reduce, 0.06 + i * 0.08)}
-                    className={`${className} w-full text-left`}
-                  >
-                    {inner}
-                  </motion.button>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Editorial campaign — Youth */}
-        <section className="bg-navy text-white">
-          <div className="mx-auto grid max-w-6xl md:grid-cols-2">
-            <motion.div
-              {...fadeUp(reduce)}
-              className="relative min-h-[360px] overflow-hidden md:min-h-[520px]"
-            >
-              <img
-                src={asset('category-youth.jpg')}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-navy-deep/25" />
-            </motion.div>
-            <motion.div
-              {...fadeUp(reduce, 0.08)}
-              className="flex flex-col justify-center px-5 py-16 md:px-12 md:py-20"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson-hot">
-                Youth collection
-              </p>
-              <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
-                Built for the next matchday
-              </h2>
-              <p className="mt-4 max-w-md text-white/70">
-                Youth home kits, training tops, and strike layers — clear sizing in every listing so
-                parents can buy with confidence.
-              </p>
-              <button
+            <div className="mt-12 grid gap-4 md:grid-cols-12 md:grid-rows-2 md:gap-5">
+              {/* Large youth tile */}
+              <motion.button
                 type="button"
                 onClick={() => {
-                  track('cta_click', { place: 'campaign_youth' })
+                  track('category_click', { category: 'category_youth' })
                   goInventory({ tag: 'Youth', reset: true })
                 }}
-                className="mt-8 inline-flex w-fit bg-crimson px-6 py-3 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+                {...fadeUp(reduce, 0.05)}
+                className="group relative min-h-[320px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-7 md:row-span-2 md:min-h-[560px]"
               >
-                Shop youth
-              </button>
-            </motion.div>
+                <img
+                  src={asset('category-youth.jpg')}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
+                  <p className="eyebrow text-white/70">Youth</p>
+                  <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-6xl">
+                    Youth apparel
+                  </p>
+                  <p className="mt-3 max-w-sm text-sm text-white/75 md:text-base">
+                    {youthCount > 0
+                      ? `${youthCount} youth listings ready to ship.`
+                      : 'Kids and youth kits sized and ready to ship.'}
+                  </p>
+                  <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                    Shop youth →
+                  </span>
+                </div>
+              </motion.button>
+
+              {/* Sale */}
+              {onSquare ? (
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    track('category_click', { category: 'category_sale' })
+                    goInventory({ tag: 'All', reset: true })
+                  }}
+                  {...fadeUp(reduce, 0.1)}
+                  className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
+                >
+                  <img
+                    src={asset('category-sale.jpg')}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
+                  <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
+                    <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
+                    <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                      {SALE_HEADLINE}
+                    </p>
+                    <p className="mt-2 text-sm text-white/75">
+                      {saleFloor != null
+                        ? `From ${formatPrice(saleFloor, 'USD')} while stock lasts.`
+                        : 'Limited sale kits from the rack.'}
+                    </p>
+                  </div>
+                </motion.button>
+              ) : (
+                <motion.a
+                  href={EBAY_SALE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track('category_click', { category: 'category_sale' })}
+                  {...fadeUp(reduce, 0.1)}
+                  className="group relative min-h-[240px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
+                >
+                  <img
+                    src={asset('category-sale.jpg')}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
+                  <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
+                    <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
+                    <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                      {SALE_HEADLINE}
+                    </p>
+                  </div>
+                </motion.a>
+              )}
+
+              {/* Full catalog */}
+              <motion.button
+                type="button"
+                onClick={() => {
+                  track('category_click', { category: 'category_all' })
+                  goInventory({ tag: 'All', reset: true })
+                }}
+                {...fadeUp(reduce, 0.14)}
+                className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
+              >
+                <img
+                  src={listings[2]?.image || asset('product-home.jpg')}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
+                  <p className="eyebrow text-white/70">Inventory</p>
+                  <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                    Full catalog
+                  </p>
+                  <p className="mt-2 text-sm text-white/75">
+                    {loadState === 'ready' && catalog
+                      ? `${catalog.count} active listings ready to filter.`
+                      : 'Every active listing from Jersey Deals.'}
+                  </p>
+                </div>
+              </motion.button>
+            </div>
           </div>
         </section>
 
@@ -668,30 +622,30 @@ export default function App() {
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
               {...fadeUp(reduce)}
-              className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+              className="flex flex-col gap-4 border-b border-navy/10 pb-8 md:flex-row md:items-end md:justify-between"
             >
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson">Just in</p>
-                <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                <p className="eyebrow text-crimson">Just in</p>
+                <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                   New drops
                 </h2>
-                <p className="mt-2 max-w-xl text-muted">
-                  Fresh from the rack — newest active listings first.
+                <p className="mt-3 max-w-xl text-muted">
+                  Fresh arrivals from the rack — newest active listings first.
                 </p>
               </div>
               <a
-                href={newestUrl}
+                href={onSquare ? shopUrl : EBAY_SHOP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track('cta_click', { place: 'new_drops_all' })}
-                className="text-sm font-semibold uppercase tracking-[0.14em] text-crimson hover:text-crimson-hot"
+                className="text-xs font-semibold uppercase tracking-[0.18em] text-navy underline decoration-crimson/50 underline-offset-4 hover:decoration-crimson"
               >
                 See newest on {channelLabel} →
               </a>
             </motion.div>
 
             {newDrops.length > 0 ? (
-              <ul className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+              <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {newDrops.map((item, i) => (
                   <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" />
                 ))}
@@ -704,54 +658,45 @@ export default function App() {
           </div>
         </section>
 
-        {/* Training editorial */}
-        {trainingPicks.length > 0 && (
-          <section id="training" className="bg-mist py-20 md:py-28">
-            <div className="mx-auto max-w-6xl px-5 md:px-8">
-              <motion.div
-                {...fadeUp(reduce)}
-                className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+        {/* Lookbook campaign */}
+        <section className="relative min-h-[70svh] overflow-hidden bg-navy-deep text-white md:min-h-[80svh]">
+          <img
+            src={asset('lookbook-tunnel.jpg')}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/90 via-navy-deep/55 to-transparent" />
+          <div className="relative z-10 mx-auto flex min-h-[70svh] max-w-6xl items-end px-5 py-16 md:min-h-[80svh] md:px-8 md:py-24">
+            <motion.div {...fadeUp(reduce)} className="max-w-lg">
+              <p className="eyebrow text-crimson-hot">Lookbook</p>
+              <h2 className="mt-3 font-display text-5xl font-bold uppercase leading-[0.95] tracking-wide md:text-7xl">
+                Built for matchday.
+              </h2>
+              <p className="mt-4 text-base text-white/75 md:text-lg">
+                Training tops, pre-match layers, and home kits — selected from live stock, not stock
+                photos.
+              </p>
+              <a
+                href="#featured"
+                onClick={() => track('cta_click', { place: 'lookbook' })}
+                className="mt-8 inline-flex border border-white/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white hover:bg-white/10"
               >
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson">
-                    Training
-                  </p>
-                  <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                    Pre-match &amp; training tops
-                  </h2>
-                  <p className="mt-2 max-w-xl text-muted">
-                    Warm-ups and strike layers from the clubs you follow.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => goInventory({ tag: 'Training', reset: true })}
-                  className="text-sm font-semibold uppercase tracking-[0.14em] text-crimson hover:text-crimson-hot"
-                >
-                  View all training →
-                </button>
-              </motion.div>
-              <ul className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-                {trainingPicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" />
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
+                View featured kits
+              </a>
+            </motion.div>
+          </div>
+        </section>
 
         {/* Featured */}
         <section id="featured" className="bg-navy py-20 text-white md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson-hot">
-                Featured
-              </p>
-              <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide md:text-6xl">
-                Staff picks
+              <p className="eyebrow text-crimson-hot">Selected</p>
+              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide md:text-7xl">
+                Featured gear
               </h2>
-              <p className="mt-3 text-lg text-white/70">
-                Real SKUs from live inventory — tap any kit to buy. Condition noted on each item.
+              <p className="mt-4 text-lg text-white/65">
+                Editor picks from live inventory — tap any kit to checkout.
               </p>
             </motion.div>
 
@@ -773,7 +718,7 @@ export default function App() {
             )}
 
             {featured.length > 0 && (
-              <ul className="mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
                   <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} />
                 ))}
@@ -781,14 +726,14 @@ export default function App() {
             )}
 
             {catalog && catalog.count > featured.length && (
-              <motion.div {...fadeUp(reduce, 0.15)} className="mt-12 flex flex-wrap gap-3">
+              <motion.div {...fadeUp(reduce, 0.15)} className="mt-14 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     track('cta_click', { place: 'featured_inventory' })
                     goInventory({ tag: 'All', reset: true })
                   }}
-                  className="inline-flex border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/5"
+                  className="inline-flex border border-white/30 px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white hover:bg-white/5"
                 >
                   Browse all {catalog.count} listings
                 </button>
@@ -797,71 +742,58 @@ export default function App() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => track('cta_click', { place: 'featured_all' })}
-                  className="inline-flex bg-crimson px-5 py-3 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+                  className="inline-flex bg-crimson px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
                 >
-                  Open {channelLabel} storefront
+                  Open {channelLabel}
                 </a>
               </motion.div>
             )}
           </div>
         </section>
 
-        {/* Sale spotlight */}
-        <section id="sale" className="relative overflow-hidden bg-crimson py-20 text-white md:py-24">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-40"
-            style={{
-              background:
-                'radial-gradient(ellipse 55% 80% at 0% 50%, rgba(6,16,28,0.55), transparent 60%)',
-            }}
-            aria-hidden
-          />
-          <div className="relative mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div
-              {...fadeUp(reduce)}
-              className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between"
-            >
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-                  Limited stock
-                </p>
-                <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide md:text-6xl">
-                  {SALE_HEADLINE}
+        {/* Shop by brand */}
+        {availableBrands.length > 0 && (
+          <section className="border-y border-navy/10 bg-white py-16 md:py-20">
+            <div className="mx-auto max-w-6xl px-5 md:px-8">
+              <motion.div {...fadeUp(reduce)}>
+                <p className="eyebrow text-crimson">Brands</p>
+                <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                  Shop by maker
                 </h2>
-                <p className="mt-3 max-w-lg text-lg text-white/85">
-                  {saleFloor != null
-                    ? `${SALE_URGENCY}. Starting at ${formatPrice(saleFloor, 'USD')}.`
-                    : SALE_URGENCY}
-                </p>
-              </div>
-              <a
-                href={onSquare ? shopUrl : EBAY_SALE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('cta_click', { place: 'sale_banner' })}
-                className="inline-flex shrink-0 bg-navy px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-navy-deep"
-              >
-                Shop sale on {channelLabel}
-              </a>
-            </motion.div>
-
-            {salePicks.length > 0 ? (
-              <ul className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-                {salePicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} />
+              </motion.div>
+              <ul className="mt-10 grid gap-3 sm:grid-cols-3">
+                {availableBrands.map((brand, i) => (
+                  <motion.li key={brand} {...fadeUp(reduce, i * 0.05)}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        track('brand_click', { brand })
+                        goInventory({ brand, tag: 'All', reset: true })
+                        setBrandFilter(brand)
+                      }}
+                      className="group flex w-full items-center justify-between border border-navy/10 bg-chalk px-5 py-5 text-left transition hover:border-navy/30 hover:bg-white"
+                    >
+                      <span className="font-display text-2xl font-bold uppercase tracking-wide text-navy">
+                        {brand}
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted transition group-hover:text-crimson">
+                        Shop →
+                      </span>
+                    </button>
+                  </motion.li>
                 ))}
               </ul>
-            ) : null}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
 
         {/* Full inventory */}
         <section id="inventory" className="bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson">Inventory</p>
-              <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                Full catalog
+              <p className="eyebrow text-crimson">Catalog</p>
+              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                Full inventory
               </h2>
               <p className="mt-3 text-lg text-muted">
                 Filter live stock by type, size, and brand — then checkout on {channelLabel}.
@@ -869,7 +801,7 @@ export default function App() {
             </motion.div>
 
             {loadState === 'ready' && listings.length > 0 && (
-              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
+              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-6">
                 <label className="block max-w-xl">
                   <span className="sr-only">Search inventory</span>
                   <input
@@ -877,12 +809,12 @@ export default function App() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search club, kit, size…"
-                    className="w-full border border-navy/15 bg-white px-4 py-3.5 text-base text-navy outline-none transition placeholder:text-muted/70 focus:border-crimson/50 focus:ring-2 focus:ring-crimson/20"
+                    className="w-full border border-navy/12 bg-white px-4 py-3.5 text-base text-navy outline-none transition placeholder:text-muted/70 focus:border-navy/40"
                   />
                 </label>
 
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Type</p>
+                  <p className="eyebrow text-muted">Type</p>
                   <div className="flex flex-wrap gap-2">
                     <FilterChip label="All" active={tagFilter === 'All'} onClick={() => setTagFilter('All')} />
                     {availableTags.map((tag) => (
@@ -898,7 +830,7 @@ export default function App() {
 
                 {availableSizes.length > 1 && (
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Size</p>
+                    <p className="eyebrow text-muted">Size</p>
                     <div className="flex flex-wrap gap-2">
                       <FilterChip
                         label="All"
@@ -919,7 +851,7 @@ export default function App() {
 
                 {availableBrands.length > 0 && (
                   <div className="space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Brand</p>
+                    <p className="eyebrow text-muted">Brand</p>
                     <div className="flex flex-wrap gap-2">
                       <FilterChip
                         label="All"
@@ -940,15 +872,7 @@ export default function App() {
 
                 <p className="text-sm text-muted">
                   Showing {filtered.length} of {listings.length}
-                  {catalog?.source ? ` · source ${catalog.source}` : ''}
-                  {catalog?.syncedAt
-                    ? ` · synced ${new Date(catalog.syncedAt).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}`
-                    : ''}
+                  {catalog?.source ? ` · ${catalog.source}` : ''}
                 </p>
               </motion.div>
             )}
@@ -974,7 +898,7 @@ export default function App() {
             )}
 
             {filtered.length > 0 && (
-              <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((item, i) => (
                   <ProductLink
                     key={item.id}
@@ -990,78 +914,86 @@ export default function App() {
         </section>
 
         {/* Trust */}
-        <section id="buy-direct" className="relative overflow-hidden bg-white py-20 md:py-28">
-          <div className="relative mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson">Why us</p>
-              <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                Buy direct. Real inventory.
-              </h2>
-              <p className="mt-4 text-lg text-muted">
-                {FAMILY_NOTE} We sell as{' '}
-                <a
-                  href={ebaySeller}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
-                >
-                  @{catalog?.seller ?? EBAY_SELLER}
-                </a>
-                {catalog ? ` with ${catalog.count} live listings` : ''}.
-                {onSquare
-                  ? ' Pay by card on Square — eBay remains available as a second channel.'
-                  : ' Checkout on eBay today with buyer protection on every order.'}
-              </p>
-            </motion.div>
+        <section id="buy-direct" className="bg-white py-20 md:py-28">
+          <div className="mx-auto max-w-6xl px-5 md:px-8">
+            <div className="grid gap-12 md:grid-cols-[1.15fr_0.85fr] md:items-start">
+              <motion.div {...fadeUp(reduce)}>
+                <p className="eyebrow text-crimson">Why Jersey Deals</p>
+                <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                  Direct. Detailed. Live.
+                </h2>
+                <p className="mt-5 max-w-xl text-lg text-muted">
+                  {FAMILY_NOTE} We sell as{' '}
+                  <a
+                    href={ebaySeller}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  >
+                    @{catalog?.seller ?? EBAY_SELLER}
+                  </a>
+                  {catalog ? ` with ${catalog.count} live listings` : ''}.
+                  {onSquare
+                    ? ' Pay by card on Square — eBay remains available as a second channel.'
+                    : ' Checkout on eBay today — Square direct payments are next.'}
+                </p>
+              </motion.div>
 
-            <dl className="mt-14 grid gap-10 border-t border-navy/10 pt-12 md:grid-cols-3">
-              {[
-                {
-                  dt: onSquare ? 'Square checkout' : 'Trusted checkout',
-                  dd: onSquare
-                    ? 'Pay with card on our Square storefront — money goes to us directly.'
-                    : 'Buy on eBay with buyer protection on the same seller account.',
-                },
-                {
-                  dt: 'Real product detail',
-                  dd: 'Photos, price, size, team, and stock on every listing — no mystery SKUs.',
-                },
-                {
-                  dt: 'US shipping',
-                  dd: 'Orders leave our US inventory. Rates and timing show at checkout on each item.',
-                },
-              ].map((item, i) => (
-                <motion.div key={item.dt} {...fadeUp(reduce, i * 0.08)}>
-                  <dt className="font-display text-2xl font-bold uppercase tracking-wide text-navy">
-                    {item.dt}
-                  </dt>
-                  <dd className="mt-2 leading-relaxed text-muted">{item.dd}</dd>
-                </motion.div>
-              ))}
-            </dl>
+              <motion.ul {...fadeUp(reduce, 0.1)} className="space-y-8 border-l border-navy/10 pl-6">
+                {[
+                  {
+                    dt: onSquare ? 'Square checkout' : 'Trusted checkout',
+                    dd: onSquare
+                      ? 'Pay with card on our storefront — money goes to us directly.'
+                      : 'Buy on eBay with buyer protection on the same seller account.',
+                  },
+                  {
+                    dt: 'Product truth',
+                    dd: 'Photos, price, size, team, and stock on every listing.',
+                  },
+                  {
+                    dt: 'Two channels',
+                    dd: onSquare
+                      ? 'Shop curated paths here, or open eBay for marketplace reach.'
+                      : 'This site is ready for Square Catalog when you flip the switch.',
+                  },
+                ].map((item) => (
+                  <li key={item.dt}>
+                    <p className="font-display text-2xl font-bold uppercase tracking-wide text-navy">
+                      {item.dt}
+                    </p>
+                    <p className="mt-1.5 text-muted">{item.dd}</p>
+                  </li>
+                ))}
+              </motion.ul>
+            </div>
 
             <motion.div
               {...fadeUp(reduce, 0.12)}
-              className="mt-14 flex flex-wrap items-baseline gap-x-10 gap-y-3 text-sm text-muted"
+              className="mt-16 grid gap-6 border-t border-navy/10 pt-10 sm:grid-cols-3"
             >
               <p>
                 <span className="font-display text-4xl font-bold text-navy">
                   {catalog?.count ?? '—'}
-                </span>{' '}
-                active listings
+                </span>
+                <span className="mt-1 block text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Active listings
+                </span>
               </p>
               <p>
-                Seller{' '}
-                <a
-                  href={ebaySeller}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-navy hover:text-crimson"
-                >
-                  @{catalog?.seller ?? EBAY_SELLER}
-                </a>
+                <span className="font-display text-4xl font-bold text-navy">
+                  {availableBrands.length || '—'}
+                </span>
+                <span className="mt-1 block text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Brands in stock
+                </span>
               </p>
-              <p>Ships from US inventory</p>
+              <p>
+                <span className="font-display text-4xl font-bold text-navy">US</span>
+                <span className="mt-1 block text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                  Ships from inventory
+                </span>
+              </p>
             </motion.div>
           </div>
         </section>
@@ -1070,9 +1002,9 @@ export default function App() {
         <section id="faq" className="bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-3xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)}>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson">Help</p>
-              <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                Sizing, authenticity &amp; shipping
+              <p className="eyebrow text-crimson">Support</p>
+              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                Sizing &amp; shipping
               </h2>
               <p className="mt-3 text-lg text-muted">Straight answers before you checkout.</p>
             </motion.div>
@@ -1106,7 +1038,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Email */}
+        {/* Alerts */}
         <section id="alerts" className="bg-navy py-20 text-white md:py-24">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
@@ -1114,15 +1046,12 @@ export default function App() {
               className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-end"
             >
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-crimson-hot">
-                  Stay ahead
-                </p>
-                <h2 className="mt-2 font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
-                  Restock &amp; sale alerts
+                <p className="eyebrow text-crimson-hot">Stay close</p>
+                <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide md:text-6xl">
+                  Restock alerts
                 </h2>
-                <p className="mt-3 max-w-xl text-white/70">
-                  Drop your email and we will add you to restock notes when sale kits and youth sizes
-                  land.
+                <p className="mt-4 max-w-xl text-white/65">
+                  Get notified when sale kits and youth sizes land.
                 </p>
               </div>
               <form onSubmit={onEmailSubmit} className="flex flex-col gap-3 sm:flex-row">
@@ -1137,11 +1066,11 @@ export default function App() {
                   placeholder="you@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="min-w-0 flex-1 border border-white/20 bg-white/5 px-4 py-3.5 text-white placeholder:text-white/40 outline-none focus:border-crimson"
+                  className="min-w-0 flex-1 border border-white/20 bg-white/5 px-4 py-3.5 text-white placeholder:text-white/35 outline-none focus:border-crimson"
                 />
                 <button
                   type="submit"
-                  className="bg-crimson px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-crimson-hot"
+                  className="bg-crimson px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
                 >
                   Get alerts
                 </button>
@@ -1156,17 +1085,25 @@ export default function App() {
         </section>
 
         {/* Final CTA */}
-        <section className="relative overflow-hidden bg-chalk py-20 md:py-24">
+        <section className="relative overflow-hidden bg-crimson py-24 text-white md:py-28">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-35"
+            style={{
+              background:
+                'radial-gradient(ellipse 55% 80% at 100% 50%, rgba(11,34,63,0.55), transparent 60%)',
+            }}
+            aria-hidden
+          />
           <motion.div
             {...fadeUp(reduce)}
-            className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-5 md:flex-row md:items-center md:justify-between md:px-8"
+            className="relative mx-auto flex max-w-6xl flex-col items-start gap-8 px-5 md:flex-row md:items-center md:justify-between md:px-8"
           >
             <div>
-              <p className="font-brand text-3xl font-bold uppercase tracking-[0.06em] text-navy md:text-4xl">
+              <p className="font-brand text-4xl font-bold uppercase tracking-[0.06em] md:text-5xl">
                 Jersey Deals
               </p>
-              <p className="mt-3 max-w-md text-lg text-muted">
-                Ready for matchday? Youth apparel, sale kits, and the full catalog are live.
+              <p className="mt-4 max-w-md text-lg text-white/90">
+                The kit shop is open — youth apparel, sale racks, and the full catalog.
               </p>
             </div>
             <a
@@ -1174,16 +1111,16 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => track('cta_click', { place: 'final' })}
-              className="inline-flex shrink-0 bg-crimson px-7 py-3.5 text-base font-semibold text-white transition hover:bg-crimson-hot"
+              className="inline-flex shrink-0 bg-navy px-8 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-navy-deep"
             >
-              {shopLabel()}
+              {shopLabel(catalog)}
             </a>
           </motion.div>
         </section>
       </main>
 
       <footer className="border-t border-white/10 bg-navy-deep py-14 text-white/60">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
               <img src={asset('favicon.svg')} alt="" className="h-9 w-9" width={36} height={36} />
@@ -1191,62 +1128,25 @@ export default function App() {
                 Jersey Deals
               </p>
             </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed">
-              Family-run soccer apparel — live kits with real photos, sizes, and US shipping.
+            <p className="mt-4 max-w-sm text-sm leading-relaxed">
+              Premium kit shopping from live inventory — sold direct.
             </p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Shop</p>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li>
-                <a href="#new-drops" className="hover:text-white">
-                  New drops
-                </a>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => goInventory({ tag: 'Youth', reset: true })}
-                  className="hover:text-white"
-                >
-                  Youth
-                </button>
-              </li>
-              <li>
-                <a href="#sale" className="hover:text-white">
-                  Sale
-                </a>
-              </li>
-              <li>
-                <a href="#inventory" className="hover:text-white">
-                  Full catalog
-                </a>
-              </li>
+            <p className="eyebrow text-white/40">Shop</p>
+            <ul className="mt-4 space-y-2 text-sm">
+              {navLinks.map((link) => (
+                <li key={link.href}>
+                  <a href={link.href} className="hover:text-white">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Help</p>
-            <ul className="mt-3 space-y-2 text-sm">
-              <li>
-                <a href="#faq" className="hover:text-white">
-                  FAQ
-                </a>
-              </li>
-              <li>
-                <a href="#alerts" className="hover:text-white">
-                  Restock alerts
-                </a>
-              </li>
-              <li>
-                <a href={asset('privacy.html')} className="hover:text-white">
-                  Privacy
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Connect</p>
-            <ul className="mt-3 space-y-2 text-sm">
+            <p className="eyebrow text-white/40">Links</p>
+            <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <a href={ebayShop} target="_blank" rel="noopener noreferrer" className="hover:text-white">
                   eBay shop
@@ -1265,16 +1165,16 @@ export default function App() {
                 </li>
               ) : null}
               <li>
-                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-white">
-                  Email us
+                <a href={asset('privacy.html')} className="hover:text-white">
+                  Privacy
                 </a>
               </li>
             </ul>
           </div>
         </div>
-        <div className="mx-auto mt-12 max-w-6xl border-t border-white/10 px-5 pt-6 text-sm md:px-8">
-          <p>© {new Date().getFullYear()} JerseyDeals. All rights reserved.</p>
-        </div>
+        <p className="mx-auto mt-12 max-w-6xl px-5 text-xs text-white/40 md:px-8">
+          © {new Date().getFullYear()} JerseyDeals
+        </p>
       </footer>
 
       <div
@@ -1287,9 +1187,9 @@ export default function App() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track('cta_click', { place: 'sticky_mobile' })}
-          className="flex w-full items-center justify-center bg-crimson px-4 py-3 text-sm font-semibold text-white"
+          className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white"
         >
-                  {shopLabel()}
+          {shopLabel(catalog)}
         </a>
       </div>
     </div>

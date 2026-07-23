@@ -33,6 +33,11 @@
   * {
     box-sizing: border-box;
   }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-crimson) 28%, transparent);
+    color: var(--color-navy-deep);
+  }
 }
 
 @layer utilities {
@@ -46,6 +51,38 @@
 
   .font-display {
     font-family: var(--font-display);
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee-x 36s linear infinite;
+  }
+
+  .marquee-track:hover {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none;
+    }
+  }
+}
+
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 
