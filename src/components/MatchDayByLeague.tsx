@@ -168,8 +168,19 @@ export function MatchDayByLeague({
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
 
+  const hasPinned =
+    leagueIds.size > 0 ||
+    teamIds.size > 0 ||
+    playerTeamIds.size > 0 ||
+    groups.some((group) => group.matches.some((match) => match.status === 'live'))
+
   return (
     <div className="flex flex-col gap-2">
+      {hasPinned ? (
+        <p className="px-0.5 text-[0.65rem] text-mist/55">
+          Favorite leagues and live matches open first
+        </p>
+      ) : null}
       {groups.map(({ leagueId, matches: leagueMatches }) => (
         <LeagueDropdown
           key={leagueId}

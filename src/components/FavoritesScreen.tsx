@@ -77,7 +77,7 @@ export function FavoritesScreen({
             Favorites
           </h1>
           <p className="mt-3 text-sm text-mist/80">
-            Starred leagues and teams drive the yellow dots on your calendar.
+            Star leagues, clubs, and players to pin Match day, calendar dots, and Stats.
           </p>
         </motion.header>
 
