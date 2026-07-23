@@ -12,7 +12,6 @@ import {
   PROMO_BAR,
   SALE_HEADLINE,
   SALE_URGENCY,
-  SQUARE_CART_URL,
   SQUARE_STORE_URL,
 } from './config'
 import {
@@ -29,6 +28,7 @@ import {
   clubsInStock,
   conditionLabel,
   formatPrice,
+  inferClub,
   isAdultListing,
   isSaleListing,
   isSquareCatalog,
@@ -202,10 +202,6 @@ function primaryShopUrl(catalog: ListingsPayload | null) {
   return catalog?.shopUrl ?? EBAY_SHOP_URL
 }
 
-function shopLabel(catalog: ListingsPayload | null = null) {
-  if (SQUARE_STORE_URL || isSquareCatalog(catalog)) return 'Shop now'
-  return 'Shop on eBay'
-}
 
 function FilterChip({
   active,
@@ -397,7 +393,7 @@ function ProductLink({
               Only 1 left
             </span>
           )}
-          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-12 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100">
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-100 transition duration-300 md:opacity-0 md:group-hover:opacity-100">
             <button
               type="button"
               onClick={() => onAddToCart(item)}
@@ -463,17 +459,19 @@ function ProductLink({
             >
               Add to cart
             </button>
-            <a
-              href={buyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })}
-              className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${
-                tone === 'dark' ? 'text-white/55' : 'text-muted'
-              }`}
-            >
-              Buy now
-            </a>
+            {buyUrl ? (
+              <a
+                href={buyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })}
+                className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${
+                  tone === 'dark' ? 'text-white/55' : 'text-muted'
+                }`}
+              >
+                Buy now
+              </a>
+            ) : null}
           </div>
         </div>
       </div>
@@ -502,6 +500,7 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false)
   const [cartToast, setCartToast] = useState<string | null>(null)
   const [trendingFilter, setTrendingFilter] = useState<'All' | 'Youth' | 'Training' | 'Jerseys' | 'Sale'>('All')
+  const [clubFilter, setClubFilter] = useState<string>('All')
 
   useEffect(() => {
     initAnalytics()
@@ -512,8 +511,13 @@ export default function App() {
     if (!menuOpen) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = previous
+      document.removeEventListener('keydown', onKey)
     }
   }, [menuOpen])
 
@@ -615,10 +619,11 @@ export default function App() {
       if (audienceFilter === 'Youth' && !isYouthListing(item)) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
+      if (clubFilter !== 'All' && inferClub(item.title)?.id !== clubFilter) return false
       if (!matchesPriceFilter(item, priceFilter)) return false
       return matchesListingQuery(item, deferredQuery)
     })
-  }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, priceFilter, deferredQuery])
+  }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery])
 
   const deferredHint = useMemo(() => {
     const q = deferredQuery.trim()
@@ -633,6 +638,7 @@ export default function App() {
     price?: PriceFilterId
     query?: string
     audience?: AudienceFilter
+    clubId?: string
     reset?: boolean
     focusSearch?: boolean
   }) {
@@ -643,12 +649,14 @@ export default function App() {
       setQuery('')
       setTagFilter('All')
       setAudienceFilter('All')
+      setClubFilter('All')
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
     if (next?.price !== undefined) setPriceFilter(next.price)
     if (next?.query !== undefined) setQuery(next.query)
     if (next?.audience !== undefined) setAudienceFilter(next.audience)
+    if (next?.clubId !== undefined) setClubFilter(next.clubId)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       if (next?.focusSearch) {
@@ -749,19 +757,20 @@ export default function App() {
                 </span>
               ) : null}
             </button>
-            <a
-              href={shopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track('cta_click', { place: 'header' })}
+            <button
+              type="button"
+              onClick={() => {
+                track('cta_click', { place: 'header' })
+                goInventory({ reset: true })
+              }}
               className={`hidden px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition md:inline-flex ${
                 navSolid
                   ? 'bg-crimson text-white hover:bg-crimson-hot'
                   : 'border border-white/40 text-white hover:border-white hover:bg-white/10'
               }`}
             >
-              {shopLabel(catalog)}
-            </a>
+              Browse kits
+            </button>
             <button
               type="button"
               aria-label="Open navigation menu"
@@ -866,17 +875,18 @@ export default function App() {
                 direct.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <motion.a
-                  href={shopUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('cta_click', { place: 'hero_primary' })}
+                <motion.button
+                  type="button"
+                  onClick={() => {
+                    track('cta_click', { place: 'hero_primary' })
+                    goInventory({ reset: true })
+                  }}
                   whileHover={reduce ? undefined : { scale: 1.02 }}
                   whileTap={reduce ? undefined : { scale: 0.98 }}
                   className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
                 >
-                  {shopLabel(catalog)}
-                </motion.a>
+                  Browse kits
+                </motion.button>
                 <a
                   href="#shop"
                   onClick={() => track('cta_click', { place: 'hero_secondary' })}
@@ -934,7 +944,7 @@ export default function App() {
         </section>
 
         {/* Editorial shop paths */}
-        <section id="shop" className="scroll-mt-40 bg-cream py-20 md:py-28">
+        <section id="shop" className="scroll-mt-44 bg-cream py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Collections</p>
@@ -953,7 +963,7 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   track('category_click', { category: 'category_youth' })
-                  goInventory({ tag: 'Youth', reset: true })
+                  goInventory({ audience: 'Youth', reset: true })
                 }}
                 {...fadeUp(reduce, 0.05)}
                 className="group relative min-h-[320px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-7 md:row-span-2 md:min-h-[560px]"
@@ -986,7 +996,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     track('category_click', { category: 'category_sale' })
-                    document.getElementById('sale')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    goInventory({ price: 'under-25', reset: true })
                   }}
                   {...fadeUp(reduce, 0.1)}
                   className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
@@ -1007,6 +1017,9 @@ export default function App() {
                         ? `From ${formatPrice(saleFloor, 'USD')} while stock lasts.`
                         : 'Limited sale kits from the rack.'}
                     </p>
+                    <span className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                      Shop sale kits →
+                    </span>
                   </div>
                 </motion.button>
               ) : (
@@ -1069,7 +1082,7 @@ export default function App() {
         </section>
 
         {/* Audience paths */}
-        <section id="audience" className="scroll-mt-36 bg-white py-20 md:py-28">
+        <section id="audience" className="scroll-mt-44 bg-white py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Browse by audience</p>
@@ -1148,7 +1161,7 @@ export default function App() {
         </section>
 
         {/* New drops */}
-        <section id="new-drops" className="scroll-mt-40 bg-white py-20 md:py-28">
+        <section id="new-drops" className="scroll-mt-44 bg-white py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
               {...fadeUp(reduce)}
@@ -1163,15 +1176,16 @@ export default function App() {
                   Fresh arrivals from the rack — newest active listings first.
                 </p>
               </div>
-              <a
-                href={onSquare ? shopUrl : EBAY_SHOP_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('cta_click', { place: 'new_drops_all' })}
+              <button
+                type="button"
+                onClick={() => {
+                  track('cta_click', { place: 'new_drops_all' })
+                  goInventory({ reset: true })
+                }}
                 className="text-xs font-semibold uppercase tracking-[0.18em] text-navy underline decoration-crimson/50 underline-offset-4 hover:decoration-crimson"
               >
-                See newest on {channelLabel} →
-              </a>
+                See all in inventory →
+              </button>
             </motion.div>
 
             {newDrops.length > 0 ? (
@@ -1190,7 +1204,7 @@ export default function App() {
 
         {/* Trending now */}
         {trendingPicks.length > 0 && (
-          <section id="trending" className="scroll-mt-36 bg-mist py-20 md:py-28">
+          <section id="trending" className="scroll-mt-44 bg-mist py-20 md:py-28">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div
                 {...fadeUp(reduce)}
@@ -1264,7 +1278,7 @@ export default function App() {
 
         {/* Training edit */}
         {trainingPicks.length > 0 ? (
-          <section id="training" className="scroll-mt-40 bg-mist py-20 md:py-28">
+          <section id="training" className="scroll-mt-44 bg-mist py-20 md:py-28">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div
                 {...fadeUp(reduce)}
@@ -1297,7 +1311,7 @@ export default function App() {
         ) : null}
 
         {/* Featured */}
-        <section id="featured" className="scroll-mt-40 bg-navy py-20 text-white md:py-28">
+        <section id="featured" className="scroll-mt-44 bg-navy py-20 text-white md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson-hot">Selected</p>
@@ -1346,15 +1360,16 @@ export default function App() {
                 >
                   Browse all {catalog.count} listings
                 </button>
-                <a
-                  href={shopUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('cta_click', { place: 'featured_all' })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    track('cta_click', { place: 'featured_all' })
+                    goInventory({ reset: true })
+                  }}
                   className="inline-flex bg-crimson px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
                 >
-                  Open {channelLabel}
-                </a>
+                  Browse inventory
+                </button>
               </motion.div>
             )}
           </div>
@@ -1362,7 +1377,7 @@ export default function App() {
 
         {/* Shop by brand */}
         {availableBrands.length > 0 && (
-          <section id="brands" className="scroll-mt-36 border-y border-navy/10 bg-white py-16 md:py-20">
+          <section id="brands" className="scroll-mt-44 border-y border-navy/10 bg-white py-16 md:py-20">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div {...fadeUp(reduce)}>
                 <p className="eyebrow text-crimson">Brands</p>
@@ -1398,7 +1413,7 @@ export default function App() {
 
         {/* Shop by club */}
         {clubsData.length > 0 && (
-          <section id="clubs" className="scroll-mt-36 bg-chalk py-16 md:py-20">
+          <section id="clubs" className="scroll-mt-44 bg-chalk py-16 md:py-20">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div {...fadeUp(reduce)}>
                 <p className="eyebrow text-crimson">Clubs</p>
@@ -1416,7 +1431,7 @@ export default function App() {
                       type="button"
                       onClick={() => {
                         track('club_click', { club: club.id })
-                        goInventory({ query: club.name, reset: true })
+                        goInventory({ clubId: club.id, reset: true })
                       }}
                       className="group relative w-full overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2"
                     >
@@ -1449,7 +1464,7 @@ export default function App() {
         )}
 
         {/* Sale campaign */}
-        <section id="sale" className="relative min-h-[68svh] scroll-mt-40 overflow-hidden bg-navy-deep text-white">
+        <section id="sale" className="relative min-h-[68svh] scroll-mt-44 overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
             <img
               src={asset('category-sale.jpg')}
@@ -1470,15 +1485,16 @@ export default function App() {
                   : SALE_URGENCY}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a
-                  href={onSquare ? shopUrl : EBAY_SALE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('cta_click', { place: 'sale_banner' })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    track('cta_click', { place: 'sale_banner' })
+                    goInventory({ price: 'under-25', reset: true })
+                  }}
                   className="inline-flex bg-crimson px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
                 >
-                  Shop sale on {channelLabel}
-                </a>
+                  Shop sale kits
+                </button>
                 {salePicks.length > 0 ? (
                   <a
                     href="#sale-picks"
@@ -1558,7 +1574,7 @@ export default function App() {
         </section>
 
         {/* Full inventory */}
-        <section id="inventory" className="scroll-mt-36 bg-chalk py-20 md:py-28">
+        <section id="inventory" className="scroll-mt-44 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Catalog</p>
@@ -1671,6 +1687,19 @@ export default function App() {
                   </div>
                 )}
 
+                {clubFilter !== 'All' && (
+                  <div className="flex items-center gap-3">
+                    <p className="eyebrow text-muted">Club</p>
+                    <button
+                      type="button"
+                      onClick={() => setClubFilter('All')}
+                      className="border border-navy bg-navy px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy/80"
+                    >
+                      {clubsData.find((c) => c.id === clubFilter)?.name ?? clubFilter} ✕
+                    </button>
+                  </div>
+                )}
+
                 <p className="text-sm text-muted">
                   Showing {filtered.length} of {listings.length}
                   {catalog?.source ? ` · ${catalog.source}` : ''}
@@ -1683,6 +1712,21 @@ export default function App() {
 
             {loadState === 'loading' && <p className="mt-12 text-muted">Loading inventory…</p>}
 
+            {loadState === 'error' && (
+              <p className="mt-12 text-muted">
+                Inventory is temporarily unavailable.{' '}
+                <a
+                  href={ebayShop}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                >
+                  Browse on eBay
+                </a>
+                .
+              </p>
+            )}
+
             {loadState === 'ready' && filtered.length === 0 && (
               <p className="mt-12 text-muted">
                 No listings match those filters.{' '}
@@ -1694,6 +1738,8 @@ export default function App() {
                     setSizeFilter('All')
                     setBrandFilter('All')
                     setPriceFilter('All')
+                    setAudienceFilter('All')
+                    setClubFilter('All')
                     setQuery('')
                   }}
                 >
@@ -1828,8 +1874,10 @@ export default function App() {
                   copy: 'Every listing photo is the actual item, not a stock image.',
                 },
                 {
-                  title: 'Square checkout',
-                  copy: 'Pay by card on our Square storefront — encrypted and direct.',
+                  title: onSquare ? 'Square checkout' : 'Secure card checkout',
+                  copy: onSquare
+                    ? 'Pay by card on our Square storefront — encrypted and direct.'
+                    : 'Pay securely by card — encrypted and direct.',
                 },
                 {
                   title: 'Adult & youth',
@@ -1891,7 +1939,7 @@ export default function App() {
         </section>
 
         {/* Size guide */}
-        <section id="size-guide" className="scroll-mt-36 bg-white py-16 md:py-20">
+        <section id="size-guide" className="scroll-mt-44 bg-white py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)}>
               <p className="eyebrow text-crimson">Sizing</p>
@@ -1941,7 +1989,7 @@ export default function App() {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="scroll-mt-40 bg-chalk py-20 md:py-28">
+        <section id="faq" className="scroll-mt-44 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-3xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)}>
               <p className="eyebrow text-crimson">Support</p>
@@ -2051,15 +2099,16 @@ export default function App() {
                 </p>
               </div>
             </div>
-            <a
-              href={shopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track('cta_click', { place: 'final' })}
+            <button
+              type="button"
+              onClick={() => {
+                track('cta_click', { place: 'final' })
+                goInventory({ reset: true })
+              }}
               className="inline-flex shrink-0 bg-navy px-8 py-4 font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream transition hover:bg-navy-deep"
             >
-              {shopLabel(catalog)}
-            </a>
+              Browse kits
+            </button>
           </motion.div>
         </section>
       </main>
@@ -2170,15 +2219,16 @@ export default function App() {
           >
             Cart{itemCount > 0 ? ` · ${itemCount}` : ''}
           </button>
-          <a
-            href={SQUARE_CART_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('cart_open_square', { place: 'sticky_mobile' })}
+          <button
+            type="button"
+            onClick={() => {
+              track('cta_click', { place: 'sticky_mobile' })
+              goInventory({ reset: true })
+            }}
             className="flex flex-1 items-center justify-center bg-navy px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
           >
-            Square cart
-          </a>
+            Browse kits
+          </button>
         </div>
       </div>
 
@@ -2229,18 +2279,17 @@ export default function App() {
             ))}
           </nav>
           <div className="mt-auto border-t border-navy/10 p-5">
-            <a
-              href={shopUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               onClick={() => {
                 track('cta_click', { place: 'mobile_menu' })
+                goInventory({ reset: true })
                 setMenuOpen(false)
               }}
               className="flex w-full items-center justify-center bg-crimson py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
             >
-              {shopLabel(catalog)}
-            </a>
+              Browse kits
+            </button>
           </div>
         </div>
       )}

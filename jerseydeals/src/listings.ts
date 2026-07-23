@@ -116,8 +116,8 @@ export function isSaleListing(item: Listing, maxPrice = 25) {
 /** Inventory price toggles — keep ranges aligned with typical kit pricing. */
 export const PRICE_FILTERS = [
   { id: 'All', label: 'All' },
-  { id: 'under-25', label: 'Under $25', max: 25 },
-  { id: '25-40', label: '$25–$40', min: 25, max: 40 },
+  { id: 'under-25', label: '$25 & under', max: 25 },
+  { id: '25-40', label: '$26–$40', min: 25, max: 40 },
   { id: '40-plus', label: '$40+', min: 40 },
 ] as const
 
@@ -287,7 +287,8 @@ export function clubsInStock(listings: Listing[]): ClubInfo[] {
 
 export function isAdultListing(item: Listing) {
   if (isYouthListing(item)) return false
-  return /\bmen'?s\b|\bwomen'?s\b/i.test(item.title) || item.tag === 'Jerseys' || item.tag === 'Training'
+  // Everything non-youth counts as adult (jerseys, training, apparel, towels, etc.).
+  return true
 }
 
 export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' | 'Training' | 'Other' {
