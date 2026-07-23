@@ -3,10 +3,6 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
   CONTACT_EMAIL,
-  EBAY_NEWEST_URL,
-  EBAY_SALE_URL,
-  EBAY_SELLER,
-  EBAY_SELLER_URL,
   EBAY_SHOP_URL,
   FAMILY_NOTE,
   SALE_HEADLINE,
@@ -16,7 +12,7 @@ import {
 import {
   conditionLabel,
   formatPrice,
-  isSquareCatalog,
+  isSaleListing,
   isYouthListing,
   listingSize,
   lowestSalePrice,
@@ -43,14 +39,11 @@ function fadeUp(reduce: boolean | null, delay = 0) {
 }
 
 function primaryShopUrl(catalog: ListingsPayload | null) {
-  if (SQUARE_STORE_URL) return SQUARE_STORE_URL
-  if (isSquareCatalog(catalog) && catalog?.shopUrl) return catalog.shopUrl
-  return catalog?.shopUrl ?? EBAY_SHOP_URL
+  return SQUARE_STORE_URL || catalog?.shopUrl || EBAY_SHOP_URL
 }
 
-function shopLabel(catalog: ListingsPayload | null = null) {
-  if (SQUARE_STORE_URL || isSquareCatalog(catalog)) return 'Shop on Square'
-  return 'Shop on eBay'
+function shopLabel() {
+  return SQUARE_STORE_URL ? 'Shop on Square' : 'Shop now'
 }
 
 function FilterChip({
@@ -96,9 +89,7 @@ const FAQ = [
   },
   {
     q: 'How do I pay?',
-    a: SQUARE_STORE_URL
-      ? 'Checkout on our Square storefront with card. You can still buy select stock on eBay with eBay buyer protection.'
-      : 'Checkout on eBay with card, PayPal, or other eBay payment options — buyer protection included. A Square direct storefront is coming next.',
+    a: 'Checkout on our Square storefront with card. Some stock is also listed on eBay if you prefer marketplace checkout.',
   },
   {
     q: 'Where do you ship from?',
@@ -106,7 +97,7 @@ const FAQ = [
   },
   {
     q: 'What is your return policy?',
-    a: 'Returns follow the policy on the listing checkout (Square or eBay). Message us before opening a case if something arrives not as described.',
+    a: 'Returns follow the policy shown at Square checkout. Message us before opening a case if something arrives not as described.',
   },
 ]
 
@@ -209,6 +200,7 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState('All')
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
+  const [saleOnly, setSaleOnly] = useState(false)
   const [query, setQuery] = useState('')
 
   useEffect(() => {
@@ -244,15 +236,11 @@ export default function App() {
   }, [])
 
   const shopUrl = primaryShopUrl(catalog)
-  const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
-  const ebayShop = catalog?.source === 'square' ? EBAY_SHOP_URL : catalog?.shopUrl ?? EBAY_SHOP_URL
-  const ebaySeller = catalog?.source === 'square' ? EBAY_SELLER_URL : catalog?.sellerUrl ?? EBAY_SELLER_URL
   const listings = useMemo(() => catalog?.listings ?? [], [catalog])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 3), [listings])
   const saleFloor = lowestSalePrice(listings)
   const youthCount = listings.filter(isYouthListing).length
-  const channelLabel = onSquare ? 'Square' : 'eBay'
 
   const availableTags = useMemo(() => {
     const present = new Set(listings.map((item) => item.tag))
@@ -273,6 +261,7 @@ export default function App() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return listings.filter((item) => {
+      if (saleOnly && !isSaleListing(item)) return false
       if (tagFilter !== 'All' && item.tag !== tagFilter) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
@@ -284,15 +273,17 @@ export default function App() {
         item.note.toLowerCase().includes(q)
       )
     })
-  }, [listings, tagFilter, sizeFilter, brandFilter, query])
+  }, [listings, tagFilter, sizeFilter, brandFilter, saleOnly, query])
 
-  function goInventory(next?: { tag?: string; reset?: boolean }) {
+  function goInventory(next?: { tag?: string; sale?: boolean; reset?: boolean }) {
     if (next?.reset) {
       setSizeFilter('All')
       setBrandFilter('All')
       setQuery('')
+      setSaleOnly(false)
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
+    if (next?.sale !== undefined) setSaleOnly(next.sale)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
@@ -306,7 +297,7 @@ export default function App() {
     event.preventDefault()
     const trimmed = email.trim()
     if (!trimmed) return
-    track('email_signup_attempt', { has_square: Boolean(SQUARE_STORE_URL) })
+    track('email_signup_attempt', { has_square: true })
     const subject = encodeURIComponent('Jersey Deals restock alerts')
     const body = encodeURIComponent(
       `Please add me to restock / sale alerts.\n\nEmail: ${trimmed}\n`,
@@ -339,7 +330,7 @@ export default function App() {
             onClick={() => track('cta_click', { place: 'header' })}
             className="bg-crimson px-4 py-2 text-sm font-semibold text-white transition hover:bg-crimson-hot"
           >
-            {shopLabel(catalog)}
+            {shopLabel()}
           </a>
         </div>
       </header>
@@ -375,8 +366,7 @@ export default function App() {
                 Youth kits &amp; sale jerseys, sold direct.
               </h1>
               <p className="mt-4 max-w-md text-base leading-relaxed text-white/75 md:text-lg">
-                Live stock with real photos and sizes — shop our catalog without the marketplace
-                runaround.
+                Real photos and sizes — browse here, checkout on Square.
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <motion.a
@@ -388,7 +378,7 @@ export default function App() {
                   whileTap={reduce ? undefined : { scale: 0.98 }}
                   className="inline-flex bg-crimson px-6 py-3.5 text-base font-semibold text-white transition hover:bg-crimson-hot"
                 >
-                  {shopLabel(catalog)}
+                  {shopLabel()}
                 </motion.a>
                 <a
                   href="#inventory"
@@ -436,7 +426,7 @@ export default function App() {
                   label: 'Youth apparel',
                   onClick: () => {
                     track('category_click', { category: 'category_youth' })
-                    goInventory({ tag: 'Youth', reset: true })
+                    goInventory({ tag: 'Youth', sale: false, reset: true })
                   },
                   image: asset('category-youth.jpg'),
                   copy:
@@ -446,90 +436,50 @@ export default function App() {
                 },
                 {
                   label: SALE_HEADLINE,
-                  href: onSquare ? `${shopUrl}` : EBAY_SALE_URL,
+                  onClick: () => {
+                    track('category_click', { category: 'category_sale' })
+                    goInventory({ tag: 'All', sale: true, reset: true })
+                  },
                   image: asset('category-sale.jpg'),
                   copy:
                     saleFloor != null
                       ? `${SALE_URGENCY} · from ${formatPrice(saleFloor, 'USD')}`
                       : SALE_URGENCY,
-                  event: 'category_sale',
-                  onClick: () => {
-                    track('category_click', { category: 'category_sale' })
-                    if (onSquare) {
-                      setTagFilter('All')
-                      setSizeFilter('All')
-                      setBrandFilter('All')
-                      setQuery('')
-                      // Show under-$25 by searching empty + user can scan; keep external for eBay sale sort
-                      requestAnimationFrame(() => {
-                        document
-                          .getElementById('inventory')
-                          ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                      })
-                    }
-                  },
-                  external: !onSquare,
                 },
                 {
                   label: 'Full catalog',
                   onClick: () => {
                     track('category_click', { category: 'category_all' })
-                    goInventory({ tag: 'All', reset: true })
+                    goInventory({ tag: 'All', sale: false, reset: true })
                   },
                   image: listings[2]?.image || asset('product-home.jpg'),
                   copy:
                     loadState === 'ready' && catalog
-                      ? `${catalog.count} active listings${catalog.source ? ` via ${catalog.source}` : ''}.`
+                      ? `${catalog.count} live items on Square.`
                       : 'Every active listing from Jersey Deals.',
                 },
-              ].map((tile, i) => {
-                const className =
-                  'group relative block min-h-[240px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk'
-                const inner = (
-                  <>
-                    <img
-                      src={tile.image}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/55 to-navy/15" />
-                    <div className="relative flex h-full flex-col justify-end p-6 md:p-7">
-                      <p className="font-display text-3xl font-bold uppercase tracking-wide text-white">
-                        {tile.label}
-                      </p>
-                      <p className="mt-2 max-w-sm text-sm text-white/75">{tile.copy}</p>
-                    </div>
-                  </>
-                )
-
-                if (tile.external && tile.href) {
-                  return (
-                    <motion.a
-                      key={tile.label}
-                      href={tile.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={tile.onClick}
-                      {...fadeUp(reduce, 0.06 + i * 0.08)}
-                      className={className}
-                    >
-                      {inner}
-                    </motion.a>
-                  )
-                }
-
-                return (
-                  <motion.button
-                    key={tile.label}
-                    type="button"
-                    onClick={tile.onClick}
-                    {...fadeUp(reduce, 0.06 + i * 0.08)}
-                    className={`${className} w-full text-left`}
-                  >
-                    {inner}
-                  </motion.button>
-                )
-              })}
+              ].map((tile, i) => (
+                <motion.button
+                  key={tile.label}
+                  type="button"
+                  onClick={tile.onClick}
+                  {...fadeUp(reduce, 0.06 + i * 0.08)}
+                  className="group relative block min-h-[240px] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
+                >
+                  <img
+                    src={tile.image}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/55 to-navy/15" />
+                  <div className="relative flex h-full flex-col justify-end p-6 md:p-7">
+                    <p className="font-display text-3xl font-bold uppercase tracking-wide text-white">
+                      {tile.label}
+                    </p>
+                    <p className="mt-2 max-w-sm text-sm text-white/75">{tile.copy}</p>
+                  </div>
+                </motion.button>
+              ))}
             </div>
           </div>
         </section>
@@ -550,13 +500,13 @@ export default function App() {
                 </p>
               </div>
               <a
-                href={onSquare ? shopUrl : EBAY_NEWEST_URL}
+                href={shopUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => track('cta_click', { place: 'new_drops_all' })}
                 className="text-sm font-semibold uppercase tracking-[0.14em] text-crimson hover:text-crimson-hot"
               >
-                See newest on {channelLabel}
+                Open Square store
               </a>
             </motion.div>
 
@@ -592,12 +542,12 @@ export default function App() {
               <p className="mt-12 text-white/70">
                 Listings are temporarily unavailable.{' '}
                 <a
-                  href={ebayShop}
+                  href={shopUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline decoration-crimson-hot underline-offset-4 hover:text-white"
                 >
-                  Open the eBay shop
+                  Open the Square store
                 </a>
                 .
               </p>
@@ -617,7 +567,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     track('cta_click', { place: 'featured_inventory' })
-                    goInventory({ tag: 'All', reset: true })
+                    goInventory({ tag: 'All', sale: false, reset: true })
                   }}
                   className="inline-flex border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/5"
                 >
@@ -628,9 +578,9 @@ export default function App() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => track('cta_click', { place: 'featured_all' })}
-                  className="inline-flex border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-white/5"
+                  className="inline-flex bg-crimson px-5 py-3 text-sm font-semibold text-white transition hover:bg-crimson-hot"
                 >
-                  Open {channelLabel} storefront
+                  Shop on Square
                 </a>
               </motion.div>
             )}
@@ -645,7 +595,7 @@ export default function App() {
                 Full inventory
               </h2>
               <p className="mt-3 text-lg text-muted">
-                Filter live stock by type, size, and brand — then checkout on {channelLabel}.
+                Filter live stock by type, size, and brand — then checkout on Square.
               </p>
             </motion.div>
 
@@ -665,13 +615,14 @@ export default function App() {
                 <div className="space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">Type</p>
                   <div className="flex flex-wrap gap-2">
-                    <FilterChip label="All" active={tagFilter === 'All'} onClick={() => setTagFilter('All')} />
+                    <FilterChip label="All" active={tagFilter === 'All' && !saleOnly} onClick={() => { setTagFilter('All'); setSaleOnly(false) }} />
+                    <FilterChip label="Sale" active={saleOnly} onClick={() => { setSaleOnly(true); setTagFilter('All') }} />
                     {availableTags.map((tag) => (
                       <FilterChip
                         key={tag}
                         label={tag}
-                        active={tagFilter === tag}
-                        onClick={() => setTagFilter(tag)}
+                        active={!saleOnly && tagFilter === tag}
+                        onClick={() => { setTagFilter(tag); setSaleOnly(false) }}
                       />
                     ))}
                   </div>
@@ -721,9 +672,8 @@ export default function App() {
 
                 <p className="text-sm text-muted">
                   Showing {filtered.length} of {listings.length}
-                  {catalog?.source ? ` · source ${catalog.source}` : ''}
                   {catalog?.syncedAt
-                    ? ` · synced ${new Date(catalog.syncedAt).toLocaleString('en-US', {
+                    ? ` · updated ${new Date(catalog.syncedAt).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: 'numeric',
@@ -746,6 +696,7 @@ export default function App() {
                     setTagFilter('All')
                     setSizeFilter('All')
                     setBrandFilter('All')
+                    setSaleOnly(false)
                     setQuery('')
                   }}
                 >
@@ -779,42 +730,44 @@ export default function App() {
           <div className="relative mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                Buy direct. Real inventory.
+                Buy direct on Square.
               </h2>
               <p className="mt-4 text-lg text-muted">
-                {FAMILY_NOTE} We sell as{' '}
+                {FAMILY_NOTE}{' '}
                 <a
-                  href={ebaySeller}
+                  href={shopUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
                 >
-                  @{catalog?.seller ?? EBAY_SELLER}
+                  Checkout on Square
                 </a>
-                {catalog ? ` with ${catalog.count} live listings` : ''}.
-                {onSquare
-                  ? ' Pay by card on Square — eBay remains available as a second channel.'
-                  : ' Checkout on eBay today — connect Square credentials to switch the catalog to direct payments.'}
+                {catalog ? ` — ${catalog.count} live listings` : ''}. Also available on{' '}
+                <a
+                  href={EBAY_SHOP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                >
+                  eBay
+                </a>
+                .
               </p>
             </motion.div>
 
             <dl className="mt-12 grid gap-10 md:grid-cols-3">
               {[
                 {
-                  dt: onSquare ? 'Square checkout' : 'Trusted checkout',
-                  dd: onSquare
-                    ? 'Pay with card on our Square storefront — money goes to us directly.'
-                    : 'Buy on eBay with buyer protection on the same seller account.',
+                  dt: 'Square checkout',
+                  dd: 'Pay with card on our Square storefront — money goes to us directly.',
                 },
                 {
                   dt: 'Real product detail',
                   dd: 'Photos, price, size, team, and stock on every listing — no mystery SKUs.',
                 },
                 {
-                  dt: onSquare ? 'Still on eBay' : 'Scaling to Square',
-                  dd: onSquare
-                    ? 'Shop here for curated paths, or open eBay anytime for marketplace reach.'
-                    : 'This site is ready for Square Catalog sync — add API secrets to go live direct.',
+                  dt: 'Also on eBay',
+                  dd: 'Prefer marketplace checkout? The same shop is still live on eBay.',
                 },
               ].map((item, i) => (
                 <motion.div key={item.dt} {...fadeUp(reduce, i * 0.08)}>
@@ -826,7 +779,6 @@ export default function App() {
               ))}
             </dl>
 
-            {/* Social proof strip */}
             <motion.div
               {...fadeUp(reduce, 0.12)}
               className="mt-14 flex flex-wrap items-baseline gap-x-8 gap-y-3 border-t border-navy/10 pt-8 text-sm text-muted"
@@ -838,14 +790,14 @@ export default function App() {
                 active listings
               </p>
               <p>
-                Seller{' '}
+                Store{' '}
                 <a
-                  href={ebaySeller}
+                  href={shopUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-navy hover:text-crimson"
                 >
-                  @{catalog?.seller ?? EBAY_SELLER}
+                  jerseydealsofficial.square.site
                 </a>
               </p>
               <p>Ships from US inventory</p>
@@ -957,7 +909,7 @@ export default function App() {
                 Jersey Deals
               </p>
               <p className="mt-3 max-w-md text-lg text-white/90">
-                Ready to shop? Youth apparel, sale kits, and the full catalog are live.
+                Ready to buy? Checkout secure on Square — youth kits, sale racks, and the full catalog.
               </p>
             </div>
             <a
@@ -967,7 +919,7 @@ export default function App() {
               onClick={() => track('cta_click', { place: 'final' })}
               className="inline-flex shrink-0 bg-navy px-7 py-3.5 text-base font-semibold text-white transition hover:bg-navy-deep"
             >
-              {shopLabel(catalog)}
+              {shopLabel()}
             </a>
           </motion.div>
         </section>
@@ -982,19 +934,12 @@ export default function App() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-            <a href={ebayShop} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+            <a href={shopUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white">
+              Square store
+            </a>
+            <a href={EBAY_SHOP_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white">
               eBay shop
             </a>
-            {SQUARE_STORE_URL ? (
-              <a
-                href={SQUARE_STORE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-white"
-              >
-                Square store
-              </a>
-            ) : null}
             <a href={asset('privacy.html')} className="hover:text-white">
               Privacy
             </a>
@@ -1016,7 +961,7 @@ export default function App() {
           onClick={() => track('cta_click', { place: 'sticky_mobile' })}
           className="flex w-full items-center justify-center bg-crimson px-4 py-3 text-sm font-semibold text-white"
         >
-          {shopLabel(catalog)}
+          {shopLabel()}
         </a>
       </div>
     </div>
