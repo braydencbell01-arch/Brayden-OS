@@ -19,6 +19,8 @@ import {
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { useNationalTeamSchedule } from '../lib/stats/useNationalTeamSchedule'
+import { seasonSnapshotFacts } from '../lib/stats/teamFacts'
+import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
@@ -95,6 +97,8 @@ export function TeamProfileScreen({
     [standings.rows, team.id],
   )
 
+  const facts = useTeamClubFacts(team.leagueId, team.id, standing?.team || team.name)
+
   const teamMatches = useMemo(
     () => (isNational ? mergeTeamMatches(matches, nationalSchedule.data) : matches),
     [isNational, matches, nationalSchedule.data],
@@ -145,17 +149,42 @@ export function TeamProfileScreen({
     if (remaining < 120) loadEarlierResults()
   }
 
-  const tableCells = standing
-    ? ([
-        ['Pos', String(standing.rank)],
-        ['P', String(standing.played)],
-        ['W', String(standing.won)],
-        ['D', String(standing.drawn)],
-        ['L', String(standing.lost)],
-        ['GD', standing.goalDiff > 0 ? `+${standing.goalDiff}` : String(standing.goalDiff)],
-        ['Pts', String(standing.points)],
-      ] as const)
-    : []
+  const factRows = useMemo(() => {
+    const club = facts.data
+    const rows: Array<[string, string]> = []
+
+    rows.push(['League', club?.leagueName || league.name])
+    rows.push([
+      club?.isNational || isNational ? 'Nation' : 'Country',
+      club?.country || league.country,
+    ])
+
+    if (club?.city) rows.push(['City', club.city])
+    if (club?.stadium) rows.push(['Stadium', club.stadium])
+    if (club?.nickname) rows.push(['Nickname', club.nickname])
+    if (club?.foundedYear) rows.push(['Founded', String(club.foundedYear)])
+
+    if (club?.trophyCount != null) {
+      rows.push([
+        'Trophies',
+        `${club.trophyCount}${club.trophySource ? ' · major titles' : ''}`,
+      ])
+    } else if (!isNational && !facts.loading) {
+      rows.push(['Trophies', 'Not listed'])
+    }
+
+    if (club?.standingSummary) {
+      rows.push(['Season line', club.standingSummary])
+    }
+
+    for (const cell of seasonSnapshotFacts(standing)) {
+      // Avoid duplicating a full season line with place/points when summary exists
+      if (club?.standingSummary && (cell[0] === 'Table place' || cell[0] === 'Points')) continue
+      rows.push(cell)
+    }
+
+    return rows
+  }, [facts.data, facts.loading, isNational, league.country, league.name, standing])
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce}>
@@ -189,6 +218,7 @@ export function TeamProfileScreen({
         meta={
           <>
             {team.shortName}
+            {facts.data?.country ? ` · ${facts.data.country}` : ` · ${league.country}`}
             {standing
               ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''} · ${standing.points} pts`
               : isNational
@@ -198,40 +228,37 @@ export function TeamProfileScreen({
         }
       />
 
-      <section className="mt-6" aria-label="Season table line">
-        {league.hasStandings && standings.loading && !standing ? (
-          <p className="text-sm text-mist/70">Loading table…</p>
-        ) : league.hasStandings && standings.error && !standing ? (
-          <p className="text-sm text-mist/80">{standings.error}</p>
-        ) : standing ? (
-          <dl className="grid grid-cols-4 gap-3 border border-white/10 px-3 py-3.5 text-center sm:grid-cols-7">
-            {tableCells.map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-                  {label}
-                </dt>
-                <dd className="mt-1 font-display text-2xl tracking-wide text-cream tabular-nums">
-                  {value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p className="text-sm text-mist/70">
-            {isNational
-              ? league.hasStandings
-                ? 'No group-table row for this side in the current competition window.'
-                : 'Friendlies and some tournaments do not publish a live table.'
-              : 'No table row yet for this club.'}
-          </p>
-        )}
+      <section className="mt-6" aria-label="Club facts">
+        {facts.loading && factRows.length <= 2 ? (
+          <p className="text-sm text-mist/70">Loading club facts…</p>
+        ) : null}
 
-        {standing?.note ? <p className="mt-2 text-xs text-mist/60">{standing.note}</p> : null}
-        {standing?.group ? (
-          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-            {standing.group}
+        <dl className="border border-white/10">
+          {factRows.map(([label, value], index) => (
+            <div
+              key={`${label}-${index}`}
+              className={`flex items-baseline justify-between gap-4 px-3.5 py-2.5 ${
+                index > 0 ? 'border-t border-white/8' : ''
+              }`}
+            >
+              <dt className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
+                {label}
+              </dt>
+              <dd className="min-w-0 text-right text-sm font-semibold text-cream">{value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {facts.error ? (
+          <p className="mt-2 text-xs text-mist/55">Some club details could not be loaded.</p>
+        ) : null}
+        {facts.data?.trophyCount != null && facts.data.trophySource ? (
+          <p className="mt-2 text-[0.65rem] text-mist/45">
+            Trophy total estimated from public records ({facts.data.trophySource}).
           </p>
         ) : null}
+
+        {standing?.note ? <p className="mt-2 text-xs text-mist/60">{standing.note}</p> : null}
 
         <div className="mt-4">
           <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
