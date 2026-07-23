@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { MISSING_SHORT, missingLong, missingShort } from '../lib/display'
+import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
@@ -538,7 +538,8 @@ export function PlayerProfileScreen({
     hasMoreRatings,
     ratingsMoreError,
   } = usePlayerProfile(player.leagueId, player.id)
-  const league = getLeague(player.leagueId)
+  const displayLeagueId = profile?.leagueId || player.leagueId
+  const league = getLeague(displayLeagueId)
   const [openSection, setOpenSection] = useState<
     'stats' | 'ratings' | 'career' | 'transfers' | null
   >(null)
@@ -569,7 +570,7 @@ export function PlayerProfileScreen({
     jerseyUrl: profile?.jerseyUrl || player.jerseyUrl,
     jersey: profile?.jersey || player.jersey,
     position: profile?.position || player.position,
-    leagueId: player.leagueId,
+    leagueId: profile?.leagueId || player.leagueId,
     teamId: profile?.teamId || player.teamId,
     teamName: profile?.teamName || player.teamName,
   }
@@ -588,12 +589,13 @@ export function PlayerProfileScreen({
 
   const openCurrentClub = () => {
     if (!canOpenClub || !teamId || !teamName) return
+    const clubLeagueId = profile?.leagueId || player.leagueId
     onOpenTeam?.({
       id: teamId,
       name: teamName,
       shortName: teamName,
-      leagueId: player.leagueId,
-      kind: isInternationalLeague(player.leagueId) ? 'national' : 'club',
+      leagueId: clubLeagueId,
+      kind: isInternationalLeague(clubLeagueId) ? 'national' : 'club',
     })
   }
 
@@ -680,7 +682,7 @@ export function PlayerProfileScreen({
                 {` · ${missingShort(positionLabel)}`}
                 {' · '}
                 {onOpenLeague ? (
-                  <ProfileTextLink onClick={() => onOpenLeague(player.leagueId)}>
+                  <ProfileTextLink onClick={() => onOpenLeague(displayLeagueId)}>
                     {league.short}
                   </ProfileTextLink>
                 ) : (
@@ -862,7 +864,7 @@ export function PlayerProfileScreen({
               ) : (
                 <RecentRatingsList
                   rows={profile.recentRatings}
-                  leagueId={player.leagueId}
+                  leagueId={displayLeagueId}
                   hasMore={hasMoreRatings}
                   loadingMore={loadingMoreRatings}
                   onOpenTeam={onOpenTeam}
@@ -889,7 +891,7 @@ export function PlayerProfileScreen({
                     seasons={career.seasons}
                     loading={career.loading}
                     error={career.error}
-                    fallbackLeagueId={player.leagueId}
+                    fallbackLeagueId={displayLeagueId}
                     onOpenTeam={onOpenTeam}
                   />
                 </section>
@@ -923,7 +925,7 @@ export function PlayerProfileScreen({
                   <ClubHistoryList
                     stints={profile.clubHistory}
                     emptyLabel="No club history listed yet."
-                    leagueId={player.leagueId}
+                    leagueId={displayLeagueId}
                     kind="club"
                     onOpenTeam={onOpenTeam}
                   />
@@ -936,7 +938,7 @@ export function PlayerProfileScreen({
                   <ClubHistoryList
                     stints={profile.nationalHistory}
                     emptyLabel="No national team history listed yet."
-                    leagueId={player.leagueId}
+                    leagueId="fifa-friendly"
                     kind="national"
                     onOpenTeam={onOpenTeam}
                   />
@@ -945,7 +947,18 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
           </div>
         </>
-      ) : null}
+      ) : (
+        <div className="border border-white/10 bg-white/[0.03] px-4 py-4">
+          <p className="text-sm text-mist/80">{MISSING_LONG}</p>
+          <button
+            type="button"
+            onClick={() => void reload(player.leagueId, player.id)}
+            className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+          >
+            Retry
+          </button>
+        </div>
+      )}
     </ProfileShell>
   )
 }

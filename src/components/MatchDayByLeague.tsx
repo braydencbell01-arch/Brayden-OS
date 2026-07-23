@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matches'
@@ -154,12 +154,10 @@ export function MatchDayByLeague({
   const teamIds = favoriteTeamIds ?? EMPTY_ID_SET
 
   const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
-  const [openForDate, setOpenForDate] = useState(dateKey)
 
-  if (openForDate !== dateKey) {
-    setOpenForDate(dateKey)
+  useEffect(() => {
     setOpenIds(new Set())
-  }
+  }, [dateKey])
 
   if (groups.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>

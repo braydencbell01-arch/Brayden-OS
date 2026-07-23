@@ -249,6 +249,8 @@ export function LeagueProfileScreen({
         >
           {loading && recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">Loading results…</p>
+          ) : error && recentGrouped.length === 0 ? (
+            <p className="text-sm text-mist/80">{error}</p>
           ) : recentGrouped.length === 0 ? (
             <p className="text-sm text-mist/70">No finished matches in the loaded window yet.</p>
           ) : (

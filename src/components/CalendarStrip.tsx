@@ -225,10 +225,12 @@ export function CalendarStrip({
                 >
                   Today
                 </span>
-              ) : hasFavoriteMatch ? (
+              ) : null}
+              {hasFavoriteMatch ? (
                 <span
                   className={[
-                    'mt-2 mx-auto block h-1.5 w-1.5 rounded-full',
+                    'mx-auto block h-1.5 w-1.5 rounded-full',
+                    isToday ? 'mt-1' : 'mt-2',
                     active
                       ? 'bg-ink/70'
                       : 'bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]',
@@ -236,7 +238,7 @@ export function CalendarStrip({
                   aria-hidden
                 />
               ) : (
-                <span className="mt-2 block h-1.5" aria-hidden />
+                <span className={`block h-1.5 ${isToday ? 'mt-1' : 'mt-2'}`} aria-hidden />
               )}
             </button>
           )

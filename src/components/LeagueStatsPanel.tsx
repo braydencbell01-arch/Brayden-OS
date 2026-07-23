@@ -1,4 +1,4 @@
-import type { LeagueId } from '../lib/leagues'
+import { isInternationalLeague, type LeagueId } from '../lib/leagues'
 import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
 import type { LeaderCategory, LeaderEntry, LeagueLeaders } from '../lib/stats/types'
@@ -51,6 +51,7 @@ function LeadersTable({
                           name: leader.name,
                           shortName: leader.shortName,
                           leagueId,
+                          kind: isInternationalLeague(leagueId) ? 'national' : 'club',
                         })
                       }
                       className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
@@ -91,6 +92,7 @@ function LeadersTable({
                           name: leader.teamName!,
                           shortName: leader.teamName!,
                           leagueId,
+                          kind: isInternationalLeague(leagueId) ? 'national' : 'club',
                         })
                       }
                       className="profile-link mt-0.5 block max-w-full truncate text-left text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"

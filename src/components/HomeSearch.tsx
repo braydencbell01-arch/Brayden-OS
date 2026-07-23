@@ -91,6 +91,7 @@ export function HomeSearch({
   const [openPlayerError, setOpenPlayerError] = useState<string | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const requestId = useRef(0)
+  const openPlayerRequestId = useRef(0)
 
   const localTeams = useMemo(
     () => collectLocalTeams(matches, favoriteTeams),
@@ -202,14 +203,17 @@ export function HomeSearch({
     }
     setOpeningPlayerId(hit.player.id)
     setOpenPlayerError(null)
+    const req = ++openPlayerRequestId.current
     try {
       const player = await resolvePlayerNavFromSearch(hit as SearchPlayerHit)
+      if (openPlayerRequestId.current !== req) return
       onOpenPlayer(player)
       clearAndClose()
     } catch {
+      if (openPlayerRequestId.current !== req) return
       setOpenPlayerError('Could not open that player. Try again.')
     } finally {
-      setOpeningPlayerId(null)
+      if (openPlayerRequestId.current === req) setOpeningPlayerId(null)
     }
   }
 

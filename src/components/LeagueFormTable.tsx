@@ -1,4 +1,4 @@
-import type { LeagueId } from '../lib/leagues'
+import { isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import type { LeagueFormRow, TeamFormResult } from '../lib/matches'
 
@@ -62,6 +62,7 @@ export function LeagueFormTable({
                           name: row.team,
                           shortName: row.shortName,
                           leagueId,
+                          kind: isInternationalLeague(leagueId) ? 'national' : 'club',
                         })
                       }
                       className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"

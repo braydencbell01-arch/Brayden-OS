@@ -60,6 +60,12 @@ export function leagueIdFromTeamSlug(slug?: string | null): LeagueId | null {
   return leagueIdFromEspnCode(`${prefix}.1`)
 }
 
+/** Country-only ESPN team slugs (eng, bra) — national sides, not clubs. */
+export function isNationalTeamSlug(slug?: string | null): boolean {
+  if (!slug) return false
+  return !slug.includes('.')
+}
+
 function teamKindForLeague(leagueId: LeagueId): FavoriteTeam['kind'] {
   return isInternationalLeague(leagueId) ? 'national' : 'club'
 }
@@ -211,6 +217,7 @@ type EspnSearchItem = {
   sport?: string
   league?: string
   defaultLeagueSlug?: string
+  slug?: string
   logos?: Array<{ href?: string }>
   leagueRelationships?: Array<{
     displayName?: string
@@ -249,7 +256,20 @@ export async function searchEspnSoccer(
   const seenTeams = new Set<string>()
   for (const item of teamJson.items ?? []) {
     if (item.type !== 'team' || item.sport !== 'soccer' || !item.id || !item.displayName) continue
-    const leagueId = pickBestLeagueId([item.defaultLeagueSlug, item.league])
+    const relatedSlugs = (item.leagueRelationships ?? [])
+      .map((rel) => rel.core?.slug)
+      .filter(Boolean) as string[]
+    let leagueId = pickBestLeagueId([
+      ...relatedSlugs,
+      item.league,
+      item.defaultLeagueSlug,
+    ])
+    // Country-only slugs are national sides — never pin them to a domestic .1 league.
+    if (isNationalTeamSlug(item.slug)) {
+      if (!leagueId || !isInternationalLeague(leagueId)) {
+        leagueId = pickBestLeagueId(relatedSlugs) || 'fifa-friendly'
+      }
+    }
     if (!leagueId) continue
     if (seenTeams.has(item.id)) continue
     seenTeams.add(item.id)
@@ -341,10 +361,18 @@ export async function resolvePlayerNavFromSearch(
     if (!athlete?.id) return hit.player
 
     const fromSlug = leagueIdFromTeamSlug(athlete.team?.slug)
+    const teamSlug = athlete.team?.slug
+    let leagueId = fromSlug || hit.player.leagueId
+    // National-side athletes have country-only slugs; don't keep a domestic search default.
+    if (!fromSlug && isNationalTeamSlug(teamSlug)) {
+      leagueId = isInternationalLeague(hit.player.leagueId)
+        ? hit.player.leagueId
+        : 'fifa-friendly'
+    }
 
     return {
       id: athlete.id,
-      leagueId: fromSlug || hit.player.leagueId,
+      leagueId,
       name: athlete.displayName || hit.player.name,
       shortName: athlete.shortName || hit.player.shortName,
       photoUrl: athlete.headshot?.href || hit.player.photoUrl || playerHeadshotUrl(athlete.id),

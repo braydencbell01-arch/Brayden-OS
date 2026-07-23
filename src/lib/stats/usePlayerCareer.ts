@@ -15,7 +15,10 @@ export function usePlayerCareer(
   const national = options?.national === true
 
   useEffect(() => {
-    if (!enabled || !playerId || !clubHistory) return
+    if (!enabled || !playerId || !clubHistory) {
+      setLoading(false)
+      return
+    }
 
     let cancelled = false
     setLoading(true)

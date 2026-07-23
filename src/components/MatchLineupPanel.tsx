@@ -1,5 +1,6 @@
 import type { FavoriteTeam } from '../lib/favorites'
 import { MISSING_LONG, MISSING_SHORT, missingShort } from '../lib/display'
+import { isInternationalLeague } from '../lib/leagues'
 import type { MatchLineupPlayer, MatchLineupSide } from '../lib/stats/types'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { PlayerAvatar } from './PlayerAvatar'
@@ -77,6 +78,7 @@ function SideBlock({
                 name: side.teamName,
                 shortName: side.teamName,
                 leagueId: leagueId!,
+                kind: isInternationalLeague(leagueId!) ? 'national' : 'club',
               })
             }
             className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"

@@ -13,7 +13,10 @@ export function useTeamStatLeaders(
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!enabled || !teamId) return
+    if (!enabled || !teamId) {
+      setLoading(false)
+      return
+    }
 
     let cancelled = false
     setLoading(true)
