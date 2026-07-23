@@ -740,10 +740,19 @@ export function autoProcessDueGameweeks(
   currentGwFromCatalog: number,
 ): FantasyLeague {
   if (!league.autoScore) return league
-  let next = league
-  if (currentGwFromCatalog > 0 && !next.lineupLockedGws.includes(currentGwFromCatalog)) {
-    next = lockLineupForGw(next, currentGwFromCatalog)
+  // Demo / pre-season lobbies should not lock the live catalog GW.
+  if (
+    league.inviteCode === 'DEMO24' ||
+    league.id.startsWith('demo_') ||
+    league.phase === 'lobby' ||
+    league.phase === 'draft_setup' ||
+    league.phase === 'drafting'
+  ) {
+    return league
   }
+
+  let next = league
+  // Score (and lock) finished gameweeks only — never auto-lock the still-editable current GW.
   const dueGws = [
     ...new Set(
       next.matchups
@@ -753,6 +762,9 @@ export function autoProcessDueGameweeks(
     ),
   ]
   for (const gw of dueGws) {
+    if (!next.lineupLockedGws.includes(gw)) {
+      next = lockLineupForGw(next, gw)
+    }
     next = scoreGameweek(next, gw, catalog)
   }
   return next

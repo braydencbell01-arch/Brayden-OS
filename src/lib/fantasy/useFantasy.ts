@@ -77,7 +77,11 @@ function readStore(): FantasyStoreState {
 }
 
 function writeStore(state: FantasyStoreState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Quota / private mode — keep in-memory state.
+  }
 }
 
 export function useFantasy() {
@@ -98,11 +102,25 @@ export function useFantasy() {
     writeStore(store)
   }, [store])
 
+  const clearPendingInvite = useCallback(() => {
+    setPendingInvite(null)
+    if (typeof window === 'undefined') return
+    const rawHash = window.location.hash.replace(/^#/, '')
+    if (!rawHash.includes('fantasy-join')) return
+    const next = `${window.location.pathname}${window.location.search}#tab=fantasy`
+    window.history.replaceState(null, '', next)
+  }, [])
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     const readHashInvite = () => {
       const rawHash = window.location.hash.replace(/^#/, '')
       const params = new URLSearchParams(rawHash)
+      // Also support `#fantasy-join=<id>` form used by shareInviteText.
+      if (rawHash.startsWith('fantasy-join=')) {
+        setPendingInvite(decodeURIComponent(rawHash.slice('fantasy-join='.length)))
+        return
+      }
       setPendingInvite(params.get('fantasy-join'))
     }
     readHashInvite()
@@ -212,6 +230,7 @@ export function useFantasy() {
 
         if (looksLikeBlobId(raw)) {
           league = normalizeLeague(await pullLeague(raw))
+          league = { ...league, syncBlobId: raw }
         } else {
           league =
             Object.values(store.leagues).find(
@@ -292,9 +311,8 @@ export function useFantasy() {
         persistLeague({ ...remote, syncBlobId: local.syncBlobId }, true)
       } else if ((local.updatedAt ?? 0) > (remote.updatedAt ?? 0)) {
         await pushLeague(local.syncBlobId, local)
-      } else {
-        await pushLeague(local.syncBlobId, local)
       }
+      // Equal timestamps: keep local view; avoid last-write clobber on Sync.
     } catch (err: unknown) {
       setSyncError(err instanceof Error ? err.message : 'Refresh failed')
     }
@@ -421,21 +439,11 @@ export function useFantasy() {
     }
 
     const currentGw = catalog?.currentGw
-    if (
-      currentGw &&
-      activeLeague.autoScore &&
-      !activeLeague.lineupLockedGws.includes(currentGw) &&
-      !['lobby', 'draft_setup', 'drafting'].includes(activeLeague.phase)
-    ) {
-      const key = `${activeLeague.id}:lock-soon:${currentGw}`
-      if (!reminderKeys.current.has(key)) {
-        reminderKeys.current.add(key)
-        new Notification('BrayStats Fantasy', { body: `GW ${currentGw} lineups lock soon.` })
-      }
-    }
+    // Lock notifications only after a GW has actually been locked — not a spammy
+    // “lock soon” every time the current GW is still editable.
 
     const lockedGw = [...activeLeague.lineupLockedGws].sort((a, b) => b - a)[0]
-    if (lockedGw != null) {
+    if (lockedGw != null && currentGw && lockedGw < currentGw) {
       const key = `${activeLeague.id}:lock:${lockedGw}`
       if (!reminderKeys.current.has(key)) {
         reminderKeys.current.add(key)
@@ -481,7 +489,7 @@ export function useFantasy() {
     pendingInvite,
     playerMap,
     setDisplayName,
-    clearPendingInvite: () => setPendingInvite(null),
+    clearPendingInvite,
     enableReminders,
     setActiveLeagueId: (id: string | null) =>
       setStore((prev) => ({ ...prev, activeLeagueId: id })),
