@@ -2,8 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getLeague } from '../lib/leagues'
 import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
+import { usePlayerCareer } from '../lib/stats/usePlayerCareer'
 import { usePlayerProfile } from '../lib/stats/usePlayerProfile'
-import type { MatchLineupPlayer, PlayerRecentMatchRating } from '../lib/stats/types'
+import type {
+  MatchLineupPlayer,
+  PlayerCareerSeason,
+  PlayerRecentMatchRating,
+} from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
 import { ProfileAccordion } from './ProfileAccordion'
@@ -119,6 +124,58 @@ function RecentRatingsList({
   )
 }
 
+function CareerSeasonsPanel({
+  seasons,
+  loading,
+  error,
+}: {
+  seasons: PlayerCareerSeason[]
+  loading: boolean
+  error: string | null
+}) {
+  if (loading && seasons.length === 0) {
+    return <p className="text-sm text-mist/70">Loading career…</p>
+  }
+  if (error && seasons.length === 0) {
+    return <p className="text-sm text-mist/80">{error}</p>
+  }
+  if (seasons.length === 0) {
+    return <p className="text-sm text-mist/70">No club seasons listed yet.</p>
+  }
+
+  return (
+    <ul className="flex flex-col gap-1.5">
+      {seasons.map((row) => (
+        <li
+          key={row.id}
+          className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] items-center gap-2 border border-white/10 px-3 py-2.5 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1.1fr)_auto_auto]"
+        >
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-cream">{row.seasonLabel}</p>
+            <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
+              {row.clubName}
+            </p>
+          </div>
+          <p className="text-sm tabular-nums text-mist/85">
+            <span className="font-semibold text-cream">{row.goals}</span> G
+            <span className="mx-1.5 text-mist/35">·</span>
+            <span className="font-semibold text-cream">{row.assists}</span> A
+          </p>
+          <p
+            className={`text-right font-display text-2xl tabular-nums ${
+              row.averageRating == null ? 'text-mist/40' : ''
+            }`}
+            style={ratingColorStyle(row.averageRating)}
+            title="Average Brayden Rating"
+          >
+            {row.averageRating != null ? row.averageRating.toFixed(1) : '—'}
+          </p>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function PlayerProfileScreen({
   player,
   favorites,
@@ -140,8 +197,15 @@ export function PlayerProfileScreen({
     hasMoreRatings,
   } = usePlayerProfile(player.leagueId, player.id)
   const league = getLeague(player.leagueId)
-  const [openSection, setOpenSection] = useState<'stats' | 'ratings' | 'transfers' | null>(
-    null,
+  const [openSection, setOpenSection] = useState<
+    'stats' | 'ratings' | 'career' | 'transfers' | null
+  >(null)
+
+  const career = usePlayerCareer(
+    profile?.id ?? player.id,
+    profile?.clubHistory,
+    profile?.positionAbbrev || player.position,
+    openSection === 'career',
   )
 
   const favoritePayload: FavoritePlayer = {
@@ -158,8 +222,10 @@ export function PlayerProfileScreen({
   }
 
   const favorited = favorites.isPlayerFavorite(player.id)
+  const nationality = profile?.citizenship || profile?.represents || null
+  const positionLabel = profile?.position || player.position || null
 
-  const toggle = (section: 'stats' | 'ratings' | 'transfers') => {
+  const toggle = (section: 'stats' | 'ratings' | 'career' | 'transfers') => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -198,16 +264,12 @@ export function PlayerProfileScreen({
                 size="lg"
               />
             }
-            eyebrow={
-              <>
-                {profile.represents || 'Nation TBD'}
-                {profile.position ? ` · ${profile.position}` : ''}
-              </>
-            }
+            eyebrow={nationality || 'Nationality TBD'}
             title={profile.name}
             meta={
               <>
                 {profile.teamName || 'Club TBD'}
+                {positionLabel ? ` · ${positionLabel}` : ''}
                 {` · ${league.short}`}
                 {profile.jersey ? ` · #${profile.jersey}` : ''}
               </>
@@ -235,10 +297,18 @@ export function PlayerProfileScreen({
               }
             />
             <ProfileMetric
-              label={profile.representsNationalTeam ? 'National team' : 'Represents'}
+              label="Nationality"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {profile.represents || '—'}
+                  {nationality || '—'}
+                </span>
+              }
+            />
+            <ProfileMetric
+              label="Position"
+              value={
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {positionLabel || '—'}
                 </span>
               }
             />
@@ -307,8 +377,21 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
 
             <ProfileAccordion
-              title="Career history"
-              subtitle="Club and national team"
+              title="Career"
+              subtitle="Season · club · goals · assists · avg rating"
+              open={openSection === 'career'}
+              onToggle={() => toggle('career')}
+            >
+              <CareerSeasonsPanel
+                seasons={career.seasons}
+                loading={career.loading}
+                error={career.error}
+              />
+            </ProfileAccordion>
+
+            <ProfileAccordion
+              title="Club history"
+              subtitle="Clubs and international sides"
               open={openSection === 'transfers'}
               onToggle={() => toggle('transfers')}
             >

@@ -143,6 +143,19 @@ export type PlayerClubStint = {
   isActive?: boolean
 }
 
+/** One club season in a player's career timeline. */
+export type PlayerCareerSeason = {
+  id: string
+  seasonYear: number
+  seasonLabel: string
+  clubId: string
+  clubName: string
+  leagueSlug: string
+  goals: number
+  assists: number
+  averageRating: number | null
+}
+
 export type PlayerSeasonStatLine = {
   label: string
   value: string
