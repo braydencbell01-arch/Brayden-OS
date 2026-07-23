@@ -46,8 +46,68 @@ import {
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
 const FALLBACK_IMAGE = asset('product-home.jpg')
+const LOGO_SRC = {
+  sm: asset('logo-64.png'),
+  md: asset('logo-192.png'),
+  lg: asset('logo.png'),
+} as const
 
 type AudienceFilter = 'All' | 'Adult' | 'Youth'
+
+function BrandMark({
+  size = 'md',
+  withWordmark = false,
+  wordmarkTone = 'navy',
+  className = '',
+}: {
+  size?: 'sm' | 'md' | 'lg' | 'hero'
+  withWordmark?: boolean
+  wordmarkTone?: 'navy' | 'white' | 'cream'
+  className?: string
+}) {
+  const frame =
+    size === 'sm'
+      ? 'h-9 w-9'
+      : size === 'md'
+        ? 'h-11 w-11'
+        : size === 'lg'
+          ? 'h-16 w-16 md:h-[4.5rem] md:w-[4.5rem]'
+          : 'h-28 w-28 sm:h-36 sm:w-36 md:h-44 md:w-44'
+  const src = size === 'sm' ? LOGO_SRC.sm : size === 'hero' || size === 'lg' ? LOGO_SRC.lg : LOGO_SRC.md
+  const word =
+    wordmarkTone === 'white'
+      ? 'text-white'
+      : wordmarkTone === 'cream'
+        ? 'text-cream'
+        : 'text-navy'
+  const wordSize =
+    size === 'hero'
+      ? 'text-3xl sm:text-4xl md:text-5xl'
+      : size === 'lg'
+        ? 'text-2xl md:text-3xl'
+        : size === 'md'
+          ? 'text-lg md:text-xl'
+          : 'text-base'
+
+  return (
+    <span className={`inline-flex items-center gap-3 ${className}`}>
+      <img
+        src={src}
+        alt={withWordmark ? '' : 'Jersey Deals'}
+        width={size === 'hero' ? 176 : size === 'lg' ? 72 : size === 'md' ? 44 : 36}
+        height={size === 'hero' ? 176 : size === 'lg' ? 72 : size === 'md' ? 44 : 36}
+        className={`${frame} shrink-0 rounded-full shadow-[0_0_0_2px_rgba(11,34,63,0.12)]`}
+        decoding="async"
+        draggable={false}
+      />
+      {withWordmark ? (
+        <span className={`font-brand font-bold uppercase leading-none tracking-[0.08em] ${word} ${wordSize}`}>
+          Jersey Deals
+        </span>
+      ) : null}
+    </span>
+  )
+}
 
 function SafeImage({
   src,
@@ -95,6 +155,7 @@ function SafeImage({
 const ease = [0.22, 1, 0.36, 1] as const
 
 const BRAND_MARQUEE = [
+  'Jersey Deals',
   'Nike',
   'Adidas',
   'Puma',
@@ -148,9 +209,9 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`border px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition ${
+      className={`border px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] transition ${
         active
-          ? 'border-navy bg-navy text-white'
+          ? 'border-navy bg-navy text-cream'
           : 'border-navy/15 text-navy/70 hover:border-navy/40 hover:text-navy'
       }`}
     >
@@ -561,7 +622,7 @@ export default function App() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
       {/* Promo bar — always on top */}
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-crimson px-4 py-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-white">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-crimson px-4 py-2 text-center font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream">
         <span>{PROMO_BAR}</span>
         {saleFloor != null && (
           <span className="hidden text-white/75 sm:inline">· From {formatPrice(saleFloor, 'USD')}</span>
@@ -578,16 +639,20 @@ export default function App() {
       <header
         className={`fixed inset-x-0 top-9 z-40 transition duration-300 ${
           navSolid
-            ? 'border-b border-navy/10 bg-chalk/95 text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] backdrop-blur-md'
+            ? 'border-b border-navy/10 bg-cream/95 text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] backdrop-blur-md'
             : 'bg-transparent text-white'
         }`}
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 md:px-8">
           <a
             href="#top"
-            className="font-brand text-lg font-bold uppercase tracking-[0.12em] md:text-xl"
+            className="inline-flex items-center outline-none focus-visible:ring-2 focus-visible:ring-crimson"
           >
-            Jersey Deals
+            <BrandMark
+              size="sm"
+              withWordmark
+              wordmarkTone={navSolid ? 'navy' : 'white'}
+            />
           </a>
           <nav className="hidden items-center gap-6 xl:flex" aria-label="Primary">
             {navLinks.map((link) => (
@@ -634,7 +699,7 @@ export default function App() {
 
         <div
           className={`border-t transition ${
-            navSolid ? 'border-navy/10 bg-chalk/95' : 'border-white/10 bg-navy-deep/55 backdrop-blur-md'
+            navSolid ? 'border-navy/10 bg-cream/95' : 'border-white/10 bg-navy-deep/55 backdrop-blur-md'
           }`}
         >
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2.5 md:px-8">
@@ -707,13 +772,15 @@ export default function App() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease }}
             >
-              <p className="font-brand text-5xl font-bold uppercase leading-[0.95] tracking-[0.04em] text-white sm:text-6xl md:text-7xl">
+              <BrandMark size="hero" className="drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]" />
+              <p className="mt-6 font-brand text-sm font-bold uppercase tracking-[0.22em] text-cream">
                 Jersey Deals
               </p>
-              <h1 className="mt-5 max-w-xl font-display text-4xl font-bold uppercase leading-[0.92] tracking-wide text-white sm:text-5xl md:text-6xl">
+              <div className="brand-rule mt-3" aria-hidden />
+              <h1 className="mt-5 max-w-xl font-display text-4xl font-bold uppercase leading-[0.92] tracking-wide text-cream sm:text-5xl md:text-6xl">
                 The modern kit shop.
               </h1>
-              <p className="mt-5 max-w-md text-base leading-relaxed text-white/72 md:text-lg">
+              <p className="mt-5 max-w-md font-brand text-base leading-relaxed text-cream/80 md:text-lg">
                 Club kits, youth sizes, and sale jerseys — photographed from our inventory and sold
                 direct.
               </p>
@@ -725,14 +792,14 @@ export default function App() {
                   onClick={() => track('cta_click', { place: 'hero_primary' })}
                   whileHover={reduce ? undefined : { scale: 1.02 }}
                   whileTap={reduce ? undefined : { scale: 0.98 }}
-                  className="inline-flex bg-crimson px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+                  className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
                 >
                   {shopLabel(catalog)}
                 </motion.a>
                 <a
                   href="#shop"
                   onClick={() => track('cta_click', { place: 'hero_secondary' })}
-                  className="inline-flex border border-white/35 px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:border-white hover:bg-white/5"
+                  className="inline-flex border border-cream/40 px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream transition hover:border-cream hover:bg-cream/10"
                 >
                   Explore
                 </a>
@@ -758,12 +825,16 @@ export default function App() {
         </section>
 
         {/* Brand / category marquee */}
-        <section className="overflow-hidden border-y border-navy/10 bg-white py-4" aria-label="Highlights">
+        <section className="overflow-hidden border-y border-navy/10 bg-cream py-5" aria-label="Highlights">
           <div className="marquee-track gap-10 px-4">
             {[...BRAND_MARQUEE, ...BRAND_MARQUEE].map((item, i) => (
               <span
                 key={`${item}-${i}`}
-                className="font-display text-lg font-bold uppercase tracking-[0.2em] text-navy/55 whitespace-nowrap"
+                className={`whitespace-nowrap uppercase tracking-[0.2em] ${
+                  item === 'Jersey Deals'
+                    ? 'font-brand text-lg font-bold text-crimson'
+                    : 'font-display text-lg font-bold text-navy/55'
+                }`}
               >
                 {item}
                 <span className="ml-10 text-crimson/70">◆</span>
@@ -773,8 +844,8 @@ export default function App() {
         </section>
 
         {/* Service strip */}
-        <section className="bg-navy text-white">
-          <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3.5 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white/70 md:px-8 md:justify-between">
+        <section className="bg-navy text-cream">
+          <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.18em] text-cream/75 md:px-8 md:justify-between">
             {SERVICE_POINTS.map((point) => (
               <li key={point}>{point}</li>
             ))}
@@ -782,14 +853,15 @@ export default function App() {
         </section>
 
         {/* Editorial shop paths */}
-        <section id="shop" className="scroll-mt-40 bg-chalk py-20 md:py-28">
+        <section id="shop" className="scroll-mt-40 bg-cream py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Collections</p>
-              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+              <div className="brand-rule mt-3" aria-hidden />
+              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                 Shop the floor
               </h2>
-              <p className="mt-3 text-lg text-muted">
+              <p className="mt-3 font-brand text-lg text-muted">
                 Youth sizes, sale racks, or the full live catalog — pick a path.
               </p>
             </motion.div>
@@ -920,10 +992,11 @@ export default function App() {
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Browse by audience</p>
-              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+              <div className="brand-rule mt-3" aria-hidden />
+              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                 Who's shopping?
               </h2>
-              <p className="mt-3 text-lg text-muted">
+              <p className="mt-3 font-brand text-lg text-muted">
                 Men's and adult kits or youth and kids sizes — filter your path.
               </p>
             </motion.div>
@@ -1408,10 +1481,11 @@ export default function App() {
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson">Catalog</p>
-              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+              <div className="brand-rule mt-3" aria-hidden />
+              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                 Full inventory
               </h2>
-              <p className="mt-3 text-lg text-muted">
+              <p className="mt-3 font-brand text-lg text-muted">
                 Filter live stock by type, size, brand, and price — then checkout on {channelLabel}.
               </p>
             </motion.div>
@@ -1576,10 +1650,11 @@ export default function App() {
             <div className="flex flex-col justify-center px-8 py-16 md:px-12 md:py-20">
               <motion.div {...fadeUp(reduce)}>
                 <p className="eyebrow text-crimson">Why Jersey Deals</p>
-                <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                <div className="brand-rule mt-3" aria-hidden />
+                <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                   Direct. Detailed. Live.
                 </h2>
-                <p className="mt-5 max-w-xl text-lg text-muted">
+                <p className="mt-5 max-w-xl font-brand text-lg text-muted">
                   {FAMILY_NOTE} We sell as{' '}
                   <a
                     href={ebaySeller}
@@ -1882,20 +1957,23 @@ export default function App() {
             {...fadeUp(reduce)}
             className="relative mx-auto flex max-w-6xl flex-col items-start gap-8 px-5 md:flex-row md:items-center md:justify-between md:px-8"
           >
-            <div>
-              <p className="font-brand text-4xl font-bold uppercase tracking-[0.06em] md:text-5xl">
-                Jersey Deals
-              </p>
-              <p className="mt-4 max-w-md text-lg text-white/90">
-                The kit shop is open — youth apparel, sale racks, and the full catalog.
-              </p>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+              <BrandMark size="lg" />
+              <div>
+                <p className="font-brand text-3xl font-bold uppercase tracking-[0.06em] text-cream md:text-4xl">
+                  Jersey Deals
+                </p>
+                <p className="mt-3 max-w-md text-lg text-cream/90">
+                  The kit shop is open — youth apparel, sale racks, and the full catalog.
+                </p>
+              </div>
             </div>
             <a
               href={shopUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => track('cta_click', { place: 'final' })}
-              className="inline-flex shrink-0 bg-navy px-8 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-navy-deep"
+              className="inline-flex shrink-0 bg-navy px-8 py-4 font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream transition hover:bg-navy-deep"
             >
               {shopLabel(catalog)}
             </a>
@@ -1907,12 +1985,12 @@ export default function App() {
         <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
-              <img src={asset('favicon.svg')} alt="" className="h-9 w-9" width={36} height={36} />
-              <p className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-white">
+              <BrandMark size="md" />
+              <p className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-cream">
                 Jersey Deals
               </p>
             </div>
-            <p className="mt-4 max-w-sm text-sm leading-relaxed">
+            <p className="mt-4 max-w-sm font-brand text-sm leading-relaxed text-cream/65">
               Premium kit shopping from live inventory — sold direct.
             </p>
           </div>
@@ -1994,7 +2072,7 @@ export default function App() {
       </footer>
 
       <div
-        className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-navy-deep/95 p-3 backdrop-blur transition md:hidden ${
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur transition md:hidden ${
           showSticky ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
         }`}
       >
@@ -2003,8 +2081,9 @@ export default function App() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track('cta_click', { place: 'sticky_mobile' })}
-          className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white"
+          className="flex w-full items-center justify-center gap-3 bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
         >
+          <img src={LOGO_SRC.sm} alt="" className="h-6 w-6 rounded-full" width={24} height={24} />
           {shopLabel(catalog)}
         </a>
       </div>
@@ -2012,15 +2091,13 @@ export default function App() {
       {/* Mobile nav drawer */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[45] flex flex-col bg-chalk xl:hidden"
+          className="fixed inset-0 z-[45] flex flex-col bg-cream xl:hidden"
           role="dialog"
           aria-modal
           aria-label="Navigation menu"
         >
-          <div className="flex items-center justify-between border-b border-navy/10 px-5 py-4 pt-[calc(1rem+36px)]">
-            <span className="font-brand text-lg font-bold uppercase tracking-[0.12em] text-navy">
-              Jersey Deals
-            </span>
+          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4 pt-[calc(1rem+36px)]">
+            <BrandMark size="sm" withWordmark wordmarkTone="navy" />
             <button
               type="button"
               aria-label="Close menu"
