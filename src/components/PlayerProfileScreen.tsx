@@ -664,11 +664,24 @@ export function PlayerProfileScreen({
               </div>
             }
             eyebrow={
-              represents
-                ? profile.representsNationalTeam
-                  ? `Represents ${represents}`
-                  : represents
-                : missingLong(null)
+              <span className="inline-flex items-center gap-2">
+                {profile.flagUrl ? (
+                  <img
+                    src={profile.flagUrl}
+                    alt=""
+                    className="h-4 w-6 object-contain"
+                    loading="lazy"
+                  />
+                ) : null}
+                <span>
+                  {represents
+                    ? profile.representsNationalTeam
+                      ? `Represents ${represents}`
+                      : represents
+                    : missingLong(null)}
+                  {profile.dateOfBirth ? ` · Born ${profile.dateOfBirth}` : ''}
+                </span>
+              </span>
             }
             title={missingShort(profile.name)}
             meta={
@@ -730,6 +743,20 @@ export function PlayerProfileScreen({
             </p>
           ) : null}
 
+          {profile.seasonSummary && profile.seasonSummary.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2" aria-label="Season snapshot">
+              {profile.seasonSummary.map((chip) => (
+                <span
+                  key={chip.label}
+                  className="border border-white/12 bg-white/[0.04] px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/80"
+                >
+                  <span className="text-cream">{chip.value}</span>
+                  <span className="ml-1.5 text-mist/50">{chip.label}</span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+
           <ProfileMetricsRow>
             <ProfileMetric
               label="Avg rating"
@@ -786,28 +813,20 @@ export function PlayerProfileScreen({
                 </span>
               }
             />
+            <ProfileMetric label="Age" value={profile.age ?? MISSING_SHORT} />
             <ProfileMetric
-              label="Club"
+              label="Height"
               value={
-                canOpenClub ? (
-                  <ProfileTextLink
-                    className="block truncate text-lg font-semibold leading-8 text-cream"
-                    onClick={openCurrentClub}
-                  >
-                    {missingShort(teamName)}
-                  </ProfileTextLink>
-                ) : (
-                  <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                    {missingShort(teamName)}
-                  </span>
-                )
+                <span className="block truncate text-lg font-semibold leading-8 text-cream">
+                  {missingShort(profile.height)}
+                </span>
               }
             />
             <ProfileMetric
-              label="Represents"
+              label="Weight"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {missingShort(represents)}
+                  {missingShort(profile.weight)}
                 </span>
               }
             />
@@ -816,23 +835,6 @@ export function PlayerProfileScreen({
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
                   {missingShort(positionLabel)}
-                </span>
-              }
-            />
-            <ProfileMetric label="Age" value={profile.age ?? MISSING_SHORT} />
-            <ProfileMetric
-              label="Height"
-              value={
-                <span className="block text-2xl leading-8 text-cream">
-                  {missingShort(profile.height)}
-                </span>
-              }
-            />
-            <ProfileMetric
-              label="Weight"
-              value={
-                <span className="block text-2xl leading-8 text-cream">
-                  {missingShort(profile.weight)}
                 </span>
               }
             />
@@ -930,8 +932,8 @@ export function PlayerProfileScreen({
             </ProfileAccordion>
 
             <ProfileAccordion
-              title="Club history"
-              subtitle="Clubs and international sides"
+              title="History"
+              subtitle="Club and national-team stints"
               open={openSection === 'transfers'}
               onToggle={() => toggle('transfers')}
             >
