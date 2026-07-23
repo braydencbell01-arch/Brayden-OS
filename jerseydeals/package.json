@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "sync:ebay": "node scripts/sync-ebay-listings.mjs",
     "sync:square": "node scripts/sync-square-catalog.mjs",
-    "sync:inventory": "node scripts/sync-inventory.mjs"
+    "sync:inventory": "node scripts/sync-inventory.mjs",
+    "push:square": "node scripts/push-listings-to-square.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.42.2",
