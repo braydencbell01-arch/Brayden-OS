@@ -30,7 +30,7 @@ export type EspnFplEstimateInput = {
 }
 
 /**
- * Estimate classic FPL points for one match from ESPN roster stats.
+ * Estimate classic Fantasy Points for one match from ESPN roster stats.
  * Bonus BPS and pen save/miss are omitted (not in ESPN match lines) — treat as est.
  */
 export function estimateFplPointsFromEspn(input: EspnFplEstimateInput): number | null {

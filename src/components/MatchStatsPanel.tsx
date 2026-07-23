@@ -54,23 +54,23 @@ export function MatchStatsPanel({
     return <p className="mt-3 text-xs text-mist/65">{MISSING_LONG}</p>
   }
 
-  const showFplToggle = stats.leagueId === 'premier-league' && stats.lineups.length > 0
-  const activeMode = showFplToggle ? scoreMode : 'rating'
+  const showFantasyToggle = stats.lineups.length > 0
+  const activeMode = showFantasyToggle ? scoreMode : 'rating'
 
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
       <div className="mb-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
-            {activeMode === 'fpl' ? 'Lineups + FPL pts' : 'Lineups + ratings'}
+            {activeMode === 'fantasy' ? 'Lineups + Fantasy Points' : 'Lineups + ratings'}
           </p>
-          {showFplToggle ? (
+          {showFantasyToggle ? (
             <LineupScoreModeToggle mode={scoreMode} onChange={setScoreMode} />
           ) : null}
         </div>
         <p className="mb-3 text-xs text-mist/65">
-          {activeMode === 'fpl'
-            ? 'Estimated classic FPL points from this match (no bonus). Tap a player for their profile.'
+          {activeMode === 'fantasy'
+            ? 'Estimated Fantasy Points from this match (no bonus). Tap a player for their profile.'
             : 'Tap a player for their profile. Ratings start at 5.0 and average out over the match.'}
         </p>
         <MatchLineupPanel

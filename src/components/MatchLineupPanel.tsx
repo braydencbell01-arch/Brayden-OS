@@ -5,7 +5,7 @@ import type { MatchLineupPlayer, MatchLineupSide } from '../lib/stats/types'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { PlayerAvatar } from './PlayerAvatar'
 
-export type LineupScoreMode = 'rating' | 'fpl'
+export type LineupScoreMode = 'rating' | 'fantasy'
 
 function LineupPlayerCard({
   player,
@@ -18,8 +18,8 @@ function LineupPlayerCard({
 }) {
   const position = missingShort(player.positionAbbrev)
   const jersey = player.jersey ? missingShort(player.jersey) : null
-  const showFpl = scoreMode === 'fpl'
-  const fplPoints = player.fplPoints
+  const showFantasy = scoreMode === 'fantasy'
+  const fantasyPoints = player.fplPoints
 
   return (
     <button
@@ -42,14 +42,18 @@ function LineupPlayerCard({
       >
         {missingShort(player.shortName)}
       </span>
-      {showFpl ? (
+      {showFantasy ? (
         <span
           className={`font-display text-lg leading-none tracking-wide tabular-nums ${
-            fplPoints == null ? 'text-mist/50' : 'text-lime'
+            fantasyPoints == null ? 'text-mist/50' : 'text-lime'
           }`}
-          title={fplPoints == null ? undefined : 'Estimated classic FPL points (no BPS)'}
+          title={
+            fantasyPoints == null
+              ? undefined
+              : 'Estimated Fantasy Points from this match (no bonus)'
+          }
         >
-          {fplPoints != null ? fplPoints : MISSING_SHORT}
+          {fantasyPoints != null ? fantasyPoints : MISSING_SHORT}
         </span>
       ) : (
         <span
@@ -197,7 +201,7 @@ export function MatchLineupPanel({
   )
 }
 
-/** Segmented Rating | FPL pts control for Premier League match expand. */
+/** Segmented Rating | Fantasy Points control for match expand. */
 export function LineupScoreModeToggle({
   mode,
   onChange,
@@ -214,7 +218,7 @@ export function LineupScoreModeToggle({
       {(
         [
           ['rating', 'Rating'],
-          ['fpl', 'FPL pts'],
+          ['fantasy', 'Fantasy Points'],
         ] as const
       ).map(([value, label]) => {
         const active = mode === value

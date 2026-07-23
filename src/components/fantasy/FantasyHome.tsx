@@ -372,8 +372,8 @@ export function FantasyHome({
             required
           />
           <p className="text-xs leading-relaxed text-mist/55">
-            Commissioners share a short invite code plus a link. Paste either the short code from a
-            league already on this device or the full cloud link/blob invite.
+            Paste a cloud invite link (or blob id) to join from another phone. Short codes only work
+            for leagues already saved on this device.
           </p>
           {fantasy.pendingInvite ? (
             <FantasyButton
