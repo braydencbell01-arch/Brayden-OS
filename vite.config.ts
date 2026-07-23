@@ -23,7 +23,7 @@ export default defineConfig({
         name: 'BrayStats',
         short_name: 'BrayStats',
         description:
-          'Soccer player ratings, live Big 5 scores, and league insights.',
+          'Soccer player ratings, live scores, and league insights across global competitions.',
         theme_color: '#06261c',
         background_color: '#06261c',
         display: 'standalone',

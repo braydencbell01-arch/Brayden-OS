@@ -34,6 +34,7 @@ import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
 import { ProfileHeader, ProfileMetric, ProfileMetricsRow, ProfileShell } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
+import { TeamSeasonStory } from './TeamSeasonStory'
 import { TeamRosterPanel } from './TeamRosterPanel'
 import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
 
@@ -492,6 +493,14 @@ export function TeamProfileScreen({
               ))}
             </div>
           )}
+        </div>
+
+        <div className="mt-4">
+          <TeamSeasonStory
+            matches={teamMatches}
+            teamId={team.id}
+            teamName={displayName}
+          />
         </div>
 
         {nextOpponent ? (

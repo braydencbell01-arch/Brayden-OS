@@ -26,6 +26,7 @@ import {
 import { FantasyCommissionerChecklist } from './FantasyCommissionerChecklist'
 import { FantasyHome } from './FantasyHome'
 import { FantasyMatchupCenter } from './FantasyMatchupCenter'
+import { downloadLeagueJson, parseLeagueImport } from '../../lib/fantasy/exportImport'
 
 type HubTab = 'home' | 'draft' | 'roster' | 'matchup' | 'waivers' | 'trades' | 'standings' | 'bracket'
 
@@ -204,6 +205,39 @@ function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
             {copied ? 'Copied' : 'Share invite'}
           </FantasyButton>
           {copyError ? <p className="text-xs text-star">{copyError}</p> : null}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <FantasyButton
+            variant="ghost"
+            onClick={() => {
+              try {
+                downloadLeagueJson(league)
+              } catch (err: unknown) {
+                setCopyError(err instanceof Error ? err.message : 'Export failed')
+              }
+            }}
+          >
+            Export JSON
+          </FantasyButton>
+          <label className="inline-flex cursor-pointer items-center rounded-full border border-white/15 px-3 py-1.5 text-xs font-bold text-mist hover:border-lime/40 hover:text-lime">
+            Import JSON
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                void file.text().then((text) => {
+                  try {
+                    fantasy.importLeague(parseLeagueImport(text))
+                  } catch (err: unknown) {
+                    setCopyError(err instanceof Error ? err.message : 'Import failed')
+                  }
+                })
+              }}
+            />
+          </label>
         </div>
       </section>
 

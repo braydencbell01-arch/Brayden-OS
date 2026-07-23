@@ -7,7 +7,9 @@ import { HomeSearch } from './components/HomeSearch'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
 import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
+import { MyMatchday } from './components/MyMatchday'
 import { FantasyScreen } from './components/fantasy/FantasyScreen'
+import { SettingsScreen, OnboardingOverlay } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
 import { useFantasy } from './lib/fantasy/useFantasy'
 import {
@@ -17,8 +19,10 @@ import {
 import { TeamProfileScreen } from './components/TeamProfileScreen'
 import { startOfDay, toDateKey } from './lib/dates'
 import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favorites'
+import { buildHash, parseHash } from './lib/hashRoute'
 import { LEAGUES, type LeagueId } from './lib/leagues'
 import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
+import { loadSettings, saveSettings } from './lib/settings'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
 import { useTodayKey } from './lib/useToday'
 
@@ -68,6 +72,7 @@ function HomeScreen({
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
+  onOpenSettings,
   matches,
   loading,
   error,
@@ -76,6 +81,7 @@ function HomeScreen({
   hasLive,
   onRefresh,
   favorites,
+  showPredictions,
   reduce,
 }: {
   selectedDate: Date
@@ -86,6 +92,7 @@ function HomeScreen({
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
+  onOpenSettings: () => void
   matches: Match[]
   loading: boolean
   error: string | null
@@ -94,6 +101,7 @@ function HomeScreen({
   hasLive: boolean
   onRefresh: () => void
   favorites: FavoritesApi
+  showPredictions: boolean
   reduce: boolean | null
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
@@ -119,8 +127,16 @@ function HomeScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
-        <div className="mb-3 flex items-center gap-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
           <BrandMark />
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="rounded-full border border-white/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-mist/75 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            aria-label="Open settings"
+          >
+            Settings
+          </button>
         </div>
 
         <header className="mb-4">
@@ -181,6 +197,15 @@ function HomeScreen({
             reduce={reduce}
           />
         </div>
+
+        <MyMatchday
+          matches={matches}
+          favorites={favorites}
+          showPredictions={showPredictions}
+          onOpenTeam={onOpenTeam}
+          onOpenPlayer={onOpenPlayer}
+          onOpenLeague={onOpenLeague}
+        />
 
         <section className="mt-1" aria-label="Fixtures for selected date">
           <div className="mb-2.5 flex items-end justify-between gap-3 px-1">
@@ -272,6 +297,7 @@ function HomeScreen({
                 ) : (
                   <MatchDayByLeague
                     matches={dayMatches}
+                    allMatches={matches}
                     dateKey={toDateKey(selectedDate)}
                     onOpenTeam={onOpenTeam}
                     onOpenPlayer={onOpenPlayer}
@@ -312,6 +338,9 @@ export default function App() {
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
   const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(() => !loadSettings().onboardingDone)
+  const [settings, setSettings] = useState(() => loadSettings())
   /** Bottom tab to restore when overlays fully close (never overwritten by league→team). */
   const [returnTab, setReturnTab] = useState<BottomTab>('home')
   /** Club stack so Team → opponent → … → Back unwinds correctly. */
@@ -324,10 +353,20 @@ export default function App() {
   const teamReturnPlayerRef = useRef<PlayerNavRef | null>(null)
   /** League → Team keeps the origin league so Back can return past a nested league hop. */
   const teamOriginLeagueRef = useRef<LeagueId | null>(null)
+  /** Skip applying hash we just wrote from in-app navigation. */
+  const writingHashRef = useRef(false)
   const todayKey = useTodayKey()
   const todayKeyRef = useRef(todayKey)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
+
+  const writeHash = useCallback((route: Parameters<typeof buildHash>[0]) => {
+    if (typeof window === 'undefined') return
+    const next = buildHash(route)
+    if (window.location.hash === next) return
+    writingHashRef.current = true
+    window.location.hash = next
+  }, [])
 
   const jumpToToday = useCallback(() => {
     const day = startOfDay(new Date())
@@ -361,6 +400,7 @@ export default function App() {
 
   const selectTab = (tab: BottomTab) => {
     const sameTab = screen === tab
+    setShowSettings(false)
     setActiveTab(tab)
     setActiveLeagueId(null)
     setActiveTeam(null)
@@ -372,6 +412,7 @@ export default function App() {
     teamOriginLeagueRef.current = null
     setReturnTab(tab)
     setScreen(tab)
+    writeHash({ kind: 'tab', tab })
     // Fresh tab or re-tap active: jump to top so you aren't mid-scroll on a new view.
     if (sameTab || typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: sameTab ? 'smooth' : 'auto' })
@@ -379,10 +420,21 @@ export default function App() {
   }
 
   // Deep-link #fantasy-join=… should land on Fantasy Home (join UI), not a league hub.
+  // Do not call selectTab here — that would rewrite the invite hash via writeHash.
   useEffect(() => {
     if (!fantasy.pendingInvite) return
+    setShowSettings(false)
     setActiveLeagueId(null)
-    if (screen !== 'fantasy') selectTab('fantasy')
+    setActiveTeam(null)
+    setActivePlayer(null)
+    teamStackRef.current = []
+    leagueReturnTeamRef.current = null
+    leagueReturnPlayerRef.current = null
+    teamReturnPlayerRef.current = null
+    teamOriginLeagueRef.current = null
+    setActiveTab('fantasy')
+    setReturnTab('fantasy')
+    setScreen('fantasy')
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to invite arrival
   }, [fantasy.pendingInvite])
 
@@ -417,8 +469,10 @@ export default function App() {
       setActiveTeam(null)
       setActivePlayer(null)
     }
+    setShowSettings(false)
     setActiveLeagueId(id)
     setScreen('league-profile')
+    writeHash({ kind: 'league', leagueId: id })
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
@@ -447,9 +501,11 @@ export default function App() {
         teamOriginLeagueRef.current = activeLeagueId
       }
     }
+    setShowSettings(false)
     setActivePlayer(null)
     setActiveTeam(team)
     setScreen('team')
+    writeHash({ kind: 'team', team })
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
@@ -467,16 +523,132 @@ export default function App() {
         teamOriginLeagueRef.current = activeLeagueId
       }
     }
+    setShowSettings(false)
     setActivePlayer(player)
     setScreen('player')
+    writeHash({ kind: 'player', player })
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
+
+  const openSettings = () => {
+    setShowSettings(true)
+    writeHash({ kind: 'settings' })
+  }
+
+  const closeSettings = () => {
+    setSettings(loadSettings())
+    setShowSettings(false)
+    if (isTabScreen(screen)) {
+      writeHash({ kind: 'tab', tab: screen })
+    } else if (screen === 'league-profile' && activeLeagueId) {
+      writeHash({ kind: 'league', leagueId: activeLeagueId })
+    } else if (screen === 'team' && activeTeam) {
+      writeHash({ kind: 'team', team: activeTeam })
+    } else if (screen === 'player' && activePlayer) {
+      writeHash({ kind: 'player', player: activePlayer })
+    } else {
+      writeHash({ kind: 'tab', tab: activeTab })
+    }
+  }
+
+  const applyHashRoute = useCallback((hash: string) => {
+    const route = parseHash(hash)
+    // Fantasy-join is owned by useFantasy + pendingInvite effect — do not clear that hash.
+    if (!route || route.kind === 'fantasy-join') return
+
+    if (route.kind === 'settings') {
+      setShowSettings(true)
+      return
+    }
+
+    setShowSettings(false)
+
+    if (route.kind === 'tab') {
+      setActiveTab(route.tab)
+      setActiveLeagueId(null)
+      setActiveTeam(null)
+      setActivePlayer(null)
+      teamStackRef.current = []
+      leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
+      teamOriginLeagueRef.current = null
+      setReturnTab(route.tab)
+      setScreen(route.tab)
+      return
+    }
+
+    if (route.kind === 'league') {
+      if (!LEAGUES.some((l) => l.id === route.leagueId)) return
+      teamStackRef.current = []
+      leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
+      teamOriginLeagueRef.current = null
+      setActiveTeam(null)
+      setActivePlayer(null)
+      setActiveLeagueId(route.leagueId)
+      setScreen('league-profile')
+      return
+    }
+
+    if (route.kind === 'team') {
+      teamStackRef.current = []
+      leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
+      teamOriginLeagueRef.current = null
+      setActiveLeagueId(null)
+      setActivePlayer(null)
+      setActiveTeam(route.team)
+      setScreen('team')
+      return
+    }
+
+    if (route.kind === 'player') {
+      teamStackRef.current = []
+      leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
+      teamOriginLeagueRef.current = null
+      setActiveLeagueId(null)
+      setActiveTeam(null)
+      setActivePlayer(route.player)
+      setScreen('player')
+      return
+    }
+
+    if (route.kind === 'compare') {
+      setActiveTab('stats')
+      setActiveLeagueId(null)
+      setActiveTeam(null)
+      setActivePlayer(null)
+      teamStackRef.current = []
+      setReturnTab('stats')
+      setScreen('stats')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onHashChange = () => {
+      if (writingHashRef.current) {
+        writingHashRef.current = false
+        return
+      }
+      applyHashRoute(window.location.hash)
+    }
+    applyHashRoute(window.location.hash)
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [applyHashRoute])
 
   const closeOverlay = () => {
     // Team → Player → Back should return to the team, not skip the stack.
     if (activePlayer && activeTeam) {
       setActivePlayer(null)
       setScreen('team')
+      writeHash({ kind: 'team', team: activeTeam })
       return
     }
 
@@ -486,6 +658,7 @@ export default function App() {
       setActivePlayer(null)
       setActiveTeam(previous)
       setScreen('team')
+      writeHash({ kind: 'team', team: previous })
       return
     }
 
@@ -495,6 +668,7 @@ export default function App() {
       setActiveTeam(null)
       setActivePlayer(returnPlayer)
       setScreen('player')
+      writeHash({ kind: 'player', player: returnPlayer })
       return
     }
 
@@ -502,6 +676,7 @@ export default function App() {
     setActivePlayer(null)
     if (activeLeagueId) {
       setScreen('league-profile')
+      writeHash({ kind: 'league', leagueId: activeLeagueId })
       return
     }
     leagueReturnTeamRef.current = null
@@ -509,6 +684,7 @@ export default function App() {
     teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
+    writeHash({ kind: 'tab', tab: returnTab })
   }
 
   const closeLeagueProfile = () => {
@@ -521,6 +697,7 @@ export default function App() {
       // Restore the league this club was opened from (if any), not the nested hop.
       setActiveLeagueId(teamOriginLeagueRef.current)
       setScreen('team')
+      writeHash({ kind: 'team', team: returnTeam })
       return
     }
     const returnPlayer = leagueReturnPlayerRef.current
@@ -530,6 +707,7 @@ export default function App() {
       setActiveTeam(null)
       setActivePlayer(returnPlayer)
       setScreen('player')
+      writeHash({ kind: 'player', player: returnPlayer })
       return
     }
     setActivePlayer(null)
@@ -539,6 +717,7 @@ export default function App() {
     teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
+    writeHash({ kind: 'tab', tab: returnTab })
   }
 
   const navActive: BottomTab =
@@ -654,7 +833,9 @@ export default function App() {
           >
             <StatsScreen
               favorites={favorites}
+              matches={matches}
               onOpenLeague={openLeague}
+              onOpenPlayer={openPlayer}
               reduce={reduce}
             />
           </motion.div>
@@ -685,6 +866,7 @@ export default function App() {
               onOpenLeague={openLeague}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
+              onOpenSettings={openSettings}
               matches={matches}
               loading={loading}
               error={error}
@@ -693,11 +875,39 @@ export default function App() {
               hasLive={hasLive}
               onRefresh={refresh}
               favorites={favorites}
+              showPredictions={settings.showPredictions}
               reduce={reduce}
             />
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showSettings ? (
+        <div className="fixed inset-0 z-[70] overflow-y-auto">
+          <SettingsScreen
+            onBack={closeSettings}
+            onOpenOnboarding={() => {
+              setShowOnboarding(true)
+              setShowSettings(false)
+            }}
+            reduce={reduce}
+          />
+        </div>
+      ) : null}
+
+      {showOnboarding ? (
+        <OnboardingOverlay
+          onDone={() => {
+            setSettings(loadSettings())
+            setShowOnboarding(false)
+          }}
+          onPickLeague={(id) => {
+            saveSettings({ preferredLeagueId: id, onboardingDone: true })
+            setSettings(loadSettings())
+            openLeague(id)
+          }}
+        />
+      ) : null}
 
       <BottomNav
         active={navActive}

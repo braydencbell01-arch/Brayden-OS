@@ -23,6 +23,24 @@ import {
 
 type HomeMode = 'menu' | 'create' | 'join'
 
+function SeasonStatusBanner({ fantasy }: { fantasy: FantasyApi }) {
+  const finished = fantasy.catalog?.finishedGws ?? 0
+  const current = fantasy.catalog?.currentGw ?? 0
+  if (!fantasy.catalog) return null
+  if (finished >= 38 || current >= 38) {
+    return (
+      <div className="mb-4 border border-star/30 bg-star/10 px-4 py-3 text-sm text-cream">
+        <p className="font-semibold">Between Premier League seasons</p>
+        <p className="mt-1 text-xs text-mist/75">
+          The FPL catalog is at GW {current} ({finished} finished). Draft rooms still work —
+          weekly scoring uses projections until the new season feeds in.
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
 function inviteFromInput(input: string): string {
   const raw = input.trim()
   if (!raw) return raw
@@ -91,6 +109,7 @@ export function FantasyHome({
         American fantasy football energy for Premier League: matchup center, MID/FWD flex,
         IR spots, trade veto review, snake or auction drafts, and auto-score gameweeks.
       </p>
+      <SeasonStatusBanner fantasy={fantasy} />
 
       {fantasy.catalogError ? (
         <p className="mb-4 rounded-xl bg-red-500/15 px-3 py-2 text-sm text-red-200">
