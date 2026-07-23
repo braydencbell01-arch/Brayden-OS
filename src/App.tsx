@@ -280,6 +280,7 @@ function HomeScreen({
                     dateKey={toDateKey(selectedDate)}
                     onOpenTeam={onOpenTeam}
                     onOpenPlayer={onOpenPlayer}
+                    onOpenLeague={onOpenLeague}
                     favoriteLeagueIds={favorites.leagueIds}
                     favoriteTeamIds={favorites.teamIds}
                     favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
@@ -487,6 +488,8 @@ export default function App() {
               player={activePlayer}
               favorites={favorites}
               onBack={closeOverlay}
+              onOpenTeam={openTeam}
+              onOpenLeague={openLeague}
               reduce={reduce}
             />
           </motion.div>

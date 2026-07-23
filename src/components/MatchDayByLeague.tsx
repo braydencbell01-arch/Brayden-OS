@@ -40,6 +40,7 @@ function LeagueDropdown({
   onToggle,
   onOpenTeam,
   onOpenPlayer,
+  onOpenLeague,
   favoriteLeagueIds,
   favoriteTeamIds,
   favoritePlayerTeamIds,
@@ -50,6 +51,7 @@ function LeagueDropdown({
   onToggle: () => void
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
+  onOpenLeague?: (id: LeagueId) => void
   favoriteLeagueIds: Set<string>
   favoriteTeamIds: Set<string>
   favoritePlayerTeamIds: Set<string>
@@ -68,17 +70,21 @@ function LeagueDropdown({
         hasFavorite ? 'border-star/30' : 'border-white/10',
       ].join(' ')}
     >
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={onToggle}
-        className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime"
-      >
+      <div className="flex w-full items-center gap-2 px-3 py-3">
         <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-2 truncate text-sm font-semibold text-cream sm:text-base">
+          <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-cream sm:text-base">
             {hasFavorite ? <FavoriteDot /> : null}
-            <span className="truncate">{league.name}</span>
+            {onOpenLeague ? (
+              <button
+                type="button"
+                onClick={() => onOpenLeague(leagueId)}
+                className="profile-link min-w-0 truncate text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              >
+                {league.name}
+              </button>
+            ) : (
+              <span className="truncate">{league.name}</span>
+            )}
           </p>
           <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
             {league.country}
@@ -87,11 +93,19 @@ function LeagueDropdown({
             ) : null}
           </p>
         </div>
-        <span className="font-display text-lg tracking-wide text-cream/85 tabular-nums">
-          {matches.length}
-        </span>
-        <Chevron open={open} />
-      </button>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={onToggle}
+          className="flex shrink-0 items-center gap-2 rounded px-1.5 py-1 transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+        >
+          <span className="font-display text-lg tracking-wide text-cream/85 tabular-nums">
+            {matches.length}
+          </span>
+          <Chevron open={open} />
+        </button>
+      </div>
 
       {open ? (
         <div id={panelId} className="border-t border-white/10">
@@ -101,6 +115,7 @@ function LeagueDropdown({
             flat
             onOpenTeam={onOpenTeam}
             onOpenPlayer={onOpenPlayer}
+            onOpenLeague={onOpenLeague}
             favoriteLeagueIds={favoriteLeagueIds}
             favoriteTeamIds={favoriteTeamIds}
             favoritePlayerTeamIds={favoritePlayerTeamIds}
@@ -117,6 +132,7 @@ export function MatchDayByLeague({
   dateKey,
   onOpenTeam,
   onOpenPlayer,
+  onOpenLeague,
   emptyLabel,
   favoriteLeagueIds,
   favoriteTeamIds,
@@ -127,6 +143,7 @@ export function MatchDayByLeague({
   dateKey: string
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
+  onOpenLeague?: (id: LeagueId) => void
   emptyLabel: string
   favoriteLeagueIds?: Set<string>
   favoriteTeamIds?: Set<string>
@@ -168,19 +185,8 @@ export function MatchDayByLeague({
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
 
-  const hasPinned =
-    leagueIds.size > 0 ||
-    teamIds.size > 0 ||
-    playerTeamIds.size > 0 ||
-    groups.some((group) => group.matches.some((match) => match.status === 'live'))
-
   return (
     <div className="flex flex-col gap-2">
-      {hasPinned ? (
-        <p className="px-0.5 text-[0.65rem] text-mist/55">
-          Favorite leagues and live matches open first
-        </p>
-      ) : null}
       {groups.map(({ leagueId, matches: leagueMatches }) => (
         <LeagueDropdown
           key={leagueId}
@@ -197,6 +203,7 @@ export function MatchDayByLeague({
           }
           onOpenTeam={onOpenTeam}
           onOpenPlayer={onOpenPlayer}
+          onOpenLeague={onOpenLeague}
           favoriteLeagueIds={leagueIds}
           favoriteTeamIds={teamIds}
           favoritePlayerTeamIds={playerTeamIds}

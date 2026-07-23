@@ -1,3 +1,4 @@
+import type { FavoriteTeam } from '../lib/favorites'
 import type { MatchLineupPlayer, MatchLineupSide } from '../lib/stats/types'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { PlayerAvatar } from './PlayerAvatar'
@@ -51,16 +52,37 @@ function LineupPlayerCard({
 function SideBlock({
   side,
   onOpenPlayer,
+  onOpenTeam,
 }: {
   side: MatchLineupSide
   onOpenPlayer?: (player: MatchLineupPlayer) => void
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   const empty = side.starters.length === 0 && side.bench.length === 0
+  const leagueId = side.starters[0]?.leagueId || side.bench[0]?.leagueId
+  const canOpenTeam = Boolean(onOpenTeam && side.teamId && leagueId)
 
   return (
     <div>
       <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
-        {side.teamName}
+        {canOpenTeam ? (
+          <button
+            type="button"
+            onClick={() =>
+              onOpenTeam?.({
+                id: side.teamId,
+                name: side.teamName,
+                shortName: side.teamName,
+                leagueId: leagueId!,
+              })
+            }
+            className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          >
+            {side.teamName}
+          </button>
+        ) : (
+          side.teamName
+        )}
         <span className="ml-2 text-mist/55">{side.homeAway}</span>
       </p>
       {empty ? (
@@ -100,9 +122,11 @@ function SideBlock({
 export function MatchLineupPanel({
   lineups,
   onOpenPlayer,
+  onOpenTeam,
 }: {
   lineups: MatchLineupSide[]
   onOpenPlayer?: (player: MatchLineupPlayer) => void
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (lineups.length === 0) {
     return <p className="text-xs text-mist/65">Not available</p>
@@ -115,16 +139,14 @@ export function MatchLineupPanel({
     return <p className="text-xs text-mist/65">Not available</p>
   }
 
-  const homeEmpty = home != null && home.starters.length === 0 && home.bench.length === 0
-  const awayEmpty = away != null && away.starters.length === 0 && away.bench.length === 0
-  if ((homeEmpty || !home) && (awayEmpty || !away)) {
-    return <p className="text-xs text-mist/65">Not available</p>
-  }
-
   return (
-    <div className="flex flex-col gap-5">
-      {home && <SideBlock side={home} onOpenPlayer={onOpenPlayer} />}
-      {away && <SideBlock side={away} onOpenPlayer={onOpenPlayer} />}
+    <div className="flex flex-col gap-4">
+      {home ? (
+        <SideBlock side={home} onOpenPlayer={onOpenPlayer} onOpenTeam={onOpenTeam} />
+      ) : null}
+      {away ? (
+        <SideBlock side={away} onOpenPlayer={onOpenPlayer} onOpenTeam={onOpenTeam} />
+      ) : null}
     </div>
   )
 }

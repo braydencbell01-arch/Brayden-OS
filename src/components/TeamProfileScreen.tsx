@@ -248,6 +248,7 @@ export function TeamProfileScreen({
                           matches={dayMatches}
                           onOpenTeam={onOpenTeam}
                           onOpenPlayer={onOpenPlayer}
+                          onOpenLeague={onOpenLeague}
                           favoriteLeagueIds={favorites.leagueIds}
                           favoriteTeamIds={favorites.teamIds}
                           favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
@@ -288,6 +289,7 @@ export function TeamProfileScreen({
                       matches={dayMatches}
                       onOpenTeam={onOpenTeam}
                       onOpenPlayer={onOpenPlayer}
+                      onOpenLeague={onOpenLeague}
                       favoriteLeagueIds={favorites.leagueIds}
                       favoriteTeamIds={favorites.teamIds}
                       favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}

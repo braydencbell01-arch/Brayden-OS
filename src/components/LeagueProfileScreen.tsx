@@ -201,6 +201,7 @@ export function LeagueProfileScreen({
             error={playerStats.error}
             leagueId={league.id}
             onOpenPlayer={onOpenPlayer}
+            onOpenTeam={onOpenTeam}
           />
         </ProfileAccordion>
 
