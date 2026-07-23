@@ -6,16 +6,18 @@ Storefront landing page for **Jersey Deals** (sibling to BrayStats in this repo)
 
 ## What’s on the page
 
-- Sticky shop nav + cinematic full-bleed hero
-- Brand marquee + service strip
-- Editorial collection grid (youth / sale / catalog)
-- New drops, training edit, tunnel lookbook campaign
-- Featured gear + shop-by-brand
-- Full-bleed sale campaign + sale picks
-- Category lookbook strip (training / sideline / matchday)
-- Filterable full inventory from `listings.json`
-- Brand story, how-it-works, FAQ, restock alerts
-- Multi-column footer + sticky mobile shop CTA
+Retail homepage patterned after Upper 90 / Goal Kick / Soccer.com-style kit shops:
+
+- Promo announcement bar + sticky nav with search + mobile menu
+- Cinematic hero, brand marquee, service strip
+- Editorial collections + Men’s / Youth audience paths
+- New drops, **Trending now** (filter chips), lookbook campaign
+- Training edit, staff picks, **shop by club**, shop by brand
+- Full-bleed sale + sale picks + category lookbook
+- Filterable inventory with multi-photo galleries + Square Payment Links
+- Product cards with sale + low-stock badges
+- Brand story, guarantees, how-it-works, size guide, FAQ
+- Newsletter / restock alerts, multi-column footer, sticky mobile CTA
 - Privacy policy at `/privacy.html`
 
 ## Config
