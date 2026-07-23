@@ -81,6 +81,17 @@ Requires `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`, `EBAY_USER_TOKEN`.
 
 `npm run sync:inventory` uses Square when `SQUARE_ACCESS_TOKEN` + `SQUARE_STORE_URL` are present; otherwise eBay.
 
+### Push eBay listings into Square
+
+If Square Catalog is empty, import the current `listings.json` (usually from eBay) into Square:
+
+```bash
+cd jerseydeals
+npm run push:square
+```
+
+Or run GitHub Action **Push listings to Square** (workflow_dispatch). Then run **Sync Jersey Deals inventory**.
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
