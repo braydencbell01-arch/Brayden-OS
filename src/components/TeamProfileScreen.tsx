@@ -2,8 +2,11 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
+  formatSideRecord,
   groupMatchesByDate,
+  homeAwayRecordForTeam,
   mergeTeamMatches,
+  nextMatchForTeam,
   recentFormForTeam,
   splitTeamFixtures,
   type Match,
@@ -18,10 +21,11 @@ import {
 } from '../lib/dates'
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
-import { useNationalTeamSchedule } from '../lib/stats/useNationalTeamSchedule'
 import { seasonSnapshotFacts } from '../lib/stats/teamFacts'
 import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
+import { useTeamSchedule } from '../lib/stats/useTeamSchedule'
+import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -29,6 +33,7 @@ import { ProfileAccordion } from './ProfileAccordion'
 import { ProfileHeader, ProfileShell } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
 import { TeamRosterPanel } from './TeamRosterPanel'
+import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
 
 function FormDot({ result }: { result: TeamFormResult }) {
   const styles =
@@ -82,15 +87,17 @@ export function TeamProfileScreen({
   const standings = useLeagueStandings(team.leagueId)
   const todayKey = useTodayKey()
   const [openSection, setOpenSection] = useState<
-    'table' | 'upcoming' | 'recent' | 'roster' | null
+    'table' | 'upcoming' | 'recent' | 'roster' | 'leaders' | null
   >(null)
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const recentScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
 
   const rosterEnabled = openSection === 'roster'
+  const leadersEnabled = openSection === 'leaders'
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
-  const nationalSchedule = useNationalTeamSchedule(team.id, team.leagueId, isNational)
+  const leaders = useTeamStatLeaders(team.leagueId, team.id, leadersEnabled)
+  const schedule = useTeamSchedule(team.id, team.leagueId, true)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
@@ -100,12 +107,17 @@ export function TeamProfileScreen({
   const facts = useTeamClubFacts(team.leagueId, team.id, standing?.team || team.name)
 
   const teamMatches = useMemo(
-    () => (isNational ? mergeTeamMatches(matches, nationalSchedule.data) : matches),
-    [isNational, matches, nationalSchedule.data],
+    () => mergeTeamMatches(matches, schedule.data),
+    [matches, schedule.data],
   )
 
   const form = useMemo(
     () => recentFormForTeam(teamMatches, team.id, 5),
+    [teamMatches, team.id],
+  )
+
+  const homeAway = useMemo(
+    () => homeAwayRecordForTeam(teamMatches, team.id),
     [teamMatches, team.id],
   )
 
@@ -114,6 +126,27 @@ export function TeamProfileScreen({
     [teamMatches, team.id, todayKey],
   )
 
+  const nextMatch = useMemo(
+    () => nextMatchForTeam(teamMatches, team.id, todayKey),
+    [teamMatches, team.id, todayKey],
+  )
+
+  const nextOpponent = useMemo(() => {
+    if (!nextMatch) return null
+    const isHome = nextMatch.home.id === team.id
+    const opponent = isHome ? nextMatch.away : nextMatch.home
+    const opponentStanding =
+      standings.rows.find((row) => row.teamId === opponent.id) ?? null
+    const opponentForm = recentFormForTeam(teamMatches, opponent.id, 5)
+    return {
+      match: nextMatch,
+      opponent,
+      isHome,
+      standing: opponentStanding,
+      form: opponentForm,
+    }
+  }, [nextMatch, standings.rows, team.id, teamMatches])
+
   const upcomingGrouped = useMemo(() => groupMatchesByDate(upcoming), [upcoming])
   const recentGrouped = useMemo(
     () => groupMatchesByDate(recent).slice().reverse(),
@@ -121,9 +154,9 @@ export function TeamProfileScreen({
   )
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
-  const fixturesLoading = loading || (isNational && nationalSchedule.loading)
+  const fixturesLoading = loading || schedule.loading
 
-  const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster') => {
+  const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster' | 'leaders') => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -174,13 +207,25 @@ export function TeamProfileScreen({
     }
 
     for (const cell of seasonSnapshotFacts(standing)) {
-      // Avoid duplicating a full season line with place/points when summary exists
       if (club?.standingSummary && (cell[0] === 'Table place' || cell[0] === 'Points')) continue
       rows.push(cell)
     }
 
+    if (homeAway.home.played > 0 || homeAway.away.played > 0) {
+      rows.push(['Home', formatSideRecord(homeAway.home)])
+      rows.push(['Away', formatSideRecord(homeAway.away)])
+    }
+
     return rows
-  }, [facts.data, facts.loading, isNational, league.country, league.name, standing])
+  }, [
+    facts.data,
+    facts.loading,
+    homeAway,
+    isNational,
+    league.country,
+    league.name,
+    standing,
+  ])
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce}>
@@ -216,13 +261,21 @@ export function TeamProfileScreen({
             {team.shortName}
             {facts.data?.country ? ` · ${facts.data.country}` : ` · ${league.country}`}
             {standing
-              ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''} · ${standing.points} pts`
+              ? ` · #${standing.rank}${
+                  standing.group ? ` · ${standing.group}` : ''
+                } · ${standing.points} pts`
               : isNational
                 ? ' · International'
                 : ''}
           </>
         }
       />
+
+      {standing?.group ? (
+        <p className="mt-4 border border-lime/30 bg-lime/10 px-3 py-2 text-sm font-semibold text-lime">
+          {standing.group}
+        </p>
+      ) : null}
 
       <section className="mt-6" aria-label="Club facts">
         {facts.loading && factRows.length <= 2 ? (
@@ -270,12 +323,59 @@ export function TeamProfileScreen({
             </div>
           )}
         </div>
+
+        {nextOpponent ? (
+          <div className="mt-5 border border-white/10 bg-white/[0.03] px-3.5 py-3">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+              Next opponent
+            </p>
+            <div className="mt-2 flex items-baseline justify-between gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenTeam({
+                    id: nextOpponent.opponent.id,
+                    name: nextOpponent.opponent.name,
+                    shortName: nextOpponent.opponent.shortName,
+                    leagueId: nextOpponent.match.leagueId,
+                    kind: isInternationalLeague(nextOpponent.match.leagueId)
+                      ? 'national'
+                      : 'club',
+                  })
+                }
+                className="profile-link text-left text-base font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              >
+                {nextOpponent.opponent.name}
+              </button>
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-mist/65">
+                {nextOpponent.isHome ? 'Home' : 'Away'}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-mist/70">
+              {formatMatchDayHeading(nextOpponent.match.dateKey)}
+              {nextOpponent.standing
+                ? ` · #${nextOpponent.standing.rank}${
+                    nextOpponent.standing.group ? ` · ${nextOpponent.standing.group}` : ''
+                  } · ${nextOpponent.standing.points} pts`
+                : ''}
+            </p>
+            {nextOpponent.form.length > 0 ? (
+              <div className="mt-2 flex gap-1" aria-label="Opponent form">
+                {nextOpponent.form.map((result, index) => (
+                  <FormDot key={`opp-${result}-${index}`} result={result} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <div className="mt-6 flex flex-col gap-3">
         <ProfileAccordion
           title="Table"
-          subtitle={league.name}
+          subtitle={
+            standing?.group ? `${standing.group} · ${league.name}` : league.name
+          }
           open={openSection === 'table'}
           onToggle={() => toggle('table')}
         >
@@ -293,7 +393,7 @@ export function TeamProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Upcoming games"
+          title="Upcoming Fixtures"
           open={openSection === 'upcoming'}
           onToggle={() => toggle('upcoming')}
         >
@@ -301,13 +401,13 @@ export function TeamProfileScreen({
             <p className="text-sm text-mist/70">Loading fixtures…</p>
           ) : (
             <>
-              {(error || nationalSchedule.error) && upcomingGrouped.length === 0 ? (
-                <p className="text-sm text-mist/80">{error || nationalSchedule.error}</p>
+              {(error || schedule.error) && upcomingGrouped.length === 0 ? (
+                <p className="text-sm text-mist/80">{error || schedule.error}</p>
               ) : null}
-              {(error || nationalSchedule.error) && upcomingGrouped.length > 0 ? (
-                <p className="mb-3 text-sm text-mist/70">{error || nationalSchedule.error}</p>
+              {(error || schedule.error) && upcomingGrouped.length > 0 ? (
+                <p className="mb-3 text-sm text-mist/70">{error || schedule.error}</p>
               ) : null}
-              {(!error && !nationalSchedule.error) || upcomingGrouped.length > 0 ? (
+              {(!error && !schedule.error) || upcomingGrouped.length > 0 ? (
                 upcomingGrouped.length === 0 ? (
                   <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
                 ) : (
@@ -336,8 +436,7 @@ export function TeamProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
-          title="Results"
-          subtitle="Scroll for earlier games"
+          title="Past Fixtures"
           open={openSection === 'recent'}
           onToggle={() => toggle('recent')}
         >
@@ -370,22 +469,34 @@ export function TeamProfileScreen({
                 ))}
               </div>
 
-              {!isNational ? (
-                <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
-                  <button
-                    type="button"
-                    onClick={loadEarlierResults}
-                    disabled={refreshing}
-                    className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
-                  >
-                    {refreshing
-                      ? 'Loading earlier…'
-                      : `Load earlier results · ${pastHorizonDays}+ days`}
-                  </button>
-                </div>
-              ) : null}
+              <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
+                <button
+                  type="button"
+                  onClick={loadEarlierResults}
+                  disabled={refreshing || !onNeedPastRange}
+                  className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
+                >
+                  {refreshing
+                    ? 'Loading earlier…'
+                    : `Load earlier results · ${pastHorizonDays}+ days`}
+                </button>
+              </div>
             </div>
           )}
+        </ProfileAccordion>
+
+        <ProfileAccordion
+          title="Stat Leaders"
+          open={openSection === 'leaders'}
+          onToggle={() => toggle('leaders')}
+        >
+          <TeamStatLeadersPanel
+            data={leaders.data}
+            loading={leaders.loading}
+            error={leaders.error}
+            leagueId={team.leagueId}
+            onOpenPlayer={onOpenPlayer}
+          />
         </ProfileAccordion>
 
         <ProfileAccordion

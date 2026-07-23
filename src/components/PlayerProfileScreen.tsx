@@ -117,29 +117,48 @@ function repeatIcons(count: number, Icon: typeof SoccerBallIcon, label: string) 
   )
 }
 
-function ratingMatchMeta(row: PlayerRecentMatchRating): string {
-  const vs =
+function ratingMatchMetaParts(row: PlayerRecentMatchRating): {
+  opponentLabel: string | null
+  rest: string
+} {
+  const opponentLabel =
     row.opponentAbbrev || row.opponent
       ? `vs ${row.opponentAbbrev || row.opponent}`
       : null
-  const side =
-    row.homeAway === 'home' ? 'H' : row.homeAway === 'away' ? 'A' : null
+  const side = row.homeAway === 'home' ? 'H' : row.homeAway === 'away' ? 'A' : null
+  const score =
+    row.teamScore != null && row.opponentScore != null
+      ? `${row.teamScore}-${row.opponentScore}`
+      : null
   const date = formatMatchDate(row.date)
-  return [vs ? (side ? `${vs} (${side})` : vs) : null, date, row.starter ? 'Started' : 'Sub']
+  const minutes =
+    row.minutes != null && row.minutes > 0 ? `${Math.round(row.minutes)}′` : null
+  const rest = [
+    side,
+    score,
+    date,
+    minutes,
+    row.starter ? 'Started' : 'Sub',
+  ]
     .filter(Boolean)
     .join(' · ')
+  return { opponentLabel, rest }
 }
 
 function RecentRatingsList({
   rows,
+  leagueId,
   hasMore,
   loadingMore,
   onLoadMore,
+  onOpenTeam,
 }: {
   rows: PlayerRecentMatchRating[]
+  leagueId: LeagueId
   hasMore: boolean
   loadingMore: boolean
   onLoadMore: () => void
+  onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   const scrollerRef = useRef<HTMLUListElement | null>(null)
   const sentinelRef = useRef<HTMLLIElement | null>(null)
@@ -172,13 +191,41 @@ function RecentRatingsList({
       {rows.map((row) => {
         const goals = repeatIcons(row.goals, SoccerBallIcon, 'goals')
         const assists = repeatIcons(row.assists, CleatIcon, 'assists')
+        const { opponentLabel, rest } = ratingMatchMetaParts(row)
+        const canOpenOpponent = Boolean(
+          onOpenTeam && row.opponentId && /^\d+$/.test(row.opponentId),
+        )
         return (
           <li
             key={row.eventId}
             className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-xs leading-snug text-mist/75">{ratingMatchMeta(row)}</p>
+              <p className="text-xs leading-snug text-mist/75">
+                {opponentLabel ? (
+                  canOpenOpponent ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenTeam?.({
+                          id: row.opponentId!,
+                          name: row.opponent || row.opponentAbbrev || 'Opponent',
+                          shortName: row.opponentAbbrev || row.opponent || 'Opponent',
+                          leagueId,
+                          kind: isInternationalLeague(leagueId) ? 'national' : 'club',
+                        })
+                      }
+                      className="profile-link font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {opponentLabel}
+                    </button>
+                  ) : (
+                    <span className="font-semibold text-cream">{opponentLabel}</span>
+                  )
+                ) : null}
+                {opponentLabel && rest ? ' · ' : null}
+                {rest}
+              </p>
               {goals || assists ? (
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {goals}
@@ -228,12 +275,14 @@ function CareerSeasonsPanel({
   error,
   fallbackLeagueId,
   onOpenTeam,
+  emptyLabel = 'No club seasons listed yet.',
 }: {
   seasons: PlayerCareerSeason[]
   loading: boolean
   error: string | null
   fallbackLeagueId: LeagueId
   onOpenTeam?: (team: FavoriteTeam) => void
+  emptyLabel?: string
 }) {
   if (loading && seasons.length === 0) {
     return <p className="text-sm text-mist/70">Loading career…</p>
@@ -242,7 +291,7 @@ function CareerSeasonsPanel({
     return <p className="text-sm text-mist/80">{error}</p>
   }
   if (seasons.length === 0) {
-    return <p className="text-sm text-mist/70">No club seasons listed yet.</p>
+    return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
 
   return (
@@ -362,12 +411,85 @@ function ClubHistoryList({
               )}
               <p className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
                 {stint.seasons}
+                {stint.isActive ? (
+                  <span className="ml-2 text-lime">Active</span>
+                ) : null}
               </p>
             </div>
           </li>
         )
       })}
     </ul>
+  )
+}
+
+function SeasonStatsCompare({
+  current,
+  currentLabel,
+  previous,
+  previousLabel,
+}: {
+  current: Array<{ label: string; value: string }>
+  currentLabel?: string
+  previous?: Array<{ label: string; value: string }>
+  previousLabel?: string
+}) {
+  if (current.length === 0) {
+    return (
+      <p className="text-sm text-mist/70">No full-season stats for this league yet.</p>
+    )
+  }
+
+  if (!previous || previous.length === 0) {
+    return (
+      <ul className="grid grid-cols-2 gap-2">
+        {current.map((stat) => (
+          <li key={stat.label} className="border border-white/10 px-3 py-2">
+            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
+              {stat.label}
+            </p>
+            <p className="mt-1 font-display text-2xl text-cream tabular-nums">{stat.value}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  const labels = Array.from(
+    new Set([...current.map((s) => s.label), ...previous.map((s) => s.label)]),
+  )
+  const currentByLabel = new Map(current.map((s) => [s.label, s.value]))
+  const previousByLabel = new Map(previous.map((s) => [s.label, s.value]))
+
+  return (
+    <div className="overflow-x-auto border border-white/10">
+      <table className="w-full min-w-[16rem] border-collapse text-left text-xs">
+        <thead className="bg-white/5 text-[0.65rem] uppercase tracking-[0.12em] text-mist/65">
+          <tr>
+            <th className="px-3 py-2 font-semibold">Stat</th>
+            <th className="px-3 py-2 text-right font-semibold">
+              {currentLabel || 'This season'}
+            </th>
+            <th className="px-3 py-2 text-right font-semibold">
+              {previousLabel || 'Last season'}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {labels.map((label) => (
+            <tr key={label} className="border-t border-white/10">
+              <td className="px-3 py-2 font-semibold text-cream">{label}</td>
+              <td className="px-3 py-2 text-right font-display text-lg tabular-nums text-lime">
+                {currentByLabel.get(label) ?? '—'}
+              </td>
+              <td className="px-3 py-2 text-right font-display text-lg tabular-nums text-mist/80">
+                {previousByLabel.get(label) ?? '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -406,6 +528,13 @@ export function PlayerProfileScreen({
     profile?.positionAbbrev || player.position,
     openSection === 'career',
   )
+  const nationalCareer = usePlayerCareer(
+    profile?.id ?? player.id,
+    profile?.nationalHistory,
+    profile?.positionAbbrev || player.position,
+    openSection === 'career',
+    { national: true },
+  )
 
   const favoritePayload: FavoritePlayer = {
     id: player.id,
@@ -421,11 +550,16 @@ export function PlayerProfileScreen({
   }
 
   const favorited = favorites.isPlayerFavorite(player.id)
-  const nationality = profile?.citizenship || profile?.represents || null
+  const represents = profile?.represents || profile?.citizenship || null
   const positionLabel = profile?.position || player.position || null
   const teamId = profile?.teamId || player.teamId
   const teamName = profile?.teamName || player.teamName
   const canOpenClub = Boolean(onOpenTeam && teamId && teamName && /^\d+$/.test(teamId))
+  const activeClubStint = profile?.clubHistory.find((stint) => stint.isActive)
+  const nationalSide =
+    profile?.nationalHistory.find((stint) => stint.isActive) || profile?.nationalHistory[0]
+  const alsoPlaysFor =
+    nationalSide && teamId && nationalSide.teamId !== teamId ? nationalSide : null
 
   const openCurrentClub = () => {
     if (!canOpenClub || !teamId || !teamName) return
@@ -435,6 +569,17 @@ export function PlayerProfileScreen({
       shortName: teamName,
       leagueId: player.leagueId,
       kind: isInternationalLeague(player.leagueId) ? 'national' : 'club',
+    })
+  }
+
+  const openAlsoPlaysFor = () => {
+    if (!alsoPlaysFor || !onOpenTeam) return
+    onOpenTeam({
+      id: alsoPlaysFor.teamId,
+      name: alsoPlaysFor.teamName,
+      shortName: alsoPlaysFor.teamName,
+      leagueId: 'fifa-friendly',
+      kind: 'national',
     })
   }
 
@@ -469,15 +614,31 @@ export function PlayerProfileScreen({
               />
             }
             trailing={
-              <PlayerAvatar
-                name={profile.name}
-                photoUrl={profile.photoUrl}
-                jerseyUrl={profile.jerseyUrl || player.jerseyUrl}
-                jersey={profile.jersey || player.jersey}
-                size="lg"
-              />
+              <div className="flex flex-col items-end gap-2">
+                <PlayerAvatar
+                  name={profile.name}
+                  photoUrl={profile.photoUrl}
+                  jerseyUrl={profile.jerseyUrl || player.jerseyUrl}
+                  jersey={profile.jersey || player.jersey}
+                  size="lg"
+                />
+                {profile.teamLogoUrl ? (
+                  <img
+                    src={profile.teamLogoUrl}
+                    alt=""
+                    className="h-8 w-8 object-contain"
+                    loading="lazy"
+                  />
+                ) : null}
+              </div>
             }
-            eyebrow={nationality || 'Nationality TBD'}
+            eyebrow={
+              represents
+                ? profile.representsNationalTeam
+                  ? `Represents ${represents}`
+                  : represents
+                : 'Nationality TBD'
+            }
             title={profile.name}
             meta={
               <>
@@ -486,6 +647,9 @@ export function PlayerProfileScreen({
                 ) : (
                   teamName || 'Club TBD'
                 )}
+                {activeClubStint?.isActive ? (
+                  <span className="text-mist/55"> · Active</span>
+                ) : null}
                 {positionLabel ? ` · ${positionLabel}` : ''}
                 {' · '}
                 {onOpenLeague ? (
@@ -499,6 +663,33 @@ export function PlayerProfileScreen({
               </>
             }
           />
+
+          {alsoPlaysFor ? (
+            <button
+              type="button"
+              onClick={openAlsoPlaysFor}
+              className="mt-4 flex w-full items-center gap-3 border border-white/10 bg-white/[0.03] px-3.5 py-3 text-left transition hover:border-lime/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            >
+              {alsoPlaysFor.logoUrl ? (
+                <img
+                  src={alsoPlaysFor.logoUrl}
+                  alt=""
+                  className="h-7 w-7 object-contain"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="h-7 w-7 rounded-full bg-white/10" />
+              )}
+              <div className="min-w-0">
+                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                  Also plays for
+                </p>
+                <p className="profile-link truncate text-sm font-semibold text-cream">
+                  {alsoPlaysFor.teamName}
+                </p>
+              </div>
+            </button>
+          ) : null}
 
           <ProfileMetricsRow>
             <ProfileMetric
@@ -530,10 +721,10 @@ export function PlayerProfileScreen({
               }
             />
             <ProfileMetric
-              label="Nationality"
+              label="Represents"
               value={
                 <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                  {nationality || '—'}
+                  {represents || '—'}
                 </span>
               }
             />
@@ -567,26 +758,20 @@ export function PlayerProfileScreen({
           <div className="mt-6 flex flex-col gap-3">
             <ProfileAccordion
               title="Season stats"
-              subtitle={profile.seasonStatsLabel || undefined}
+              subtitle={
+                profile.previousSeasonStats?.length
+                  ? 'This season vs last'
+                  : profile.seasonStatsLabel || undefined
+              }
               open={openSection === 'stats'}
               onToggle={() => toggle('stats')}
             >
-              {profile.seasonStats.length === 0 ? (
-                <p className="text-sm text-mist/70">
-                  No full-season stats for this league yet.
-                </p>
-              ) : (
-                <ul className="grid grid-cols-2 gap-2">
-                  {profile.seasonStats.map((stat) => (
-                    <li key={stat.label} className="border border-white/10 px-3 py-2">
-                      <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
-                        {stat.label}
-                      </p>
-                      <p className="mt-1 font-display text-2xl text-cream tabular-nums">{stat.value}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <SeasonStatsCompare
+                current={profile.seasonStats}
+                currentLabel={profile.seasonStatsLabel || 'This season'}
+                previous={profile.previousSeasonStats}
+                previousLabel={profile.previousSeasonStatsLabel || 'Last season'}
+              />
             </ProfileAccordion>
 
             <ProfileAccordion
@@ -600,8 +785,10 @@ export function PlayerProfileScreen({
               ) : (
                 <RecentRatingsList
                   rows={profile.recentRatings}
+                  leagueId={player.leagueId}
                   hasMore={hasMoreRatings}
                   loadingMore={loadingMoreRatings}
+                  onOpenTeam={onOpenTeam}
                   onLoadMore={() => {
                     void loadMoreRatings()
                   }}
@@ -611,17 +798,37 @@ export function PlayerProfileScreen({
 
             <ProfileAccordion
               title="Career"
-              subtitle="Club · league · matches · goals · assists · avg rating"
+              subtitle="Club and national team seasons"
               open={openSection === 'career'}
               onToggle={() => toggle('career')}
             >
-              <CareerSeasonsPanel
-                seasons={career.seasons}
-                loading={career.loading}
-                error={career.error}
-                fallbackLeagueId={player.leagueId}
-                onOpenTeam={onOpenTeam}
-              />
+              <div className="flex flex-col gap-5">
+                <section aria-label="Club career">
+                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                    Clubs
+                  </p>
+                  <CareerSeasonsPanel
+                    seasons={career.seasons}
+                    loading={career.loading}
+                    error={career.error}
+                    fallbackLeagueId={player.leagueId}
+                    onOpenTeam={onOpenTeam}
+                  />
+                </section>
+                <section aria-label="National team career">
+                  <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
+                    National team
+                  </p>
+                  <CareerSeasonsPanel
+                    seasons={nationalCareer.seasons}
+                    loading={nationalCareer.loading}
+                    error={nationalCareer.error}
+                    fallbackLeagueId="fifa-friendly"
+                    onOpenTeam={onOpenTeam}
+                    emptyLabel="No national team seasons listed yet."
+                  />
+                </section>
+              </div>
             </ProfileAccordion>
 
             <ProfileAccordion

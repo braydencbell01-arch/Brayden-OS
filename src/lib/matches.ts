@@ -340,6 +340,94 @@ export function recentFormForTeam(
     .filter((result): result is TeamFormResult => result != null)
 }
 
+export type SideRecord = {
+  played: number
+  won: number
+  drawn: number
+  lost: number
+  goalsFor: number
+  goalsAgainst: number
+}
+
+export type HomeAwayRecord = {
+  home: SideRecord
+  away: SideRecord
+}
+
+function emptySideRecord(): SideRecord {
+  return { played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0 }
+}
+
+/** Home vs away W-D-L and goals from finished matches in the loaded window. */
+export function homeAwayRecordForTeam(matches: Match[], teamId: string): HomeAwayRecord {
+  const home = emptySideRecord()
+  const away = emptySideRecord()
+
+  for (const match of matchesForTeam(matches, teamId)) {
+    if (match.status !== 'finished') continue
+    const hs = match.home.score
+    const as = match.away.score
+    if (hs == null || as == null) continue
+
+    const isHome = match.home.id === teamId
+    const side = isHome ? home : away
+    const gf = isHome ? hs : as
+    const ga = isHome ? as : hs
+    side.played += 1
+    side.goalsFor += gf
+    side.goalsAgainst += ga
+    if (gf > ga) side.won += 1
+    else if (gf < ga) side.lost += 1
+    else side.drawn += 1
+  }
+
+  return { home, away }
+}
+
+export function formatSideRecord(record: SideRecord): string {
+  if (record.played === 0) return '—'
+  return `${record.won}W-${record.drawn}D-${record.lost}L · ${record.goalsFor}:${record.goalsAgainst}`
+}
+
+/** First upcoming (or live) fixture for a team. */
+export function nextMatchForTeam(
+  matches: Match[],
+  teamId: string,
+  todayKey: string,
+): Match | null {
+  const { upcoming } = splitTeamFixtures(matches, teamId, todayKey)
+  return upcoming[0] ?? null
+}
+
+/** Finished league matches newest-first (for a league profile Results accordion). */
+export function recentLeagueResults(matches: Match[], leagueId: LeagueId, limit = 40): Match[] {
+  return matches
+    .filter((match) => match.leagueId === leagueId && match.status === 'finished')
+    .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
+    .slice(0, limit)
+}
+
+export type LeagueFormRow = {
+  teamId: string
+  team: string
+  shortName: string
+  form: TeamFormResult[]
+}
+
+/** Last-N form strips aligned to standings order. */
+export function leagueFormTable(
+  matches: Match[],
+  rows: Array<{ teamId: string; team: string; shortName: string }>,
+  limit = 5,
+): LeagueFormRow[] {
+  return rows.map((row) => ({
+    teamId: row.teamId,
+    team: row.team,
+    shortName: row.shortName,
+    form: recentFormForTeam(matches, row.teamId, limit),
+  }))
+}
+
 export function splitTeamFixtures(
   matches: Match[],
   teamId: string,
@@ -362,6 +450,18 @@ export function splitTeamFixtures(
   return { recent, upcoming }
 }
 
+async function fetchScheduleForLeague(teamId: string, leagueId: LeagueId): Promise<Match[]> {
+  const league = LEAGUES.find((entry) => entry.id === leagueId)
+  if (!league) return []
+  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/schedule`
+  const res = await fetch(url)
+  if (!res.ok) return []
+  const data = (await res.json()) as EspnScoreboard
+  return (data.events ?? [])
+    .map((event) => normalizeEvent(event, league.id))
+    .filter((match): match is Match => match != null)
+}
+
 /**
  * Pull a national side's fixtures from ESPN team schedules across international comps.
  * Used to fill gaps when the Match Day scoreboard window is sparse.
@@ -377,15 +477,7 @@ export async function fetchNationalTeamSchedules(
   ]
 
   const results = await Promise.allSettled(
-    codes.map(async (league) => {
-      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/schedule`
-      const res = await fetch(url)
-      if (!res.ok) return [] as Match[]
-      const data = (await res.json()) as EspnScoreboard
-      return (data.events ?? [])
-        .map((event) => normalizeEvent(event, league.id))
-        .filter((match): match is Match => match != null)
-    }),
+    codes.map((league) => fetchScheduleForLeague(teamId, league.id)),
   )
 
   const byEvent = new Map<string, Match>()
@@ -397,6 +489,22 @@ export async function fetchNationalTeamSchedules(
   }
 
   return [...byEvent.values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+}
+
+/**
+ * Club (or national) schedule from ESPN to fill Match Day cache gaps.
+ * Clubs: preferred league only. Nationals: all international comps.
+ */
+export async function fetchTeamSchedule(
+  teamId: string,
+  leagueId: LeagueId,
+): Promise<Match[]> {
+  const league = LEAGUES.find((entry) => entry.id === leagueId)
+  if (!league) return []
+  if (league.kind === 'international') {
+    return fetchNationalTeamSchedules(teamId, leagueId)
+  }
+  return fetchScheduleForLeague(teamId, leagueId)
 }
 
 /** Merge Match Day cache with schedule extras; cache rows win on id collisions. */

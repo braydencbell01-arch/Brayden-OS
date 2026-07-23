@@ -7,10 +7,12 @@ export function usePlayerCareer(
   clubHistory: PlayerClubStint[] | undefined,
   positionAbbrev: string | undefined,
   enabled: boolean,
+  options?: { national?: boolean },
 ) {
   const [seasons, setSeasons] = useState<PlayerCareerSeason[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const national = options?.national === true
 
   useEffect(() => {
     if (!enabled || !playerId || !clubHistory) return
@@ -19,7 +21,7 @@ export function usePlayerCareer(
     setLoading(true)
     setError(null)
 
-    fetchPlayerCareerSeasons(playerId, clubHistory, positionAbbrev)
+    fetchPlayerCareerSeasons(playerId, clubHistory, positionAbbrev, { national })
       .then((rows) => {
         if (cancelled) return
         setSeasons(rows)
@@ -36,7 +38,7 @@ export function usePlayerCareer(
     return () => {
       cancelled = true
     }
-  }, [enabled, playerId, clubHistory, positionAbbrev])
+  }, [enabled, playerId, clubHistory, positionAbbrev, national])
 
   return { seasons, loading, error }
 }

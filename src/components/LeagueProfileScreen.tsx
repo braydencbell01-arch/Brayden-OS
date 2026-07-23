@@ -3,12 +3,20 @@ import { formatMatchDayHeading, toDateKey } from '../lib/dates'
 import { useToday } from '../lib/useToday'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import type { League } from '../lib/leagues'
-import { groupMatchesByDate, matchesForLeagueFrom, type Match } from '../lib/matches'
+import {
+  groupMatchesByDate,
+  leagueFormTable,
+  matchesForLeagueFrom,
+  recentLeagueResults,
+  type Match,
+} from '../lib/matches'
 import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { FavoriteStar } from './FavoriteStar'
+import { LeagueFormTable } from './LeagueFormTable'
 import { LeaguePlayerStatsPanel } from './LeaguePlayerStatsPanel'
+import { LeagueSeasonTimeline } from './LeagueSeasonTimeline'
 import { LeagueStatsPanel } from './LeagueStatsPanel'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -52,15 +60,30 @@ export function LeagueProfileScreen({
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
   const isInternational = league.kind === 'international'
 
+  const recentResults = useMemo(
+    () => recentLeagueResults(matches, league.id, 48),
+    [matches, league.id],
+  )
+  const recentGrouped = useMemo(
+    () => groupMatchesByDate(recentResults).slice().reverse(),
+    [recentResults],
+  )
+  const formRows = useMemo(
+    () => leagueFormTable(matches, standings.rows, 5),
+    [matches, standings.rows],
+  )
+
   const [openSection, setOpenSection] = useState<
-    'table' | 'fixtures' | 'player-stats' | 'stats' | null
+    'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | null
   >(null)
   const statsEnabled = openSection === 'stats'
   const playerStatsEnabled = openSection === 'player-stats'
   const leaders = useLeagueLeaders(league.id, statsEnabled)
   const playerStats = useLeaguePlayerStats(league.id, playerStatsEnabled)
 
-  const toggleSection = (section: 'table' | 'fixtures' | 'player-stats' | 'stats') => {
+  const toggleSection = (
+    section: 'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats',
+  ) => {
     setOpenSection((current) => (current === section ? null : section))
   }
 
@@ -122,6 +145,12 @@ export function LeagueProfileScreen({
         />
       </ProfileMetricsRow>
 
+      {isInternational ? (
+        <div className="mt-5">
+          <LeagueSeasonTimeline leagueId={league.id} />
+        </div>
+      ) : null}
+
       <div className="mt-6 flex flex-col gap-3">
         {league.hasStandings ? (
           <ProfileAccordion
@@ -139,6 +168,21 @@ export function LeagueProfileScreen({
               onOpenTeam={onOpenTeam}
               onRetry={() => void standings.reload()}
             />
+          </ProfileAccordion>
+        ) : null}
+
+        {league.hasStandings ? (
+          <ProfileAccordion
+            title="Form"
+            subtitle="Last 5 results per club"
+            open={openSection === 'form'}
+            onToggle={() => toggleSection('form')}
+          >
+            {standings.loading && formRows.length === 0 ? (
+              <p className="text-sm text-mist/70">Loading form…</p>
+            ) : (
+              <LeagueFormTable rows={formRows} leagueId={league.id} onOpenTeam={onOpenTeam} />
+            )}
           </ProfileAccordion>
         ) : null}
 
@@ -194,7 +238,38 @@ export function LeagueProfileScreen({
         </ProfileAccordion>
 
         <ProfileAccordion
+          title="Recent results"
+          open={openSection === 'results'}
+          onToggle={() => toggleSection('results')}
+        >
+          {loading && recentGrouped.length === 0 ? (
+            <p className="text-sm text-mist/70">Loading results…</p>
+          ) : recentGrouped.length === 0 ? (
+            <p className="text-sm text-mist/70">No finished matches in the loaded window yet.</p>
+          ) : (
+            <div className="flex max-h-[28rem] flex-col gap-5 overflow-y-auto overscroll-contain pr-1">
+              {recentGrouped.map(({ dateKey, matches: dayMatches }) => (
+                <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
+                  <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
+                    {formatMatchDayHeading(dateKey)}
+                  </h2>
+                  <MatchList
+                    matches={dayMatches}
+                    onOpenTeam={onOpenTeam}
+                    onOpenPlayer={onOpenPlayer}
+                    favoriteLeagueIds={favorites.leagueIds}
+                    favoriteTeamIds={favorites.teamIds}
+                    emptyLabel="No matches"
+                  />
+                </section>
+              ))}
+            </div>
+          )}
+        </ProfileAccordion>
+
+        <ProfileAccordion
           title="Player stats"
+          subtitle="Top scorers and category boards"
           open={openSection === 'player-stats'}
           onToggle={() => toggleSection('player-stats')}
         >
@@ -210,6 +285,7 @@ export function LeagueProfileScreen({
 
         <ProfileAccordion
           title="Stat leaders"
+          subtitle="Players and teams"
           open={openSection === 'stats'}
           onToggle={() => toggleSection('stats')}
         >

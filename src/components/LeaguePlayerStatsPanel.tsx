@@ -26,84 +26,97 @@ export function LeaguePlayerStatsPanel({
     return <p className="text-sm text-mist/80">{error}</p>
   }
 
-  if (!data || data.rows.length === 0) {
+  const boards = data?.boards?.length
+    ? data.boards
+    : (data?.rows ?? []).map((row) => ({
+        categoryId: row.categoryId,
+        label: row.label,
+        leaders: [row.player],
+      }))
+
+  if (!data || boards.length === 0) {
     return <p className="text-sm text-mist/70">No player stats available for this league yet.</p>
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-5">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-        {data.seasonLabel} · #1 in each category
+        {data.seasonLabel} · top {Math.max(...boards.map((b) => b.leaders.length), 1)} per category
       </p>
 
-      <ul className="flex flex-col gap-1.5">
-        {data.rows.map((row) => {
-          const playerClickable = Boolean(
-            onOpenPlayer && row.player.id && /^\d+$/.test(row.player.id),
-          )
-          const teamClickable = Boolean(
-            onOpenTeam && row.player.teamId && row.player.teamName,
-          )
-          return (
-            <li
-              key={row.categoryId}
-              className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-2.5 sm:grid-cols-[minmax(0,9rem)_1fr_auto]"
-            >
-              <span className="truncate text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-lime/85">
-                {row.label}
-              </span>
-              <div className="min-w-0">
-                {playerClickable ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onOpenPlayer?.({
-                        id: row.player.id,
-                        leagueId,
-                        name: row.player.name,
-                        shortName: row.player.shortName,
-                        jersey: row.player.jersey,
-                        teamId: row.player.teamId,
-                        teamName: row.player.teamName,
-                      })
-                    }
-                    className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                  >
-                    {row.player.name}
-                  </button>
-                ) : (
-                  <p className="truncate text-sm font-semibold text-cream">{row.player.name}</p>
-                )}
-                {row.player.teamName ? (
-                  teamClickable ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onOpenTeam?.({
-                          id: row.player.teamId!,
-                          name: row.player.teamName!,
-                          shortName: row.player.teamName!,
-                          leagueId,
-                        })
-                      }
-                      className="profile-link mt-0.5 block max-w-full truncate text-left text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    >
-                      {row.player.teamName}
-                    </button>
-                  ) : (
-                    <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-                      {row.player.teamName}
-                    </p>
-                  )
-                ) : null}
-              </div>
-              <span className="font-display text-xl tracking-wide text-lime tabular-nums">
-                {row.player.displayValue}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
+      {boards.map((board) => (
+        <section key={board.categoryId} aria-label={board.label}>
+          <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
+            {board.label}
+          </p>
+          <ol className="flex flex-col gap-1.5">
+            {board.leaders.map((leader) => {
+              const playerClickable = Boolean(
+                onOpenPlayer && leader.id && /^\d+$/.test(leader.id),
+              )
+              const teamClickable = Boolean(onOpenTeam && leader.teamId && leader.teamName)
+              return (
+                <li
+                  key={`${board.categoryId}-${leader.id}-${leader.rank}`}
+                  className="grid grid-cols-[1.5rem_1fr_auto] items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-2"
+                >
+                  <span className="font-display text-lg tracking-wide text-mist/70 tabular-nums">
+                    {leader.rank}
+                  </span>
+                  <div className="min-w-0">
+                    {playerClickable ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenPlayer?.({
+                            id: leader.id,
+                            leagueId,
+                            name: leader.name,
+                            shortName: leader.shortName,
+                            jersey: leader.jersey,
+                            teamId: leader.teamId,
+                            teamName: leader.teamName,
+                          })
+                        }
+                        className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {leader.name}
+                      </button>
+                    ) : (
+                      <p className="truncate text-sm font-semibold text-cream">{leader.name}</p>
+                    )}
+                    {leader.teamName ? (
+                      teamClickable ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onOpenTeam?.({
+                              id: leader.teamId!,
+                              name: leader.teamName!,
+                              shortName: leader.teamName!,
+                              leagueId,
+                            })
+                          }
+                          className="profile-link mt-0.5 block max-w-full truncate text-left text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                        >
+                          {leader.teamName}
+                        </button>
+                      ) : (
+                        <p className="truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
+                          {leader.teamName}
+                        </p>
+                      )
+                    ) : null}
+                  </div>
+                  <span className="font-display text-xl tracking-wide text-lime tabular-nums">
+                    {leader.displayValue}
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      ))}
     </div>
   )
 }

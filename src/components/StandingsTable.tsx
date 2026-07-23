@@ -24,7 +24,7 @@ function StandingGroupTable({
 }) {
   return (
     <div className="overflow-x-auto border border-white/10">
-      <table className="w-full min-w-[30rem] border-collapse text-left text-xs">
+      <table className="w-full min-w-[34rem] border-collapse text-left text-xs">
         <thead className="bg-white/5 text-[0.65rem] uppercase tracking-[0.12em] text-mist/65">
           <tr>
             <th className="px-3 py-2 font-semibold">#</th>
@@ -36,6 +36,8 @@ function StandingGroupTable({
             <th className="px-2 py-2 text-center font-semibold">W</th>
             <th className="px-2 py-2 text-center font-semibold">D</th>
             <th className="px-2 py-2 text-center font-semibold">L</th>
+            <th className="px-2 py-2 text-center font-semibold">GF</th>
+            <th className="px-2 py-2 text-center font-semibold">GA</th>
             <th className="px-2 py-2 text-center font-semibold">GD</th>
             <th className="px-3 py-2 text-right font-semibold">Pts</th>
           </tr>
@@ -100,6 +102,8 @@ function StandingGroupTable({
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.won}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.drawn}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.lost}</td>
+                <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.goalsFor}</td>
+                <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.goalsAgainst}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">
                   {row.goalDiff > 0 ? `+${row.goalDiff}` : row.goalDiff}
                 </td>

@@ -205,6 +205,8 @@ export function seasonSnapshotFacts(standing: StandingRow | null): Array<[string
   return [
     ['Table place', `#${standing.rank}${standing.group ? ` · ${standing.group}` : ''}`],
     ['Points', String(standing.points)],
+    ['Goals for', String(standing.goalsFor)],
+    ['Goals against', String(standing.goalsAgainst)],
     [
       'Goal difference',
       standing.goalDiff > 0 ? `+${standing.goalDiff}` : String(standing.goalDiff),

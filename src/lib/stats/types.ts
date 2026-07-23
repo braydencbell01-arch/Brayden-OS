@@ -103,11 +103,30 @@ export type LeaguePlayerStatTop = {
   player: LeaderEntry
 }
 
+/** Top N players for a single league stat category. */
+export type LeaguePlayerStatBoard = {
+  categoryId: string
+  label: string
+  leaders: LeaderEntry[]
+}
+
 export type LeaguePlayerStatsOverview = {
   leagueId: LeagueId
   season: number
   seasonLabel: string
   rows: LeaguePlayerStatTop[]
+  /** Top players per category (typically 5). */
+  boards: LeaguePlayerStatBoard[]
+  fetchedAt: number
+}
+
+/** Top players on a single club across meaningful season stats. */
+export type TeamStatLeaders = {
+  leagueId: LeagueId
+  teamId: string
+  season: number
+  seasonLabel: string
+  categories: LeaderCategory[]
   fetchedAt: number
 }
 
@@ -171,14 +190,20 @@ export type PlayerRecentMatchRating = {
   goals: number
   assists: number
   starter: boolean
+  /** Approximate minutes used for the rating (90 when unknown). */
+  minutes?: number
   /** Opponent club/nation display name when known. */
   opponent?: string
   /** Short opponent code when known (e.g. WHU). */
   opponentAbbrev?: string
+  /** Opponent ESPN team id when known. */
+  opponentId?: string
   /** Kickoff / match date ISO string. */
   date?: string
   /** Player's side: home or away. */
   homeAway?: 'home' | 'away'
+  teamScore?: number | null
+  opponentScore?: number | null
 }
 
 /** Opaque cursor for paginating recent match ratings across seasons. */
@@ -223,5 +248,8 @@ export type PlayerProfile = {
   nationalHistory: PlayerClubStint[]
   /** Label for the season stats block, e.g. "2025-26 English Premier League". */
   seasonStatsLabel?: string
+  /** Prior season totals for the same club league when available. */
+  previousSeasonStats?: PlayerSeasonStatLine[]
+  previousSeasonStatsLabel?: string
   fetchedAt: number
 }

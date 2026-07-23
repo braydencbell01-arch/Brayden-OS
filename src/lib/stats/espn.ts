@@ -9,6 +9,7 @@ import type {
   LeaderCategory,
   LeaderEntry,
   LeagueLeaders,
+  LeaguePlayerStatBoard,
   LeaguePlayerStatTop,
   LeaguePlayerStatsOverview,
   MatchDetailStats,
@@ -26,6 +27,7 @@ import type {
   TeamRoster,
   TeamRosterGroup,
   TeamRosterPlayer,
+  TeamStatLeaders,
 } from './types'
 
 const STAT_KEYS: Array<{ key: string; label: string }> = [
@@ -574,6 +576,9 @@ function teamLeadersFromStandings(rows: StandingRow[], limit: number): LeaderCat
   const byPoints = [...played].sort((a, b) => b.points - a.points || b.goalDiff - a.goalDiff)
   const byGoals = [...played].sort((a, b) => b.goalsFor - a.goalsFor || b.goalDiff - a.goalDiff)
   const byDiff = [...played].sort((a, b) => b.goalDiff - a.goalDiff || b.points - a.points)
+  const byAgainst = [...played].sort(
+    (a, b) => a.goalsAgainst - b.goalsAgainst || b.goalDiff - a.goalDiff,
+  )
 
   const toEntries = (list: StandingRow[], valueOf: (row: StandingRow) => number): LeaderEntry[] =>
     list.slice(0, limit).map((row, index) => ({
@@ -594,6 +599,12 @@ function teamLeadersFromStandings(rows: StandingRow[], limit: number): LeaderCat
       label: 'Goals scored',
       kind: 'team' as const,
       leaders: toEntries(byGoals, (r) => r.goalsFor),
+    },
+    {
+      id: 'team-ga',
+      label: 'Fewest conceded',
+      kind: 'team' as const,
+      leaders: toEntries(byAgainst, (r) => r.goalsAgainst),
     },
     {
       id: 'team-gd',
@@ -751,21 +762,26 @@ async function fetchCoreNamed(ref: string | undefined): Promise<EspnCoreNamed | 
 }
 
 /**
- * Highest-ranked player in each available league stat (goals, assists, shots, cards, saves, …).
- * Uses ESPN core leaders, which expose more categories than the site statistics feed.
+ * Top players per available league stat (goals, assists, shots, cards, saves, …).
+ * Uses ESPN core leaders; `boards` hold top N, `rows` keep the #1 snapshot.
  */
 export async function fetchLeaguePlayerStatsOverview(
   leagueId: LeagueId,
+  limit = 5,
 ): Promise<LeaguePlayerStatsOverview> {
   const league = getLeague(leagueId)
   const nowYear = new Date().getUTCFullYear()
   const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+  const perCategoryCap = Math.max(1, Math.min(limit, 10))
 
   let payload: EspnCoreLeadersResponse | null = null
   let season = nowYear
 
   for (const year of yearsToTry) {
-    const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`
+    const url = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`,
+    )
+    url.searchParams.set('limit', '50')
     const res = await fetch(url)
     if (!res.ok) continue
     const data = (await res.json()) as EspnCoreLeadersResponse
@@ -792,11 +808,12 @@ export async function fetchLeaguePlayerStatsOverview(
   const athleteRefs = new Map<string, string>()
   const teamRefs = new Map<string, string>()
   for (const category of selected) {
-    const top = category.leaders![0]
-    const athleteId = idFromCoreRef(top.athlete?.$ref, 'athletes')
-    const teamId = idFromCoreRef(top.team?.$ref, 'teams')
-    if (athleteId && top.athlete?.$ref) athleteRefs.set(athleteId, top.athlete.$ref)
-    if (teamId && top.team?.$ref) teamRefs.set(teamId, top.team.$ref)
+    for (const leader of (category.leaders ?? []).slice(0, perCategoryCap)) {
+      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
+      const teamId = idFromCoreRef(leader.team?.$ref, 'teams')
+      if (athleteId && leader.athlete?.$ref) athleteRefs.set(athleteId, leader.athlete.$ref)
+      if (teamId && leader.team?.$ref) teamRefs.set(teamId, leader.team.$ref)
+    }
   }
 
   const [athletes, teams] = await Promise.all([
@@ -810,30 +827,52 @@ export async function fetchLeaguePlayerStatsOverview(
   const athleteById = new Map(athletes)
   const teamById = new Map(teams)
 
-  const rows: LeaguePlayerStatTop[] = selected.map((category) => {
-    const top = category.leaders![0]
-    const athleteId = idFromCoreRef(top.athlete?.$ref, 'athletes') || `${category.name}-0`
-    const teamId = idFromCoreRef(top.team?.$ref, 'teams')
+  const toEntry = (
+    categoryName: string | undefined,
+    leader: NonNullable<EspnCoreLeadersResponse['categories']>[number]['leaders'] extends
+      | Array<infer L>
+      | undefined
+      ? L
+      : never,
+    rank: number,
+  ): LeaderEntry => {
+    const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes') || `${categoryName}-${rank}`
+    const teamId = idFromCoreRef(leader.team?.$ref, 'teams')
     const athlete = athleteId ? athleteById.get(athleteId) : null
     const team = teamId ? teamById.get(teamId) : null
     const name = athlete?.displayName || 'Unknown'
-    const value = typeof top.value === 'number' ? top.value : Number(top.value) || 0
+    const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
     return {
-      categoryId: category.name || name,
+      rank,
+      id: athleteId,
+      name,
+      shortName: athlete?.shortName || athlete?.shortDisplayName || name,
+      jersey: athlete?.jersey,
+      teamId: teamId || undefined,
+      teamName: team?.displayName || team?.shortDisplayName || team?.abbreviation,
+      value,
+      displayValue: String(value),
+    }
+  }
+
+  const boards: LeaguePlayerStatBoard[] = selected.map((category) => {
+    const leaders = (category.leaders ?? [])
+      .slice(0, perCategoryCap)
+      .map((leader, index) => toEntry(category.name, leader, index + 1))
+    return {
+      categoryId: category.name || 'stat',
       label: category.displayName || category.shortDisplayName || category.name || 'Stat',
-      player: {
-        rank: 1,
-        id: athleteId,
-        name,
-        shortName: athlete?.shortName || athlete?.shortDisplayName || name,
-        jersey: athlete?.jersey,
-        teamId: teamId || undefined,
-        teamName: team?.displayName || team?.shortDisplayName || team?.abbreviation,
-        value,
-        displayValue: top.shortDisplayValue || top.displayValue || String(value),
-      },
+      leaders,
     }
   })
+
+  const rows: LeaguePlayerStatTop[] = boards
+    .filter((board) => board.leaders[0])
+    .map((board) => ({
+      categoryId: board.categoryId,
+      label: board.label,
+      player: board.leaders[0]!,
+    }))
 
   if (rows.length === 0) {
     throw new Error(`No ${league.name} player stats available yet`)
@@ -844,6 +883,114 @@ export async function fetchLeaguePlayerStatsOverview(
     season,
     seasonLabel: `${season} season`,
     rows,
+    boards,
+    fetchedAt: Date.now(),
+  }
+}
+
+/**
+ * Top players on a club for each meaningful season stat.
+ * Filters ESPN core league leaders down to the requested team.
+ */
+export async function fetchTeamStatLeaders(
+  leagueId: LeagueId,
+  teamId: string,
+  limit = 3,
+): Promise<TeamStatLeaders> {
+  const league = getLeague(leagueId)
+  const nowYear = new Date().getUTCFullYear()
+  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
+  const perCategoryCap = Math.max(1, Math.min(limit, 8))
+
+  let payload: EspnCoreLeadersResponse | null = null
+  let season = nowYear
+
+  for (const year of yearsToTry) {
+    const url = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`,
+    )
+    url.searchParams.set('limit', '200')
+    const res = await fetch(url)
+    if (!res.ok) continue
+    const data = (await res.json()) as EspnCoreLeadersResponse
+    if (!data.categories?.length) continue
+    payload = data
+    season = year
+    break
+  }
+
+  if (!payload?.categories?.length) {
+    throw new Error(`No ${league.name} player stats available yet`)
+  }
+
+  const byName = new Map(
+    payload.categories
+      .filter((category) => category.name)
+      .map((category) => [category.name as string, category]),
+  )
+
+  const selected = PLAYER_STAT_CATEGORY_ORDER.map((name) => byName.get(name)).filter(
+    (category): category is NonNullable<typeof category> => Boolean(category?.leaders?.length),
+  )
+
+  const teamLeadersByCategory = selected
+    .map((category) => {
+      const forTeam = (category.leaders ?? [])
+        .filter((leader) => idFromCoreRef(leader.team?.$ref, 'teams') === teamId)
+        .filter((leader) => {
+          const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
+          return value > 0
+        })
+        .slice(0, perCategoryCap)
+      return { category, leaders: forTeam }
+    })
+    .filter((entry) => entry.leaders.length > 0)
+
+  if (teamLeadersByCategory.length === 0) {
+    throw new Error(`No stat leaders available for this club yet`)
+  }
+
+  const athleteRefs = new Map<string, string>()
+  for (const { leaders } of teamLeadersByCategory) {
+    for (const leader of leaders) {
+      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
+      if (athleteId && leader.athlete?.$ref) athleteRefs.set(athleteId, leader.athlete.$ref)
+    }
+  }
+
+  const athletes = await Promise.all(
+    [...athleteRefs.entries()].map(async ([id, ref]) => [id, await fetchCoreNamed(ref)] as const),
+  )
+  const athleteById = new Map(athletes)
+
+  const categories: LeaderCategory[] = teamLeadersByCategory.map(({ category, leaders }) => ({
+    id: category.name || 'stat',
+    label: category.displayName || category.shortDisplayName || category.name || 'Stat',
+    kind: 'player' as const,
+    leaders: leaders.map((leader, index) => {
+      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes') || `${category.name}-${index}`
+      const athlete = athleteId ? athleteById.get(athleteId) : null
+      const name = athlete?.displayName || 'Unknown'
+      const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
+      return {
+        rank: index + 1,
+        id: athleteId,
+        name,
+        shortName: athlete?.shortName || athlete?.shortDisplayName || name,
+        jersey: athlete?.jersey,
+        teamId,
+        value,
+        displayValue: String(value),
+      }
+    }),
+  }))
+
+  return {
+    leagueId,
+    teamId,
+    season,
+    seasonLabel: `${season} season`,
+    categories,
     fetchedAt: Date.now(),
   }
 }
@@ -1036,15 +1183,23 @@ function buildOrderedSeasonStatsFromAthleteStats(
   payload: EspnAthleteStatsPayload,
   leagueSlug: string,
   appearances?: number | null,
+  preferredYear?: number | null,
 ): { stats: PlayerSeasonStatLine[]; seasonLabel: string | null; seasonYear: number | null } {
   const category = payload.categories?.[0]
   const names = [...(category?.names ?? [])]
   const labels = [...(category?.displayNames ?? [])]
   const rows = category?.statistics ?? []
+  const leagueRows = rows.filter((item) => item.leagueSlug === leagueSlug)
+  const candidates =
+    leagueRows.length > 0
+      ? leagueRows
+      : rows.filter((item) => item.leagueSlug && item.leagueSlug.includes('.'))
+
   const row =
-    rows.find((item) => item.leagueSlug === leagueSlug) ||
-    // Prefer a club-league row over an unrelated first split (often national team).
-    rows.find((item) => item.leagueSlug && item.leagueSlug.includes('.')) ||
+    (preferredYear != null
+      ? candidates.find((item) => item.season?.year === preferredYear)
+      : null) ||
+    candidates[0] ||
     null
   if (!row?.stats?.length || names.length === 0) {
     return { stats: [], seasonLabel: null, seasonYear: null }
@@ -1086,10 +1241,17 @@ async function fetchCoreSeasonAppearances(
 async function fetchAthleteLeagueSeasonStats(
   playerId: string,
   leagueSlug: string,
-): Promise<{ stats: PlayerSeasonStatLine[]; seasonLabel: string | null }> {
+): Promise<{
+  stats: PlayerSeasonStatLine[]
+  seasonLabel: string | null
+  previousStats: PlayerSeasonStatLine[]
+  previousSeasonLabel: string | null
+}> {
   const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/stats?league=${encodeURIComponent(leagueSlug)}`
   const res = await fetch(url)
-  if (!res.ok) return { stats: [], seasonLabel: null }
+  if (!res.ok) {
+    return { stats: [], seasonLabel: null, previousStats: [], previousSeasonLabel: null }
+  }
   const payload = (await res.json()) as EspnAthleteStatsPayload
 
   // First pass: learn which season year the club-league row uses.
@@ -1100,7 +1262,31 @@ async function fetchAthleteLeagueSeasonStats(
   }
 
   const full = buildOrderedSeasonStatsFromAthleteStats(payload, leagueSlug, appearances)
-  return { stats: full.stats, seasonLabel: full.seasonLabel }
+
+  let previousStats: PlayerSeasonStatLine[] = []
+  let previousSeasonLabel: string | null = null
+  if (full.seasonYear != null) {
+    const prevYear = full.seasonYear - 1
+    let prevApps: number | null = null
+    prevApps = await fetchCoreSeasonAppearances(leagueSlug, prevYear, playerId)
+    const previous = buildOrderedSeasonStatsFromAthleteStats(
+      payload,
+      leagueSlug,
+      prevApps,
+      prevYear,
+    )
+    if (previous.stats.length > 0 && previous.seasonYear === prevYear) {
+      previousStats = previous.stats
+      previousSeasonLabel = previous.seasonLabel || String(prevYear)
+    }
+  }
+
+  return {
+    stats: full.stats,
+    seasonLabel: full.seasonLabel,
+    previousStats,
+    previousSeasonLabel,
+  }
 }
 
 function parseGameLogRatings(
@@ -1154,20 +1340,26 @@ function parseGameLogRatings(
           num('dribblesSuccessful'),
       }
 
+      const minutesRaw =
+        num('minutes') || num('minsPlayed') || num('minutesPlayed') || num('MIN')
+      const minutesPlayed = minutesRaw > 0 ? minutesRaw : starter ? 90 : 45
+
       const breakdown = rateMatchPerformance(
         stats,
         positionGroupFromAbbrev(positionAbbrev),
-        { minutesPlayed: 90, live: false },
+        { minutesPlayed, live: false },
       )
       if (!breakdown || !event.eventId) return null
 
-      return {
+      const row: PlayerRecentMatchRating = {
         eventId: event.eventId,
         rating: breakdown.rating,
         goals: stats.totalGoals,
         assists: stats.goalAssists,
         starter,
-      } satisfies PlayerRecentMatchRating
+        minutes: Math.round(breakdown.minutesUsed),
+      }
+      return row
     })
     .filter((row): row is PlayerRecentMatchRating => row != null)
 }
@@ -1215,6 +1407,7 @@ type EspnSiteSummary = {
       date?: string
       competitors?: Array<{
         homeAway?: string
+        score?: string | number | { value?: number; displayValue?: string }
         team?: {
           id?: string
           displayName?: string
@@ -1364,11 +1557,39 @@ async function fetchEventLogPage(
   }
 }
 
+function parseCompetitorScore(
+  value: string | number | { value?: number; displayValue?: string } | undefined,
+): number | null {
+  if (value == null || value === '') return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  if (typeof value === 'object') {
+    if (typeof value.value === 'number' && Number.isFinite(value.value)) return value.value
+    if (value.displayValue != null && value.displayValue !== '') {
+      const n = Number(value.displayValue)
+      return Number.isFinite(n) ? n : null
+    }
+    return null
+  }
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
 async function fetchMatchMeta(
   leagueEspnCode: string,
   eventId: string,
   playerTeamId: string | undefined,
-): Promise<Pick<PlayerRecentMatchRating, 'opponent' | 'opponentAbbrev' | 'date' | 'homeAway'>> {
+): Promise<
+  Pick<
+    PlayerRecentMatchRating,
+    | 'opponent'
+    | 'opponentAbbrev'
+    | 'opponentId'
+    | 'date'
+    | 'homeAway'
+    | 'teamScore'
+    | 'opponentScore'
+  >
+> {
   const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueEspnCode}/summary?event=${eventId}`
   try {
     const res = await fetch(summaryUrl)
@@ -1393,7 +1614,10 @@ async function fetchMatchMeta(
           opponentSide?.team?.shortDisplayName ||
           undefined,
         opponentAbbrev: opponentSide?.team?.abbreviation,
+        opponentId: opponentSide?.team?.id,
         homeAway,
+        teamScore: parseCompetitorScore(playerSide?.score),
+        opponentScore: parseCompetitorScore(opponentSide?.score),
       }
     }
   } catch {
@@ -1409,14 +1633,19 @@ async function fetchMatchMeta(
     const competitors = event.competitions?.[0]?.competitors ?? []
     let homeAway: 'home' | 'away' | undefined
     let opponentToken: string | undefined
+    let opponentId: string | undefined
     if (playerTeamId && event.shortName) {
       const parts = event.shortName.split(/\s*@\s*|\s+vs\.?\s+/i).map((p) => p.trim())
       const playerCompetitor = competitors.find(
         (c) => teamIdFromRef(c.team?.$ref) === playerTeamId || c.id === playerTeamId,
       )
+      const opponentCompetitor = competitors.find(
+        (c) => teamIdFromRef(c.team?.$ref) !== playerTeamId && c.id !== playerTeamId,
+      )
       if (playerCompetitor?.homeAway === 'home' || playerCompetitor?.homeAway === 'away') {
         homeAway = playerCompetitor.homeAway
       }
+      opponentId = teamIdFromRef(opponentCompetitor?.team?.$ref) || opponentCompetitor?.id
       if (parts.length === 2) {
         if (event.shortName.includes('@')) {
           opponentToken = homeAway === 'home' ? parts[0] : parts[1]
@@ -1429,6 +1658,7 @@ async function fetchMatchMeta(
       date: event.date || event.competitions?.[0]?.date,
       opponent: opponentToken || event.name,
       opponentAbbrev: opponentToken,
+      opponentId,
       homeAway,
     }
   } catch {
@@ -1496,8 +1726,14 @@ async function ratingFromEventLogItem(
       readCoreStatValue(categories, 'takeOnsWon'),
   }
 
+  const minutesRaw =
+    readCoreStatValue(categories, 'minutes') ||
+    readCoreStatValue(categories, 'minsPlayed') ||
+    readCoreStatValue(categories, 'minutesPlayed')
+  const minutesPlayed = minutesRaw > 0 ? minutesRaw : starter ? 90 : 45
+
   const breakdown = rateMatchPerformance(stats, positionGroupFromAbbrev(positionAbbrev), {
-    minutesPlayed: 90,
+    minutesPlayed,
     live: false,
   })
   if (!breakdown) return null
@@ -1508,6 +1744,7 @@ async function ratingFromEventLogItem(
     goals: stats.totalGoals,
     assists: stats.goalAssists,
     starter,
+    minutes: Math.round(breakdown.minutesUsed),
     ...meta,
   }
 }
@@ -1758,16 +1995,18 @@ async function averageRatingFromSeasonGameLog(
 }
 
 /**
- * Club career by season: matches, goals, assists, and Brayden average rating (from gamelog).
- * Skips national-team stints. Rating fetch is capped for responsiveness.
+ * Career by season: matches, goals, assists, and Brayden average rating (from gamelog).
+ * Pass clubHistory for clubs, or nationalHistory for national-team lines.
  */
 export async function fetchPlayerCareerSeasons(
   playerId: string,
   clubHistory: PlayerClubStint[],
   positionAbbrev?: string,
+  options?: { national?: boolean },
 ): Promise<PlayerCareerSeason[]> {
   const clubs = clubHistory.filter((club) => /^\d+$/.test(club.teamId))
   if (clubs.length === 0) return []
+  const national = options?.national === true
 
   const seasonRows = await mapPool(clubs, 3, async (club) => {
     const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?team=${encodeURIComponent(club.teamId)}`
@@ -1785,8 +2024,10 @@ export async function fetchPlayerCareerSeasons(
     for (const row of rows) {
       const year = row.season?.year
       const leagueSlug = row.leagueSlug
-      if (typeof year !== 'number' || !leagueSlug || !leagueSlug.includes('.')) continue
-      // Skip country / national competition slugs without a club league pattern.
+      if (typeof year !== 'number' || !leagueSlug) continue
+      const looksClub = leagueSlug.includes('.')
+      // Club career prefers club league slugs; national career keeps everything for that team.
+      if (!national && !looksClub) continue
       const values = row.stats ?? []
       const seasonLabel =
         row.season?.shortDisplayName ||
@@ -1838,7 +2079,7 @@ export async function fetchPlayerCareerSeasons(
     return true
   })
 
-  const RATING_SEASON_CAP = 18
+  const RATING_SEASON_CAP = national ? 12 : 18
   const withExtras = await mapPool(unique.slice(0, RATING_SEASON_CAP), 3, async (row) => {
     const [averageRating, coreApps] = await Promise.all([
       averageRatingFromSeasonGameLog(
@@ -1946,6 +2187,8 @@ export async function fetchPlayerProfile(
       leagueId,
       seasonStats,
       seasonStatsLabel,
+      previousSeasonStats: seasonStatsBundle.previousStats,
+      previousSeasonStatsLabel: seasonStatsBundle.previousSeasonLabel || undefined,
       averageRating,
       recentRatings,
       clubHistory,
