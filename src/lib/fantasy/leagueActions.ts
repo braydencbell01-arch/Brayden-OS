@@ -3,6 +3,7 @@ import {
   activateFromIr as activateFromIrLineup,
   ensureLegalStarters,
   moveToIr as moveToIrLineup,
+  ownedPlayerIds,
   suggestStarters,
   validateStarters,
 } from './lineup'
@@ -327,7 +328,7 @@ export function addFreeAgent(
   if (league.waiverPool.includes(playerId)) {
     throw new Error('Player is on waivers — submit a waiver claim')
   }
-  const owned = new Set(league.members.flatMap((m) => m.roster))
+  const owned = ownedPlayerIds(league.members)
   if (owned.has(playerId)) throw new Error('Player is on a roster')
 
   const player = catalog.get(playerId)
@@ -567,8 +568,9 @@ function tradeIsVetoed(league: FantasyLeague, trade: TradeOffer): boolean {
   const nonPartyCount = league.members.filter(
     (m) => m.id !== trade.fromMemberId && m.id !== trade.toMemberId,
   ).length
+  // Majority of non-party managers (not a fixed 2-vote shortcut).
   const majority = Math.max(1, Math.ceil(nonPartyCount / 2))
-  return votes >= 2 || votes >= majority
+  return votes >= majority
 }
 
 export function tickTradeVetoes(

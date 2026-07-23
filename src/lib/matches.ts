@@ -275,6 +275,21 @@ export function dateKeysWithMatches(matches: Match[]): Set<string> {
   return new Set(matches.map((match) => match.dateKey))
 }
 
+/** Next calendar day after `fromKey` that has fixtures (optionally prefer favorites). */
+export function nextDateKeyWithMatches(
+  matches: Match[],
+  fromKey: string,
+  preferredKeys?: Set<string> | null,
+): string | null {
+  const all = [...dateKeysWithMatches(matches)].filter((key) => key > fromKey).sort()
+  if (all.length === 0) return null
+  if (preferredKeys?.size) {
+    const favoriteHit = all.find((key) => preferredKeys.has(key))
+    if (favoriteHit) return favoriteHit
+  }
+  return all[0] ?? null
+}
+
 /** True when the match is in a favorited league or features a favorited team. */
 export function isFavoriteMatch(
   match: Match,

@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { snakeMemberForPick, totalDraftPicks } from '../../lib/fantasy/draft'
-import { suggestStartersDetailed, validateStarters } from '../../lib/fantasy/lineup'
+import {
+  ownedPlayerIds,
+  suggestStartersDetailed,
+  validateStarters,
+} from '../../lib/fantasy/lineup'
 import { standingsRank } from '../../lib/fantasy/schedule'
 import { scoringBlurb } from '../../lib/fantasy/scoringPresets'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
@@ -85,7 +89,10 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
   const [tab, setTab] = useState<HubTab>(() => defaultTab(league))
 
   useEffect(() => {
-    setTab(defaultTab(league))
+    const phase = league.phase
+    if (phase === 'drafting' || phase === 'draft_setup') setTab('draft')
+    else if (phase === 'regular' || phase === 'semifinals' || phase === 'finals') setTab('matchup')
+    else setTab('home')
   }, [league.id, league.phase])
 
   const draftPhase =
@@ -841,9 +848,10 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
   const [starters, setStarters] = useState<number[]>(me?.starters ?? [])
   const [optimizeReasons, setOptimizeReasons] = useState<string[]>([])
 
+  const starterSyncKey = `${me?.id ?? ''}:${(me?.starters ?? []).join(',')}`
   useEffect(() => {
     setStarters(me?.starters ?? [])
-  }, [me])
+  }, [starterSyncKey, me?.starters])
 
   if (!me) return <p className="text-sm text-mist/70">Join this league to manage a roster.</p>
 
@@ -853,7 +861,7 @@ function RosterPanel({ fantasy }: { fantasy: FantasyApi }) {
   const irIds = me.ir ?? []
   const flexId = flexPlayerId(activeStarterIds, fantasy.playerMap)
   const lineupIssue = validateStarters(
-    me.starters,
+    starters,
     me.roster,
     league.starterSpots,
     fantasy.playerMap,
@@ -1060,7 +1068,7 @@ function WaiversPanel({ fantasy }: { fantasy: FantasyApi }) {
   const [q, setQ] = useState('')
   const [dropId, setDropId] = useState<number | ''>('')
   const [mode, setMode] = useState<'fa' | 'wire' | 'priority'>('fa')
-  const owned = useMemo(() => new Set(league.members.flatMap((m) => m.roster)), [league.members])
+  const owned = useMemo(() => ownedPlayerIds(league.members), [league.members])
   const waiverSet = useMemo(() => new Set(league.waiverPool ?? []), [league.waiverPool])
 
   const players = useMemo(() => {

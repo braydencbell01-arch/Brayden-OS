@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { BottomNav, type BottomTab } from './components/BottomNav'
 import { CalendarStrip } from './components/CalendarStrip'
@@ -15,11 +15,17 @@ import {
   type PlayerNavRef,
 } from './components/PlayerProfileScreen'
 import { TeamProfileScreen } from './components/TeamProfileScreen'
-import { startOfDay, toDateKey } from './lib/dates'
+import { parseDateKey, startOfDay, toDateKey } from './lib/dates'
 import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favorites'
 import { LEAGUES, type LeagueId } from './lib/leagues'
-import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
+import {
+  dateKeysForFavorites,
+  matchesOnDate,
+  nextDateKeyWithMatches,
+  type Match,
+} from './lib/matches'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
+import { useToday } from './lib/useToday'
 
 type Screen =
   | BottomTab
@@ -105,6 +111,10 @@ function HomeScreen({
         favorites.favoritePlayerTeamIds,
       ),
     [matches, favorites.leagueIds, favorites.teamIds, favorites.favoritePlayerTeamIds],
+  )
+  const nextMatchDayKey = useMemo(
+    () => nextDateKeyWithMatches(matches, toDateKey(selectedDate), favoriteDateKeys),
+    [matches, selectedDate, favoriteDateKeys],
   )
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
@@ -266,13 +276,24 @@ function HomeScreen({
                     <p className="text-sm text-mist/70">
                       No matches on this date. Try another day or jump back to Today.
                     </p>
-                    <button
-                      type="button"
-                      onClick={onJumpToToday}
-                      className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
-                    >
-                      Jump to Today
-                    </button>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {nextMatchDayKey ? (
+                        <button
+                          type="button"
+                          onClick={() => onSelectDate(parseDateKey(nextMatchDayKey))}
+                          className="rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+                        >
+                          Next match day
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={onJumpToToday}
+                        className="rounded-full border border-white/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-mist transition hover:border-lime/40 hover:text-lime"
+                      >
+                        Jump to Today
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <MatchDayByLeague
@@ -311,7 +332,10 @@ export default function App() {
     ensureRange,
     ensureDate,
   } = useLiveBigFiveMatches()
+  const today = useToday()
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
+  /** Follow the live calendar day until the user picks another date. */
+  const [followToday, setFollowToday] = useState(true)
   const [screen, setScreen] = useState<Screen>('home')
   const [activeTab, setActiveTab] = useState<BottomTab>('home')
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
@@ -326,7 +350,15 @@ export default function App() {
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
+  useEffect(() => {
+    if (!followToday) return
+    const day = startOfDay(today)
+    setSelectedDate(day)
+    void ensureDate(day)
+  }, [followToday, today, ensureDate])
+
   const jumpToToday = () => {
+    setFollowToday(true)
     const day = startOfDay(new Date())
     setSelectedDate(day)
     void ensureDate(day)
@@ -335,6 +367,7 @@ export default function App() {
   const handleSelectDate = useCallback(
     (date: Date) => {
       const day = startOfDay(date)
+      setFollowToday(toDateKey(day) === toDateKey(startOfDay(new Date())))
       setSelectedDate(day)
       void ensureDate(day)
     },

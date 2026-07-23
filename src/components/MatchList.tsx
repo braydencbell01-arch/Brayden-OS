@@ -141,10 +141,11 @@ function ExpandableMatchRow({
         tabIndex={0}
         onClick={() => setOpen((value) => !value)}
         onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault()
-            setOpen((value) => !value)
-          }
+          if (event.key !== 'Enter' && event.key !== ' ') return
+          // Nested team buttons must receive Enter/Space without toggling the row.
+          if (event.target !== event.currentTarget) return
+          event.preventDefault()
+          setOpen((value) => !value)
         }}
         aria-expanded={open}
         className={[
@@ -173,11 +174,17 @@ function ExpandableMatchRow({
         </div>
 
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div onClick={(event) => event.stopPropagation()}>
+          <div
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
             <TeamNameButton match={match} side="home" onOpenTeam={onOpenTeam} />
           </div>
           <Score match={match} />
-          <div onClick={(event) => event.stopPropagation()}>
+          <div
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
             <TeamNameButton match={match} side="away" onOpenTeam={onOpenTeam} />
           </div>
         </div>

@@ -37,6 +37,11 @@ export function addDays(date: Date, amount: number): Date {
   return next
 }
 
+export function parseDateKey(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number)
+  return startOfDay(new Date(y, (m ?? 1) - 1, d ?? 1))
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&

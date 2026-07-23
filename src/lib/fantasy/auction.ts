@@ -76,9 +76,11 @@ export function nominatePlayer(
 
   const player = catalog.get(playerId)
   if (!player || player.status === 'u') throw new Error('Unknown player')
+  const bid = Math.floor(Number(openingBid))
+  if (!Number.isFinite(bid) || bid < 1) throw new Error('Opening bid must be at least 1')
   const member = league.members.find((m) => m.id === memberId)
   if (!member) throw new Error('Manager not found')
-  if ((member.auctionBudget ?? league.auctionBudget) < openingBid) {
+  if ((member.auctionBudget ?? league.auctionBudget) < bid) {
     throw new Error('Opening bid exceeds budget')
   }
   if (!canRosterBidder(league, memberId, player, catalog)) {
@@ -90,7 +92,7 @@ export function nominatePlayer(
     {
       ...league,
       auctionNomPlayerId: playerId,
-      auctionHighBid: openingBid,
+      auctionHighBid: bid,
       auctionHighBidderId: memberId,
       auctionBidDeadlineAt: nextDeadline(now, league.draftClockSeconds || DEFAULT_DRAFT_CLOCK_SECONDS),
       updatedAt: now,

@@ -186,6 +186,18 @@ export function canAddPosition(
   return countByPos(roster, catalog)[pos] < limits[pos]
 }
 
+/** Active roster + IR — IR players must stay owned while stashed. */
+export function ownedPlayerIds(
+  members: Array<{ roster: number[]; ir?: number[] }>,
+): Set<number> {
+  const ids = new Set<number>()
+  for (const member of members) {
+    for (const id of member.roster) ids.add(id)
+    for (const id of member.ir ?? []) ids.add(id)
+  }
+  return ids
+}
+
 export function moveToIr(
   league: FantasyLeague,
   memberId: string,

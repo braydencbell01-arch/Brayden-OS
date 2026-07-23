@@ -1,4 +1,4 @@
-import { canAddPosition, ensureLegalStarters } from './lineup'
+import { canAddPosition, ensureLegalStarters, ownedPlayerIds } from './lineup'
 import type { FantasyLeague, FantasyPlayer, WaiverClaim } from './types'
 import { POSITION_LIMITS } from './types'
 
@@ -18,7 +18,7 @@ export function submitWaiverClaim(
   const member = league.members.find((m) => m.id === memberId)
   if (!member) throw new Error('Manager not found')
 
-  const owned = new Set(league.members.flatMap((m) => m.roster))
+  const owned = ownedPlayerIds(league.members)
   if (owned.has(addPlayerId)) throw new Error('Player is already rostered')
 
   const needsDrop = member.roster.length >= league.rosterSpots
@@ -91,7 +91,7 @@ export function processWaiverClaims(
   const claimUpdates = new Map<string, WaiverClaim>()
   const remaining = [...pending]
 
-  const owned = () => new Set(members.flatMap((m) => m.roster))
+  const owned = () => ownedPlayerIds(members)
   const rankOf = (memberId: string) => {
     const i = waiverOrder.indexOf(memberId)
     return i === -1 ? 999 : i
