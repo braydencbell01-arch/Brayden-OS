@@ -111,7 +111,7 @@ export function FantasyHome({
           className="flex flex-col gap-3"
         >
           <label className="text-xs font-semibold uppercase tracking-[0.16em] text-mist/60">
-            Your manager name
+            1. Your manager name
           </label>
           <FantasyInput
             value={name}
@@ -121,6 +121,10 @@ export function FantasyHome({
             }}
             placeholder="e.g. Brayden"
           />
+
+          <p className="text-xs text-mist/55">
+            2. Pick a path — then 3. draft when your league is full.
+          </p>
 
           {fantasy.leagues.length > 0 ? (
             <div className="mb-2">
@@ -153,28 +157,42 @@ export function FantasyHome({
           ) : null}
 
           <div className="grid gap-2 sm:grid-cols-2">
-            <FantasyButton
-              disabled={busy || !fantasy.catalog}
-              onClick={() => runBusy(() => fantasy.loadDemoLeague(), 'Could not load demo league')}
-            >
-              Spectator demo
-            </FantasyButton>
-            <FantasyButton
-              disabled={busy || fantasy.syncing}
-              variant="ghost"
-              onClick={() => {
-                fantasy.setDisplayName(name)
-                runBusy(() => fantasy.createQuickLeague(), 'Could not create quick league')
-              }}
-            >
-              Quick league
-            </FantasyButton>
-            <FantasyButton className="sm:col-span-1" onClick={() => setMode('create')}>
-              Create custom
-            </FantasyButton>
-            <FantasyButton className="sm:col-span-1" variant="ghost" onClick={() => setMode('join')}>
-              Join with invite
-            </FantasyButton>
+            <div className="space-y-1">
+              <FantasyButton
+                disabled={busy || !fantasy.catalog}
+                onClick={() => runBusy(() => fantasy.loadDemoLeague(), 'Could not load demo league')}
+                className="w-full"
+              >
+                Spectator demo
+              </FantasyButton>
+              <p className="px-1 text-[11px] text-mist/50">Tour a filled league without drafting.</p>
+            </div>
+            <div className="space-y-1">
+              <FantasyButton
+                disabled={busy || fantasy.syncing}
+                variant="ghost"
+                onClick={() => {
+                  fantasy.setDisplayName(name)
+                  runBusy(() => fantasy.createQuickLeague(), 'Could not create quick league')
+                }}
+                className="w-full"
+              >
+                Quick league
+              </FantasyButton>
+              <p className="px-1 text-[11px] text-mist/50">8 teams, bots fill empty seats.</p>
+            </div>
+            <div className="space-y-1">
+              <FantasyButton className="w-full" onClick={() => setMode('create')}>
+                Create custom
+              </FantasyButton>
+              <p className="px-1 text-[11px] text-mist/50">Pick size, draft type, and scoring.</p>
+            </div>
+            <div className="space-y-1">
+              <FantasyButton className="w-full" variant="ghost" onClick={() => setMode('join')}>
+                Join with invite
+              </FantasyButton>
+              <p className="px-1 text-[11px] text-mist/50">Paste a code or sync link from a friend.</p>
+            </div>
           </div>
           {!fantasy.catalog && !fantasy.catalogError ? (
             <p className="text-xs text-mist/55">Loading player catalog…</p>

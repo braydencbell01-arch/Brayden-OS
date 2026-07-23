@@ -17,11 +17,16 @@ function canRosterBidder(
   memberId: string,
   player: FantasyPlayer,
   catalog: Map<number, FantasyPlayer>,
+  bidAmount: number,
 ): boolean {
   const member = league.members.find((m) => m.id === memberId)
   if (!member) return false
   if (member.roster.length >= league.rosterSpots) return false
-  return canAddPosition(member.roster, player.pos, POSITION_LIMITS, catalog)
+  if (!canAddPosition(member.roster, player.pos, POSITION_LIMITS, catalog)) return false
+  const budget = member.auctionBudget ?? league.auctionBudget ?? DEFAULT_AUCTION_BUDGET
+  // Reserve $1 for every remaining open roster slot after this win.
+  const openAfterWin = Math.max(0, league.rosterSpots - member.roster.length - 1)
+  return bidAmount + openAfterWin <= budget
 }
 
 export function startAuctionDraft(league: FantasyLeague): FantasyLeague {
@@ -83,8 +88,8 @@ export function nominatePlayer(
   if ((member.auctionBudget ?? league.auctionBudget) < bid) {
     throw new Error('Opening bid exceeds budget')
   }
-  if (!canRosterBidder(league, memberId, player, catalog)) {
-    throw new Error('Nominated player does not fit your roster')
+  if (!canRosterBidder(league, memberId, player, catalog, bid)) {
+    throw new Error('Bid leaves too little budget to finish your roster')
   }
 
   const now = Date.now()
@@ -120,8 +125,8 @@ export function placeBid(
   const member = league.members.find((m) => m.id === memberId)
   if (!member) throw new Error('Manager not found')
   if ((member.auctionBudget ?? league.auctionBudget) < bid) throw new Error('Bid exceeds budget')
-  if (!canRosterBidder(league, memberId, player, catalog)) {
-    throw new Error('Player does not fit your roster')
+  if (!canRosterBidder(league, memberId, player, catalog, bid)) {
+    throw new Error('Bid leaves too little budget to finish your roster')
   }
 
   const now = Date.now()

@@ -98,13 +98,13 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
   const draftPhase =
     league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting'
   const tabs: Array<{ id: HubTab; label: string; hidden?: boolean }> = [
-    { id: 'home', label: 'Home' },
+    { id: 'home', label: draftPhase ? 'Lobby' : 'Home' },
     { id: 'draft', label: 'Draft', hidden: !draftPhase },
     { id: 'matchup', label: 'Matchup', hidden: draftPhase },
     { id: 'roster', label: 'Roster' },
     { id: 'waivers', label: 'Waivers', hidden: draftPhase },
     { id: 'trades', label: 'Trades', hidden: draftPhase },
-    { id: 'standings', label: 'Table', hidden: draftPhase },
+    { id: 'standings', label: 'Standings', hidden: draftPhase },
     { id: 'bracket', label: 'Bracket', hidden: league.playoffs.length === 0 },
   ]
 
@@ -122,9 +122,12 @@ function FantasyLeagueHub({ fantasy, reduce }: { fantasy: FantasyApi; reduce: bo
           <h1 className="mt-2 font-display text-4xl tracking-[0.04em] text-cream sm:text-5xl">
             {league.name}
           </h1>
-          <p className="mt-1 text-xs text-mist/60">
-            Premier League - {phaseLabel(league.phase)} - {league.draftMode} - {league.scoringPreset} -{' '}
-            {league.members.length}/{league.teamCount} - {league.rosterSpots}-man
+          <p className="mt-2 inline-flex rounded-full border border-lime/30 bg-lime/10 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
+            {phaseLabel(league.phase)}
+          </p>
+          <p className="mt-2 text-xs text-mist/60">
+            Premier League · {league.draftMode} · {league.scoringPreset} · {league.members.length}/
+            {league.teamCount} · {league.rosterSpots}-man
           </p>
         </div>
         <FantasyButton variant="ghost" onClick={() => void fantasy.refreshActive()}>
@@ -1280,7 +1283,13 @@ function TradesPanel({ fantasy }: { fantasy: FantasyApi }) {
           Accepted trades enter a {league.tradeVetoHours || 24}h review window. Non-parties can vote
           to veto during that countdown.
         </p>
-        <FantasySelect value={toId} onChange={(e) => setToId(e.target.value)}>
+        <FantasySelect
+          value={toId}
+          onChange={(e) => {
+            setToId(e.target.value)
+            setRequest([])
+          }}
+        >
           <option value="">Trade partner...</option>
           {league.members
             .filter((m) => m.id !== me.id)

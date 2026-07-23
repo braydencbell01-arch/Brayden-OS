@@ -216,24 +216,25 @@ export async function searchEspnSoccer(
       leagueIdFromEspnCode(item.defaultLeagueSlug) ||
       null
 
-    // Skip unresolved leagues — avoid fake Premier League defaults in results.
-    if (!leagueId) continue
-
     const relatedLabel =
       (item.leagueRelationships ?? []).find((rel) => leagueIdFromEspnCode(rel.core?.slug))
         ?.displayName ||
-      (item.leagueRelationships ?? [])[0]?.displayName
+      (item.leagueRelationships ?? [])[0]?.displayName ||
+      item.league ||
+      undefined
 
+    // Keep players even when ESPN tags a cup/national slug we don't map.
+    // resolvePlayerNavFromSearch recovers the club league from the athlete endpoint.
     players.push({
       kind: 'player',
       player: {
         id: item.id,
-        leagueId,
+        leagueId: leagueId ?? LEAGUES[0]!.id,
         name: item.displayName,
         shortName: item.shortName || item.displayName,
         photoUrl: playerHeadshotUrl(item.id),
       },
-      subtitle: relatedLabel,
+      subtitle: leagueId ? relatedLabel : relatedLabel || 'Club league TBD',
     })
     if (players.length >= 10) break
   }

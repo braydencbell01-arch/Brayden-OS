@@ -28,6 +28,7 @@ export function LeagueProfileScreen({
   error,
   favorites,
   onBack,
+  backLabel,
   onOpenTeam,
   onOpenPlayer,
   reduce,
@@ -38,6 +39,7 @@ export function LeagueProfileScreen({
   error: string | null
   favorites: FavoritesApi
   onBack: () => void
+  backLabel?: string
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
@@ -67,7 +69,7 @@ export function LeagueProfileScreen({
   const clubCount = standings.rows.length
 
   return (
-    <ProfileShell onBack={onBack} reduce={reduce}>
+    <ProfileShell onBack={onBack} backLabel={backLabel} reduce={reduce}>
       <ProfileHeader
         reduce={reduce}
         star={

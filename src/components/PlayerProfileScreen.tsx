@@ -256,11 +256,13 @@ export function PlayerProfileScreen({
   player,
   favorites,
   onBack,
+  backLabel,
   reduce,
 }: {
   player: PlayerNavRef
   favorites: FavoritesApi
   onBack: () => void
+  backLabel?: string
   reduce: boolean | null
 }) {
   const {
@@ -322,7 +324,7 @@ export function PlayerProfileScreen({
   }
 
   return (
-    <ProfileShell onBack={onBack} reduce={reduce}>
+    <ProfileShell onBack={onBack} backLabel={backLabel} reduce={reduce}>
       {loading && !profile ? (
         <p className="text-sm text-mist/70">Loading player…</p>
       ) : error && !profile ? (

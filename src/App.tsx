@@ -54,6 +54,21 @@ function BrandMark({ className = '' }: { className?: string }) {
   )
 }
 
+function tabBackLabel(tab: BottomTab): string {
+  switch (tab) {
+    case 'stats':
+      return 'Stats'
+    case 'leagues':
+      return 'Leagues'
+    case 'fantasy':
+      return 'Fantasy'
+    case 'favorites':
+      return 'Favorites'
+    default:
+      return 'Home'
+  }
+}
+
 function isTabScreen(screen: Screen): screen is BottomTab {
   return (
     screen === 'home' ||
@@ -70,6 +85,7 @@ function HomeScreen({
   onJumpToToday,
   onNeedMatchRange,
   knownForwardDays,
+  degradedLeagues,
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
@@ -88,6 +104,7 @@ function HomeScreen({
   onJumpToToday: () => void
   onNeedMatchRange: (from: Date, to: Date) => void
   knownForwardDays: number
+  degradedLeagues?: string[]
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
@@ -229,6 +246,12 @@ function HomeScreen({
             </div>
           </div>
 
+          {degradedLeagues && degradedLeagues.length > 0 ? (
+            <div className="mb-3 border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs text-amber-100/90">
+              Partial sync — unavailable: {degradedLeagues.join(', ')}. Refresh to retry.
+            </div>
+          ) : null}
+
           {loading ? (
             <div className="space-y-2" aria-label="Loading fixtures">
               {Array.from({ length: 4 }).map((_, index) => (
@@ -328,6 +351,7 @@ export default function App() {
     refreshing,
     hasLive,
     knownForwardDays,
+    degradedLeagues,
     refresh,
     ensureRange,
     ensureDate,
@@ -497,6 +521,22 @@ export default function App() {
     setActiveTab(returnTab)
   }
 
+  const playerBackLabel = activeTeam
+    ? activeTeam.name
+    : activeLeague
+      ? activeLeague.short
+      : tabBackLabel(returnTab)
+
+  const teamBackLabel = previousTeamRef.current
+    ? previousTeamRef.current.name
+    : activeLeague
+      ? activeLeague.short
+      : tabBackLabel(returnTab)
+
+  const leagueBackLabel = leagueReturnTeamRef.current
+    ? leagueReturnTeamRef.current.name
+    : tabBackLabel(returnTab)
+
   const navActive: BottomTab =
     screen === 'league-profile'
       ? activeTab
@@ -521,6 +561,7 @@ export default function App() {
               player={activePlayer}
               favorites={favorites}
               onBack={closeOverlay}
+              backLabel={playerBackLabel}
               reduce={reduce}
             />
           </motion.div>
@@ -540,6 +581,7 @@ export default function App() {
               refreshing={refreshing}
               favorites={favorites}
               onBack={closeOverlay}
+              backLabel={teamBackLabel}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               onOpenLeague={openLeague}
@@ -562,6 +604,7 @@ export default function App() {
               error={error}
               favorites={favorites}
               onBack={closeLeagueProfile}
+              backLabel={leagueBackLabel}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               reduce={reduce}
@@ -636,6 +679,7 @@ export default function App() {
               onJumpToToday={jumpToToday}
               onNeedMatchRange={handleNeedMatchRange}
               knownForwardDays={knownForwardDays}
+              degradedLeagues={degradedLeagues}
               onOpenLeague={openLeague}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}

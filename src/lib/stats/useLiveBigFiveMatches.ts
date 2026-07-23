@@ -59,6 +59,7 @@ export function useLiveBigFiveMatches() {
   const [refreshing, setRefreshing] = useState(false)
   /** Inclusive days from today through the last published upcoming fixture (or probed empty stop). */
   const [knownForwardDays, setKnownForwardDays] = useState(CALENDAR_INITIAL_FORWARD_DAYS)
+  const [degradedLeagues, setDegradedLeagues] = useState<string[]>([])
   const hasLoadedRef = useRef(false)
   const loadedFromRef = useRef<Date | null>(null)
   const loadedToRef = useRef<Date | null>(null)
@@ -66,7 +67,13 @@ export function useLiveBigFiveMatches() {
   const discoveryStartedRef = useRef(false)
 
   const fetchAndMerge = useCallback(async (from: Date, to: Date) => {
-    const data = await fetchBigFiveWindow(from, to)
+    const { matches: data, failedLeagues } = await fetchBigFiveWindow(from, to)
+    if (failedLeagues.length > 0) {
+      setDegradedLeagues((prev) => {
+        const next = new Set([...prev, ...failedLeagues])
+        return [...next].sort()
+      })
+    }
     setMatches((prev) => mergeMatches(prev, data))
     setUpdatedAt(Date.now())
     hasLoadedRef.current = true
@@ -198,6 +205,7 @@ export function useLiveBigFiveMatches() {
       if (!silent) setLoading(true)
       else setRefreshing(true)
       setError(null)
+      setDegradedLeagues([])
 
       try {
         await fetchAndMerge(from, to)
@@ -246,6 +254,7 @@ export function useLiveBigFiveMatches() {
     refreshing,
     hasLive,
     knownForwardDays,
+    degradedLeagues,
     refresh: () => loadCore(true),
     ensureRange,
     ensureDate,

@@ -51,6 +51,7 @@ export function TeamProfileScreen({
   refreshing,
   favorites,
   onBack,
+  backLabel,
   onOpenTeam,
   onOpenPlayer,
   onOpenLeague,
@@ -64,6 +65,7 @@ export function TeamProfileScreen({
   refreshing?: boolean
   favorites: FavoritesApi
   onBack: () => void
+  backLabel?: string
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   onOpenLeague: (id: LeagueId) => void
@@ -139,7 +141,7 @@ export function TeamProfileScreen({
     : []
 
   return (
-    <ProfileShell onBack={onBack} reduce={reduce}>
+    <ProfileShell onBack={onBack} backLabel={backLabel} reduce={reduce}>
       <ProfileHeader
         reduce={reduce}
         star={

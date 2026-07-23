@@ -3,10 +3,13 @@ import { motion } from 'framer-motion'
 
 export function ProfileShell({
   onBack,
+  backLabel = 'Back',
   reduce,
   children,
 }: {
   onBack: () => void
+  /** Destination-aware label, e.g. "Home" or "Arsenal". */
+  backLabel?: string
   reduce: boolean | null
   children: ReactNode
 }) {
@@ -31,7 +34,7 @@ export function ProfileShell({
             onClick={onBack}
             className="inline-flex min-h-11 w-fit items-center gap-2 pr-3 text-sm font-semibold text-mist transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep"
           >
-            <span aria-hidden>←</span> Back
+            <span aria-hidden>←</span> Back to {backLabel}
           </motion.button>
         </div>
         {children}

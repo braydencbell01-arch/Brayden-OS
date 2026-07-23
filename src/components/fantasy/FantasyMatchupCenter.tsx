@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { seriesAggregate } from '../../lib/fantasy/schedule'
+import { estimateGwPoints } from '../../lib/fantasy/scoring'
 import type { FantasyLeague, FantasyMember, FantasyPlayer, WeeklyMatchup } from '../../lib/fantasy/types'
 import type { FantasyApi } from '../../lib/fantasy/useFantasy'
 import { FantasyButton } from './FantasyChrome'
@@ -13,8 +14,16 @@ function starterIds(sideIds: number[], member: FantasyMember | undefined): numbe
   return sideIds.length > 0 ? sideIds : (member?.starters ?? [])
 }
 
-function projection(ids: number[], playerMap: Map<number, FantasyPlayer>): number {
-  return ids.reduce((sum, id) => sum + (playerMap.get(id)?.weekProjection ?? 0), 0)
+function projection(
+  ids: number[],
+  playerMap: Map<number, FantasyPlayer>,
+  scoringPreset: FantasyLeague['scoringPreset'],
+): number {
+  return ids.reduce((sum, id) => {
+    const player = playerMap.get(id)
+    if (!player) return sum
+    return sum + estimateGwPoints(player, false, scoringPreset)
+  }, 0)
 }
 
 function storedPoints(
@@ -23,12 +32,18 @@ function storedPoints(
   gw: number,
   fallback: number,
   scored: boolean | undefined,
-): number {
-  if (scored) return fallback
-  return ids.reduce((sum, id) => {
+): { value: number; hasLive: boolean } {
+  if (scored) return { value: fallback, hasLive: true }
+  let hasLive = false
+  const value = ids.reduce((sum, id) => {
     const stored = league.playerGwPoints[String(id)]?.[String(gw)]
-    return sum + (typeof stored === 'number' ? stored : 0)
+    if (typeof stored === 'number') {
+      hasLive = true
+      return sum + stored
+    }
+    return sum
   }, 0)
+  return { value, hasLive }
 }
 
 function MatchupTeamCard({
@@ -37,6 +52,7 @@ function MatchupTeamCard({
   ids,
   points,
   projected,
+  pointsLabel,
   highlighted,
 }: {
   label: string
@@ -44,6 +60,7 @@ function MatchupTeamCard({
   ids: number[]
   points: number
   projected: number
+  pointsLabel: string
   highlighted?: boolean
 }) {
   return (
@@ -57,7 +74,7 @@ function MatchupTeamCard({
       <div className="mt-3 grid grid-cols-2 gap-2 text-center">
         <div className="rounded-xl bg-black/20 px-2 py-2">
           <p className="font-display text-3xl text-lime">{points.toFixed(1)}</p>
-          <p className="text-[10px] uppercase tracking-[0.14em] text-mist/45">Live/scored</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-mist/45">{pointsLabel}</p>
         </div>
         <div className="rounded-xl bg-black/20 px-2 py-2">
           <p className="font-display text-3xl text-cream">{projected.toFixed(1)}</p>
@@ -86,10 +103,15 @@ function MatchupSummary({
   const away = league.members.find((m) => m.id === matchup.away.memberId)
   const homeIds = starterIds(matchup.home.starterIds, home)
   const awayIds = starterIds(matchup.away.starterIds, away)
-  const homeProjected = projection(homeIds, fantasy.playerMap)
-  const awayProjected = projection(awayIds, fantasy.playerMap)
+  const homeProjected = projection(homeIds, fantasy.playerMap, league.scoringPreset)
+  const awayProjected = projection(awayIds, fantasy.playerMap, league.scoringPreset)
   const homeLive = storedPoints(league, homeIds, viewGw, matchup.home.points, matchup.scored)
   const awayLive = storedPoints(league, awayIds, viewGw, matchup.away.points, matchup.scored)
+  const pointsLabel = matchup.scored
+    ? 'Scored'
+    : homeLive.hasLive || awayLive.hasLive
+      ? 'Live'
+      : 'Est.'
 
   if (!primary) {
     return (
@@ -97,13 +119,23 @@ function MatchupSummary({
         <div className="flex items-center justify-between gap-3">
           <span className="font-semibold text-cream">{memberName(league, matchup.home.memberId)}</span>
           <span className="font-display text-xl text-lime">
-            {(matchup.scored ? matchup.home.points : homeProjected).toFixed(1)}
+            {(matchup.scored
+              ? matchup.home.points
+              : homeLive.hasLive
+                ? homeLive.value
+                : homeProjected
+            ).toFixed(1)}
           </span>
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
           <span className="font-semibold text-cream">{memberName(league, matchup.away.memberId)}</span>
           <span className="font-display text-xl text-cream">
-            {(matchup.scored ? matchup.away.points : awayProjected).toFixed(1)}
+            {(matchup.scored
+              ? matchup.away.points
+              : awayLive.hasLive
+                ? awayLive.value
+                : awayProjected
+            ).toFixed(1)}
           </span>
         </div>
       </li>
@@ -112,6 +144,21 @@ function MatchupSummary({
 
   const series = matchup.seriesId ? league.playoffs.find((p) => p.id === matchup.seriesId) : null
   const aggregate = matchup.seriesId ? seriesAggregate(league, matchup.seriesId) : null
+  const myIsHome = home?.id === fantasy.me?.id
+  const myPoints = myIsHome
+    ? matchup.scored || homeLive.hasLive
+      ? homeLive.value
+      : homeProjected
+    : matchup.scored || awayLive.hasLive
+      ? awayLive.value
+      : awayProjected
+  const oppPoints = myIsHome
+    ? matchup.scored || awayLive.hasLive
+      ? awayLive.value
+      : awayProjected
+    : matchup.scored || homeLive.hasLive
+      ? homeLive.value
+      : homeProjected
 
   return (
     <section className="rounded-3xl border border-lime/25 bg-black/25 p-4">
@@ -130,18 +177,20 @@ function MatchupSummary({
       <div className="grid gap-3 sm:grid-cols-2">
         <MatchupTeamCard
           label="You"
-          member={home?.id === fantasy.me?.id ? home : away}
-          ids={home?.id === fantasy.me?.id ? homeIds : awayIds}
-          points={home?.id === fantasy.me?.id ? homeLive : awayLive}
-          projected={home?.id === fantasy.me?.id ? homeProjected : awayProjected}
+          member={myIsHome ? home : away}
+          ids={myIsHome ? homeIds : awayIds}
+          points={myPoints}
+          projected={myIsHome ? homeProjected : awayProjected}
+          pointsLabel={pointsLabel}
           highlighted
         />
         <MatchupTeamCard
           label="Opponent"
-          member={home?.id === fantasy.me?.id ? away : home}
-          ids={home?.id === fantasy.me?.id ? awayIds : homeIds}
-          points={home?.id === fantasy.me?.id ? awayLive : homeLive}
-          projected={home?.id === fantasy.me?.id ? awayProjected : homeProjected}
+          member={myIsHome ? away : home}
+          ids={myIsHome ? awayIds : homeIds}
+          points={oppPoints}
+          projected={myIsHome ? awayProjected : homeProjected}
+          pointsLabel={pointsLabel}
         />
       </div>
       {series && aggregate ? (

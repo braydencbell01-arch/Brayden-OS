@@ -46,7 +46,8 @@ export function LeaguesScreen({
             Leagues
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Favorites stay on top. Star a league to pin it on Match day.
+            Browse every competition. Star one to pin it on Match day. For tables and leaders, use
+            Stats.
           </p>
         </header>
 
