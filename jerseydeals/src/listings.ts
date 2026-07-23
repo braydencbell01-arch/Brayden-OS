@@ -4,6 +4,8 @@ export type Listing = {
   price: number | null
   currency: string
   url: string
+  /** Square Payment Link checkout when Online shipping isn't configured */
+  checkoutUrl?: string
   image: string
   /** All product photos; first entry is the main/cover image. */
   images?: string[]
@@ -58,6 +60,11 @@ export function formatPrice(price: number | null, currency: string) {
   } catch {
     return `$${price}`
   }
+}
+
+/** Prefer Payment Link checkout when present (Square Online shipping workaround). */
+export function listingBuyUrl(item: Listing) {
+  return (item.checkoutUrl || item.url || '').trim()
 }
 
 export function shortTitle(title: string) {

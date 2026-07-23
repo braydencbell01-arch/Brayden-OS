@@ -14,6 +14,7 @@
     "push:square": "node scripts/push-listings-to-square.mjs",
     "square:pos-abbrevs": "node scripts/update-square-pos-abbrevs.mjs",
     "square:fix-stock-images": "node scripts/fix-square-stock-and-images.mjs",
+    "square:buyable-checkout": "node scripts/enable-square-buyable-checkout.mjs",
     "backfill:images": "node scripts/backfill-square-images-from-ebay.mjs"
   },
   "dependencies": {

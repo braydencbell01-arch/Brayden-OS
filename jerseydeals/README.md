@@ -121,6 +121,17 @@ Requires Square + eBay secrets. Then run `npm run sync:square` so `listings.json
 
 **Square Online “Out of stock”:** Catalog API cannot enable online Shipping fulfillment. In Square Dashboard → Online → Shipping / Item fulfillment, enable **Shipping** (and assign the Jersey Deals location), then bulk-enable Shipping on items. Until that is set, the `.square.site` storefront can show Out of stock even when Inventory API qty is 1.
 
+### Buyable checkout without Online Shipping
+
+Until Shipping is enabled in the Dashboard, run:
+
+```bash
+cd jerseydeals
+npm run square:buyable-checkout
+```
+
+This creates a Square **Payment Link** per item (asks for shipping address), points `listings.json` at those links, and injects a Square Online snippet that adds **Buy now — secure checkout** on product pages.
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`

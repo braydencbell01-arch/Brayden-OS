@@ -15,7 +15,7 @@
  *   node jerseydeals/scripts/sync-square-catalog.mjs
  */
 
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -359,4 +359,36 @@ if (listings.length === 0) {
   console.warn(
     '::warning title=Square catalog empty::No sellable Square items found. Add products in Square or set SQUARE_INCLUDE_ZERO=1.',
   )
+}
+
+// Preserve Payment Link checkout URLs from a prior enable-square-buyable-checkout run
+const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
+if (existsSync(LINKS_PATH) && listings.length > 0) {
+  try {
+    const linksFile = JSON.parse(readFileSync(LINKS_PATH, 'utf8'))
+    const byVar = new Map()
+    const byItem = new Map()
+    for (const row of linksFile.links || []) {
+      if (row.variationId && row.url) byVar.set(row.variationId, row.url)
+      if (row.itemId && row.url) byItem.set(row.itemId, row.url)
+    }
+    let patched = 0
+    for (const listing of listings) {
+      const checkout = byVar.get(listing.id) || byItem.get(listing.itemId) || ''
+      if (checkout) {
+        listing.checkoutUrl = checkout
+        listing.url = checkout
+        patched += 1
+      }
+    }
+    if (patched > 0) {
+      payload.checkoutMode = 'square-payment-links'
+      payload.listings = listings
+      payload.count = listings.length
+      writeFileSync(OUT, `${JSON.stringify(payload, null, 2)}\n`)
+      console.log(`Merged ${patched} Square Payment Link checkout URLs`)
+    }
+  } catch (err) {
+    console.warn(`checkout-links merge skipped: ${err.message}`)
+  }
 }

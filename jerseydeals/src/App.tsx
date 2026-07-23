@@ -17,6 +17,7 @@ import {
   formatPrice,
   isSquareCatalog,
   isYouthListing,
+  listingBuyUrl,
   listingImages,
   listingSize,
   lowestSalePrice,
@@ -246,6 +247,7 @@ function ProductLink({
   tone?: 'dark' | 'light'
 }) {
   const condition = conditionLabel(item.title)
+  const buyUrl = listingBuyUrl(item)
   return (
     <motion.li {...fadeUp(reduce, delay)}>
       <div
@@ -256,7 +258,7 @@ function ProductLink({
         <div className="relative aspect-[3/4] overflow-hidden bg-navy-deep">
           <ProductGallery item={item} tone={tone} />
           <a
-            href={item.url}
+            href={buyUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track('product_click', { id: item.id, tag: item.tag })}
@@ -268,7 +270,7 @@ function ProductLink({
           </a>
         </div>
         <a
-          href={item.url}
+          href={buyUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'title' })}
