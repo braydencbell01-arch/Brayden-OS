@@ -567,6 +567,10 @@ export function TeamProfileScreen({
             loading={leaders.loading}
             error={leaders.error}
             leagueId={team.leagueId}
+            seasons={leaders.seasons}
+            seasonsLoading={leaders.seasonsLoading}
+            selectedSeason={leaders.selectedSeason}
+            onSelectSeason={leaders.selectSeason}
             onOpenPlayer={onOpenPlayer}
           />
         </ProfileAccordion>

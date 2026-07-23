@@ -12,6 +12,7 @@ import type {
   LeaguePlayerStatBoard,
   LeaguePlayerStatTop,
   LeaguePlayerStatsOverview,
+  LeagueSeasonOption,
   MatchDetailStats,
   MatchLineupPlayer,
   MatchLineupSide,
@@ -891,19 +892,30 @@ export async function fetchLeaguePlayerStatsOverview(
 /**
  * Top players on a club for each meaningful season stat.
  * Filters ESPN core league leaders down to the requested team.
+ * Pass `seasonYear` to load a specific season; otherwise picks the newest with data.
  */
 export async function fetchTeamStatLeaders(
   leagueId: LeagueId,
   teamId: string,
   limit = 3,
+  seasonYear?: number,
 ): Promise<TeamStatLeaders> {
   const league = getLeague(leagueId)
-  const nowYear = new Date().getUTCFullYear()
-  const yearsToTry = [nowYear, nowYear - 1, nowYear - 2]
   const perCategoryCap = Math.max(1, Math.min(limit, 8))
 
   let payload: EspnCoreLeadersResponse | null = null
-  let season = nowYear
+  let season = seasonYear ?? new Date().getUTCFullYear()
+  let seasonMeta: { label: string; shortLabel: string } | null = null
+
+  const yearsToTry =
+    seasonYear != null
+      ? [seasonYear]
+      : [
+          new Date().getUTCFullYear(),
+          new Date().getUTCFullYear() - 1,
+          new Date().getUTCFullYear() - 2,
+          new Date().getUTCFullYear() - 3,
+        ]
 
   for (const year of yearsToTry) {
     const url = new URL(
@@ -916,11 +928,20 @@ export async function fetchTeamStatLeaders(
     if (!data.categories?.length) continue
     payload = data
     season = year
+    seasonMeta = await fetchSeasonLabels(league.espnCode, year)
     break
   }
 
   if (!payload?.categories?.length) {
-    throw new Error(`No ${league.name} player stats available yet`)
+    throw new Error(
+      seasonYear != null
+        ? `No ${league.name} player stats for that season`
+        : `No ${league.name} player stats available yet`,
+    )
+  }
+
+  if (!seasonMeta) {
+    seasonMeta = await fetchSeasonLabels(league.espnCode, season)
   }
 
   const byName = new Map(
@@ -947,7 +968,7 @@ export async function fetchTeamStatLeaders(
     .filter((entry) => entry.leaders.length > 0)
 
   if (teamLeadersByCategory.length === 0) {
-    throw new Error(`No stat leaders available for this club yet`)
+    throw new Error(`No stat leaders available for this club in ${seasonMeta.shortLabel}`)
   }
 
   const athleteRefs = new Map<string, string>()
@@ -970,7 +991,7 @@ export async function fetchTeamStatLeaders(
     leaders: leaders.map((leader, index) => {
       const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes') || `${category.name}-${index}`
       const athlete = athleteId ? athleteById.get(athleteId) : null
-      const name = athlete?.displayName || 'Unknown'
+      const name = athlete?.displayName || ''
       const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
       return {
         rank: index + 1,
@@ -989,10 +1010,140 @@ export async function fetchTeamStatLeaders(
     leagueId,
     teamId,
     season,
-    seasonLabel: `${season} season`,
+    seasonLabel: seasonMeta.label,
+    seasonShortLabel: seasonMeta.shortLabel,
     categories,
     fetchedAt: Date.now(),
   }
+}
+
+type EspnSeasonList = {
+  count?: number
+  pageCount?: number
+  items?: Array<{ $ref?: string }>
+}
+
+type EspnSeasonDetail = {
+  year?: number
+  displayName?: string
+  abbreviation?: string
+}
+
+const leaderSeasonsCache = new Map<string, LeagueSeasonOption[]>()
+
+/** Compact season chip: "2025-26" → "25/26"; calendar years stay as "2025". */
+export function formatSeasonShortLabel(year: number, abbreviation?: string): string {
+  const abbr = (abbreviation || '').trim()
+  const cross = abbr.match(/^(\d{4})-(\d{2})$/)
+  if (cross) {
+    return `${cross[1]!.slice(2)}/${cross[2]}`
+  }
+  const crossSlash = abbr.match(/^(\d{4})\/(\d{2})$/)
+  if (crossSlash) {
+    return `${crossSlash[1]!.slice(2)}/${crossSlash[2]}`
+  }
+  return String(year)
+}
+
+async function fetchSeasonLabels(
+  espnCode: string,
+  year: number,
+): Promise<{ label: string; shortLabel: string }> {
+  try {
+    const res = await fetch(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}`,
+    )
+    if (res.ok) {
+      const detail = (await res.json()) as EspnSeasonDetail
+      const shortLabel = formatSeasonShortLabel(year, detail.abbreviation)
+      return {
+        label: detail.displayName || detail.abbreviation || `${shortLabel} season`,
+        shortLabel,
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return { label: `${year} season`, shortLabel: String(year) }
+}
+
+async function listLeagueSeasonYears(espnCode: string): Promise<number[]> {
+  const years: number[] = []
+  let page = 1
+  let pageCount = 1
+  while (page <= pageCount && page <= 4) {
+    const url = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons`,
+    )
+    url.searchParams.set('limit', '50')
+    url.searchParams.set('page', String(page))
+    const res = await fetch(url)
+    if (!res.ok) break
+    const data = (await res.json()) as EspnSeasonList
+    pageCount = Math.max(1, data.pageCount ?? 1)
+    for (const item of data.items ?? []) {
+      const match = item.$ref?.match(/\/seasons\/(\d+)/)
+      if (match?.[1]) years.push(Number(match[1]))
+    }
+    page += 1
+  }
+  return [...new Set(years)].sort((a, b) => b - a)
+}
+
+async function seasonHasLeaders(espnCode: string, year: number): Promise<boolean> {
+  try {
+    const url = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/leaders`,
+    )
+    url.searchParams.set('limit', '1')
+    const res = await fetch(url)
+    if (!res.ok) return false
+    const data = (await res.json()) as EspnCoreLeadersResponse
+    return Boolean(data.categories?.length)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Seasons for a league that have ESPN leaderboard data (newest first).
+ * Used by the team Stat Leaders season picker.
+ */
+export async function fetchLeagueLeaderSeasons(
+  leagueId: LeagueId,
+): Promise<LeagueSeasonOption[]> {
+  const cached = leaderSeasonsCache.get(leagueId)
+  if (cached) return cached
+
+  const league = getLeague(leagueId)
+  const years = await listLeagueSeasonYears(league.espnCode)
+  if (years.length === 0) return []
+
+  const withData: number[] = []
+  const concurrency = 8
+  for (let i = 0; i < years.length; i += concurrency) {
+    const chunk = years.slice(i, i + concurrency)
+    const checks = await Promise.all(
+      chunk.map(async (year) => ((await seasonHasLeaders(league.espnCode, year)) ? year : null)),
+    )
+    for (const year of checks) {
+      if (year != null) withData.push(year)
+    }
+  }
+
+  const options = await Promise.all(
+    withData.map(async (year) => {
+      const labels = await fetchSeasonLabels(league.espnCode, year)
+      return {
+        year,
+        label: labels.label,
+        shortLabel: labels.shortLabel,
+      } satisfies LeagueSeasonOption
+    }),
+  )
+
+  leaderSeasonsCache.set(leagueId, options)
+  return options
 }
 
 type EspnAthletePayload = {

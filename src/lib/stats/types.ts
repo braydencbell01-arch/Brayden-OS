@@ -126,8 +126,19 @@ export type TeamStatLeaders = {
   teamId: string
   season: number
   seasonLabel: string
+  /** Compact label for the season picker, e.g. "25/26". */
+  seasonShortLabel?: string
   categories: LeaderCategory[]
   fetchedAt: number
+}
+
+/** A league season that has ESPN leaderboard data. */
+export type LeagueSeasonOption = {
+  year: number
+  /** e.g. "2025-26 English Premier League" */
+  label: string
+  /** Compact picker label, e.g. "25/26" or "2025". */
+  shortLabel: string
 }
 
 export type TeamRosterPlayer = {

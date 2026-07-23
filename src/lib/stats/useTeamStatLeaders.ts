@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
-import { fetchTeamStatLeaders } from './espn'
-import type { TeamStatLeaders } from './types'
+import { fetchLeagueLeaderSeasons, fetchTeamStatLeaders } from './espn'
+import type { LeagueSeasonOption, TeamStatLeaders } from './types'
 
 export function useTeamStatLeaders(
   leagueId: LeagueId,
@@ -11,18 +11,53 @@ export function useTeamStatLeaders(
   const [data, setData] = useState<TeamStatLeaders | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [seasons, setSeasons] = useState<LeagueSeasonOption[]>([])
+  const [seasonsLoading, setSeasonsLoading] = useState(false)
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
 
   useEffect(() => {
     if (!enabled || !teamId) return
 
     let cancelled = false
+    setSeasonsLoading(true)
+    setData(null)
+    setError(null)
+    setSelectedSeason(null)
+
+    fetchLeagueLeaderSeasons(leagueId)
+      .then((options) => {
+        if (cancelled) return
+        setSeasons(options)
+        setSelectedSeason(options[0]?.year ?? null)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setSeasons([])
+        setSelectedSeason(null)
+      })
+      .finally(() => {
+        if (!cancelled) setSeasonsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [leagueId, teamId, enabled])
+
+  useEffect(() => {
+    if (!enabled || !teamId) return
+    // Wait until seasons resolve so the first paint uses a known-good year when possible.
+    if (seasonsLoading) return
+
+    let cancelled = false
     setLoading(true)
     setError(null)
 
-    fetchTeamStatLeaders(leagueId, teamId)
+    fetchTeamStatLeaders(leagueId, teamId, 3, selectedSeason ?? undefined)
       .then((leaders) => {
         if (cancelled) return
         setData(leaders)
+        setSelectedSeason((current) => current ?? leaders.season)
       })
       .catch((err) => {
         if (cancelled) return
@@ -36,7 +71,19 @@ export function useTeamStatLeaders(
     return () => {
       cancelled = true
     }
-  }, [leagueId, teamId, enabled])
+  }, [leagueId, teamId, enabled, selectedSeason, seasonsLoading])
 
-  return { data, loading, error }
+  const selectSeason = useCallback((year: number) => {
+    setSelectedSeason(year)
+  }, [])
+
+  return {
+    data,
+    loading,
+    error,
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectSeason,
+  }
 }
