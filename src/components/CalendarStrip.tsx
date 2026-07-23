@@ -220,23 +220,10 @@ export function CalendarStrip({
                 {dayNum}
               </span>
               {isToday ? (
-                <span className="mt-1 flex items-center justify-center gap-1">
-                  <span
-                    className={`text-[0.6rem] font-bold uppercase tracking-[0.12em] ${active ? 'text-ink/80' : 'text-lime'}`}
-                  >
-                    Today
-                  </span>
-                  {hasFavoriteMatch ? (
-                    <span
-                      className={[
-                        'inline-block h-1.5 w-1.5 rounded-full',
-                        active
-                          ? 'bg-ink/70'
-                          : 'bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]',
-                      ].join(' ')}
-                      aria-hidden
-                    />
-                  ) : null}
+                <span
+                  className={`mt-1 block text-[0.6rem] font-bold uppercase tracking-[0.12em] ${active ? 'text-ink/80' : 'text-lime'}`}
+                >
+                  Today
                 </span>
               ) : hasFavoriteMatch ? (
                 <span

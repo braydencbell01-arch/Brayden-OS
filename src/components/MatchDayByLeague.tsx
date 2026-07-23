@@ -153,33 +153,12 @@ export function MatchDayByLeague({
   const leagueIds = favoriteLeagueIds ?? EMPTY_ID_SET
   const teamIds = favoriteTeamIds ?? EMPTY_ID_SET
 
-  const defaultOpenIds = useMemo(() => {
-    const open = new Set<LeagueId>()
-    for (const group of groups) {
-      const hasFavoriteTeam = group.matches.some(
-        (match) => teamIds.has(match.home.id) || teamIds.has(match.away.id),
-      )
-      if (leagueIds.has(group.leagueId) || hasFavoriteTeam) {
-        open.add(group.leagueId)
-      }
-    }
-    if (open.size === 0 && groups.length > 0) {
-      // Always show something without an extra tap.
-      if (groups.length <= 4) {
-        for (const group of groups) open.add(group.leagueId)
-      } else {
-        open.add(groups[0]!.leagueId)
-      }
-    }
-    return open
-  }, [groups, leagueIds, teamIds])
-
-  const [openIds, setOpenIds] = useState<Set<LeagueId>>(defaultOpenIds)
+  const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
   const [openForDate, setOpenForDate] = useState(dateKey)
 
   if (openForDate !== dateKey) {
     setOpenForDate(dateKey)
-    setOpenIds(defaultOpenIds)
+    setOpenIds(new Set())
   }
 
   if (groups.length === 0) {
