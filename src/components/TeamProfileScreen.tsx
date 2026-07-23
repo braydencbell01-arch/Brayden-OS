@@ -250,7 +250,6 @@ export function TeamProfileScreen({
                           onOpenPlayer={onOpenPlayer}
                           favoriteLeagueIds={favorites.leagueIds}
                           favoriteTeamIds={favorites.teamIds}
-                          favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
                           emptyLabel="No matches"
                         />
                       </section>
@@ -290,7 +289,6 @@ export function TeamProfileScreen({
                       onOpenPlayer={onOpenPlayer}
                       favoriteLeagueIds={favorites.leagueIds}
                       favoriteTeamIds={favorites.teamIds}
-                      favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
                       emptyLabel="No matches"
                     />
                   </section>

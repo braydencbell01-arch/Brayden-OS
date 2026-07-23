@@ -42,7 +42,6 @@ function LeagueDropdown({
   onOpenPlayer,
   favoriteLeagueIds,
   favoriteTeamIds,
-  favoritePlayerTeamIds,
 }: {
   leagueId: LeagueId
   matches: Match[]
@@ -52,13 +51,12 @@ function LeagueDropdown({
   onOpenPlayer?: (player: PlayerNavRef) => void
   favoriteLeagueIds: Set<string>
   favoriteTeamIds: Set<string>
-  favoritePlayerTeamIds: Set<string>
 }) {
   const league = getLeague(leagueId)
   const panelId = useId()
   const liveCount = matches.filter((match) => match.status === 'live').length
   const hasFavorite = matches.some((match) =>
-    isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds, favoritePlayerTeamIds),
+    isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds),
   )
 
   return (
@@ -103,7 +101,6 @@ function LeagueDropdown({
             onOpenPlayer={onOpenPlayer}
             favoriteLeagueIds={favoriteLeagueIds}
             favoriteTeamIds={favoriteTeamIds}
-            favoritePlayerTeamIds={favoritePlayerTeamIds}
             emptyLabel="No matches in this league."
           />
         </div>
@@ -120,7 +117,6 @@ export function MatchDayByLeague({
   emptyLabel,
   favoriteLeagueIds,
   favoriteTeamIds,
-  favoritePlayerTeamIds,
 }: {
   matches: Match[]
   /** Reset open panels when the selected calendar day changes */
@@ -130,7 +126,6 @@ export function MatchDayByLeague({
   emptyLabel: string
   favoriteLeagueIds?: Set<string>
   favoriteTeamIds?: Set<string>
-  favoritePlayerTeamIds?: Set<string>
 }) {
   const groups = useMemo(
     () => groupMatchesByLeague(matches, favoriteLeagueIds),
@@ -138,14 +133,13 @@ export function MatchDayByLeague({
   )
   const leagueIds = favoriteLeagueIds ?? new Set<string>()
   const teamIds = favoriteTeamIds ?? new Set<string>()
-  const playerTeamIds = favoritePlayerTeamIds ?? new Set<string>()
 
   const defaultOpenIds = useMemo(() => {
     const next = new Set<LeagueId>()
     for (const group of groups) {
       const hasLive = group.matches.some((match) => match.status === 'live')
       const hasFavorite = group.matches.some((match) =>
-        isFavoriteMatch(match, leagueIds, teamIds, playerTeamIds),
+        isFavoriteMatch(match, leagueIds, teamIds),
       )
       if (hasLive || hasFavorite || leagueIds.has(group.leagueId)) {
         next.add(group.leagueId)
@@ -154,7 +148,7 @@ export function MatchDayByLeague({
     // Quiet days: open the first league so the screen isn't only headers.
     if (next.size === 0 && groups[0]) next.add(groups[0].leagueId)
     return next
-  }, [groups, leagueIds, teamIds, playerTeamIds])
+  }, [groups, leagueIds, teamIds])
 
   const [openIds, setOpenIds] = useState<Set<LeagueId>>(defaultOpenIds)
   const [openForDate, setOpenForDate] = useState(dateKey)
@@ -188,7 +182,6 @@ export function MatchDayByLeague({
           onOpenPlayer={onOpenPlayer}
           favoriteLeagueIds={leagueIds}
           favoriteTeamIds={teamIds}
-          favoritePlayerTeamIds={playerTeamIds}
         />
       ))}
     </div>
