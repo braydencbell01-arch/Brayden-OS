@@ -211,13 +211,14 @@ export function TeamProfileScreen({
     const club = facts.data
     const rows: Array<[string, string]> = []
 
-    rows.push(['League', club?.leagueName || league.name])
-    rows.push([
-      club?.isNational || isNational ? 'Nation' : 'Country',
-      club?.country || league.country,
-    ])
+    rows.push([isNational ? 'Competition' : 'League', club?.leagueName || league.name])
 
-    if (club?.city) rows.push(['City', club.city])
+    // Club identity — skip Nation/City and league-table cells for national sides.
+    if (!isNational) {
+      rows.push(['Country', club?.country || league.country])
+      if (club?.city) rows.push(['City', club.city])
+    }
+
     if (club?.stadium) rows.push(['Stadium', club.stadium])
     if (club?.nickname) rows.push(['Nickname', club.nickname])
     if (club?.foundedYear) rows.push(['Founded', String(club.foundedYear)])
@@ -231,18 +232,20 @@ export function TeamProfileScreen({
       rows.push(['Trophies', MISSING_LONG])
     }
 
-    if (club?.standingSummary) {
-      rows.push(['Season line', club.standingSummary])
-    }
+    if (!isNational) {
+      if (club?.standingSummary) {
+        rows.push(['Season line', club.standingSummary])
+      }
 
-    for (const cell of seasonSnapshotFacts(standing)) {
-      if (club?.standingSummary && (cell[0] === 'Table place' || cell[0] === 'Points')) continue
-      rows.push(cell)
-    }
+      for (const cell of seasonSnapshotFacts(standing)) {
+        if (club?.standingSummary && (cell[0] === 'Table place' || cell[0] === 'Points')) continue
+        rows.push(cell)
+      }
 
-    if (homeAway.home.played > 0 || homeAway.away.played > 0) {
-      rows.push(['Home', formatSideRecord(homeAway.home)])
-      rows.push(['Away', formatSideRecord(homeAway.away)])
+      if (homeAway.home.played > 0 || homeAway.away.played > 0) {
+        rows.push(['Home', formatSideRecord(homeAway.home)])
+        rows.push(['Away', formatSideRecord(homeAway.away)])
+      }
     }
 
     if (teamXg) {
@@ -299,26 +302,28 @@ export function TeamProfileScreen({
           <>
             {team.shortName}
             {facts.data?.country ? ` · ${facts.data.country}` : ` · ${league.country}`}
-            {standing
-              ? ` · #${standing.rank}${
-                  standing.group ? ` · ${standing.group}` : ''
-                } · ${standing.points} pts`
-              : isNational
-                ? ' · International'
+            {isNational
+              ? ' · International'
+              : standing
+                ? ` · #${standing.rank}${
+                    standing.group ? ` · ${standing.group}` : ''
+                  } · ${standing.points} pts`
                 : ''}
           </>
         }
       />
 
-      {standing?.group ? (
+      {!isNational && standing?.group ? (
         <p className="mt-4 border border-lime/30 bg-lime/10 px-3 py-2 text-sm font-semibold text-lime">
           {standing.group}
         </p>
       ) : null}
 
-      <section className="mt-6" aria-label="Club facts">
+      <section className="mt-6" aria-label={isNational ? 'Team facts' : 'Club facts'}>
         {facts.loading && factRows.length <= 2 ? (
-          <p className="text-sm text-mist/70">Loading club facts…</p>
+          <p className="text-sm text-mist/70">
+            {isNational ? 'Loading team facts…' : 'Loading club facts…'}
+          </p>
         ) : null}
 
         <dl className="border border-white/10">
@@ -338,7 +343,11 @@ export function TeamProfileScreen({
         </dl>
 
         {facts.error ? (
-          <p className="mt-2 text-xs text-mist/55">Some club details could not be loaded.</p>
+          <p className="mt-2 text-xs text-mist/55">
+            {isNational
+              ? 'Some team details could not be loaded.'
+              : 'Some club details could not be loaded.'}
+          </p>
         ) : null}
         {facts.data?.trophyCount != null && facts.data.trophySource ? (
           <p className="mt-2 text-[0.65rem] text-mist/45">
@@ -392,11 +401,13 @@ export function TeamProfileScreen({
             </div>
             <p className="mt-1 text-xs text-mist/70">
               {formatMatchDayHeading(nextOpponent.match.dateKey)}
-              {nextOpponent.standing
+              {!isNational && nextOpponent.standing
                 ? ` · #${nextOpponent.standing.rank}${
                     nextOpponent.standing.group ? ` · ${nextOpponent.standing.group}` : ''
                   } · ${nextOpponent.standing.points} pts`
-                : ''}
+                : nextOpponent.standing?.group
+                  ? ` · ${nextOpponent.standing.group}`
+                  : ''}
             </p>
             {nextOpponent.form.length > 0 ? (
               <div className="mt-2 flex gap-1" aria-label="Opponent form">
