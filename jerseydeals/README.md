@@ -6,12 +6,17 @@ Storefront landing page for **Jersey Deals** (sibling to BrayStats in this repo)
 
 ## What’s on the page
 
-- Full-bleed hero (brand + offer + CTAs)
-- Category paths: youth, sale (under $25), full catalog
-- New drops + featured gear + **filterable full inventory** from `listings.json`
-- Condition labels, buy-direct trust, FAQ, restock email alerts
-- Sticky mobile shop CTA + lightweight analytics hooks
-- Privacy policy at `/privacy.html` (eBay OAuth / app settings)
+- Sticky shop nav + cinematic full-bleed hero
+- Brand marquee + service strip
+- Editorial collection grid (youth / sale / catalog)
+- New drops, training edit, tunnel lookbook campaign
+- Featured gear + shop-by-brand
+- Full-bleed sale campaign + sale picks
+- Category lookbook strip (training / sideline / matchday)
+- Filterable full inventory from `listings.json`
+- Brand story, how-it-works, FAQ, restock alerts
+- Multi-column footer + sticky mobile shop CTA
+- Privacy policy at `/privacy.html`
 
 ## Config
 

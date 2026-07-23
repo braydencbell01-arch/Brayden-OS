@@ -85,26 +85,3 @@
     transform: translateX(-50%);
   }
 }
-
-@keyframes jd-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@layer utilities {
-  .jd-marquee-track {
-    display: flex;
-    width: max-content;
-    animation: jd-marquee 42s linear infinite;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .jd-marquee-track {
-      animation: none;
-    }
-  }
-}
