@@ -19,14 +19,17 @@ import {
   isYouthListing,
   listingSize,
   lowestSalePrice,
+  matchesPriceFilter,
   pickFeatured,
   pickNewDrops,
   pickSaleItems,
+  PRICE_FILTERS,
   shortTitle,
   sortSizes,
   TAG_ORDER,
   type Listing,
   type ListingsPayload,
+  type PriceFilterId,
 } from './listings'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
@@ -220,6 +223,7 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState('All')
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
+  const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
   const [query, setQuery] = useState('')
 
   useEffect(() => {
@@ -296,6 +300,7 @@ export default function App() {
       if (tagFilter !== 'All' && item.tag !== tagFilter) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
+      if (!matchesPriceFilter(item, priceFilter)) return false
       if (!q) return true
       return (
         item.title.toLowerCase().includes(q) ||
@@ -304,17 +309,24 @@ export default function App() {
         item.note.toLowerCase().includes(q)
       )
     })
-  }, [listings, tagFilter, sizeFilter, brandFilter, query])
+  }, [listings, tagFilter, sizeFilter, brandFilter, priceFilter, query])
 
-  function goInventory(next?: { tag?: string; brand?: string; reset?: boolean }) {
+  function goInventory(next?: {
+    tag?: string
+    brand?: string
+    price?: PriceFilterId
+    reset?: boolean
+  }) {
     if (next?.reset) {
       setSizeFilter('All')
       setBrandFilter('All')
+      setPriceFilter('All')
       setQuery('')
       setTagFilter('All')
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
+    if (next?.price !== undefined) setPriceFilter(next.price)
     requestAnimationFrame(() => {
       document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
@@ -946,7 +958,7 @@ export default function App() {
                 Full inventory
               </h2>
               <p className="mt-3 text-lg text-muted">
-                Filter live stock by type, size, and brand — then checkout on {channelLabel}.
+                Filter live stock by type, size, brand, and price — then checkout on {channelLabel}.
               </p>
             </motion.div>
 
@@ -973,6 +985,23 @@ export default function App() {
                         label={tag}
                         active={tagFilter === tag}
                         onClick={() => setTagFilter(tag)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="eyebrow text-muted">Price</p>
+                  <div className="flex flex-wrap gap-2">
+                    {PRICE_FILTERS.map((range) => (
+                      <FilterChip
+                        key={range.id}
+                        label={range.label}
+                        active={priceFilter === range.id}
+                        onClick={() => {
+                          setPriceFilter(range.id)
+                          track('price_filter', { range: range.id })
+                        }}
                       />
                     ))}
                   </div>
@@ -1023,6 +1052,9 @@ export default function App() {
                 <p className="text-sm text-muted">
                   Showing {filtered.length} of {listings.length}
                   {catalog?.source ? ` · ${catalog.source}` : ''}
+                  {priceFilter !== 'All'
+                    ? ` · ${PRICE_FILTERS.find((row) => row.id === priceFilter)?.label}`
+                    : ''}
                 </p>
               </motion.div>
             )}
@@ -1039,6 +1071,7 @@ export default function App() {
                     setTagFilter('All')
                     setSizeFilter('All')
                     setBrandFilter('All')
+                    setPriceFilter('All')
                     setQuery('')
                   }}
                 >

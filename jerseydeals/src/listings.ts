@@ -83,6 +83,25 @@ export function isSaleListing(item: Listing, maxPrice = 25) {
   return item.price != null && item.price <= maxPrice
 }
 
+/** Inventory price toggles — keep ranges aligned with typical kit pricing. */
+export const PRICE_FILTERS = [
+  { id: 'All', label: 'All' },
+  { id: 'under-25', label: 'Under $25', max: 25 },
+  { id: '25-40', label: '$25–$40', min: 25, max: 40 },
+  { id: '40-plus', label: '$40+', min: 40 },
+] as const
+
+export type PriceFilterId = (typeof PRICE_FILTERS)[number]['id']
+
+export function matchesPriceFilter(item: Listing, filterId: PriceFilterId) {
+  if (filterId === 'All') return true
+  if (item.price == null || Number.isNaN(item.price)) return false
+  if (filterId === 'under-25') return item.price <= 25
+  if (filterId === '25-40') return item.price > 25 && item.price <= 40
+  if (filterId === '40-plus') return item.price > 40
+  return true
+}
+
 export function pickFeatured(listings: Listing[], count = 6) {
   const picked: Listing[] = []
   const used = new Set<string>()
