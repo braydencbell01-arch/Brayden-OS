@@ -229,7 +229,6 @@ export function MatchList({
   onOpenLeague,
   favoriteLeagueIds,
   favoriteTeamIds,
-  favoritePlayerTeamIds,
 }: {
   matches: Match[]
   showLeague?: boolean
@@ -241,7 +240,6 @@ export function MatchList({
   onOpenLeague?: (id: LeagueId) => void
   favoriteLeagueIds?: Set<string>
   favoriteTeamIds?: Set<string>
-  favoritePlayerTeamIds?: Set<string>
 }) {
   if (matches.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
@@ -249,7 +247,6 @@ export function MatchList({
 
   const leagueIds = favoriteLeagueIds ?? new Set<string>()
   const teamIds = favoriteTeamIds ?? new Set<string>()
-  const playerTeamIds = favoritePlayerTeamIds ?? new Set<string>()
 
   return (
     <ul className={flat ? 'flex flex-col' : 'flex flex-col gap-2'}>
@@ -259,7 +256,7 @@ export function MatchList({
             match={match}
             showLeague={showLeague}
             flat={flat}
-            isFavorite={isFavoriteMatch(match, leagueIds, teamIds, playerTeamIds)}
+            isFavorite={isFavoriteMatch(match, leagueIds, teamIds)}
             onOpenTeam={onOpenTeam}
             onOpenPlayer={onOpenPlayer}
             onOpenLeague={onOpenLeague}

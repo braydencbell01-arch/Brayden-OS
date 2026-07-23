@@ -43,7 +43,6 @@ function LeagueDropdown({
   onOpenLeague,
   favoriteLeagueIds,
   favoriteTeamIds,
-  favoritePlayerTeamIds,
 }: {
   leagueId: LeagueId
   matches: Match[]
@@ -54,13 +53,12 @@ function LeagueDropdown({
   onOpenLeague?: (id: LeagueId) => void
   favoriteLeagueIds: Set<string>
   favoriteTeamIds: Set<string>
-  favoritePlayerTeamIds: Set<string>
 }) {
   const league = getLeague(leagueId)
   const panelId = useId()
   const liveCount = matches.filter((match) => match.status === 'live').length
   const hasFavorite = matches.some((match) =>
-    isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds, favoritePlayerTeamIds),
+    isFavoriteMatch(match, favoriteLeagueIds, favoriteTeamIds),
   )
 
   return (
@@ -118,7 +116,6 @@ function LeagueDropdown({
             onOpenLeague={onOpenLeague}
             favoriteLeagueIds={favoriteLeagueIds}
             favoriteTeamIds={favoriteTeamIds}
-            favoritePlayerTeamIds={favoritePlayerTeamIds}
             emptyLabel="No matches in this league."
           />
         </div>
@@ -136,7 +133,6 @@ export function MatchDayByLeague({
   emptyLabel,
   favoriteLeagueIds,
   favoriteTeamIds,
-  favoritePlayerTeamIds,
 }: {
   matches: Match[]
   /** Reset open panels when the selected calendar day changes */
@@ -147,7 +143,6 @@ export function MatchDayByLeague({
   emptyLabel: string
   favoriteLeagueIds?: Set<string>
   favoriteTeamIds?: Set<string>
-  favoritePlayerTeamIds?: Set<string>
 }) {
   const groups = useMemo(
     () => groupMatchesByLeague(matches, favoriteLeagueIds),
@@ -155,7 +150,6 @@ export function MatchDayByLeague({
   )
   const leagueIds = favoriteLeagueIds ?? new Set<string>()
   const teamIds = favoriteTeamIds ?? new Set<string>()
-  const playerTeamIds = favoritePlayerTeamIds ?? new Set<string>()
 
   const [openIds, setOpenIds] = useState<Set<LeagueId>>(() => new Set())
   const [openForDate, setOpenForDate] = useState(dateKey)
@@ -190,7 +184,6 @@ export function MatchDayByLeague({
           onOpenLeague={onOpenLeague}
           favoriteLeagueIds={leagueIds}
           favoriteTeamIds={teamIds}
-          favoritePlayerTeamIds={playerTeamIds}
         />
       ))}
     </div>

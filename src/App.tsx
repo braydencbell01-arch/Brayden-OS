@@ -97,14 +97,8 @@ function HomeScreen({
 }) {
   const dayMatches = useMemo(() => matchesOnDate(matches, selectedDate), [matches, selectedDate])
   const favoriteDateKeys = useMemo(
-    () =>
-      dateKeysForFavorites(
-        matches,
-        favorites.leagueIds,
-        favorites.teamIds,
-        favorites.favoritePlayerTeamIds,
-      ),
-    [matches, favorites.leagueIds, favorites.teamIds, favorites.favoritePlayerTeamIds],
+    () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
+    [matches, favorites.leagueIds, favorites.teamIds],
   )
   const dayLabel = selectedDate.toLocaleDateString(undefined, {
     weekday: 'long',
@@ -283,7 +277,6 @@ function HomeScreen({
                     onOpenLeague={onOpenLeague}
                     favoriteLeagueIds={favorites.leagueIds}
                     favoriteTeamIds={favorites.teamIds}
-                    favoritePlayerTeamIds={favorites.favoritePlayerTeamIds}
                     emptyLabel="No matches on this date. Try another day or jump to Today."
                   />
                 )
