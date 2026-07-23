@@ -150,41 +150,26 @@ export default function App() {
           </div>
 
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-20 pt-24 md:justify-center md:px-8 md:pb-24 md:pt-20">
-            <div className="max-w-xl">
-              <motion.p
-                initial={reduce ? false : { opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease }}
-                className="font-brand text-4xl font-bold uppercase leading-[1.05] tracking-[0.06em] text-white sm:text-5xl md:text-6xl"
-              >
+            <motion.div
+              className="max-w-xl"
+              initial={reduce ? false : { opacity: 0.001, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease }}
+            >
+              <p className="font-brand text-4xl font-bold uppercase leading-[1.05] tracking-[0.06em] text-white sm:text-5xl md:text-6xl">
                 Jersey Deals
-              </motion.p>
+              </p>
 
-              <motion.h1
-                initial={reduce ? false : { opacity: 0, y: 22 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: reduce ? 0 : 0.12, ease }}
-                className="mt-4 font-display text-3xl font-bold uppercase leading-none tracking-wide text-white sm:text-4xl md:text-[2.75rem]"
-              >
+              <h1 className="mt-4 font-display text-3xl font-bold uppercase leading-none tracking-wide text-white sm:text-4xl md:text-[2.75rem]">
                 Club kits. Live stock.
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                initial={reduce ? false : { opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: reduce ? 0 : 0.22, ease }}
-                className="mt-4 max-w-md text-base leading-relaxed text-white/75 md:text-lg"
-              >
+              <p className="mt-4 max-w-md text-base leading-relaxed text-white/75 md:text-lg">
                 Browse our active eBay inventory — real photos, sizes, and prices from
                 @jerseydealsofficial.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={reduce ? false : { opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.65, delay: reduce ? 0 : 0.32, ease }}
-                className="mt-7 flex flex-wrap items-center gap-3"
-              >
+              <div className="mt-7 flex flex-wrap items-center gap-3">
                 <a
                   href={shopUrl}
                   target="_blank"
@@ -199,15 +184,12 @@ export default function App() {
                 >
                   See featured gear
                 </a>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           </div>
 
-          <motion.a
+          <a
             href="#shop"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: reduce ? 0 : 0.9, duration: 0.6 }}
             className="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 text-xs font-semibold uppercase tracking-[0.2em] text-white/55 transition hover:text-white"
             aria-label="Scroll to shop"
           >
@@ -220,7 +202,7 @@ export default function App() {
                 className="block h-6 w-px bg-white/50"
               />
             </span>
-          </motion.a>
+          </a>
         </section>
 
         {/* Shop paths — one job */}
