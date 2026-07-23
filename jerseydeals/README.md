@@ -132,6 +132,19 @@ npm run square:buyable-checkout
 
 This creates a Square **Payment Link** per item (asks for shipping address), points `listings.json` at those links, and injects a Square Online snippet that adds **Buy now — secure checkout** on product pages.
 
+### Polish Square Online storefront + catalog copy
+
+Makes the `.square.site` store look less like the default template:
+
+```bash
+cd jerseydeals
+npm run square:polish-catalog     # cleaner titles + buyer-facing descriptions
+npm run square:polish-storefront  # brand CSS/JS snippet (hero copy, trust bar, crimson CTAs)
+npm run sync:square               # refresh listings.json after catalog polish
+```
+
+`square:polish-storefront` upserts the Square Snippets API (preserves the buy-now payment-link map). It cannot change Square’s theme editor settings (logo upload, native colors) — do those in Square Dashboard → Online → Website if needed.
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`

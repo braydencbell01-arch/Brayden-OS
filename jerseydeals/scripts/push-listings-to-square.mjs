@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { randomUUID } from 'node:crypto'
 import { inferClubAbbrev } from './lib/club-abbrev.mjs'
+import { polishTitle, polishDescription } from './lib/listing-copy.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
@@ -146,14 +147,19 @@ async function upsertListing(listing, locationId) {
   const itemTempId = `#item_${listing.id}`
   const varTempId = `#var_${listing.id}`
   const variationName = listing.note || listing.size || 'Standard'
+  const displayTitle = polishTitle(listing.title, {
+    brand: listing.brand,
+    tag: listing.tag,
+    size: listing.size,
+    note: listing.note,
+  })
   const abbreviation = inferClubAbbrev(listing.title)
-  const description = [
-    listing.brand ? `Brand: ${listing.brand}` : '',
-    listing.tag ? `Type: ${listing.tag}` : '',
-    listing.note ? `Size: ${listing.note}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n')
+  const description = polishDescription(listing.title, {
+    brand: listing.brand,
+    tag: listing.tag,
+    size: listing.size,
+    note: listing.note,
+  })
 
   let itemId
   let variationId
@@ -198,7 +204,7 @@ async function upsertListing(listing, locationId) {
               present_at_all_locations: true,
               item_data: {
                 ...obj.item_data,
-                name: listing.title,
+                name: displayTitle,
                 description,
                 abbreviation,
                 product_type: 'REGULAR',
@@ -221,7 +227,7 @@ async function upsertListing(listing, locationId) {
                 id: itemTempId,
                 present_at_all_locations: true,
                 item_data: {
-                  name: listing.title,
+                  name: displayTitle,
                   description,
                   abbreviation,
                   product_type: 'REGULAR',

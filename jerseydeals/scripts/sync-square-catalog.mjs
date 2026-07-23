@@ -298,8 +298,16 @@ for (const item of items) {
     const quantity = qty == null ? 1 : Math.max(0, Math.floor(qty))
     if (!INCLUDE_ZERO && quantity <= 0) continue
 
-    const titleParts = [name, vdata.name].filter(Boolean)
-    const title = titleParts.join(' — ')
+    // Prefer the polished Square item name; only append variation name when it adds new info
+    const varLabel = String(vdata.name || '').trim()
+    const nameHasSize =
+      /(?:·|\bSize\b|\bYouth\b|\bYth|\bXXL\b|\bXL\b|\bXS\b|\b[SML]\b|\d+\s*[-–]\s*\d+\s*YRS?)/i.test(
+        name,
+      )
+    const title =
+      varLabel && !nameHasSize && !name.toLowerCase().includes(varLabel.toLowerCase())
+        ? `${name} — ${varLabel}`
+        : name
     const haystack = `${title} ${description} ${categoryName || ''}`
     const { note, size } = inferSize(haystack, vdata.name, name)
     const price = moneyToNumber(vdata.price_money)
