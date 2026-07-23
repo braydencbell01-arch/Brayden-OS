@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
@@ -73,7 +73,7 @@ export function TeamProfileScreen({
   onOpenPlayer: (player: PlayerNavRef) => void
   onOpenLeague: (id: LeagueId) => void
   /** Expand the shared fixture cache further into the past for infinite Recent. */
-  onNeedPastRange?: (from: Date, to: Date) => void
+  onNeedPastRange?: (from: Date, to: Date) => void | Promise<unknown>
   reduce: boolean | null
 }) {
   const league = getLeague(team.leagueId)
@@ -130,17 +130,13 @@ export function TeamProfileScreen({
   const loadEarlierResults = useCallback(() => {
     if (!onNeedPastRange || loadingMoreRef.current) return
     loadingMoreRef.current = true
-    setPastHorizonDays((current) => {
-      const next = current + CALENDAR_PAST_CHUNK_DAYS
-      const today = startOfDay(new Date())
-      onNeedPastRange(addDays(today, -next), today)
-      return next
+    const next = pastHorizonDays + CALENDAR_PAST_CHUNK_DAYS
+    setPastHorizonDays(next)
+    const today = startOfDay(new Date())
+    void Promise.resolve(onNeedPastRange(addDays(today, -next), today)).finally(() => {
+      loadingMoreRef.current = false
     })
-  }, [onNeedPastRange])
-
-  useEffect(() => {
-    if (!refreshing) loadingMoreRef.current = false
-  }, [refreshing])
+  }, [onNeedPastRange, pastHorizonDays])
 
   const onRecentScroll = () => {
     const scroller = recentScrollRef.current

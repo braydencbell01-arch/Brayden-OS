@@ -317,6 +317,8 @@ export default function App() {
   const previousTeamRef = useRef<FavoriteTeam | null>(null)
   /** Team → League Back restores the club (separate from opponent stack). */
   const leagueReturnTeamRef = useRef<FavoriteTeam | null>(null)
+  /** League → Team keeps the origin league so Back can return past a nested league hop. */
+  const teamOriginLeagueRef = useRef<LeagueId | null>(null)
 
   const activeLeague = LEAGUES.find((l) => l.id === activeLeagueId) ?? null
 
@@ -350,6 +352,7 @@ export default function App() {
     setActivePlayer(null)
     previousTeamRef.current = null
     leagueReturnTeamRef.current = null
+    teamOriginLeagueRef.current = null
     setReturnTab(tab)
     setScreen(tab)
     // Fresh tab or re-tap active: jump to top so you aren't mid-scroll on a new view.
@@ -364,6 +367,7 @@ export default function App() {
       setActiveTab(screen)
       previousTeamRef.current = null
       leagueReturnTeamRef.current = null
+      teamOriginLeagueRef.current = null
       setActiveTeam(null)
     } else if (screen === 'team' && activeTeam) {
       // Team → league: keep the club so Back returns here instead of the tab.
@@ -388,8 +392,11 @@ export default function App() {
       previousTeamRef.current = null
       if (isTabScreen(screen)) {
         leagueReturnTeamRef.current = null
+        teamOriginLeagueRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
+      } else if (screen === 'league-profile' && activeLeagueId) {
+        teamOriginLeagueRef.current = activeLeagueId
       }
     }
     setActivePlayer(null)
@@ -403,8 +410,11 @@ export default function App() {
       previousTeamRef.current = null
       if (isTabScreen(screen)) {
         leagueReturnTeamRef.current = null
+        teamOriginLeagueRef.current = null
         setReturnTab(screen)
         setActiveTab(screen)
+      } else if (screen === 'league-profile' && activeLeagueId) {
+        teamOriginLeagueRef.current = activeLeagueId
       }
     }
     setActivePlayer(player)
@@ -437,22 +447,26 @@ export default function App() {
       return
     }
     leagueReturnTeamRef.current = null
+    teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
   }
 
   const closeLeagueProfile = () => {
-    setActiveLeagueId(null)
     setActivePlayer(null)
     const returnTeam = leagueReturnTeamRef.current
     if (returnTeam) {
       leagueReturnTeamRef.current = null
       setActiveTeam(returnTeam)
+      // Restore the league this club was opened from (if any), not the nested hop.
+      setActiveLeagueId(teamOriginLeagueRef.current)
       setScreen('team')
       return
     }
+    setActiveLeagueId(null)
     setActiveTeam(null)
     previousTeamRef.current = null
+    teamOriginLeagueRef.current = null
     setScreen(returnTab)
     setActiveTab(returnTab)
   }
@@ -505,9 +519,7 @@ export default function App() {
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
               onOpenLeague={openLeague}
-              onNeedPastRange={(from, to) => {
-                void ensureRange(from, to)
-              }}
+              onNeedPastRange={(from, to) => ensureRange(from, to)}
               reduce={reduce}
             />
           </motion.div>

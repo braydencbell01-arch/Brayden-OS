@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { getLeague, type LeagueId } from '../lib/leagues'
+import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
@@ -265,6 +265,7 @@ function CareerSeasonsPanel({
                       name: row.clubName,
                       shortName: row.clubName,
                       leagueId,
+                      kind: isInternationalLeague(leagueId) ? 'national' : 'club',
                     })
                   }
                 >
@@ -306,16 +307,20 @@ function ClubHistoryList({
   stints,
   emptyLabel,
   leagueId,
+  kind = 'club',
   onOpenTeam,
 }: {
   stints: PlayerClubStint[]
   emptyLabel: string
   leagueId: LeagueId
+  kind?: FavoriteTeam['kind']
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   if (stints.length === 0) {
     return <p className="text-sm text-mist/70">{emptyLabel}</p>
   }
+
+  const openLeagueId: LeagueId = kind === 'national' ? 'fifa-friendly' : leagueId
 
   return (
     <ul className="flex flex-col gap-1.5">
@@ -345,7 +350,8 @@ function ClubHistoryList({
                       id: stint.teamId,
                       name: stint.teamName,
                       shortName: stint.teamName,
-                      leagueId,
+                      leagueId: openLeagueId,
+                      kind,
                     })
                   }
                 >
@@ -428,6 +434,7 @@ export function PlayerProfileScreen({
       name: teamName,
       shortName: teamName,
       leagueId: player.leagueId,
+      kind: isInternationalLeague(player.leagueId) ? 'national' : 'club',
     })
   }
 
@@ -632,6 +639,7 @@ export function PlayerProfileScreen({
                     stints={profile.clubHistory}
                     emptyLabel="No club history listed yet."
                     leagueId={player.leagueId}
+                    kind="club"
                     onOpenTeam={onOpenTeam}
                   />
                 </section>
@@ -644,6 +652,7 @@ export function PlayerProfileScreen({
                     stints={profile.nationalHistory}
                     emptyLabel="No national team history listed yet."
                     leagueId={player.leagueId}
+                    kind="national"
                     onOpenTeam={onOpenTeam}
                   />
                 </section>
