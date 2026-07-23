@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { fetchLeaguePlayerStatsOverview } from './espn'
 import type { LeaguePlayerStatsOverview } from './types'
+import { useLeagueSeasons } from './useLeagueSeasons'
 
 export function useLeaguePlayerStats(leagueId: LeagueId, enabled: boolean) {
+  const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
+    leagueId,
+    enabled,
+    'leaders',
+  )
   const [data, setData] = useState<LeaguePlayerStatsOverview | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -13,12 +19,13 @@ export function useLeaguePlayerStats(leagueId: LeagueId, enabled: boolean) {
       setLoading(false)
       return
     }
+    if (seasonsLoading) return
 
     let cancelled = false
     setLoading(true)
     setError(null)
 
-    fetchLeaguePlayerStatsOverview(leagueId)
+    fetchLeaguePlayerStatsOverview(leagueId, 5, selectedSeason ?? undefined)
       .then((overview) => {
         if (cancelled) return
         setData(overview)
@@ -35,7 +42,15 @@ export function useLeaguePlayerStats(leagueId: LeagueId, enabled: boolean) {
     return () => {
       cancelled = true
     }
-  }, [leagueId, enabled])
+  }, [leagueId, enabled, selectedSeason, seasonsLoading])
 
-  return { data, loading, error }
+  return {
+    data,
+    loading,
+    error,
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectSeason,
+  }
 }

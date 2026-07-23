@@ -2,8 +2,9 @@ import type { LeagueId } from '../lib/leagues'
 import { isInternationalLeague } from '../lib/leagues'
 import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
-import type { StandingRow } from '../lib/stats/types'
+import type { LeagueSeasonOption, StandingRow } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
+import { SeasonPicker } from './SeasonPicker'
 
 function StandingGroupTable({
   rows,
@@ -134,6 +135,10 @@ export function StandingsTable({
   onOpenTeam,
   onRetry,
   highlightedTeamId,
+  seasons,
+  seasonsLoading,
+  selectedSeason,
+  onSelectSeason,
 }: {
   rows: StandingRow[]
   loading: boolean
@@ -144,8 +149,13 @@ export function StandingsTable({
   onOpenTeam?: (team: FavoriteTeam) => void
   onRetry?: () => void
   highlightedTeamId?: string
+  seasons?: LeagueSeasonOption[]
+  seasonsLoading?: boolean
+  selectedSeason?: number | null
+  onSelectSeason?: (year: number) => void
 }) {
   const teamColumnLabel = isInternationalLeague(leagueId) ? 'Team' : 'Club'
+  const showSeasonPicker = Boolean(seasons && onSelectSeason)
   const grouped = (() => {
     const hasGroups = rows.some((row) => row.group)
     if (!hasGroups) return [{ label: null as string | null, rows }]
@@ -162,45 +172,69 @@ export function StandingsTable({
     return order.map((label) => ({ label, rows: map.get(label) ?? [] }))
   })()
 
+  const seasonPicker = showSeasonPicker ? (
+    <SeasonPicker
+      seasons={seasons!}
+      selectedSeason={selectedSeason ?? null}
+      loading={Boolean(seasonsLoading)}
+      onSelect={onSelectSeason!}
+    />
+  ) : null
+
   if (loading && rows.length === 0) {
     return (
-      <div className="space-y-2" aria-label="Loading table">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-9 animate-pulse rounded bg-white/[0.06]" />
-        ))}
+      <div className="flex flex-col gap-4">
+        {seasonPicker}
+        <div className="space-y-2" aria-label="Loading table">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="h-9 animate-pulse rounded bg-white/[0.06]" />
+          ))}
+        </div>
       </div>
     )
   }
 
   if (error && rows.length === 0) {
     return (
-      <div className="border border-white/10 bg-white/[0.03] px-3 py-3">
-        <p className="text-sm text-mist/80">{error}</p>
-        {onRetry ? (
-          <button
-            type="button"
-            onClick={onRetry}
-            className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
-          >
-            Retry
-          </button>
-        ) : null}
+      <div className="flex flex-col gap-4">
+        {seasonPicker}
+        <div className="border border-white/10 bg-white/[0.03] px-3 py-3">
+          <p className="text-sm text-mist/80">{error}</p>
+          {onRetry ? (
+            <button
+              type="button"
+              onClick={onRetry}
+              className="mt-3 rounded-full border border-lime/45 bg-lime/15 px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:bg-lime hover:text-ink"
+            >
+              Retry
+            </button>
+          ) : null}
+        </div>
       </div>
     )
   }
 
   if (rows.length === 0) {
     return (
-      <p className="text-sm text-mist/70">
-        {isInternationalLeague(leagueId)
-          ? 'No table for this competition yet (group stage may not have started, or friendlies have no standings).'
-          : 'Standings are not available yet for this season.'}
-      </p>
+      <div className="flex flex-col gap-4">
+        {seasonPicker}
+        <p className="text-sm text-mist/70">
+          {isInternationalLeague(leagueId)
+            ? 'No table for this competition yet (group stage may not have started, or friendlies have no standings).'
+            : 'Standings are not available yet for this season.'}
+        </p>
+      </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {seasonPicker}
+      {loading ? (
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/55">
+          Updating…
+        </p>
+      ) : null}
       {grouped.map(({ label, rows: groupRows }) => (
         <section key={label || 'all'} aria-label={label || 'Standings'}>
           {label ? (

@@ -22,6 +22,7 @@ import {
   ProfileMetricsRow,
   ProfileShell,
 } from './ProfileShell'
+import { SeasonPicker } from './SeasonPicker'
 
 export type PlayerNavRef = {
   id: string
@@ -537,6 +538,11 @@ export function PlayerProfileScreen({
     loadingMoreRatings,
     hasMoreRatings,
     ratingsMoreError,
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectSeason,
+    statsLoading,
   } = usePlayerProfile(player.leagueId, player.id)
   const displayLeagueId = profile?.leagueId || player.leagueId
   const league = getLeague(displayLeagueId)
@@ -839,18 +845,32 @@ export function PlayerProfileScreen({
               title="Season stats"
               subtitle={
                 profile.previousSeasonStats?.length
-                  ? 'This season vs last'
+                  ? 'Selected season vs prior year'
                   : profile.seasonStatsLabel || undefined
               }
               open={openSection === 'stats'}
               onToggle={() => toggle('stats')}
             >
-              <SeasonStatsCompare
-                current={profile.seasonStats}
-                currentLabel={profile.seasonStatsLabel || 'This season'}
-                previous={profile.previousSeasonStats}
-                previousLabel={profile.previousSeasonStatsLabel || 'Last season'}
-              />
+              <div className="flex flex-col gap-4">
+                <SeasonPicker
+                  seasons={seasons}
+                  selectedSeason={selectedSeason ?? profile.seasonYear ?? null}
+                  loading={seasonsLoading}
+                  onSelect={selectSeason}
+                  emptyLabel="No season stats years available"
+                />
+                {statsLoading ? (
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/55">
+                    Updating…
+                  </p>
+                ) : null}
+                <SeasonStatsCompare
+                  current={profile.seasonStats}
+                  currentLabel={profile.seasonStatsLabel || 'This season'}
+                  previous={profile.previousSeasonStats}
+                  previousLabel={profile.previousSeasonStatsLabel || 'Last season'}
+                />
+              </div>
             </ProfileAccordion>
 
             <ProfileAccordion

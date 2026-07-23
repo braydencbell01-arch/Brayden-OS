@@ -1,10 +1,11 @@
 import { isMissing, MISSING_LONG, missingShort } from '../lib/display'
 import type { FavoritePlayer, FavoritesApi } from '../lib/favorites'
 import type { LeagueId } from '../lib/leagues'
-import type { TeamRoster } from '../lib/stats/types'
+import type { LeagueSeasonOption, TeamRoster } from '../lib/stats/types'
 import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
 import type { PlayerNavRef } from './PlayerProfileScreen'
+import { SeasonPicker } from './SeasonPicker'
 
 export function TeamRosterPanel({
   data,
@@ -14,6 +15,10 @@ export function TeamRosterPanel({
   teamId,
   teamName,
   favorites,
+  seasons,
+  seasonsLoading,
+  selectedSeason,
+  onSelectSeason,
   onOpenPlayer,
 }: {
   data: TeamRoster | null
@@ -23,25 +28,40 @@ export function TeamRosterPanel({
   teamId: string
   teamName: string
   favorites: FavoritesApi
+  seasons: LeagueSeasonOption[]
+  seasonsLoading: boolean
+  selectedSeason: number | null
+  onSelectSeason: (year: number) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
-  if (loading && !data) {
-    return <p className="text-sm text-mist/70">Loading roster…</p>
-  }
-
-  if (error && !data) {
-    return <p className="text-sm text-mist/80">{error}</p>
-  }
-
-  if (!data || data.groups.length === 0) {
-    return <p className="text-sm text-mist/70">{MISSING_LONG}</p>
-  }
-
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-        {data.seasonLabel}
-      </p>
+      <SeasonPicker
+        seasons={seasons}
+        selectedSeason={selectedSeason ?? data?.season ?? null}
+        loading={seasonsLoading}
+        onSelect={onSelectSeason}
+      />
+
+      {loading && !data ? <p className="text-sm text-mist/70">Loading roster…</p> : null}
+
+      {error && !data ? <p className="text-sm text-mist/80">{error}</p> : null}
+
+      {!loading && !error && (!data || data.groups.length === 0) ? (
+        <p className="text-sm text-mist/70">{MISSING_LONG}</p>
+      ) : null}
+
+      {data && data.groups.length > 0 ? (
+        <>
+          {loading ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/55">
+              Updating…
+            </p>
+          ) : (
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
+              {data.seasonLabel}
+            </p>
+          )}
 
       {data.groups.map((group) => (
         <section key={group.id} aria-label={group.label} className="flex flex-col gap-2">
@@ -131,6 +151,8 @@ export function TeamRosterPanel({
           </ul>
         </section>
       ))}
+        </>
+      ) : null}
     </div>
   )
 }

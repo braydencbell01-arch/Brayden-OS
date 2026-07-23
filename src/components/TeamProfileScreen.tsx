@@ -494,6 +494,10 @@ export function TeamProfileScreen({
               onOpenTeam={onOpenTeam}
               highlightedTeamId={team.id}
               onRetry={() => void standings.reload()}
+              seasons={standings.seasons}
+              seasonsLoading={standings.seasonsLoading}
+              selectedSeason={standings.selectedSeason}
+              onSelectSeason={standings.selectSeason}
             />
           </ProfileAccordion>
         ) : null}
@@ -607,6 +611,10 @@ export function TeamProfileScreen({
             loading={leaders.loading}
             error={leaders.error}
             leagueId={team.leagueId}
+            seasons={leaders.seasons}
+            seasonsLoading={leaders.seasonsLoading}
+            selectedSeason={leaders.selectedSeason}
+            onSelectSeason={leaders.selectSeason}
             onOpenPlayer={onOpenPlayer}
           />
         </ProfileAccordion>
@@ -625,6 +633,10 @@ export function TeamProfileScreen({
             teamId={team.id}
             teamName={displayName}
             favorites={favorites}
+            seasons={roster.seasons}
+            seasonsLoading={roster.seasonsLoading}
+            selectedSeason={roster.selectedSeason}
+            onSelectSeason={roster.selectSeason}
             onOpenPlayer={onOpenPlayer}
           />
         </ProfileAccordion>

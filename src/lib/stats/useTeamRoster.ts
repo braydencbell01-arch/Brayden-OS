@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { fetchTeamRoster } from './espn'
 import type { TeamRoster } from './types'
+import { useLeagueSeasons } from './useLeagueSeasons'
 
 export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled: boolean) {
+  const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
+    leagueId,
+    enabled && Boolean(teamId),
+    'all',
+  )
   const [data, setData] = useState<TeamRoster | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -13,12 +19,13 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
       setLoading(false)
       return
     }
+    if (seasonsLoading) return
 
     let cancelled = false
     setLoading(true)
     setError(null)
 
-    fetchTeamRoster(leagueId, teamId)
+    fetchTeamRoster(leagueId, teamId, selectedSeason ?? undefined)
       .then((roster) => {
         if (cancelled) return
         setData(roster)
@@ -35,7 +42,15 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
     return () => {
       cancelled = true
     }
-  }, [leagueId, teamId, enabled])
+  }, [leagueId, teamId, enabled, selectedSeason, seasonsLoading])
 
-  return { data, loading, error }
+  return {
+    data,
+    loading,
+    error,
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectSeason,
+  }
 }

@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { getLeague } from '../leagues'
-import { fetchNextPlayerRatingsBatch, fetchPlayerProfile } from './espn'
-import type { PlayerProfile, PlayerRatingsCursor } from './types'
+import {
+  fetchNextPlayerRatingsBatch,
+  fetchPlayerProfile,
+  fetchPlayerSeasonOptions,
+  fetchPlayerSeasonStatsForYear,
+  formatSeasonShortLabel,
+} from './espn'
+import type { LeagueSeasonOption, PlayerProfile, PlayerRatingsCursor } from './types'
 
 export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | null) {
   const [profile, setProfile] = useState<PlayerProfile | null>(null)
@@ -11,6 +17,10 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   const [loadingMoreRatings, setLoadingMoreRatings] = useState(false)
   const [hasMoreRatings, setHasMoreRatings] = useState(false)
   const [ratingsMoreError, setRatingsMoreError] = useState<string | null>(null)
+  const [seasons, setSeasons] = useState<LeagueSeasonOption[]>([])
+  const [seasonsLoading, setSeasonsLoading] = useState(false)
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
   const requestId = useRef(0)
   const ratingsCursor = useRef<PlayerRatingsCursor | null>(null)
   const loadMoreLock = useRef(false)
@@ -21,13 +31,44 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     setError(null)
     setRatingsMoreError(null)
     setHasMoreRatings(false)
+    setSeasons([])
+    setSelectedSeason(null)
     ratingsCursor.current = null
     try {
       const data = await fetchPlayerProfile(league, id)
       if (requestId.current !== req) return
       setProfile(data.profile)
+      setSelectedSeason(data.profile.seasonYear ?? data.profile.availableSeasonYears?.[0] ?? null)
       ratingsCursor.current = data.ratingsCursor
       setHasMoreRatings(!data.ratingsCursor.done)
+
+      // Build picker options in the background from years already known on the profile.
+      const years = data.profile.availableSeasonYears ?? []
+      if (years.length > 0) {
+        setSeasonsLoading(true)
+        fetchPlayerSeasonOptions(league, id)
+          .then((options) => {
+            if (requestId.current !== req) return
+            setSeasons(options.length > 0 ? options : years.map((year) => ({
+              year,
+              label: `${year} season`,
+              shortLabel: formatSeasonShortLabel(year),
+            })))
+          })
+          .catch(() => {
+            if (requestId.current !== req) return
+            setSeasons(
+              years.map((year) => ({
+                year,
+                label: `${year} season`,
+                shortLabel: formatSeasonShortLabel(year),
+              })),
+            )
+          })
+          .finally(() => {
+            if (requestId.current === req) setSeasonsLoading(false)
+          })
+      }
     } catch (err) {
       if (requestId.current !== req) return
       setProfile(null)
@@ -36,6 +77,38 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       if (requestId.current === req) setLoading(false)
     }
   }, [])
+
+  const selectSeason = useCallback(
+    (year: number) => {
+      if (!leagueId || !playerId || !profile) return
+      if (selectedSeason === year) return
+      setSelectedSeason(year)
+      setStatsLoading(true)
+      const req = requestId.current
+      fetchPlayerSeasonStatsForYear(leagueId, playerId, year)
+        .then((bundle) => {
+          if (requestId.current !== req) return
+          setProfile((current) => {
+            if (!current) return current
+            return {
+              ...current,
+              seasonStats: bundle.stats,
+              seasonStatsLabel: bundle.seasonLabel || current.seasonStatsLabel,
+              seasonYear: bundle.seasonYear,
+              previousSeasonStats: bundle.previousStats,
+              previousSeasonStatsLabel: bundle.previousSeasonLabel || undefined,
+            }
+          })
+        })
+        .catch(() => {
+          // Keep prior stats visible; picker still reflects the attempted year.
+        })
+        .finally(() => {
+          if (requestId.current === req) setStatsLoading(false)
+        })
+    },
+    [leagueId, playerId, profile, selectedSeason],
+  )
 
   const loadMoreRatings = useCallback(async () => {
     if (!leagueId || !playerId || !profile) return
@@ -89,6 +162,9 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       setRatingsMoreError(null)
       setLoading(false)
       setHasMoreRatings(false)
+      setSeasons([])
+      setSelectedSeason(null)
+      setStatsLoading(false)
       ratingsCursor.current = null
       return
     }
@@ -105,5 +181,10 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     loadingMoreRatings,
     hasMoreRatings,
     ratingsMoreError,
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectSeason,
+    statsLoading,
   }
 }

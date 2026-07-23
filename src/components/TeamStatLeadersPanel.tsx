@@ -1,5 +1,12 @@
+import { SeasonPicker } from './SeasonPicker'
+import { missingShort } from '../lib/display'
 import type { LeagueId } from '../lib/leagues'
-import type { LeaderCategory, LeaderEntry, TeamStatLeaders } from '../lib/stats/types'
+import type {
+  LeaderCategory,
+  LeaderEntry,
+  LeagueSeasonOption,
+  TeamStatLeaders,
+} from '../lib/stats/types'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
 function CategoryLeaders({
@@ -53,10 +60,10 @@ function CategoryLeaders({
                     clickable ? 'profile-link text-cream' : 'text-cream'
                   }`}
                 >
-                  {leader.name}
+                  {missingShort(leader.name)}
                 </p>
                 <span className="font-display text-xl tracking-wide text-lime tabular-nums">
-                  {leader.displayValue}
+                  {missingShort(leader.displayValue)}
                 </span>
               </button>
             </li>
@@ -72,40 +79,65 @@ export function TeamStatLeadersPanel({
   loading,
   error,
   leagueId,
+  seasons,
+  seasonsLoading,
+  selectedSeason,
+  onSelectSeason,
   onOpenPlayer,
 }: {
   data: TeamStatLeaders | null
   loading: boolean
   error: string | null
   leagueId: LeagueId
+  seasons: LeagueSeasonOption[]
+  seasonsLoading: boolean
+  selectedSeason: number | null
+  onSelectSeason: (year: number) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
-  if (loading && !data) {
-    return <p className="text-sm text-mist/70">Loading stat leaders…</p>
-  }
-
-  if (error && !data) {
-    return <p className="text-sm text-mist/80">{error}</p>
-  }
-
-  if (!data || data.categories.length === 0) {
-    return <p className="text-sm text-mist/70">No stat leaders available for this club yet.</p>
-  }
-
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-        {data.seasonLabel}
-      </p>
+      <SeasonPicker
+        seasons={seasons}
+        selectedSeason={selectedSeason ?? data?.season ?? null}
+        loading={seasonsLoading}
+        onSelect={onSelectSeason}
+      />
 
-      {data.categories.map((category) => (
-        <CategoryLeaders
-          key={category.id}
-          category={category}
-          leagueId={leagueId}
-          onOpenPlayer={onOpenPlayer}
-        />
-      ))}
+      {loading && !data ? (
+        <p className="text-sm text-mist/70">Loading stat leaders…</p>
+      ) : null}
+
+      {error && !data ? <p className="text-sm text-mist/80">{error}</p> : null}
+
+      {!loading && !error && (!data || data.categories.length === 0) ? (
+        <p className="text-sm text-mist/70">No stat leaders available for this club yet.</p>
+      ) : null}
+
+      {data && data.categories.length > 0 ? (
+        <>
+          {loading ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/55">
+              Updating…
+            </p>
+          ) : (
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
+              {data.seasonShortLabel || data.seasonLabel}
+            </p>
+          )}
+
+          {error ? <p className="text-sm text-mist/70">{error}</p> : null}
+
+          {data.categories.map((category) => (
+            <CategoryLeaders
+              key={`${data.season}-${category.id}`}
+              category={category}
+              leagueId={leagueId}
+              onOpenPlayer={onOpenPlayer}
+            />
+          ))}
+        </>
+      ) : null}
     </div>
   )
 }
