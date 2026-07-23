@@ -335,6 +335,10 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [screen, setScreen] = useState<Screen>('home')
   const [activeTab, setActiveTab] = useState<BottomTab>('home')
+  const [statsInitialTab, setStatsInitialTab] = useState<'pulse' | 'compare' | 'predict' | 'leagues'>(
+    'pulse',
+  )
+  const [fantasyResearchTab, setFantasyResearchTab] = useState<'value' | 'compare' | undefined>()
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
   const [activePlayer, setActivePlayer] = useState<PlayerNavRef | null>(null)
@@ -411,6 +415,8 @@ export default function App() {
     teamReturnPlayerRef.current = null
     teamOriginLeagueRef.current = null
     setReturnTab(tab)
+    if (tab === 'stats') setStatsInitialTab('pulse')
+    if (tab !== 'fantasy') setFantasyResearchTab(undefined)
     setScreen(tab)
     writeHash({ kind: 'tab', tab })
     // Fresh tab or re-tap active: jump to top so you aren't mid-scroll on a new view.
@@ -619,6 +625,8 @@ export default function App() {
     }
 
     if (route.kind === 'compare') {
+      // Real-stats compare lives on Stats; FPL compare is under Fantasy → Research.
+      setStatsInitialTab('compare')
       setActiveTab('stats')
       setActiveLeagueId(null)
       setActiveTeam(null)
@@ -825,7 +833,7 @@ export default function App() {
           </motion.div>
         ) : screen === 'stats' ? (
           <motion.div
-            key="stats"
+            key={`stats-${statsInitialTab}`}
             initial={reduce ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? undefined : { opacity: 0, y: 24 }}
@@ -837,17 +845,23 @@ export default function App() {
               onOpenLeague={openLeague}
               onOpenPlayer={openPlayer}
               reduce={reduce}
+              initialTab={statsInitialTab}
             />
           </motion.div>
         ) : screen === 'fantasy' ? (
           <motion.div
-            key="fantasy"
+            key={`fantasy-${fantasyResearchTab ?? 'home'}`}
             initial={reduce ? false : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduce ? undefined : { opacity: 0, y: 24 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
-            <FantasyScreen fantasy={fantasy} reduce={reduce} />
+            <FantasyScreen
+              fantasy={fantasy}
+              reduce={reduce}
+              onOpenPlayer={openPlayer}
+              initialResearchTab={fantasyResearchTab}
+            />
           </motion.div>
         ) : (
           <motion.div
