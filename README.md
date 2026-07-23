@@ -18,7 +18,8 @@ Interactive soccer stats app shell — player ratings, pay-per-stat insights, an
 ## What's included
 
 - **Home**: BrayStats branding, match calendar with a **Today** jump button, and fixtures for the selected date
-- **League profiles**: Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Brasileirão, Liga MX, MLS, Liga Profesional, Eredivisie, Primeira Liga, Pro League, Super Lig, Austrian Bundesliga, Super League (Switzerland) — listed by importance; tap a league for its profile (season snapshot, table, upcoming fixtures)
+- **League profiles**: Premier League, La Liga, Serie A, Bundesliga, Ligue 1, plus domestic cups (FA Cup, Copa del Rey, DFB-Pokal, …), continental competitions, and international tournaments — listed by importance; tap a competition for its profile (season snapshot, table when available, upcoming fixtures)
+- **Domestic cups**: FA Cup, Carabao Cup, Community Shield, Copa del Rey, Coppa Italia, DFB-Pokal, Coupe de France, and more — knockout timelines, fixtures/results, starred on Match day
 - **Team profiles**: tap any club name on home fixtures, league tables, match lists, or Favorites to open a simple club page (table line, form, upcoming/recent matches). From a team profile, tap the league name to open that league’s profile
 - **Player profiles + Brayden Ratings**: expand a live/finished match for lineups with ratings; tap a player for stats, rating history, club path, and favorites (Favorites → Players). Rating = match performance /100 shown as /10 (26/100 → 2.6)
 - **Live fixture + stats pipeline (Jefferson)**: ESPN public soccer APIs for scores, team match stats, key moments, and standings — auto-refreshes (faster while matches are live)

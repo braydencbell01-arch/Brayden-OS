@@ -59,9 +59,13 @@ export function LeagueProfileScreen({
     [matches, league.id, today],
   )
   const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
-  const standings = useLeagueStandings(league.id)
+  const standings = useLeagueStandings(league.id, league.hasStandings)
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
   const isInternational = league.kind === 'international'
+  const isDomesticCup = league.kind === 'domestic' && league.format !== 'league'
+  const showTimeline = isInternational || isDomesticCup
+  const formatLabel =
+    league.format === 'supercup' ? 'Super cup' : league.format === 'cup' ? 'Cup' : 'League'
 
   const recentResults = useMemo(
     () => recentLeagueResults(matches, league.id, 48),
@@ -117,43 +121,52 @@ export function LeagueProfileScreen({
         meta={
           <>
             {league.short}
+            {isDomesticCup ? ` · ${formatLabel}` : ''}
             {!loading && !error ? ` · ${leagueMatches.length} upcoming games` : ''}
           </>
         }
       />
 
       <ProfileMetricsRow>
-        <ProfileMetric
-          label={isInternational ? 'Teams' : 'Clubs'}
-          value={standings.loading ? '…' : clubCount || MISSING_SHORT}
-        />
+        {league.hasStandings ? (
+          <ProfileMetric
+            label={isInternational ? 'Teams' : 'Clubs'}
+            value={standings.loading ? '…' : clubCount || MISSING_SHORT}
+          />
+        ) : (
+          <ProfileMetric label="Format" value={formatLabel} />
+        )}
         <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
-        <ProfileMetric
-          label="Leader"
-          value={
-            standings.loading ? (
-              '…'
-            ) : leader ? (
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenTeam({
-                    id: leader.teamId,
-                    name: leader.team,
-                    shortName: leader.shortName,
-                    leagueId: league.id,
-                    kind: isInternational ? 'national' : 'club',
-                  })
-                }
-                className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-              >
-                {leader.shortName}
-              </button>
-            ) : (
-              MISSING_SHORT
-            )
-          }
-        />
+        {league.hasStandings ? (
+          <ProfileMetric
+            label="Leader"
+            value={
+              standings.loading ? (
+                '…'
+              ) : leader ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenTeam({
+                      id: leader.teamId,
+                      name: leader.team,
+                      shortName: leader.shortName,
+                      leagueId: league.id,
+                      kind: isInternational ? 'national' : 'club',
+                    })
+                  }
+                  className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                >
+                  {leader.shortName}
+                </button>
+              ) : (
+                MISSING_SHORT
+              )
+            }
+          />
+        ) : (
+          <ProfileMetric label="Recent results" value={loading ? '…' : recentResults.length} />
+        )}
         <ProfileMetric
           label="Top scorer"
           value={
@@ -184,7 +197,7 @@ export function LeagueProfileScreen({
         />
       </ProfileMetricsRow>
 
-      {isInternational ? (
+      {showTimeline ? (
         <div className="mt-5">
           <LeagueSeasonTimeline leagueId={league.id} />
         </div>

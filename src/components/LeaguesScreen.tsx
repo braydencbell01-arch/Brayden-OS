@@ -3,7 +3,8 @@ import { FavoriteStar } from './FavoriteStar'
 import {
   compareLeaguesForDisplay,
   continentalLeagues,
-  domesticLeagues,
+  domesticCupCompetitions,
+  domesticTableLeagues,
   internationalLeagues,
   leaguesInDisplayOrder,
   type League,
@@ -30,7 +31,10 @@ export function LeaguesScreen({
   const continental = continentalLeagues()
     .filter((league) => !favorites.isLeagueFavorite(league.id))
     .sort(sortByDisplay)
-  const domestic = domesticLeagues()
+  const domesticTables = domesticTableLeagues()
+    .filter((league) => !favorites.isLeagueFavorite(league.id))
+    .sort(sortByDisplay)
+  const domesticCups = domesticCupCompetitions()
     .filter((league) => !favorites.isLeagueFavorite(league.id))
     .sort(sortByDisplay)
 
@@ -64,8 +68,8 @@ export function LeaguesScreen({
             Leagues
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Domestic leagues, continental cups, and international tournaments. Star a competition to
-            pin it on Match day.
+            Domestic leagues and cups, continental competitions, and international tournaments. Star
+            a competition to pin it on Match day.
           </p>
         </header>
 
@@ -132,12 +136,12 @@ export function LeaguesScreen({
           </section>
         ) : null}
 
-        <section aria-label="Domestic leagues">
+        <section className="mb-6" aria-label="Domestic leagues">
           <p className="mb-2 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
-            Domestic
+            Domestic leagues
           </p>
           <div className="flex flex-col gap-3">
-            {domestic.map((league, i) => (
+            {domesticTables.map((league, i) => (
               <LeagueRow
                 key={league.id}
                 league={league}
@@ -150,9 +154,36 @@ export function LeaguesScreen({
             ))}
           </div>
         </section>
+
+        {domesticCups.length > 0 ? (
+          <section aria-label="Domestic cups">
+            <p className="mb-2 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+              Domestic cups
+            </p>
+            <div className="flex flex-col gap-3">
+              {domesticCups.map((league, i) => (
+                <LeagueRow
+                  key={league.id}
+                  league={league}
+                  favorited={favorites.isLeagueFavorite(league.id)}
+                  index={i}
+                  reduce={reduce}
+                  onOpen={() => onOpenLeague(league.id)}
+                  onToggleFavorite={() => favorites.toggleLeague(league.id)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   )
+}
+
+function formatBadge(league: League): string | null {
+  if (league.format === 'supercup') return 'Super cup'
+  if (league.format === 'cup' && league.kind === 'domestic') return 'Cup'
+  return null
 }
 
 function LeagueRow({
@@ -170,6 +201,7 @@ function LeagueRow({
   onOpen: () => void
   onToggleFavorite: () => void
 }) {
+  const badge = formatBadge(league)
   return (
     <motion.div
       layout={!reduce}
@@ -199,6 +231,7 @@ function LeagueRow({
           </span>
           <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
             {league.country}
+            {badge ? ` · ${badge}` : ''}
           </span>
         </span>
         <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">

@@ -1,9 +1,22 @@
 export type LeagueId =
   | 'premier-league'
+  | 'fa-cup'
+  | 'efl-cup'
+  | 'community-shield'
+  | 'efl-trophy'
   | 'la-liga'
+  | 'copa-del-rey'
+  | 'spanish-supercopa'
   | 'serie-a'
+  | 'coppa-italia'
+  | 'italian-supercoppa'
   | 'bundesliga'
+  | 'dfb-pokal'
+  | 'german-supercup'
   | 'ligue-1'
+  | 'coupe-de-france'
+  | 'trophee-des-champions'
+  | 'coupe-de-la-ligue'
   | 'uefa-champions'
   | 'uefa-europa'
   | 'uefa-conference'
@@ -24,22 +37,37 @@ export type LeagueId =
   | 'afc-asian-cup'
   | 'concacaf-gold'
   | 'brasileirao'
+  | 'copa-do-brasil'
+  | 'brazilian-supercopa'
   | 'liga-mx'
+  | 'copa-mx'
+  | 'campeon-de-campeones'
   | 'mls'
+  | 'us-open-cup'
   | 'liga-profesional'
+  | 'copa-argentina'
+  | 'argentine-supercopa'
+  | 'trofeo-de-campeones'
   | 'eredivisie'
+  | 'knvb-beker'
+  | 'johan-cruyff-shield'
   | 'primeira-liga'
+  | 'taca-de-portugal'
   | 'belgian-pro-league'
   | 'turkish-super-lig'
   | 'austrian-bundesliga'
   | 'swiss-super-league'
   | 'scottish-premiership'
+  | 'scottish-cup'
+  | 'scottish-league-cup'
+  | 'scottish-challenge-cup'
   | 'superliga'
   | 'allsvenskan'
   | 'eliteserien'
   | 'j1-league'
   | 'chinese-super-league'
   | 'saudi-pro-league'
+  | 'saudi-kings-cup'
   | 'a-league'
   | 'eng-championship'
   | 'esp-segunda'
@@ -51,6 +79,9 @@ export type LeagueId =
 
 export type LeagueKind = 'domestic' | 'international' | 'continental'
 
+/** How the competition is structured — cups stay `kind: 'domestic'`. */
+export type LeagueFormat = 'league' | 'cup' | 'supercup'
+
 export type League = {
   id: LeagueId
   name: string
@@ -58,7 +89,8 @@ export type League = {
   country: string
   espnCode: string
   kind: LeagueKind
-  /** False for friendlies / comps without a meaningful table. */
+  format: LeagueFormat
+  /** False for friendlies / knockout cups without a meaningful table. */
   hasStandings: boolean
   /** When false, skipped in bulk Match day scoreboard polls (still searchable/favoritable). Default true. */
   matchDayPoll?: boolean
@@ -69,6 +101,7 @@ export type League = {
  * Favorited leagues are pinned above this order via `leaguesInDisplayOrder`.
  *
  * Only include competitions with a working ESPN scoreboard slug.
+ * Domestic cups share `kind: 'domestic'` with top flights; use `format` to tell them apart.
  * Continental entries are club cups (UCL etc.) — not national-team tournaments.
  * ESPN does not serve Serbian SuperLiga (or POL/CRO/UKR domestic leagues).
  * Chinese Super League is included via chn.1.
@@ -81,7 +114,49 @@ export const LEAGUES: League[] = [
     country: 'England',
     espnCode: 'eng.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'fa-cup',
+    name: 'FA Cup',
+    short: 'FAC',
+    country: 'England',
+    espnCode: 'eng.fa',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'efl-cup',
+    name: 'Carabao Cup',
+    short: 'EFL',
+    country: 'England',
+    espnCode: 'eng.league_cup',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'community-shield',
+    name: 'FA Community Shield',
+    short: 'CS',
+    country: 'England',
+    espnCode: 'eng.charity',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
+  },
+  {
+    id: 'efl-trophy',
+    name: 'EFL Trophy',
+    short: 'EFLT',
+    country: 'England',
+    espnCode: 'eng.trophy',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+    matchDayPoll: false,
   },
   {
     id: 'la-liga',
@@ -90,7 +165,28 @@ export const LEAGUES: League[] = [
     country: 'Spain',
     espnCode: 'esp.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'copa-del-rey',
+    name: 'Copa del Rey',
+    short: 'CDR',
+    country: 'Spain',
+    espnCode: 'esp.copa_del_rey',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'spanish-supercopa',
+    name: 'Spanish Supercopa',
+    short: 'SSC',
+    country: 'Spain',
+    espnCode: 'esp.super_cup',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
   },
   {
     id: 'serie-a',
@@ -99,7 +195,28 @@ export const LEAGUES: League[] = [
     country: 'Italy',
     espnCode: 'ita.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'coppa-italia',
+    name: 'Coppa Italia',
+    short: 'CI',
+    country: 'Italy',
+    espnCode: 'ita.coppa_italia',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'italian-supercoppa',
+    name: 'Italian Supercoppa',
+    short: 'SCI',
+    country: 'Italy',
+    espnCode: 'ita.super_cup',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
   },
   {
     id: 'bundesliga',
@@ -108,7 +225,28 @@ export const LEAGUES: League[] = [
     country: 'Germany',
     espnCode: 'ger.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'dfb-pokal',
+    name: 'DFB-Pokal',
+    short: 'DFB',
+    country: 'Germany',
+    espnCode: 'ger.dfb_pokal',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'german-supercup',
+    name: 'German Supercup',
+    short: 'GSC',
+    country: 'Germany',
+    espnCode: 'ger.super_cup',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
   },
   {
     id: 'ligue-1',
@@ -117,7 +255,39 @@ export const LEAGUES: League[] = [
     country: 'France',
     espnCode: 'fra.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'coupe-de-france',
+    name: 'Coupe de France',
+    short: 'CDF',
+    country: 'France',
+    espnCode: 'fra.coupe_de_france',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'trophee-des-champions',
+    name: 'Trophée des Champions',
+    short: 'TDC',
+    country: 'France',
+    espnCode: 'fra.super_cup',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
+  },
+  {
+    id: 'coupe-de-la-ligue',
+    name: 'Coupe de la Ligue',
+    short: 'CDL',
+    country: 'France',
+    espnCode: 'fra.coupe_de_la_ligue',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+    matchDayPoll: false,
   },
   {
     id: 'uefa-champions',
@@ -126,6 +296,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.champions',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -135,6 +306,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.europa',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -144,6 +316,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.europa.conf',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -153,6 +326,7 @@ export const LEAGUES: League[] = [
     country: 'South America',
     espnCode: 'conmebol.libertadores',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -162,6 +336,7 @@ export const LEAGUES: League[] = [
     country: 'South America',
     espnCode: 'conmebol.sudamericana',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -171,6 +346,7 @@ export const LEAGUES: League[] = [
     country: 'Africa',
     espnCode: 'caf.champions',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -180,6 +356,7 @@ export const LEAGUES: League[] = [
     country: 'Asia',
     espnCode: 'afc.champions',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -189,6 +366,7 @@ export const LEAGUES: League[] = [
     country: 'North America',
     espnCode: 'concacaf.champions_cup',
     kind: 'continental',
+    format: 'cup',
     hasStandings: false,
     matchDayPoll: false,
   },
@@ -199,6 +377,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.cwc',
     kind: 'continental',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -208,6 +387,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.super_cup',
     kind: 'continental',
+    format: 'cup',
     hasStandings: false,
     matchDayPoll: false,
   },
@@ -218,6 +398,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.world',
     kind: 'international',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -227,6 +408,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.friendly',
     kind: 'international',
+    format: 'cup',
     hasStandings: false,
   },
   {
@@ -236,6 +418,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.nations',
     kind: 'international',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -245,6 +428,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.euro',
     kind: 'international',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -254,6 +438,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.worldq',
     kind: 'international',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -263,6 +448,7 @@ export const LEAGUES: League[] = [
     country: 'South America',
     espnCode: 'conmebol.america',
     kind: 'international',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -272,6 +458,7 @@ export const LEAGUES: League[] = [
     country: 'Africa',
     espnCode: 'caf.nations',
     kind: 'international',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -281,6 +468,7 @@ export const LEAGUES: League[] = [
     country: 'Asia',
     espnCode: 'afc.asian.cup',
     kind: 'international',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -290,6 +478,7 @@ export const LEAGUES: League[] = [
     country: 'North America',
     espnCode: 'concacaf.gold',
     kind: 'international',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -299,7 +488,28 @@ export const LEAGUES: League[] = [
     country: 'Brazil',
     espnCode: 'bra.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'copa-do-brasil',
+    name: 'Copa do Brasil',
+    short: 'CDB',
+    country: 'Brazil',
+    espnCode: 'bra.copa_do_brazil',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'brazilian-supercopa',
+    name: 'Supercopa do Brasil',
+    short: 'SDB',
+    country: 'Brazil',
+    espnCode: 'bra.supercopa_do_brazil',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
   },
   {
     id: 'liga-mx',
@@ -308,7 +518,29 @@ export const LEAGUES: League[] = [
     country: 'Mexico',
     espnCode: 'mex.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'copa-mx',
+    name: 'Copa MX',
+    short: 'CMX',
+    country: 'Mexico',
+    espnCode: 'mex.copa_mx',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'campeon-de-campeones',
+    name: 'Campeón de Campeones',
+    short: 'CDC',
+    country: 'Mexico',
+    espnCode: 'mex.campeon',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
+    matchDayPoll: false,
   },
   {
     id: 'mls',
@@ -317,7 +549,18 @@ export const LEAGUES: League[] = [
     country: 'USA',
     espnCode: 'usa.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'us-open-cup',
+    name: 'U.S. Open Cup',
+    short: 'USOC',
+    country: 'USA',
+    espnCode: 'usa.open',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
   },
   {
     id: 'liga-profesional',
@@ -326,7 +569,40 @@ export const LEAGUES: League[] = [
     country: 'Argentina',
     espnCode: 'arg.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'copa-argentina',
+    name: 'Copa Argentina',
+    short: 'CA',
+    country: 'Argentina',
+    espnCode: 'arg.copa',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'argentine-supercopa',
+    name: 'Supercopa Argentina',
+    short: 'SA',
+    country: 'Argentina',
+    espnCode: 'arg.supercopa',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
+    matchDayPoll: false,
+  },
+  {
+    id: 'trofeo-de-campeones',
+    name: 'Trofeo de Campeones',
+    short: 'TDC',
+    country: 'Argentina',
+    espnCode: 'arg.trofeo_de_campeones',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
+    matchDayPoll: false,
   },
   {
     id: 'eredivisie',
@@ -335,7 +611,28 @@ export const LEAGUES: League[] = [
     country: 'Netherlands',
     espnCode: 'ned.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'knvb-beker',
+    name: 'KNVB Beker',
+    short: 'KNVB',
+    country: 'Netherlands',
+    espnCode: 'ned.cup',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'johan-cruyff-shield',
+    name: 'Johan Cruyff Shield',
+    short: 'JCS',
+    country: 'Netherlands',
+    espnCode: 'ned.supercup',
+    kind: 'domestic',
+    format: 'supercup',
+    hasStandings: false,
   },
   {
     id: 'primeira-liga',
@@ -344,7 +641,18 @@ export const LEAGUES: League[] = [
     country: 'Portugal',
     espnCode: 'por.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'taca-de-portugal',
+    name: 'Taça de Portugal',
+    short: 'TP',
+    country: 'Portugal',
+    espnCode: 'por.taca.portugal',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
   },
   {
     id: 'belgian-pro-league',
@@ -353,6 +661,7 @@ export const LEAGUES: League[] = [
     country: 'Belgium',
     espnCode: 'bel.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -362,6 +671,7 @@ export const LEAGUES: League[] = [
     country: 'Turkey',
     espnCode: 'tur.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -371,6 +681,7 @@ export const LEAGUES: League[] = [
     country: 'Austria',
     espnCode: 'aut.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -380,6 +691,7 @@ export const LEAGUES: League[] = [
     country: 'Switzerland',
     espnCode: 'sui.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -389,7 +701,39 @@ export const LEAGUES: League[] = [
     country: 'Scotland',
     espnCode: 'sco.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'scottish-cup',
+    name: 'Scottish Cup',
+    short: 'SC',
+    country: 'Scotland',
+    espnCode: 'sco.tennents',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'scottish-league-cup',
+    name: 'Scottish League Cup',
+    short: 'SLC',
+    country: 'Scotland',
+    espnCode: 'sco.cis',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'scottish-challenge-cup',
+    name: 'Scottish Challenge Cup',
+    short: 'SCC',
+    country: 'Scotland',
+    espnCode: 'sco.challenge',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
+    matchDayPoll: false,
   },
   {
     id: 'superliga',
@@ -398,6 +742,7 @@ export const LEAGUES: League[] = [
     country: 'Denmark',
     espnCode: 'den.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -407,6 +752,7 @@ export const LEAGUES: League[] = [
     country: 'Sweden',
     espnCode: 'swe.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -416,6 +762,7 @@ export const LEAGUES: League[] = [
     country: 'Norway',
     espnCode: 'nor.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -425,6 +772,7 @@ export const LEAGUES: League[] = [
     country: 'Japan',
     espnCode: 'jpn.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -434,6 +782,7 @@ export const LEAGUES: League[] = [
     country: 'China',
     espnCode: 'chn.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -443,7 +792,18 @@ export const LEAGUES: League[] = [
     country: 'Saudi Arabia',
     espnCode: 'ksa.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
+  },
+  {
+    id: 'saudi-kings-cup',
+    name: "King's Cup",
+    short: 'KC',
+    country: 'Saudi Arabia',
+    espnCode: 'ksa.kings.cup',
+    kind: 'domestic',
+    format: 'cup',
+    hasStandings: false,
   },
   {
     id: 'a-league',
@@ -452,6 +812,7 @@ export const LEAGUES: League[] = [
     country: 'Australia',
     espnCode: 'aus.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -461,6 +822,7 @@ export const LEAGUES: League[] = [
     country: 'England',
     espnCode: 'eng.2',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -470,6 +832,7 @@ export const LEAGUES: League[] = [
     country: 'Spain',
     espnCode: 'esp.2',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -479,6 +842,7 @@ export const LEAGUES: League[] = [
     country: 'Italy',
     espnCode: 'ita.2',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -488,6 +852,7 @@ export const LEAGUES: League[] = [
     country: 'Germany',
     espnCode: 'ger.2',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -497,6 +862,7 @@ export const LEAGUES: League[] = [
     country: 'France',
     espnCode: 'fra.2',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -506,6 +872,7 @@ export const LEAGUES: League[] = [
     country: 'Czechia',
     espnCode: 'cze.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
   },
   {
@@ -515,8 +882,9 @@ export const LEAGUES: League[] = [
     country: 'Cyprus',
     espnCode: 'cyp.1',
     kind: 'domestic',
+    format: 'league',
     hasStandings: true,
-  },
+  }
 ]
 
 export function getLeague(id: LeagueId): League {
@@ -544,6 +912,32 @@ export function continentalLeagues(): League[] {
 export function domesticLeagues(): League[] {
   return LEAGUES.filter((league) => league.kind === 'domestic')
 }
+
+/** Domestic knockout / super cups (still `kind: 'domestic'`). */
+export function isDomesticCup(id: LeagueId): boolean {
+  const league = getLeague(id)
+  return league.kind === 'domestic' && league.format !== 'league'
+}
+
+export function isCupFormat(id: LeagueId): boolean {
+  return getLeague(id).format !== 'league'
+}
+
+/** Top-flight / table domestic competitions only. */
+export function domesticTableLeagues(): League[] {
+  return LEAGUES.filter((league) => league.kind === 'domestic' && league.format === 'league')
+}
+
+/** Domestic cups + super cups. */
+export function domesticCupCompetitions(): League[] {
+  return LEAGUES.filter((league) => league.kind === 'domestic' && league.format !== 'league')
+}
+
+/** Cups tied to the same country as a club's domestic league. */
+export function domesticCupsForCountry(country: string): League[] {
+  return domesticCupCompetitions().filter((league) => league.country === country)
+}
+
 
 const LEAGUE_IMPORTANCE_RANK = new Map(LEAGUES.map((league, index) => [league.id, index]))
 

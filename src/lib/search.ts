@@ -3,6 +3,7 @@ import {
   domesticLeagues,
   getLeague,
   isContinentalLeague,
+  isDomesticCup,
   isInternationalLeague,
   type League,
   type LeagueId,
@@ -157,6 +158,11 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
       (league.kind === 'continental' && includesQuery('europa', q)) ||
       (league.kind === 'continental' && includesQuery('libertadores', q)) ||
       (league.kind === 'continental' && includesQuery('sudamericana', q)) ||
+      (league.format === 'cup' && includesQuery('cup', q)) ||
+      (league.format === 'supercup' && includesQuery('super', q)) ||
+      (league.format === 'supercup' && includesQuery('supercup', q)) ||
+      (league.format === 'supercup' && includesQuery('shield', q)) ||
+      (isDomesticCup(league.id) && includesQuery('domestic cup', q)) ||
       (includesQuery('championship', q) && league.id === 'eng-championship'),
   ).map((league) => ({ kind: 'league' as const, league }))
 }
@@ -174,9 +180,16 @@ function preferTeamLeagueId(current: LeagueId, next: LeagueId): LeagueId {
   // Prefer international context when a national side also appears in friendlies/cups.
   if (isInternationalLeague(next) && !isInternationalLeague(current)) return next
   if (isInternationalLeague(current) && !isInternationalLeague(next)) return current
-  // Club contexts: prefer domestic league over continental cup as the primary profile.
-  if (isContinentalLeague(current) && !isContinentalLeague(next)) return next
-  if (!isContinentalLeague(current) && isContinentalLeague(next)) return current
+  // Club contexts: prefer domestic league table over cups / continental.
+  if (isDomesticCup(current) && !isDomesticCup(next) && !isContinentalLeague(next)) return next
+  if (!isDomesticCup(current) && !isContinentalLeague(current) && isDomesticCup(next)) return current
+  if (isContinentalLeague(current) && !isContinentalLeague(next) && !isDomesticCup(next)) return next
+  if (!isContinentalLeague(current) && !isDomesticCup(current) && isContinentalLeague(next)) {
+    return current
+  }
+  // Between cup and continental, keep whatever we already have unless upgrading to a league.
+  if (isDomesticCup(current) && isContinentalLeague(next)) return current
+  if (isContinentalLeague(current) && isDomesticCup(next)) return current
   return current
 }
 

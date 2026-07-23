@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MISSING_LONG } from '../lib/display'
-import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
+import { getLeague, domesticCupsForCountry, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   formatSideRecord,
@@ -191,8 +191,13 @@ export function TeamProfileScreen({
         ids.add(match.leagueId)
       }
     }
+    if (!isNational) {
+      for (const cup of domesticCupsForCountry(league.country)) {
+        ids.add(cup.id)
+      }
+    }
     return [...ids]
-  }, [team.id, team.leagueId, teamMatches])
+  }, [team.id, team.leagueId, teamMatches, isNational, league.country])
 
   const topScorers = useMemo(() => {
     const goalsBoard =
@@ -432,6 +437,7 @@ export function TeamProfileScreen({
                       ? 'border-lime/45 bg-lime/15 text-lime'
                       : 'border-white/12 bg-white/[0.03] text-mist/80 hover:border-lime/35 hover:text-lime'
                   }`}
+                  title={item.name}
                 >
                   {item.short}
                 </button>

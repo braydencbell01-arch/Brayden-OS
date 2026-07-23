@@ -5,6 +5,32 @@ type Phase = {
   label: string
 }
 
+const KNOCKOUT_DEEP: Phase[] = [
+  { id: 'early', label: 'Early rounds' },
+  { id: 'r32', label: 'Round of 32' },
+  { id: 'r16', label: 'Round of 16' },
+  { id: 'qf', label: 'Quarter-finals' },
+  { id: 'sf', label: 'Semi-finals' },
+  { id: 'final', label: 'Final' },
+]
+
+const KNOCKOUT_STANDARD: Phase[] = [
+  { id: 'r32', label: 'Round of 32' },
+  { id: 'r16', label: 'Round of 16' },
+  { id: 'qf', label: 'Quarter-finals' },
+  { id: 'sf', label: 'Semi-finals' },
+  { id: 'final', label: 'Final' },
+]
+
+const KNOCKOUT_COMPACT: Phase[] = [
+  { id: 'r16', label: 'Round of 16' },
+  { id: 'qf', label: 'Quarter-finals' },
+  { id: 'sf', label: 'Semi-finals' },
+  { id: 'final', label: 'Final' },
+]
+
+const SUPERCUP: Phase[] = [{ id: 'final', label: 'Final' }]
+
 const TIMELINES: Partial<Record<LeagueId, Phase[]>> = {
   'fifa-world': [
     { id: 'group', label: 'Group stage' },
@@ -35,9 +61,44 @@ const TIMELINES: Partial<Record<LeagueId, Phase[]>> = {
     { id: 'groups', label: 'Qualifying groups' },
     { id: 'playoffs', label: 'Play-offs' },
   ],
+  // Domestic cups
+  'fa-cup': KNOCKOUT_DEEP,
+  'efl-cup': KNOCKOUT_STANDARD,
+  'community-shield': SUPERCUP,
+  'efl-trophy': KNOCKOUT_COMPACT,
+  'copa-del-rey': KNOCKOUT_DEEP,
+  'spanish-supercopa': [
+    { id: 'sf', label: 'Semi-finals' },
+    { id: 'final', label: 'Final' },
+  ],
+  'coppa-italia': KNOCKOUT_STANDARD,
+  'italian-supercoppa': [
+    { id: 'sf', label: 'Semi-finals' },
+    { id: 'final', label: 'Final' },
+  ],
+  'dfb-pokal': KNOCKOUT_DEEP,
+  'german-supercup': SUPERCUP,
+  'coupe-de-france': KNOCKOUT_DEEP,
+  'trophee-des-champions': SUPERCUP,
+  'coupe-de-la-ligue': KNOCKOUT_COMPACT,
+  'copa-do-brasil': KNOCKOUT_DEEP,
+  'brazilian-supercopa': SUPERCUP,
+  'copa-mx': KNOCKOUT_COMPACT,
+  'campeon-de-campeones': SUPERCUP,
+  'us-open-cup': KNOCKOUT_DEEP,
+  'copa-argentina': KNOCKOUT_DEEP,
+  'argentine-supercopa': SUPERCUP,
+  'trofeo-de-campeones': SUPERCUP,
+  'knvb-beker': KNOCKOUT_STANDARD,
+  'johan-cruyff-shield': SUPERCUP,
+  'taca-de-portugal': KNOCKOUT_DEEP,
+  'scottish-cup': KNOCKOUT_DEEP,
+  'scottish-league-cup': KNOCKOUT_STANDARD,
+  'scottish-challenge-cup': KNOCKOUT_COMPACT,
+  'saudi-kings-cup': KNOCKOUT_STANDARD,
 }
 
-/** Light tournament-phase strip for major international competitions. */
+/** Tournament-phase strip for internationals and domestic cups. */
 export function LeagueSeasonTimeline({ leagueId }: { leagueId: LeagueId }) {
   const phases = TIMELINES[leagueId]
   if (!phases || phases.length === 0) return null

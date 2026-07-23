@@ -1,4 +1,10 @@
-import { compareLeaguesForDisplay, internationalLeagues, LEAGUES, type LeagueId } from './leagues'
+import {
+  compareLeaguesForDisplay,
+  domesticCupsForCountry,
+  internationalLeagues,
+  LEAGUES,
+  type LeagueId,
+} from './leagues'
 import { addDays, dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
@@ -507,7 +513,8 @@ export async function fetchNationalTeamSchedules(
 
 /**
  * Club (or national) schedule from ESPN to fill Match Day cache gaps.
- * Clubs: preferred league only. Nationals: all international comps.
+ * Clubs: preferred league + same-country domestic cups.
+ * Nationals: all international comps.
  */
 export async function fetchTeamSchedule(
   teamId: string,
@@ -518,7 +525,21 @@ export async function fetchTeamSchedule(
   if (league.kind === 'international') {
     return fetchNationalTeamSchedules(teamId, leagueId)
   }
-  return fetchScheduleForLeague(teamId, leagueId)
+
+  const cupIds = domesticCupsForCountry(league.country).map((cup) => cup.id)
+  const codes = [leagueId, ...cupIds.filter((id) => id !== leagueId)]
+  const results = await Promise.allSettled(
+    codes.map((id) => fetchScheduleForLeague(teamId, id)),
+  )
+
+  const byEvent = new Map<string, Match>()
+  for (const result of results) {
+    if (result.status !== 'fulfilled') continue
+    for (const match of result.value) {
+      if (!byEvent.has(match.espnEventId)) byEvent.set(match.espnEventId, match)
+    }
+  }
+  return [...byEvent.values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
 }
 
 /** Merge Match Day cache with schedule extras; cache rows win on id collisions. */
