@@ -1,0 +1,36 @@
+name: Update Square POS abbreviations
+
+# Sets CatalogItem.abbreviation (POS title) to club codes, e.g. Manchester City → MC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jerseydeals-square-pos-abbrevs
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: jerseydeals/package-lock.json
+
+      - name: Update POS abbreviations
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+        run: npm run square:pos-abbrevs
