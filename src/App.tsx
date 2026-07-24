@@ -176,7 +176,7 @@ function HomeScreen({
           </div>
         </header>
 
-        <div className="sticky top-0 z-30 -mx-5 mb-5 border-b border-white/10 bg-pitch-deep/92 px-5 pb-3 pt-2 backdrop-blur-md md:-mx-6 md:px-6">
+        <div className="sticky top-0 z-30 -mx-5 mb-4 border-b border-white/10 bg-pitch-deep/92 px-5 pb-2 pt-1.5 backdrop-blur-md md:-mx-6 md:px-6">
           <HomeSearch
             matches={matches}
             favoriteTeams={favorites.teams}

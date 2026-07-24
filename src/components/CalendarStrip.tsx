@@ -144,20 +144,20 @@ export function CalendarStrip({
 
   return (
     <section aria-label="Match calendar" className="relative">
-      <div className="mb-2 flex items-end justify-between gap-3 px-1">
+      <div className="mb-1.5 flex items-end justify-between gap-2 px-1">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lime/80">Calendar</p>
-          <p className="mt-0.5 text-[0.7rem] text-mist/65">Yellow = favorites</p>
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">Calendar</p>
+          <p className="mt-0.5 text-[0.65rem] text-mist/65">Yellow = favorites</p>
         </div>
-        <div className="flex items-center gap-2">
-          <p className="font-display text-2xl tracking-wide text-cream/90">
+        <div className="flex items-center gap-1.5">
+          <p className="font-display text-lg tracking-wide text-cream/90">
             {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
           </p>
           <button
             type="button"
             onClick={handleTodayClick}
             className={[
-              'rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] transition outline-none',
+              'rounded-full border px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] transition outline-none',
               'focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
               'border-lime/50 bg-lime/15 text-lime hover:bg-lime hover:text-ink',
             ].join(' ')}
@@ -175,14 +175,14 @@ export function CalendarStrip({
       >
         <div
           ref={scrollerRef}
-          className="scrollbar-hide -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 snap-x snap-mandatory"
+          className="scrollbar-hide -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5 snap-x snap-mandatory"
           role="listbox"
           aria-label="Select a date"
         >
         <button
           type="button"
           onClick={extendPast}
-          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-3 py-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-2.5 py-2 text-center text-[0.6rem] font-bold uppercase tracking-[0.1em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           aria-label="Load earlier match days"
         >
           Earlier
@@ -204,24 +204,24 @@ export function CalendarStrip({
               aria-selected={active}
               onClick={() => onSelect(startOfDay(day))}
               className={[
-                'snap-center shrink-0 rounded-2xl px-3 py-3 text-center transition outline-none',
-                'min-w-[4.25rem] border focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
+                'snap-center shrink-0 rounded-xl px-2.5 py-2 text-center transition outline-none',
+                'min-w-[3.5rem] border focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
                 active
                   ? 'border-lime bg-lime text-ink shadow-[0_0_0_1px_rgba(200,245,66,0.35)]'
                   : 'border-white/10 bg-white/5 text-cream hover:border-lime/40 hover:bg-white/10',
               ].join(' ')}
             >
               <span
-                className={`block text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${active ? 'text-ink/70' : 'text-mist/70'}`}
+                className={`block text-[0.55rem] font-semibold uppercase tracking-[0.12em] ${active ? 'text-ink/70' : 'text-mist/70'}`}
               >
                 {weekday}
               </span>
-              <span className="mt-1 block font-display text-3xl leading-none tracking-wide">
+              <span className="mt-0.5 block font-display text-xl leading-none tracking-wide">
                 {dayNum}
               </span>
               {isToday ? (
                 <span
-                  className={`mt-1 block text-[0.6rem] font-bold uppercase tracking-[0.12em] ${active ? 'text-ink/80' : 'text-lime'}`}
+                  className={`mt-0.5 block text-[0.55rem] font-bold uppercase tracking-[0.1em] ${active ? 'text-ink/80' : 'text-lime'}`}
                 >
                   Today
                 </span>
@@ -229,8 +229,8 @@ export function CalendarStrip({
               {hasFavoriteMatch ? (
                 <span
                   className={[
-                    'mx-auto block h-1.5 w-1.5 rounded-full',
-                    isToday ? 'mt-1' : 'mt-2',
+                    'mx-auto block h-1 w-1 rounded-full',
+                    isToday ? 'mt-0.5' : 'mt-1',
                     active
                       ? 'bg-ink/70'
                       : 'bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]',
@@ -238,7 +238,7 @@ export function CalendarStrip({
                   aria-hidden
                 />
               ) : (
-                <span className={`block h-1.5 ${isToday ? 'mt-1' : 'mt-2'}`} aria-hidden />
+                <span className={`block h-1 ${isToday ? 'mt-0.5' : 'mt-1'}`} aria-hidden />
               )}
             </button>
           )
@@ -247,7 +247,7 @@ export function CalendarStrip({
         <button
           type="button"
           onClick={extendForward}
-          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-3 py-3 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-2.5 py-2 text-center text-[0.6rem] font-bold uppercase tracking-[0.1em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           aria-label="Load later match days"
         >
           Later
