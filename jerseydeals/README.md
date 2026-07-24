@@ -112,14 +112,17 @@ Or run GitHub Action **Update Square POS abbreviations**.
 
 ### Fix Square stock + photos
 
-Re-apply qty **1** on every variation and upload eBay photos onto items missing images:
+Re-apply qty **1** on every variation and upload remaining eBay photos onto Square items (up to 12 per item):
 
 ```bash
 cd jerseydeals
 npm run square:fix-stock-images
+npm run sync:square
+# Optional: fill gaps from eBay when Square still has fewer photos than the eBay listing
+npm run enrich:images
 ```
 
-Requires Square + eBay secrets. Then run `npm run sync:square` so `listings.json` picks up the new image URLs.
+Requires Square + eBay secrets. Browse cards show the cover photo only; clicking a listing opens a swipeable gallery of every photo.
 
 **Square Online “Out of stock”:** Catalog API cannot enable online Shipping fulfillment. In Square Dashboard → Online → Shipping / Item fulfillment, enable **Shipping** (and assign the Jersey Deals location), then bulk-enable Shipping on items. Until that is set, the `.square.site` storefront can show Out of stock even when Inventory API qty is 1.
 

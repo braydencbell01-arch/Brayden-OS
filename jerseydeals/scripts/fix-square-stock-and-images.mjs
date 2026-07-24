@@ -322,33 +322,45 @@ for (const [index, rawItem] of items.entries()) {
   }
 
   const existingImages = item.item_data?.image_ids || []
+  const MAX_IMAGES = Number(process.env.SQUARE_MAX_IMAGES || 12)
   if (SKIP_IMAGES) {
     imagesSkip += 1
-  } else if (existingImages.length > 0) {
-    imagesSkip += 1
-    console.log(`· images already set ${label}`)
+    console.log(`✓ stock ${label}`)
   } else if (!ebayId) {
-    imagesFail += 1
-    console.warn(`· no ebay sku for images ${label}`)
+    if (existingImages.length === 0) {
+      imagesFail += 1
+      console.warn(`· no ebay sku for images ${label}`)
+    } else {
+      imagesSkip += 1
+      console.log(`✓ stock ${label} (${existingImages.length} images)`)
+    }
   } else {
     try {
       const pics = await fetchEbayItemId(ebayId)
       if (pics.length === 0) throw new Error('no PictureURL on eBay item')
-      // One primary photo only (storefront shows a single image per listing).
-      const toUpload = pics.slice(0, 1)
-      for (const [i, url] of toUpload.entries()) {
-        await uploadImage(item.id, url, name, primaryVar?.item_variation_data?.name || '', i === 0)
+      const need = Math.max(0, Math.min(MAX_IMAGES, pics.length) - existingImages.length)
+      if (need === 0) {
+        imagesSkip += 1
+        console.log(`✓ stock ${label} (${existingImages.length} images)`)
+      } else {
+        // Append remaining eBay photos so Square / quick view have the full set.
+        const toUpload = pics.slice(existingImages.length, existingImages.length + need)
+        for (const [i, url] of toUpload.entries()) {
+          await uploadImage(
+            item.id,
+            url,
+            name,
+            primaryVar?.item_variation_data?.name || '',
+            existingImages.length === 0 && i === 0,
+          )
+        }
+        imagesOk += 1
+        console.log(`✓ +${toUpload.length} images + stock ${label}`)
       }
-      imagesOk += 1
-      console.log(`✓ image + stock ${label}`)
     } catch (err) {
       imagesFail += 1
       console.error(`✗ images ${label}: ${err.message}`)
     }
-  }
-
-  if (SKIP_IMAGES || existingImages.length > 0 || !ebayId) {
-    console.log(`✓ stock ${label}`)
   }
 }
 

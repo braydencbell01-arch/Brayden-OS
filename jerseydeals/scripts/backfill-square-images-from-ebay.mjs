@@ -57,14 +57,19 @@ const merged = {
       ebayByNorm.get(normTitle(item.title)) ||
       [...ebayByNorm.entries()].find(([k]) => normTitle(item.title).includes(k) || k.includes(normTitle(item.title)))?.[1]
     if (!hit) return item
-    const images = hit.images?.length ? hit.images : hit.image ? [hit.image] : []
-    if (!images.length) return item
+    const ebayImages = hit.images?.length ? hit.images : hit.image ? [hit.image] : []
+    if (!ebayImages.length) return item
     filled += 1
-    const primary = images[0]
+    const existing = item.images?.length ? item.images : item.image ? [item.image] : []
+    const mergedImages = [...existing]
+    for (const url of ebayImages) {
+      if (url && !mergedImages.includes(url)) mergedImages.push(url)
+    }
+    const primary = item.image || mergedImages[0]
     return {
       ...item,
       image: primary,
-      images: [primary],
+      images: primary && mergedImages[0] !== primary ? [primary, ...mergedImages.filter((u) => u !== primary)] : mergedImages,
     }
   }),
 }
