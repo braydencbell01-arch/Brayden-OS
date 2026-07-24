@@ -850,31 +850,44 @@ export default function App() {
       {/* Promo bar — always on top */}
       <div className="fixed inset-x-0 top-0 z-50 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-crimson px-4 py-2 text-center font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream">
         <span>{PROMO_BAR}</span>
-        <span className="hidden text-cream/40 sm:inline" aria-hidden>
+        <span className="text-cream/40" aria-hidden>
           ·
         </span>
-        <span className="inline-flex items-center gap-2 normal-case tracking-normal">
-          <a
-            href={SQUARE_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'square' })}
-            className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
-          >
-            Square
-          </a>
-          <span className="text-cream/40" aria-hidden>
-            ·
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1">
+            Buy from
+            <svg
+              viewBox="0 0 12 12"
+              className="h-2.5 w-2.5 shrink-0 text-cream/90"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M6 9.5 1.5 4h9L6 9.5Z" />
+            </svg>
           </span>
-          <a
-            href={ebayShop}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'ebay' })}
-            className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
-          >
-            eBay
-          </a>
+          <span className="inline-flex items-center gap-2 normal-case tracking-normal">
+            <a
+              href={SQUARE_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'square' })}
+              className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
+            >
+              Square
+            </a>
+            <span className="text-cream/40" aria-hidden>
+              ·
+            </span>
+            <a
+              href={ebayShop}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'ebay' })}
+              className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
+            >
+              eBay
+            </a>
+          </span>
         </span>
       </div>
 
