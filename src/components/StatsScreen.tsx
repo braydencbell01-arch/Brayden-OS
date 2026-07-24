@@ -159,12 +159,12 @@ export function StatsScreen({
                         key={league.id}
                         type="button"
                         onClick={() => onOpenLeagueStats(league.id)}
-                        className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2.5 text-left hover:border-lime/40"
-                        style={
-                          accent
-                            ? { boxShadow: `inset 3px 0 0 ${accent}` }
-                            : undefined
-                        }
+                        className="flex items-center justify-between gap-3 border px-3 py-2.5 text-left hover:border-lime/40"
+                        style={{
+                          boxShadow: `inset 3px 0 0 ${accent}`,
+                          borderColor: `${accent}40`,
+                          background: `linear-gradient(90deg, ${accent}1f, transparent 50%)`,
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2.5">
                           <LeagueLogoMark
@@ -213,15 +213,12 @@ export function StatsScreen({
                   key={league.id}
                   type="button"
                   onClick={() => onOpenLeagueStats(league.id)}
-                  className="flex items-center justify-between gap-3 border border-white/10 bg-pitch/40 px-3 py-3 text-left hover:border-lime/40"
-                  style={
-                    accent
-                      ? {
-                          borderColor: `${accent}55`,
-                          boxShadow: `inset 3px 0 0 ${accent}`,
-                        }
-                      : undefined
-                  }
+                  className="flex items-center justify-between gap-3 border bg-pitch/40 px-3 py-3 text-left hover:border-lime/40"
+                  style={{
+                    borderColor: `${accent}55`,
+                    boxShadow: `inset 3px 0 0 ${accent}`,
+                    background: `linear-gradient(90deg, ${accent}1f, rgba(11,61,46,0.4) 55%)`,
+                  }}
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <LeagueLogoMark

@@ -75,9 +75,12 @@ function LeagueDropdown({
         hasFavorite ? 'border-star/30' : 'border-white/10',
       ].join(' ')}
       style={
-        accent && !hasFavorite
-          ? { borderColor: `${accent}55` }
-          : undefined
+        hasFavorite
+          ? undefined
+          : {
+              borderColor: `${accent}55`,
+              boxShadow: `inset 3px 0 0 ${accent}`,
+            }
       }
     >
       <div className="flex w-full items-center gap-2 px-3 py-3">

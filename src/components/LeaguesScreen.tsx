@@ -428,17 +428,14 @@ function LeagueRow({
         ease: [0.22, 1, 0.36, 1],
       }}
       className={[
-        'flex items-stretch border bg-gradient-to-r from-pitch/80 to-turf/40 transition hover:border-lime/50',
+        'flex items-stretch border transition hover:border-lime/50',
         favorited ? 'border-star/35' : 'border-white/10',
       ].join(' ')}
-      style={
-        accent
-          ? {
-              borderColor: favorited ? undefined : `${accent}66`,
-              background: `linear-gradient(90deg, ${accent}22, transparent 55%), linear-gradient(90deg, rgba(11,61,46,0.85), rgba(20,107,74,0.35))`,
-            }
-          : undefined
-      }
+      style={{
+        borderColor: favorited ? undefined : `${accent}66`,
+        background: `linear-gradient(90deg, ${accent}28, transparent 58%), linear-gradient(90deg, rgba(11,61,46,0.9), rgba(20,107,74,0.4))`,
+        boxShadow: `inset 3px 0 0 ${accent}`,
+      }}
     >
       <div className="flex items-center px-2">
         <FavoriteStar active={favorited} label={league.name} onToggle={onToggleFavorite} />

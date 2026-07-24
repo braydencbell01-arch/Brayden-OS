@@ -149,12 +149,12 @@ export function FavoritesScreen({
                             return (
                             <li key={league.id}>
                               <div
-                                className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3"
-                                style={
-                                  accent
-                                    ? { boxShadow: `inset 3px 0 0 ${accent}` }
-                                    : undefined
-                                }
+                                className="flex items-center gap-2 border border-white/10 px-3 py-3"
+                                style={{
+                                  boxShadow: `inset 3px 0 0 ${accent}`,
+                                  background: `linear-gradient(90deg, ${accent}22, rgba(255,255,255,0.04) 42%)`,
+                                  borderColor: `${accent}40`,
+                                }}
                               >
                                 <FavoriteStar
                                   active
