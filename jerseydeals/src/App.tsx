@@ -1299,7 +1299,7 @@ export default function App() {
                 className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
               >
                 <img
-                  src={asset('product-home.jpg')}
+                  src={asset('category-catalog.jpg')}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
                   onError={(e) => {
