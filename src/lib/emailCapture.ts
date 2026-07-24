@@ -1,10 +1,16 @@
+/**
+ * BrayStats-only email capture. Never import jerseydeals modules or JD env vars.
+ */
+
 const STORAGE_KEY = 'braystats_email_signups_v1'
-const CONTACT_EMAIL = 'braydencbell01@gmail.com'
+/** Product inbox for BrayStats updates (keep separate from Jersey Deals business). */
+const BRAYSTATS_CONTACT_EMAIL = 'braydencbell01@gmail.com'
 
 export type EmailSignup = {
   email: string
   source: string
   site: 'braystats'
+  product: 'BrayStats'
   at: string
 }
 
@@ -39,10 +45,11 @@ function persistSignup(entry: EmailSignup) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([entry, ...prev].slice(0, 200)))
 }
 
+/** BrayStats-only form endpoint. Never reads Jersey Deals env vars. */
 function formEndpoint() {
-  const custom = (import.meta.env.VITE_EMAIL_FORM_ENDPOINT as string | undefined)?.trim()
+  const custom = (import.meta.env.VITE_BRAYSTATS_EMAIL_FORM_ENDPOINT as string | undefined)?.trim()
   if (custom) return custom
-  return `https://formsubmit.co/ajax/${encodeURIComponent(CONTACT_EMAIL)}`
+  return `https://formsubmit.co/ajax/${encodeURIComponent(BRAYSTATS_CONTACT_EMAIL)}`
 }
 
 export async function captureEmail(
@@ -58,6 +65,7 @@ export async function captureEmail(
     email,
     source,
     site: 'braystats',
+    product: 'BrayStats',
     at: new Date().toISOString(),
   }
   persistSignup(entry)
@@ -72,8 +80,10 @@ export async function captureEmail(
       body: JSON.stringify({
         email,
         source,
+        product: 'BrayStats',
         site: 'BrayStats',
-        _subject: `BrayStats signup · ${source}`,
+        list: 'braystats_updates',
+        _subject: `[BrayStats] signup · ${source}`,
         _template: 'table',
         _captcha: 'false',
       }),
@@ -84,7 +94,7 @@ export async function captureEmail(
         message: 'Saved. Confirm FormSubmit’s first email to your inbox if prompted.',
       }
     }
-    return { ok: true, message: 'You’re on the list for BrayStats updates.' }
+    return { ok: true, message: 'You’re on the BrayStats list.' }
   } catch {
     return {
       ok: true,

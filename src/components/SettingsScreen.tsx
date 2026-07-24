@@ -128,7 +128,7 @@ export function SettingsScreen({
             Email updates
           </h2>
           <p className="mt-2 text-sm text-mist/70">
-            Get product updates and matchday tips. We only use your email for BrayStats news.
+            BrayStats updates only — this list is separate from any shop or store mailing list.
           </p>
           <form onSubmit={onEmailSubmit} className="mt-3 flex flex-col gap-2 sm:flex-row">
             <label className="sr-only" htmlFor="braystats-email">

@@ -15,6 +15,7 @@ Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-u
 
 - Do **not** publish BrayStats into `/jerseydeals/`.
 - Do **not** publish Jersey Deals into the Pages root.
+- Keep **email lists and form endpoints separate** (BrayStats ≠ Jersey Deals business). No shared signup storage or env vars across products.
 - When a BrayStats task finishes, report **both** URLs, labeled.
 
 ## BrayStats agent roles

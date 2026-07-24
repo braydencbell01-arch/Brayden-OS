@@ -27,7 +27,7 @@ Edit `src/config.ts` or set env vars when building:
 | Variable | Purpose |
 |----------|---------|
 | `VITE_SQUARE_STORE_URL` | Square Online storefront URL (CTAs switch to Square when set) |
-| `VITE_EMAIL_FORM_ENDPOINT` | Optional form POST URL (Formspree etc.). Default: FormSubmit → `CONTACT_EMAIL` |
+| `VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT` | Jersey Deals–only form POST URL. Default: FormSubmit → `CONTACT_EMAIL`. Never share with BrayStats. |
 | `VITE_GA_ID` | Optional GA4 measurement ID |
 
 Until Square Catalog sync is configured, primary checkout stays on eBay (`@jerseydealsofficial`).

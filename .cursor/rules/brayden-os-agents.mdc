@@ -10,6 +10,7 @@ alwaysApply: true
 - **BrayStats** lives at repo root → https://braydencbell01-arch.github.io/Brayden-OS/
 - **Jersey Deals** lives in `jerseydeals/` → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
 - Never deploy one product into the other’s URL path.
+- **Email lists stay separate.** BrayStats signups use BrayStats-only storage/endpoints; Jersey Deals business emails never mix with BrayStats (separate env vars, subjects, and localStorage keys).
 
 ## Roles on BrayStats
 
