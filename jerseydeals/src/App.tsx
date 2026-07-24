@@ -2,7 +2,6 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent 
 import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
-  CONTACT_EMAIL,
   EBAY_RATINGS,
   EBAY_SALE_URL,
   EBAY_SELLER,
@@ -32,6 +31,7 @@ import {
   readBuyerEmail,
   readOffer,
 } from './offer'
+import { captureEmail } from './emailCapture'
 import {
   clubsInStock,
   conditionLabel,
@@ -1048,17 +1048,14 @@ export default function App() {
 
   const heroImage = asset('hero-jersey.jpg')
 
-  function onEmailSubmit(event: FormEvent) {
+  async function onEmailSubmit(event: FormEvent) {
     event.preventDefault()
     const trimmed = email.trim()
     if (!trimmed) return
     track('email_signup_attempt', { has_square: Boolean(SQUARE_STORE_URL) })
-    const subject = encodeURIComponent('Jersey Deals restock alerts')
-    const body = encodeURIComponent(
-      `Please add me to restock / sale alerts.\n\nEmail: ${trimmed}\n`,
-    )
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`
-    setEmailStatus('sent')
+    const result = await captureEmail(trimmed, 'restock_alerts')
+    setEmailStatus(result.ok ? 'sent' : 'idle')
+    if (result.ok) setEmail('')
   }
 
   const navLinks = [
@@ -2543,7 +2540,7 @@ export default function App() {
             </motion.div>
             {emailStatus === 'sent' ? (
               <p className="mt-4 text-sm text-white/65">
-                Your email app should open — send it so we can add you.
+                You’re on the list — check your inbox if FormSubmit asks for a one-time confirm.
               </p>
             ) : null}
           </div>

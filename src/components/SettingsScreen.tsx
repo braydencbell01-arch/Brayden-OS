@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import {
   clearSettings,
@@ -7,6 +7,7 @@ import {
   type AppSettings,
 } from '../lib/settings'
 import { LEAGUES, type LeagueId } from '../lib/leagues'
+import { captureEmail } from '../lib/emailCapture'
 
 export function SettingsScreen({
   onBack,
@@ -18,9 +19,25 @@ export function SettingsScreen({
   reduce: boolean | null
 }) {
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
+  const [email, setEmail] = useState('')
+  const [emailMsg, setEmailMsg] = useState('')
+  const [emailBusy, setEmailBusy] = useState(false)
 
   const patch = (next: Partial<AppSettings>) => {
     setSettings(saveSettings(next))
+  }
+
+  async function onEmailSubmit(event: FormEvent) {
+    event.preventDefault()
+    setEmailBusy(true)
+    setEmailMsg('')
+    try {
+      const result = await captureEmail(email, 'settings_updates')
+      setEmailMsg(result.message)
+      if (result.ok) setEmail('')
+    } finally {
+      setEmailBusy(false)
+    }
   }
 
   return (
@@ -104,6 +121,38 @@ export function SettingsScreen({
               onChange={(e) => patch({ notificationsEnabled: e.target.checked })}
             />
           </label>
+        </section>
+
+        <section className="mb-4 border border-white/10 bg-white/[0.03] px-4 py-4">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-mist/70">
+            Email updates
+          </h2>
+          <p className="mt-2 text-sm text-mist/70">
+            Get product updates and matchday tips. We only use your email for BrayStats news.
+          </p>
+          <form onSubmit={onEmailSubmit} className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <label className="sr-only" htmlFor="braystats-email">
+              Email
+            </label>
+            <input
+              id="braystats-email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="min-w-0 flex-1 rounded-lg border border-white/15 bg-pitch px-3 py-2 text-sm text-cream placeholder:text-mist/40"
+            />
+            <button
+              type="submit"
+              disabled={emailBusy}
+              className="rounded-full border border-lime/45 bg-lime/15 px-4 py-2 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-lime disabled:opacity-50"
+            >
+              {emailBusy ? 'Saving…' : 'Join list'}
+            </button>
+          </form>
+          {emailMsg ? <p className="mt-2 text-xs text-mist/70">{emailMsg}</p> : null}
         </section>
 
         <section className="mb-4 border border-white/10 bg-white/[0.03] px-4 py-4">

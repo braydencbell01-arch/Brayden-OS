@@ -44,7 +44,7 @@ export const FREE_SHIPPING_THRESHOLD = 0
 
 export const FAMILY_NOTE = 'Family-run shop — real photos, sizes, and shipping from our inventory.'
 
-/** Newsletter incentive copy (mailto signup — no backend list). */
+/** Newsletter incentive copy. */
 export const NEWSLETTER_INCENTIVE = 'Be first on restocks & sale drops'
 
 /** First-time buyer welcome offer (10% via Square Payment Links when activated). */

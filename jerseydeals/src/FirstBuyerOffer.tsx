@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { track } from './analytics'
+import { captureEmail } from './emailCapture'
 import {
   activateOffer,
   emailHasPriorPurchase,
@@ -79,6 +80,7 @@ export function FirstBuyerOfferModal({
 
       writeBuyerEmail(cleaned)
       onEmailSaved(cleaned)
+      void captureEmail(cleaned, isOffer ? 'first_buyer_offer' : 'checkout_gate')
 
       if (isOffer) {
         if (hasPurchased()) {
