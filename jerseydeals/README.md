@@ -117,12 +117,12 @@ Re-apply qty **1** on every variation and upload remaining eBay photos onto Squa
 ```bash
 cd jerseydeals
 npm run square:fix-stock-images
-npm run sync:square
-# Optional: fill gaps from eBay when Square still has fewer photos than the eBay listing
-npm run enrich:images
+npm run square:reorder-images   # rebuild Square image_ids in exact eBay PictureURL order
+npm run sync:square             # also rewrites listings.json galleries to eBay order
+# Or just: npm run enrich:images
 ```
 
-Requires Square + eBay secrets. Browse cards show the cover photo only; clicking a listing opens a swipeable gallery of every photo.
+Requires Square + eBay secrets. Browse cards show the cover photo only; clicking a listing opens a swipeable gallery of every photo in **eBay’s order**.
 
 **Square Online “Out of stock”:** Catalog API cannot enable online Shipping fulfillment. In Square Dashboard → Online → Shipping / Item fulfillment, enable **Shipping** (and assign the Jersey Deals location), then bulk-enable Shipping on items. Until that is set, the `.square.site` storefront can show Out of stock even when Inventory API qty is 1.
 

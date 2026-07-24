@@ -18,6 +18,7 @@
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { spawnSync } from 'node:child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT = join(__dirname, '../public/listings.json')
@@ -400,5 +401,23 @@ if (existsSync(LINKS_PATH) && listings.length > 0) {
     }
   } catch (err) {
     console.warn(`checkout-links merge skipped: ${err.message}`)
+  }
+}
+
+// Prefer eBay PictureURL order for landing-page galleries (cover-first, exact order).
+if (
+  listings.length > 0 &&
+  process.env.EBAY_APP_ID &&
+  process.env.EBAY_CERT_ID &&
+  process.env.EBAY_DEV_ID &&
+  process.env.EBAY_USER_TOKEN &&
+  process.env.SQUARE_SKIP_EBAY_IMAGE_ORDER !== '1'
+) {
+  const enrich = spawnSync(process.execPath, [join(__dirname, 'enrich-listing-images-from-ebay.mjs')], {
+    stdio: 'inherit',
+    env: process.env,
+  })
+  if (enrich.status !== 0) {
+    console.warn('eBay image-order enrich failed; listings keep Square image order for now')
   }
 }
