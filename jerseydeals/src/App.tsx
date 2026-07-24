@@ -1221,11 +1221,6 @@ export default function App() {
                   <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-6xl">
                     Youth apparel
                   </p>
-                  <p className="mt-3 max-w-sm text-sm text-white/75 md:text-base">
-                    {youthCount > 0
-                      ? `${youthCount} youth listings ready to ship.`
-                      : 'Kids and youth kits sized and ready to ship.'}
-                  </p>
                   <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                     Shop youth →
                   </span>
@@ -1253,11 +1248,6 @@ export default function App() {
                     <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
                     <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
                       {SALE_HEADLINE}
-                    </p>
-                    <p className="mt-2 text-sm text-white/75">
-                      {saleFloor != null
-                        ? `From ${formatPrice(saleFloor, 'USD')} while stock lasts.`
-                        : 'Limited sale kits from the rack.'}
                     </p>
                     <span className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-white">
                       Shop sale kits →
@@ -1311,11 +1301,6 @@ export default function App() {
                   <p className="eyebrow text-white/70">Inventory</p>
                   <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
                     Full catalog
-                  </p>
-                  <p className="mt-2 text-sm text-white/75">
-                    {loadState === 'ready' && catalog
-                      ? `${catalog.count} active listings ready to filter.`
-                      : 'Every active listing from Jersey Deals.'}
                   </p>
                 </div>
               </motion.button>
