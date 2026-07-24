@@ -23,13 +23,24 @@ alwaysApply: true
 3. Do not publish a feature branch to `gh-pages` as the final step without merging first — other agents redeploying from `Brayden-OS` will overwrite it.
 4. When updating Pages, preserve the other product’s folder (Stats root vs `jerseydeals/`).
 
+## Ship live by default (do not wait to be asked)
+
+The user should **never** need to say “make it live” or “merge it.” For finished user-visible work:
+
+1. Open/update the PR against `Brayden-OS`.
+2. **Merge into `Brayden-OS` yourself** (local merge + `git push origin Brayden-OS` is fine) — that triggers Pages deploy.
+3. Confirm the deploy ran, then verify the live URL.
+4. Only then tell the user it is live.
+
+Do **not** stop at “PR opened” / draft waiting. Exceptions only: unresolved conflicts, failing build, or the user explicitly asked for review-only / draft.
+
 ## Done means on Brayden-OS
 
-- A user-visible change is **not done** until it is on `origin/Brayden-OS`.
+- A user-visible change is **not done** until it is on `origin/Brayden-OS` **and** Pages has rebuilt.
 - Keep PRs **mergeable**; merge/rebase `origin/Brayden-OS` before claiming finished.
 - Prefer **small focused PRs** for user-requested copy — do not leave them stranded only on a large conflicted polish PR.
-- Before saying “done” / “updated”, verify with `git show origin/Brayden-OS:…`.
-- If the PR is still open, say clearly that live updates only after merge.
+- Before saying “done” / “updated” / “live”, verify with `git show origin/Brayden-OS:…` and the live site.
+- If blocked from merging, say so plainly — never imply the live URL already has the change.
 
 ## After BrayStats tasks
 

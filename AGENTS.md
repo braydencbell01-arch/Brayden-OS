@@ -33,7 +33,9 @@ Stay in your lane. If a task needs another role’s files, coordinate or leave a
 
 User-visible work (copy, UI, bugs) fails if it only lives on a feature branch while the user checks the live site.
 
-### Agents merge and ship live themselves (default)
+### Agents merge and ship live themselves (default — do not wait to be asked)
+
+The user should **never** need to say “make it live,” “merge it,” or “deploy it.” That is part of finishing the task.
 
 Do **not** leave finished user-visible work sitting on an open PR waiting for the user to merge. When the change is ready and mergeable:
 
@@ -41,6 +43,8 @@ Do **not** leave finished user-visible work sitting on an open PR waiting for th
 2. **Merge it yourself** into `Brayden-OS` (merge the feature branch locally or via the host’s merge path, then `git push origin Brayden-OS`). Pushing `Brayden-OS` triggers GitHub Pages deploy.
 3. Wait for / confirm the Pages deploy, then verify the live URL.
 4. Only then tell the user it is live.
+
+Stopping at “PR opened” or “draft ready for review” is incomplete unless the user explicitly asked for review-only.
 
 Exceptions (say so plainly and stop): merge conflicts you cannot resolve, failing CI/build, or the user explicitly asked for a draft / review-only PR.
 
