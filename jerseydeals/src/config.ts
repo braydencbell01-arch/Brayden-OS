@@ -4,7 +4,7 @@
  */
 export const SQUARE_STORE_URL =
   (import.meta.env.VITE_SQUARE_STORE_URL as string | undefined)?.trim() ||
-  'https://jerseydealsofficial.square.site'
+  'https://jerseydealsofficial.square.site/'
 
 /** Square Online cart (Weebly path). */
 export const SQUARE_CART_URL =
@@ -17,6 +17,14 @@ export const EBAY_SELLER_URL = `https://www.ebay.com/usr/${EBAY_SELLER}`
 export const EBAY_SHOP_URL = `https://www.ebay.com/sch/i.html?_ssn=${EBAY_SELLER}&_sop=10`
 
 export const EBAY_SALE_URL = `https://www.ebay.com/sch/i.html?_ssn=${EBAY_SELLER}&_udhi=25&_sop=15`
+
+/** Detailed seller ratings shown on the storefront (from eBay). */
+export const EBAY_RATINGS = [
+  { label: 'Accurate description', score: 4.6 },
+  { label: 'Reasonable shipping cost', score: 4.9 },
+  { label: 'Shipping speed', score: 5.0 },
+  { label: 'Communication', score: 4.6 },
+] as const
 
 /** Restock / newsletter mailto (static Pages has no backend). */
 export const CONTACT_EMAIL = 'braydencbell01@gmail.com'
