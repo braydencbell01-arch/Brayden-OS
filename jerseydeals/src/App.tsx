@@ -348,7 +348,7 @@ function ProductGallery({
   }
 
   return (
-    <div className={`absolute inset-0 ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}>
+    <div className="absolute inset-0 bg-navy-deep">
       <div
         ref={trackRef}
         className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -365,13 +365,16 @@ function ProductGallery({
         aria-label={`${shortTitle(item.title)} photos`}
       >
         {photos.map((src, index) => (
-          <div key={`${item.id}-${index}`} className="relative h-full min-w-full shrink-0 snap-center">
+          <div
+            key={`${item.id}-${index}`}
+            className="relative h-full min-w-full shrink-0 snap-start snap-always"
+          >
             <SafeImage
               src={src}
               alt={
                 index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`
               }
-              className="h-full w-full object-contain object-center p-2 select-none"
+              className="h-full w-full object-cover object-center select-none"
               loading={index === 0 || eager ? 'eager' : 'lazy'}
               decoding="async"
               draggable={false}
