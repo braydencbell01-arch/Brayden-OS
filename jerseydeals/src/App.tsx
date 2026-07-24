@@ -976,10 +976,25 @@ export default function App() {
                 setCartOpen(true)
                 track('cart_open', { place: 'header', items: itemCount })
               }}
-              className={`relative px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] transition ${
+              className={`relative inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] transition ${
                 navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
               }`}
             >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 shrink-0"
+                aria-hidden
+              >
+                <path d="M6 6h15l-1.5 9h-12z" />
+                <path d="M6 6 5 3H2" />
+                <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none" />
+                <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none" />
+              </svg>
               Cart
               {itemCount > 0 ? (
                 <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
