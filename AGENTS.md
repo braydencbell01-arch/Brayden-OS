@@ -88,6 +88,10 @@ Before finishing a design task:
 - [ ] Live Stats URL verified after merge/deploy
 - [ ] Both permanent links given to the user, labeled
 
+## Minimal tokens / context (hard default)
+
+Prefer the smallest useful response and the fewest tool calls. Short answers by default. Do not explore the whole repo, write long plans, or restate the task unless needed to ship correctly.
+
 ## Cursor Cloud specific instructions
 
 Two independent Vite + React + TS apps, each its own npm project (separate `package-lock.json` + `node_modules`): **BrayStats** (repo root) and **Jersey Deals** (`jerseydeals/`). There are no npm workspaces, so install and run each directory separately. Node 22 matches CI. Dependency install is handled by the startup update script (`npm ci` in root and in `jerseydeals/`).
