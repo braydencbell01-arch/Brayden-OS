@@ -29,7 +29,7 @@ export const SALE_HEADLINE = 'Shop the sale'
 export const SALE_URGENCY = '$25 & under · while stock lasts'
 
 /** Top promo bar — keep short so it stays one line under the fixed header offset. */
-export const PROMO_BAR = 'Ships from US · Sale $25 & under · Secure checkout'
+export const PROMO_BAR = 'Real photos · Youth & adult sizes · Live stock'
 
 /** Soft free-shipping goal shown in the cart drawer (Payment Links are per-item). */
 export const FREE_SHIPPING_THRESHOLD = 75

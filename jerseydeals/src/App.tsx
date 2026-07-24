@@ -619,7 +619,6 @@ export default function App() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sent'>('idle')
-  const [showSticky, setShowSticky] = useState(false)
   const [navSolid, setNavSolid] = useState(false)
   const [tagFilter, setTagFilter] = useState('All')
   const [audienceFilter, setAudienceFilter] = useState<AudienceFilter>('All')
@@ -694,9 +693,7 @@ export default function App() {
 
   useEffect(() => {
     const onScroll = () => {
-      const y = window.scrollY
-      setShowSticky(y > window.innerHeight * 0.7)
-      setNavSolid(y > 48)
+      setNavSolid(window.scrollY > 48)
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -924,9 +921,6 @@ export default function App() {
       {/* Promo bar — always on top */}
       <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-crimson px-4 py-2 text-center font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream">
         <span>{PROMO_BAR}</span>
-        {saleFloor != null && (
-          <span className="hidden text-white/75 sm:inline">· From {formatPrice(saleFloor, 'USD')}</span>
-        )}
       </div>
 
       <a
@@ -1082,7 +1076,7 @@ export default function App() {
         </div>
       </header>
 
-      <main id="top" className={showSticky ? 'pb-20 md:pb-0' : undefined}>
+      <main id="top" className="pb-20 md:pb-0">
         {/* Hero */}
         <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
@@ -2403,11 +2397,7 @@ export default function App() {
         </p>
       </footer>
 
-      <div
-        className={`fixed inset-x-0 bottom-0 z-40 border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur transition md:hidden ${
-          showSticky ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
-        }`}
-      >
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur md:hidden">
         <div className="flex gap-2">
           <button
             type="button"
