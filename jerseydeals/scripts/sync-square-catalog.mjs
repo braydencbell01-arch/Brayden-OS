@@ -280,8 +280,6 @@ for (const item of items) {
   const description = data.description_plaintext || data.description || ''
   const itemImages = imagesForItem(item)
   const image = itemImages[0] || ''
-  // Storefront shows one photo per listing — keep only the primary cover.
-  const primaryImages = image ? [image] : []
   const categoryName = (data.categories || [])
     .map((c) => categories.get(c.id) || c.id)
     .filter(Boolean)[0]
@@ -325,7 +323,7 @@ for (const item of items) {
       currency,
       url: productUrl(item.id, name, seoPermalink, ecomUri),
       image,
-      images: primaryImages,
+      images: itemImages,
       quantity,
       tag: inferTag(haystack),
       note,
