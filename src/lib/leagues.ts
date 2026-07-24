@@ -939,6 +939,247 @@ export function domesticCupsForCountry(country: string): League[] {
 }
 
 
+/** FIFA confederations shown on national-team cards instead of “FR”. */
+export type ConfederationId = 'UEFA' | 'CONCACAF' | 'CONMEBOL' | 'CAF' | 'AFC' | 'OFC'
+
+const CONFEDERATION_LEAGUE_ID: Record<ConfederationId, LeagueId> = {
+  UEFA: 'uefa-nations',
+  CONCACAF: 'concacaf-gold',
+  CONMEBOL: 'conmebol-america',
+  CAF: 'caf-nations',
+  AFC: 'afc-asian-cup',
+  OFC: 'fifa-worldq',
+}
+
+/** Normalize country / team labels for confederation lookup. */
+function normalizeNationKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+/**
+ * Country name / common alias → confederation.
+ * Keys are normalized with `normalizeNationKey`.
+ */
+const NATION_TO_CONFEDERATION: Record<string, ConfederationId> = {
+  // CONCACAF
+  'united states': 'CONCACAF',
+  usa: 'CONCACAF',
+  usmnt: 'CONCACAF',
+  mexico: 'CONCACAF',
+  canada: 'CONCACAF',
+  'costa rica': 'CONCACAF',
+  jamaica: 'CONCACAF',
+  panama: 'CONCACAF',
+  honduras: 'CONCACAF',
+  'el salvador': 'CONCACAF',
+  guatemala: 'CONCACAF',
+  haiti: 'CONCACAF',
+  'trinidad and tobago': 'CONCACAF',
+  cuba: 'CONCACAF',
+  nicaragua: 'CONCACAF',
+  belize: 'CONCACAF',
+  bermuda: 'CONCACAF',
+  curacao: 'CONCACAF',
+  suriname: 'CONCACAF',
+  guyana: 'CONCACAF',
+  // CONMEBOL
+  brazil: 'CONMEBOL',
+  argentina: 'CONMEBOL',
+  uruguay: 'CONMEBOL',
+  chile: 'CONMEBOL',
+  colombia: 'CONMEBOL',
+  peru: 'CONMEBOL',
+  ecuador: 'CONMEBOL',
+  paraguay: 'CONMEBOL',
+  bolivia: 'CONMEBOL',
+  venezuela: 'CONMEBOL',
+  // UEFA
+  england: 'UEFA',
+  scotland: 'UEFA',
+  wales: 'UEFA',
+  'northern ireland': 'UEFA',
+  'republic of ireland': 'UEFA',
+  ireland: 'UEFA',
+  france: 'UEFA',
+  germany: 'UEFA',
+  spain: 'UEFA',
+  italy: 'UEFA',
+  portugal: 'UEFA',
+  netherlands: 'UEFA',
+  belgium: 'UEFA',
+  croatia: 'UEFA',
+  denmark: 'UEFA',
+  sweden: 'UEFA',
+  norway: 'UEFA',
+  switzerland: 'UEFA',
+  austria: 'UEFA',
+  poland: 'UEFA',
+  'czech republic': 'UEFA',
+  czechia: 'UEFA',
+  slovakia: 'UEFA',
+  hungary: 'UEFA',
+  romania: 'UEFA',
+  serbia: 'UEFA',
+  ukraine: 'UEFA',
+  turkey: 'UEFA',
+  greece: 'UEFA',
+  'bosnia and herzegovina': 'UEFA',
+  bosnia: 'UEFA',
+  slovenia: 'UEFA',
+  albania: 'UEFA',
+  'north macedonia': 'UEFA',
+  macedonia: 'UEFA',
+  finland: 'UEFA',
+  iceland: 'UEFA',
+  georgia: 'UEFA',
+  armenia: 'UEFA',
+  azerbaijan: 'UEFA',
+  kazakhstan: 'UEFA',
+  israel: 'UEFA',
+  cyprus: 'UEFA',
+  malta: 'UEFA',
+  luxembourg: 'UEFA',
+  andorra: 'UEFA',
+  'faroe islands': 'UEFA',
+  gibraltar: 'UEFA',
+  moldova: 'UEFA',
+  montenegro: 'UEFA',
+  kosovo: 'UEFA',
+  latvia: 'UEFA',
+  lithuania: 'UEFA',
+  estonia: 'UEFA',
+  bulgaria: 'UEFA',
+  belarus: 'UEFA',
+  russia: 'UEFA',
+  // CAF
+  egypt: 'CAF',
+  morocco: 'CAF',
+  senegal: 'CAF',
+  nigeria: 'CAF',
+  ghana: 'CAF',
+  'ivory coast': 'CAF',
+  "cote d ivoire": 'CAF',
+  cameroon: 'CAF',
+  algeria: 'CAF',
+  tunisia: 'CAF',
+  'south africa': 'CAF',
+  mali: 'CAF',
+  'burkina faso': 'CAF',
+  'dr congo': 'CAF',
+  congo: 'CAF',
+  kenya: 'CAF',
+  uganda: 'CAF',
+  zambia: 'CAF',
+  zimbabwe: 'CAF',
+  angola: 'CAF',
+  guinea: 'CAF',
+  gabon: 'CAF',
+  // AFC
+  japan: 'AFC',
+  'south korea': 'AFC',
+  korea: 'AFC',
+  australia: 'AFC',
+  'saudi arabia': 'AFC',
+  iran: 'AFC',
+  iraq: 'AFC',
+  qatar: 'AFC',
+  uae: 'AFC',
+  'united arab emirates': 'AFC',
+  china: 'AFC',
+  'china pr': 'AFC',
+  uzbekistan: 'AFC',
+  jordan: 'AFC',
+  bahrain: 'AFC',
+  oman: 'AFC',
+  kuwait: 'AFC',
+  thailand: 'AFC',
+  vietnam: 'AFC',
+  indonesia: 'AFC',
+  india: 'AFC',
+  // OFC
+  'new zealand': 'OFC',
+  fiji: 'OFC',
+  'papua new guinea': 'OFC',
+  'solomon islands': 'OFC',
+  tahiti: 'OFC',
+  'new caledonia': 'OFC',
+}
+
+/** Infer FIFA confederation from a national team name or short code. */
+export function confederationForNationalTeam(input: {
+  name?: string | null
+  shortName?: string | null
+  slug?: string | null
+}): ConfederationId | null {
+  const candidates = [input.slug, input.shortName, input.name]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .map(normalizeNationKey)
+  for (const key of candidates) {
+    const hit = NATION_TO_CONFEDERATION[key]
+    if (hit) return hit
+  }
+  // Soft match: “United States of America”, “Korea Republic”, etc.
+  for (const key of candidates) {
+    for (const [nation, confederation] of Object.entries(NATION_TO_CONFEDERATION)) {
+      if (nation.length < 4) continue
+      if (key === nation || key.includes(nation) || (key.length >= 4 && nation.includes(key))) {
+        return confederation
+      }
+    }
+  }
+  return null
+}
+
+export function leagueIdForConfederation(confederation: ConfederationId): LeagueId {
+  return CONFEDERATION_LEAGUE_ID[confederation]
+}
+
+/**
+ * Subtitle under a team name: confederation for national sides (CONCACAF),
+ * otherwise the competition short code (EPL, UCL, FR for friendlies fixtures).
+ */
+export function teamSubtitleLabel(team: {
+  name: string
+  shortName?: string
+  leagueId: LeagueId
+  kind?: 'club' | 'national'
+}): string {
+  const national =
+    team.kind === 'national' || (team.kind == null && isInternationalLeague(team.leagueId))
+  if (national) {
+    const confederation = confederationForNationalTeam({
+      name: team.name,
+      shortName: team.shortName,
+    })
+    if (confederation) return confederation
+  }
+  return getLeague(team.leagueId).short
+}
+
+/** League to open when tapping a national-team association subtitle. */
+export function teamSubtitleLeagueId(team: {
+  name: string
+  shortName?: string
+  leagueId: LeagueId
+  kind?: 'club' | 'national'
+}): LeagueId {
+  const national =
+    team.kind === 'national' || (team.kind == null && isInternationalLeague(team.leagueId))
+  if (national) {
+    const confederation = confederationForNationalTeam({
+      name: team.name,
+      shortName: team.shortName,
+    })
+    if (confederation) return leagueIdForConfederation(confederation)
+  }
+  return team.leagueId
+}
+
 const LEAGUE_IMPORTANCE_RANK = new Map(LEAGUES.map((league, index) => [league.id, index]))
 
 /** Lower = more important. Unknown ids sort last. */

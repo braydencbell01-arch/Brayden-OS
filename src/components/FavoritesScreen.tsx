@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { missingShort } from '../lib/display'
-import { LEAGUES, getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
+import { LEAGUES, getLeague, isInternationalLeague, teamSubtitleLabel, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { FavoriteStar } from './FavoriteStar'
 import { PlayerAvatar } from './PlayerAvatar'
@@ -193,7 +193,8 @@ export function FavoritesScreen({
                       ) : (
                         <ul className="flex flex-col gap-2">
                           {favorites.teams.map((team) => {
-                            const league = getLeague(team.leagueId)
+                            const subtitle = teamSubtitleLabel(team)
+                            const subtitleLeagueId = teamSubtitleLeagueId(team)
                             return (
                               <li key={team.id}>
                                 <div className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3">
@@ -213,10 +214,10 @@ export function FavoritesScreen({
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => onOpenLeague(team.leagueId)}
+                                        onClick={() => onOpenLeague(subtitleLeagueId)}
                                         className="profile-link mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                       >
-                                        {league.short}
+                                        {subtitle}
                                       </button>
                                     </span>
                                     <button

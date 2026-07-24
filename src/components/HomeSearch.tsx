@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { MISSING_LONG, missingShort } from '../lib/display'
-import { LEAGUES, getLeague, type LeagueId } from '../lib/leagues'
+import { LEAGUES, getLeague, teamSubtitleLabel, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam } from '../lib/favorites'
 import type { Match } from '../lib/matches'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -302,7 +302,7 @@ export function HomeSearch({
                         <ResultButton
                           key={team.id}
                           label={team.name}
-                          meta={getLeague(team.leagueId).short}
+                          meta={teamSubtitleLabel(team)}
                           onClick={() => {
                             onOpenTeam(team)
                             clearAndClose()
@@ -365,7 +365,7 @@ export function HomeSearch({
                     <ResultButton
                       key={hit.team.id}
                       label={hit.team.name}
-                      meta={getLeague(hit.team.leagueId).short}
+                      meta={teamSubtitleLabel(hit.team)}
                       onClick={() => void handleHit(hit)}
                     />
                   ))}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MISSING_LONG } from '../lib/display'
-import { getLeague, domesticCupsForCountry, isInternationalLeague, type LeagueId } from '../lib/leagues'
+import { getLeague, domesticCupsForCountry, isInternationalLeague, confederationForNationalTeam, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   formatSideRecord,
@@ -333,10 +333,17 @@ export function TeamProfileScreen({
         eyebrow={
           <button
             type="button"
-            onClick={() => onOpenLeague(team.leagueId)}
+            onClick={() => onOpenLeague(isNational ? teamSubtitleLeagueId(team) : team.leagueId)}
             className="profile-link text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
-            {isNational ? `National team · ${league.name}` : league.name}
+            {isNational
+              ? `National team · ${
+                  confederationForNationalTeam({
+                    name: team.name,
+                    shortName: team.shortName,
+                  }) || league.name
+                }`
+              : league.name}
           </button>
         }
         title={displayName}
@@ -345,7 +352,12 @@ export function TeamProfileScreen({
             {team.shortName}
             {facts.data?.country ? ` · ${facts.data.country}` : ` · ${league.country}`}
             {isNational
-              ? ' · International'
+              ? ` · ${
+                  confederationForNationalTeam({
+                    name: team.name,
+                    shortName: team.shortName,
+                  }) || 'International'
+                }`
               : standing
                 ? ` · #${standing.rank}${
                     standing.group ? ` · ${standing.group}` : ''
