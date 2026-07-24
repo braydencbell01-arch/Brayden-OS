@@ -132,8 +132,9 @@ export function StatsScreen({
                               {player.name}
                             </span>
                             <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                              {player.teamName || getLeague(player.leagueId).short}
-                              {player.position ? ` · ${player.position}` : ''}
+                              {[player.teamName, player.citizenship, player.position]
+                                .filter(Boolean)
+                                .join(' · ') || getLeague(player.leagueId).short}
                             </span>
                           </span>
                         </span>

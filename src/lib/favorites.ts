@@ -21,6 +21,8 @@ export type FavoritePlayer = {
   jerseyUrl?: string
   jersey?: string
   position?: string
+  /** Player nationality / citizenship (not the club league country). */
+  citizenship?: string
   leagueId: LeagueId
   teamId?: string
   teamName?: string
@@ -152,6 +154,35 @@ export function useFavorites() {
     })
   }, [])
 
+  /** Refresh stored fields for an already-favorited player (e.g. citizenship once profile loads). */
+  const patchPlayer = useCallback((player: FavoritePlayer) => {
+    setState((prev) => {
+      const index = prev.players.findIndex((item) => item.id === player.id)
+      if (index < 0) return prev
+      const current = prev.players[index]!
+      const merged: FavoritePlayer = { ...current, ...player, id: current.id }
+      if (
+        merged.name === current.name &&
+        merged.shortName === current.shortName &&
+        merged.photoUrl === current.photoUrl &&
+        merged.jerseyUrl === current.jerseyUrl &&
+        merged.jersey === current.jersey &&
+        merged.position === current.position &&
+        merged.citizenship === current.citizenship &&
+        merged.leagueId === current.leagueId &&
+        merged.teamId === current.teamId &&
+        merged.teamName === current.teamName
+      ) {
+        return prev
+      }
+      const players = prev.players.slice()
+      players[index] = merged
+      const next = { ...prev, players }
+      writeStorage(next)
+      return next
+    })
+  }, [])
+
   return {
     leagues: state.leagues,
     teams: state.teams,
@@ -165,6 +196,7 @@ export function useFavorites() {
     toggleLeague,
     toggleTeam,
     togglePlayer,
+    patchPlayer,
   }
 }
 

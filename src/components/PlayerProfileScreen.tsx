@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode, Fragment } from 'react'
 import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
-import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
+import { isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueIdFromEspnCode } from '../lib/search'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
@@ -540,16 +540,18 @@ export function PlayerProfileScreen({
   favorites,
   onBack,
   onOpenTeam,
-  onOpenLeague,
+  onOpenLeague: _onOpenLeague,
   reduce,
 }: {
   player: PlayerNavRef
   favorites: FavoritesApi
   onBack: () => void
   onOpenTeam?: (team: FavoriteTeam) => void
+  /** Kept for callers; league country no longer shown in the header subtitle. */
   onOpenLeague?: (id: LeagueId) => void
   reduce: boolean | null
 }) {
+  void _onOpenLeague
   const {
     profile,
     loading,
@@ -566,7 +568,6 @@ export function PlayerProfileScreen({
     statsLoading,
   } = usePlayerProfile(player.leagueId, player.id)
   const displayLeagueId = profile?.leagueId || player.leagueId
-  const league = getLeague(displayLeagueId)
   const [openSection, setOpenSection] = useState<
     'stats' | 'ratings' | 'career' | 'transfers' | null
   >(null)
@@ -597,6 +598,7 @@ export function PlayerProfileScreen({
     jerseyUrl: profile?.jerseyUrl || player.jerseyUrl,
     jersey: profile?.jersey || player.jersey,
     position: profile?.position || player.position,
+    citizenship: profile?.citizenship || profile?.represents || undefined,
     leagueId: profile?.leagueId || player.leagueId,
     teamId: profile?.teamId || player.teamId,
     teamName: profile?.teamName || player.teamName,
@@ -604,6 +606,7 @@ export function PlayerProfileScreen({
 
   const favorited = favorites.isPlayerFavorite(player.id)
   const represents = profile?.represents || profile?.citizenship || null
+  const nationality = profile?.citizenship || profile?.represents || null
   const positionLabel = profile?.position || player.position || null
   const teamId = profile?.teamId || player.teamId
   const teamName = profile?.teamName || player.teamName
@@ -613,6 +616,23 @@ export function PlayerProfileScreen({
     profile?.nationalHistory.find((stint) => stint.isActive) || profile?.nationalHistory[0]
   const alsoPlaysFor =
     nationalSide && teamId && nationalSide.teamId !== teamId ? nationalSide : null
+
+  useEffect(() => {
+    if (!favorited || !profile) return
+    favorites.patchPlayer(favoritePayload)
+    // Only sync when profile identity / nationality fields settle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: avoid looping on favorites object identity
+  }, [
+    favorited,
+    profile?.id,
+    profile?.citizenship,
+    profile?.represents,
+    profile?.name,
+    profile?.teamId,
+    profile?.teamName,
+    profile?.position,
+    profile?.leagueId,
+  ])
 
   const openCurrentClub = () => {
     if (!canOpenClub || !teamId || !teamName) return
@@ -720,14 +740,12 @@ export function PlayerProfileScreen({
                   <span className="text-mist/55"> · Active</span>
                 ) : null}
                 {` · ${missingShort(positionLabel)}`}
-                {' · '}
-                {onOpenLeague ? (
-                  <ProfileTextLink onClick={() => onOpenLeague(displayLeagueId)}>
-                    {league.short}
-                  </ProfileTextLink>
-                ) : (
-                  league.short
-                )}
+                {nationality ? (
+                  <>
+                    {' · '}
+                    <span>{missingShort(nationality)}</span>
+                  </>
+                ) : null}
                 {profile.jersey ? ` · #${missingShort(profile.jersey)}` : ''}
               </>
             }

@@ -315,14 +315,24 @@ export function FavoritesScreen({
                                       {player.teamName}
                                     </button>
                                   ) : null}
-                                  <button
-                                    type="button"
-                                    onClick={() => onOpenLeague(player.leagueId)}
-                                    className="profile-link text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                                  >
-                                    {getLeague(player.leagueId).short}
-                                    {` · ${missingShort(player.position)}`}
-                                  </button>
+                                  {player.citizenship || player.position ? (
+                                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70">
+                                      {[
+                                        player.citizenship,
+                                        player.position ? missingShort(player.position) : null,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' · ')}
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenLeague(player.leagueId)}
+                                      className="profile-link text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                    >
+                                      {getLeague(player.leagueId).short}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </li>
