@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 /**
- * Merge full eBay PictureURL sets into Square listings.json by ebay:SKU.
- * Keeps Square as source; cover image stays the current primary when present.
+ * Set listings.json photos from eBay PictureURLs in eBay's exact order.
+ *
+ * Default: REPLACE each listing's images with the eBay set (cover = first eBay photo).
+ * Use --merge to only append missing eBay URLs when Square has fewer photos.
  *
  * Requires: EBAY_APP_ID, EBAY_CERT_ID, EBAY_DEV_ID, EBAY_USER_TOKEN
- * Usage: node jerseydeals/scripts/enrich-listing-images-from-ebay.mjs
+ * Usage:
+ *   node jerseydeals/scripts/enrich-listing-images-from-ebay.mjs
+ *   node jerseydeals/scripts/enrich-listing-images-from-ebay.mjs --merge
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -17,6 +21,7 @@ const APP = process.env.EBAY_APP_ID
 const CERT = process.env.EBAY_CERT_ID
 const DEV = process.env.EBAY_DEV_ID
 const TOKEN = process.env.EBAY_USER_TOKEN
+const MERGE = process.argv.includes('--merge')
 
 if (!APP || !CERT || !DEV || !TOKEN) {
   console.error('Missing eBay secrets (EBAY_APP_ID, EBAY_CERT_ID, EBAY_DEV_ID, EBAY_USER_TOKEN)')
@@ -38,6 +43,7 @@ function ebayIdFromListing(listing) {
   return ''
 }
 
+/** PictureURL nodes in document order — this is eBay's gallery order. */
 async function fetchEbayPictures(itemId) {
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <GetItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">
@@ -88,8 +94,10 @@ async function main() {
   const data = JSON.parse(readFileSync(LISTINGS_PATH, 'utf8'))
   const listings = data.listings || []
   let enriched = 0
-  let added = 0
+  let changed = 0
   let failed = 0
+
+  console.log(`Mode: ${MERGE ? 'merge gaps' : 'replace with eBay order'}`)
 
   const concurrency = 4
   for (let i = 0; i < listings.length; i += concurrency) {
@@ -101,23 +109,34 @@ async function main() {
         try {
           const ebayPics = await fetchEbayPictures(ebayId)
           if (!ebayPics.length) return
-          const existing = listing.images?.length
-            ? listing.images
-            : listing.image
-              ? [listing.image]
-              : []
-          // If Square already has a full (or fuller) set, keep it — avoid duplicate CDN+eBay URLs.
-          if (existing.length >= ebayPics.length) return
-          const before = existing.length
-          const merged = mergeImages(existing, ebayPics)
-          const primary = listing.image && merged.includes(listing.image) ? listing.image : merged[0]
-          listing.image = primary
-          listing.images =
-            primary && merged[0] !== primary
-              ? [primary, ...merged.filter((u) => u !== primary)]
-              : merged
           enriched += 1
-          added += Math.max(0, merged.length - before)
+
+          if (MERGE) {
+            const existing = listing.images?.length
+              ? listing.images
+              : listing.image
+                ? [listing.image]
+                : []
+            if (existing.length >= ebayPics.length) return
+            const merged = mergeImages(existing, ebayPics)
+            listing.image = listing.image && merged.includes(listing.image) ? listing.image : merged[0]
+            listing.images =
+              listing.image && merged[0] !== listing.image
+                ? [listing.image, ...merged.filter((u) => u !== listing.image)]
+                : merged
+            changed += 1
+            return
+          }
+
+          // Replace: exact eBay gallery order (no Square CDN interleave).
+          const same =
+            Array.isArray(listing.images) &&
+            listing.images.length === ebayPics.length &&
+            listing.images.every((u, idx) => u === ebayPics[idx])
+          if (same && listing.image === ebayPics[0]) return
+          listing.image = ebayPics[0]
+          listing.images = ebayPics
+          changed += 1
         } catch (err) {
           failed += 1
           console.warn(`eBay photos skip ${ebayId}: ${err.message}`)
@@ -129,7 +148,7 @@ async function main() {
 
   data.syncedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
   writeFileSync(LISTINGS_PATH, `${JSON.stringify(data, null, 2)}\n`)
-  console.log(`Done. listings_enriched=${enriched} photos_added=${added} failed=${failed}`)
+  console.log(`Done. fetched=${enriched} updated=${changed} failed=${failed}`)
 }
 
 main().catch((err) => {
