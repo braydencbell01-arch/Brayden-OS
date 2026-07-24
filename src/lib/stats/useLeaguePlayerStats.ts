@@ -25,7 +25,7 @@ export function useLeaguePlayerStats(leagueId: LeagueId, enabled: boolean) {
     setLoading(true)
     setError(null)
 
-    fetchLeaguePlayerStatsOverview(leagueId, 5, selectedSeason ?? undefined)
+    fetchLeaguePlayerStatsOverview(leagueId, 50, selectedSeason ?? undefined)
       .then((overview) => {
         if (cancelled) return
         setData(overview)

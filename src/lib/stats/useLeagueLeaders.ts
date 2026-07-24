@@ -25,7 +25,7 @@ export function useLeagueLeaders(leagueId: LeagueId, enabled: boolean) {
     setLoading(true)
     setError(null)
 
-    fetchLeagueLeaders(leagueId, 8, selectedSeason ?? undefined)
+    fetchLeagueLeaders(leagueId, 20, selectedSeason ?? undefined)
       .then((leaders) => {
         if (cancelled) return
         setData(leaders)

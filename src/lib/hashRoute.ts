@@ -5,6 +5,7 @@ import type { PlayerNavRef } from '../components/PlayerProfileScreen'
 export type HashRoute =
   | { kind: 'tab'; tab: 'home' | 'stats' | 'leagues' | 'fantasy' | 'favorites' }
   | { kind: 'league'; leagueId: LeagueId }
+  | { kind: 'league-stats'; leagueId: LeagueId }
   | { kind: 'team'; team: FavoriteTeam }
   | { kind: 'player'; player: PlayerNavRef }
   | { kind: 'compare'; a?: string; b?: string }
@@ -23,6 +24,7 @@ function qs(params: Record<string, string | undefined>): string {
 export function buildHash(route: Exclude<HashRoute, null>): string {
   if (route.kind === 'tab') return `#tab=${route.tab}`
   if (route.kind === 'league') return `#league=${route.leagueId}`
+  if (route.kind === 'league-stats') return `#league-stats=${route.leagueId}`
   if (route.kind === 'team') {
     return `#team=${qs({
       id: route.team.id,
@@ -78,6 +80,9 @@ export function parseHash(hash: string): HashRoute {
     ) {
       return { kind: 'tab', tab }
     }
+  }
+  if (raw.startsWith('league-stats=')) {
+    return { kind: 'league-stats', leagueId: decodeURIComponent(raw.slice('league-stats='.length)) as LeagueId }
   }
   if (raw.startsWith('league=')) {
     return { kind: 'league', leagueId: decodeURIComponent(raw.slice(7)) as LeagueId }

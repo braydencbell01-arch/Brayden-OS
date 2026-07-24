@@ -819,7 +819,7 @@ export async function fetchLeaguePlayerStatsOverview(
   const nowYear = new Date().getUTCFullYear()
   const yearsToTry =
     seasonYear != null ? [seasonYear] : [nowYear, nowYear - 1, nowYear - 2]
-  const perCategoryCap = Math.max(1, Math.min(limit, 10))
+  const perCategoryCap = Math.max(1, Math.min(limit, 50))
 
   let payload: EspnCoreLeadersResponse | null = null
   let season = seasonYear ?? nowYear
@@ -828,7 +828,7 @@ export async function fetchLeaguePlayerStatsOverview(
     const url = new URL(
       `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`,
     )
-    url.searchParams.set('limit', '50')
+    url.searchParams.set('limit', String(Math.max(50, limit)))
     const res = await fetch(url)
     if (!res.ok) continue
     const data = (await res.json()) as EspnCoreLeadersResponse

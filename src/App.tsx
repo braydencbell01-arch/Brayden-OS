@@ -5,6 +5,7 @@ import { CalendarStrip } from './components/CalendarStrip'
 import { FavoritesScreen } from './components/FavoritesScreen'
 import { HomeSearch } from './components/HomeSearch'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
+import { LeagueStatsHubScreen } from './components/LeagueStatsHubScreen'
 import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
 import { FantasyScreen } from './components/fantasy/FantasyScreen'
@@ -28,6 +29,7 @@ import { useTodayKey } from './lib/useToday'
 type Screen =
   | BottomTab
   | 'league-profile'
+  | 'league-stats'
   | 'team'
   | 'player'
 
@@ -345,6 +347,8 @@ export default function App() {
   const teamReturnPlayerRef = useRef<PlayerNavRef | null>(null)
   /** League → Team keeps the origin league so Back can return past a nested league hop. */
   const teamOriginLeagueRef = useRef<LeagueId | null>(null)
+  /** Restore league profile vs stats hub when Back leaves team/player. */
+  const leagueReturnModeRef = useRef<'profile' | 'stats'>('profile')
   /** Skip applying hash we just wrote from in-app navigation. */
   const writingHashRef = useRef(false)
   const todayKey = useTodayKey()
@@ -443,8 +447,10 @@ export default function App() {
       teamOriginLeagueRef.current = null
       setActiveTeam(null)
       setActivePlayer(null)
+      leagueReturnModeRef.current = 'profile'
     } else if (screen === 'team' && activeTeam) {
       // Team → league: keep the club so Back returns here instead of the tab.
+      // Preserve leagueReturnModeRef so team → Back can still hit the stats hub.
       leagueReturnTeamRef.current = activeTeam
       leagueReturnPlayerRef.current = null
       setActiveTeam(null)
@@ -462,11 +468,35 @@ export default function App() {
     } else {
       setActiveTeam(null)
       setActivePlayer(null)
+      leagueReturnModeRef.current = 'profile'
     }
     setShowSettings(false)
     setActiveLeagueId(id)
     setScreen('league-profile')
     writeHash({ kind: 'league', leagueId: id })
+    window.scrollTo({ top: 0, behavior: 'auto' })
+  }
+
+  const openLeagueStats = (id: LeagueId) => {
+    if (isTabScreen(screen)) {
+      setReturnTab(screen)
+      setActiveTab(screen)
+      teamStackRef.current = []
+      leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
+      teamOriginLeagueRef.current = null
+      setActiveTeam(null)
+      setActivePlayer(null)
+    } else {
+      setActiveTeam(null)
+      setActivePlayer(null)
+    }
+    setShowSettings(false)
+    setActiveLeagueId(id)
+    setScreen('league-stats')
+    leagueReturnModeRef.current = 'stats'
+    writeHash({ kind: 'league-stats', leagueId: id })
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
 
@@ -493,6 +523,8 @@ export default function App() {
         setActiveTab(screen)
       } else if (screen === 'league-profile' && activeLeagueId) {
         teamOriginLeagueRef.current = activeLeagueId
+      } else if (screen === 'league-stats' && activeLeagueId) {
+        teamOriginLeagueRef.current = activeLeagueId
       }
     }
     setShowSettings(false)
@@ -515,6 +547,8 @@ export default function App() {
         setActiveTab(screen)
       } else if (screen === 'league-profile' && activeLeagueId) {
         teamOriginLeagueRef.current = activeLeagueId
+      } else if (screen === 'league-stats' && activeLeagueId) {
+        teamOriginLeagueRef.current = activeLeagueId
       }
     }
     setShowSettings(false)
@@ -535,6 +569,8 @@ export default function App() {
       writeHash({ kind: 'tab', tab: screen })
     } else if (screen === 'league-profile' && activeLeagueId) {
       writeHash({ kind: 'league', leagueId: activeLeagueId })
+    } else if (screen === 'league-stats' && activeLeagueId) {
+      writeHash({ kind: 'league-stats', leagueId: activeLeagueId })
     } else if (screen === 'team' && activeTeam) {
       writeHash({ kind: 'team', team: activeTeam })
     } else if (screen === 'player' && activePlayer) {
@@ -578,10 +614,28 @@ export default function App() {
       leagueReturnPlayerRef.current = null
       teamReturnPlayerRef.current = null
       teamOriginLeagueRef.current = null
+      leagueReturnModeRef.current = 'profile'
       setActiveTeam(null)
       setActivePlayer(null)
       setActiveLeagueId(route.leagueId)
       setScreen('league-profile')
+      return
+    }
+
+    if (route.kind === 'league-stats') {
+      if (!LEAGUES.some((l) => l.id === route.leagueId)) return
+      teamStackRef.current = []
+      leagueReturnTeamRef.current = null
+      leagueReturnPlayerRef.current = null
+      teamReturnPlayerRef.current = null
+      teamOriginLeagueRef.current = null
+      leagueReturnModeRef.current = 'stats'
+      setActiveTeam(null)
+      setActivePlayer(null)
+      setActiveLeagueId(route.leagueId)
+      setReturnTab('stats')
+      setActiveTab('stats')
+      setScreen('league-stats')
       return
     }
 
@@ -670,8 +724,13 @@ export default function App() {
     setActiveTeam(null)
     setActivePlayer(null)
     if (activeLeagueId) {
-      setScreen('league-profile')
-      writeHash({ kind: 'league', leagueId: activeLeagueId })
+      if (leagueReturnModeRef.current === 'stats') {
+        setScreen('league-stats')
+        writeHash({ kind: 'league-stats', leagueId: activeLeagueId })
+      } else {
+        setScreen('league-profile')
+        writeHash({ kind: 'league', leagueId: activeLeagueId })
+      }
       return
     }
     leagueReturnTeamRef.current = null
@@ -716,7 +775,7 @@ export default function App() {
   }
 
   const navActive: BottomTab =
-    screen === 'league-profile'
+    screen === 'league-profile' || screen === 'league-stats'
       ? activeTab
       : screen === 'team' || screen === 'player'
         ? activeTab
@@ -787,6 +846,23 @@ export default function App() {
               reduce={reduce}
             />
           </motion.div>
+        ) : screen === 'league-stats' && activeLeague ? (
+          <motion.div
+            key={`league-stats-${activeLeague.id}`}
+            initial={reduce ? false : { opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduce ? undefined : { opacity: 0, x: 40 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <LeagueStatsHubScreen
+              league={activeLeague}
+              favorites={favorites}
+              onBack={closeLeagueProfile}
+              onOpenTeam={openTeam}
+              onOpenPlayer={openPlayer}
+              reduce={reduce}
+            />
+          </motion.div>
         ) : screen === 'favorites' ? (
           <motion.div
             key="favorites"
@@ -829,7 +905,7 @@ export default function App() {
             <StatsScreen
               favorites={favorites}
               matches={matches}
-              onOpenLeague={openLeague}
+              onOpenLeagueStats={openLeagueStats}
               onOpenPlayer={openPlayer}
               reduce={reduce}
               initialTab={statsInitialTab}

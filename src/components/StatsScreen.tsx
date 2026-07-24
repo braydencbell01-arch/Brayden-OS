@@ -15,14 +15,14 @@ type StatsTab = 'pulse' | 'compare' | 'predict' | 'leagues'
 export function StatsScreen({
   favorites,
   matches,
-  onOpenLeague,
+  onOpenLeagueStats,
   onOpenPlayer,
   reduce,
   initialTab = 'pulse',
 }: {
   favorites: FavoritesApi
   matches: Match[]
-  onOpenLeague: (id: LeagueId) => void
+  onOpenLeagueStats: (id: LeagueId) => void
   onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
   initialTab?: StatsTab
@@ -133,7 +133,7 @@ export function StatsScreen({
 
             <section className="border border-white/10 bg-white/[0.03] px-4 py-4">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
-                Your leagues · open for leaders
+                Your leagues · open for stats
               </h2>
               <div className="mt-3 flex flex-col gap-2">
                 {(favoriteLeagues.length > 0 ? favoriteLeagues : leagues.slice(0, 6)).map(
@@ -141,13 +141,13 @@ export function StatsScreen({
                     <button
                       key={league.id}
                       type="button"
-                      onClick={() => onOpenLeague(league.id)}
+                      onClick={() => onOpenLeagueStats(league.id)}
                       className="flex items-center justify-between border border-white/10 px-3 py-2.5 text-left hover:border-lime/40"
                     >
                       <span>
                         <span className="block font-display text-2xl text-cream">{league.name}</span>
                         <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                          Standings · Player stats · xG
+                          Leaders · Player boards · Table
                         </span>
                       </span>
                       <span className="text-lime">→</span>
@@ -170,17 +170,20 @@ export function StatsScreen({
 
         {tab === 'leagues' ? (
           <div className="flex flex-col gap-2">
+            <p className="mb-1 text-sm text-mist/75">
+              Open a competition for stats only — leaders, boards, and tables by season.
+            </p>
             {LEAGUES.map((league) => (
               <button
                 key={league.id}
                 type="button"
-                onClick={() => onOpenLeague(league.id)}
+                onClick={() => onOpenLeagueStats(league.id)}
                 className="flex items-center justify-between border border-white/10 bg-pitch/40 px-3 py-3 text-left hover:border-lime/40"
               >
                 <span>
                   <span className="block font-display text-2xl text-cream">{league.name}</span>
                   <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                    {league.country}
+                    {league.country} · Stats hub
                   </span>
                 </span>
                 <span className="text-lime">→</span>
