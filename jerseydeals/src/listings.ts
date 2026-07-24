@@ -350,18 +350,24 @@ export function sortListings(listings: Listing[], sort: SortId): Listing[] {
     case 'name':
       return copy.sort((a, b) => shortTitle(a.title).localeCompare(shortTitle(b.title)))
     case 'newest':
+      // Catalog sync order is oldest→newest in some feeds; reverse so newest appears first.
+      return copy.reverse()
     case 'featured':
     default:
       return copy
   }
 }
 
-/** Drop exact duplicate titles so the grid doesn't show twin cards. */
+/** Drop true clones only — same title + price + checkout — so distinct SKUs stay visible. */
 export function dedupeListingsByTitle(listings: Listing[]): Listing[] {
   const seen = new Set<string>()
   const out: Listing[] = []
   for (const item of listings) {
-    const key = item.title.trim().toLowerCase()
+    const key = [
+      item.title.trim().toLowerCase(),
+      item.price ?? '',
+      item.checkoutUrl ?? item.productUrl ?? item.url ?? item.id,
+    ].join('|')
     if (seen.has(key)) continue
     seen.add(key)
     out.push(item)

@@ -524,7 +524,7 @@ function QuickViewModal({
                 onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'quick_view_buy' })}
                 className="flex w-full items-center justify-center border border-navy/20 px-4 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-navy transition hover:border-navy"
               >
-                Buy now on Square
+                Buy now{item.source === 'ebay' ? ' on eBay' : ' on Square'}
               </a>
             ) : null}
             <button
@@ -848,7 +848,7 @@ export default function App() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
       {/* Promo bar — always on top */}
-      <div className="fixed inset-x-0 top-0 z-50 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-crimson px-4 py-2 text-center font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-x-2 overflow-x-auto bg-crimson px-3 py-2 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cream sm:gap-x-3 sm:px-4 sm:text-xs sm:tracking-[0.18em]">
         <span>{PROMO_BAR}</span>
         <span className="text-cream/40" aria-hidden>
           ·
@@ -1077,7 +1077,7 @@ export default function App() {
         </div>
       </header>
 
-      <main id="top" className="pb-20 md:pb-0">
+      <main id="top" className="pb-32 md:pb-0">
         {/* Hero */}
         <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
@@ -1136,7 +1136,7 @@ export default function App() {
 
           <a
             href="#shop"
-            className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/50 transition hover:text-white"
+            className="absolute bottom-28 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/50 transition hover:text-white md:bottom-6"
             aria-label="Scroll to shop"
           >
             <span className="flex flex-col items-center gap-2">
@@ -1490,7 +1490,7 @@ export default function App() {
               </ul>
             )}
 
-            {catalog && catalog.count > featured.length && (
+            {listings.length > featured.length && (
               <motion.div {...fadeUp(reduce, 0.15)} className="mt-14 flex flex-wrap gap-3">
                 <button
                   type="button"
@@ -1500,7 +1500,7 @@ export default function App() {
                   }}
                   className="inline-flex border border-white/30 px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white hover:bg-white/5"
                 >
-                  Browse all {catalog.count} listings
+                  Browse all {listings.length} listings
                 </button>
                 <button
                   type="button"
@@ -2242,11 +2242,15 @@ export default function App() {
             <ul className="mt-10 divide-y divide-navy/10 border-y border-navy/10">
               {FAQ.map((item, index) => {
                 const open = openFaq === index
+                const panelId = `faq-panel-${index}`
+                const buttonId = `faq-button-${index}`
                 return (
                   <li key={item.q}>
                     <button
                       type="button"
+                      id={buttonId}
                       aria-expanded={open}
+                      aria-controls={panelId}
                       onClick={() => {
                         setOpenFaq(open ? null : index)
                         track('faq_toggle', { question: item.q, open: !open })
@@ -2260,7 +2264,11 @@ export default function App() {
                         {open ? '−' : '+'}
                       </span>
                     </button>
-                    {open ? <p className="pb-5 leading-relaxed text-muted">{item.a}</p> : null}
+                    {open ? (
+                      <p id={panelId} role="region" aria-labelledby={buttonId} className="pb-5 leading-relaxed text-muted">
+                        {item.a}
+                      </p>
+                    ) : null}
                   </li>
                 )
               })}
@@ -2353,7 +2361,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-navy-deep py-14 text-white/60">
+      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-36 text-white/60 md:pb-14">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
@@ -2392,9 +2400,16 @@ export default function App() {
                 </a>
               </li>
               <li>
-                <a href="#shop" className="hover:text-white">
+                <button
+                  type="button"
+                  onClick={() => {
+                    track('cta_click', { place: 'footer_youth' })
+                    goInventory({ audience: 'Youth', reset: true })
+                  }}
+                  className="hover:text-white"
+                >
                   Youth sizes
-                </a>
+                </button>
               </li>
               <li>
                 <a href="#size-guide" className="hover:text-white">
