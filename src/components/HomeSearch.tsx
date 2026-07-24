@@ -16,6 +16,9 @@ import {
   type SearchHit,
   type SearchPlayerHit,
 } from '../lib/search'
+import { teamLogoUrl } from '../lib/stats/branding'
+import { EntityLogo } from './EntityLogo'
+import { LeagueLogoMark } from './LeagueLogoMark'
 
 const EMPTY_HITS: GroupedSearchHits = { leagues: [], teams: [], players: [] }
 
@@ -40,10 +43,12 @@ function ResultButton({
   label,
   meta,
   onClick,
+  leading,
 }: {
   label: string
   meta: string
   onClick: () => void
+  leading?: ReactNode
 }) {
   return (
     <li>
@@ -52,10 +57,13 @@ function ResultButton({
         onClick={onClick}
         className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
       >
-        <span className="min-w-0">
-          <span className="profile-link block truncate text-sm font-semibold text-cream">{label}</span>
-          <span className="block truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
-            {meta}
+        <span className="flex min-w-0 items-center gap-2.5">
+          {leading}
+          <span className="min-w-0">
+            <span className="profile-link block truncate text-sm font-semibold text-cream">{label}</span>
+            <span className="block truncate text-[0.65rem] uppercase tracking-[0.12em] text-mist/60">
+              {meta}
+            </span>
           </span>
         </span>
         <span className="shrink-0 text-lime">→</span>
@@ -303,6 +311,9 @@ export function HomeSearch({
                           key={team.id}
                           label={team.name}
                           meta={teamSubtitleLabel(team)}
+                          leading={
+                            <EntityLogo name={team.name} src={teamLogoUrl(team.id)} size="sm" />
+                          }
                           onClick={() => {
                             onOpenTeam(team)
                             clearAndClose()
@@ -317,6 +328,9 @@ export function HomeSearch({
                         key={league.id}
                         label={league.name}
                         meta={`${league.short} · ${league.country}`}
+                        leading={
+                          <LeagueLogoMark leagueId={league.id} name={league.name} size="sm" />
+                        }
                         onClick={() => {
                           onOpenLeague(league.id)
                           clearAndClose()
@@ -353,6 +367,13 @@ export function HomeSearch({
                       key={hit.league.id}
                       label={hit.league.name}
                       meta={`${hit.league.short} · ${hit.league.country}`}
+                      leading={
+                        <LeagueLogoMark
+                          leagueId={hit.league.id}
+                          name={hit.league.name}
+                          size="sm"
+                        />
+                      }
                       onClick={() => void handleHit(hit)}
                     />
                   ))}
@@ -366,6 +387,13 @@ export function HomeSearch({
                       key={hit.team.id}
                       label={hit.team.name}
                       meta={teamSubtitleLabel(hit.team)}
+                      leading={
+                        <EntityLogo
+                          name={hit.team.name}
+                          src={teamLogoUrl(hit.team.id)}
+                          size="sm"
+                        />
+                      }
                       onClick={() => void handleHit(hit)}
                     />
                   ))}

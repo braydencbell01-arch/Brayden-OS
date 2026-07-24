@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import type { FavoritesApi } from '../lib/favorites'
 import { getLeague, LEAGUES, leaguesInDisplayOrder, type LeagueId } from '../lib/leagues'
+import { leagueAccentColor } from '../lib/stats/branding'
 import type { PlayerNavRef } from './PlayerProfileScreen'
+import { LeagueLogoMark } from './LeagueLogoMark'
+import { PlayerAvatar } from './PlayerAvatar'
 import { PlayerComparePanel } from './PlayerComparePanel'
 import { PredictionGamePanel } from './PredictionGamePanel'
 import type { Match } from '../lib/matches'
@@ -116,14 +119,25 @@ export function StatsScreen({
                         }
                         className="flex w-full items-center justify-between gap-3 text-left"
                       >
-                        <span>
-                          <span className="block text-sm font-semibold text-cream">{player.name}</span>
-                          <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                            {player.teamName || getLeague(player.leagueId).short}
-                            {player.position ? ` · ${player.position}` : ''}
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <PlayerAvatar
+                            name={player.name}
+                            photoUrl={player.photoUrl}
+                            jerseyUrl={player.jerseyUrl}
+                            jersey={player.jersey}
+                            size="sm"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-cream">
+                              {player.name}
+                            </span>
+                            <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                              {player.teamName || getLeague(player.leagueId).short}
+                              {player.position ? ` · ${player.position}` : ''}
+                            </span>
                           </span>
                         </span>
-                        <span className="text-lime">Profile →</span>
+                        <span className="shrink-0 text-lime">Profile →</span>
                       </button>
                     </li>
                   ))}
@@ -137,22 +151,38 @@ export function StatsScreen({
               </h2>
               <div className="mt-3 flex flex-col gap-2">
                 {(favoriteLeagues.length > 0 ? favoriteLeagues : leagues.slice(0, 6)).map(
-                  (league) => (
+                  (league) => {
+                    const accent = leagueAccentColor(league.id)
+                    return (
                     <button
                       key={league.id}
                       type="button"
                       onClick={() => onOpenLeague(league.id)}
-                      className="flex items-center justify-between border border-white/10 px-3 py-2.5 text-left hover:border-lime/40"
+                      className="flex items-center justify-between gap-3 border border-white/10 px-3 py-2.5 text-left hover:border-lime/40"
+                      style={
+                        accent
+                          ? { boxShadow: `inset 3px 0 0 ${accent}` }
+                          : undefined
+                      }
                     >
-                      <span>
-                        <span className="block font-display text-2xl text-cream">{league.name}</span>
-                        <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                          Standings · Player stats · xG
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <LeagueLogoMark
+                          leagueId={league.id}
+                          name={league.name}
+                          size="sm"
+                          ringColor={accent}
+                        />
+                        <span className="min-w-0">
+                          <span className="block font-display text-2xl text-cream">{league.name}</span>
+                          <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                            Standings · Player stats · xG
+                          </span>
                         </span>
                       </span>
-                      <span className="text-lime">→</span>
+                      <span className="shrink-0 text-lime">→</span>
                     </button>
-                  ),
+                    )
+                  },
                 )}
               </div>
             </section>
@@ -170,22 +200,41 @@ export function StatsScreen({
 
         {tab === 'leagues' ? (
           <div className="flex flex-col gap-2">
-            {LEAGUES.map((league) => (
+            {LEAGUES.map((league) => {
+              const accent = leagueAccentColor(league.id)
+              return (
               <button
                 key={league.id}
                 type="button"
                 onClick={() => onOpenLeague(league.id)}
-                className="flex items-center justify-between border border-white/10 bg-pitch/40 px-3 py-3 text-left hover:border-lime/40"
+                className="flex items-center justify-between gap-3 border border-white/10 bg-pitch/40 px-3 py-3 text-left hover:border-lime/40"
+                style={
+                  accent
+                    ? {
+                        borderColor: `${accent}55`,
+                        boxShadow: `inset 3px 0 0 ${accent}`,
+                      }
+                    : undefined
+                }
               >
-                <span>
-                  <span className="block font-display text-2xl text-cream">{league.name}</span>
-                  <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                    {league.country}
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <LeagueLogoMark
+                    leagueId={league.id}
+                    name={league.name}
+                    size="sm"
+                    ringColor={accent}
+                  />
+                  <span className="min-w-0">
+                    <span className="block font-display text-2xl text-cream">{league.name}</span>
+                    <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                      {league.country}
+                    </span>
                   </span>
                 </span>
-                <span className="text-lime">→</span>
+                <span className="shrink-0 text-lime">→</span>
               </button>
-            ))}
+              )
+            })}
           </div>
         ) : null}
       </div>

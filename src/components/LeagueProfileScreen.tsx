@@ -15,6 +15,9 @@ import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
 import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
+import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
+import { leagueAccentColor } from '../lib/stats/branding'
+import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { LeagueExpectedGoalsPanel } from './LeagueExpectedGoalsPanel'
 import { LeagueFormTable } from './LeagueFormTable'
@@ -105,16 +108,23 @@ export function LeagueProfileScreen({
     playerStats.data?.rows[0]?.player ||
     null
 
+  const { logoUrl } = useLeagueLogo(league.id)
+  const accent = leagueAccentColor(league.id)
+
   return (
-    <ProfileShell onBack={onBack} reduce={reduce}>
+    <ProfileShell onBack={onBack} reduce={reduce} accentColor={accent}>
       <ProfileHeader
         reduce={reduce}
+        accentColor={accent}
         star={
           <FavoriteStar
             active={leagueFavorited}
             label={league.name}
             onToggle={() => favorites.toggleLeague(league.id)}
           />
+        }
+        trailing={
+          <EntityLogo name={league.name} src={logoUrl} size="lg" ringColor={accent} />
         }
         eyebrow={league.country}
         title={league.name}

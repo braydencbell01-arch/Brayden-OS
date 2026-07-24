@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
+import { leagueAccentColor } from '../lib/stats/branding'
 import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matches'
+import { LeagueLogoMark } from './LeagueLogoMark'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
@@ -59,6 +61,7 @@ function LeagueDropdown({
   favoriteTeamIds: Set<string>
 }) {
   const league = getLeague(leagueId)
+  const accent = leagueAccentColor(leagueId)
   const panelId = useId()
   const liveCount = matches.filter((match) => match.status === 'live').length
   const hasFavorite = matches.some((match) =>
@@ -71,8 +74,19 @@ function LeagueDropdown({
         'overflow-hidden border bg-pitch/40',
         hasFavorite ? 'border-star/30' : 'border-white/10',
       ].join(' ')}
+      style={
+        accent && !hasFavorite
+          ? { borderColor: `${accent}55` }
+          : undefined
+      }
     >
       <div className="flex w-full items-center gap-2 px-3 py-3">
+        <LeagueLogoMark
+          leagueId={leagueId}
+          name={league.name}
+          size="sm"
+          ringColor={accent}
+        />
         <div className="min-w-0 flex-1">
           <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-cream sm:text-base">
             {hasFavorite ? <FavoriteDot /> : null}

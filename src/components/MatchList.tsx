@@ -5,7 +5,9 @@ import { formatKickoffTime } from '../lib/dates'
 import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { isFavoriteMatch, type Match } from '../lib/matches'
 import type { MatchLineupPlayer } from '../lib/stats/types'
+import { teamLogoUrl } from '../lib/stats/branding'
 import { useMatchDetailStats } from '../lib/stats/useMatchDetailStats'
+import { EntityLogo } from './EntityLogo'
 import { MatchStatsPanel } from './MatchStatsPanel'
 import { PreMatchBriefingPanel } from './PreMatchBriefingPanel'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -79,12 +81,24 @@ function TeamNameButton({
   onOpenTeam?: (team: FavoriteTeam) => void
 }) {
   const team = side === 'home' ? match.home : match.away
-  const align = side === 'home' ? 'text-right' : 'text-left'
+  const align = side === 'home' ? 'justify-end text-right' : 'justify-start text-left'
   const label = missingShort(team.shortName)
+  const logo = (
+    <EntityLogo
+      name={team.name}
+      src={teamLogoUrl(team.id)}
+      size="sm"
+      className="!h-7 !w-7"
+    />
+  )
 
   if (!onOpenTeam) {
     return (
-      <p className={`${align} text-sm font-semibold text-cream sm:text-base`}>{label}</p>
+      <p className={`flex items-center gap-1.5 ${align} text-sm font-semibold text-cream sm:text-base`}>
+        {side === 'away' ? logo : null}
+        <span className="min-w-0 truncate">{label}</span>
+        {side === 'home' ? logo : null}
+      </p>
     )
   }
 
@@ -100,9 +114,11 @@ function TeamNameButton({
           kind: isInternationalLeague(match.leagueId) ? 'national' : 'club',
         })
       }
-      className={`${align} profile-link text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
+      className={`flex items-center gap-1.5 ${align} profile-link text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:text-base`}
     >
-      {label}
+      {side === 'away' ? logo : null}
+      <span className="min-w-0 truncate">{label}</span>
+      {side === 'home' ? logo : null}
     </button>
   )
 }

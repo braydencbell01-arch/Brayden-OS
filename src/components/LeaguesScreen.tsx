@@ -12,6 +12,8 @@ import {
   type LeagueId,
 } from '../lib/leagues'
 import type { FavoritesApi } from '../lib/favorites'
+import { leagueAccentColor } from '../lib/stats/branding'
+import { LeagueLogoMark } from './LeagueLogoMark'
 
 type SectionId =
   | 'favorites'
@@ -414,6 +416,7 @@ function LeagueRow({
   onToggleFavorite: () => void
 }) {
   const badge = formatBadge(league)
+  const accent = leagueAccentColor(league.id)
   return (
     <motion.div
       layout={!reduce}
@@ -428,6 +431,14 @@ function LeagueRow({
         'flex items-stretch border bg-gradient-to-r from-pitch/80 to-turf/40 transition hover:border-lime/50',
         favorited ? 'border-star/35' : 'border-white/10',
       ].join(' ')}
+      style={
+        accent
+          ? {
+              borderColor: favorited ? undefined : `${accent}66`,
+              background: `linear-gradient(90deg, ${accent}22, transparent 55%), linear-gradient(90deg, rgba(11,61,46,0.85), rgba(20,107,74,0.35))`,
+            }
+          : undefined
+      }
     >
       <div className="flex items-center px-2">
         <FavoriteStar active={favorited} label={league.name} onToggle={onToggleFavorite} />
@@ -435,18 +446,26 @@ function LeagueRow({
       <button
         type="button"
         onClick={onOpen}
-        className="group flex min-w-0 flex-1 items-center justify-between px-3 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
+        className="group flex min-w-0 flex-1 items-center justify-between gap-3 px-3 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
       >
-        <span>
-          <span className="profile-link block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
-            {league.name}
-          </span>
-          <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
-            {league.country}
-            {badge ? ` · ${badge}` : ''}
+        <span className="flex min-w-0 items-center gap-3">
+          <LeagueLogoMark
+            leagueId={league.id}
+            name={league.name}
+            size="md"
+            ringColor={accent}
+          />
+          <span className="min-w-0">
+            <span className="profile-link block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
+              {league.name}
+            </span>
+            <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
+              {league.country}
+              {badge ? ` · ${badge}` : ''}
+            </span>
           </span>
         </span>
-        <span className="font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
+        <span className="shrink-0 font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
           Profile →
         </span>
       </button>

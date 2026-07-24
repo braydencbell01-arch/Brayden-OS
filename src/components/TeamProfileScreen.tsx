@@ -28,6 +28,9 @@ import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { useTeamSchedule } from '../lib/stats/useTeamSchedule'
 import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
+import { teamAccentFromFacts } from '../lib/stats/teamFacts'
+import { withAlpha } from '../lib/stats/branding'
+import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -38,10 +41,12 @@ import { TeamSeasonStory } from './TeamSeasonStory'
 import { TeamRosterPanel } from './TeamRosterPanel'
 import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
 
-function FormDot({ result }: { result: TeamFormResult }) {
+function FormDot({ result, accent }: { result: TeamFormResult; accent?: string | null }) {
   const styles =
     result === 'W'
-      ? 'bg-lime text-ink'
+      ? accent
+        ? 'text-ink'
+        : 'bg-lime text-ink'
       : result === 'D'
         ? 'bg-white/20 text-cream'
         : 'bg-white/10 text-mist/80'
@@ -49,6 +54,11 @@ function FormDot({ result }: { result: TeamFormResult }) {
   return (
     <span
       className={`inline-flex h-7 w-7 items-center justify-center text-[0.7rem] font-bold ${styles}`}
+      style={
+        result === 'W' && accent
+          ? { background: accent, color: '#0a1f18' }
+          : undefined
+      }
       title={result === 'W' ? 'Win' : result === 'D' ? 'Draw' : 'Loss'}
     >
       {result}
@@ -301,10 +311,13 @@ export function TeamProfileScreen({
     league.name,
   ])
 
+  const accent = teamAccentFromFacts(facts.data)
+
   return (
-    <ProfileShell onBack={onBack} reduce={reduce}>
+    <ProfileShell onBack={onBack} reduce={reduce} accentColor={accent}>
       <ProfileHeader
         reduce={reduce}
+        accentColor={accent}
         star={
           <FavoriteStar
             active={favorited}
@@ -321,14 +334,12 @@ export function TeamProfileScreen({
           />
         }
         trailing={
-          facts.data?.logoUrl ? (
-            <img
-              src={facts.data.logoUrl}
-              alt=""
-              className="h-14 w-14 object-contain sm:h-16 sm:w-16"
-              loading="lazy"
-            />
-          ) : undefined
+          <EntityLogo
+            name={displayName}
+            src={facts.data?.logoUrl}
+            size="lg"
+            ringColor={accent}
+          />
         }
         eyebrow={
           <button
@@ -368,7 +379,22 @@ export function TeamProfileScreen({
       />
 
       {!isNational && standing?.group ? (
-        <p className="mt-4 border border-lime/30 bg-lime/10 px-3 py-2 text-sm font-semibold text-lime">
+        <p
+          className={
+            accent
+              ? 'mt-4 border px-3 py-2 text-sm font-semibold'
+              : 'mt-4 border border-lime/35 bg-lime/10 px-3 py-2 text-sm font-semibold text-lime'
+          }
+          style={
+            accent
+              ? {
+                  borderColor: withAlpha(accent, 0.45),
+                  background: withAlpha(accent, 0.12),
+                  color: accent,
+                }
+              : undefined
+          }
+        >
           {standing.group}
         </p>
       ) : null}
@@ -446,9 +472,20 @@ export function TeamProfileScreen({
                   onClick={() => onOpenLeague(id)}
                   className={`border px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
                     id === team.leagueId
-                      ? 'border-lime/45 bg-lime/15 text-lime'
+                      ? accent
+                        ? 'text-cream'
+                        : 'border-lime/45 bg-lime/15 text-lime'
                       : 'border-white/12 bg-white/[0.03] text-mist/80 hover:border-lime/35 hover:text-lime'
                   }`}
+                  style={
+                    id === team.leagueId && accent
+                      ? {
+                          borderColor: withAlpha(accent, 0.55),
+                          background: withAlpha(accent, 0.18),
+                          color: accent,
+                        }
+                      : undefined
+                  }
                   title={item.name}
                 >
                   {item.short}
@@ -466,7 +503,17 @@ export function TeamProfileScreen({
           </p>
         ) : null}
 
-        <dl className="border border-white/10">
+        <dl
+          className="border border-white/10"
+          style={
+            accent
+              ? {
+                  borderColor: withAlpha(accent, 0.35),
+                  boxShadow: `inset 3px 0 0 ${accent}`,
+                }
+              : undefined
+          }
+        >
           {factRows.map(([label, value], index) => (
             <div
               key={`${label}-${index}`}
@@ -506,7 +553,7 @@ export function TeamProfileScreen({
           ) : (
             <div className="flex gap-1.5" aria-label="Recent form">
               {form.map((result, index) => (
-                <FormDot key={`${result}-${index}`} result={result} />
+                <FormDot key={`${result}-${index}`} result={result} accent={accent} />
               ))}
             </div>
           )}
