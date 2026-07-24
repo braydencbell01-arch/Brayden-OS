@@ -10,6 +10,14 @@
  *   node jerseydeals/scripts/polish-square-storefront.mjs --dry-run
  */
 
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
+const PURCHASERS_PATH = join(__dirname, '../public/purchasers.json')
+
 const ENV = (process.env.SQUARE_ENVIRONMENT || 'production').toLowerCase()
 const HOST =
   ENV === 'sandbox' ? 'https://connect.squareupsandbox.com' : 'https://connect.squareup.com'
@@ -61,8 +69,59 @@ function extractBuyMap(existingContent) {
   }
 }
 
-function buildSnippet(map) {
-  const mapJson = JSON.stringify(map || { byItemId: {}, byVariationId: {} })
+function loadLinksMap() {
+  const map = {
+    byItemId: {},
+    byVariationId: {},
+    byItemIdDiscount: {},
+    byVariationIdDiscount: {},
+  }
+  if (!existsSync(LINKS_PATH)) return map
+  try {
+    const raw = JSON.parse(readFileSync(LINKS_PATH, 'utf8'))
+    for (const row of raw.links || []) {
+      if (row.itemId && row.url) map.byItemId[row.itemId] = row.url
+      if (row.variationId && row.url) map.byVariationId[row.variationId] = row.url
+      if (row.itemId && row.discountUrl) map.byItemIdDiscount[row.itemId] = row.discountUrl
+      if (row.variationId && row.discountUrl) {
+        map.byVariationIdDiscount[row.variationId] = row.discountUrl
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return map
+}
+
+function mergeMaps(base, extra) {
+  const out = {
+    byItemId: { ...(base?.byItemId || {}) },
+    byVariationId: { ...(base?.byVariationId || {}) },
+    byItemIdDiscount: { ...(base?.byItemIdDiscount || {}) },
+    byVariationIdDiscount: { ...(base?.byVariationIdDiscount || {}) },
+  }
+  Object.assign(out.byItemId, extra.byItemId || {})
+  Object.assign(out.byVariationId, extra.byVariationId || {})
+  Object.assign(out.byItemIdDiscount, extra.byItemIdDiscount || {})
+  Object.assign(out.byVariationIdDiscount, extra.byVariationIdDiscount || {})
+  return out
+}
+
+function loadPurchaserEmails() {
+  if (!existsSync(PURCHASERS_PATH)) return []
+  try {
+    const raw = JSON.parse(readFileSync(PURCHASERS_PATH, 'utf8'))
+    return (raw.emails || []).map((e) => String(e).trim().toLowerCase()).filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+function buildSnippet(map, purchaserEmails = []) {
+  const mapJson = JSON.stringify(
+    map || { byItemId: {}, byVariationId: {}, byItemIdDiscount: {}, byVariationIdDiscount: {} },
+  )
+  const emailsJson = JSON.stringify(purchaserEmails || [])
 
   // Keep head-safe elements only (style/script/link/meta).
   return `<!-- jerseydeals-storefront-polish -->
@@ -243,14 +302,72 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   [class*="banner"],[data-ux="Banner"]{min-height:58vh}
   .jd-trust{letter-spacing:.1em;font-size:.65rem;gap:.55rem .9rem}
 }
+/* First-time buyer offer modal */
+#jd-offer-root{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(6,16,28,.72)}
+#jd-offer-card{width:min(100%,26rem);background:#06101c;color:#fff;border:1px solid rgba(255,255,255,.12);padding:1.5rem;box-shadow:0 24px 60px rgba(0,0,0,.45);font-family:"Outfit",system-ui,sans-serif}
+#jd-offer-card h2{font-family:"Libre Baskerville",Georgia,serif;font-size:1.75rem;line-height:1.1;margin:.35rem 0 .75rem;color:#fff}
+#jd-offer-card p{color:rgba(255,255,255,.82);font-size:.92rem;line-height:1.45;margin:0}
+#jd-offer-card label{display:flex;align-items:center;gap:.35rem;margin:1rem 0 .4rem;font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+#jd-offer-card .jd-req{color:#d7282f;font-weight:700}
+#jd-offer-card input[type="email"]{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.22);background:#0b223f;color:#fff;padding:.85rem .9rem;font-size:.95rem}
+#jd-offer-card .jd-offer-err{color:#ff7a7f;font-size:.78rem;margin:.45rem 0 0}
+#jd-offer-activate{display:flex;width:100%;justify-content:center;margin-top:.85rem;padding:.95rem 1rem;border:0;background:#d7282f;color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+#jd-offer-close{position:absolute;top:.55rem;right:.7rem;background:transparent;border:0;color:rgba(255,255,255,.7);font-size:1.1rem;cursor:pointer}
+#jd-offer-card{position:relative}
+.jd-price-was{text-decoration:line-through;opacity:.65;margin-left:.4rem;font-size:.9em}
+.jd-offer-chip{display:inline-block;margin-top:.25rem;color:#d7282f;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
 </style>
 <script id="jd-storefront-polish">
 (function(){
   var MAP=${mapJson};
+  var PRIOR_EMAILS=${emailsJson};
+  var OFFER_KEY="jerseydeals.offer.v1";
+  var PURCHASED_KEY="jerseydeals.purchased.v1";
+  var EMAIL_KEY="jerseydeals.buyerEmail.v1";
   var HERO="Authentic kits. Real stock. Ships from the U.S.";
   var HERO_SUB="Club, youth, and training jerseys — photographed from our inventory.";
   var FOOTER_DEMO=/Thanks for exploring this Square Online Theme/i;
   var TEMPLATE_HERO=/Get started with this free eCommerce template for retailers\\.?/i;
+
+  function storageGet(k){ try{ return localStorage.getItem(k)||""; }catch(e){ return ""; } }
+  function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function sessionGet(k){ try{ return sessionStorage.getItem(k)||""; }catch(e){ return ""; } }
+  function sessionSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+  function hasPurchased(){ return storageGet(PURCHASED_KEY)==="1"; }
+  function markPurchased(){ storageSet(PURCHASED_KEY,"1"); }
+  function readOffer(){
+    try{
+      var raw=storageGet(OFFER_KEY);
+      if(!raw) return {activated:false,email:storageGet(EMAIL_KEY)};
+      var o=JSON.parse(raw);
+      return {activated:!!o.activated,email:(o.email||storageGet(EMAIL_KEY)||"").toLowerCase()};
+    }catch(e){ return {activated:false,email:storageGet(EMAIL_KEY)}; }
+  }
+  function writeOffer(o){
+    storageSet(OFFER_KEY, JSON.stringify(o));
+    if(o.email) storageSet(EMAIL_KEY, o.email);
+  }
+  function validEmail(e){ return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test((e||"").trim()); }
+  function capturePurchase(){
+    try{
+      var u=new URL(location.href);
+      var f=u.searchParams.get("purchase")||u.searchParams.get("purchased");
+      if(f==="1"||f==="true"){
+        markPurchased();
+        u.searchParams.delete("purchase");
+        u.searchParams.delete("purchased");
+        history.replaceState({},"",u.pathname+u.search+u.hash);
+      }
+    }catch(e){}
+  }
+  function emailHasPurchase(email){
+    var want=(email||"").toLowerCase();
+    if(!want) return false;
+    for(var i=0;i<(PRIOR_EMAILS||[]).length;i++){
+      if(PRIOR_EMAILS[i]===want) return true;
+    }
+    return false;
+  }
 
   function walkText(root, fn){
     var w=document.createTreeWalker(root||document.body, NodeFilter.SHOW_TEXT, null);
@@ -306,14 +423,142 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   function findLink(){
     try{
       var path=location.pathname||"";
+      var offer=readOffer();
+      var disc=offer.activated;
       var m=path.match(/\\/product\\/[^/]+\\/([A-Z0-9]+)/i);
-      if(m && MAP.byItemId[m[1]]) return MAP.byItemId[m[1]];
+      var id=m && m[1];
+      if(id){
+        if(disc && MAP.byItemIdDiscount && MAP.byItemIdDiscount[id]) return MAP.byItemIdDiscount[id];
+        if(MAP.byItemId && MAP.byItemId[id]) return MAP.byItemId[id];
+      }
       var keys=Object.keys(MAP.byItemId||{});
       for(var i=0;i<keys.length;i++){
-        if(path.indexOf(keys[i])!==-1) return MAP.byItemId[keys[i]];
+        if(path.indexOf(keys[i])!==-1){
+          if(disc && MAP.byItemIdDiscount && MAP.byItemIdDiscount[keys[i]]) return MAP.byItemIdDiscount[keys[i]];
+          return MAP.byItemId[keys[i]];
+        }
       }
     }catch(e){}
     return null;
+  }
+
+  function ensureOfferPopup(){
+    capturePurchase();
+    if(hasPurchased()) return;
+    if(readOffer().activated) return;
+    if(sessionGet("jerseydeals.offer.dismissed")==="1") return;
+    if(document.getElementById("jd-offer-root")) return;
+    var root=document.createElement("div");
+    root.id="jd-offer-root";
+    root.innerHTML='<div id="jd-offer-card" role="dialog" aria-modal="true">'
+      +'<button type="button" id="jd-offer-close" aria-label="Close">✕</button>'
+      +'<div style="font-size:.68rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#d7282f">First-time buyer offer</div>'
+      +'<h2>10% off all items</h2>'
+      +'<p>Activate your welcome offer for first-time buyers. Enter your email, then press Activate offer.</p>'
+      +'<label for="jd-offer-email">Email <span class="jd-req">*</span> <span class="jd-req" style="letter-spacing:0;text-transform:none;font-size:.72rem">mandatory</span></label>'
+      +'<input id="jd-offer-email" type="email" autocomplete="email" placeholder="you@email.com" required />'
+      +'<div class="jd-offer-err" id="jd-offer-err" hidden></div>'
+      +'<button type="button" id="jd-offer-activate">Activate offer</button>'
+      +'</div>';
+    document.body.appendChild(root);
+    function close(){
+      sessionSet("jerseydeals.offer.dismissed","1");
+      root.remove();
+    }
+    root.querySelector("#jd-offer-close").onclick=close;
+    root.addEventListener("click", function(e){ if(e.target===root) close(); });
+    root.querySelector("#jd-offer-activate").onclick=async function(){
+      var input=root.querySelector("#jd-offer-email");
+      var err=root.querySelector("#jd-offer-err");
+      var email=(input.value||"").trim().toLowerCase();
+      err.hidden=true;
+      if(!validEmail(email)){ err.textContent="Enter a valid email address."; err.hidden=false; return; }
+      if(emailHasPurchase(email)){
+        markPurchased();
+        storageSet(EMAIL_KEY, email);
+        err.textContent="This email already has a purchase — the first-time 10% offer isn’t available.";
+        err.hidden=false;
+        setTimeout(close, 1600);
+        return;
+      }
+      writeOffer({activated:true,email:email,activatedAt:Date.now()});
+      close();
+      polishPrices();
+      var link=findLink();
+      if(link){
+        var btn=document.querySelector("#jd-buy-now-btn .jd-buy-now");
+        if(btn) btn.href=link;
+      }
+    };
+  }
+
+  function ensureEmailBeforeCheckout(anchor){
+    if(!anchor || anchor.getAttribute("data-jd-email-bound")==="1") return;
+    anchor.setAttribute("data-jd-email-bound","1");
+    anchor.addEventListener("click", function(e){
+      var email=storageGet(EMAIL_KEY) || readOffer().email;
+      if(email) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Reuse offer modal as email gate when possible
+      sessionSet("jerseydeals.offer.dismissed","");
+      var existing=document.getElementById("jd-offer-root");
+      if(existing) existing.remove();
+      // Force gate UI
+      var root=document.createElement("div");
+      root.id="jd-offer-root";
+      root.innerHTML='<div id="jd-offer-card" role="dialog" aria-modal="true">'
+        +'<div style="font-size:.68rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#d7282f">Email required</div>'
+        +'<h2>Add your email to checkout</h2>'
+        +'<p>Email is mandatory before you can buy.</p>'
+        +'<label for="jd-offer-email">Email <span class="jd-req">*</span> <span class="jd-req" style="letter-spacing:0;text-transform:none;font-size:.72rem">mandatory</span></label>'
+        +'<input id="jd-offer-email" type="email" autocomplete="email" placeholder="you@email.com" required />'
+        +'<div class="jd-offer-err" id="jd-offer-err" hidden></div>'
+        +'<button type="button" id="jd-offer-activate">Continue to checkout</button>'
+        +'</div>';
+      document.body.appendChild(root);
+      root.querySelector("#jd-offer-activate").onclick=function(){
+        var input=root.querySelector("#jd-offer-email");
+        var err=root.querySelector("#jd-offer-err");
+        var val=(input.value||"").trim().toLowerCase();
+        err.hidden=true;
+        if(!validEmail(val)){ err.textContent="Enter a valid email address."; err.hidden=false; return; }
+        if(emailHasPurchase(val)) markPurchased();
+        storageSet(EMAIL_KEY, val);
+        var offer=readOffer();
+        if(!offer.activated && !hasPurchased()){
+          // keep offer inactive; email only
+        }
+        root.remove();
+        var href=anchor.getAttribute("href");
+        if(href) window.open(href, "_blank", "noopener,noreferrer");
+      };
+    }, true);
+  }
+
+  function polishPrices(){
+    if(!readOffer().activated) return;
+    var nodes=document.querySelectorAll("body *");
+    for(var i=0;i<nodes.length;i++){
+      var el=nodes[i];
+      if(!el || el.childNodes.length!==1 || el.getAttribute("data-jd-priced")==="1") continue;
+      var t=(el.textContent||"").trim();
+      var m=t.match(/^\\$(\\d+(?:\\.\\d{2})?)$/);
+      if(!m) continue;
+      var price=parseFloat(m[1]);
+      if(!(price>0) || price>500) continue;
+      var next=Math.round(price*0.9*100)/100;
+      el.setAttribute("data-jd-priced","1");
+      var was=document.createElement("span");
+      was.className="jd-price-was";
+      was.textContent=t;
+      el.textContent="$"+(Number.isInteger(next)?next:next.toFixed(2));
+      el.appendChild(was);
+      var chip=document.createElement("div");
+      chip.className="jd-offer-chip";
+      chip.textContent="10% first-time offer";
+      if(el.parentNode) el.parentNode.insertBefore(chip, el.nextSibling);
+    }
   }
 
   function hideOos(root){
@@ -331,7 +576,13 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 
   function ensureBuyButton(url){
     if(!url) return;
-    if(document.getElementById("jd-buy-now-btn")) return;
+    var existing=document.getElementById("jd-buy-now-btn");
+    if(existing){
+      var a=existing.querySelector("a.jd-buy-now");
+      if(a && a.href!==url) a.href=url;
+      ensureEmailBeforeCheckout(a);
+      return;
+    }
     var wrap=document.createElement("div");
     wrap.id="jd-buy-now-btn";
     wrap.style.cssText="display:flex;flex-wrap:wrap;gap:.6rem;margin:.75rem 0 1rem";
@@ -341,6 +592,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     btn.target="_blank";
     btn.rel="noopener noreferrer";
     btn.textContent="Buy now — secure checkout";
+    ensureEmailBeforeCheckout(btn);
     var cart=document.createElement("a");
     cart.className="jd-buy-now";
     cart.href="/s/cart";
@@ -392,9 +644,15 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     ensureCartNav();
     polishCopy();
     hideOos(document);
+    ensureOfferPopup();
+    polishPrices();
     var link=findLink();
     if(link) ensureBuyButton(link);
     patchCards();
+    var checkoutAnchors=document.querySelectorAll('a[href*="square.link"],a[href*="checkout.square"],a[href*="/checkout"],a[href*="/s/cart"] button, button[class*="checkout"], a[class*="checkout"]');
+    for(var i=0;i<checkoutAnchors.length;i++){
+      if(checkoutAnchors[i].tagName==="A") ensureEmailBeforeCheckout(checkoutAnchors[i]);
+    }
   }
 
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", run);
@@ -423,13 +681,21 @@ async function main() {
     console.log(`No existing snippet (or read failed): ${err.message}`)
   }
 
-  const map = extractBuyMap(existing) || { byItemId: {}, byVariationId: {} }
+  const fromSnippet = extractBuyMap(existing) || {
+    byItemId: {},
+    byVariationId: {},
+    byItemIdDiscount: {},
+    byVariationIdDiscount: {},
+  }
+  const fromFile = loadLinksMap()
+  const map = mergeMaps(fromSnippet, fromFile)
   console.log(
-    `Buy-bridge map: ${Object.keys(map.byItemId || {}).length} items / ${Object.keys(map.byVariationId || {}).length} variations`,
+    `Buy-bridge map: ${Object.keys(map.byItemId || {}).length} items / ${Object.keys(map.byItemIdDiscount || {}).length} discount links`,
   )
 
-  const content = buildSnippet(map)
-  console.log(`New snippet length: ${content.length}`)
+  const purchaserEmails = loadPurchaserEmails()
+  const content = buildSnippet(map, purchaserEmails)
+  console.log(`New snippet length: ${content.length} (prior emails: ${purchaserEmails.length})`)
   if (content.length > 65000) {
     throw new Error(`Snippet too long (${content.length}); Square limit is 65535`)
   }

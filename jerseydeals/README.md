@@ -128,6 +128,18 @@ Requires Square + eBay secrets. Browse cards show the cover photo only; clicking
 
 Primary landing CTAs say **Browse kits** and open this site’s inventory. Product cards and the cart drawer checkout via Square **Payment Links** (`checkoutUrl`), which work without Online Shipping.
 
+### First-time buyer 10% offer
+
+Creates Square Payment Links with a **10% catalog discount**, syncs `checkoutUrlDiscounted` into `listings.json`, writes `purchasers.json` (emails from Square orders/customers), and powers the welcome popup on Jersey Deals + Square Online:
+
+```bash
+cd jerseydeals
+npm run square:first10-links
+npm run square:polish-storefront
+```
+
+The popup only shows for browsers that have never completed a purchase (local flag + prior Square emails). Checkout requires an email on both storefronts.
+
 ### Buyable checkout without Online Shipping
 
 Until Shipping is enabled in the Dashboard, run:

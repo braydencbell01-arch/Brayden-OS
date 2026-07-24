@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-07-24T19:11:15Z",
+  "syncedAt": "2026-07-24T23:00:04Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -34,7 +34,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "Match Jerseys",
-      "checkoutUrl": "https://square.link/u/A8IA51pi"
+      "checkoutUrl": "https://square.link/u/A8IA51pi",
+      "checkoutUrlDiscounted": "https://square.link/u/GjX1qUPN"
     },
     {
       "id": "5IGOAAVG5N3HVSBTOXMQ6AH7",
@@ -63,7 +64,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "Training",
-      "checkoutUrl": "https://square.link/u/cxSQc1w0"
+      "checkoutUrl": "https://square.link/u/cxSQc1w0",
+      "checkoutUrlDiscounted": "https://square.link/u/GRRBaigY"
     },
     {
       "id": "GKCKDASTXCN4AG4LUMQHNL4X",
@@ -92,7 +94,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/HjiMFk6w"
+      "checkoutUrl": "https://square.link/u/HjiMFk6w",
+      "checkoutUrlDiscounted": "https://square.link/u/9yYMmWPo"
     },
     {
       "id": "QJEOSSVEYGYCNA5553L7NMLW",
@@ -124,7 +127,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/EmDSQReU"
+      "checkoutUrl": "https://square.link/u/EmDSQReU",
+      "checkoutUrlDiscounted": "https://square.link/u/YOjYREMP"
     },
     {
       "id": "N6UZIJJ7VXPDHKXZOXA7SRYB",
@@ -154,7 +158,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/n7nPxdGl"
+      "checkoutUrl": "https://square.link/u/n7nPxdGl",
+      "checkoutUrlDiscounted": "https://square.link/u/Jloov0Ng"
     },
     {
       "id": "MCEIHY77J3ER5UHJJGLCSLYN",
@@ -183,7 +188,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/W3FYkdqu"
+      "checkoutUrl": "https://square.link/u/W3FYkdqu",
+      "checkoutUrlDiscounted": "https://square.link/u/g7GEBmpt"
     },
     {
       "id": "KRHP6YJO5KRMODFKNAYBKK6S",
@@ -212,7 +218,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/ELWBEPXU"
+      "checkoutUrl": "https://square.link/u/ELWBEPXU",
+      "checkoutUrlDiscounted": "https://square.link/u/hlpbleGZ"
     },
     {
       "id": "5TQZU3FKRKF2HAZQIYA23ZCQ",
@@ -241,7 +248,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/il1zfGR1"
+      "checkoutUrl": "https://square.link/u/il1zfGR1",
+      "checkoutUrlDiscounted": "https://square.link/u/6A4SbcIo"
     },
     {
       "id": "U6N3EI2MXKOTR5ASQSFWGW2U",
@@ -270,7 +278,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/1ThV4Qk2"
+      "checkoutUrl": "https://square.link/u/1ThV4Qk2",
+      "checkoutUrlDiscounted": "https://square.link/u/lb0pbgPc"
     },
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -298,7 +307,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/LTepOK2F"
+      "checkoutUrl": "https://square.link/u/LTepOK2F",
+      "checkoutUrlDiscounted": "https://square.link/u/yml7nqrl"
     },
     {
       "id": "DX72TIG4T47LOPW5S6BWHJAC",
@@ -325,7 +335,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/9n7cWMmK"
+      "checkoutUrl": "https://square.link/u/9n7cWMmK",
+      "checkoutUrlDiscounted": "https://square.link/u/rCLGF53h"
     },
     {
       "id": "MXVXOENXOALOOAT44NW5IR32",
@@ -353,7 +364,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/hg2N7iCO"
+      "checkoutUrl": "https://square.link/u/hg2N7iCO",
+      "checkoutUrlDiscounted": "https://square.link/u/f4rsPK26"
     },
     {
       "id": "VUWLFJKHDOIHTL3U3K3R36E7",
@@ -384,7 +396,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/UHoYvi8r"
+      "checkoutUrl": "https://square.link/u/UHoYvi8r",
+      "checkoutUrlDiscounted": "https://square.link/u/6jIe3ave"
     },
     {
       "id": "5ZMO6NV7TPNCYMUREA6QBZCH",
@@ -414,7 +427,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/rK6BdNlW"
+      "checkoutUrl": "https://square.link/u/rK6BdNlW",
+      "checkoutUrlDiscounted": "https://square.link/u/AOv5LkBP"
     },
     {
       "id": "BIXIXRBNFCUCYEXEX7SFU4R2",
@@ -443,7 +457,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/zXZ4ZgMr"
+      "checkoutUrl": "https://square.link/u/zXZ4ZgMr",
+      "checkoutUrlDiscounted": "https://square.link/u/FnJSA55w"
     },
     {
       "id": "NNVRQNJQSHXIRQC5GCJB4ES4",
@@ -472,7 +487,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/sqUoJD50"
+      "checkoutUrl": "https://square.link/u/sqUoJD50",
+      "checkoutUrlDiscounted": "https://square.link/u/h00yNDER"
     },
     {
       "id": "HELNG4NELK57GRBIGQUMIFKZ",
@@ -501,7 +517,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/Lp59ftc3"
+      "checkoutUrl": "https://square.link/u/Lp59ftc3",
+      "checkoutUrlDiscounted": "https://square.link/u/uTA6bmwp"
     },
     {
       "id": "7J6DO636MD5CSSILRBUXTMQB",
@@ -531,7 +548,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/5fcCigZF"
+      "checkoutUrl": "https://square.link/u/5fcCigZF",
+      "checkoutUrlDiscounted": "https://square.link/u/YCfh16SI"
     },
     {
       "id": "F2D2CZHZSJV52P4ANCZ3O4F4",
@@ -560,7 +578,8 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/WTFBvMF5"
+      "checkoutUrl": "https://square.link/u/WTFBvMF5",
+      "checkoutUrlDiscounted": "https://square.link/u/d5JukREj"
     },
     {
       "id": "4536BCCPRWZHQSXIC2Z4HAMX",
@@ -588,7 +607,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/YudJYERD"
+      "checkoutUrl": "https://square.link/u/YudJYERD",
+      "checkoutUrlDiscounted": "https://square.link/u/DeNbiAwp"
     },
     {
       "id": "IICEPL6TBH6ZVJPRURFJ4HBU",
@@ -618,7 +638,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/jBqxWe1e"
+      "checkoutUrl": "https://square.link/u/jBqxWe1e",
+      "checkoutUrlDiscounted": "https://square.link/u/z7sAKcDi"
     },
     {
       "id": "Z3DE6BQ55K4EBWVLD3JZY6JP",
@@ -646,7 +667,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/QGvTc1Ys"
+      "checkoutUrl": "https://square.link/u/QGvTc1Ys",
+      "checkoutUrlDiscounted": "https://square.link/u/JzYO5MGy"
     },
     {
       "id": "ZPVVMODVRJMOICVJBS5DS4WU",
@@ -674,7 +696,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/mPBJqEHk"
+      "checkoutUrl": "https://square.link/u/mPBJqEHk",
+      "checkoutUrlDiscounted": "https://square.link/u/U0YmnHlr"
     },
     {
       "id": "F5DEPH7PNZQPAO4J5U7TTMOU",
@@ -703,7 +726,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/6AE54sIf"
+      "checkoutUrl": "https://square.link/u/6AE54sIf",
+      "checkoutUrlDiscounted": "https://square.link/u/Habrir2X"
     },
     {
       "id": "WSZKEVL3YZH5CD73UCGFDP7K",
@@ -735,7 +759,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/PVSRBWN5"
+      "checkoutUrl": "https://square.link/u/PVSRBWN5",
+      "checkoutUrlDiscounted": "https://square.link/u/d12kC7u7"
     },
     {
       "id": "2R5BPPFCVBMJLBOKNX5PT6AF",
@@ -764,7 +789,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/BipZrK7w"
+      "checkoutUrl": "https://square.link/u/BipZrK7w",
+      "checkoutUrlDiscounted": "https://square.link/u/GtECzy8o"
     },
     {
       "id": "SEQEMDAMQGUWPILJW7HEUWZO",
@@ -793,7 +819,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/0Wi3b6Il"
+      "checkoutUrl": "https://square.link/u/0Wi3b6Il",
+      "checkoutUrlDiscounted": "https://square.link/u/tZehlCtv"
     },
     {
       "id": "Q5U6CE4YFROKNHEJ75DRAE7W",
@@ -820,7 +847,8 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/F8mIlIXS"
+      "checkoutUrl": "https://square.link/u/F8mIlIXS",
+      "checkoutUrlDiscounted": "https://square.link/u/glftT2rZ"
     },
     {
       "id": "XDF6VB47D6ALWBLMWSNUTEM6",
@@ -851,7 +879,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/zPskEk0W"
+      "checkoutUrl": "https://square.link/u/zPskEk0W",
+      "checkoutUrlDiscounted": "https://square.link/u/7JGbJ598"
     },
     {
       "id": "TNLLMZ7CSS72HGOHXAYNALLP",
@@ -877,7 +906,8 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/hyvgaFVr"
+      "checkoutUrl": "https://square.link/u/hyvgaFVr",
+      "checkoutUrlDiscounted": "https://square.link/u/6s7YzxaV"
     },
     {
       "id": "FPACGK626CQ3PF4CRARJHXLW",
@@ -905,7 +935,8 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/Eki5bFyg"
+      "checkoutUrl": "https://square.link/u/Eki5bFyg",
+      "checkoutUrlDiscounted": "https://square.link/u/jA5LFoZ4"
     },
     {
       "id": "NWSMDPZORSCBZ5KWSG3L46SO",
@@ -934,7 +965,8 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/c7KVjpRw"
+      "checkoutUrl": "https://square.link/u/c7KVjpRw",
+      "checkoutUrlDiscounted": "https://square.link/u/FFm49fqk"
     },
     {
       "id": "PPVWVZKJYRLSFX33RN4XQDOV",
@@ -957,7 +989,8 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "checkoutUrl": "https://square.link/u/X1t5GSeE"
+      "checkoutUrl": "https://square.link/u/X1t5GSeE",
+      "checkoutUrlDiscounted": "https://square.link/u/g5v40iFb"
     }
   ],
   "checkoutMode": "square-online-cart+payment-links"

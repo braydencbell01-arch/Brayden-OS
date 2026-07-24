@@ -46,3 +46,6 @@ export const FAMILY_NOTE = 'Family-run shop — real photos, sizes, and shipping
 
 /** Newsletter incentive copy (mailto signup — no backend list). */
 export const NEWSLETTER_INCENTIVE = 'Be first on restocks & sale drops'
+
+/** First-time buyer welcome offer (10% via Square Payment Links when activated). */
+export const FIRST_BUYER_OFFER_LABEL = '10% off for first-time buyers'
