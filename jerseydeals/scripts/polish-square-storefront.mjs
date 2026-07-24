@@ -171,6 +171,20 @@ a[href*="/product/"] [class*="title"],a[href*="/product/"] h2,a[href*="/product/
   line-height:1.35!important;
   letter-spacing:.01em;
 }
+/* Product detail page title (beside/under gallery photos) */
+h1.w-product-title,
+h1.text-component.w-product-title,
+.w-product-title,
+[data-aid*="PRODUCT_NAME"],
+[data-aid*="PRODUCT_TITLE"],
+[class*="ProductDetails"] h1,
+[class*="product-details"] h1,
+[class*="productDetail"] h1{
+  font-family:"Outfit",system-ui,sans-serif!important;
+  font-weight:700!important;
+  color:var(--jd-white)!important;
+  text-shadow:none!important;
+}
 [class*="price"],[data-aid*="PRODUCT_PRICE"]{
   font-family:"Outfit",system-ui,sans-serif!important;
   font-weight:700!important;
