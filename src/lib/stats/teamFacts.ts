@@ -1,5 +1,6 @@
 import { getLeague, type LeagueId } from '../leagues'
 import type { StandingRow } from './types'
+import { normalizeHexColor, pickEspnLogoUrl, safeAccentColor, teamLogoUrl } from './branding'
 
 export type TeamClubFacts = {
   teamId: string
@@ -16,6 +17,10 @@ export type TeamClubFacts = {
   foundedYear?: number
   standingSummary?: string
   logoUrl?: string
+  /** Team primary kit / brand color (#rrggbb). */
+  primaryColor?: string
+  /** Secondary / alt color (#rrggbb). */
+  secondaryColor?: string
   isNational: boolean
   /** Best-effort major trophy total from public encyclopedic sources. */
   trophyCount?: number
@@ -32,6 +37,8 @@ type EspnSiteTeamPayload = {
     nickname?: string
     location?: string
     standingSummary?: string
+    color?: string
+    alternateColor?: string
     logos?: Array<{ href?: string; rel?: string[] }>
     defaultLeague?: { name?: string; shortName?: string }
   }
@@ -41,6 +48,8 @@ type EspnCoreTeamPayload = {
   isNational?: boolean
   location?: string
   nickname?: string
+  color?: string
+  alternateColor?: string
   venue?: {
     fullName?: string
     address?: { city?: string; country?: string }
@@ -183,6 +192,11 @@ export async function fetchTeamClubFacts(
     sportsDb.country ||
     (isNational ? siteTeam?.location || league.country : league.country)
 
+  const primaryRaw = siteTeam?.color || coreJson.color
+  const secondaryRaw = siteTeam?.alternateColor || coreJson.alternateColor
+  const logoFromApi = pickEspnLogoUrl(siteTeam?.logos, 'default')
+  const logoUrl = logoFromApi || teamLogoUrl(teamId)
+
   return {
     teamId,
     leagueId,
@@ -195,12 +209,20 @@ export async function fetchTeamClubFacts(
     stadium: coreJson.venue?.fullName || sportsDb.stadium,
     foundedYear: sportsDb.foundedYear,
     standingSummary: siteTeam?.standingSummary,
-    logoUrl: siteTeam?.logos?.[0]?.href,
+    logoUrl,
+    primaryColor: normalizeHexColor(primaryRaw) || undefined,
+    secondaryColor: normalizeHexColor(secondaryRaw) || undefined,
     isNational,
     trophyCount: wiki.count ?? undefined,
     trophySource: wiki.source,
     fetchedAt: Date.now(),
   }
+}
+
+/** Accent-safe primary for dark UI theming. */
+export function teamAccentFromFacts(facts: TeamClubFacts | null | undefined): string | null {
+  if (!facts?.primaryColor) return null
+  return safeAccentColor(facts.primaryColor)
 }
 
 export function seasonSnapshotFacts(standing: StandingRow | null): Array<[string, string]> {

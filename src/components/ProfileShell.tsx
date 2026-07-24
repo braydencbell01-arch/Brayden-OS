@@ -5,21 +5,32 @@ export function ProfileShell({
   onBack,
   reduce,
   children,
+  accentColor,
 }: {
   onBack: () => void
   reduce: boolean | null
   children: ReactNode
+  /** Optional brand color for a soft header wash (team primary). */
+  accentColor?: string | null
 }) {
+  const wash = accentColor
+    ? `radial-gradient(ellipse 75% 50% at 50% 0%, ${accentColor}66, transparent 58%), linear-gradient(180deg, #06261c 0%, #0b3d2e 100%)`
+    : 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(20,107,74,0.5), transparent 55%), linear-gradient(180deg, #06261c 0%, #0b3d2e 100%)'
+
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
       <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(20,107,74,0.5), transparent 55%), linear-gradient(180deg, #06261c 0%, #0b3d2e 100%)',
-        }}
+        className="pointer-events-none absolute inset-0 transition-[background] duration-500"
+        style={{ background: wash }}
       />
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-30" aria-hidden />
+      {accentColor ? (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-1"
+          style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
+          aria-hidden
+        />
+      ) : null}
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-3 md:max-w-xl md:px-6">
         <div className="sticky top-0 z-30 -mx-5 mb-7 border-b border-white/10 bg-pitch-deep/90 px-5 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top,0px))] backdrop-blur-md md:-mx-6 md:px-6">
@@ -47,6 +58,7 @@ export function ProfileHeader({
   star,
   reduce,
   trailing,
+  accentColor,
 }: {
   eyebrow?: ReactNode
   title: string
@@ -54,6 +66,7 @@ export function ProfileHeader({
   star?: ReactNode
   reduce: boolean | null
   trailing?: ReactNode
+  accentColor?: string | null
 }) {
   return (
     <motion.header
@@ -61,12 +74,28 @@ export function ProfileHeader({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="border-b border-white/10 pb-5"
+      style={
+        accentColor
+          ? {
+              borderImage: `linear-gradient(90deg, ${accentColor}, transparent) 1`,
+              borderBottomWidth: 1,
+              borderBottomStyle: 'solid',
+              borderBottomColor: 'transparent',
+              boxShadow: `inset 0 -1px 0 ${accentColor}88`,
+            }
+          : undefined
+      }
     >
       <div className="flex items-start gap-3">
         {star}
         <div className="min-w-0 flex-1">
           {eyebrow ? (
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-lime">{eyebrow}</div>
+            <div
+              className="text-xs font-semibold uppercase tracking-[0.2em] text-lime"
+              style={accentColor ? { color: accentColor } : undefined}
+            >
+              {eyebrow}
+            </div>
           ) : null}
           <h1 className="mt-1.5 font-display text-[clamp(2.4rem,9vw,3.5rem)] leading-[0.92] tracking-[0.03em] text-cream">
             {title}

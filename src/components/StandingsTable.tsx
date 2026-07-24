@@ -2,7 +2,9 @@ import type { LeagueId } from '../lib/leagues'
 import { isInternationalLeague } from '../lib/leagues'
 import { missingShort } from '../lib/display'
 import type { FavoriteTeam } from '../lib/favorites'
+import { teamLogoUrl } from '../lib/stats/branding'
 import type { LeagueSeasonOption, StandingRow } from '../lib/stats/types'
+import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { SeasonPicker } from './SeasonPicker'
 
@@ -83,22 +85,32 @@ function StandingGroupTable({
                     highlighted ? 'text-lime' : 'text-cream'
                   }`}
                 >
-                  {onOpenTeam && !highlighted ? (
-                    <button
-                      type="button"
-                      onClick={() => onOpenTeam(teamRef)}
-                      className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    >
-                      {missingShort(row.shortName)}
-                    </button>
-                  ) : (
-                    missingShort(row.shortName)
-                  )}
-                  {row.note ? (
-                    <span className="mt-0.5 block text-[0.6rem] font-medium normal-case tracking-normal text-mist/55">
-                      {row.note}
+                  <span className="inline-flex items-center gap-2">
+                    <EntityLogo
+                      name={row.team}
+                      src={teamLogoUrl(row.teamId)}
+                      size="sm"
+                      className="!h-7 !w-7"
+                    />
+                    <span className="min-w-0">
+                      {onOpenTeam && !highlighted ? (
+                        <button
+                          type="button"
+                          onClick={() => onOpenTeam(teamRef)}
+                          className="profile-link text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                        >
+                          {missingShort(row.shortName)}
+                        </button>
+                      ) : (
+                        missingShort(row.shortName)
+                      )}
+                      {row.note ? (
+                        <span className="mt-0.5 block text-[0.6rem] font-medium normal-case tracking-normal text-mist/55">
+                          {row.note}
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
+                  </span>
                 </td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.played}</td>
                 <td className="px-2 py-2 text-center tabular-nums text-mist/80">{row.won}</td>

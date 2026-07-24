@@ -3,7 +3,10 @@ import { motion } from 'framer-motion'
 import { missingShort } from '../lib/display'
 import { LEAGUES, getLeague, isInternationalLeague, teamSubtitleLabel, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
+import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
+import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
+import { LeagueLogoMark } from './LeagueLogoMark'
 import { PlayerAvatar } from './PlayerAvatar'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 
@@ -141,13 +144,28 @@ export function FavoritesScreen({
                         </div>
                       ) : (
                         <ul className="flex flex-col gap-2">
-                          {favoriteLeagues.map((league) => (
+                          {favoriteLeagues.map((league) => {
+                            const accent = leagueAccentColor(league.id)
+                            return (
                             <li key={league.id}>
-                              <div className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3">
+                              <div
+                                className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3"
+                                style={
+                                  accent
+                                    ? { boxShadow: `inset 3px 0 0 ${accent}` }
+                                    : undefined
+                                }
+                              >
                                 <FavoriteStar
                                   active
                                   label={league.name}
                                   onToggle={() => favorites.toggleLeague(league.id)}
+                                />
+                                <LeagueLogoMark
+                                  leagueId={league.id}
+                                  name={league.name}
+                                  size="sm"
+                                  ringColor={accent}
                                 />
                                 <button
                                   type="button"
@@ -166,7 +184,8 @@ export function FavoritesScreen({
                                 </button>
                               </div>
                             </li>
-                          ))}
+                            )
+                          })}
                         </ul>
                       )
                     )}
@@ -202,6 +221,11 @@ export function FavoritesScreen({
                                     active
                                     label={team.shortName}
                                     onToggle={() => favorites.toggleTeam(team)}
+                                  />
+                                  <EntityLogo
+                                    name={team.name}
+                                    src={teamLogoUrl(team.id)}
+                                    size="sm"
                                   />
                                   <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
                                     <span className="min-w-0">
