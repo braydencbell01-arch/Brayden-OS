@@ -36,7 +36,7 @@ import {
   isYouthListing,
   kitType,
   listingBuyUrl,
-  listingImages,
+  listingPrimaryImage,
   listingProductPageUrl,
   listingSize,
   lowestSalePrice,
@@ -252,103 +252,31 @@ const FAQ = [
   },
 ]
 
-function ProductGallery({
+function ProductPhoto({
   item,
+  tone = 'light',
+  eager = false,
 }: {
   item: Listing
   tone?: 'dark' | 'light'
+  eager?: boolean
 }) {
-  const photos = listingImages(item)
-  const [active, setActive] = useState(0)
-  const trackRef = useRef<HTMLDivElement>(null)
-
-  const go = (dir: -1 | 1) => {
-    const el = trackRef.current
-    if (!el) return
-    const next = Math.min(photos.length - 1, Math.max(0, active + dir))
-    el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
-    setActive(next)
-  }
-
-  if (photos.length === 0) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
-        <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
-      </div>
-    )
-  }
-
+  const src = listingPrimaryImage(item) || FALLBACK_IMAGE
   return (
-    <div className="relative h-full">
-      <div
-        ref={trackRef}
-        className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-        onScroll={(event) => {
-          const el = event.currentTarget
-          const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
-          setActive(Math.min(Math.max(index, 0), photos.length - 1))
-        }}
-        role="region"
-        aria-label={`${shortTitle(item.title)} photos`}
-      >
-        {photos.map((src, index) => (
-          <div key={`${item.id}-${index}`} className="relative h-full min-w-full shrink-0 snap-center">
-            <SafeImage
-              src={src}
-              alt={index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`}
-              className="h-full w-full object-contain object-center select-none"
-              loading={index === 0 ? 'eager' : 'lazy'}
-              decoding="async"
-              draggable={false}
-            />
-          </div>
-        ))}
-      </div>
-      {photos.length > 1 ? (
-        <>
-          <button
-            type="button"
-            aria-label="Previous photo"
-            disabled={active === 0}
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              go(-1)
-            }}
-            className="absolute left-2 top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-lg leading-none text-navy shadow disabled:opacity-35"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            aria-label="Next photo"
-            disabled={active === photos.length - 1}
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              go(1)
-            }}
-            className="absolute right-2 top-1/2 z-20 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-lg leading-none text-navy shadow disabled:opacity-35"
-          >
-            ›
-          </button>
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
-            {photos.map((_, index) => (
-              <span
-                key={`dot-${index}`}
-                className={`h-1.5 w-1.5 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition ${
-                  index === active ? 'bg-white' : 'bg-white/45'
-                }`}
-                aria-hidden
-              />
-            ))}
-          </div>
-          <p className="pointer-events-none absolute bottom-3 right-3 z-20 bg-navy-deep/70 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-            {active + 1}/{photos.length}
-          </p>
-        </>
-      ) : null}
+    <div
+      className={`absolute inset-0 flex items-center justify-center ${
+        tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
+      }`}
+    >
+      <SafeImage
+        key={`${item.id}-${src}`}
+        src={src}
+        alt={shortTitle(item.title)}
+        className="h-full w-full object-contain object-center p-2 select-none"
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        draggable={false}
+      />
     </div>
   )
 }
@@ -389,7 +317,7 @@ function ProductLink({
           }`}
           aria-label={`Quick view ${shortTitle(item.title)}`}
         >
-          <ProductGallery item={item} tone={tone} />
+          <ProductPhoto item={item} tone={tone} />
           {onSale && (
             <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
               Sale
@@ -520,7 +448,7 @@ function QuickViewModal({
       <button type="button" className="absolute inset-0 bg-navy-deep/60" aria-label="Close quick view" onClick={onClose} />
       <div className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-cream shadow-2xl sm:max-h-[88dvh] sm:flex-row">
         <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:h-auto sm:w-[48%]">
-          <ProductGallery item={item} tone="light" />
+          <ProductPhoto item={item} tone="light" eager />
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 sm:p-7">
           <div className="flex items-start justify-between gap-3">

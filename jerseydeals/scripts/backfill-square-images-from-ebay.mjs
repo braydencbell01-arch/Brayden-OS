@@ -60,10 +60,11 @@ const merged = {
     const images = hit.images?.length ? hit.images : hit.image ? [hit.image] : []
     if (!images.length) return item
     filled += 1
+    const primary = images[0]
     return {
       ...item,
-      image: images[0],
-      images,
+      image: primary,
+      images: [primary],
     }
   }),
 }

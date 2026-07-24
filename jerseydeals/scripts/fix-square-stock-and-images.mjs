@@ -334,13 +334,13 @@ for (const [index, rawItem] of items.entries()) {
     try {
       const pics = await fetchEbayItemId(ebayId)
       if (pics.length === 0) throw new Error('no PictureURL on eBay item')
-      // Primary + up to 2 extras (Square Online gallery)
-      const toUpload = pics.slice(0, 3)
+      // One primary photo only (storefront shows a single image per listing).
+      const toUpload = pics.slice(0, 1)
       for (const [i, url] of toUpload.entries()) {
         await uploadImage(item.id, url, name, primaryVar?.item_variation_data?.name || '', i === 0)
       }
       imagesOk += 1
-      console.log(`✓ images×${toUpload.length} + stock ${label}`)
+      console.log(`✓ image + stock ${label}`)
     } catch (err) {
       imagesFail += 1
       console.error(`✗ images ${label}: ${err.message}`)
