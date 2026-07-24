@@ -734,7 +734,6 @@ export default function App() {
     [listings],
   )
   const saleFloor = lowestSalePrice(listings)
-  const youthCount = listings.filter(isYouthListing).length
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const trendingPicks = useMemo(() => pickTrending(listings, 8), [listings])
   const channelLabel = onSquare ? 'Square' : 'eBay'
