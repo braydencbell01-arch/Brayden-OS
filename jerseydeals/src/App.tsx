@@ -1319,7 +1319,7 @@ export default function App() {
         {/* Lookbook campaign */}
         <section className="relative min-h-[70svh] overflow-hidden bg-navy-deep text-white md:min-h-[80svh]">
           <img
-            src={asset('lookbook-tunnel.jpg')}
+            src={asset('lookbook-matchday.jpg')}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
           />
