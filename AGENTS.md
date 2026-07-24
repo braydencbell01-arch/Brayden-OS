@@ -2,6 +2,10 @@
 
 Read this before changing code or deploying. Multiple agents work in this repo; following these rules prevents live-site wipeouts and “I thought you fixed that” misses.
 
+## Token / context budget
+
+Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-usage.mdc`: small reads, capped tool output, short replies, no full-file dumps.
+
 ## Two separate products (never mix them)
 
 | Product | Source | Permanent live URL |
