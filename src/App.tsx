@@ -160,7 +160,7 @@ function HomeScreen({
             transition={{ duration: 0.55, delay: reduce ? 0 : 0.14 }}
             className="mt-2 max-w-md text-sm text-mist/85"
           >
-            Player ratings, match stats, and league, club, and player information.
+            Ratings, match stats, and league, club, and player information.
           </motion.p>
           <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
             <span>{formatUpdatedAt(updatedAt)}</span>
