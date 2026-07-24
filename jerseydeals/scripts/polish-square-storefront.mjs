@@ -162,11 +162,16 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
 a[href*="/product/"]{
   text-decoration:none!important;
 }
+/* Shop / Shop All card titles under product photos */
 a[href*="/product/"] [class*="title"],a[href*="/product/"] h2,a[href*="/product/"] h3,
-[class*="ProductCard"] [class*="title"]{
+a[href*="/product/"] h4,
+[class*="ProductCard"] [class*="title"],
+[class*="product-card"] [class*="title"],
+[class*="ProductGrid"] [class*="title"],
+[class*="product-grid"] [class*="title"]{
   font-family:"Outfit",system-ui,sans-serif!important;
   font-weight:600!important;
-  color:var(--jd-navy)!important;
+  color:var(--jd-white)!important;
   font-size:.95rem!important;
   line-height:1.35!important;
   letter-spacing:.01em;
