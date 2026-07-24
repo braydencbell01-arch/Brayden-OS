@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
   CONTACT_EMAIL,
+  EBAY_RATINGS,
   EBAY_SALE_URL,
   EBAY_SELLER,
   EBAY_SELLER_URL,
@@ -847,8 +848,34 @@ export default function App() {
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
       {/* Promo bar — always on top */}
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-2 bg-crimson px-4 py-2 text-center font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream">
+      <div className="fixed inset-x-0 top-0 z-50 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-crimson px-4 py-2 text-center font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream">
         <span>{PROMO_BAR}</span>
+        <span className="hidden text-cream/40 sm:inline" aria-hidden>
+          ·
+        </span>
+        <span className="inline-flex items-center gap-2 normal-case tracking-normal">
+          <a
+            href={SQUARE_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'square' })}
+            className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
+          >
+            Square
+          </a>
+          <span className="text-cream/40" aria-hidden>
+            ·
+          </span>
+          <a
+            href={ebayShop}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'ebay' })}
+            className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
+          >
+            eBay
+          </a>
+        </span>
       </div>
 
       <a
@@ -890,6 +917,39 @@ export default function App() {
             ))}
           </nav>
           <div className="flex items-center gap-3">
+            <div
+              className={`hidden items-center gap-2 text-xs font-semibold tracking-wide sm:inline-flex ${
+                navSolid ? 'text-navy/70' : 'text-white/75'
+              }`}
+            >
+              <a
+                href={SQUARE_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('outbound_click', { place: 'header', channel: 'square' })}
+                className={`underline underline-offset-4 transition ${
+                  navSolid
+                    ? 'decoration-navy/35 hover:text-navy hover:decoration-crimson'
+                    : 'decoration-white/45 hover:text-white hover:decoration-white'
+                }`}
+              >
+                Square
+              </a>
+              <span aria-hidden>·</span>
+              <a
+                href={ebayShop}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => track('outbound_click', { place: 'header', channel: 'ebay' })}
+                className={`underline underline-offset-4 transition ${
+                  navSolid
+                    ? 'decoration-navy/35 hover:text-navy hover:decoration-crimson'
+                    : 'decoration-white/45 hover:text-white hover:decoration-white'
+                }`}
+              >
+                eBay
+              </a>
+            </div>
             <button
               type="button"
               aria-label={`Open cart, ${itemCount} items`}
@@ -1906,20 +1966,65 @@ export default function App() {
                   Direct. Detailed. Live.
                 </h2>
                 <p className="mt-5 max-w-xl font-brand text-lg text-muted">
-                  {FAMILY_NOTE} We sell as{' '}
+                  {FAMILY_NOTE} Shop on{' '}
                   <a
-                    href={ebaySeller}
+                    href={SQUARE_STORE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => track('outbound_click', { place: 'trust', channel: 'square' })}
                     className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
                   >
-                    @{catalog?.seller ?? EBAY_SELLER}
+                    Square
+                  </a>{' '}
+                  or{' '}
+                  <a
+                    href={ebayShop}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => track('outbound_click', { place: 'trust', channel: 'ebay' })}
+                    className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  >
+                    eBay
                   </a>
-                  {catalog ? ` with ${catalog.count} live listings` : ''}.
+                  {catalog ? ` — ${catalog.count} live listings` : ''}.
                   {onSquare
                     ? ' Pay by card on Square Payment Links — eBay remains available as a second channel.'
                     : ' Checkout on eBay today — Square direct payments are next.'}
                 </p>
+                <div className="mt-8 max-w-md">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+                    eBay seller ratings
+                  </p>
+                  <ul className="mt-4 space-y-3" aria-label="eBay detailed seller ratings">
+                    {EBAY_RATINGS.map((row) => (
+                      <li key={row.label} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1">
+                        <span className="text-sm text-navy/80">{row.label}</span>
+                        <span className="font-display text-lg font-bold tabular-nums text-navy">
+                          {row.score.toFixed(1)}
+                        </span>
+                        <div
+                          className="col-span-2 h-1.5 overflow-hidden bg-navy/10"
+                          role="presentation"
+                          aria-hidden
+                        >
+                          <div
+                            className="h-full bg-crimson"
+                            style={{ width: `${(row.score / 5) * 100}%` }}
+                          />
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href={ebaySeller}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => track('outbound_click', { place: 'trust_ratings', channel: 'ebay' })}
+                    className="mt-4 inline-block text-sm font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  >
+                    View @{EBAY_SELLER} on eBay
+                  </a>
+                </div>
                 <ul className="mt-10 space-y-6 border-l border-navy/10 pl-6">
                   {[
                     {
@@ -2296,22 +2401,27 @@ export default function App() {
             <p className="eyebrow text-white/40">Links</p>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <a href={ebayShop} target="_blank" rel="noopener noreferrer" className="hover:text-white">
-                  eBay shop
+                <a
+                  href={SQUARE_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track('outbound_click', { place: 'footer', channel: 'square' })}
+                  className="underline decoration-white/35 underline-offset-4 hover:text-white hover:decoration-white"
+                >
+                  Square
                 </a>
               </li>
-              {SQUARE_STORE_URL ? (
-                <li>
-                  <a
-                    href={SQUARE_STORE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-white"
-                  >
-                    Secure checkout
-                  </a>
-                </li>
-              ) : null}
+              <li>
+                <a
+                  href={ebayShop}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => track('outbound_click', { place: 'footer', channel: 'ebay' })}
+                  className="underline decoration-white/35 underline-offset-4 hover:text-white hover:decoration-white"
+                >
+                  eBay
+                </a>
+              </li>
               <li>
                 <a href={asset('privacy.html')} className="hover:text-white">
                   Privacy
@@ -2326,6 +2436,29 @@ export default function App() {
       </footer>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur md:hidden">
+        <div className="mb-2 flex items-center justify-center gap-3 text-xs font-semibold text-cream/85">
+          <a
+            href={SQUARE_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('outbound_click', { place: 'sticky_mobile', channel: 'square' })}
+            className="underline decoration-cream/50 underline-offset-4"
+          >
+            Square
+          </a>
+          <span className="text-cream/35" aria-hidden>
+            ·
+          </span>
+          <a
+            href={ebayShop}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('outbound_click', { place: 'sticky_mobile', channel: 'ebay' })}
+            className="underline decoration-cream/50 underline-offset-4"
+          >
+            eBay
+          </a>
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
