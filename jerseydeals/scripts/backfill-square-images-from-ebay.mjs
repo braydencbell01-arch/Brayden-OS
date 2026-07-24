@@ -64,7 +64,7 @@ const merged = {
     return {
       ...item,
       image: primary,
-      images,
+      images: [primary],
     }
   }),
 }

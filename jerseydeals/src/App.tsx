@@ -36,7 +36,6 @@ import {
   isYouthListing,
   kitType,
   listingBuyUrl,
-  listingImages,
   listingPrimaryImage,
   listingProductPageUrl,
   listingSize,
@@ -282,145 +281,6 @@ function ProductPhoto({
   )
 }
 
-function ProductGallery({
-  item,
-  tone = 'light',
-  eager = false,
-}: {
-  item: Listing
-  tone?: 'dark' | 'light'
-  eager?: boolean
-}) {
-  const photos = listingImages(item)
-  const [active, setActive] = useState(0)
-  const trackRef = useRef<HTMLDivElement>(null)
-  const activeRef = useRef(0)
-
-  useEffect(() => {
-    setActive(0)
-    activeRef.current = 0
-    trackRef.current?.scrollTo({ left: 0 })
-  }, [item.id])
-
-  useEffect(() => {
-    activeRef.current = active
-  }, [active])
-
-  const go = (dir: -1 | 1) => {
-    const el = trackRef.current
-    if (!el || photos.length <= 1) return
-    const next = Math.min(photos.length - 1, Math.max(0, activeRef.current + dir))
-    el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
-    setActive(next)
-    activeRef.current = next
-  }
-
-  useEffect(() => {
-    if (photos.length <= 1) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        go(-1)
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        go(1)
-      }
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [photos.length, item.id])
-
-  if (photos.length === 0) {
-    return (
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
-        <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
-      </div>
-    )
-  }
-
-  if (photos.length === 1) {
-    return <ProductPhoto item={item} tone={tone} eager={eager} />
-  }
-
-  return (
-    <div className={`absolute inset-0 ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}>
-      <div
-        ref={trackRef}
-        className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-        onScroll={(event) => {
-          const el = event.currentTarget
-          const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
-          const next = Math.min(Math.max(index, 0), photos.length - 1)
-          setActive(next)
-          activeRef.current = next
-        }}
-        role="region"
-        aria-roledescription="carousel"
-        aria-label={`${shortTitle(item.title)} photos`}
-      >
-        {photos.map((src, index) => (
-          <div key={`${item.id}-${index}`} className="relative h-full min-w-full shrink-0 snap-center">
-            <SafeImage
-              src={src}
-              alt={
-                index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`
-              }
-              className="h-full w-full object-contain object-center p-2 select-none"
-              loading={index === 0 || eager ? 'eager' : 'lazy'}
-              decoding="async"
-              draggable={false}
-            />
-          </div>
-        ))}
-      </div>
-      <button
-        type="button"
-        aria-label="Previous photo"
-        disabled={active === 0}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          go(-1)
-        }}
-        className="absolute left-2 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-lg leading-none text-navy shadow disabled:opacity-35"
-      >
-        ‹
-      </button>
-      <button
-        type="button"
-        aria-label="Next photo"
-        disabled={active === photos.length - 1}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          go(1)
-        }}
-        className="absolute right-2 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-lg leading-none text-navy shadow disabled:opacity-35"
-      >
-        ›
-      </button>
-      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center gap-1.5">
-        {photos.map((_, index) => (
-          <span
-            key={`dot-${index}`}
-            className={`h-1.5 w-1.5 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition ${
-              index === active ? 'bg-white' : 'bg-white/45'
-            }`}
-            aria-hidden
-          />
-        ))}
-      </div>
-      <p className="pointer-events-none absolute bottom-3 right-3 z-20 bg-navy-deep/75 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-        {active + 1}/{photos.length}
-      </p>
-      <p className="pointer-events-none absolute left-3 top-3 z-20 bg-navy-deep/70 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-        Swipe
-      </p>
-    </div>
-  )
-}
-
 function ProductLink({
   item,
   reduce,
@@ -441,7 +301,6 @@ function ProductLink({
   const kit = kitType(item)
   const onSale = isSaleListing(item)
   const size = listingSize(item)
-  const photoCount = listingImages(item).length
   const muted = tone === 'dark' ? 'text-white/45' : 'text-muted'
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
   const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
@@ -469,16 +328,6 @@ function ProductLink({
               Only 1 left
             </span>
           )}
-          {photoCount > 1 && item.quantity !== 1 ? (
-            <span className="pointer-events-none absolute right-2 top-2 z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-              {photoCount} photos
-            </span>
-          ) : null}
-          {photoCount > 1 && item.quantity === 1 ? (
-            <span className="pointer-events-none absolute right-2 top-10 z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-              {photoCount} photos
-            </span>
-          ) : null}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
               Quick view
@@ -570,7 +419,7 @@ function QuickViewModal({
       document.body.style.overflow = previous
       document.removeEventListener('keydown', onKey)
     }
-  }, [onClose, item.id])
+  }, [onClose])
 
   async function shareListing() {
     const url = buyUrl || window.location.href
@@ -598,8 +447,8 @@ function QuickViewModal({
     <div className="fixed inset-0 z-[58] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label="Product quick view">
       <button type="button" className="absolute inset-0 bg-navy-deep/60" aria-label="Close quick view" onClick={onClose} />
       <div className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-cream shadow-2xl sm:max-h-[88dvh] sm:flex-row">
-        <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:min-h-[22rem] sm:w-[48%]">
-          <ProductGallery item={item} tone="light" eager />
+        <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:h-auto sm:w-[48%]">
+          <ProductPhoto item={item} tone="light" eager />
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 sm:p-7">
           <div className="flex items-start justify-between gap-3">

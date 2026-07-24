@@ -133,7 +133,7 @@ async function enrichListingPictures(listings) {
           const images = collectEbayImages(xml)
           if (images.length === 0) return listing
           const primary = images[0]
-          return { ...listing, image: primary, images }
+          return { ...listing, image: primary, images: [primary] }
         } catch (err) {
           console.warn(`GetItem pictures failed for ${listing.id}: ${err.message}`)
           return listing
@@ -275,7 +275,8 @@ async function fetchActiveListings() {
           const imgs = collectEbayImages(item)
           const gallery = upscaleImage(decodeXml(xmlText(item, 'PictureDetails>GalleryURL')))
           if (gallery && !imgs.includes(gallery)) imgs.unshift(gallery)
-          return imgs
+          // One photo per listing on the storefront.
+          return imgs.slice(0, 1)
         })(),
         quantity: Number.parseInt(qtyRaw, 10) || 1,
         tag: inferTag(title),

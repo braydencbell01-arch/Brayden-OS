@@ -193,29 +193,10 @@ export function listingPrimaryImage(item: Listing): string {
   return primary ? resolveListingImageUrl(primary) : ''
 }
 
-/** All listing photos with the cover image first. */
+/** @deprecated Prefer listingPrimaryImage — galleries are single-photo only. */
 export function listingImages(item: Listing): string[] {
-  const fromArray = (item.images || []).filter(Boolean)
-  let urls: string[]
-  if (fromArray.length > 0) {
-    if (item.image && fromArray[0] !== item.image) {
-      urls = [item.image, ...fromArray.filter((url) => url !== item.image)]
-    } else {
-      urls = fromArray
-    }
-  } else {
-    urls = item.image ? [item.image] : []
-  }
-  // Dedupe while preserving order
-  const seen = new Set<string>()
-  const out: string[] = []
-  for (const url of urls) {
-    const resolved = resolveListingImageUrl(url)
-    if (!resolved || seen.has(resolved)) continue
-    seen.add(resolved)
-    out.push(resolved)
-  }
-  return out
+  const primary = listingPrimaryImage(item)
+  return primary ? [primary] : []
 }
 
 export function listingSearchText(item: Listing) {
