@@ -6,6 +6,8 @@ export type Listing = {
   url: string
   /** Square Payment Link checkout when Online shipping isn't configured */
   checkoutUrl?: string
+  /** Square Payment Link with first-time buyer 10% discount applied */
+  checkoutUrlDiscounted?: string
   /** Square Online product page (supports store cart when shipping is enabled) */
   productUrl?: string
   image: string
@@ -54,10 +56,12 @@ export const SIZE_ORDER = [
 export function formatPrice(price: number | null, currency: string) {
   if (price == null || Number.isNaN(price)) return 'See listing'
   try {
+    const hasCents = Math.abs(price % 1) > 1e-9
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: currency || 'USD',
-      maximumFractionDigits: 0,
+      maximumFractionDigits: hasCents ? 2 : 0,
+      minimumFractionDigits: hasCents ? 2 : 0,
     }).format(price)
   } catch {
     return `$${price}`
@@ -65,7 +69,11 @@ export function formatPrice(price: number | null, currency: string) {
 }
 
 /** Prefer Payment Link checkout when present (Square Online shipping workaround). */
-export function listingBuyUrl(item: Listing) {
+export function listingBuyUrl(item: Listing, opts?: { discounted?: boolean }) {
+  if (opts?.discounted) {
+    const discounted = (item.checkoutUrlDiscounted || '').trim()
+    if (discounted) return discounted
+  }
   return (item.checkoutUrl || item.url || '').trim()
 }
 

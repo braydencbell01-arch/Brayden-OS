@@ -11,6 +11,7 @@ export type CartLine = {
   image: string
   quantity: number
   checkoutUrl: string
+  checkoutUrlDiscounted?: string
   productUrl?: string
   size?: string
   maxQuantity: number
@@ -66,6 +67,7 @@ export function cartSubtotal(cart: CartState) {
 export function listingToCartLine(item: Listing, productUrl?: string): CartLine | null {
   const checkoutUrl = listingBuyUrl(item)
   if (!checkoutUrl) return null
+  const checkoutUrlDiscounted = listingBuyUrl(item, { discounted: true })
   return {
     id: item.id,
     title: item.title,
@@ -74,10 +76,19 @@ export function listingToCartLine(item: Listing, productUrl?: string): CartLine 
     image: item.image,
     quantity: 1,
     checkoutUrl,
+    checkoutUrlDiscounted:
+      checkoutUrlDiscounted && checkoutUrlDiscounted !== checkoutUrl
+        ? checkoutUrlDiscounted
+        : item.checkoutUrlDiscounted,
     productUrl,
     size: item.size || item.note,
     maxQuantity: Math.max(1, item.quantity || 1),
   }
+}
+
+export function cartLineCheckoutUrl(line: CartLine, discounted: boolean) {
+  if (discounted && line.checkoutUrlDiscounted) return line.checkoutUrlDiscounted
+  return line.checkoutUrl
 }
 
 export function addListingToCart(item: Listing, productUrl?: string): CartState {

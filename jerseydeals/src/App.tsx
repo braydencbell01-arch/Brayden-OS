@@ -25,6 +25,13 @@ import {
   type CartState,
 } from './cart'
 import { CartDrawer } from './Cart'
+import { FirstBuyerOfferModal } from './FirstBuyerOffer'
+import {
+  capturePurchaseReturnFromUrl,
+  hasPurchased,
+  readBuyerEmail,
+  readOffer,
+} from './offer'
 import {
   clubsInStock,
   conditionLabel,
@@ -433,6 +440,7 @@ function ProductLink({
   tone = 'dark',
   onAddToCart,
   onQuickView,
+  onBuyNow,
 }: {
   item: Listing
   reduce: boolean | null
@@ -440,6 +448,7 @@ function ProductLink({
   tone?: 'dark' | 'light'
   onAddToCart: (item: Listing) => void
   onQuickView: (item: Listing) => void
+  onBuyNow: (item: Listing) => void
 }) {
   const condition = conditionLabel(item.title)
   const buyUrl = listingBuyUrl(item)
@@ -530,15 +539,16 @@ function ProductLink({
               Details
             </button>
             {buyUrl ? (
-              <a
-                href={buyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })}
+              <button
+                type="button"
+                onClick={() => {
+                  track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
+                  onBuyNow(item)
+                }}
                 className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
               >
                 Buy now
-              </a>
+              </button>
             ) : null}
           </div>
         </div>
@@ -551,10 +561,12 @@ function QuickViewModal({
   item,
   onClose,
   onAddToCart,
+  onBuyNow,
 }: {
   item: Listing
   onClose: () => void
   onAddToCart: (item: Listing) => void
+  onBuyNow: (item: Listing) => void
 }) {
   const buyUrl = listingBuyUrl(item)
   const condition = conditionLabel(item.title)
@@ -671,15 +683,16 @@ function QuickViewModal({
               Add to cart
             </button>
             {buyUrl ? (
-              <a
-                href={buyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('product_click', { id: item.id, tag: item.tag, place: 'quick_view_buy' })}
+              <button
+                type="button"
+                onClick={() => {
+                  track('product_click', { id: item.id, tag: item.tag, place: 'quick_view_buy' })
+                  onBuyNow(item)
+                }}
                 className="flex w-full items-center justify-center border border-navy/20 px-4 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-navy transition hover:border-navy"
               >
                 Buy now{item.source === 'ebay' ? ' on eBay' : ' on Square'}
-              </a>
+              </button>
             ) : null}
             <button
               type="button"
@@ -720,12 +733,70 @@ export default function App() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [quickView, setQuickView] = useState<Listing | null>(null)
   const [recentIds, setRecentIds] = useState<string[]>(() => readRecentlyViewed())
+  const [offerOpen, setOfferOpen] = useState(false)
+  const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
+  const [offerActive, setOfferActive] = useState(() => readOffer().activated)
+  const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const urlHydrated = useRef(false)
 
   useEffect(() => {
     initAnalytics()
     track('page_view', { page: 'landing' })
+    capturePurchaseReturnFromUrl()
   }, [])
+
+  useEffect(() => {
+    if (hasPurchased()) return
+    if (readOffer().activated) return
+    try {
+      if (sessionStorage.getItem('jerseydeals.offer.dismissed') === '1') return
+    } catch {
+      /* ignore */
+    }
+    const timer = window.setTimeout(() => {
+      setOfferMode('offer')
+      setOfferOpen(true)
+      track('offer_popup_shown', {})
+    }, 700)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  function hasCheckoutEmail() {
+    return Boolean(readBuyerEmail() || readOffer().email)
+  }
+
+  function requestCheckoutAccess() {
+    if (hasCheckoutEmail()) return true
+    setPendingBuy(null)
+    setOfferMode('email-gate')
+    setOfferOpen(true)
+    return false
+  }
+
+  function handleBuyNow(item: Listing) {
+    if (!hasCheckoutEmail()) {
+      setPendingBuy(item)
+      setOfferMode('email-gate')
+      setOfferOpen(true)
+      return
+    }
+    const discounted = readOffer().activated
+    const url = listingBuyUrl(item, { discounted })
+    if (!url) return
+    track('buy_now', { id: item.id, discounted })
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  function dismissOfferModal() {
+    if (offerMode === 'offer') {
+      try {
+        sessionStorage.setItem('jerseydeals.offer.dismissed', '1')
+      } catch {
+        /* ignore */
+      }
+    }
+    setOfferOpen(false)
+  }
 
   useEffect(() => {
     if (!menuOpen) return
@@ -1487,7 +1558,7 @@ export default function App() {
             {newDrops.length > 0 ? (
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {newDrops.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             ) : (
@@ -1532,7 +1603,7 @@ export default function App() {
                 return filtered.length > 0 ? (
                   <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                     {filtered.slice(0, 8).map((item, i) => (
-                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
+                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                     ))}
                   </ul>
                 ) : (
@@ -1599,7 +1670,7 @@ export default function App() {
               </motion.div>
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {trainingPicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             </div>
@@ -1639,7 +1710,7 @@ export default function App() {
             {featured.length > 0 && (
               <ul className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             )}
@@ -1815,7 +1886,7 @@ export default function App() {
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {salePicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} />
+                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             </div>
@@ -1903,6 +1974,7 @@ export default function App() {
                       tone="light"
                       onAddToCart={handleAddToCart}
                       onQuickView={handleQuickView}
+                      onBuyNow={handleBuyNow}
                     />
                   ))}
                 </ul>
@@ -2108,6 +2180,7 @@ export default function App() {
                     tone="light"
                     onAddToCart={handleAddToCart}
                     onQuickView={handleQuickView}
+                    onBuyNow={handleBuyNow}
                   />
                 ))}
               </ul>
@@ -2672,6 +2745,8 @@ export default function App() {
         onChangeQty={(id, quantity) => setCart(setCartLineQuantity(id, quantity))}
         onRemove={(id) => setCart(removeCartLine(id))}
         onClear={() => setCart(clearCart())}
+        onRequestCheckout={requestCheckoutAccess}
+        discountActive={offerActive}
       />
 
       {quickView ? (
@@ -2679,8 +2754,27 @@ export default function App() {
           item={quickView}
           onClose={() => setQuickView(null)}
           onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
         />
       ) : null}
+
+      <FirstBuyerOfferModal
+        open={offerOpen}
+        mode={offerMode}
+        onClose={dismissOfferModal}
+        onActivated={() => {
+          setOfferActive(true)
+          setCartToast('10% first-time offer activated')
+          window.setTimeout(() => setCartToast(null), 2200)
+        }}
+        onEmailSaved={() => {
+          if (pendingBuy) {
+            const item = pendingBuy
+            setPendingBuy(null)
+            window.setTimeout(() => handleBuyNow(item), 50)
+          }
+        }}
+      />
 
       {cartToast ? (
         <div className="fixed bottom-24 left-1/2 z-[56] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg md:bottom-6">
