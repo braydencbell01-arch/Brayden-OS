@@ -7,7 +7,6 @@ import { HomeSearch } from './components/HomeSearch'
 import { LeagueProfileScreen } from './components/LeagueProfileScreen'
 import { LeaguesScreen } from './components/LeaguesScreen'
 import { MatchDayByLeague } from './components/MatchDayByLeague'
-import { MyMatchday } from './components/MyMatchday'
 import { FantasyScreen } from './components/fantasy/FantasyScreen'
 import { SettingsScreen, OnboardingOverlay } from './components/SettingsScreen'
 import { StatsScreen } from './components/StatsScreen'
@@ -196,13 +195,6 @@ function HomeScreen({
             reduce={reduce}
           />
         </div>
-
-        <MyMatchday
-          favorites={favorites}
-          onOpenTeam={onOpenTeam}
-          onOpenPlayer={onOpenPlayer}
-          onOpenLeague={onOpenLeague}
-        />
 
         <section className="mt-1" aria-label="Fixtures for selected date">
           <div className="mb-2.5 flex items-end justify-between gap-3 px-1">
