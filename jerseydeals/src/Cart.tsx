@@ -37,8 +37,9 @@ export function CartDrawer({
   const count = cartCount(cart)
   const subtotal = cartSubtotal(cart)
   const currency = cart.lines[0]?.currency || 'USD'
-  const shipProgress = Math.min(1, subtotal / FREE_SHIPPING_THRESHOLD)
-  const shipRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
+  const showShipGoal = FREE_SHIPPING_THRESHOLD > 0
+  const shipProgress = showShipGoal ? Math.min(1, subtotal / FREE_SHIPPING_THRESHOLD) : 1
+  const shipRemaining = showShipGoal ? Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal) : 0
 
   return (
     <div className="fixed inset-0 z-[55] flex justify-end" role="dialog" aria-modal aria-label="Shopping cart">
@@ -137,19 +138,23 @@ export function CartDrawer({
 
         {cart.lines.length > 0 ? (
           <div className="border-t border-navy/10 bg-white px-5 py-4">
-            <div className="mb-4">
-              {shipRemaining > 0 ? (
-                <p className="text-xs text-muted">
-                  Add {formatPrice(shipRemaining, currency)} more toward free shipping
-                  {FREE_SHIPPING_THRESHOLD > 0 ? ` ($${FREE_SHIPPING_THRESHOLD}+)` : ''}.
-                </p>
-              ) : (
-                <p className="text-xs font-semibold text-navy">You&apos;ve hit the free-shipping goal.</p>
-              )}
-              <div className="mt-2 h-1.5 overflow-hidden bg-mist" aria-hidden>
-                <div className="h-full bg-crimson transition-all" style={{ width: `${shipProgress * 100}%` }} />
+            {showShipGoal ? (
+              <div className="mb-4">
+                {shipRemaining > 0 ? (
+                  <p className="text-xs text-muted">
+                    Add {formatPrice(shipRemaining, currency)} more toward free shipping ($
+                    {FREE_SHIPPING_THRESHOLD}+).
+                  </p>
+                ) : (
+                  <p className="text-xs font-semibold text-navy">You&apos;ve hit the free-shipping goal.</p>
+                )}
+                <div className="mt-2 h-1.5 overflow-hidden bg-mist" aria-hidden>
+                  <div className="h-full bg-crimson transition-all" style={{ width: `${shipProgress * 100}%` }} />
+                </div>
               </div>
-            </div>
+            ) : (
+              <p className="mb-4 text-xs font-semibold text-navy">Shipping is free on Square checkout.</p>
+            )}
             <div className="flex items-baseline justify-between">
               <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">Subtotal</p>
               <p className="font-display text-2xl font-bold text-navy">{formatPrice(subtotal, currency)}</p>
