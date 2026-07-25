@@ -6,6 +6,9 @@
  *
  * Requires: SQUARE_ACCESS_TOKEN
  *
+ *   FORCE_RECREATE=1 rebuilds discount payment links
+ *   FORCE_DELETE_OLD=1 also deletes prior discount short links (breaks shared URLs)
+ *
  *   node jerseydeals/scripts/ensure-first-buyer-discount-links.mjs
  */
 
@@ -38,6 +41,7 @@ const PURCHASERS_PATH = join(__dirname, '../public/purchasers.json')
 const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '10')
 const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
 const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
+const FORCE_DELETE_OLD = process.env.FORCE_DELETE_OLD === '1'
 
 if (!TOKEN) {
   console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
@@ -293,7 +297,13 @@ async function main() {
         continue
       }
       try {
-        if (row.discountPaymentLinkId) await deletePaymentLink(row.discountPaymentLinkId)
+        if (FORCE_DELETE_OLD && row.discountPaymentLinkId) {
+          await deletePaymentLink(row.discountPaymentLinkId)
+        } else if (row.discountPaymentLinkId) {
+          console.warn(
+            `keeping prior discount link for ${name.slice(0, 40)} (set FORCE_DELETE_OLD=1 to remove)`,
+          )
+        }
         const disc = await createDiscountedLink({
           variationId,
           name,

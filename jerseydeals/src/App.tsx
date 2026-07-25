@@ -1055,8 +1055,35 @@ export default function App() {
     urlHydrated.current = true
   }, [])
 
+  // Stable marketing deep-link: /jerseydeals/?buy=<variationId|itemId|sku|slug>
+  // Always resolves to the current Square Payment Link so FB posts don't 404 after rebuilds.
+  useEffect(() => {
+    if (loadState !== 'ready' || !listings.length) return
+    const params = new URLSearchParams(window.location.search)
+    const buy = (params.get('buy') || params.get('checkout') || '').trim()
+    if (!buy) return
+    const needle = buy.toLowerCase()
+    const ebayNeedle = needle.startsWith('ebay:') ? needle : `ebay:${needle}`
+    const item =
+      listings.find((row) => row.id.toLowerCase() === needle) ||
+      listings.find((row) => (row.itemId || '').toLowerCase() === needle) ||
+      listings.find((row) => (row.sku || '').toLowerCase() === needle || (row.sku || '').toLowerCase() === ebayNeedle) ||
+      listings.find((row) => {
+        const product = listingProductPageUrl(row, SQUARE_STORE_URL)
+        return Boolean(product && product.toLowerCase().includes(`/${needle}`))
+      }) ||
+      listings.find((row) => shortTitle(row.title).toLowerCase() === needle)
+    const url = item ? listingBuyUrl(item) : ''
+    if (!url) return
+    track('buy_deeplink', { id: item!.id, buy })
+    window.location.replace(url)
+  }, [loadState, listings])
+
   useEffect(() => {
     if (!urlHydrated.current) return
+    // Don't clobber an in-flight buy deep-link while we resolve checkout.
+    const current = new URLSearchParams(window.location.search)
+    if (current.get('buy') || current.get('checkout')) return
     const params = new URLSearchParams()
     if (query.trim()) params.set('q', query.trim())
     if (audienceFilter !== 'All') params.set('audience', audienceFilter)

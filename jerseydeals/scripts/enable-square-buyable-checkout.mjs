@@ -15,6 +15,8 @@
  * Optional: SQUARE_ENVIRONMENT, SQUARE_LOCATION_ID,
  *   SQUARE_SHIPPING_PERCENT (default 10), SQUARE_SHIPPING_CENTS (legacy flat fee),
  *   FORCE_RECREATE=1 to rebuild all payment links
+ *   FORCE_DELETE_OLD=1 also deletes prior payment-link IDs (breaks shared square.link URLs —
+ *   leave off so Facebook / ads keep working)
  *
  *   node jerseydeals/scripts/enable-square-buyable-checkout.mjs
  */
@@ -36,6 +38,8 @@ const LOCATION_OVERRIDE = process.env.SQUARE_LOCATION_ID || ''
 const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
 const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '10')
 const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
+/** Dangerous: deleting old Square short links breaks Facebook/ads that already shared them. */
+const FORCE_DELETE_OLD = process.env.FORCE_DELETE_OLD === '1'
 const REDIRECT_BASE =
   process.env.SQUARE_PURCHASE_REDIRECT_URL ||
   'https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/?purchase=1'
@@ -340,9 +344,16 @@ for (const item of items) {
       let row = existing[variationId]
       // Reuse only if URL still looks valid and shipping config matches
       if (mustRecreate || !row?.url || !row.paymentLinkId) {
-        if (row?.paymentLinkId) await deletePaymentLink(row.paymentLinkId)
-        // Drop discount links so first10 script recreates them with matching shipping
-        if (row?.discountPaymentLinkId) await deletePaymentLink(row.discountPaymentLinkId)
+        // Keep prior short links alive unless explicitly opted in — shared FB/ads URLs
+        // point at square.link/u/… and 404 forever once deleted.
+        if (FORCE_DELETE_OLD) {
+          if (row?.paymentLinkId) await deletePaymentLink(row.paymentLinkId)
+          if (row?.discountPaymentLinkId) await deletePaymentLink(row.discountPaymentLinkId)
+        } else if (row?.paymentLinkId || row?.discountPaymentLinkId) {
+          console.warn(
+            `keeping prior payment link(s) for ${name.slice(0, 40)} (set FORCE_DELETE_OLD=1 to remove)`,
+          )
+        }
         row = await createPaymentLink({ variationId, name, locationId })
         created += 1
         console.log(`✓ created ${name.slice(0, 60)}`)
