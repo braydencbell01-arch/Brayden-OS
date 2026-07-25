@@ -1,7 +1,8 @@
 name: Sync Jersey Deals inventory
 
 # Prefers Square Catalog when SQUARE_* secrets exist; otherwise eBay.
-# Also reconciles sold orders: delists on Square + eBay + Jersey Deals.
+# Reconciles sales from Square orders / qty-0 AND eBay SoldList, then delists
+# on Square + eBay + Jersey Deals so a sale on one channel clears the others.
 # Writes listings.json / sold-out.json / checkout-links.json and redeploys Pages when changed.
 
 on:

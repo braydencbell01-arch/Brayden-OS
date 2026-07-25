@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 /**
- * When something sells on Square, remove it everywhere:
+ * When something sells on Square OR eBay, remove it everywhere:
  *  - Square inventory → 0, variation unsellable
  *  - Delete Square Payment Links (regular + first10)
  *  - End matching eBay listing (sku ebay:{itemId})
  *  - Drop from listings.json + checkout-links.json
  *  - Write public/sold-out.json for instant client filtering
  *
+ * Sale signals:
+ *  - Square COMPLETED orders (lookback SOLD_LOOKBACK_DAYS)
+ *  - Square inventory qty 0
+ *  - eBay SoldList (GetMyeBaySelling) mapped via sku ebay:{itemId}
+ *
  * Requires: SQUARE_ACCESS_TOKEN
- * Optional: EBAY_* (skip eBay end if missing), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
+ * Optional: EBAY_* (needed for eBay sold detection + EndItem), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
  *
  *   node jerseydeals/scripts/reconcile-sold-inventory.mjs
  *   DRY_RUN=1 node jerseydeals/scripts/reconcile-sold-inventory.mjs
@@ -105,16 +110,15 @@ function ebayIdFromSku(sku) {
   return m ? m[1] : ''
 }
 
-async function endEbayListing(itemId) {
-  if (!HAS_EBAY || !itemId) return { ok: false, skipped: true }
+async function ebayCall(callName, innerXml) {
+  if (!HAS_EBAY) throw new Error('eBay credentials missing')
   const body = `<?xml version="1.0" encoding="utf-8"?>
-<EndItemRequest xmlns="${EBAY.ns}">
+<${callName}Request xmlns="${EBAY.ns}">
   <RequesterCredentials>
     <eBayAuthToken>${EBAY.token}</eBayAuthToken>
   </RequesterCredentials>
-  <ItemID>${itemId}</ItemID>
-  <EndingReason>NotAvailable</EndingReason>
-</EndItemRequest>`
+  ${innerXml}
+</${callName}Request>`
   const res = await fetch(EBAY.endpoint, {
     method: 'POST',
     headers: {
@@ -123,12 +127,21 @@ async function endEbayListing(itemId) {
       'X-EBAY-API-DEV-NAME': EBAY.dev,
       'X-EBAY-API-APP-NAME': EBAY.app,
       'X-EBAY-API-CERT-NAME': EBAY.cert,
-      'X-EBAY-API-CALL-NAME': 'EndItem',
+      'X-EBAY-API-CALL-NAME': callName,
       'X-EBAY-API-SITEID': '0',
     },
     body,
   })
-  const text = await res.text()
+  return res.text()
+}
+
+async function endEbayListing(itemId) {
+  if (!HAS_EBAY || !itemId) return { ok: false, skipped: true }
+  const text = await ebayCall(
+    'EndItem',
+    `<ItemID>${itemId}</ItemID>
+  <EndingReason>NotAvailable</EndingReason>`,
+  )
   if (/<Ack>(Success|Warning)<\/Ack>/i.test(text)) return { ok: true }
   const short = (text.match(/<ShortMessage>([^<]+)/i) || [])[1] || ''
   const long = (text.match(/<LongMessage>([^<]+)/i) || [])[1] || ''
@@ -137,6 +150,128 @@ async function endEbayListing(itemId) {
     return { ok: true, already: true, message: short || long }
   }
   return { ok: false, message: short || long || text.slice(0, 200) }
+}
+
+/** Map ebay item id → Square variation meta from local catalog files. */
+function buildEbayToVariationMap(listings, links, soldOutItems = []) {
+  const map = new Map()
+  const put = (ebayId, row) => {
+    if (!ebayId || !row?.variationId || map.has(ebayId)) return
+    map.set(ebayId, {
+      variationId: row.variationId,
+      title: row.title || ebayId,
+      sku: row.sku || `ebay:${ebayId}`,
+      itemId: row.itemId || '',
+    })
+  }
+  for (const row of listings || []) {
+    put(ebayIdFromSku(row.sku), {
+      variationId: row.id,
+      title: row.title,
+      sku: row.sku,
+      itemId: row.itemId,
+    })
+  }
+  for (const row of links || []) {
+    put(ebayIdFromSku(row.sku), {
+      variationId: row.variationId,
+      title: row.title,
+      sku: row.sku,
+      itemId: row.itemId,
+    })
+  }
+  // Keep mapping after a kit is removed from listings so re-runs stay idempotent.
+  for (const row of soldOutItems || []) {
+    put(row.ebayId || ebayIdFromSku(row.sku), {
+      variationId: row.variationId,
+      title: row.title,
+      sku: row.sku || (row.ebayId ? `ebay:${row.ebayId}` : ''),
+      itemId: row.itemId,
+    })
+  }
+  return map
+}
+
+/**
+ * eBay SoldList → Square variation ids (via sku ebay:{itemId}).
+ * This closes the gap where a kit sells on eBay but Square qty stays 1.
+ */
+async function collectEbaySoldVariationIds({ keepInStock, listings, links, soldOutItems }) {
+  const sold = new Map()
+  if (!HAS_EBAY) return sold
+
+  const keep = new Set(keepInStock || [])
+  const byEbay = buildEbayToVariationMap(listings, links, soldOutItems)
+  if (byEbay.size === 0) return sold
+
+  const days = Math.min(Math.max(LOOKBACK_DAYS, 1), 60)
+  let page = 1
+  let totalPages = 1
+  const soldEbayIds = new Set()
+
+  while (page <= totalPages && page <= 10) {
+    const text = await ebayCall(
+      'GetMyeBaySelling',
+      `<SoldList>
+    <DurationInDays>${days}</DurationInDays>
+    <Include>true</Include>
+    <Pagination>
+      <EntriesPerPage>100</EntriesPerPage>
+      <PageNumber>${page}</PageNumber>
+    </Pagination>
+  </SoldList>`,
+    )
+    if (!/<Ack>(Success|Warning)<\/Ack>/i.test(text)) {
+      const short = (text.match(/<ShortMessage>([^<]+)/i) || [])[1] || text.slice(0, 160)
+      throw new Error(`eBay SoldList failed: ${short}`)
+    }
+    const pages = Number.parseInt((text.match(/<TotalNumberOfPages>(\d+)/i) || [])[1] || '1', 10)
+    if (Number.isFinite(pages) && pages > 0) totalPages = pages
+
+    for (const match of text.matchAll(/<ItemID>(\d+)<\/ItemID>/g)) {
+      soldEbayIds.add(match[1])
+    }
+    page += 1
+  }
+
+  // Optional deep check: GetItem for catalog eBay ids missing from SoldList.
+  // Off by default (SoldList is enough); set EBAY_DEEP_CHECK=1 to enable.
+  if (process.env.EBAY_DEEP_CHECK === '1') {
+    for (const [ebayId, meta] of byEbay) {
+      if (soldEbayIds.has(ebayId)) continue
+      if (keep.has(meta.variationId)) continue
+      try {
+        const text = await ebayCall(
+          'GetItem',
+          `<ItemID>${ebayId}</ItemID><DetailLevel>ReturnSummary</DetailLevel>`,
+        )
+        if (!/<Ack>(Success|Warning)<\/Ack>/i.test(text)) continue
+        const status = (text.match(/<ListingStatus>([^<]+)<\/ListingStatus>/i) || [])[1] || ''
+        const qtySold = Number.parseInt((text.match(/<QuantitySold>(\d+)/i) || [])[1] || '0', 10)
+        if (/^completed$/i.test(status) || qtySold > 0) {
+          soldEbayIds.add(ebayId)
+        }
+      } catch {
+        /* ignore per-item failures */
+      }
+    }
+  }
+
+  for (const ebayId of soldEbayIds) {
+    const meta = byEbay.get(ebayId)
+    if (!meta?.variationId || keep.has(meta.variationId)) continue
+    sold.set(meta.variationId, {
+      orderIds: [],
+      title: meta.title,
+      qty: 1,
+      sku: meta.sku,
+      itemId: meta.itemId,
+      ebayId,
+      fromEbaySold: true,
+    })
+  }
+
+  return sold
 }
 
 async function setInventoryZero(variationId, locationId) {
@@ -198,7 +333,7 @@ async function deletePaymentLink(paymentLinkId) {
 async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStock }) {
   const ignoredOrders = new Set(ignoredOrderIds || [])
   const keep = new Set(keepInStock || [])
-  const sold = new Map() // variationId -> { orderIds, title, qty }
+  const sold = new Map() // variationId -> { orderIds, title, qty, sources... }
   const start = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
   let cursor = ''
   do {
@@ -226,10 +361,12 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
           orderIds: [],
           title: line.name || variationId,
           qty: 0,
+          fromSquareOrder: true,
         }
         prev.orderIds.push(order.id)
         prev.qty += Number.parseFloat(line.quantity || '1') || 1
         prev.title = line.name || prev.title
+        prev.fromSquareOrder = true
         sold.set(variationId, prev)
       }
     }
@@ -256,16 +393,46 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
       const qty = Number.parseFloat(row.quantity || '0') || 0
       if (qty > 0) continue
       const variationId = row.catalog_object_id
-      if (sold.has(variationId) || keep.has(variationId)) continue
+      if (keep.has(variationId)) continue
       const listing = (listings.listings || []).find((l) => l.id === variationId)
       const link = (links.links || []).find((l) => l.variationId === variationId)
-      sold.set(variationId, {
+      const prev = sold.get(variationId) || {
         orderIds: [],
         title: listing?.title || link?.title || variationId,
         qty: 0,
-        fromInventoryZero: true,
-      })
+      }
+      prev.fromInventoryZero = true
+      prev.title = prev.title || listing?.title || link?.title || variationId
+      sold.set(variationId, prev)
     }
+  }
+
+  // eBay sales must also delist Square + Jersey Deals (was the Spurs gap).
+  try {
+    const soldOutFile = loadJson(SOLD_OUT_PATH, { items: [] })
+    const ebaySold = await collectEbaySoldVariationIds({
+      keepInStock: keep,
+      listings: listings.listings || [],
+      links: links.links || [],
+      soldOutItems: soldOutFile.items || [],
+    })
+    for (const [variationId, info] of ebaySold) {
+      const prev = sold.get(variationId) || {
+        orderIds: [],
+        title: info.title,
+        qty: 0,
+      }
+      prev.fromEbaySold = true
+      prev.ebayId = info.ebayId || prev.ebayId
+      prev.sku = info.sku || prev.sku
+      prev.itemId = info.itemId || prev.itemId
+      prev.title = info.title || prev.title
+      prev.qty = Math.max(prev.qty || 0, info.qty || 1)
+      sold.set(variationId, prev)
+    }
+    console.log(`eBay sold mapped to catalog: ${ebaySold.size}`)
+  } catch (err) {
+    console.warn(`eBay sold scan skipped: ${err.message}`)
   }
 
   return sold
@@ -370,6 +537,9 @@ async function main() {
   const linksFile = loadJson(LINKS_PATH, { links: [] })
   const listingsFile = loadJson(LISTINGS_PATH, { listings: [] })
   const soldOutFile = loadJson(SOLD_OUT_PATH, { syncedAt: '', count: 0, items: [] })
+  for (const item of soldOutFile.items || []) {
+    if (item.variationId) already.add(item.variationId)
+  }
 
   const originalListings = [...(listingsFile.listings || [])]
   const originalLinks = [...(linksFile.links || [])]
@@ -378,25 +548,33 @@ async function main() {
   for (const [variationId, info] of soldMap) {
     const listing = originalListings.find((l) => l.id === variationId)
     const link = originalLinks.find((l) => l.variationId === variationId)
+    // Already reconciled and gone from site catalog — don't re-hit APIs every run.
+    if (already.has(variationId) && !listing && !link) {
+      continue
+    }
     const meta = {
       title: info.title,
-      sku: listing?.sku || link?.sku || '',
-      itemId: listing?.itemId || link?.itemId || '',
+      sku: info.sku || listing?.sku || link?.sku || '',
+      itemId: info.itemId || listing?.itemId || link?.itemId || '',
     }
-    console.log(`→ delist ${meta.title.slice(0, 70)} (${variationId})`)
+    const why = [
+      info.fromEbaySold ? 'ebay-sold' : '',
+      info.fromSquareOrder ? 'square-order' : '',
+      info.fromInventoryZero ? 'square-qty-0' : '',
+    ]
+      .filter(Boolean)
+      .join('+')
+    console.log(`→ delist ${meta.title.slice(0, 70)} (${variationId}) [${why || 'unknown'}]`)
     const row = await delistVariation(variationId, { ...meta }, locationId, {
       links: originalLinks,
     })
     row.itemId = meta.itemId
+    row.sources = why ? why.split('+') : ['unknown']
     results.push(row)
     already.add(variationId)
     for (const oid of info.orderIds || []) {
       if (!state.processedOrderIds.includes(oid)) state.processedOrderIds.push(oid)
     }
-  }
-
-  for (const item of soldOutFile.items || []) {
-    if (item.variationId) already.add(item.variationId)
   }
 
   const soldIds = new Set(already)
@@ -420,7 +598,7 @@ async function main() {
       title: r.title || listing?.title || link?.title || r.variationId,
       ebayId: r.ebayId || ebayIdFromSku(listing?.sku || link?.sku),
       soldAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-      sources: ['square-order-or-zero-qty'],
+      sources: Array.isArray(r.sources) && r.sources.length ? r.sources : ['square-order-or-zero-qty'],
     })
   }
 

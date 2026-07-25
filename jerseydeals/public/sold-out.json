@@ -1,5 +1,16 @@
 {
-  "syncedAt": "2026-07-25T02:44:28Z",
-  "count": 0,
-  "items": []
+  "syncedAt": "2026-07-25T21:00:52Z",
+  "count": 1,
+  "items": [
+    {
+      "variationId": "IICEPL6TBH6ZVJPRURFJ4HBU",
+      "itemId": "FW6CHQFW7YHRGVIVWL3UKBOC",
+      "title": "Tottenham Hotspur 23/24 Pre-Match Jersey (Nike) · M",
+      "ebayId": "389131856395",
+      "soldAt": "2026-07-25T21:00:39Z",
+      "sources": [
+        "ebay-sold"
+      ]
+    }
+  ]
 }

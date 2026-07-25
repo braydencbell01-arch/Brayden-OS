@@ -198,10 +198,10 @@ npm run sync:square               # refresh listings.json after catalog polish
 
 ### Sold-item reconcile (must-have)
 
-When a kit sells on Square, `npm run reconcile:sold` removes it from:
+When a kit sells on **Square or eBay**, `npm run reconcile:sold` removes it from:
 
 - Square (qty 0 + unsellable + Payment Links deleted)
-- eBay (`EndItem` when SKU is `ebay:{itemId}`)
+- eBay (`EndItem` when SKU is `ebay:{itemId}`; also reads eBay SoldList so eBay-first sales clear Square/site)
 - Jersey Deals (`listings.json` + `sold-out.json` for instant client hide)
 
 Test purchases that should stay in stock can be restored with `npm run restore:listing` and recorded in `public/reconcile-exceptions.json`.

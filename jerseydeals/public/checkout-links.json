@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-25T02:44:28Z",
+  "syncedAt": "2026-07-25T21:00:52Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 33,
+  "count": 32,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -201,19 +201,6 @@
       "discountPaymentLinkId": "SF4AJRQZSOEBIJHY",
       "discountUrl": "https://square.link/u/5QjiY8l5",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0FtQdXIF3B4j4C3XsdMsn2lZi86YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "FW6CHQFW7YHRGVIVWL3UKBOC",
-      "variationId": "IICEPL6TBH6ZVJPRURFJ4HBU",
-      "title": "Tottenham Hotspur 23/24 Pre-Match Jersey (Nike) · M",
-      "sku": "ebay:389131856395",
-      "paymentLinkId": "FTW4YVI2PNLAWUOQ",
-      "url": "https://square.link/u/Kl0NcaQF",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/MrgHlWLqJfhJpLKhqhsmAbJtpaOZY",
-      "discountPaymentLinkId": "6OIV6DZMCFFHWDDD",
-      "discountUrl": "https://square.link/u/XBB7STTJ",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/MZtIKhEuy1kqRgMakiAvFO8UPeYZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
