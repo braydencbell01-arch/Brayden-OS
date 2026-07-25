@@ -225,12 +225,26 @@ export function HomeSearch({
     }
   }
 
+  const submitSearch = () => {
+    setFocused(true)
+    setOpenPlayerError(null)
+    if (!query.trim()) return
+    const first = hits.leagues[0] ?? hits.teams[0] ?? hits.players[0] ?? null
+    if (first) void handleHit(first)
+  }
+
   return (
     <div ref={rootRef} className="relative z-20 mb-3.5">
       <label className="sr-only" htmlFor="home-search">
         Search any league, club, or player
       </label>
-      <div className="flex min-h-11 items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.05] px-3 py-2 focus-within:border-lime/45 focus-within:bg-white/[0.07]">
+      <form
+        className="flex min-h-11 items-center gap-2 rounded-2xl border border-white/12 bg-white/[0.05] py-1.5 pl-3 pr-1.5 focus-within:border-lime/45 focus-within:bg-white/[0.07]"
+        onSubmit={(event) => {
+          event.preventDefault()
+          submitSearch()
+        }}
+      >
         <svg
           width="16"
           height="16"
@@ -249,6 +263,7 @@ export function HomeSearch({
           onFocus={() => setFocused(true)}
           placeholder="Try Arsenal, Premier League, Messi…"
           autoComplete="off"
+          enterKeyHint="search"
           className="min-w-0 flex-1 bg-transparent text-base text-cream outline-none placeholder:text-mist/40"
         />
         {query ? (
@@ -258,12 +273,23 @@ export function HomeSearch({
               setQuery('')
               setRemote({ teams: [], players: [] })
             }}
-            className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/60 transition hover:text-lime"
+            className="shrink-0 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/60 transition hover:text-lime"
           >
             Clear
           </button>
         ) : null}
-      </div>
+        <button
+          type="submit"
+          aria-label="Search"
+          title="Enter"
+          className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-[#2563eb] px-3 py-2 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af]"
+        >
+          Enter
+          <span aria-hidden className="text-sm font-semibold leading-none">
+            ↵
+          </span>
+        </button>
+      </form>
 
       {showPanel ? (
         <div

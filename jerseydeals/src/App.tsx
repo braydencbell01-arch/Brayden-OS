@@ -1306,29 +1306,43 @@ export default function App() {
           }`}
         >
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2.5 md:px-8">
-            <label className="relative min-w-0 flex-1">
-              <span className="sr-only">Search kits</span>
-              <input
-                id="sticky-search"
-                type="search"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    goInventory({ focusSearch: true })
-                  }
-                }}
-                placeholder="Search club, kit, size, brand…"
-                className={`w-full border px-4 py-2.5 text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
-                  navSolid
-                    ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
-                    : 'border-white/20 bg-white/10 text-white placeholder:text-white/55'
-                }`}
-              />
-            </label>
+            <form
+              className="relative min-w-0 flex-1"
+              onSubmit={(e) => {
+                e.preventDefault()
+                goInventory()
+              }}
+            >
+              <label className="block">
+                <span className="sr-only">Search kits</span>
+                <input
+                  id="sticky-search"
+                  type="search"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value)
+                  }}
+                  placeholder="Search club, kit, size, brand…"
+                  enterKeyHint="search"
+                  className={`w-full border py-2.5 pl-4 pr-[5.75rem] text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
+                    navSolid
+                      ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
+                      : 'border-white/20 bg-white/10 text-white placeholder:text-white/55'
+                  }`}
+                />
+              </label>
+              <button
+                type="submit"
+                aria-label="Search"
+                title="Enter"
+                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af]"
+              >
+                Enter
+                <span aria-hidden className="text-sm font-semibold leading-none">
+                  ↵
+                </span>
+              </button>
+            </form>
             <p
               className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] sm:block ${
                 navSolid ? 'text-muted' : 'text-white/55'
