@@ -237,7 +237,7 @@ export function HomeSearch({
   }
 
   return (
-    <div ref={rootRef} className="relative z-20 mb-3.5">
+    <div ref={rootRef} className="relative z-20 mb-2">
       <label className="sr-only" htmlFor="home-search">
         Search any league, club, or player
       </label>

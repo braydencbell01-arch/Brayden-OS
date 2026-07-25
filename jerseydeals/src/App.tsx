@@ -1,4 +1,12 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
@@ -264,7 +272,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`border px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] transition ${
+      className={`border px-2.5 py-1 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] transition ${
         active
           ? 'border-navy bg-navy text-cream'
           : 'border-navy/15 text-navy/70 hover:border-navy/40 hover:text-navy'
@@ -272,6 +280,17 @@ function FilterChip({
     >
       {label}
     </button>
+  )
+}
+
+function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+      <p className="shrink-0 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted sm:w-[4.5rem]">
+        {label}
+      </p>
+      <div className="flex min-w-0 flex-wrap gap-1.5">{children}</div>
+    </div>
   )
 }
 
@@ -1758,7 +1777,7 @@ export default function App() {
                     Trending now
                   </h2>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {(['All', 'Youth', 'Training', 'Jerseys', 'Sale'] as const).map((f) => (
                     <FilterChip
                       key={f}
@@ -2137,14 +2156,14 @@ export default function App() {
               </motion.div>
 
               {loadState === 'ready' && listings.length > 0 && (
-                <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <motion.div {...fadeUp(reduce, 0.08)} className="mt-6 space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-muted">
                       Showing {filtered.length} of {listings.length}
                       {deferredHint.includes('result') ? ` · ${deferredHint}` : ''}
                     </p>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="flex items-center gap-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted">
                         Sort
                         <select
                           value={sortBy}
@@ -2152,7 +2171,7 @@ export default function App() {
                             setSortBy(e.target.value as SortId)
                             track('sort_change', { sort: e.target.value })
                           }}
-                          className="border border-navy/15 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30"
+                          className="border border-navy/15 bg-white px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30"
                         >
                           {SORT_OPTIONS.map((option) => (
                             <option key={option.id} value={option.id}>
@@ -2163,7 +2182,7 @@ export default function App() {
                       </label>
                       <button
                         type="button"
-                        className="border border-navy/15 px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy md:hidden"
+                        className="border border-navy/15 px-2.5 py-1 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-navy md:hidden"
                         aria-expanded={filtersOpen}
                         onClick={() => setFiltersOpen((open) => !open)}
                       >
@@ -2174,13 +2193,13 @@ export default function App() {
                   </div>
 
                   {activeFilterChips.length > 0 ? (
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {activeFilterChips.map((chip) => (
                         <button
                           key={chip.key}
                           type="button"
                           onClick={chip.clear}
-                          className="border border-navy bg-navy px-3 py-1.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy/80"
+                          className="border border-navy bg-navy px-2 py-0.5 font-brand text-[0.6rem] font-bold uppercase tracking-[0.1em] text-cream transition hover:bg-navy/80"
                         >
                           {chip.label} ✕
                         </button>
@@ -2188,7 +2207,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={clearAllFilters}
-                        className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                        className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
                       >
                         Clear all
                       </button>
@@ -2196,107 +2215,92 @@ export default function App() {
                   ) : null}
 
                   <div
-                    className={`space-y-5 ${
+                    className={`space-y-2 ${
                       filtersOpen || deferredQuery.trim() ? 'block' : 'hidden md:block'
                     }`}
                   >
-                    <div className="space-y-3">
-                      <p className="eyebrow text-muted">Audience</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(
-                          [
-                            { id: 'All', label: 'All' },
-                            { id: 'Adult', label: "Men's / adult" },
-                            { id: 'Youth', label: 'Youth' },
-                          ] as const
-                        ).map((option) => (
-                          <FilterChip
-                            key={option.id}
-                            label={option.label}
-                            active={audienceFilter === option.id}
-                            onClick={() => setAudienceFilter(option.id)}
-                          />
-                        ))}
-                      </div>
-                    </div>
+                    <FilterRow label="Audience">
+                      {(
+                        [
+                          { id: 'All', label: 'All' },
+                          { id: 'Adult', label: "Men's / adult" },
+                          { id: 'Youth', label: 'Youth' },
+                        ] as const
+                      ).map((option) => (
+                        <FilterChip
+                          key={option.id}
+                          label={option.label}
+                          active={audienceFilter === option.id}
+                          onClick={() => setAudienceFilter(option.id)}
+                        />
+                      ))}
+                    </FilterRow>
 
-                    <div className="space-y-3">
-                      <p className="eyebrow text-muted">Type</p>
-                      <div className="flex flex-wrap gap-2">
+                    <FilterRow label="Type">
+                      <FilterChip
+                        label="All"
+                        active={tagFilter === 'All'}
+                        onClick={() => setTagFilter('All')}
+                      />
+                      {availableTags.map((tag) => (
+                        <FilterChip
+                          key={tag}
+                          label={tag}
+                          active={tagFilter === tag}
+                          onClick={() => setTagFilter(tag)}
+                        />
+                      ))}
+                    </FilterRow>
+
+                    <FilterRow label="Price">
+                      {PRICE_FILTERS.map((range) => (
+                        <FilterChip
+                          key={range.id}
+                          label={range.label}
+                          active={priceFilter === range.id}
+                          onClick={() => {
+                            setPriceFilter(range.id)
+                            track('price_filter', { range: range.id })
+                          }}
+                        />
+                      ))}
+                    </FilterRow>
+
+                    {availableSizes.length > 1 ? (
+                      <FilterRow label="Size">
                         <FilterChip
                           label="All"
-                          active={tagFilter === 'All'}
-                          onClick={() => setTagFilter('All')}
+                          active={sizeFilter === 'All'}
+                          onClick={() => setSizeFilter('All')}
                         />
-                        {availableTags.map((tag) => (
+                        {availableSizes.map((size) => (
                           <FilterChip
-                            key={tag}
-                            label={tag}
-                            active={tagFilter === tag}
-                            onClick={() => setTagFilter(tag)}
+                            key={size}
+                            label={size}
+                            active={sizeFilter === size}
+                            onClick={() => setSizeFilter(size)}
                           />
                         ))}
-                      </div>
-                    </div>
+                      </FilterRow>
+                    ) : null}
 
-                    <div className="space-y-3">
-                      <p className="eyebrow text-muted">Price</p>
-                      <div className="flex flex-wrap gap-2">
-                        {PRICE_FILTERS.map((range) => (
+                    {availableBrands.length > 0 ? (
+                      <FilterRow label="Brand">
+                        <FilterChip
+                          label="All"
+                          active={brandFilter === 'All'}
+                          onClick={() => setBrandFilter('All')}
+                        />
+                        {availableBrands.map((brand) => (
                           <FilterChip
-                            key={range.id}
-                            label={range.label}
-                            active={priceFilter === range.id}
-                            onClick={() => {
-                              setPriceFilter(range.id)
-                              track('price_filter', { range: range.id })
-                            }}
+                            key={brand}
+                            label={brand}
+                            active={brandFilter === brand}
+                            onClick={() => setBrandFilter(brand)}
                           />
                         ))}
-                      </div>
-                    </div>
-
-                    {availableSizes.length > 1 && (
-                      <div className="space-y-3">
-                        <p className="eyebrow text-muted">Size</p>
-                        <div className="flex flex-wrap gap-2">
-                          <FilterChip
-                            label="All"
-                            active={sizeFilter === 'All'}
-                            onClick={() => setSizeFilter('All')}
-                          />
-                          {availableSizes.map((size) => (
-                            <FilterChip
-                              key={size}
-                              label={size}
-                              active={sizeFilter === size}
-                              onClick={() => setSizeFilter(size)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {availableBrands.length > 0 && (
-                      <div className="space-y-3">
-                        <p className="eyebrow text-muted">Brand</p>
-                        <div className="flex flex-wrap gap-2">
-                          <FilterChip
-                            label="All"
-                            active={brandFilter === 'All'}
-                            onClick={() => setBrandFilter('All')}
-                          />
-                          {availableBrands.map((brand) => (
-                            <FilterChip
-                              key={brand}
-                              label={brand}
-                              active={brandFilter === brand}
-                              onClick={() => setBrandFilter(brand)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                      </FilterRow>
+                    ) : null}
                   </div>
                 </motion.div>
               )}
