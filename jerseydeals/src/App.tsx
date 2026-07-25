@@ -45,7 +45,6 @@ import {
   kitType,
   listingBuyUrl,
   listingImages,
-  listingPrimaryImage,
   listingProductPageUrl,
   listingSize,
   lowestSalePrice,
@@ -253,7 +252,7 @@ const FAQ = [
   },
   {
     q: 'Where do you ship from?',
-    a: 'Orders ship from our US inventory. Shipping is 5% of your item total and is added at Square checkout.',
+    a: 'Orders ship from our US inventory. Shipping is 10% of your item total and is added at Square checkout.',
   },
   {
     q: 'What is your return policy?',
@@ -261,50 +260,24 @@ const FAQ = [
   },
 ]
 
-function ProductPhoto({
-  item,
-  tone = 'light',
-  eager = false,
-}: {
-  item: Listing
-  tone?: 'dark' | 'light'
-  eager?: boolean
-}) {
-  // Browse/scroll cards always show the cover photo only.
-  const src = listingPrimaryImage(item) || FALLBACK_IMAGE
-  return (
-    <div
-      className={`absolute inset-0 flex items-center justify-center ${
-        tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
-      }`}
-    >
-      <SafeImage
-        key={`${item.id}-${src}`}
-        src={src}
-        alt={shortTitle(item.title)}
-        className="h-full w-full object-contain object-center p-2 select-none"
-        loading={eager ? 'eager' : 'lazy'}
-        decoding="async"
-        draggable={false}
-      />
-    </div>
-  )
-}
-
-/** Multi-photo carousel for quick view only — not used on scroll cards. */
+/** eBay photo strip: every image side-by-side, flush, no crop/zoom. */
 function ProductGallery({
   item,
   tone = 'light',
   eager = false,
+  controls = true,
 }: {
   item: Listing
   tone?: 'dark' | 'light'
   eager?: boolean
+  /** Arrows / dots for quick view; browse cards stay a plain swipe strip. */
+  controls?: boolean
 }) {
   const photos = listingImages(item)
   const [active, setActive] = useState(0)
   const trackRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef(0)
+  const bg = tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
 
   useEffect(() => {
     setActive(0)
@@ -326,7 +299,7 @@ function ProductGallery({
   }
 
   useEffect(() => {
-    if (photos.length <= 1) return
+    if (!controls || photos.length <= 1) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
       e.preventDefault()
@@ -340,25 +313,28 @@ function ProductGallery({
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [photos.length, item.id])
+  }, [photos.length, item.id, controls])
 
   if (photos.length === 0) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-navy-deep to-navy p-6">
-        <span className="font-display text-2xl uppercase text-white/70">{item.tag}</span>
+      <div className={`absolute inset-0 flex items-center justify-center ${bg}`}>
+        <SafeImage
+          src={FALLBACK_IMAGE}
+          alt={shortTitle(item.title)}
+          className="h-full w-full object-contain object-center select-none"
+          loading={eager ? 'eager' : 'lazy'}
+          decoding="async"
+          draggable={false}
+        />
       </div>
     )
   }
 
-  if (photos.length === 1) {
-    return <ProductPhoto item={item} tone={tone} eager={eager} />
-  }
-
   return (
-    <div className="absolute inset-0 bg-navy-deep">
+    <div className={`absolute inset-0 ${bg}`}>
       <div
         ref={trackRef}
-        className="flex h-full snap-x snap-mandatory overflow-x-auto scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ WebkitOverflowScrolling: 'touch' }}
         onScroll={(event) => {
           const el = event.currentTarget
@@ -373,15 +349,15 @@ function ProductGallery({
       >
         {photos.map((src, index) => (
           <div
-            key={`${item.id}-${index}`}
-            className="relative h-full min-w-full shrink-0 snap-start snap-always"
+            key={`${item.id}-${index}-${src}`}
+            className="relative h-full w-full min-w-full shrink-0 grow-0 basis-full snap-start snap-always"
           >
             <SafeImage
               src={src}
               alt={
                 index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`
               }
-              className="h-full w-full object-cover object-center select-none"
+              className="h-full w-full object-contain object-center select-none"
               loading={index === 0 || eager ? 'eager' : 'lazy'}
               decoding="async"
               draggable={false}
@@ -389,46 +365,50 @@ function ProductGallery({
           </div>
         ))}
       </div>
-      <button
-        type="button"
-        aria-label="Previous photo"
-        disabled={active === 0}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          go(-1)
-        }}
-        className="absolute left-2 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-lg leading-none text-navy shadow disabled:opacity-35"
-      >
-        ‹
-      </button>
-      <button
-        type="button"
-        aria-label="Next photo"
-        disabled={active === photos.length - 1}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          go(1)
-        }}
-        className="absolute right-2 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-lg leading-none text-navy shadow disabled:opacity-35"
-      >
-        ›
-      </button>
-      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center gap-1.5">
-        {photos.map((_, index) => (
-          <span
-            key={`dot-${index}`}
-            className={`h-1.5 w-1.5 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition ${
-              index === active ? 'bg-white' : 'bg-white/45'
-            }`}
-            aria-hidden
-          />
-        ))}
-      </div>
-      <p className="pointer-events-none absolute bottom-3 right-3 z-20 bg-navy-deep/75 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-        {active + 1}/{photos.length}
-      </p>
+      {controls && photos.length > 1 ? (
+        <>
+          <button
+            type="button"
+            aria-label="Previous photo"
+            disabled={active === 0}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              go(-1)
+            }}
+            className="absolute left-2 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-lg leading-none text-navy shadow disabled:opacity-35"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            aria-label="Next photo"
+            disabled={active === photos.length - 1}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              go(1)
+            }}
+            className="absolute right-2 top-1/2 z-20 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-lg leading-none text-navy shadow disabled:opacity-35"
+          >
+            ›
+          </button>
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center gap-1.5">
+            {photos.map((_, index) => (
+              <span
+                key={`dot-${index}`}
+                className={`h-1.5 w-1.5 rounded-full shadow-[0_0_0_1px_rgba(0,0,0,0.25)] transition ${
+                  index === active ? 'bg-white' : 'bg-white/45'
+                }`}
+                aria-hidden
+              />
+            ))}
+          </div>
+          <p className="pointer-events-none absolute bottom-3 right-3 z-20 bg-navy-deep/75 px-2 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
+            {active + 1}/{photos.length}
+          </p>
+        </>
+      ) : null}
     </div>
   )
 }
@@ -472,7 +452,7 @@ function ProductLink({
           }`}
           aria-label={`Quick view ${shortTitle(item.title)}`}
         >
-          <ProductPhoto item={item} tone={tone} />
+          <ProductGallery item={item} tone={tone} controls={false} />
           {onSale && (
             <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
               Sale
@@ -615,7 +595,7 @@ function QuickViewModal({
       <button type="button" className="absolute inset-0 bg-navy-deep/60" aria-label="Close quick view" onClick={onClose} />
       <div className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-cream shadow-2xl sm:max-h-[88dvh] sm:flex-row">
         <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:h-auto sm:w-[48%]">
-          <ProductGallery item={item} tone="light" eager />
+          <ProductGallery item={item} tone="light" eager controls />
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 sm:p-7">
           <div className="flex items-start justify-between gap-3">
@@ -784,7 +764,13 @@ export default function App() {
     const url = listingBuyUrl(item, { discounted })
     if (!url) return
     track('buy_now', { id: item.id, discounted })
+    // Buying removes the kit from the bag so it doesn’t linger after checkout.
+    setCart(removeCartLine(item.id))
     window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  function handleCheckoutLine(lineId: string) {
+    setCart(removeCartLine(lineId))
   }
 
   function dismissOfferModal() {
@@ -2743,6 +2729,7 @@ export default function App() {
         onRemove={(id) => setCart(removeCartLine(id))}
         onClear={() => setCart(clearCart())}
         onRequestCheckout={requestCheckoutAccess}
+        onCheckoutLine={handleCheckoutLine}
         discountActive={offerActive}
       />
 

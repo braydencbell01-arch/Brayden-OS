@@ -27,7 +27,7 @@ const REDIRECT_URL =
 const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
 const PURCHASERS_PATH = join(__dirname, '../public/purchasers.json')
-const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '5')
+const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '10')
 const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
 const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
 

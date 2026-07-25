@@ -1,5 +1,5 @@
 /** Flat shipping rate charged on every Jersey Deals / Square checkout. */
-export const SHIPPING_PERCENT = 0.05
+export const SHIPPING_PERCENT = 0.1
 
 /** Shipping dollars for a merchandise subtotal (2-decimal money). */
 export function shippingForSubtotal(subtotal: number) {

@@ -411,7 +411,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     var bar=document.createElement("div");
     bar.id="jd-trust-bar";
     bar.className="jd-trust";
-    bar.innerHTML="<span>Ships from US inventory</span><span>5% shipping on every order</span><span>Secure Square checkout</span><span>Real product photos</span>";
+    bar.innerHTML="<span>Ships from US inventory</span><span>10% shipping on every order</span><span>Secure Square checkout</span><span>Real product photos</span>";
     var header=document.querySelector("header,[class*=\\"header\\"],[data-ux=\\"Header\\"]");
     if(header && header.parentNode){
       header.parentNode.insertBefore(bar, header.nextSibling);
@@ -602,7 +602,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     wrap.appendChild(cart);
     var ship=document.createElement("div");
     ship.style.cssText="flex-basis:100%;font:600 12px/1.3 system-ui,sans-serif;color:#0b223f;margin-top:.15rem";
-    ship.textContent="Shipping: 5% added at checkout · email required";
+    ship.textContent="Shipping: 10% added at checkout · email required";
     wrap.appendChild(ship);
     var host=document.querySelector('[class*="product"], main, #content, body');
     var price=null;

@@ -13,7 +13,7 @@
  *
  * Requires: SQUARE_ACCESS_TOKEN, SQUARE_STORE_URL (or VITE_SQUARE_STORE_URL)
  * Optional: SQUARE_ENVIRONMENT, SQUARE_LOCATION_ID,
- *   SQUARE_SHIPPING_PERCENT (default 5), SQUARE_SHIPPING_CENTS (legacy flat fee),
+ *   SQUARE_SHIPPING_PERCENT (default 10), SQUARE_SHIPPING_CENTS (legacy flat fee),
  *   FORCE_RECREATE=1 to rebuild all payment links
  *
  *   node jerseydeals/scripts/enable-square-buyable-checkout.mjs
@@ -34,8 +34,11 @@ const API_VERSION = '2026-04-26'
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN
 const LOCATION_OVERRIDE = process.env.SQUARE_LOCATION_ID || ''
 const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
-const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '5')
+const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '10')
 const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
+const REDIRECT_URL =
+  process.env.SQUARE_PURCHASE_REDIRECT_URL ||
+  'https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/?purchase=1'
 
 if (!TOKEN) {
   console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
@@ -156,6 +159,7 @@ async function createPaymentLink({ variationId, name, locationId }) {
       checkout_options: {
         ask_for_shipping_address: true,
         allow_tipping: false,
+        redirect_url: REDIRECT_URL,
       },
       order,
     },

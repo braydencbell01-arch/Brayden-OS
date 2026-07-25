@@ -25,6 +25,7 @@ export function CartDrawer({
   onRemove,
   onClear,
   onRequestCheckout,
+  onCheckoutLine,
   discountActive,
 }: {
   open: boolean
@@ -35,6 +36,8 @@ export function CartDrawer({
   onClear: () => void
   /** Gate checkout behind email / offer rules. Return true if checkout may proceed. */
   onRequestCheckout: () => boolean
+  /** Remove the checked-out line so it doesn’t stay in the bag after buy. */
+  onCheckoutLine: (id: string) => void
   discountActive: boolean
 }) {
   const emailId = useId()
@@ -101,13 +104,14 @@ export function CartDrawer({
     }
   }
 
-  function beginCheckout(href: string, meta: Record<string, unknown>) {
+  function beginCheckout(href: string, lineId: string, meta: Record<string, unknown>) {
     if (!hasEmail) {
       setEmailError('Enter your email to checkout.')
       return
     }
     if (!onRequestCheckout()) return
-    track('cart_checkout', { ...meta, discounted, has_email: true, shipping_percent: 5 })
+    track('cart_checkout', { ...meta, discounted, has_email: true, shipping_percent: 10 })
+    onCheckoutLine(lineId)
     window.open(href, '_blank', 'noopener,noreferrer')
     onClose()
   }
@@ -301,8 +305,8 @@ export function CartDrawer({
             <p className="mt-2 text-xs leading-relaxed text-muted">
               Checkout opens Square&apos;s secure payment page
               {cart.lines.length > 1
-                ? ' for each kit (one secure link per item, each includes 5% shipping). Your bag stays here if you come back.'
-                : ' (includes 5% shipping).'}
+                ? ' for each kit (one secure link per item, each includes 10% shipping). Checked-out items leave your bag.'
+                : ' (includes 10% shipping). Checked-out items leave your bag.'}
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {cart.lines.length === 1 ? (
@@ -310,7 +314,7 @@ export function CartDrawer({
                   type="button"
                   disabled={!hasEmail}
                   onClick={() =>
-                    beginCheckout(cartLineCheckoutUrl(cart.lines[0]!, discounted), {
+                    beginCheckout(cartLineCheckoutUrl(cart.lines[0]!, discounted), cart.lines[0]!.id, {
                       items: 1,
                       mode: 'single',
                     })
@@ -326,7 +330,7 @@ export function CartDrawer({
                     type="button"
                     disabled={!hasEmail}
                     onClick={() =>
-                      beginCheckout(cartLineCheckoutUrl(line, discounted), {
+                      beginCheckout(cartLineCheckoutUrl(line, discounted), line.id, {
                         items: cart.lines.length,
                         mode: 'line',
                         index,
