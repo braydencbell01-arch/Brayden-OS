@@ -36,7 +36,11 @@ function read(): AppSettings {
 }
 
 function write(next: AppSettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  } catch {
+    /* private mode / quota — keep in-memory defaults only */
+  }
 }
 
 export function loadSettings(): AppSettings {
@@ -46,6 +50,9 @@ export function loadSettings(): AppSettings {
 export function saveSettings(patch: Partial<AppSettings>): AppSettings {
   const next = { ...read(), ...patch }
   write(next)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('braystats:settings', { detail: next }))
+  }
   return next
 }
 

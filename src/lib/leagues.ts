@@ -575,7 +575,7 @@ export const LEAGUES: League[] = [
   {
     id: 'copa-argentina',
     name: 'Copa Argentina',
-    short: 'CA',
+    short: 'CPA',
     country: 'Argentina',
     espnCode: 'arg.copa',
     kind: 'domestic',
@@ -596,7 +596,7 @@ export const LEAGUES: League[] = [
   {
     id: 'trofeo-de-campeones',
     name: 'Trofeo de Campeones',
-    short: 'TDC',
+    short: 'TDA',
     country: 'Argentina',
     espnCode: 'arg.trofeo_de_campeones',
     kind: 'domestic',
@@ -887,8 +887,17 @@ export const LEAGUES: League[] = [
   }
 ]
 
+export function findLeague(id: string | null | undefined): League | undefined {
+  if (!id) return undefined
+  return LEAGUES.find((item) => item.id === id)
+}
+
+export function isLeagueId(id: string | null | undefined): id is LeagueId {
+  return Boolean(findLeague(id))
+}
+
 export function getLeague(id: LeagueId): League {
-  const league = LEAGUES.find((item) => item.id === id)
+  const league = findLeague(id)
   if (!league) throw new Error(`Unknown league: ${id}`)
   return league
 }
@@ -1189,19 +1198,30 @@ export function leagueImportanceRank(id: LeagueId): number {
 
 /**
  * Favorited leagues first (still by importance among themselves),
- * then the rest in LEAGUES priority order.
+ * then the preferred league, then the rest in LEAGUES priority order.
  */
 export function compareLeaguesForDisplay(
   a: LeagueId,
   b: LeagueId,
   favoriteLeagueIds?: Set<string> | null,
+  preferredLeagueId?: string | null,
 ): number {
   const aFav = favoriteLeagueIds?.has(a) ? 0 : 1
   const bFav = favoriteLeagueIds?.has(b) ? 0 : 1
   if (aFav !== bFav) return aFav - bFav
+  if (preferredLeagueId) {
+    const aPref = a === preferredLeagueId ? 0 : 1
+    const bPref = b === preferredLeagueId ? 0 : 1
+    if (aPref !== bPref) return aPref - bPref
+  }
   return leagueImportanceRank(a) - leagueImportanceRank(b)
 }
 
-export function leaguesInDisplayOrder(favoriteLeagueIds?: Set<string> | null): League[] {
-  return [...LEAGUES].sort((a, b) => compareLeaguesForDisplay(a.id, b.id, favoriteLeagueIds))
+export function leaguesInDisplayOrder(
+  favoriteLeagueIds?: Set<string> | null,
+  preferredLeagueId?: string | null,
+): League[] {
+  return [...LEAGUES].sort((a, b) =>
+    compareLeaguesForDisplay(a.id, b.id, favoriteLeagueIds, preferredLeagueId),
+  )
 }

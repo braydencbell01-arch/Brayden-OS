@@ -68,6 +68,9 @@ export function hasPurchased() {
 export function markPurchased() {
   if (!canUseStorage()) return
   window.localStorage.setItem(PURCHASED_STORAGE_KEY, '1')
+  // First-time 10% is one-time — clear activation so discounted links stop after a buy.
+  const email = readBuyerEmail() || readOffer().email
+  writeOffer({ activated: false, email, activatedAt: undefined })
   window.dispatchEvent(new CustomEvent('jerseydeals:purchased'))
 }
 

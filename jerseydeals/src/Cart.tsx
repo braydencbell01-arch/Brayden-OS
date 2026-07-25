@@ -25,7 +25,6 @@ export function CartDrawer({
   onRemove,
   onClear,
   onRequestCheckout,
-  onCheckoutLine,
   discountActive,
 }: {
   open: boolean
@@ -36,8 +35,6 @@ export function CartDrawer({
   onClear: () => void
   /** Gate checkout behind email / offer rules. Return true if checkout may proceed. */
   onRequestCheckout: () => boolean
-  /** Remove the checked-out line so it doesn’t stay in the bag after buy. */
-  onCheckoutLine: (id: string) => void
   discountActive: boolean
 }) {
   const emailId = useId()
@@ -110,8 +107,14 @@ export function CartDrawer({
       return
     }
     if (!onRequestCheckout()) return
-    track('cart_checkout', { ...meta, discounted, has_email: true, shipping_percent: 10 })
-    onCheckoutLine(lineId)
+    track('cart_checkout', {
+      ...meta,
+      line_id: lineId,
+      discounted,
+      has_email: true,
+      shipping_percent: 10,
+    })
+    // Keep the line until Square return (?purchase= / ?sold=) confirms payment.
     window.open(href, '_blank', 'noopener,noreferrer')
     onClose()
   }

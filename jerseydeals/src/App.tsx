@@ -452,13 +452,11 @@ function ProductLink({
   return (
     <motion.li {...fadeUp(reduce, delay)}>
       <div className="group outline-none">
-        <button
-          type="button"
-          onClick={() => onQuickView(item)}
-          className={`relative block aspect-square w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-crimson ${
+        {/* Gallery is not a <button> — nested interactive scroll + button breaks swipe/a11y. */}
+        <div
+          className={`relative aspect-square w-full overflow-hidden ${
             tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
           }`}
-          aria-label={`Quick view ${shortTitle(item.title)}`}
         >
           <ProductGallery item={item} tone={tone} controls={false} />
           {onSale && (
@@ -480,12 +478,17 @@ function ProductLink({
               {photoCount} photos
             </span>
           ) : null}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+          <button
+            type="button"
+            onClick={() => onQuickView(item)}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:pointer-events-auto md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+            aria-label={`Quick view ${shortTitle(item.title)}`}
+          >
             <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
               Quick view
             </span>
-          </div>
-        </button>
+          </button>
+        </div>
         <div className="mt-4 block">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{item.tag}</p>
@@ -731,7 +734,9 @@ export default function App() {
   const [recentIds, setRecentIds] = useState<string[]>(() => readRecentlyViewed())
   const [offerOpen, setOfferOpen] = useState(false)
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
-  const [offerActive, setOfferActive] = useState(() => readOffer().activated)
+  const [offerActive, setOfferActive] = useState(
+    () => readOffer().activated && !hasPurchased(),
+  )
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const urlHydrated = useRef(false)
@@ -739,17 +744,25 @@ export default function App() {
   useEffect(() => {
     initAnalytics()
     track('page_view', { page: 'landing' })
-    capturePurchaseReturnFromUrl()
+    const purchased = capturePurchaseReturnFromUrl()
+    if (purchased) setOfferActive(false)
     const fromReturn = captureSoldReturnFromUrl()
     if (fromReturn.length) {
       rememberSoldOutIds(fromReturn)
       setSoldIds(new Set(readLocalSoldOutIds()))
+      // Only remove bag lines after a confirmed purchase return — never when checkout opens.
       for (const id of fromReturn) setCart(removeCartLine(id))
     }
     void fetchSoldOutIds(asset('')).then((ids) => {
       setSoldIds(new Set(ids))
-      for (const id of ids) setCart(removeCartLine(id))
     })
+    const syncOffer = () => setOfferActive(readOffer().activated && !hasPurchased())
+    window.addEventListener('jerseydeals:offer', syncOffer)
+    window.addEventListener('jerseydeals:purchased', syncOffer)
+    return () => {
+      window.removeEventListener('jerseydeals:offer', syncOffer)
+      window.removeEventListener('jerseydeals:purchased', syncOffer)
+    }
   }, [])
 
   useEffect(() => {
@@ -791,13 +804,8 @@ export default function App() {
     const url = listingBuyUrl(item, { discounted })
     if (!url) return
     track('buy_now', { id: item.id, discounted })
-    // Buying removes the kit from the bag so it doesn’t linger after checkout.
-    setCart(removeCartLine(item.id))
+    // Keep bag lines until Square return (?purchase= / ?sold=) confirms the sale.
     window.open(url, '_blank', 'noopener,noreferrer')
-  }
-
-  function handleCheckoutLine(lineId: string) {
-    setCart(removeCartLine(lineId))
   }
 
   function dismissOfferModal() {
@@ -808,6 +816,7 @@ export default function App() {
         /* ignore */
       }
     }
+    setPendingBuy(null)
     setOfferOpen(false)
   }
 
@@ -2759,7 +2768,6 @@ export default function App() {
         onRemove={(id) => setCart(removeCartLine(id))}
         onClear={() => setCart(clearCart())}
         onRequestCheckout={requestCheckoutAccess}
-        onCheckoutLine={handleCheckoutLine}
         discountActive={offerActive}
       />
 

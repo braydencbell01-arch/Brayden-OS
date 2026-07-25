@@ -329,6 +329,7 @@ export default function App() {
   const [statsInitialTab, setStatsInitialTab] = useState<'pulse' | 'compare' | 'predict' | 'leagues'>(
     'pulse',
   )
+  const [compareDeepLink, setCompareDeepLink] = useState<{ a?: string; b?: string }>({})
   const [fantasyResearchTab, setFantasyResearchTab] = useState<'value' | 'compare' | undefined>()
   const [activeLeagueId, setActiveLeagueId] = useState<LeagueId | null>(null)
   const [activeTeam, setActiveTeam] = useState<FavoriteTeam | null>(null)
@@ -667,6 +668,7 @@ export default function App() {
 
     if (route.kind === 'compare') {
       // Real-stats compare lives on Stats; FPL compare is under Fantasy → Research.
+      setCompareDeepLink({ a: route.a, b: route.b })
       setStatsInitialTab('compare')
       setActiveTab('stats')
       setActiveLeagueId(null)
@@ -680,6 +682,7 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    document.documentElement.dataset.density = loadSettings().density
     const onHashChange = () => {
       if (writingHashRef.current) {
         writingHashRef.current = false
@@ -909,6 +912,8 @@ export default function App() {
               onOpenPlayer={openPlayer}
               reduce={reduce}
               initialTab={statsInitialTab}
+              compareA={compareDeepLink.a}
+              compareB={compareDeepLink.b}
             />
           </motion.div>
         ) : screen === 'fantasy' ? (

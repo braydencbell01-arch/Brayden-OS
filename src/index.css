@@ -38,6 +38,20 @@
   }
 }
 
+@layer base {
+  html[data-density='compact'] body {
+    font-size: 15px;
+  }
+
+  html[data-density='compact'] .pt-screen {
+    padding-top: max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.55rem));
+  }
+
+  html[data-density='compact'] .density-stack {
+    gap: 0.5rem;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

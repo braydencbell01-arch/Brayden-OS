@@ -90,15 +90,15 @@ export async function captureEmail(
     })
     if (!res.ok) {
       return {
-        ok: true,
-        message: 'Saved. Confirm FormSubmit’s first email to your inbox if prompted.',
+        ok: false,
+        message: 'Couldn’t reach the signup service. Try again in a moment.',
       }
     }
     return { ok: true, message: 'You’re on the BrayStats list.' }
   } catch {
     return {
-      ok: true,
-      message: 'Saved on this device. Inbox delivery may need a one-time FormSubmit confirm.',
+      ok: false,
+      message: 'Network error — your email wasn’t submitted. Check connection and try again.',
     }
   }
 }

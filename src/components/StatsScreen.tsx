@@ -22,6 +22,8 @@ export function StatsScreen({
   onOpenPlayer,
   reduce,
   initialTab = 'pulse',
+  compareA,
+  compareB,
 }: {
   favorites: FavoritesApi
   matches: Match[]
@@ -29,6 +31,8 @@ export function StatsScreen({
   onOpenPlayer: (player: PlayerNavRef) => void
   reduce: boolean | null
   initialTab?: StatsTab
+  compareA?: string
+  compareB?: string
 }) {
   const [tab, setTab] = useState<StatsTab>(initialTab)
   const leagues = leaguesInDisplayOrder(favorites.leagueIds)
@@ -196,6 +200,8 @@ export function StatsScreen({
           <PlayerComparePanel
             favoritePlayers={favorites.players}
             onOpenPlayer={onOpenPlayer}
+            initialA={compareA}
+            initialB={compareB}
           />
         ) : null}
 

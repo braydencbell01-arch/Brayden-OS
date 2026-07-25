@@ -3,6 +3,7 @@ import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { leagueAccentColor } from '../lib/stats/branding'
 import { groupMatchesByLeague, isFavoriteMatch, type Match } from '../lib/matches'
+import { loadSettings } from '../lib/settings'
 import { LeagueLogoMark } from './LeagueLogoMark'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -169,9 +170,17 @@ export function MatchDayByLeague({
   favoriteLeagueIds?: Set<string>
   favoriteTeamIds?: Set<string>
 }) {
+  const [preferredLeagueId, setPreferredLeagueId] = useState(
+    () => loadSettings().preferredLeagueId,
+  )
+  useEffect(() => {
+    const sync = () => setPreferredLeagueId(loadSettings().preferredLeagueId)
+    window.addEventListener('braystats:settings', sync)
+    return () => window.removeEventListener('braystats:settings', sync)
+  }, [])
   const groups = useMemo(
-    () => groupMatchesByLeague(matches, favoriteLeagueIds),
-    [matches, favoriteLeagueIds],
+    () => groupMatchesByLeague(matches, favoriteLeagueIds, preferredLeagueId),
+    [matches, favoriteLeagueIds, preferredLeagueId],
   )
   const leagueIds = favoriteLeagueIds ?? EMPTY_ID_SET
   const teamIds = favoriteTeamIds ?? EMPTY_ID_SET

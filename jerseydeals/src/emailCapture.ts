@@ -163,7 +163,7 @@ export async function captureEmail(
     }
   }
   return {
-    ok: true,
-    message: 'Saved on this device. Delivery may need a one-time inbox confirm.',
+    ok: false,
+    message: 'Couldn’t submit your email right now. Check your connection and try again.',
   }
 }

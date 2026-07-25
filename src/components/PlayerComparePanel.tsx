@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MISSING_SHORT, missingShort } from '../lib/display'
 import type { FavoritePlayer } from '../lib/favorites'
-import { getLeague } from '../lib/leagues'
+import { getLeague, isLeagueId } from '../lib/leagues'
 import {
   resolvePlayerNavFromSearch,
   searchEspnSoccer,
@@ -201,17 +201,63 @@ async function loadSide(nav: PlayerNavRef): Promise<Omit<Side, 'nav'>> {
 /**
  * Head-to-head compare using real ESPN season stats (not FPL).
  */
+function resolveCompareRef(
+  raw: string | undefined,
+  favoritePlayers: FavoritePlayer[],
+): PlayerNavRef | null {
+  if (!raw) return null
+  const fromFav = favoritePlayers.find((player) => player.id === raw)
+  if (fromFav) {
+    return {
+      id: fromFav.id,
+      leagueId: fromFav.leagueId,
+      name: fromFav.name,
+      shortName: fromFav.shortName || fromFav.name,
+      teamId: fromFav.teamId,
+      teamName: fromFav.teamName,
+      position: fromFav.position,
+    }
+  }
+  // Deep-link format: leagueId:playerId or leagueId:playerId:Display Name
+  const parts = raw.split(':')
+  if (parts.length >= 2 && isLeagueId(parts[0]) && parts[1]) {
+    const name = parts.slice(2).join(':') || parts[1]
+    return {
+      id: parts[1],
+      leagueId: parts[0],
+      name,
+      shortName: name,
+    }
+  }
+  return null
+}
+
 export function PlayerComparePanel({
   favoritePlayers,
   onOpenPlayer,
+  initialA,
+  initialB,
 }: {
   favoritePlayers: FavoritePlayer[]
   onOpenPlayer: (player: PlayerNavRef) => void
+  initialA?: string
+  initialB?: string
 }) {
-  const [navA, setNavA] = useState<PlayerNavRef | null>(null)
-  const [navB, setNavB] = useState<PlayerNavRef | null>(null)
+  const [navA, setNavA] = useState<PlayerNavRef | null>(() =>
+    resolveCompareRef(initialA, favoritePlayers),
+  )
+  const [navB, setNavB] = useState<PlayerNavRef | null>(() =>
+    resolveCompareRef(initialB, favoritePlayers),
+  )
   const [sideA, setSideA] = useState<Side | null>(null)
   const [sideB, setSideB] = useState<Side | null>(null)
+
+  useEffect(() => {
+    const nextA = resolveCompareRef(initialA, favoritePlayers)
+    const nextB = resolveCompareRef(initialB, favoritePlayers)
+    if (nextA) setNavA(nextA)
+    if (nextB) setNavB(nextB)
+  }, [favoritePlayers, initialA, initialB])
 
   useEffect(() => {
     if (!navA) {

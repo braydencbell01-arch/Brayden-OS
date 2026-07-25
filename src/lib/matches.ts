@@ -272,6 +272,7 @@ export function groupMatchesByDate(matches: Match[]): Array<{ dateKey: string; m
 export function groupMatchesByLeague(
   matches: Match[],
   favoriteLeagueIds?: Set<string> | null,
+  preferredLeagueId?: string | null,
 ): Array<{ leagueId: LeagueId; matches: Match[] }> {
   const map = new Map<LeagueId, Match[]>()
   for (const match of matches) {
@@ -281,7 +282,7 @@ export function groupMatchesByLeague(
   }
 
   return [...map.keys()]
-    .sort((a, b) => compareLeaguesForDisplay(a, b, favoriteLeagueIds))
+    .sort((a, b) => compareLeaguesForDisplay(a, b, favoriteLeagueIds, preferredLeagueId))
     .map((leagueId) => ({
       leagueId,
       matches: (map.get(leagueId) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),

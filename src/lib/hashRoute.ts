@@ -1,4 +1,5 @@
 import type { LeagueId } from './leagues'
+import { isLeagueId } from './leagues'
 import type { FavoriteTeam } from './favorites'
 import type { PlayerNavRef } from '../components/PlayerProfileScreen'
 
@@ -82,19 +83,23 @@ export function parseHash(hash: string): HashRoute {
     }
   }
   if (raw.startsWith('league-stats=')) {
-    return { kind: 'league-stats', leagueId: decodeURIComponent(raw.slice('league-stats='.length)) as LeagueId }
+    const leagueId = decodeURIComponent(raw.slice('league-stats='.length))
+    if (!isLeagueId(leagueId)) return null
+    return { kind: 'league-stats', leagueId }
   }
   if (raw.startsWith('league=')) {
-    return { kind: 'league', leagueId: decodeURIComponent(raw.slice(7)) as LeagueId }
+    const leagueId = decodeURIComponent(raw.slice(7))
+    if (!isLeagueId(leagueId)) return null
+    return { kind: 'league', leagueId }
   }
   if (raw.startsWith('team=')) {
     const p = parseQs(raw.slice(5))
-    if (!p.id || !p.league || !p.name) return null
+    if (!p.id || !p.league || !p.name || !isLeagueId(p.league)) return null
     return {
       kind: 'team',
       team: {
         id: p.id,
-        leagueId: p.league as LeagueId,
+        leagueId: p.league,
         name: p.name,
         shortName: p.short || p.name,
         kind: p.kind === 'national' ? 'national' : 'club',
@@ -103,12 +108,12 @@ export function parseHash(hash: string): HashRoute {
   }
   if (raw.startsWith('player=')) {
     const p = parseQs(raw.slice(7))
-    if (!p.id || !p.league) return null
+    if (!p.id || !p.league || !isLeagueId(p.league)) return null
     return {
       kind: 'player',
       player: {
         id: p.id,
-        leagueId: p.league as LeagueId,
+        leagueId: p.league,
         name: p.name,
         shortName: p.short || p.name,
         teamId: p.teamId,

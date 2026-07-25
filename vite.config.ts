@@ -56,7 +56,11 @@ export default defineConfig({
         clientsClaim: true,
         navigateFallback: '/Brayden-OS/index.html',
         // Jersey Deals is a sibling app under the same Pages host.
-        navigateFallbackDenylist: [/^\/Brayden-OS\/jerseydeals/],
+        // Never hijack the sibling Jersey Deals app (or its assets) with BrayStats shell.
+        navigateFallbackDenylist: [
+          /^\/Brayden-OS\/jerseydeals(?:\/|$)/i,
+          /\/jerseydeals(?:\/|$)/i,
+        ],
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff2}'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [

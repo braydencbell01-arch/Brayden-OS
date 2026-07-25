@@ -39,14 +39,24 @@ export function FirstBuyerOfferModal({
     setBusy(false)
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = previous
+      document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, onClose])
 
   if (!open) return null
 
   const isOffer = mode === 'offer'
+
+  function dismiss() {
+    if (isOffer) track('offer_dismissed', {})
+    onClose()
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -105,27 +115,17 @@ export function FirstBuyerOfferModal({
         type="button"
         className="absolute inset-0 bg-navy-deep/70"
         aria-label={isOffer ? 'Dismiss offer' : 'Close'}
-        onClick={() => {
-          if (isOffer) {
-            track('offer_dismissed', {})
-            onClose()
-          }
-        }}
+        onClick={dismiss}
       />
       <div className="relative w-full max-w-md border border-white/10 bg-navy-deep p-6 text-cream shadow-2xl sm:p-8">
-        {isOffer ? (
-          <button
-            type="button"
-            onClick={() => {
-              track('offer_dismissed', {})
-              onClose()
-            }}
-            className="absolute right-3 top-3 grid h-8 w-8 place-items-center text-cream/70 hover:text-cream"
-            aria-label="Close"
-          >
-            ✕
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={dismiss}
+          className="absolute right-3 top-3 grid h-8 w-8 place-items-center text-cream/70 hover:text-cream"
+          aria-label="Close"
+        >
+          ✕
+        </button>
 
         <p className="font-brand text-[0.65rem] font-bold uppercase tracking-[0.22em] text-crimson">
           {isOffer ? 'First-time buyer offer' : 'Email required'}

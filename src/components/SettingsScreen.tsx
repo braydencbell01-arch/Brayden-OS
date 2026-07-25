@@ -24,7 +24,9 @@ export function SettingsScreen({
   const [emailBusy, setEmailBusy] = useState(false)
 
   const patch = (next: Partial<AppSettings>) => {
-    setSettings(saveSettings(next))
+    const saved = saveSettings(next)
+    setSettings(saved)
+    if (next.density) document.documentElement.dataset.density = saved.density
   }
 
   async function onEmailSubmit(event: FormEvent) {
