@@ -2,10 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// Relative base so the shop works on both:
-//   https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
-//   https://jerseydeals.online/jerseydeals/
+// Default `./` for monorepo Pages path (/Brayden-OS/jerseydeals/).
+// Dedicated domain deploy sets JERSEYDEALS_BASE=/
+const base = process.env.JERSEYDEALS_BASE || './'
+
 export default defineConfig({
-  base: './',
+  base,
   plugins: [react(), tailwindcss()],
 })
