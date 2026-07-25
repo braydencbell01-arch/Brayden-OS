@@ -28,6 +28,8 @@ Edit `src/config.ts` or set env vars when building:
 |----------|---------|
 | `VITE_SQUARE_STORE_URL` | Square Online storefront URL (CTAs switch to Square when set) |
 | `VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT` | Jersey Deals–only form POST URL. Default: FormSubmit → `CONTACT_EMAIL`. Never share with BrayStats. |
+| `VITE_JERSEYDEALS_EMAIL_API_URL` | Collector API that upserts **Square Customers** (Cloudflare Worker). |
+| `VITE_JERSEYDEALS_EMAIL_API_SECRET` | Optional shared secret header for the collector. |
 | `VITE_GA_ID` | Optional GA4 measurement ID |
 
 Until Square Catalog sync is configured, primary checkout stays on eBay (`@jerseydealsofficial`).
@@ -140,6 +142,33 @@ npm run square:polish-storefront
 ```
 
 The popup only shows for browsers that have never completed a purchase (local flag + prior Square emails). Checkout requires an email on both storefronts.
+
+### Collect offer / checkout emails into Square Customers
+
+Offer + checkout email gates POST to:
+
+1. **Square Customers** via `jerseydeals/email-api` (Cloudflare Worker), when `VITE_JERSEYDEALS_EMAIL_API_URL` / `JERSEYDEALS_EMAIL_API_URL` is set
+2. **FormSubmit** inbox fallback → `CONTACT_EMAIL` (confirm the first activation email once)
+
+Deploy the worker (GitHub secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SQUARE_ACCESS_TOKEN`):
+
+```bash
+# local test collector
+cd jerseydeals
+SQUARE_ACCESS_TOKEN=... npm run email:collect-server
+```
+
+Workflow: **Deploy Jersey Deals email API**. Then set `VITE_JERSEYDEALS_EMAIL_API_URL` to the Worker URL and re-polish:
+
+```bash
+JERSEYDEALS_EMAIL_API_URL=https://jerseydeals-email-api.<account>.workers.dev npm run square:polish-storefront
+```
+
+List collected emails anytime from Square Dashboard → Customers, or:
+
+```bash
+npm run square:first10-links   # refreshes public/purchasers.json from Square
+```
 
 ### Buyable checkout without Online Shipping
 

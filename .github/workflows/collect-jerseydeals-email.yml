@@ -1,0 +1,117 @@
+name: Collect Jersey Deals email
+
+# Creates/updates a Square Customer for each lead.
+# Trigger: repository_dispatch type `jerseydeals-email`
+#   client_payload: { email, source, secret }
+# Or workflow_dispatch for manual tests.
+
+on:
+  repository_dispatch:
+    types: [jerseydeals-email]
+  workflow_dispatch:
+    inputs:
+      email:
+        description: Email to upsert as Square Customer
+        required: true
+        type: string
+      source:
+        description: Lead source label
+        required: false
+        default: manual
+        type: string
+
+jobs:
+  upsert:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Upsert Square Customer
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          COLLECT_SECRET: ${{ secrets.JD_EMAIL_COLLECT_SECRET }}
+          EMAIL: ${{ github.event.client_payload.email || inputs.email }}
+          SOURCE: ${{ github.event.client_payload.source || inputs.source || 'manual' }}
+          PAYLOAD_SECRET: ${{ github.event.client_payload.secret }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SQUARE_ACCESS_TOKEN:-}" ]; then
+            echo "Missing SQUARE_ACCESS_TOKEN" >&2
+            exit 1
+          fi
+          if [ -n "${COLLECT_SECRET:-}" ] && [ "${GITHUB_EVENT_NAME}" = "repository_dispatch" ]; then
+            if [ "${PAYLOAD_SECRET:-}" != "${COLLECT_SECRET}" ]; then
+              echo "Invalid collect secret" >&2
+              exit 1
+            fi
+          fi
+          if [ -z "${EMAIL:-}" ]; then
+            echo "Missing email" >&2
+            exit 1
+          fi
+          node <<'NODE'
+          const email = String(process.env.EMAIL || '').trim().toLowerCase()
+          const source = String(process.env.SOURCE || 'manual').trim().slice(0, 80)
+          const token = process.env.SQUARE_ACCESS_TOKEN
+          const host = 'https://connect.squareup.com'
+          const version = '2025-10-16'
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            console.error('Invalid email')
+            process.exit(1)
+          }
+          async function square(path, { method = 'GET', body } = {}) {
+            const res = await fetch(`${host}${path}`, {
+              method,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Square-Version': version,
+                Accept: 'application/json',
+                ...(body ? { 'Content-Type': 'application/json' } : {}),
+              },
+              body: body ? JSON.stringify(body) : undefined,
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {
+              throw new Error(data?.errors?.map((e) => e.detail || e.code).join('; ') || res.status)
+            }
+            return data
+          }
+          const search = await square('/v2/customers/search', {
+            method: 'POST',
+            body: { query: { filter: { email_address: { exact: email } } }, limit: 1 },
+          })
+          const existing = (search.customers || [])[0]
+          const note = `Jersey Deals lead · source:${source} · at:${new Date().toISOString()}`
+          if (existing?.id) {
+            const prev = existing.note || ''
+            const nextNote = prev.includes(source) ? prev : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
+            await square(`/v2/customers/${existing.id}`, {
+              method: 'PUT',
+              body: {
+                customer: {
+                  email_address: email,
+                  note: nextNote,
+                  reference_id: existing.reference_id || 'jerseydeals',
+                },
+              },
+            })
+            console.log('updated', existing.id, email)
+          } else {
+            const created = await square('/v2/customers', {
+              method: 'POST',
+              body: {
+                idempotency_key: crypto.randomUUID(),
+                email_address: email,
+                note,
+                reference_id: 'jerseydeals',
+              },
+            })
+            console.log('created', created.customer?.id, email)
+          }
+          NODE

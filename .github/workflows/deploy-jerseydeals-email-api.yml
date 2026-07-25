@@ -1,0 +1,59 @@
+name: Deploy Jersey Deals email API
+
+# Deploys jerseydeals/email-api Cloudflare Worker when CF secrets are configured.
+# Required GitHub secrets:
+#   CLOUDFLARE_API_TOKEN
+#   CLOUDFLARE_ACCOUNT_ID
+#   SQUARE_ACCESS_TOKEN
+# Optional:
+#   JD_EMAIL_COLLECT_SECRET
+
+on:
+  push:
+    branches: [Brayden-OS]
+    paths:
+      - 'jerseydeals/email-api/**'
+      - '.github/workflows/deploy-jerseydeals-email-api.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jerseydeals/email-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare secrets
+        id: check
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${CF_TOKEN}" ] || [ -z "${CF_ACCOUNT}" ]; then
+            echo "has_cf=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare secrets not set — skip worker deploy (FormSubmit fallback still works)."
+          else
+            echo "has_cf=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.has_cf == 'true'
+        with:
+          node-version: '22'
+
+      - name: Deploy Worker
+        if: steps.check.outputs.has_cf == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: jerseydeals/email-api
+          command: deploy
+          secrets: |
+            SQUARE_ACCESS_TOKEN
+            COLLECT_SECRET
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          COLLECT_SECRET: ${{ secrets.JD_EMAIL_COLLECT_SECRET }}

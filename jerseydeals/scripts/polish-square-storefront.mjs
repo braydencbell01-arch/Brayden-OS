@@ -117,11 +117,14 @@ function loadPurchaserEmails() {
   }
 }
 
-function buildSnippet(map, purchaserEmails = []) {
+function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail = 'braydencbell01@gmail.com') {
   const mapJson = JSON.stringify(
     map || { byItemId: {}, byVariationId: {}, byItemIdDiscount: {}, byVariationIdDiscount: {} },
   )
   const emailsJson = JSON.stringify(purchaserEmails || [])
+  const collectUrlJson = JSON.stringify(collectUrl || '')
+  const contactEmailJson = JSON.stringify(contactEmail || 'braydencbell01@gmail.com')
+  const collectSecretJson = JSON.stringify(process.env.JERSEYDEALS_EMAIL_API_SECRET || '')
 
   // Keep head-safe elements only (style/script/link/meta).
   return `<!-- jerseydeals-storefront-polish -->
@@ -321,6 +324,9 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 (function(){
   var MAP=${mapJson};
   var PRIOR_EMAILS=${emailsJson};
+  var COLLECT_URL=${collectUrlJson};
+  var COLLECT_SECRET=${collectSecretJson};
+  var CONTACT_EMAIL=${contactEmailJson};
   var OFFER_KEY="jerseydeals.offer.v1";
   var PURCHASED_KEY="jerseydeals.purchased.v1";
   var EMAIL_KEY="jerseydeals.buyerEmail.v1";
@@ -367,6 +373,36 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
       if(PRIOR_EMAILS[i]===want) return true;
     }
     return false;
+  }
+
+  function collectLead(email, source){
+    var tasks=[];
+    if(COLLECT_URL){
+      var headers={"Content-Type":"application/json","Accept":"application/json"};
+      if(COLLECT_SECRET) headers["X-JD-Collect-Secret"]=COLLECT_SECRET;
+      tasks.push(fetch(COLLECT_URL,{
+        method:"POST",
+        headers:headers,
+        body:JSON.stringify({email:email,source:source,product:"Jersey Deals",site:"Jersey Deals"})
+      }).catch(function(){ return null; }));
+    }
+    if(CONTACT_EMAIL){
+      tasks.push(fetch("https://formsubmit.co/ajax/"+encodeURIComponent(CONTACT_EMAIL),{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify({
+          email:email,
+          source:source,
+          product:"Jersey Deals",
+          site:"Square Online",
+          list:"jerseydeals_leads",
+          _subject:"[Jersey Deals] signup · "+source,
+          _template:"table",
+          _captcha:"false"
+        })
+      }).catch(function(){ return null; }));
+    }
+    return Promise.all(tasks);
   }
 
   function walkText(root, fn){
@@ -476,12 +512,14 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
       if(emailHasPurchase(email)){
         markPurchased();
         storageSet(EMAIL_KEY, email);
+        collectLead(email, "first_buyer_offer_returning");
         err.textContent="This email already has a purchase — the first-time 10% offer isn’t available.";
         err.hidden=false;
         setTimeout(close, 1600);
         return;
       }
       writeOffer({activated:true,email:email,activatedAt:Date.now()});
+      collectLead(email, "first_buyer_offer");
       close();
       polishPrices();
       var link=findLink();
@@ -525,10 +563,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
         if(!validEmail(val)){ err.textContent="Enter a valid email address."; err.hidden=false; return; }
         if(emailHasPurchase(val)) markPurchased();
         storageSet(EMAIL_KEY, val);
-        var offer=readOffer();
-        if(!offer.activated && !hasPurchased()){
-          // keep offer inactive; email only
-        }
+        collectLead(val, "square_checkout_gate");
         root.remove();
         var href=anchor.getAttribute("href");
         if(href) window.open(href, "_blank", "noopener,noreferrer");
@@ -698,8 +733,12 @@ async function main() {
   )
 
   const purchaserEmails = loadPurchaserEmails()
-  const content = buildSnippet(map, purchaserEmails)
-  console.log(`New snippet length: ${content.length} (prior emails: ${purchaserEmails.length})`)
+  const collectUrl = (process.env.JERSEYDEALS_EMAIL_API_URL || process.env.VITE_JERSEYDEALS_EMAIL_API_URL || '').trim()
+  const contactEmail = (process.env.JERSEYDEALS_CONTACT_EMAIL || 'braydencbell01@gmail.com').trim()
+  const content = buildSnippet(map, purchaserEmails, collectUrl, contactEmail)
+  console.log(
+    `New snippet length: ${content.length} (prior emails: ${purchaserEmails.length}, collectUrl: ${collectUrl || 'formsubmit-only'})`,
+  )
   if (content.length > 65000) {
     throw new Error(`Snippet too long (${content.length}); Square limit is 65535`)
   }

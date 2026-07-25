@@ -18,6 +18,7 @@
     "square:first10-links": "node scripts/ensure-first-buyer-discount-links.mjs",
     "square:polish-catalog": "node scripts/polish-square-catalog.mjs",
     "square:polish-storefront": "node scripts/polish-square-storefront.mjs",
+    "email:collect-server": "node scripts/email-collect-server.mjs",
     "backfill:images": "node scripts/backfill-square-images-from-ebay.mjs",
     "enrich:images": "node scripts/enrich-listing-images-from-ebay.mjs",
     "square:reorder-images": "node scripts/reorder-square-images-from-ebay.mjs"

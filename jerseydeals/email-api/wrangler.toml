@@ -1,0 +1,7 @@
+name = "jerseydeals-email-api"
+main = "worker.js"
+compatibility_date = "2026-07-01"
+
+# Set secrets with:
+#   npx wrangler secret put SQUARE_ACCESS_TOKEN
+#   npx wrangler secret put COLLECT_SECRET   # optional
