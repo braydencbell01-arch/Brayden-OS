@@ -52,6 +52,7 @@ import {
   kitType,
   listingBuyUrl,
   listingImages,
+  listingPrimaryImage,
   listingProductPageUrl,
   listingSize,
   lowestSalePrice,
@@ -106,7 +107,9 @@ function BrandMark({
         : size === 'lg'
           ? 'h-16 w-16 md:h-[4.5rem] md:w-[4.5rem]'
           : 'h-28 w-28 sm:h-36 sm:w-36 md:h-44 md:w-44'
-  const src = size === 'sm' ? LOGO_SRC.sm : size === 'hero' || size === 'lg' ? LOGO_SRC.lg : LOGO_SRC.md
+  // Hero uses the 192px asset (~48KB) instead of full logo.png (~281KB).
+  const src =
+    size === 'sm' ? LOGO_SRC.sm : size === 'hero' || size === 'md' ? LOGO_SRC.md : LOGO_SRC.lg
   const word =
     wordmarkTone === 'white'
       ? 'text-white'
@@ -131,6 +134,8 @@ function BrandMark({
         height={size === 'hero' ? 176 : size === 'lg' ? 72 : size === 'md' ? 44 : 36}
         className={`${frame} shrink-0 rounded-full shadow-[0_0_0_2px_rgba(11,34,63,0.12)]`}
         decoding="async"
+        loading={size === 'hero' ? 'eager' : 'lazy'}
+        fetchPriority={size === 'hero' ? 'high' : 'auto'}
         draggable={false}
       />
       {withWordmark ? (
@@ -146,9 +151,10 @@ function SafeImage({
   src,
   alt,
   className,
-  loading,
-  decoding,
+  loading = 'lazy',
+  decoding = 'async',
   draggable,
+  fetchPriority,
 }: {
   src: string
   alt: string
@@ -156,6 +162,7 @@ function SafeImage({
   loading?: 'eager' | 'lazy'
   decoding?: 'async' | 'auto' | 'sync'
   draggable?: boolean
+  fetchPriority?: 'high' | 'low' | 'auto'
 }) {
   const [failed, setFailed] = useState(false)
   if (failed || !src) {
@@ -180,8 +187,34 @@ function SafeImage({
       loading={loading}
       decoding={decoding}
       draggable={draggable}
+      fetchPriority={fetchPriority}
       onError={() => setFailed(true)}
     />
+  )
+}
+
+/** Browse-grid cover: one photo only — full galleries stay in quick view. */
+function ProductCardCover({
+  item,
+  tone = 'light',
+}: {
+  item: Listing
+  tone?: 'dark' | 'light'
+}) {
+  const src = listingPrimaryImage(item) || FALLBACK_IMAGE
+  const bg = tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
+  return (
+    <div className={`absolute inset-0 ${bg}`}>
+      <SafeImage
+        src={src}
+        alt={shortTitle(item.title)}
+        className="h-full w-full object-contain object-center select-none"
+        loading="lazy"
+        decoding="async"
+        fetchPriority="low"
+        draggable={false}
+      />
+    </div>
   )
 }
 
@@ -282,6 +315,8 @@ function ProductGallery({
 }) {
   const photos = listingImages(item)
   const [active, setActive] = useState(0)
+  /** Only mount nearby slides so quick-view does not request every photo up front. */
+  const [mountedThrough, setMountedThrough] = useState(1)
   const trackRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef(0)
   const bg = tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
@@ -289,12 +324,14 @@ function ProductGallery({
   useEffect(() => {
     setActive(0)
     activeRef.current = 0
+    setMountedThrough(1)
     trackRef.current?.scrollTo({ left: 0 })
   }, [item.id])
 
   useEffect(() => {
     activeRef.current = active
-  }, [active])
+    setMountedThrough((prev) => Math.max(prev, Math.min(photos.length - 1, active + 1)))
+  }, [active, photos.length])
 
   const go = (dir: -1 | 1) => {
     const el = trackRef.current
@@ -360,16 +397,19 @@ function ProductGallery({
             key={`${item.id}-${index}-${src}`}
             className="relative h-full w-full min-w-full shrink-0 grow-0 basis-full snap-start snap-always"
           >
-            <SafeImage
-              src={src}
-              alt={
-                index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`
-              }
-              className="h-full w-full object-contain object-center select-none"
-              loading={index === 0 || eager ? 'eager' : 'lazy'}
-              decoding="async"
-              draggable={false}
-            />
+            {index <= mountedThrough ? (
+              <SafeImage
+                src={src}
+                alt={
+                  index === 0 ? shortTitle(item.title) : `${shortTitle(item.title)} photo ${index + 1}`
+                }
+                className="h-full w-full object-contain object-center select-none"
+                loading={index === 0 && eager ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchPriority={index === 0 && eager ? 'high' : 'low'}
+                draggable={false}
+              />
+            ) : null}
           </div>
         ))}
       </div>
@@ -423,16 +463,15 @@ function ProductGallery({
 
 function ProductLink({
   item,
-  reduce,
-  delay,
   tone = 'dark',
   onAddToCart,
   onQuickView,
   onBuyNow,
 }: {
   item: Listing
-  reduce: boolean | null
-  delay: number
+  /** Kept for call-site compatibility; cards skip per-item motion for faster paint. */
+  reduce?: boolean | null
+  delay?: number
   tone?: 'dark' | 'light'
   onAddToCart: (item: Listing) => void
   onQuickView: (item: Listing) => void
@@ -443,7 +482,7 @@ function ProductLink({
   const kit = kitType(item)
   const onSale = isSaleListing(item)
   const size = listingSize(item)
-  const photoCount = listingImages(item).length
+  const photoCount = item.images?.length ? item.images.length : item.image ? 1 : 0
   const muted = tone === 'dark' ? 'text-white/45' : 'text-muted'
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
   const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
@@ -451,15 +490,15 @@ function ProductLink({
   const used = /used|pre-?owned|worn/i.test(condition)
 
   return (
-    <motion.li {...fadeUp(reduce, delay)}>
+    <li>
       <div className="group outline-none">
-        {/* Gallery is not a <button> — nested interactive scroll + button breaks swipe/a11y. */}
+        {/* Cover only on cards — full swipe gallery lives in quick view. */}
         <div
           className={`relative aspect-square w-full overflow-hidden ${
             tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
           }`}
         >
-          <ProductGallery item={item} tone={tone} controls={false} />
+          <ProductCardCover item={item} tone={tone} />
           {onSale && (
             <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
               Sale
@@ -545,7 +584,7 @@ function ProductLink({
           </div>
         </div>
       </div>
-    </motion.li>
+    </li>
   )
 }
 
@@ -743,6 +782,7 @@ export default function App() {
   )
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
+  const [inventoryLimit, setInventoryLimit] = useState(12)
   const urlHydrated = useRef(false)
 
   useEffect(() => {
@@ -953,6 +993,15 @@ export default function App() {
     })
     return sortListings(rows, sortBy)
   }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+
+  useEffect(() => {
+    setInventoryLimit(12)
+  }, [tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+
+  const visibleInventory = useMemo(
+    () => filtered.slice(0, inventoryLimit),
+    [filtered, inventoryLimit],
+  )
 
   const activeFilterChips = useMemo(() => {
     const chips: { key: string; label: string; clear: () => void }[] = []
@@ -1425,10 +1474,13 @@ export default function App() {
               key={heroImage}
               src={heroImage}
               alt=""
-              initial={reduce ? false : { scale: 1.1, opacity: 0.55 }}
+              initial={reduce ? false : { scale: 1.06, opacity: 0.7 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: reduce ? 0 : 1.6, ease }}
+              transition={{ duration: reduce ? 0 : 1.1, ease }}
               className="h-full w-full object-cover object-center"
+              decoding="async"
+              fetchPriority="high"
+              loading="eager"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/80 to-navy-deep/25" />
             <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/45" />
@@ -1548,6 +1600,8 @@ export default function App() {
                   src={asset('category-youth.jpg')}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
                 <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
@@ -1576,6 +1630,8 @@ export default function App() {
                     src={asset('category-sale.jpg')}
                     alt=""
                     className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
                   <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
@@ -1601,6 +1657,8 @@ export default function App() {
                     src={asset('category-sale.jpg')}
                     alt=""
                     className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
                   <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
@@ -1626,6 +1684,8 @@ export default function App() {
                   src={asset('category-catalog.jpg')}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => {
                     e.currentTarget.src = FALLBACK_IMAGE
                   }}
@@ -1643,7 +1703,7 @@ export default function App() {
         </section>
 
         {/* New drops */}
-        <section id="new-drops" className="scroll-mt-44 bg-white py-20 md:py-28">
+        <section id="new-drops" className="cv-auto scroll-mt-44 bg-white py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
               {...fadeUp(reduce)}
@@ -1686,7 +1746,7 @@ export default function App() {
 
         {/* Trending now */}
         {trendingPicks.length > 0 && (
-          <section id="trending" className="scroll-mt-44 bg-mist py-20 md:py-28">
+          <section id="trending" className="cv-auto scroll-mt-44 bg-mist py-20 md:py-28">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div
                 {...fadeUp(reduce)}
@@ -1730,11 +1790,13 @@ export default function App() {
         )}
 
         {/* Lookbook campaign */}
-        <section className="relative min-h-[70svh] overflow-hidden bg-navy-deep text-white md:min-h-[80svh]">
+        <section className="cv-auto relative min-h-[70svh] overflow-hidden bg-navy-deep text-white md:min-h-[80svh]">
           <img
             src={asset('lookbook-matchday.jpg')}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/90 via-navy-deep/55 to-transparent" />
           <div className="relative z-10 mx-auto flex min-h-[70svh] max-w-6xl items-end px-5 py-16 md:min-h-[80svh] md:px-8 md:py-24">
@@ -1760,7 +1822,7 @@ export default function App() {
 
         {/* Training edit */}
         {trainingPicks.length > 0 ? (
-          <section id="training" className="scroll-mt-44 bg-mist py-20 md:py-28">
+          <section id="training" className="cv-auto scroll-mt-44 bg-mist py-20 md:py-28">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div
                 {...fadeUp(reduce)}
@@ -1793,7 +1855,7 @@ export default function App() {
         ) : null}
 
         {/* Featured */}
-        <section id="featured" className="scroll-mt-44 bg-navy py-20 text-white md:py-28">
+        <section id="featured" className="cv-auto scroll-mt-44 bg-navy py-20 text-white md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson-hot">Selected</p>
@@ -1946,12 +2008,14 @@ export default function App() {
         )}
 
         {/* Sale campaign */}
-        <section id="sale" className="relative min-h-[68svh] scroll-mt-44 overflow-hidden bg-navy-deep text-white">
+        <section id="sale" className="cv-auto relative min-h-[68svh] scroll-mt-44 overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
             <img
               src={asset('category-sale.jpg')}
               alt=""
               className="h-full w-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/80 to-navy-deep/25" />
           </div>
@@ -2046,6 +2110,8 @@ export default function App() {
                 src={tile.src}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
+                loading="lazy"
+                decoding="async"
               />
               <div className="absolute inset-0 bg-navy-deep/40 transition group-hover:bg-navy-deep/55" />
               <span className="relative flex h-full items-end p-6 font-display text-3xl font-bold uppercase tracking-wide text-white md:p-8 md:text-4xl">
@@ -2056,7 +2122,7 @@ export default function App() {
         </section>
 
         {/* Full inventory — filters first, results directly below (search scrolls here). */}
-        <section id="inventory" className="scroll-mt-48 bg-chalk py-20 md:py-28">
+        <section id="inventory" className="cv-auto scroll-mt-48 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <div id="inventory-browse" className="scroll-mt-48">
               <motion.div {...fadeUp(reduce)} className="max-w-2xl">
@@ -2269,20 +2335,34 @@ export default function App() {
               )}
 
               {filtered.length > 0 && (
-                <ul className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-                  {filtered.map((item, i) => (
-                    <ProductLink
-                      key={item.id}
-                      item={item}
-                      reduce={reduce}
-                      delay={Math.min(i, 8) * 0.04}
-                      tone="light"
-                      onAddToCart={handleAddToCart}
-                      onQuickView={handleQuickView}
-                      onBuyNow={handleBuyNow}
-                    />
-                  ))}
-                </ul>
+                <>
+                  <ul className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                    {visibleInventory.map((item) => (
+                      <ProductLink
+                        key={item.id}
+                        item={item}
+                        tone="light"
+                        onAddToCart={handleAddToCart}
+                        onQuickView={handleQuickView}
+                        onBuyNow={handleBuyNow}
+                      />
+                    ))}
+                  </ul>
+                  {visibleInventory.length < filtered.length ? (
+                    <div className="mt-10 flex flex-col items-center gap-3">
+                      <p className="text-sm text-muted">
+                        Showing {visibleInventory.length} of {filtered.length}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setInventoryLimit((n) => n + 12)}
+                        className="bg-navy px-6 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-navy/90"
+                      >
+                        Show more kits
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
 
@@ -2316,13 +2396,15 @@ export default function App() {
         </section>
 
         {/* Trust */}
-        <section id="buy-direct" className="bg-white">
+        <section id="buy-direct" className="cv-auto bg-white">
           <div className="mx-auto grid max-w-6xl md:grid-cols-2">
             <div className="relative min-h-[360px] overflow-hidden md:min-h-[560px]">
               <img
                 src={asset('hero-jersey.jpg')}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="flex flex-col justify-center px-8 py-16 md:px-12 md:py-20">

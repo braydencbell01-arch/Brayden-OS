@@ -107,6 +107,12 @@
     border: 1px solid color-mix(in srgb, var(--color-navy) 10%, transparent);
   }
 
+  /* Skip layout/paint work for off-screen marketing blocks. */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 720px;
+  }
+
   .marquee-track {
     display: flex;
     width: max-content;
