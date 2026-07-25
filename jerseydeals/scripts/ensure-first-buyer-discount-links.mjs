@@ -21,9 +21,17 @@ const HOST =
 const API_VERSION = '2025-10-16'
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN
 const DISCOUNT_NAME = 'First-time buyer 10% off'
-const REDIRECT_URL =
+const REDIRECT_BASE =
   process.env.SQUARE_PURCHASE_REDIRECT_URL ||
   'https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/?purchase=1'
+
+function redirectForVariation(variationId) {
+  const base = REDIRECT_BASE.includes('?') ? REDIRECT_BASE : `${REDIRECT_BASE}?purchase=1`
+  const url = new URL(base)
+  url.searchParams.set('purchase', '1')
+  url.searchParams.set('sold', variationId)
+  return url.toString()
+}
 const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
 const PURCHASERS_PATH = join(__dirname, '../public/purchasers.json')
@@ -170,7 +178,7 @@ async function createDiscountedLink({ variationId, name, locationId, discountId 
       checkout_options: {
         ask_for_shipping_address: true,
         allow_tipping: false,
-        redirect_url: REDIRECT_URL,
+        redirect_url: redirectForVariation(variationId),
       },
       order,
     },

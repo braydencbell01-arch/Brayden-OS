@@ -167,12 +167,21 @@ npm run sync:square               # refresh listings.json after catalog polish
 
 `square:polish-storefront` upserts the Square Snippets API (preserves the buy-now payment-link map). It cannot change Square’s theme editor settings (logo upload, native colors) — do those in Square Dashboard → Online → Website if needed.
 
+### Sold-item reconcile (must-have)
+
+When a kit sells on Square, `npm run reconcile:sold` removes it from:
+
+- Square (qty 0 + unsellable + Payment Links deleted)
+- eBay (`EndItem` when SKU is `ebay:{itemId}`)
+- Jersey Deals (`listings.json` + `sold-out.json` for instant client hide)
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
 
-- Runs twice daily (UTC) and on manual `workflow_dispatch`
-- Updates `jerseydeals/public/listings.json` on `Brayden-OS`
+- Runs every ~10 minutes and on manual `workflow_dispatch`
+- Reconciles sold kits, then refreshes inventory
+- Updates `listings.json` / `sold-out.json` / `checkout-links.json` on `Brayden-OS`
 - Triggers the Pages deploy when inventory changed
 
 ## Build

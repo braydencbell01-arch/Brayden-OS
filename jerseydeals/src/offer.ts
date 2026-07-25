@@ -109,6 +109,7 @@ export function capturePurchaseReturnFromUrl() {
       markPurchased()
       url.searchParams.delete('purchase')
       url.searchParams.delete('purchased')
+      // Keep ?sold= for soldOut capture (called separately); only strip purchase flags here.
       window.history.replaceState({}, '', url.pathname + url.search + url.hash)
       return true
     }

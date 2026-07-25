@@ -1,11 +1,13 @@
 name: Sync Jersey Deals inventory
 
 # Prefers Square Catalog when SQUARE_* secrets exist; otherwise eBay.
-# Writes jerseydeals/public/listings.json and redeploys Pages when changed.
+# Also reconciles sold orders: delists on Square + eBay + Jersey Deals.
+# Writes listings.json / sold-out.json / checkout-links.json and redeploys Pages when changed.
 
 on:
   schedule:
-    - cron: '15 14,22 * * *'
+    # Every 10 minutes — sold kits should leave all channels quickly.
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -32,33 +34,63 @@ jobs:
           cache: npm
           cache-dependency-path: jerseydeals/package-lock.json
 
-      - name: Sync inventory (Square preferred, eBay fallback)
+      - name: Reconcile sold inventory (Square + eBay + site)
         working-directory: jerseydeals
         env:
-          # Square (preferred)
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
           SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
           SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
-          # eBay fallback
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: npm run reconcile:sold
+
+      - name: Sync remaining inventory (Square preferred, eBay fallback)
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
           EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
           EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
           EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
         run: npm run sync:inventory
 
+      - name: Re-apply sold filter after sync
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: npm run reconcile:sold
+
       - name: Commit if inventory changed
         id: commit
         run: |
-          if git diff --quiet -- jerseydeals/public/listings.json; then
+          if git diff --quiet -- \
+            jerseydeals/public/listings.json \
+            jerseydeals/public/sold-out.json \
+            jerseydeals/public/checkout-links.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No inventory changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add jerseydeals/public/listings.json
-          git commit -m "chore(jerseydeals): sync live inventory"
+          git add \
+            jerseydeals/public/listings.json \
+            jerseydeals/public/sold-out.json \
+            jerseydeals/public/checkout-links.json
+          git commit -m "chore(jerseydeals): sync live inventory + delist sold kits"
           git push origin HEAD:Brayden-OS
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

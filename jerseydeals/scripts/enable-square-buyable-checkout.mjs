@@ -36,9 +36,17 @@ const LOCATION_OVERRIDE = process.env.SQUARE_LOCATION_ID || ''
 const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
 const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '10')
 const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
-const REDIRECT_URL =
+const REDIRECT_BASE =
   process.env.SQUARE_PURCHASE_REDIRECT_URL ||
   'https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/?purchase=1'
+
+function redirectForVariation(variationId) {
+  const base = REDIRECT_BASE.includes('?') ? REDIRECT_BASE : `${REDIRECT_BASE}?purchase=1`
+  const url = new URL(base)
+  url.searchParams.set('purchase', '1')
+  url.searchParams.set('sold', variationId)
+  return url.toString()
+}
 
 if (!TOKEN) {
   console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
@@ -159,7 +167,7 @@ async function createPaymentLink({ variationId, name, locationId }) {
       checkout_options: {
         ask_for_shipping_address: true,
         allow_tipping: false,
-        redirect_url: REDIRECT_URL,
+        redirect_url: redirectForVariation(variationId),
       },
       order,
     },

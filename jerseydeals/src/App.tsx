@@ -33,6 +33,13 @@ import {
 } from './offer'
 import { captureEmail } from './emailCapture'
 import {
+  captureSoldReturnFromUrl,
+  fetchSoldOutIds,
+  isListingSoldOut,
+  readLocalSoldOutIds,
+  rememberSoldOutIds,
+} from './soldOut'
+import {
   clubsInStock,
   conditionLabel,
   dedupeListingsByTitle,
@@ -717,12 +724,23 @@ export default function App() {
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
   const [offerActive, setOfferActive] = useState(() => readOffer().activated)
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
+  const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const urlHydrated = useRef(false)
 
   useEffect(() => {
     initAnalytics()
     track('page_view', { page: 'landing' })
     capturePurchaseReturnFromUrl()
+    const fromReturn = captureSoldReturnFromUrl()
+    if (fromReturn.length) {
+      rememberSoldOutIds(fromReturn)
+      setSoldIds(new Set(readLocalSoldOutIds()))
+      for (const id of fromReturn) setCart(removeCartLine(id))
+    }
+    void fetchSoldOutIds(asset('')).then((ids) => {
+      setSoldIds(new Set(ids))
+      for (const id of ids) setCart(removeCartLine(id))
+    })
   }, [])
 
   useEffect(() => {
@@ -862,7 +880,10 @@ export default function App() {
   const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
   const ebayShop = catalog?.source === 'square' ? EBAY_SHOP_URL : catalog?.shopUrl ?? EBAY_SHOP_URL
   const ebaySeller = catalog?.source === 'square' ? EBAY_SELLER_URL : catalog?.sellerUrl ?? EBAY_SELLER_URL
-  const listings = useMemo(() => dedupeListingsByTitle(catalog?.listings ?? []), [catalog])
+  const listings = useMemo(() => {
+    const rows = (catalog?.listings ?? []).filter((item) => !isListingSoldOut(item, soldIds))
+    return dedupeListingsByTitle(rows)
+  }, [catalog, soldIds])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 4), [listings])
   const salePicks = useMemo(() => pickSaleItems(listings, 4), [listings])

@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
+const SOLD_OUT_PATH = join(__dirname, '../public/sold-out.json')
 const PURCHASERS_PATH = join(__dirname, '../public/purchasers.json')
 
 const ENV = (process.env.SQUARE_ENVIRONMENT || 'production').toLowerCase()
@@ -105,6 +106,46 @@ function mergeMaps(base, extra) {
   Object.assign(out.byItemIdDiscount, extra.byItemIdDiscount || {})
   Object.assign(out.byVariationIdDiscount, extra.byVariationIdDiscount || {})
   return out
+}
+
+function loadSoldOutIds() {
+  const ids = new Set()
+  if (!existsSync(SOLD_OUT_PATH)) return ids
+  try {
+    const raw = JSON.parse(readFileSync(SOLD_OUT_PATH, 'utf8'))
+    for (const item of raw.items || []) {
+      if (item.variationId) ids.add(item.variationId)
+      if (item.itemId) ids.add(item.itemId)
+    }
+  } catch {
+    /* ignore */
+  }
+  return ids
+}
+
+/** File map is source of truth; drop sold kits and any orphan snippet URLs. */
+function authoritativeBuyMap(fromSnippet, fromFile) {
+  const sold = loadSoldOutIds()
+  const merged = mergeMaps(fromSnippet, fromFile)
+  const allowedItemIds = new Set(Object.keys(fromFile.byItemId || {}))
+  const allowedVariationIds = new Set(Object.keys(fromFile.byVariationId || {}))
+
+  function scrub(obj, allowed) {
+    const out = {}
+    for (const [key, value] of Object.entries(obj || {})) {
+      if (sold.has(key)) continue
+      if (allowed && !allowed.has(key)) continue
+      out[key] = value
+    }
+    return out
+  }
+
+  return {
+    byItemId: scrub(merged.byItemId, allowedItemIds),
+    byVariationId: scrub(merged.byVariationId, allowedVariationIds),
+    byItemIdDiscount: scrub(merged.byItemIdDiscount, allowedItemIds),
+    byVariationIdDiscount: scrub(merged.byVariationIdDiscount, allowedVariationIds),
+  }
 }
 
 function loadPurchaserEmails() {
@@ -692,9 +733,9 @@ async function main() {
     byVariationIdDiscount: {},
   }
   const fromFile = loadLinksMap()
-  const map = mergeMaps(fromSnippet, fromFile)
+  const map = authoritativeBuyMap(fromSnippet, fromFile)
   console.log(
-    `Buy-bridge map: ${Object.keys(map.byItemId || {}).length} items / ${Object.keys(map.byItemIdDiscount || {}).length} discount links`,
+    `Buy-bridge map: ${Object.keys(map.byItemId || {}).length} items / ${Object.keys(map.byItemIdDiscount || {}).length} discount links (sold scrubbed)`,
   )
 
   const purchaserEmails = loadPurchaserEmails()
