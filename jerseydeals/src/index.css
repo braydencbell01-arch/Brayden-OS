@@ -20,9 +20,16 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    /* Smooth scrolling via CSS can crash some iOS WebKit builds when JS also scrolls. */
+    scroll-behavior: auto;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
 
   body {

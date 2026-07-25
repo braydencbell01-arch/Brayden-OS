@@ -37,14 +37,26 @@ export function FirstBuyerOfferModal({
     setEmail(readBuyerEmail() || readOffer().email || '')
     setError('')
     setBusy(false)
-    const previous = document.body.style.overflow
+    // Prefer position:fixed lock over overflow:hidden — safer on iOS Safari.
+    const previousOverflow = document.body.style.overflow
+    const previousPosition = document.body.style.position
+    const previousTop = document.body.style.top
+    const previousWidth = document.body.style.width
+    const scrollY = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
     document.body.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = previous
+      document.body.style.overflow = previousOverflow
+      document.body.style.position = previousPosition
+      document.body.style.top = previousTop
+      document.body.style.width = previousWidth
+      window.scrollTo(0, scrollY)
       document.removeEventListener('keydown', onKey)
     }
   }, [open, onClose])
