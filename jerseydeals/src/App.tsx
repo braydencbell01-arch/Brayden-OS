@@ -720,8 +720,11 @@ export default function App() {
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
+  /** Text currently typed in the sticky search bar. */
   const [query, setQuery] = useState('')
-  const deferredQuery = useDeferredValue(query)
+  /** Query applied to inventory filters — only updates when Enter / search is activated. */
+  const [appliedQuery, setAppliedQuery] = useState('')
+  const deferredQuery = useDeferredValue(appliedQuery)
   const [menuOpen, setMenuOpen] = useState(false)
   const [cart, setCart] = useState<CartState>(() => readCart())
   const [cartOpen, setCartOpen] = useState(false)
@@ -975,7 +978,14 @@ export default function App() {
       })
     }
     if (deferredQuery.trim()) {
-      chips.push({ key: 'q', label: `“${deferredQuery.trim()}”`, clear: () => setQuery('') })
+      chips.push({
+        key: 'q',
+        label: `“${deferredQuery.trim()}”`,
+        clear: () => {
+          setQuery('')
+          setAppliedQuery('')
+        },
+      })
     }
     return chips
   }, [audienceFilter, tagFilter, priceFilter, sizeFilter, brandFilter, clubFilter, deferredQuery, clubsData])
@@ -988,6 +998,7 @@ export default function App() {
     setAudienceFilter('All')
     setClubFilter('All')
     setQuery('')
+    setAppliedQuery('')
     setSortBy('featured')
   }
 
@@ -1013,6 +1024,12 @@ export default function App() {
     requestAnimationFrame(() => requestAnimationFrame(run))
   }
 
+  /** Apply sticky search + jump to filters/results — only from Enter / blue button. */
+  function activateSearch(opts?: { focusSearch?: boolean }) {
+    setAppliedQuery(query.trim())
+    scrollToInventoryBrowse({ focusSearch: opts?.focusSearch })
+  }
+
   function goInventory(next?: {
     tag?: string
     brand?: string
@@ -1028,6 +1045,7 @@ export default function App() {
       setBrandFilter('All')
       setPriceFilter('All')
       setQuery('')
+      setAppliedQuery('')
       setTagFilter('All')
       setAudienceFilter('All')
       setClubFilter('All')
@@ -1036,24 +1054,14 @@ export default function App() {
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
     if (next?.price !== undefined) setPriceFilter(next.price)
-    if (next?.query !== undefined) setQuery(next.query)
+    if (next?.query !== undefined) {
+      setQuery(next.query)
+      setAppliedQuery(next.query.trim())
+    }
     if (next?.audience !== undefined) setAudienceFilter(next.audience)
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
     scrollToInventoryBrowse({ focusSearch: next?.focusSearch })
   }
-
-  // Searching from the sticky bar jumps to filters (top) + results below.
-  const searchScrollKey = query.trim()
-  const lastSearchScrollRef = useRef('')
-  useEffect(() => {
-    if (!searchScrollKey) {
-      lastSearchScrollRef.current = ''
-      return
-    }
-    if (lastSearchScrollRef.current === searchScrollKey) return
-    lastSearchScrollRef.current = searchScrollKey
-    scrollToInventoryBrowse()
-  }, [searchScrollKey])
 
   useEffect(() => {
     if (urlHydrated.current) return
@@ -1066,7 +1074,10 @@ export default function App() {
     const price = params.get('price')
     const club = params.get('club')
     const sort = params.get('sort')
-    if (q) setQuery(q)
+    if (q) {
+      setQuery(q)
+      setAppliedQuery(q)
+    }
     if (audience === 'Adult' || audience === 'Youth' || audience === 'All') setAudienceFilter(audience)
     if (tag) setTagFilter(tag)
     if (size) setSizeFilter(size)
@@ -1107,7 +1118,7 @@ export default function App() {
     const current = new URLSearchParams(window.location.search)
     if (current.get('buy') || current.get('checkout')) return
     const params = new URLSearchParams()
-    if (query.trim()) params.set('q', query.trim())
+    if (appliedQuery.trim()) params.set('q', appliedQuery.trim())
     if (audienceFilter !== 'All') params.set('audience', audienceFilter)
     if (tagFilter !== 'All') params.set('tag', tagFilter)
     if (sizeFilter !== 'All') params.set('size', sizeFilter)
@@ -1118,7 +1129,7 @@ export default function App() {
     const next = params.toString()
     const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
     window.history.replaceState(null, '', url)
-  }, [query, audienceFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
+  }, [appliedQuery, audienceFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
 
   const heroImage = asset('hero-jersey.jpg')
 
@@ -1332,7 +1343,7 @@ export default function App() {
               className="relative min-w-0 flex-1"
               onSubmit={(e) => {
                 e.preventDefault()
-                scrollToInventoryBrowse({ focusSearch: true })
+                activateSearch()
               }}
             >
               <label className="block">
@@ -1372,10 +1383,13 @@ export default function App() {
             >
               {deferredHint}
             </p>
-            {query ? (
+            {query || appliedQuery ? (
               <button
                 type="button"
-                onClick={() => setQuery('')}
+                onClick={() => {
+                  setQuery('')
+                  setAppliedQuery('')
+                }}
                 className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${
                   navSolid ? 'text-crimson' : 'text-crimson-hot'
                 }`}

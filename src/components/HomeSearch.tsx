@@ -89,6 +89,8 @@ export function HomeSearch({
 }) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
+  /** Results panel only after Enter / blue search button — not while typing. */
+  const [resultsOpen, setResultsOpen] = useState(false)
   const [remote, setRemote] = useState<{ teams: GroupedSearchHits['teams']; players: GroupedSearchHits['players'] }>({
     teams: [],
     players: [],
@@ -122,7 +124,7 @@ export function HomeSearch({
   )
 
   const hasQuery = query.trim().length > 0
-  const showPanel = focused
+  const showPanel = resultsOpen
   const total =
     hits.leagues.length + hits.teams.length + hits.players.length
 
@@ -172,6 +174,7 @@ export function HomeSearch({
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setFocused(false)
+        setResultsOpen(false)
       }
     }
     document.addEventListener('mousedown', onPointerDown)
@@ -179,20 +182,22 @@ export function HomeSearch({
   }, [])
 
   useEffect(() => {
-    if (!focused) return
+    if (!resultsOpen && !focused) return
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setFocused(false)
+        setResultsOpen(false)
         setOpenPlayerError(null)
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [focused])
+  }, [focused, resultsOpen])
 
   const clearAndClose = () => {
     setQuery('')
     setFocused(false)
+    setResultsOpen(false)
     setRemote({ teams: [], players: [] })
     setRemoteError(null)
     setOpenPlayerError(null)
@@ -227,10 +232,8 @@ export function HomeSearch({
 
   const submitSearch = () => {
     setFocused(true)
+    setResultsOpen(true)
     setOpenPlayerError(null)
-    if (!query.trim()) return
-    const first = hits.leagues[0] ?? hits.teams[0] ?? hits.players[0] ?? null
-    if (first) void handleHit(first)
   }
 
   return (
@@ -271,7 +274,9 @@ export function HomeSearch({
             type="button"
             onClick={() => {
               setQuery('')
+              setResultsOpen(false)
               setRemote({ teams: [], players: [] })
+              setRemoteError(null)
             }}
             className="shrink-0 text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/60 transition hover:text-lime"
           >
