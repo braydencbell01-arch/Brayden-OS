@@ -12,6 +12,7 @@ import type { FavoritePlayer, FavoriteTeam } from './favorites'
 import type { Match } from './matches'
 import type { PlayerNavRef } from '../components/PlayerProfileScreen'
 import { playerHeadshotUrl } from './stats/espn'
+import { canonicalSearchQuery, matchesInclusive } from './inclusiveSearch'
 
 export type SearchLeagueHit = {
   kind: 'league'
@@ -134,37 +135,23 @@ function pickBestLeagueId(candidates: Array<string | null | undefined>): LeagueI
   return resolved[0] ?? null
 }
 
-function normalizeQuery(value: string): string {
-  return value.trim().toLowerCase()
-}
-
-function includesQuery(haystack: string | undefined, query: string): boolean {
-  if (!haystack) return false
-  return haystack.toLowerCase().includes(query)
-}
-
 export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
-  const q = normalizeQuery(query)
+  const q = query.trim()
   if (!q) return []
-  return LEAGUES.filter(
-    (league) =>
-      includesQuery(league.name, q) ||
-      includesQuery(league.short, q) ||
-      includesQuery(league.country, q) ||
-      (league.kind === 'international' && includesQuery('international', q)) ||
-      (league.kind === 'international' && includesQuery('national', q)) ||
-      (league.kind === 'continental' && includesQuery('continental', q)) ||
-      (league.kind === 'continental' && includesQuery('champions', q)) ||
-      (league.kind === 'continental' && includesQuery('europa', q)) ||
-      (league.kind === 'continental' && includesQuery('libertadores', q)) ||
-      (league.kind === 'continental' && includesQuery('sudamericana', q)) ||
-      (league.format === 'cup' && includesQuery('cup', q)) ||
-      (league.format === 'supercup' && includesQuery('super', q)) ||
-      (league.format === 'supercup' && includesQuery('supercup', q)) ||
-      (league.format === 'supercup' && includesQuery('shield', q)) ||
-      (isDomesticCup(league.id) && includesQuery('domestic cup', q)) ||
-      (includesQuery('championship', q) && league.id === 'eng-championship'),
-  ).map((league) => ({ kind: 'league' as const, league }))
+  return LEAGUES.filter((league) => {
+    const kindHints = [
+      league.kind === 'international' ? 'international national' : '',
+      league.kind === 'continental' ? 'continental champions europa libertadores sudamericana' : '',
+      league.format === 'cup' ? 'cup' : '',
+      league.format === 'supercup' ? 'super supercup shield' : '',
+      isDomesticCup(league.id) ? 'domestic cup' : '',
+      league.id === 'eng-championship' ? 'championship' : '',
+    ]
+    return matchesInclusive(
+      [league.name, league.short, league.country, league.id, ...kindHints],
+      q,
+    )
+  }).map((league) => ({ kind: 'league' as const, league }))
 }
 
 function preferTeamLeagueId(current: LeagueId, next: LeagueId): LeagueId {
@@ -231,14 +218,10 @@ export function collectLocalTeams(
 }
 
 export function searchTeamsLocal(query: string, teams: FavoriteTeam[]): SearchTeamHit[] {
-  const q = normalizeQuery(query)
+  const q = query.trim()
   if (!q) return []
   return teams
-    .filter(
-      (team) =>
-        includesQuery(team.name, q) ||
-        includesQuery(team.shortName, q),
-    )
+    .filter((team) => matchesInclusive([team.name, team.shortName, team.leagueId], q))
     .slice(0, 12)
     .map((team) => ({ kind: 'team' as const, team }))
 }
@@ -247,14 +230,14 @@ export function searchPlayersLocal(
   query: string,
   favoritePlayers: FavoritePlayer[],
 ): SearchPlayerHit[] {
-  const q = normalizeQuery(query)
+  const q = query.trim()
   if (!q) return []
   return favoritePlayers
-    .filter(
-      (player) =>
-        includesQuery(player.name, q) ||
-        includesQuery(player.shortName, q) ||
-        includesQuery(player.teamName, q),
+    .filter((player) =>
+      matchesInclusive(
+        [player.name, player.shortName, player.teamName, player.position],
+        q,
+      ),
     )
     .slice(0, 12)
     .map((player) => ({
@@ -305,8 +288,10 @@ function espnSearchUrl(query: string, type?: 'team' | 'player'): string {
 export async function searchEspnSoccer(
   query: string,
 ): Promise<{ teams: SearchTeamHit[]; players: SearchPlayerHit[] }> {
-  const q = query.trim()
-  if (q.length < 2) return { teams: [], players: [] }
+  const raw = query.trim()
+  if (raw.length < 2) return { teams: [], players: [] }
+  // Expand abbreviations (barca → barcelona) so ESPN returns better hits.
+  const q = canonicalSearchQuery(raw)
 
   const [teamRes, playerRes] = await Promise.all([
     fetch(espnSearchUrl(q, 'team')),

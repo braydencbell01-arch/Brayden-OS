@@ -28,6 +28,7 @@ import { FantasyHome } from './FantasyHome'
 import { FantasyMatchupCenter } from './FantasyMatchupCenter'
 import { FantasyResearchPanel } from './FantasyResearchPanel'
 import { downloadLeagueJson, parseLeagueImport } from '../../lib/fantasy/exportImport'
+import { matchesInclusive } from '../../lib/inclusiveSearch'
 import type { PlayerNavRef } from '../PlayerProfileScreen'
 
 type HubTab =
@@ -516,11 +517,9 @@ function DraftPanel({ fantasy }: { fantasy: FantasyApi }) {
       .filter((p) => (pos === 'ALL' ? true : p.pos === pos))
       .filter((p) => {
         if (!q.trim()) return true
-        const s = q.toLowerCase()
-        return (
-          p.webName.toLowerCase().includes(s) ||
-          p.secondName.toLowerCase().includes(s) ||
-          p.teamShort.toLowerCase().includes(s)
+        return matchesInclusive(
+          [p.webName, p.secondName, p.firstName, p.teamShort, p.teamName, p.pos],
+          q,
         )
       })
       .slice(0, 80)
@@ -1143,8 +1142,10 @@ function WaiversPanel({ fantasy }: { fantasy: FantasyApi }) {
       .filter((p) => !owned.has(p.id))
       .filter((p) => {
         if (!q.trim()) return true
-        const s = q.toLowerCase()
-        return p.webName.toLowerCase().includes(s) || p.teamShort.toLowerCase().includes(s)
+        return matchesInclusive(
+          [p.webName, p.secondName, p.firstName, p.teamShort, p.teamName, p.pos],
+          q,
+        )
       })
       .filter((p) => (mode === 'wire' ? waiverSet.has(p.id) : !waiverSet.has(p.id)))
       .slice(0, 60)

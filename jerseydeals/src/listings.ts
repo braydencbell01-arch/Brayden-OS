@@ -1,3 +1,5 @@
+import { matchesInclusive } from './inclusiveSearch'
+
 export type Listing = {
   id: string
   title: string
@@ -245,18 +247,46 @@ export function listingImages(item: Listing): string[] {
 }
 
 export function listingSearchText(item: Listing) {
-  return [item.title, item.tag, item.brand, item.note, item.size, item.category, item.sku]
+  const club = inferClub(item.title)
+  return [
+    item.title,
+    item.tag,
+    item.brand,
+    item.note,
+    item.size,
+    item.category,
+    item.sku,
+    item.description,
+    item.condition,
+    item.conditionEbay,
+    club?.name,
+    club?.id,
+  ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
 }
 
 export function matchesListingQuery(item: Listing, rawQuery: string) {
-  const q = rawQuery.trim().toLowerCase()
-  if (!q) return true
-  const hay = listingSearchText(item)
-  const tokens = q.split(/\s+/).filter(Boolean)
-  return tokens.every((token) => hay.includes(token))
+  if (!rawQuery.trim()) return true
+  const club = inferClub(item.title)
+  return matchesInclusive(
+    [
+      item.title,
+      item.tag,
+      item.brand,
+      item.note,
+      item.size,
+      item.category,
+      item.sku,
+      item.description,
+      item.condition,
+      item.conditionEbay,
+      club?.name,
+      club?.id,
+    ],
+    rawQuery,
+  )
 }
 
 export function isSquareCatalog(catalog: ListingsPayload | null | undefined) {
@@ -266,28 +296,28 @@ export function isSquareCatalog(catalog: ListingsPayload | null | undefined) {
 
 /** Clubs / nations we can detect from listing titles (longer names first). */
 export const CLUB_CATALOG = [
-  { id: 'manchester-city', name: 'Manchester City', pattern: /manchester\s*city|\bman\s*city\b|\bmcfc\b/i },
-  { id: 'manchester-united', name: 'Manchester United', pattern: /manchester\s*united|\bman\s*utd\b|\bmufc\b/i },
-  { id: 'paris-saint-germain', name: 'Paris Saint-Germain', pattern: /paris\s*saint[-\s]?germain|\bpsg\b/i },
+  { id: 'manchester-city', name: 'Manchester City', pattern: /manchester\s*city|\bman\s*city\b|\bman\s*c\b|\bmcfc\b/i },
+  { id: 'manchester-united', name: 'Manchester United', pattern: /manchester\s*united|\bman\s*utd\b|\bman\s*u\b|\bman\s*united\b|\bmufc\b/i },
+  { id: 'paris-saint-germain', name: 'Paris Saint-Germain', pattern: /paris\s*saint[-\s]?germain|\bpsg\b|\bparis\s*sg\b/i },
   { id: 'inter-miami', name: 'Inter Miami', pattern: /inter\s*miami\b/i },
   { id: 'ac-milan', name: 'AC Milan', pattern: /\bac\s*milan\b/i },
   { id: 'borussia-dortmund', name: 'Borussia Dortmund', pattern: /borussia\s*dortmund|\bdortmund\b|\bbvb\b/i },
   { id: 'tottenham', name: 'Tottenham', pattern: /tottenham(?:\s*hotspur)?|\bspurs\b/i },
   { id: 'liverpool', name: 'Liverpool', pattern: /liverpool(?:\s*fc)?|\blfc\b/i },
   { id: 'real-madrid', name: 'Real Madrid', pattern: /real\s*madrid|\brma\b/i },
-  { id: 'barcelona', name: 'Barcelona', pattern: /fc\s*barcelona|\bbarcelona\b|\bbarca\b|\bfcb\b/i },
+  { id: 'barcelona', name: 'Barcelona', pattern: /fc\s*barcelona|\bbarcelona\b|\bbarca\b|\bbarça\b|\bfcb\b/i },
   { id: 'chelsea', name: 'Chelsea', pattern: /chelsea(?:\s*fc)?|\bcfc\b/i },
   { id: 'ajax', name: 'Ajax', pattern: /ajax(?:\s*amsterdam)?/i },
   { id: 'germany', name: 'Germany', pattern: /germany(?:\s*national)?|\bdfb\b/i },
-  { id: 'syracuse', name: 'Syracuse', pattern: /syracuse(?:\s*orange)?/i },
-  { id: 'arsenal', name: 'Arsenal', pattern: /arsenal(?:\s*fc)?/i },
-  { id: 'bayern', name: 'Bayern Munich', pattern: /bayern(?:\s*munich)?/i },
+  { id: 'syracuse', name: 'Syracuse', pattern: /syracuse(?:\s*orange)?|\bcuse\b/i },
+  { id: 'arsenal', name: 'Arsenal', pattern: /arsenal(?:\s*fc)?|\bgunners\b/i },
+  { id: 'bayern', name: 'Bayern Munich', pattern: /bayern(?:\s*munich)?|\bbayern\s*m[uü]nchen\b/i },
   { id: 'juventus', name: 'Juventus', pattern: /juventus|\bjuve\b/i },
-  { id: 'newcastle', name: 'Newcastle', pattern: /newcastle(?:\s*united)?/i },
+  { id: 'newcastle', name: 'Newcastle', pattern: /newcastle(?:\s*united)?|\bnufc\b/i },
   { id: 'spain', name: 'Spain', pattern: /\bspain(?:\s*national)?\b|\bla\s*roja\b/i },
   { id: 'argentina', name: 'Argentina', pattern: /\bargentina\b|\balbiceleste\b/i },
   { id: 'mexico', name: 'Mexico', pattern: /\bmexico\b|\bel\s*tri\b/i },
-  { id: 'usa', name: 'USA', pattern: /\busa\b|united\s*states|\busmnt\b/i },
+  { id: 'usa', name: 'USA', pattern: /\busa\b|united\s*states|\busmnt\b|\buswnt\b/i },
 ] as const
 
 export type ClubInfo = {

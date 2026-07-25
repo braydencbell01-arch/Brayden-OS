@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { FplCatalog } from '../../lib/fantasy/fplData'
 import type { FantasyPlayer } from '../../lib/fantasy/types'
+import { matchesInclusive } from '../../lib/inclusiveSearch'
 import { computePayPerStat, formatMillions, formatPounds } from '../../lib/payPerStat'
 import type { PlayerNavRef } from '../PlayerProfileScreen'
 import type { LeagueId } from '../../lib/leagues'
@@ -19,13 +20,12 @@ function PlayerPick({
   const [query, setQuery] = useState('')
   const hits = useMemo(() => {
     if (!catalog || query.trim().length < 2) return []
-    const q = query.trim().toLowerCase()
     return catalog.players
-      .filter(
-        (p) =>
-          p.webName.toLowerCase().includes(q) ||
-          p.secondName.toLowerCase().includes(q) ||
-          p.teamShort.toLowerCase().includes(q),
+      .filter((p) =>
+        matchesInclusive(
+          [p.webName, p.secondName, p.firstName, p.teamShort, p.teamName, p.pos],
+          query,
+        ),
       )
       .slice(0, 8)
   }, [catalog, query])
