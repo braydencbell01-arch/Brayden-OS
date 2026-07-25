@@ -437,7 +437,7 @@ function ProductLink({
   onQuickView: (item: Listing) => void
   onBuyNow: (item: Listing) => void
 }) {
-  const condition = conditionLabel(item.title)
+  const condition = conditionLabel(item)
   const buyUrl = listingBuyUrl(item)
   const kit = kitType(item)
   const onSale = isSaleListing(item)
@@ -447,6 +447,7 @@ function ProductLink({
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
   const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
   const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
+  const used = /used|pre-?owned|worn/i.test(condition)
 
   return (
     <motion.li {...fadeUp(reduce, delay)}>
@@ -494,7 +495,7 @@ function ProductLink({
             {kit !== 'Other' ? (
               <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{kit}</span>
             ) : null}
-            {condition === 'Pre-owned' ? (
+            {used ? (
               <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{condition}</span>
             ) : null}
           </div>
@@ -556,7 +557,7 @@ function QuickViewModal({
   onBuyNow: (item: Listing) => void
 }) {
   const buyUrl = listingBuyUrl(item)
-  const condition = conditionLabel(item.title)
+  const condition = conditionLabel(item)
   const kit = kitType(item)
   const size = listingSize(item)
   const club = inferClub(item.title)
@@ -658,6 +659,14 @@ function QuickViewModal({
               </dd>
             </div>
           </dl>
+          {item.description ? (
+            <div className="mt-5">
+              <p className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Description</p>
+              <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-navy/90">
+                {item.description}
+              </p>
+            </div>
+          ) : null}
           <div className="mt-auto flex flex-col gap-2 pt-8">
             <button
               type="button"

@@ -12,6 +12,8 @@
     "sync:square": "node scripts/sync-square-catalog.mjs",
     "sync:inventory": "node scripts/sync-inventory.mjs",
     "reconcile:sold": "node scripts/reconcile-sold-inventory.mjs",
+    "sync:ebay-details": "node scripts/sync-ebay-listing-details.mjs",
+    "restore:listing": "node scripts/restore-square-listing.mjs",
     "push:square": "node scripts/push-listings-to-square.mjs",
     "square:pos-abbrevs": "node scripts/update-square-pos-abbrevs.mjs",
     "square:fix-stock-images": "node scripts/fix-square-stock-and-images.mjs",

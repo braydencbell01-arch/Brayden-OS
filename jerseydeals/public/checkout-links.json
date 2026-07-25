@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-25T02:25:44Z",
+  "syncedAt": "2026-07-25T02:44:28Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 32,
+  "count": 33,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -409,6 +409,19 @@
       "discountPaymentLinkId": "PSLZY3WHYPUQ6KSQ",
       "discountUrl": "https://square.link/u/drvAUzuu",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CcPPAWvzgaxLVxqpbfJn7MrGgFHZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "PMJBVHVEQEP5HBPMPYV6PCML",
+      "variationId": "NWSMDPZORSCBZ5KWSG3L46SO",
+      "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
+      "sku": "ebay:800403694830",
+      "paymentLinkId": "VAPR3Z6LIPJD7MKZ",
+      "url": "https://square.link/u/xOLCvUn1",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ILzUptnX1kZUsa5Ai3XMUJOqxv8YY",
+      "discountPaymentLinkId": "USCX45JNHNR7VNHC",
+      "discountUrl": "https://square.link/u/7az1u6cl",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0neo1xkQHCfLLbmabixOco6C0RKZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

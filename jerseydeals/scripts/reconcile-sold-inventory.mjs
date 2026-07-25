@@ -23,6 +23,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
 const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
 const SOLD_OUT_PATH = join(__dirname, '../public/sold-out.json')
+const EXCEPTIONS_PATH = join(__dirname, '../public/reconcile-exceptions.json')
 const STATE_PATH = join(__dirname, '../.sold-reconcile-state.json')
 
 const ENV = (process.env.SQUARE_ENVIRONMENT || 'production').toLowerCase()
@@ -194,7 +195,9 @@ async function deletePaymentLink(paymentLinkId) {
   }
 }
 
-async function collectSoldVariationIds(locationId) {
+async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStock }) {
+  const ignoredOrders = new Set(ignoredOrderIds || [])
+  const keep = new Set(keepInStock || [])
   const sold = new Map() // variationId -> { orderIds, title, qty }
   const start = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
   let cursor = ''
@@ -215,9 +218,10 @@ async function collectSoldVariationIds(locationId) {
     if (cursor) body.cursor = cursor
     const data = await square('/v2/orders/search', { method: 'POST', body })
     for (const order of data.orders || []) {
+      if (ignoredOrders.has(order.id)) continue
       for (const line of order.line_items || []) {
         const variationId = line.catalog_object_id
-        if (!variationId) continue
+        if (!variationId || keep.has(variationId)) continue
         const prev = sold.get(variationId) || {
           orderIds: [],
           title: line.name || variationId,
@@ -252,7 +256,7 @@ async function collectSoldVariationIds(locationId) {
       const qty = Number.parseFloat(row.quantity || '0') || 0
       if (qty > 0) continue
       const variationId = row.catalog_object_id
-      if (sold.has(variationId)) continue
+      if (sold.has(variationId) || keep.has(variationId)) continue
       const listing = (listings.listings || []).find((l) => l.id === variationId)
       const link = (links.links || []).find((l) => l.variationId === variationId)
       sold.set(variationId, {
@@ -337,10 +341,31 @@ async function main() {
     })`,
   )
 
-  const soldMap = await collectSoldVariationIds(locationId)
-  console.log(`Candidates to delist: ${soldMap.size}`)
+  const state = loadJson(STATE_PATH, {
+    processedOrderIds: [],
+    soldVariationIds: [],
+    ignoredOrderIds: [],
+    keepInStockVariationIds: [],
+  })
+  const exceptions = loadJson(EXCEPTIONS_PATH, {
+    ignoredOrderIds: [],
+    keepInStockVariationIds: [],
+  })
+  const ignoredOrderIds = [
+    ...new Set([...(state.ignoredOrderIds || []), ...(exceptions.ignoredOrderIds || [])]),
+  ]
+  const keepInStock = [
+    ...new Set([
+      ...(state.keepInStockVariationIds || []),
+      ...(exceptions.keepInStockVariationIds || []),
+    ]),
+  ]
+  const soldMap = await collectSoldVariationIds(locationId, {
+    ignoredOrderIds,
+    keepInStock,
+  })
+  console.log(`Candidates to delist: ${soldMap.size} (keepInStock=${keepInStock.length})`)
 
-  const state = loadJson(STATE_PATH, { processedOrderIds: [], soldVariationIds: [] })
   const already = new Set(state.soldVariationIds || [])
   const linksFile = loadJson(LINKS_PATH, { links: [] })
   const listingsFile = loadJson(LISTINGS_PATH, { listings: [] })

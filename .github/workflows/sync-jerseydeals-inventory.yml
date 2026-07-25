@@ -73,13 +73,25 @@ jobs:
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
         run: npm run reconcile:sold
 
+      - name: Sync eBay description + condition onto Square / listings
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: npm run sync:ebay-details
+
       - name: Commit if inventory changed
         id: commit
         run: |
           if git diff --quiet -- \
             jerseydeals/public/listings.json \
             jerseydeals/public/sold-out.json \
-            jerseydeals/public/checkout-links.json; then
+            jerseydeals/public/checkout-links.json \
+            jerseydeals/public/reconcile-exceptions.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No inventory changes."
             exit 0
@@ -89,8 +101,9 @@ jobs:
           git add \
             jerseydeals/public/listings.json \
             jerseydeals/public/sold-out.json \
-            jerseydeals/public/checkout-links.json
-          git commit -m "chore(jerseydeals): sync live inventory + delist sold kits"
+            jerseydeals/public/checkout-links.json \
+            jerseydeals/public/reconcile-exceptions.json
+          git commit -m "chore(jerseydeals): sync live inventory + listing details"
           git push origin HEAD:Brayden-OS
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

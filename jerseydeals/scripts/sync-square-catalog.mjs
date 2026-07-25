@@ -315,6 +315,20 @@ for (const item of items) {
     const price = moneyToNumber(vdata.price_money)
     const currency = vdata.price_money?.currency || 'USD'
     const sku = vdata.sku || ''
+    const plainDesc = String(description || '')
+      .replace(/\r\n/g, '\n')
+      .trim()
+    const conditionMatch = plainDesc.match(/^Condition:\s*(.+)$/im)
+    const conditionRaw = (conditionMatch?.[1] || '').trim()
+    const condition = /\bnew\b/i.test(conditionRaw)
+      ? 'New'
+      : /\bused|pre-?owned|worn\b/i.test(conditionRaw)
+        ? 'Used'
+        : conditionRaw || undefined
+    const descriptionBody = plainDesc
+      .replace(/^Condition:\s*.+$/im, '')
+      .replace(/\n{0,2}Ships from our US inventory\.[\s\S]*$/i, '')
+      .trim()
 
     listings.push({
       id: variation.id || item.id,
@@ -333,6 +347,8 @@ for (const item of items) {
       brand: inferBrand(haystack),
       source: 'square',
       category: categoryName || '',
+      ...(condition ? { condition, conditionEbay: conditionRaw || condition } : {}),
+      ...(descriptionBody ? { description: descriptionBody } : {}),
     })
   }
 }

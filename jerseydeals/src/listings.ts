@@ -22,6 +22,13 @@ export type Listing = {
   itemId?: string
   sku?: string
   category?: string
+  /** Buyer-facing condition from eBay (New / Used). */
+  condition?: string
+  /** Exact eBay ConditionDisplayName when available. */
+  conditionEbay?: string
+  conditionId?: string
+  /** Plain-text listing description (from eBay / Square). */
+  description?: string
 }
 
 export type ListingsPayload = {
@@ -102,9 +109,21 @@ export function shortTitle(title: string) {
     .trim()
 }
 
-/** Infer a buyer-facing condition chip from listing title copy. */
-export function conditionLabel(title: string): 'New' | 'Pre-owned' | 'Authentic' {
-  if (/\b(used|pre-?owned|worn)\b/i.test(title)) return 'Pre-owned'
+/** Prefer stored eBay/Square condition; fall back to title inference. */
+export function conditionLabel(
+  titleOrItem: string | { title?: string; condition?: string; conditionEbay?: string },
+): string {
+  if (titleOrItem && typeof titleOrItem === 'object') {
+    const stored = (titleOrItem.conditionEbay || titleOrItem.condition || '').trim()
+    if (stored) {
+      if (/^new\b/i.test(stored)) return 'New'
+      if (/used|pre-?owned|worn/i.test(stored)) return 'Used'
+      return stored
+    }
+    return conditionLabel(titleOrItem.title || '')
+  }
+  const title = String(titleOrItem || '')
+  if (/\b(used|pre-?owned|worn)\b/i.test(title)) return 'Used'
   if (/\b(authentic|player.?issue|match.?worn)\b/i.test(title)) return 'Authentic'
   return 'New'
 }
