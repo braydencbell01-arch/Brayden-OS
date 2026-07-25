@@ -42,17 +42,27 @@ const EBAY = {
   ns: 'urn:ebay:apis:eBLBaseComponents',
 }
 
-for (const [name, value] of [
-  ['SQUARE_ACCESS_TOKEN', SQUARE_TOKEN],
-  ['EBAY_APP_ID', EBAY.app],
-  ['EBAY_CERT_ID', EBAY.cert],
-  ['EBAY_DEV_ID', EBAY.dev],
-  ['EBAY_USER_TOKEN', EBAY.token],
-]) {
-  if (!value) {
-    console.error(`Missing required secret: ${name}`)
-    process.exit(1)
-  }
+const HAS_EBAY = Boolean(EBAY.app && EBAY.cert && EBAY.dev && EBAY.token)
+
+if (!SQUARE_TOKEN) {
+  console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
+  process.exit(1)
+}
+
+if (!HAS_EBAY) {
+  const missing = [
+    ['EBAY_APP_ID', EBAY.app],
+    ['EBAY_CERT_ID', EBAY.cert],
+    ['EBAY_DEV_ID', EBAY.dev],
+    ['EBAY_USER_TOKEN', EBAY.token],
+  ]
+    .filter(([, v]) => !v)
+    .map(([n]) => n)
+  console.warn(
+    `Skipping cross-platform sync — missing eBay secret(s): ${missing.join(', ')}. ` +
+      'Set EBAY_APP_ID, EBAY_CERT_ID, EBAY_DEV_ID, EBAY_USER_TOKEN on the repo for scheduled eBay ↔ Square sync.',
+  )
+  process.exit(0)
 }
 
 const DEFAULT_CATEGORY = '2887' // Soccer

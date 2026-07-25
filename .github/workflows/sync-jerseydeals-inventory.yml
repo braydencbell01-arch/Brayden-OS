@@ -4,6 +4,7 @@ name: Sync Jersey Deals inventory
 # Reconciles sales from Square orders / qty-0 AND eBay SoldList, then delists
 # on Square + eBay + Jersey Deals so a sale on one channel clears the others.
 # Also syncs NEW listings + updates across eBay ↔ Square (SKU ebay:{itemId}).
+# Cross-platform + eBay-details steps no-op (skip) when EBAY_* repo secrets are unset.
 # Writes listings.json / sold-out.json / checkout-links.json and redeploys Pages when changed.
 
 on:
