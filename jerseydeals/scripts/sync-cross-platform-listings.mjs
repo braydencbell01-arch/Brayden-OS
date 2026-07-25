@@ -581,26 +581,6 @@ async function reviseEbayInventory(ebayId, { price, quantity }) {
   return { ok: false, message: short }
 }
 
-async function reviseEbayItem(ebayId, { title, description }) {
-  if (DRY) return { ok: true, dry: true }
-  const chunks = []
-  if (title) chunks.push(`<Title>${escapeXml(title.slice(0, 80))}</Title>`)
-  if (description) {
-    chunks.push(`<Description><![CDATA[${description}]]></Description>`)
-  }
-  if (!chunks.length) return { ok: true, skipped: true }
-  const xml = await ebayCall(
-    'ReviseFixedPriceItem',
-    `<Item>
-    <ItemID>${ebayId}</ItemID>
-    ${chunks.join('\n    ')}
-  </Item>`,
-  )
-  if (/<Ack>(Success|Warning)<\/Ack>/i.test(xml)) return { ok: true }
-  const short = (xml.match(/<ShortMessage>([^<]+)/i) || [])[1] || xml.slice(0, 160)
-  return { ok: false, message: short }
-}
-
 function shippingXml() {
   return `<ShippingDetails>
     <ShippingType>Flat</ShippingType>
