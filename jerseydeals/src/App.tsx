@@ -1001,9 +1001,12 @@ export default function App() {
   function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
     setFiltersOpen(true)
     const run = () => {
-      document
-        .getElementById('inventory-browse')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const target = document.getElementById('inventory-browse')
+      if (!target) return
+      const header = document.querySelector('header')
+      const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
+      const top = window.scrollY + target.getBoundingClientRect().top - headerH - 8
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
       if (opts?.focusSearch) document.getElementById('sticky-search')?.focus()
     }
     // Two frames so filter panel layout is open before we scroll.
@@ -1040,10 +1043,17 @@ export default function App() {
   }
 
   // Searching from the sticky bar jumps to filters (top) + results below.
+  const searchScrollKey = query.trim()
+  const lastSearchScrollRef = useRef('')
   useEffect(() => {
-    if (!deferredQuery.trim()) return
+    if (!searchScrollKey) {
+      lastSearchScrollRef.current = ''
+      return
+    }
+    if (lastSearchScrollRef.current === searchScrollKey) return
+    lastSearchScrollRef.current = searchScrollKey
     scrollToInventoryBrowse()
-  }, [deferredQuery])
+  }, [searchScrollKey])
 
   useEffect(() => {
     if (urlHydrated.current) return
