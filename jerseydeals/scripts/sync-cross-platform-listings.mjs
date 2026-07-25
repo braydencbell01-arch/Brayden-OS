@@ -3,7 +3,7 @@
  * Bidirectional listing sync across eBay ↔ Square (Jersey Deals site pulls Square).
  *
  * - New / updated eBay actives → create or update Square (SKU ebay:{itemId})
- * - Linked Square items → revise eBay price / qty / title when they drift
+ * - Linked Square items → revise eBay price / qty when Square drifts
  * - New Square-only sellable items → create eBay FixedPrice listing, write back SKU
  *
  * Join key: Square variation SKU = ebay:{eBayItemId}
