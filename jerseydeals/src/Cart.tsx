@@ -278,7 +278,7 @@ export function CartDrawer({
                     setEmailError('')
                   }}
                   placeholder="you@email.com"
-                  className="min-w-0 flex-1 border border-navy/15 bg-cream px-3 py-2.5 text-sm text-navy outline-none placeholder:text-muted focus:border-crimson"
+                  className="min-w-0 flex-1 border border-navy/15 bg-cream px-3 py-2.5 text-base text-navy outline-none placeholder:text-muted focus:border-crimson"
                 />
                 <button
                   type="submit"

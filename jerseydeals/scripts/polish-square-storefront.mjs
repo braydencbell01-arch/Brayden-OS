@@ -182,13 +182,17 @@ function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail =
   --jd-muted:#5a6470;
   --jd-white:#ffffff;
 }
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   font-family:"Outfit",system-ui,sans-serif!important;
   color:var(--jd-navy)!important;
   background:var(--jd-chalk)!important;
   -webkit-font-smoothing:antialiased;
 }
+/* Stop iOS auto-zoom on focus (fields under 16px zoom the page). */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="file"]):not([type="hidden"]),
+textarea,
+select{font-size:16px!important}
 /* Header */
 header,[class*="header"],[data-ux="Header"]{
   background:rgba(6,16,28,.96)!important;
@@ -353,7 +357,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 #jd-offer-card p{color:rgba(255,255,255,.82);font-size:.92rem;line-height:1.45;margin:0}
 #jd-offer-card label{display:flex;align-items:center;gap:.35rem;margin:1rem 0 .4rem;font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.85)}
 #jd-offer-card .jd-req{color:#d7282f;font-weight:700}
-#jd-offer-card input[type="email"]{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.22);background:#0b223f;color:#fff;padding:.85rem .9rem;font-size:.95rem}
+#jd-offer-card input[type="email"]{width:100%;box-sizing:border-box;border:1px solid rgba(255,255,255,.22);background:#0b223f;color:#fff;padding:.85rem .9rem;font-size:16px}
 #jd-offer-card .jd-offer-err{color:#ff7a7f;font-size:.78rem;margin:.45rem 0 0}
 #jd-offer-activate{display:flex;width:100%;justify-content:center;margin-top:.85rem;padding:.95rem 1rem;border:0;background:#d7282f;color:#fff;font-weight:700;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
 #jd-offer-close{position:absolute;top:.55rem;right:.7rem;background:transparent;border:0;color:rgba(255,255,255,.7);font-size:1.1rem;cursor:pointer}
@@ -376,6 +380,18 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   var FOOTER_DEMO=/Thanks for exploring this Square Online Theme/i;
   var TEMPLATE_HERO=/Get started with this free eCommerce template for retailers\\.?/i;
 
+  // Prevent mobile browsers from auto-zooming on focus / search.
+  try{
+    var vp=document.querySelector('meta[name="viewport"]');
+    var content="width=device-width, initial-scale=1, maximum-scale=1";
+    if(vp) vp.setAttribute("content", content);
+    else{
+      vp=document.createElement("meta");
+      vp.setAttribute("name","viewport");
+      vp.setAttribute("content", content);
+      document.head.appendChild(vp);
+    }
+  }catch(e){}
   function storageGet(k){ try{ return localStorage.getItem(k)||""; }catch(e){ return ""; } }
   function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
   function sessionGet(k){ try{ return sessionStorage.getItem(k)||""; }catch(e){ return ""; } }

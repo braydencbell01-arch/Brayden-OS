@@ -21,6 +21,9 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Keep rem-based UI stable; form controls enforce 16px below for iOS. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
@@ -35,6 +38,16 @@
 
   * {
     box-sizing: border-box;
+  }
+
+  /*
+   * iOS Safari auto-zooms focused fields under 16px.
+   * Keep every editable control at least 16px so search/focus never zooms the page.
+   */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='button']):not([type='submit']):not([type='reset']):not([type='image']):not([type='file']):not([type='hidden']),
+  textarea,
+  select {
+    font-size: 16px !important;
   }
 }
 

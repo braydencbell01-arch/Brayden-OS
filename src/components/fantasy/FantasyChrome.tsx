@@ -96,7 +96,7 @@ export function FantasySelect(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
       {...props}
-      className={`w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-cream outline-none ring-lime focus:ring-2 ${props.className ?? ''}`}
+      className={`w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-base text-cream outline-none ring-lime focus:ring-2 ${props.className ?? ''}`}
     />
   )
 }

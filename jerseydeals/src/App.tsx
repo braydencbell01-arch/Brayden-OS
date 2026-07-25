@@ -1322,7 +1322,7 @@ export default function App() {
                   }
                 }}
                 placeholder="Search club, kit, size, brand…"
-                className={`w-full border px-4 py-2.5 text-sm outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
+                className={`w-full border px-4 py-2.5 text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
                   navSolid
                     ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
                     : 'border-white/20 bg-white/10 text-white placeholder:text-white/55'

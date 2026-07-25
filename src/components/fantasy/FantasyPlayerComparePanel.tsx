@@ -51,7 +51,7 @@ function PlayerPick({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search FPL name…"
-            className="mt-2 w-full rounded-lg border border-white/15 bg-pitch px-3 py-2 text-sm text-cream outline-none focus:border-lime/45"
+            className="mt-2 w-full rounded-lg border border-white/15 bg-pitch px-3 py-2 text-base text-cream outline-none focus:border-lime/45"
           />
           <ul className="mt-1">
             {hits.map((p) => (

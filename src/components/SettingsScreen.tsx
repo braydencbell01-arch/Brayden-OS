@@ -91,7 +91,7 @@ export function SettingsScreen({
           <label className="mt-3 block text-sm text-cream">
             Preferred league
             <select
-              className="mt-1 w-full rounded-lg border border-white/15 bg-pitch px-3 py-2 text-sm text-cream"
+              className="mt-1 w-full rounded-lg border border-white/15 bg-pitch px-3 py-2 text-base text-cream"
               value={settings.preferredLeagueId ?? ''}
               onChange={(e) =>
                 patch({ preferredLeagueId: e.target.value || null })
@@ -144,7 +144,7 @@ export function SettingsScreen({
               placeholder="you@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-white/15 bg-pitch px-3 py-2 text-sm text-cream placeholder:text-mist/40"
+              className="min-w-0 flex-1 rounded-lg border border-white/15 bg-pitch px-3 py-2 text-base text-cream placeholder:text-mist/40"
             />
             <button
               type="submit"

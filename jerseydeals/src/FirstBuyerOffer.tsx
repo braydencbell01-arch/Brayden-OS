@@ -157,7 +157,7 @@ export function FirstBuyerOfferModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@email.com"
-              className="w-full border border-white/20 bg-navy px-3 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-crimson"
+              className="w-full border border-white/20 bg-navy px-3 py-3 text-base text-white outline-none placeholder:text-white/35 focus:border-crimson"
             />
           </div>
           {error ? <p className="text-xs text-crimson-hot">{error}</p> : null}
