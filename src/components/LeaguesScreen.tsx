@@ -175,12 +175,9 @@ export function LeaguesScreen({
         {sections.length > 1 ? (
           <nav
             aria-label="Jump to competition section"
-            className="sticky top-[max(0.5rem,env(safe-area-inset-top,0px))] z-20 -mx-5 mb-5 border-b border-white/10 bg-pitch-deep/92 px-5 py-2.5 backdrop-blur-md md:-mx-6 md:px-6"
+            className="sticky top-[max(0.5rem,env(safe-area-inset-top,0px))] z-20 -mx-5 mb-3 border-b border-white/10 bg-pitch-deep/92 px-5 py-1.5 backdrop-blur-md md:-mx-6 md:px-6"
           >
-            <p className="mb-2 text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-mist/55">
-              {sections.length} sections
-            </p>
-            <div className="scrollbar-hide flex gap-1.5 overflow-x-auto pb-0.5">
+            <div className="scrollbar-hide flex gap-1 overflow-x-auto">
               {sections.map((section) => {
                 const active = activeSection === section.id
                 return (
@@ -189,14 +186,14 @@ export function LeaguesScreen({
                     type="button"
                     onClick={() => jumpTo(section.id)}
                     className={[
-                      'shrink-0 rounded-full border px-3 py-1.5 text-[0.65rem] font-bold uppercase tracking-[0.12em] transition outline-none focus-visible:ring-2 focus-visible:ring-lime',
+                      'shrink-0 rounded-full border px-2.5 py-1 text-[0.6rem] font-bold uppercase tracking-[0.1em] transition outline-none focus-visible:ring-2 focus-visible:ring-lime',
                       active
                         ? 'border-lime/55 bg-lime/20 text-lime'
                         : 'border-white/12 bg-white/[0.04] text-mist/75 hover:border-lime/35 hover:text-lime',
                     ].join(' ')}
                   >
                     {section.label}
-                    <span className={active ? 'ml-1.5 text-lime/80' : 'ml-1.5 text-mist/45'}>
+                    <span className={active ? 'ml-1 text-lime/80' : 'ml-1 text-mist/45'}>
                       {section.count}
                     </span>
                   </button>

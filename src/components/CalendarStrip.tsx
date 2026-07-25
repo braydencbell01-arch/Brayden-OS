@@ -144,20 +144,20 @@ export function CalendarStrip({
 
   return (
     <section aria-label="Match calendar" className="relative">
-      <div className="mb-1.5 flex items-end justify-between gap-2 px-1">
-        <div>
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">Calendar</p>
-          <p className="mt-0.5 text-[0.65rem] text-mist/65">Yellow = favorites</p>
+      <div className="mb-1 flex items-center justify-between gap-2 px-1">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-lime/80">Calendar</p>
+          <p className="truncate text-[0.6rem] text-mist/55">Yellow = favorites</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <p className="font-display text-lg tracking-wide text-cream/90">
+          <p className="font-display text-base tracking-wide text-cream/90">
             {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
           </p>
           <button
             type="button"
             onClick={handleTodayClick}
             className={[
-              'rounded-full border px-2.5 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.12em] transition outline-none',
+              'rounded-full border px-2 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.1em] transition outline-none',
               'focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
               'border-lime/50 bg-lime/15 text-lime hover:bg-lime hover:text-ink',
             ].join(' ')}
@@ -175,14 +175,14 @@ export function CalendarStrip({
       >
         <div
           ref={scrollerRef}
-          className="scrollbar-hide -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-0.5 snap-x snap-mandatory"
+          className="scrollbar-hide -mx-5 flex gap-1 overflow-x-auto px-5 snap-x snap-mandatory"
           role="listbox"
           aria-label="Select a date"
         >
         <button
           type="button"
           onClick={extendPast}
-          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-2.5 py-2 text-center text-[0.6rem] font-bold uppercase tracking-[0.1em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-2 py-1.5 text-center text-[0.55rem] font-bold uppercase tracking-[0.08em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           aria-label="Load earlier match days"
         >
           Earlier
@@ -204,19 +204,19 @@ export function CalendarStrip({
               aria-selected={active}
               onClick={() => onSelect(startOfDay(day))}
               className={[
-                'snap-center shrink-0 rounded-xl px-2.5 py-2 text-center transition outline-none',
-                'min-w-[3.5rem] border focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
+                'snap-center shrink-0 rounded-lg px-2 py-1.5 text-center transition outline-none',
+                'min-w-[3rem] border focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-pitch-deep',
                 active
                   ? 'border-lime bg-lime text-ink shadow-[0_0_0_1px_rgba(200,245,66,0.35)]'
                   : 'border-white/10 bg-white/5 text-cream hover:border-lime/40 hover:bg-white/10',
               ].join(' ')}
             >
               <span
-                className={`block text-[0.55rem] font-semibold uppercase tracking-[0.12em] ${active ? 'text-ink/70' : 'text-mist/70'}`}
+                className={`block text-[0.5rem] font-semibold uppercase tracking-[0.1em] ${active ? 'text-ink/70' : 'text-mist/70'}`}
               >
                 {weekday}
               </span>
-              <span className="mt-0.5 block font-display text-xl leading-none tracking-wide">
+              <span className="mt-0.5 block font-display text-lg leading-none tracking-wide">
                 {dayNum}
               </span>
               {isToday ? (
@@ -247,7 +247,7 @@ export function CalendarStrip({
         <button
           type="button"
           onClick={extendForward}
-          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-2.5 py-2 text-center text-[0.6rem] font-bold uppercase tracking-[0.1em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          className="snap-center shrink-0 self-stretch border border-dashed border-white/15 bg-white/[0.03] px-2 py-1.5 text-center text-[0.55rem] font-bold uppercase tracking-[0.08em] text-mist/70 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           aria-label="Load later match days"
         >
           Later

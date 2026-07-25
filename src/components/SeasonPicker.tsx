@@ -60,13 +60,13 @@ export function SeasonPicker({
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 border border-white/15 bg-white/[0.04] px-3 py-2.5 text-left transition hover:border-lime/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+        className="flex w-full items-center justify-between gap-2 border border-white/15 bg-white/[0.04] px-2.5 py-1.5 text-left transition hover:border-lime/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
       >
         <div className="min-w-0">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
             Season
           </p>
-          <p className="mt-0.5 truncate text-sm font-semibold text-cream">
+          <p className="truncate text-sm font-semibold leading-tight text-cream">
             {selected.shortLabel}
             <span className="font-medium text-mist/55"> season</span>
           </p>

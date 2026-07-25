@@ -52,7 +52,7 @@ export function FantasyResearchPanel({
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+            className={`rounded-full px-2.5 py-1 text-[0.7rem] font-bold transition ${
               tab === item.id ? 'bg-lime text-ink' : 'bg-white/5 text-mist hover:bg-white/10'
             }`}
           >

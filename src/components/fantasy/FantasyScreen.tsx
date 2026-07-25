@@ -179,7 +179,7 @@ function FantasyLeagueHub({
         </FantasyButton>
       </div>
 
-      <div className="scrollbar-hide -mx-1 mb-5 flex gap-1 overflow-x-auto px-1">
+      <div className="scrollbar-hide -mx-1 mb-3 flex gap-1 overflow-x-auto px-1">
         {tabs
           .filter((t) => !t.hidden)
           .map((t) => (
@@ -187,7 +187,7 @@ function FantasyLeagueHub({
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[0.7rem] font-bold transition ${
                 tab === t.id ? 'bg-lime text-ink' : 'bg-white/5 text-mist hover:bg-white/10'
               }`}
             >
@@ -1159,7 +1159,7 @@ function WaiversPanel({ fantasy }: { fantasy: FantasyApi }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-1">
         {(
           [
             ['fa', 'Free agents'],
@@ -1171,7 +1171,7 @@ function WaiversPanel({ fantasy }: { fantasy: FantasyApi }) {
             key={id}
             type="button"
             onClick={() => setMode(id)}
-            className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+            className={`rounded-full px-2.5 py-1 text-[0.7rem] font-bold ${
               mode === id ? 'bg-lime text-ink' : 'bg-white/5 text-mist'
             }`}
           >
