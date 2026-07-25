@@ -347,8 +347,9 @@ function ProductGallery({
           const el = event.currentTarget
           const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
           const next = Math.min(Math.max(index, 0), photos.length - 1)
-          setActive(next)
+          if (next === activeRef.current) return
           activeRef.current = next
+          setActive(next)
         }}
         role="region"
         aria-roledescription="carousel"
@@ -769,6 +770,7 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (loadState !== 'ready') return
     if (hasPurchased()) return
     if (readOffer().activated) return
     try {
@@ -776,13 +778,14 @@ export default function App() {
     } catch {
       /* ignore */
     }
+    // Wait until inventory is painted so the modal + body lock don't fight first paint on iOS.
     const timer = window.setTimeout(() => {
       setOfferMode('offer')
       setOfferOpen(true)
       track('offer_popup_shown', {})
-    }, 700)
+    }, 1200)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [loadState])
 
   function hasCheckoutEmail() {
     return Boolean(readBuyerEmail() || readOffer().email)
@@ -1017,8 +1020,12 @@ export default function App() {
       const header = document.querySelector('header')
       const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
       const top = window.scrollY + target.getBoundingClientRect().top - headerH - 8
-      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
-      if (opts?.focusSearch) document.getElementById('sticky-search')?.focus()
+      // iOS Safari can crash when smooth programmatic scrolls stack with sticky chrome.
+      const preferSmooth =
+        typeof window !== 'undefined' &&
+        !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
+      window.scrollTo({ top: Math.max(0, top), behavior: preferSmooth ? 'smooth' : 'auto' })
+      if (opts?.focusSearch) document.getElementById('sticky-search')?.focus({ preventScroll: true })
     }
     // Two frames so filter panel layout is open before we scroll.
     requestAnimationFrame(() => requestAnimationFrame(run))
@@ -1128,6 +1135,9 @@ export default function App() {
     if (sortBy !== 'featured') params.set('sort', sortBy)
     const next = params.toString()
     const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    // Avoid replaceState spam — iOS Safari can choke on repeated history updates.
+    if (url === currentUrl) return
     window.history.replaceState(null, '', url)
   }, [appliedQuery, audienceFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
 
@@ -1341,6 +1351,7 @@ export default function App() {
           <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2.5 md:px-8">
             <form
               className="relative min-w-0 flex-1"
+              autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault()
                 activateSearch()
@@ -1350,8 +1361,13 @@ export default function App() {
                 <span className="sr-only">Search kits</span>
                 <input
                   id="sticky-search"
+                  name="q"
                   type="search"
                   value={query}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
                   onChange={(e) => {
                     setQuery(e.target.value)
                   }}
