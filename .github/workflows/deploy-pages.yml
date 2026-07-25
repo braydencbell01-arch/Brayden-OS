@@ -36,6 +36,9 @@ jobs:
         env:
           VITE_SQUARE_STORE_URL: ${{ secrets.VITE_SQUARE_STORE_URL }}
           VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
+          VITE_JERSEYDEALS_EMAIL_API_URL: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_URL }}
+          VITE_JERSEYDEALS_EMAIL_API_SECRET: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_SECRET }}
+          VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT: ${{ secrets.VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT }}
         run: |
           export VITE_SQUARE_STORE_URL="${VITE_SQUARE_STORE_URL:-https://jerseydealsofficial.square.site}"
           npm ci
