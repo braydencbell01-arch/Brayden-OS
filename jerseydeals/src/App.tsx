@@ -2242,12 +2242,12 @@ export default function App() {
                     </FilterRow>
 
                     <FilterRow label="Type">
-                      {TYPE_FILTERS.map((type) => (
+                      {TYPE_FILTERS.map((option) => (
                         <FilterChip
-                          key={type}
-                          label={type}
-                          active={tagFilter === type}
-                          onClick={() => setTagFilter(type)}
+                          key={option.id}
+                          label={option.label}
+                          active={tagFilter === option.id}
+                          onClick={() => setTagFilter(option.id)}
                         />
                       ))}
                     </FilterRow>

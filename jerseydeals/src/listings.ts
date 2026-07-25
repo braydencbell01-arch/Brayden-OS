@@ -363,8 +363,17 @@ export function isAdultListing(item: Listing) {
 }
 
 /** Inventory Type filter — title-based, not catalog tag. */
-export const TYPE_FILTERS = ['All', 'Training', 'Jerseys', 'Apparel'] as const
-export type TypeFilterId = (typeof TYPE_FILTERS)[number]
+export const TYPE_FILTERS = [
+  { id: 'All', label: 'All' },
+  { id: 'Training', label: 'Training' },
+  { id: 'Jerseys', label: 'Jerseys' },
+  { id: 'Home kits', label: 'Home kits' },
+  { id: 'Away kits', label: 'Away kits' },
+  { id: 'Third kits', label: 'Third kits' },
+  { id: 'Apparel', label: 'Apparel' },
+] as const
+
+export type TypeFilterId = (typeof TYPE_FILTERS)[number]['id']
 
 /** Pre-match, training, or strike tops. */
 export function isTrainingTypeListing(item: Listing) {
@@ -377,6 +386,21 @@ export function isJerseyTypeListing(item: Listing) {
   return /\bjerseys?\b/i.test(item.title)
 }
 
+/** Home kit / home jersey. */
+export function isHomeKitListing(item: Listing) {
+  return /\bhome\b/i.test(item.title)
+}
+
+/** Away kit / away jersey. */
+export function isAwayKitListing(item: Listing) {
+  return /\baway\b/i.test(item.title)
+}
+
+/** Third or fourth kit / jersey. */
+export function isThirdKitListing(item: Listing) {
+  return /\bthird\b|\bfourth\b|\b4th\b/i.test(item.title)
+}
+
 /** Everything outside Training and Jerseys (scarves, tees, towels, etc.). */
 export function isApparelTypeListing(item: Listing) {
   return !isTrainingTypeListing(item) && !isJerseyTypeListing(item)
@@ -386,6 +410,9 @@ export function matchesTypeFilter(item: Listing, filter: TypeFilterId | string) 
   if (filter === 'All') return true
   if (filter === 'Training') return isTrainingTypeListing(item)
   if (filter === 'Jerseys') return isJerseyTypeListing(item)
+  if (filter === 'Home kits') return isHomeKitListing(item)
+  if (filter === 'Away kits') return isAwayKitListing(item)
+  if (filter === 'Third kits') return isThirdKitListing(item)
   if (filter === 'Apparel') return isApparelTypeListing(item)
   // Legacy catalog tags from old deep links.
   if (filter === 'Youth') return isYouthListing(item)
