@@ -91,7 +91,24 @@ Requires `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`, `EBAY_USER_TOKEN`.
 
 `npm run sync:inventory` uses Square when `SQUARE_ACCESS_TOKEN` + `SQUARE_STORE_URL` are present; otherwise eBay.
 
-### Push eBay listings into Square
+### Cross-platform listing sync (new + updates)
+
+`npm run sync:cross-platform` keeps **eBay ↔ Square** aligned (Jersey Deals site follows Square):
+
+| Direction | What syncs |
+|-----------|------------|
+| eBay → Square | New actives create Square items (`sku = ebay:{itemId}`); price / title / qty / description updates |
+| Square → eBay | Linked kits revise eBay **price / qty** when Square changes; Square-only sellable kits create an eBay listing and write back the SKU |
+
+Scheduled with **Sync Jersey Deals inventory** (every ~10 minutes), after sold reconcile and before site catalog refresh + Payment Links.
+
+```bash
+cd jerseydeals
+DRY_RUN=1 npm run sync:cross-platform
+npm run sync:cross-platform
+```
+
+### Push eBay listings into Square (manual bulk)
 
 If Square Catalog is empty, import the current `listings.json` (usually from eBay) into Square:
 
@@ -101,6 +118,7 @@ npm run push:square
 ```
 
 Or run GitHub Action **Push listings to Square** (workflow_dispatch). Then run **Sync Jersey Deals inventory**.
+`push:square` only accepts numeric eBay ItemIDs or existing `sku: ebay:{itemId}` (never invents SKUs from Square variation ids).
 
 ### Update Square POS titles (club abbreviations)
 

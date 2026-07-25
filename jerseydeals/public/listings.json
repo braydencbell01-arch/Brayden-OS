@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-07-25T21:00:52Z",
+  "syncedAt": "2026-07-25T22:34:45Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 32,
+  "count": 39,
   "listings": [
     {
       "id": "NK4QWAQHIVIST5HLZRY7DWRH",
@@ -34,11 +34,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "Match Jerseys",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/0K2u0u5t",
-      "checkoutUrlDiscounted": "https://square.link/u/STRMrB8S"
+      "checkoutUrlDiscounted": "https://square.link/u/STRMrB8S",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "5IGOAAVG5N3HVSBTOXMQ6AH7",
@@ -67,11 +68,49 @@
       "brand": "Puma",
       "source": "square",
       "category": "Training",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/EznO0C7o",
-      "checkoutUrlDiscounted": "https://square.link/u/rsgvWFFG"
+      "checkoutUrlDiscounted": "https://square.link/u/rsgvWFFG",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "NPGYT7TP5A4DA25PU5TQNYQI",
+      "itemId": "MESUKSIHUJYM6FHJIBSGKZ4Q",
+      "sku": "ebay:800407234121",
+      "title": "Nike Home Jersey · S",
+      "price": 50,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/nike-home-jersey-s/MESUKSIHUJYM6FHJIBSGKZ4Q",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bvkAAeSwMDlqZSjh/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bvkAAeSwMDlqZSjh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WhYAAeSwkN9qZSjl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/VuAAAeSwhEBqZSpR/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2XkAAeSwQBhqZSpR/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qjsAAeSwwnxqZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8lgAAeSwAQ9qZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TB8AAeSwErFqZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7rsAAeSw6JVqZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/yWsAAeSw8vVqZSjk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0QUAAeSwQBhqZSjk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/uqsAAeSwsehqZSjl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eykAAeSwZB9qZSjm/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Jerseys",
+      "note": "Size S",
+      "size": "S",
+      "brand": "Nike",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is new with tag and authentic. Message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/VZYJ4L1j",
+      "checkoutUrlDiscounted": "https://square.link/u/7lor2d6E",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "GKCKDASTXCN4AG4LUMQHNL4X",
@@ -100,11 +139,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/6d1sjM1Z",
-      "checkoutUrlDiscounted": "https://square.link/u/QnMzaKQf"
+      "checkoutUrlDiscounted": "https://square.link/u/QnMzaKQf",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "QJEOSSVEYGYCNA5553L7NMLW",
@@ -129,18 +169,19 @@
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/R8MAAeSwYwRqW92B/$_57.JPG?set_id=8800005007",
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ay4AAeSwkN9qW92T/$_57.JPG?set_id=8800005007"
       ],
-      "quantity": 1,
+      "quantity": 2,
       "tag": "Training",
       "note": "Size M",
       "size": "M",
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/6x0DYlTE",
-      "checkoutUrlDiscounted": "https://square.link/u/hl7FRlTu"
+      "checkoutUrlDiscounted": "https://square.link/u/hl7FRlTu",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "N6UZIJJ7VXPDHKXZOXA7SRYB",
@@ -170,11 +211,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/evdoc8Qh",
-      "checkoutUrlDiscounted": "https://square.link/u/Oz70KsVf"
+      "checkoutUrlDiscounted": "https://square.link/u/Oz70KsVf",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "MCEIHY77J3ER5UHJJGLCSLYN",
@@ -203,11 +245,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/SyerroLB",
-      "checkoutUrlDiscounted": "https://square.link/u/xCL32GhR"
+      "checkoutUrlDiscounted": "https://square.link/u/xCL32GhR",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "KRHP6YJO5KRMODFKNAYBKK6S",
@@ -236,11 +279,88 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/IBVyeWEH",
-      "checkoutUrlDiscounted": "https://square.link/u/9QKFeiZ8"
+      "checkoutUrlDiscounted": "https://square.link/u/9QKFeiZ8",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "6DXVTBZHQXRZQ7Q5G23SYRWL",
+      "itemId": "YB3RYUU4FJL7WEQGGQ7YYVVZ",
+      "sku": "ebay:800407206007",
+      "title": "Inter Miami 23/24 Away Jersey (adidas) · Youth XL",
+      "price": 45,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/inter-miami-23-24-away-jersey-adidas-youth-xl/YB3RYUU4FJL7WEQGGQ7YYVVZ",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5koAAeSwHg9qZSVG/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5koAAeSwHg9qZSVG/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tB0AAeSwoi5qZSVL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2pkAAeSwraVqZSZa/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Ux0AAeSwOPZqZSaB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3JcAAeSw2OhqZSVJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FS8AAeSwRT1qZSVJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-0UAAeSwl-1qZSVJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MvMAAeSwizZqZSVJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9HcAAeSwGs1qZSVL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lFcAAeSw1uFqZSVL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/JTMAAeSwahlqZSVM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HI0AAeSwPGtqZSVM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lK4AAeSwxUxqZSVM/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 2,
+      "tag": "Youth",
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
+      "checkoutUrl": "https://square.link/u/BwVQkKOS",
+      "checkoutUrlDiscounted": "https://square.link/u/7qYUVhnG",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "3J2OXHY3PHBWVK264JTYPLBD",
+      "itemId": "YADWORMUYICFV3TKSCYFG5S5",
+      "sku": "ebay:800407292943",
+      "title": "Inter Miami 24/25 Home Jersey (adidas) · Youth XL",
+      "price": 45,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/inter-miami-24-25-home-jersey-adidas-youth-xl/YADWORMUYICFV3TKSCYFG5S5",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gNIAAeSwZlJqZS9P/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gNIAAeSwZlJqZS9P/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bjEAAeSwdbtqZS9S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Y-gAAeSw2S9qZS9T/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/05EAAeSw-4NqZS9T/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-PYAAeSwwbZqZS9R/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2wgAAeSwINxqZS9R/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g7QAAeSwlcJqZS9Q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/KMgAAeSwlYhqZS9R/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/80QAAeSwoi5qZS9R/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/xBEAAeSwnQxqZS9S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/e9AAAeSwQtRqZS9S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ctYAAeSwGjJqZS9S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Lp8AAeSwuzZqZS9T/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 2,
+      "tag": "Youth",
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Adidas",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is new with tag and authentic. Message up if you have any questions.",
+      "checkoutUrl": "https://square.link/u/GDFkPTOJ",
+      "checkoutUrlDiscounted": "https://square.link/u/5I4zal4Y",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "5TQZU3FKRKF2HAZQIYA23ZCQ",
@@ -269,11 +389,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/9sMRcUQS",
-      "checkoutUrlDiscounted": "https://square.link/u/uE1iZMzI"
+      "checkoutUrlDiscounted": "https://square.link/u/uE1iZMzI",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "U6N3EI2MXKOTR5ASQSFWGW2U",
@@ -302,11 +423,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/mq9i4PUT",
-      "checkoutUrlDiscounted": "https://square.link/u/omrFkQoQ"
+      "checkoutUrlDiscounted": "https://square.link/u/omrFkQoQ",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -334,11 +456,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/c6LCtkmx",
-      "checkoutUrlDiscounted": "https://square.link/u/VgwgIH2l"
+      "checkoutUrlDiscounted": "https://square.link/u/VgwgIH2l",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "DX72TIG4T47LOPW5S6BWHJAC",
@@ -365,11 +488,51 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/y56CqD5F",
-      "checkoutUrlDiscounted": "https://square.link/u/iTprkA4d"
+      "checkoutUrlDiscounted": "https://square.link/u/iTprkA4d",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "TVAE6QTZ6YQL7326JAIX2I7C",
+      "itemId": "K2MVDBOYRK7AH5HTPLYYU6VT",
+      "sku": "ebay:800407272493",
+      "title": "Paris Saint-Germain 23/24 Away Jersey (Nike) · Youth XL",
+      "price": 45,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/paris-saint-germain-23-24-away-jersey-nike-youth-xl/K2MVDBOYRK7AH5HTPLYYU6VT",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/L8wAAeSwfRBqZS2g/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/L8wAAeSwfRBqZS2g/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8SgAAeSwSApqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hzEAAeSw0ZZqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UhsAAeSwZl5qZS2k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lgIAAeSwaTJqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TScAAeSweXxqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/f68AAeSwycZqZS2h/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bjsAAeSwYlpqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FnwAAeSwjYdqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/afcAAeSwW0ZqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zb0AAeSw1uFqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/dT0AAeSwo9lqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZlUAAeSwMndqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gS0AAeSw0ttqZS2j/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Youth",
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Nike",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is new with tag and authentic. Message up if you have any questions.",
+      "checkoutUrl": "https://square.link/u/Tqw2XMee",
+      "checkoutUrlDiscounted": "https://square.link/u/pFXGnwVv",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "MXVXOENXOALOOAT44NW5IR32",
@@ -397,11 +560,50 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/Iap4Uskz",
-      "checkoutUrlDiscounted": "https://square.link/u/OZIqatzz"
+      "checkoutUrlDiscounted": "https://square.link/u/OZIqatzz",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "HF5D4QEYD2CSREEN75LHME7Y",
+      "itemId": "AHXYNZF2JKQ35R6VIZHVFZIB",
+      "sku": "ebay:800407244493",
+      "title": "Tottenham Hotspur 24/25 Home Jersey (Nike) · Youth XL",
+      "price": 45,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/tottenham-hotspur-24-25-home-jersey-nike-youth-xl/AHXYNZF2JKQ35R6VIZHVFZIB",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E6oAAeSwgm9qZSwE/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E6oAAeSwgm9qZSwE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/V4sAAeSwygVqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZYUAAeSwwvJqZSwI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q-wAAeSweXxqZSwI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AOUAAeSwOKhqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ao8AAeSwapBqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/P6gAAeSwlOZqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/djEAAeSwOPZqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZCQAAeSwf4JqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LuoAAeSwPFVqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2RAAAeSwpwZqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NwkAAeSwIoZqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kncAAeSw371qZSwI/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Youth",
+      "note": "Youth XL",
+      "size": "Youth XL",
+      "brand": "Nike",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is new with tag and authentic. Message up if you have any questions.",
+      "checkoutUrl": "https://square.link/u/Xc0f0zUS",
+      "checkoutUrlDiscounted": "https://square.link/u/vszxCSvI",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "VUWLFJKHDOIHTL3U3K3R36E7",
@@ -432,11 +634,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/QOfI9NIp",
-      "checkoutUrlDiscounted": "https://square.link/u/yXIjuPRk"
+      "checkoutUrlDiscounted": "https://square.link/u/yXIjuPRk",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "5ZMO6NV7TPNCYMUREA6QBZCH",
@@ -466,11 +669,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "WORLD CUP SALE. Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/d4Jl3Qi0",
-      "checkoutUrlDiscounted": "https://square.link/u/G76jymXG"
+      "checkoutUrlDiscounted": "https://square.link/u/G76jymXG",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "BIXIXRBNFCUCYEXEX7SFU4R2",
@@ -499,11 +703,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/Gh6wEQfq",
-      "checkoutUrlDiscounted": "https://square.link/u/yAhbDktR"
+      "checkoutUrlDiscounted": "https://square.link/u/yAhbDktR",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "NNVRQNJQSHXIRQC5GCJB4ES4",
@@ -532,11 +737,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/Z3vDXiOB",
-      "checkoutUrlDiscounted": "https://square.link/u/5QjiY8l5"
+      "checkoutUrlDiscounted": "https://square.link/u/5QjiY8l5",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "HELNG4NELK57GRBIGQUMIFKZ",
@@ -565,11 +771,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/e4KcC9rM",
-      "checkoutUrlDiscounted": "https://square.link/u/q4gFSdwF"
+      "checkoutUrlDiscounted": "https://square.link/u/q4gFSdwF",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "7J6DO636MD5CSSILRBUXTMQB",
@@ -599,11 +806,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/omw4D1tA",
-      "checkoutUrlDiscounted": "https://square.link/u/8oDyx2B3"
+      "checkoutUrlDiscounted": "https://square.link/u/8oDyx2B3",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "F2D2CZHZSJV52P4ANCZ3O4F4",
@@ -632,11 +840,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/11hcuvgk",
-      "checkoutUrlDiscounted": "https://square.link/u/FKILtV5q"
+      "checkoutUrlDiscounted": "https://square.link/u/FKILtV5q",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "4536BCCPRWZHQSXIC2Z4HAMX",
@@ -664,11 +873,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/hxm8Sbbf",
-      "checkoutUrlDiscounted": "https://square.link/u/WgK1Bn0A"
+      "checkoutUrlDiscounted": "https://square.link/u/WgK1Bn0A",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "Z3DE6BQ55K4EBWVLD3JZY6JP",
@@ -696,11 +906,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/GU0FnRTS",
-      "checkoutUrlDiscounted": "https://square.link/u/D1nzMLAK"
+      "checkoutUrlDiscounted": "https://square.link/u/D1nzMLAK",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "ZPVVMODVRJMOICVJBS5DS4WU",
@@ -728,11 +939,44 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/J5ggEM7N",
-      "checkoutUrlDiscounted": "https://square.link/u/nOAPio4H"
+      "checkoutUrlDiscounted": "https://square.link/u/nOAPio4H",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "UQWJCMVXI44M4BYKG5ZXMUFO",
+      "itemId": "OX7AAG6BBHIQYZ4OEW4GUWFM",
+      "sku": "ebay:800359830155",
+      "title": "Ajax Amsterdam Authentic Red And White Scarf | 2 Sided | 173cm-20cm | — Standard",
+      "price": 32,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/ajax-amsterdam-authentic-red-and-white-scarf-2-sided-173cm-20cm/OX7AAG6BBHIQYZ4OEW4GUWFM",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9EoAAeSwAzZqWlYl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OO0AAeSwDCFqWlYk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SckAAeSwlcJqWlYk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hEoAAeSwNKlqWlYl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5vUAAeSwyWFqWlYm/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3rwAAeSwsIxqWlYm/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "See listing",
+      "size": "Other",
+      "brand": "",
+      "source": "square",
+      "category": "",
+      "description": "Scarf is new and authentic. Message me if you have any questions.",
+      "checkoutUrl": "https://square.link/u/mf6BNx2O",
+      "checkoutUrlDiscounted": "https://square.link/u/TuwiUOdO",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "F5DEPH7PNZQPAO4J5U7TTMOU",
@@ -761,11 +1005,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in great condition. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/06b2Uj9e",
-      "checkoutUrlDiscounted": "https://square.link/u/ufJlfqDH"
+      "checkoutUrlDiscounted": "https://square.link/u/ufJlfqDH",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "WSZKEVL3YZH5CD73UCGFDP7K",
@@ -797,11 +1042,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in pretty good condition. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/89HUN6F7",
-      "checkoutUrlDiscounted": "https://square.link/u/Pd9kfzfa"
+      "checkoutUrlDiscounted": "https://square.link/u/Pd9kfzfa",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "2R5BPPFCVBMJLBOKNX5PT6AF",
@@ -830,11 +1076,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/by2ZZMcf",
-      "checkoutUrlDiscounted": "https://square.link/u/50HtbbPo"
+      "checkoutUrlDiscounted": "https://square.link/u/50HtbbPo",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "SEQEMDAMQGUWPILJW7HEUWZO",
@@ -863,11 +1110,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/zClnZp6N",
-      "checkoutUrlDiscounted": "https://square.link/u/kAeslpqr"
+      "checkoutUrlDiscounted": "https://square.link/u/kAeslpqr",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "Q5U6CE4YFROKNHEJ75DRAE7W",
@@ -894,11 +1142,12 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Product is new with tag and authentic. Message me if you have questions.",
       "checkoutUrl": "https://square.link/u/rBSjTbEw",
-      "checkoutUrlDiscounted": "https://square.link/u/mxM66Es9"
+      "checkoutUrlDiscounted": "https://square.link/u/mxM66Es9",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "XDF6VB47D6ALWBLMWSNUTEM6",
@@ -929,11 +1178,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in great condition. Please message me if you have questions.",
       "checkoutUrl": "https://square.link/u/XNtESHWi",
-      "checkoutUrlDiscounted": "https://square.link/u/HMJGQkFm"
+      "checkoutUrlDiscounted": "https://square.link/u/HMJGQkFm",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "TNLLMZ7CSS72HGOHXAYNALLP",
@@ -959,11 +1209,12 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is new with tag and authentic. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/iUKdeBys",
-      "checkoutUrlDiscounted": "https://square.link/u/ycKXlHvp"
+      "checkoutUrlDiscounted": "https://square.link/u/ycKXlHvp",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "FPACGK626CQ3PF4CRARJHXLW",
@@ -991,11 +1242,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in pretty good condition there are no stains just a tiny bit of peeling as you can see. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/8FZqj1jg",
-      "checkoutUrlDiscounted": "https://square.link/u/drvAUzuu"
+      "checkoutUrlDiscounted": "https://square.link/u/drvAUzuu",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "NWSMDPZORSCBZ5KWSG3L46SO",
@@ -1024,17 +1276,52 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in not great condition. Pretty dirty but a great item to hang up or try to clean and then wear for a very low price. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/xOLCvUn1",
-      "checkoutUrlDiscounted": "https://square.link/u/7az1u6cl"
+      "checkoutUrlDiscounted": "https://square.link/u/7az1u6cl",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
+    },
+    {
+      "id": "BITTO3N42GF6UMBOTP6VFEU6",
+      "itemId": "KSQAQS5FD2JUDR2OSVTR2CKN",
+      "sku": "ebay:800366857184",
+      "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
+      "price": 10,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/manchester-city-17-18-home-jersey-nike-youth-l/KSQAQS5FD2JUDR2OSVTR2CKN",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OZAAAeSwwnlqW96d/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OZAAAeSwwnlqW96d/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fXMAAeSwusNqW96g/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UtkAAeSwws5qW96g/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gVIAAeSwOPZqW96f/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/yB0AAeSw1uFqW96h/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GogAAeSwiBtqW96p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BBcAAeSwGs1qW96o/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~6wAAeSwfZRqW96p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ziQAAeSw46tqW96p/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Youth",
+      "note": "Youth L",
+      "size": "Youth L",
+      "brand": "Nike",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is in not great condition. Pretty dirty but a great item to hang up or try to clean and then wear for a very low price. Message me if you have any questions.",
+      "checkoutUrl": "https://square.link/u/mS4ocWAI",
+      "checkoutUrlDiscounted": "https://square.link/u/kKIjbdSt",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "PPVWVZKJYRLSFX33RN4XQDOV",
       "itemId": "KL5J6BT3HLBFTOVJMCUZRG7S",
       "sku": "ebay:800359738314",
-      "title": "Syracuse Soccer Rally Towels (2-Pack) — See listing",
+      "title": "Syracuse Soccer Rally Towels (2-Pack) — Standard",
       "price": 8,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/syracuse-soccer-rally-towels-2-pack/KL5J6BT3HLBFTOVJMCUZRG7S",
@@ -1051,12 +1338,14 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Rally Towel is in perfect condition. Message me if you have any questions.",
       "checkoutUrl": "https://square.link/u/8OnPITRc",
-      "checkoutUrlDiscounted": "https://square.link/u/JbVjvuD1"
+      "checkoutUrlDiscounted": "https://square.link/u/JbVjvuD1",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     }
   ],
-  "checkoutMode": "square-online-cart+payment-links"
+  "checkoutMode": "square-online-cart+payment-links",
+  "ebayDetailsSyncedAt": "2026-07-25T22:34:45Z"
 }

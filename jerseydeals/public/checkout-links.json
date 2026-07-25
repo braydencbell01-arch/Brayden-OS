@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-25T21:00:52Z",
+  "syncedAt": "2026-07-25T22:34:01Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 32,
+  "count": 39,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -422,6 +422,97 @@
       "discountPaymentLinkId": "323LBXJ7JEUVGGST",
       "discountUrl": "https://square.link/u/JbVjvuD1",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4rbi3xrCWpUxy6zF6L7oRwEvOyWZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "YB3RYUU4FJL7WEQGGQ7YYVVZ",
+      "variationId": "6DXVTBZHQXRZQ7Q5G23SYRWL",
+      "title": "Inter Miami 23/24 Away Jersey (adidas) · Youth XL",
+      "sku": "ebay:800407206007",
+      "paymentLinkId": "DPBN25CAGNEUYXHF",
+      "url": "https://square.link/u/BwVQkKOS",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CeqoI3zwZgFxqSABaRuu7wgf32UZY",
+      "discountPaymentLinkId": "B2ZZ2NCLAZO6ITB3",
+      "discountUrl": "https://square.link/u/7qYUVhnG",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kzESl0TtWDlWSfeQdjH12KqZi85YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "MESUKSIHUJYM6FHJIBSGKZ4Q",
+      "variationId": "NPGYT7TP5A4DA25PU5TQNYQI",
+      "title": "Nike Home Jersey · S",
+      "sku": "ebay:800407234121",
+      "paymentLinkId": "3IAY5YPR7QIFH23G",
+      "url": "https://square.link/u/VZYJ4L1j",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Ow6pkwmAQngol2RY28TSTGxch0LZY",
+      "discountPaymentLinkId": "3P6PYRGYZUR3CDVJ",
+      "discountUrl": "https://square.link/u/7lor2d6E",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ARq9newHH9km5jFMhWNAETJINPdZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "AHXYNZF2JKQ35R6VIZHVFZIB",
+      "variationId": "HF5D4QEYD2CSREEN75LHME7Y",
+      "title": "Tottenham Hotspur 24/25 Home Jersey (Nike) · Youth XL",
+      "sku": "ebay:800407244493",
+      "paymentLinkId": "LJWDDGYU3OK6I6EE",
+      "url": "https://square.link/u/Xc0f0zUS",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8zEhjAbtvkoJcTpPG5DDo9sKzxJZY",
+      "discountPaymentLinkId": "OKWUVUIXU2RIFOZ5",
+      "discountUrl": "https://square.link/u/vszxCSvI",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/uYK7eV6a6Hqiyn8f1VxsdSoCF9WZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "K2MVDBOYRK7AH5HTPLYYU6VT",
+      "variationId": "TVAE6QTZ6YQL7326JAIX2I7C",
+      "title": "Paris Saint-Germain 23/24 Away Jersey (Nike) · Youth XL",
+      "sku": "ebay:800407272493",
+      "paymentLinkId": "GDWHQ7K76BC6PKOD",
+      "url": "https://square.link/u/Tqw2XMee",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/sptMs5oEBZdjPB5FXnmsQPlp02CZY",
+      "discountPaymentLinkId": "A47XLWSI7LLC5QLO",
+      "discountUrl": "https://square.link/u/pFXGnwVv",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ycfhSejL3jOn7x0Zfq6HKxvRPY6YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "YADWORMUYICFV3TKSCYFG5S5",
+      "variationId": "3J2OXHY3PHBWVK264JTYPLBD",
+      "title": "Inter Miami 24/25 Home Jersey (adidas) · Youth XL",
+      "sku": "ebay:800407292943",
+      "paymentLinkId": "DSABPK4A7A2YJRQ5",
+      "url": "https://square.link/u/GDFkPTOJ",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/qUFloRddRqHyFTfE6HMLbU4XWSIZY",
+      "discountPaymentLinkId": "S2QJNIZNMQUKUOZN",
+      "discountUrl": "https://square.link/u/5I4zal4Y",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Gc6zzMDL0XViaG1HeeAaF7n5zm7YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "KSQAQS5FD2JUDR2OSVTR2CKN",
+      "variationId": "BITTO3N42GF6UMBOTP6VFEU6",
+      "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
+      "sku": "ebay:800366857184",
+      "paymentLinkId": "RMN2MAPAWLPJNHEY",
+      "url": "https://square.link/u/mS4ocWAI",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/INqtw59ZKsOZBXZp4QnJQZjctUDZY",
+      "discountPaymentLinkId": "WSJPQ7VUH2LSV2LQ",
+      "discountUrl": "https://square.link/u/kKIjbdSt",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4dUm1vps4v4UmGpPA9baP9NdHjaZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "OX7AAG6BBHIQYZ4OEW4GUWFM",
+      "variationId": "UQWJCMVXI44M4BYKG5ZXMUFO",
+      "title": "Ajax Amsterdam Authentic Red And White Scarf | 2 Sided | 173cm-20cm |",
+      "sku": "ebay:800359830155",
+      "paymentLinkId": "ILVXAJUVMNFHYC5G",
+      "url": "https://square.link/u/mf6BNx2O",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Q7f5eBXvNFhafy6SXhUHZVWzdhVZY",
+      "discountPaymentLinkId": "AVYRZHMYTHDGUMVR",
+      "discountUrl": "https://square.link/u/TuwiUOdO",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Ih4ZLA3B7I8nXMxqcn2asD2mMNBZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]

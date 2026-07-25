@@ -3,6 +3,7 @@ name: Sync Jersey Deals inventory
 # Prefers Square Catalog when SQUARE_* secrets exist; otherwise eBay.
 # Reconciles sales from Square orders / qty-0 AND eBay SoldList, then delists
 # on Square + eBay + Jersey Deals so a sale on one channel clears the others.
+# Also syncs NEW listings + updates across eBay ↔ Square (SKU ebay:{itemId}).
 # Writes listings.json / sold-out.json / checkout-links.json and redeploys Pages when changed.
 
 on:
@@ -48,6 +49,18 @@ jobs:
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
         run: npm run reconcile:sold
 
+      - name: Sync new listings + updates across eBay ↔ Square
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: npm run sync:cross-platform
+
       - name: Sync remaining inventory (Square preferred, eBay fallback)
         working-directory: jerseydeals
         env:
@@ -60,6 +73,24 @@ jobs:
           EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
         run: npm run sync:inventory
+
+      - name: Ensure Payment Links for any new Square items
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+        run: npm run square:buyable-checkout
+
+      - name: Ensure first-buyer discount Payment Links
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+        run: npm run square:first10-links
 
       - name: Re-apply sold filter after sync
         working-directory: jerseydeals

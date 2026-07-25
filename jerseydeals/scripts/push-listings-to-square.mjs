@@ -61,8 +61,22 @@ async function square(path, { method = 'GET', body, headers = {} } = {}) {
   return json
 }
 
+function ebayIdFromListing(listing) {
+  const fromSku = String(listing.sku || '').match(/^ebay:(\d+)/i)
+  if (fromSku) return fromSku[1]
+  // Only treat listing.id as an eBay ItemID when it is numeric (eBay-sourced listings.json).
+  if (/^\d{6,}$/.test(String(listing.id || ''))) return String(listing.id)
+  return ''
+}
+
 function skuFor(listing) {
-  return `ebay:${listing.id}`
+  const ebayId = ebayIdFromListing(listing)
+  if (!ebayId) {
+    throw new Error(
+      `Cannot derive ebay:{itemId} SKU for “${String(listing.title || listing.id).slice(0, 60)}” — set sku to ebay:{itemId}`,
+    )
+  }
+  return `ebay:${ebayId}`
 }
 
 function moneyAmount(price) {
