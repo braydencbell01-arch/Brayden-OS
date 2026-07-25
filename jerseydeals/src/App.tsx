@@ -998,6 +998,21 @@ export default function App() {
     return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
   }, [deferredQuery, filtered.length, listings.length, audienceFilter])
 
+  function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
+    setFiltersOpen(true)
+    const run = () => {
+      const target = document.getElementById('inventory-browse')
+      if (!target) return
+      const header = document.querySelector('header')
+      const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
+      const top = window.scrollY + target.getBoundingClientRect().top - headerH - 8
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      if (opts?.focusSearch) document.getElementById('sticky-search')?.focus()
+    }
+    // Two frames so filter panel layout is open before we scroll.
+    requestAnimationFrame(() => requestAnimationFrame(run))
+  }
+
   function goInventory(next?: {
     tag?: string
     brand?: string
@@ -1024,14 +1039,21 @@ export default function App() {
     if (next?.query !== undefined) setQuery(next.query)
     if (next?.audience !== undefined) setAudienceFilter(next.audience)
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
-    setFiltersOpen(true)
-    requestAnimationFrame(() => {
-      document.getElementById('inventory')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      if (next?.focusSearch) {
-        document.getElementById('sticky-search')?.focus()
-      }
-    })
+    scrollToInventoryBrowse({ focusSearch: next?.focusSearch })
   }
+
+  // Searching from the sticky bar jumps to filters (top) + results below.
+  const searchScrollKey = query.trim()
+  const lastSearchScrollRef = useRef('')
+  useEffect(() => {
+    if (!searchScrollKey) {
+      lastSearchScrollRef.current = ''
+      return
+    }
+    if (lastSearchScrollRef.current === searchScrollKey) return
+    lastSearchScrollRef.current = searchScrollKey
+    scrollToInventoryBrowse()
+  }, [searchScrollKey])
 
   useEffect(() => {
     if (urlHydrated.current) return
@@ -1310,7 +1332,7 @@ export default function App() {
               className="relative min-w-0 flex-1"
               onSubmit={(e) => {
                 e.preventDefault()
-                goInventory()
+                scrollToInventoryBrowse({ focusSearch: true })
               }}
             >
               <label className="block">
@@ -2003,22 +2025,239 @@ export default function App() {
           ))}
         </section>
 
-        {/* Full inventory */}
-        <section id="inventory" className="scroll-mt-44 bg-chalk py-20 md:py-28">
+        {/* Full inventory — filters first, results directly below (search scrolls here). */}
+        <section id="inventory" className="scroll-mt-48 bg-chalk py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="eyebrow text-crimson">Catalog</p>
-              <div className="brand-rule mt-3" aria-hidden />
-              <h2 className="mt-4 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                Full inventory
-              </h2>
-              <p className="mt-3 font-brand text-lg text-muted">
-                Filter live stock, add to cart, then checkout securely on {channelLabel}.
-              </p>
-            </motion.div>
+            <div id="inventory-browse" className="scroll-mt-48">
+              <motion.div {...fadeUp(reduce)} className="max-w-2xl">
+                <p className="eyebrow text-crimson">Catalog</p>
+                <div className="brand-rule mt-3" aria-hidden />
+                <h2 className="mt-4 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                  Full inventory
+                </h2>
+                <p className="mt-3 font-brand text-lg text-muted">
+                  Filter live stock, add to cart, then checkout securely on {channelLabel}.
+                </p>
+              </motion.div>
 
-            {recentlyViewed.length > 0 ? (
-              <motion.div {...fadeUp(reduce, 0.05)} className="mt-12 border-b border-navy/10 pb-12">
+              {loadState === 'ready' && listings.length > 0 && (
+                <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted">
+                      Showing {filtered.length} of {listings.length}
+                      {deferredHint.includes('result') ? ` · ${deferredHint}` : ''}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                        Sort
+                        <select
+                          value={sortBy}
+                          onChange={(e) => {
+                            setSortBy(e.target.value as SortId)
+                            track('sort_change', { sort: e.target.value })
+                          }}
+                          className="border border-navy/15 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30"
+                        >
+                          {SORT_OPTIONS.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        className="border border-navy/15 px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy md:hidden"
+                        aria-expanded={filtersOpen}
+                        onClick={() => setFiltersOpen((open) => !open)}
+                      >
+                        {filtersOpen ? 'Hide filters' : 'Filters'}
+                        {activeFilterChips.length > 0 ? ` · ${activeFilterChips.length}` : ''}
+                      </button>
+                    </div>
+                  </div>
+
+                  {activeFilterChips.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {activeFilterChips.map((chip) => (
+                        <button
+                          key={chip.key}
+                          type="button"
+                          onClick={chip.clear}
+                          className="border border-navy bg-navy px-3 py-1.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy/80"
+                        >
+                          {chip.label} ✕
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  ) : null}
+
+                  <div
+                    className={`space-y-5 ${
+                      filtersOpen || deferredQuery.trim() ? 'block' : 'hidden md:block'
+                    }`}
+                  >
+                    <div className="space-y-3">
+                      <p className="eyebrow text-muted">Audience</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(
+                          [
+                            { id: 'All', label: 'All' },
+                            { id: 'Adult', label: "Men's / adult" },
+                            { id: 'Youth', label: 'Youth' },
+                          ] as const
+                        ).map((option) => (
+                          <FilterChip
+                            key={option.id}
+                            label={option.label}
+                            active={audienceFilter === option.id}
+                            onClick={() => setAudienceFilter(option.id)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <p className="eyebrow text-muted">Type</p>
+                      <div className="flex flex-wrap gap-2">
+                        <FilterChip
+                          label="All"
+                          active={tagFilter === 'All'}
+                          onClick={() => setTagFilter('All')}
+                        />
+                        {availableTags.map((tag) => (
+                          <FilterChip
+                            key={tag}
+                            label={tag}
+                            active={tagFilter === tag}
+                            onClick={() => setTagFilter(tag)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <p className="eyebrow text-muted">Price</p>
+                      <div className="flex flex-wrap gap-2">
+                        {PRICE_FILTERS.map((range) => (
+                          <FilterChip
+                            key={range.id}
+                            label={range.label}
+                            active={priceFilter === range.id}
+                            onClick={() => {
+                              setPriceFilter(range.id)
+                              track('price_filter', { range: range.id })
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {availableSizes.length > 1 && (
+                      <div className="space-y-3">
+                        <p className="eyebrow text-muted">Size</p>
+                        <div className="flex flex-wrap gap-2">
+                          <FilterChip
+                            label="All"
+                            active={sizeFilter === 'All'}
+                            onClick={() => setSizeFilter('All')}
+                          />
+                          {availableSizes.map((size) => (
+                            <FilterChip
+                              key={size}
+                              label={size}
+                              active={sizeFilter === size}
+                              onClick={() => setSizeFilter(size)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {availableBrands.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="eyebrow text-muted">Brand</p>
+                        <div className="flex flex-wrap gap-2">
+                          <FilterChip
+                            label="All"
+                            active={brandFilter === 'All'}
+                            onClick={() => setBrandFilter('All')}
+                          />
+                          {availableBrands.map((brand) => (
+                            <FilterChip
+                              key={brand}
+                              label={brand}
+                              active={brandFilter === brand}
+                              onClick={() => setBrandFilter(brand)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {loadState === 'loading' && <p className="mt-12 text-muted">Loading inventory…</p>}
+
+              {loadState === 'error' && (
+                <p className="mt-12 text-muted">
+                  Inventory is temporarily unavailable.{' '}
+                  <a
+                    href={ebayShop}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
+                  >
+                    Browse on eBay
+                  </a>
+                  .
+                </p>
+              )}
+
+              {loadState === 'ready' && filtered.length === 0 && (
+                <div className="mt-10 border border-navy/10 bg-white px-6 py-10 text-center">
+                  <p className="font-display text-2xl font-bold uppercase text-navy">No kits match</p>
+                  <p className="mt-2 text-muted">
+                    Try clearing filters or searching a different club or size.
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-6 bg-crimson px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
+                    onClick={clearAllFilters}
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+
+              {filtered.length > 0 && (
+                <ul className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                  {filtered.map((item, i) => (
+                    <ProductLink
+                      key={item.id}
+                      item={item}
+                      reduce={reduce}
+                      delay={Math.min(i, 8) * 0.04}
+                      tone="light"
+                      onAddToCart={handleAddToCart}
+                      onQuickView={handleQuickView}
+                      onBuyNow={handleBuyNow}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {recentlyViewed.length > 0 && !deferredQuery.trim() ? (
+              <motion.div {...fadeUp(reduce, 0.05)} className="mt-16 border-t border-navy/10 pt-12">
                 <div className="flex items-end justify-between gap-4">
                   <div>
                     <p className="eyebrow text-crimson">Continue</p>
@@ -2043,211 +2282,6 @@ export default function App() {
                 </ul>
               </motion.div>
             ) : null}
-
-            {loadState === 'ready' && listings.length > 0 && (
-              <motion.div {...fadeUp(reduce, 0.08)} className="mt-10 space-y-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-muted">
-                    Showing {filtered.length} of {listings.length}
-                    {deferredHint.includes('result') ? ` · ${deferredHint}` : ''}
-                  </p>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-muted">
-                      Sort
-                      <select
-                        value={sortBy}
-                        onChange={(e) => {
-                          setSortBy(e.target.value as SortId)
-                          track('sort_change', { sort: e.target.value })
-                        }}
-                        className="border border-navy/15 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30"
-                      >
-                        {SORT_OPTIONS.map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      className="border border-navy/15 px-3.5 py-2 font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy md:hidden"
-                      aria-expanded={filtersOpen}
-                      onClick={() => setFiltersOpen((open) => !open)}
-                    >
-                      {filtersOpen ? 'Hide filters' : 'Filters'}
-                      {activeFilterChips.length > 0 ? ` · ${activeFilterChips.length}` : ''}
-                    </button>
-                  </div>
-                </div>
-
-                {activeFilterChips.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {activeFilterChips.map((chip) => (
-                      <button
-                        key={chip.key}
-                        type="button"
-                        onClick={chip.clear}
-                        className="border border-navy bg-navy px-3 py-1.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy/80"
-                      >
-                        {chip.label} ✕
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={clearAllFilters}
-                      className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-crimson"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                ) : null}
-
-                <div className={`space-y-5 ${filtersOpen ? 'block' : 'hidden md:block'}`}>
-                  <div className="space-y-3">
-                    <p className="eyebrow text-muted">Audience</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(
-                        [
-                          { id: 'All', label: 'All' },
-                          { id: 'Adult', label: "Men's / adult" },
-                          { id: 'Youth', label: 'Youth' },
-                        ] as const
-                      ).map((option) => (
-                        <FilterChip
-                          key={option.id}
-                          label={option.label}
-                          active={audienceFilter === option.id}
-                          onClick={() => setAudienceFilter(option.id)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="eyebrow text-muted">Type</p>
-                    <div className="flex flex-wrap gap-2">
-                      <FilterChip label="All" active={tagFilter === 'All'} onClick={() => setTagFilter('All')} />
-                      {availableTags.map((tag) => (
-                        <FilterChip
-                          key={tag}
-                          label={tag}
-                          active={tagFilter === tag}
-                          onClick={() => setTagFilter(tag)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="eyebrow text-muted">Price</p>
-                    <div className="flex flex-wrap gap-2">
-                      {PRICE_FILTERS.map((range) => (
-                        <FilterChip
-                          key={range.id}
-                          label={range.label}
-                          active={priceFilter === range.id}
-                          onClick={() => {
-                            setPriceFilter(range.id)
-                            track('price_filter', { range: range.id })
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {availableSizes.length > 1 && (
-                    <div className="space-y-3">
-                      <p className="eyebrow text-muted">Size</p>
-                      <div className="flex flex-wrap gap-2">
-                        <FilterChip
-                          label="All"
-                          active={sizeFilter === 'All'}
-                          onClick={() => setSizeFilter('All')}
-                        />
-                        {availableSizes.map((size) => (
-                          <FilterChip
-                            key={size}
-                            label={size}
-                            active={sizeFilter === size}
-                            onClick={() => setSizeFilter(size)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {availableBrands.length > 0 && (
-                    <div className="space-y-3">
-                      <p className="eyebrow text-muted">Brand</p>
-                      <div className="flex flex-wrap gap-2">
-                        <FilterChip
-                          label="All"
-                          active={brandFilter === 'All'}
-                          onClick={() => setBrandFilter('All')}
-                        />
-                        {availableBrands.map((brand) => (
-                          <FilterChip
-                            key={brand}
-                            label={brand}
-                            active={brandFilter === brand}
-                            onClick={() => setBrandFilter(brand)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {loadState === 'loading' && <p className="mt-12 text-muted">Loading inventory…</p>}
-
-            {loadState === 'error' && (
-              <p className="mt-12 text-muted">
-                Inventory is temporarily unavailable.{' '}
-                <a
-                  href={ebayShop}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold text-navy underline decoration-crimson/40 underline-offset-4 hover:decoration-crimson"
-                >
-                  Browse on eBay
-                </a>
-                .
-              </p>
-            )}
-
-            {loadState === 'ready' && filtered.length === 0 && (
-              <div className="mt-12 border border-navy/10 bg-white px-6 py-10 text-center">
-                <p className="font-display text-2xl font-bold uppercase text-navy">No kits match</p>
-                <p className="mt-2 text-muted">Try clearing filters or searching a different club or size.</p>
-                <button
-                  type="button"
-                  className="mt-6 bg-crimson px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
-                  onClick={clearAllFilters}
-                >
-                  Clear all filters
-                </button>
-              </div>
-            )}
-
-            {filtered.length > 0 && (
-              <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((item, i) => (
-                  <ProductLink
-                    key={item.id}
-                    item={item}
-                    reduce={reduce}
-                    delay={Math.min(i, 8) * 0.04}
-                    tone="light"
-                    onAddToCart={handleAddToCart}
-                    onQuickView={handleQuickView}
-                    onBuyNow={handleBuyNow}
-                  />
-                ))}
-              </ul>
-            )}
           </div>
         </section>
 
