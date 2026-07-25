@@ -102,6 +102,8 @@ Requires `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`, `EBAY_USER_TOKEN`.
 
 Scheduled with **Sync Jersey Deals inventory** (every ~10 minutes), after sold reconcile and before site catalog refresh + Payment Links.
 
+Requires repo secrets `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`, `EBAY_USER_TOKEN` plus `SQUARE_ACCESS_TOKEN`. If eBay secrets are missing, the step skips (exit 0) so Square-only inventory sync can still finish — restore those secrets for scheduled cross-platform carry.
+
 ```bash
 cd jerseydeals
 DRY_RUN=1 npm run sync:cross-platform

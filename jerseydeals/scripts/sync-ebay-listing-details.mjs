@@ -32,17 +32,26 @@ const EBAY = {
   ns: 'urn:ebay:apis:eBLBaseComponents',
 }
 
-for (const [name, value] of [
-  ['SQUARE_ACCESS_TOKEN', TOKEN],
-  ['EBAY_APP_ID', EBAY.app],
-  ['EBAY_CERT_ID', EBAY.cert],
-  ['EBAY_DEV_ID', EBAY.dev],
-  ['EBAY_USER_TOKEN', EBAY.token],
-]) {
-  if (!value) {
-    console.error(`Missing required secret: ${name}`)
-    process.exit(1)
-  }
+const HAS_EBAY = Boolean(EBAY.app && EBAY.cert && EBAY.dev && EBAY.token)
+
+if (!TOKEN) {
+  console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
+  process.exit(1)
+}
+
+if (!HAS_EBAY) {
+  const missing = [
+    ['EBAY_APP_ID', EBAY.app],
+    ['EBAY_CERT_ID', EBAY.cert],
+    ['EBAY_DEV_ID', EBAY.dev],
+    ['EBAY_USER_TOKEN', EBAY.token],
+  ]
+    .filter(([, v]) => !v)
+    .map(([n]) => n)
+  console.warn(
+    `Skipping eBay details sync — missing eBay secret(s): ${missing.join(', ')}.`,
+  )
+  process.exit(0)
 }
 
 async function square(path, { method = 'GET', body } = {}) {
