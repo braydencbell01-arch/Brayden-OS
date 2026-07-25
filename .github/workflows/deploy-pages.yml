@@ -72,6 +72,3 @@ jobs:
           publish_dir: ./site
           publish_branch: gh-pages
           force_orphan: true
-          # Serves BrayStats at github.io/Brayden-OS/ and Jersey Deals at
-          # jerseydeals.online/jerseydeals/ (same Pages site, custom domain).
-          cname: jerseydeals.online
