@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 /**
- * When something sells on Square OR eBay, remove it everywhere:
+ * When something sells OR is removed on Square OR eBay, clear it everywhere:
  *  - Square inventory → 0, variation unsellable
  *  - Delete Square Payment Links (regular + first10)
  *  - End matching eBay listing (sku ebay:{itemId})
  *  - Drop from listings.json + checkout-links.json
  *  - Write public/sold-out.json for instant client filtering
  *
- * Sale signals:
+ * Sale / removal signals:
  *  - Square COMPLETED orders (lookback SOLD_LOOKBACK_DAYS)
  *  - Square inventory qty 0
+ *  - Square variation marked unsellable (still linked to an active eBay item)
  *  - eBay SoldList (GetMyeBaySelling) mapped via sku ebay:{itemId}
+ *  - eBay UnsoldList / ended listings (ActiveList miss) mapped the same way
  *
  * Requires: SQUARE_ACCESS_TOKEN
- * Optional: EBAY_* (needed for eBay sold detection + EndItem), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
+ * Optional: EBAY_* (needed for eBay sold/ended detection + EndItem), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
  *
  *   node jerseydeals/scripts/reconcile-sold-inventory.mjs
  *   DRY_RUN=1 node jerseydeals/scripts/reconcile-sold-inventory.mjs
@@ -274,6 +276,203 @@ async function collectEbaySoldVariationIds({ keepInStock, listings, links, soldO
   return sold
 }
 
+/** Active eBay ItemIDs (paginated GetMyeBaySelling ActiveList). */
+async function fetchEbayActiveIds() {
+  const ids = new Set()
+  if (!HAS_EBAY) return ids
+  let page = 1
+  let totalPages = 1
+  while (page <= totalPages && page <= 20) {
+    const text = await ebayCall(
+      'GetMyeBaySelling',
+      `<ActiveList>
+    <Include>true</Include>
+    <Pagination>
+      <EntriesPerPage>100</EntriesPerPage>
+      <PageNumber>${page}</PageNumber>
+    </Pagination>
+  </ActiveList>`,
+    )
+    if (!/<Ack>(Success|Warning)<\/Ack>/i.test(text)) {
+      const short = (text.match(/<ShortMessage>([^<]+)/i) || [])[1] || text.slice(0, 160)
+      throw new Error(`eBay ActiveList failed: ${short}`)
+    }
+    const pages = Number.parseInt((text.match(/<TotalNumberOfPages>(\d+)/i) || [])[1] || '1', 10)
+    if (Number.isFinite(pages) && pages > 0) totalPages = pages
+    for (const match of text.matchAll(/<ItemID>(\d+)<\/ItemID>/g)) {
+      ids.add(match[1])
+    }
+    page += 1
+  }
+  return ids
+}
+
+/** Ended-without-sale eBay ItemIDs (UnsoldList). */
+async function fetchEbayUnsoldIds() {
+  const ids = new Set()
+  if (!HAS_EBAY) return ids
+  const days = Math.min(Math.max(LOOKBACK_DAYS, 1), 60)
+  let page = 1
+  let totalPages = 1
+  while (page <= totalPages && page <= 10) {
+    const text = await ebayCall(
+      'GetMyeBaySelling',
+      `<UnsoldList>
+    <DurationInDays>${days}</DurationInDays>
+    <Include>true</Include>
+    <Pagination>
+      <EntriesPerPage>100</EntriesPerPage>
+      <PageNumber>${page}</PageNumber>
+    </Pagination>
+  </UnsoldList>`,
+    )
+    if (!/<Ack>(Success|Warning)<\/Ack>/i.test(text)) {
+      const short = (text.match(/<ShortMessage>([^<]+)/i) || [])[1] || text.slice(0, 160)
+      throw new Error(`eBay UnsoldList failed: ${short}`)
+    }
+    const pages = Number.parseInt((text.match(/<TotalNumberOfPages>(\d+)/i) || [])[1] || '1', 10)
+    if (Number.isFinite(pages) && pages > 0) totalPages = pages
+    for (const match of text.matchAll(/<ItemID>(\d+)<\/ItemID>/g)) {
+      ids.add(match[1])
+    }
+    page += 1
+  }
+  return ids
+}
+
+/**
+ * Square catalog rows with ebay:{id} SKUs (includes unsellable — needed for EndItem).
+ */
+async function listSquareEbayLinkedVariations() {
+  const objects = []
+  let cursor = ''
+  do {
+    const qs = new URLSearchParams({ types: 'ITEM,ITEM_VARIATION', limit: '100' })
+    if (cursor) qs.set('cursor', cursor)
+    const data = await square(`/v2/catalog/list?${qs}`)
+    objects.push(...(data.objects || []))
+    cursor = data.cursor || ''
+  } while (cursor)
+
+  const items = new Map()
+  for (const obj of objects) {
+    if (obj.type === 'ITEM') items.set(obj.id, obj)
+  }
+  const rows = []
+  for (const obj of objects) {
+    if (obj.type !== 'ITEM_VARIATION') continue
+    const vd = obj.item_variation_data || {}
+    const ebayId = ebayIdFromSku(vd.sku)
+    if (!ebayId) continue
+    const parent = items.get(vd.item_id)
+    rows.push({
+      variationId: obj.id,
+      itemId: vd.item_id || '',
+      sku: vd.sku || '',
+      ebayId,
+      title: parent?.item_data?.name || vd.name || ebayId,
+      sellable: vd.sellable !== false,
+    })
+  }
+  return rows
+}
+
+/**
+ * Removals that are not (yet) sales:
+ *  - Linked eBay id missing from ActiveList (ended / unsold / taken down)
+ *  - Square marked unsellable while eBay listing is still active → EndItem
+ */
+async function collectRemovedVariationIds({ keepInStock, listings, links, soldOutItems }) {
+  const removed = new Map()
+  const keep = new Set(keepInStock || [])
+  const byEbay = buildEbayToVariationMap(listings, links, soldOutItems)
+
+  let squareLinked = []
+  try {
+    squareLinked = await listSquareEbayLinkedVariations()
+  } catch (err) {
+    console.warn(`Square ebay-link scan skipped: ${err.message}`)
+  }
+  for (const row of squareLinked) {
+    if (!byEbay.has(row.ebayId)) {
+      byEbay.set(row.ebayId, {
+        variationId: row.variationId,
+        title: row.title,
+        sku: row.sku,
+        itemId: row.itemId,
+      })
+    }
+  }
+  const squareByEbay = new Map(squareLinked.map((r) => [r.ebayId, r]))
+
+  if (!HAS_EBAY) {
+    // Without eBay we can still clear site/Square for unsellable linked rows already known.
+    for (const row of squareLinked) {
+      if (row.sellable || keep.has(row.variationId)) continue
+      removed.set(row.variationId, {
+        orderIds: [],
+        title: row.title,
+        qty: 0,
+        sku: row.sku,
+        itemId: row.itemId,
+        ebayId: row.ebayId,
+        fromSquareUnsellable: true,
+      })
+    }
+    return removed
+  }
+
+  let activeIds = new Set()
+  let unsoldIds = new Set()
+  try {
+    activeIds = await fetchEbayActiveIds()
+  } catch (err) {
+    console.warn(`eBay ActiveList skipped: ${err.message}`)
+    return removed
+  }
+  try {
+    unsoldIds = await fetchEbayUnsoldIds()
+  } catch (err) {
+    console.warn(`eBay UnsoldList skipped: ${err.message}`)
+  }
+
+  for (const [ebayId, meta] of byEbay) {
+    if (!meta?.variationId || keep.has(meta.variationId)) continue
+    const square = squareByEbay.get(ebayId)
+    const isActive = activeIds.has(ebayId)
+
+    if (isActive) {
+      // Merchant removed / hid on Square — end the live eBay twin.
+      if (square && square.sellable === false) {
+        removed.set(meta.variationId, {
+          orderIds: [],
+          title: meta.title || square.title,
+          qty: 0,
+          sku: meta.sku || square.sku,
+          itemId: meta.itemId || square.itemId,
+          ebayId,
+          fromSquareUnsellable: true,
+        })
+      }
+      continue
+    }
+
+    // Not active on eBay → clear Square + site (sold path also covers SoldList).
+    removed.set(meta.variationId, {
+      orderIds: [],
+      title: meta.title,
+      qty: 0,
+      sku: meta.sku,
+      itemId: meta.itemId,
+      ebayId,
+      fromEbayUnsold: unsoldIds.has(ebayId),
+      fromEbayEnded: !unsoldIds.has(ebayId),
+    })
+  }
+
+  return removed
+}
+
 async function setInventoryZero(variationId, locationId) {
   await square('/v2/inventory/changes/batch-create', {
     method: 'POST',
@@ -407,9 +606,10 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
     }
   }
 
+  const soldOutFile = loadJson(SOLD_OUT_PATH, { items: [] })
+
   // eBay sales must also delist Square + Jersey Deals (was the Spurs gap).
   try {
-    const soldOutFile = loadJson(SOLD_OUT_PATH, { items: [] })
     const ebaySold = await collectEbaySoldVariationIds({
       keepInStock: keep,
       listings: listings.listings || [],
@@ -433,6 +633,35 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
     console.log(`eBay sold mapped to catalog: ${ebaySold.size}`)
   } catch (err) {
     console.warn(`eBay sold scan skipped: ${err.message}`)
+  }
+
+  // Ended / removed (not necessarily sold) — keep Square + site + eBay twins aligned.
+  try {
+    const removed = await collectRemovedVariationIds({
+      keepInStock: keep,
+      listings: listings.listings || [],
+      links: links.links || [],
+      soldOutItems: soldOutFile.items || [],
+    })
+    let added = 0
+    for (const [variationId, info] of removed) {
+      const prev = sold.get(variationId)
+      if (prev) {
+        // Already flagged as sold/qty0 — just enrich sources.
+        if (info.fromEbayUnsold) prev.fromEbayUnsold = true
+        if (info.fromEbayEnded) prev.fromEbayEnded = true
+        if (info.fromSquareUnsellable) prev.fromSquareUnsellable = true
+        prev.ebayId = info.ebayId || prev.ebayId
+        prev.sku = info.sku || prev.sku
+        sold.set(variationId, prev)
+        continue
+      }
+      sold.set(variationId, { ...info })
+      added += 1
+    }
+    console.log(`eBay/Square removals mapped to catalog: ${added} (scanned ${removed.size})`)
+  } catch (err) {
+    console.warn(`removal scan skipped: ${err.message}`)
   }
 
   return sold
@@ -559,8 +788,11 @@ async function main() {
     }
     const why = [
       info.fromEbaySold ? 'ebay-sold' : '',
+      info.fromEbayUnsold ? 'ebay-unsold' : '',
+      info.fromEbayEnded ? 'ebay-ended' : '',
       info.fromSquareOrder ? 'square-order' : '',
       info.fromInventoryZero ? 'square-qty-0' : '',
+      info.fromSquareUnsellable ? 'square-unsellable' : '',
     ]
       .filter(Boolean)
       .join('+')

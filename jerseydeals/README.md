@@ -98,7 +98,8 @@ Requires `EBAY_APP_ID`, `EBAY_CERT_ID`, `EBAY_DEV_ID`, `EBAY_USER_TOKEN`.
 | Direction | What syncs |
 |-----------|------------|
 | eBay → Square | New actives create Square items (`sku = ebay:{itemId}`); price / title / qty / description updates |
-| Square → eBay | Linked kits revise eBay **price / qty** when Square changes; Square-only sellable kits create an eBay listing and write back the SKU |
+| Square → eBay | Linked kits revise eBay **price / qty** (up or down) when Square changes; Square-only sellable kits create an eBay listing and write back the SKU |
+| Sold / removed | `reconcile:sold` clears Square + eBay + site on Square orders, qty 0, unsellable, eBay SoldList, or eBay ended/UnsoldList |
 
 Scheduled with **Sync Jersey Deals inventory** (every ~10 minutes), after sold reconcile and before site catalog refresh + Payment Links.
 
