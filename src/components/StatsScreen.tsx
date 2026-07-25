@@ -78,13 +78,13 @@ export function StatsScreen({
           </p>
         </header>
 
-        <div className="scrollbar-hide mb-5 flex gap-1 overflow-x-auto">
+        <div className="scrollbar-hide mb-3 flex gap-1 overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[0.7rem] font-bold transition ${
                 tab === t.id ? 'bg-lime text-ink' : 'bg-white/5 text-mist hover:bg-white/10'
               }`}
             >
