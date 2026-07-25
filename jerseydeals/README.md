@@ -204,6 +204,12 @@ When a kit sells on Square, `npm run reconcile:sold` removes it from:
 - eBay (`EndItem` when SKU is `ebay:{itemId}`)
 - Jersey Deals (`listings.json` + `sold-out.json` for instant client hide)
 
+Test purchases that should stay in stock can be restored with `npm run restore:listing` and recorded in `public/reconcile-exceptions.json`.
+
+### eBay details sync
+
+`npm run sync:ebay-details` copies each eBay listing’s **description** and **condition** onto Square catalog items and `listings.json` (eBay is source of truth).
+
 ### Scheduled sync (GitHub Actions)
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
