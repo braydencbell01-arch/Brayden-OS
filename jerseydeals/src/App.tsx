@@ -253,7 +253,7 @@ const FAQ = [
   },
   {
     q: 'Where do you ship from?',
-    a: 'Orders ship from our US inventory. Shipping speed and cost are shown at checkout on each listing.',
+    a: 'Orders ship from our US inventory. Shipping is 5% of your item total and is added at Square checkout.',
   },
   {
     q: 'What is your return policy?',

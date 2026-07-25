@@ -1,14 +1,21 @@
-import { useEffect } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { track } from './analytics'
-import { FREE_SHIPPING_THRESHOLD } from './config'
+import { SHIPPING_RATE_LABEL } from './config'
 import {
   cartCount,
   cartLineCheckoutUrl,
   cartSubtotal,
   type CartState,
 } from './cart'
+import { captureEmail } from './emailCapture'
 import { formatPrice, shortTitle } from './listings'
-import { applyFirstBuyerDiscount, readBuyerEmail } from './offer'
+import {
+  applyFirstBuyerDiscount,
+  isValidEmail,
+  readBuyerEmail,
+  writeBuyerEmail,
+} from './offer'
+import { shippingForSubtotal, totalWithShipping } from './shipping'
 
 export function CartDrawer({
   open,
@@ -30,10 +37,19 @@ export function CartDrawer({
   onRequestCheckout: () => boolean
   discountActive: boolean
 }) {
+  const emailId = useId()
+  const [email, setEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [emailBusy, setEmailBusy] = useState(false)
+  const [savedEmail, setSavedEmail] = useState(() => readBuyerEmail())
+
   useEffect(() => {
     if (!open) return
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
+    setEmail(readBuyerEmail())
+    setSavedEmail(readBuyerEmail())
+    setEmailError('')
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
@@ -56,14 +72,42 @@ export function CartDrawer({
       }, 0)
     : subtotal
   const currency = cart.lines[0]?.currency || 'USD'
-  const showShipGoal = FREE_SHIPPING_THRESHOLD > 0
-  const shipProgress = showShipGoal ? Math.min(1, discountedSubtotal / FREE_SHIPPING_THRESHOLD) : 1
-  const shipRemaining = showShipGoal ? Math.max(0, FREE_SHIPPING_THRESHOLD - discountedSubtotal) : 0
-  const hasEmail = Boolean(readBuyerEmail())
+  const shipping = shippingForSubtotal(discountedSubtotal)
+  const orderTotal = totalWithShipping(discountedSubtotal)
+  const hasEmail = Boolean(savedEmail)
+
+  function lineCheckoutAmount(price: number | null | undefined) {
+    const unit = discounted ? applyFirstBuyerDiscount(price) : price
+    if (unit == null) return 0
+    return totalWithShipping(unit)
+  }
+
+  async function saveEmail(event: FormEvent) {
+    event.preventDefault()
+    setEmailError('')
+    const cleaned = email.trim().toLowerCase()
+    if (!isValidEmail(cleaned)) {
+      setEmailError('Enter a valid email address.')
+      return
+    }
+    setEmailBusy(true)
+    try {
+      writeBuyerEmail(cleaned)
+      setSavedEmail(cleaned)
+      void captureEmail(cleaned, 'cart_checkout_gate')
+      track('checkout_email_saved', { source: 'cart' })
+    } finally {
+      setEmailBusy(false)
+    }
+  }
 
   function beginCheckout(href: string, meta: Record<string, unknown>) {
+    if (!hasEmail) {
+      setEmailError('Enter your email to checkout.')
+      return
+    }
     if (!onRequestCheckout()) return
-    track('cart_checkout', { ...meta, discounted, has_email: hasEmail })
+    track('cart_checkout', { ...meta, discounted, has_email: true, shipping_percent: 5 })
     window.open(href, '_blank', 'noopener,noreferrer')
     onClose()
   }
@@ -179,62 +223,108 @@ export function CartDrawer({
 
         {cart.lines.length > 0 ? (
           <div className="border-t border-navy/10 bg-white px-5 py-4">
-            {showShipGoal ? (
-              <div className="mb-4">
-                {shipRemaining > 0 ? (
-                  <p className="text-xs text-muted">
-                    Add {formatPrice(shipRemaining, currency)} more toward free shipping ($
-                    {FREE_SHIPPING_THRESHOLD}+).
+            <div className="space-y-1.5">
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs uppercase tracking-[0.12em] text-muted">Subtotal</p>
+                <div className="text-right">
+                  <p className="font-display text-lg font-bold text-navy">
+                    {formatPrice(discountedSubtotal, currency)}
                   </p>
-                ) : (
-                  <p className="text-xs font-semibold text-navy">You&apos;ve hit the free-shipping goal.</p>
-                )}
-                <div className="mt-2 h-1.5 overflow-hidden bg-mist" aria-hidden>
-                  <div className="h-full bg-crimson transition-all" style={{ width: `${shipProgress * 100}%` }} />
+                  {discounted && discountedSubtotal !== subtotal ? (
+                    <p className="text-xs text-muted line-through">{formatPrice(subtotal, currency)}</p>
+                  ) : null}
                 </div>
               </div>
-            ) : (
-              <p className="mb-4 text-xs font-semibold text-navy">Shipping is free on Square checkout.</p>
-            )}
-            <div className="flex items-baseline justify-between">
-              <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">Subtotal</p>
-              <div className="text-right">
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs uppercase tracking-[0.12em] text-muted">Shipping</p>
+                <p className="text-sm font-semibold text-navy">{formatPrice(shipping, currency)}</p>
+              </div>
+              <p className="text-[0.65rem] text-muted">{SHIPPING_RATE_LABEL} on every order.</p>
+              <div className="flex items-baseline justify-between border-t border-navy/10 pt-2">
+                <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">Total</p>
                 <p className="font-display text-2xl font-bold text-navy">
-                  {formatPrice(discountedSubtotal, currency)}
+                  {formatPrice(orderTotal, currency)}
                 </p>
-                {discounted && discountedSubtotal !== subtotal ? (
-                  <p className="text-xs text-muted line-through">{formatPrice(subtotal, currency)}</p>
-                ) : null}
               </div>
             </div>
-            {!hasEmail ? (
-              <p className="mt-2 text-xs font-semibold text-crimson">Email is mandatory before checkout.</p>
-            ) : discounted ? (
-              <p className="mt-2 text-xs font-semibold text-navy">10% first-time offer applied at Square checkout.</p>
+
+            <form onSubmit={saveEmail} className="mt-4 space-y-2" noValidate>
+              <label
+                htmlFor={emailId}
+                className="flex items-center gap-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-navy"
+              >
+                Email for checkout
+                <span className="text-crimson" aria-hidden>
+                  *
+                </span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id={emailId}
+                  type="email"
+                  name="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setEmailError('')
+                  }}
+                  placeholder="you@email.com"
+                  className="min-w-0 flex-1 border border-navy/15 bg-cream px-3 py-2.5 text-sm text-navy outline-none placeholder:text-muted focus:border-crimson"
+                />
+                <button
+                  type="submit"
+                  disabled={emailBusy}
+                  className="shrink-0 border border-navy/20 bg-navy px-3 py-2.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy-deep disabled:opacity-60"
+                >
+                  {hasEmail && email.trim().toLowerCase() === savedEmail
+                    ? 'Saved'
+                    : emailBusy
+                      ? '…'
+                      : 'Save'}
+                </button>
+              </div>
+              {emailError ? <p className="text-xs font-semibold text-crimson">{emailError}</p> : null}
+              {hasEmail && !emailError ? (
+                <p className="text-xs text-navy">Checkout unlocked for {savedEmail}</p>
+              ) : (
+                <p className="text-xs font-semibold text-crimson">Email is required before checkout.</p>
+              )}
+            </form>
+
+            {discounted ? (
+              <p className="mt-2 text-xs font-semibold text-navy">
+                10% first-time offer applied at Square checkout.
+              </p>
             ) : null}
             <p className="mt-2 text-xs leading-relaxed text-muted">
               Checkout opens Square&apos;s secure payment page
-              {cart.lines.length > 1 ? ' for each kit (one secure link per item). Your bag stays here if you come back.' : '.'}
+              {cart.lines.length > 1
+                ? ' for each kit (one secure link per item, each includes 5% shipping). Your bag stays here if you come back.'
+                : ' (includes 5% shipping).'}
             </p>
             <div className="mt-4 flex flex-col gap-2">
               {cart.lines.length === 1 ? (
                 <button
                   type="button"
+                  disabled={!hasEmail}
                   onClick={() =>
                     beginCheckout(cartLineCheckoutUrl(cart.lines[0]!, discounted), {
                       items: 1,
                       mode: 'single',
                     })
                   }
-                  className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot"
+                  className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Checkout on Square
+                  Checkout on Square · {formatPrice(orderTotal, currency)}
                 </button>
               ) : (
                 cart.lines.map((line, index) => (
                   <button
                     key={line.id}
                     type="button"
+                    disabled={!hasEmail}
                     onClick={() =>
                       beginCheckout(cartLineCheckoutUrl(line, discounted), {
                         items: cart.lines.length,
@@ -242,17 +332,12 @@ export function CartDrawer({
                         index,
                       })
                     }
-                    className="flex w-full items-center justify-between gap-3 border border-navy/15 bg-navy px-4 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy-deep"
+                    className="flex w-full items-center justify-between gap-3 border border-navy/15 bg-navy px-4 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy-deep disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <span className="truncate">
                       Checkout {index + 1}/{cart.lines.length}
                     </span>
-                    <span>
-                      {formatPrice(
-                        discounted ? applyFirstBuyerDiscount(line.price) : line.price,
-                        line.currency,
-                      )}
-                    </span>
+                    <span>{formatPrice(lineCheckoutAmount(line.price), line.currency)}</span>
                   </button>
                 ))
               )}

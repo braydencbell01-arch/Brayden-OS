@@ -39,8 +39,11 @@ export const SALE_URGENCY = '$25 & under · while stock lasts'
 /** Top promo bar — keep short so it stays one line under the fixed header offset. */
 export const PROMO_BAR = 'Live stock · Youth & adult sizes'
 
-/** Soft free-shipping goal shown in the cart drawer. Set to 0 when shipping is already free. */
+/** Soft free-shipping goal (unused — shipping is a flat 5% on all checkouts). */
 export const FREE_SHIPPING_THRESHOLD = 0
+
+/** Shipping charged on every checkout (also baked into Square Payment Links). */
+export const SHIPPING_RATE_LABEL = '5% shipping'
 
 export const FAMILY_NOTE = 'Family-run shop — real photos, sizes, and shipping from our inventory.'
 

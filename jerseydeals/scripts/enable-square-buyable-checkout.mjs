@@ -12,7 +12,9 @@
  *  4. Injects a Square Online snippet that replaces "Out of stock" with Buy Now
  *
  * Requires: SQUARE_ACCESS_TOKEN, SQUARE_STORE_URL (or VITE_SQUARE_STORE_URL)
- * Optional: SQUARE_ENVIRONMENT, SQUARE_LOCATION_ID, SQUARE_SHIPPING_CENTS
+ * Optional: SQUARE_ENVIRONMENT, SQUARE_LOCATION_ID,
+ *   SQUARE_SHIPPING_PERCENT (default 5), SQUARE_SHIPPING_CENTS (legacy flat fee),
+ *   FORCE_RECREATE=1 to rebuild all payment links
  *
  *   node jerseydeals/scripts/enable-square-buyable-checkout.mjs
  */
@@ -32,6 +34,8 @@ const API_VERSION = '2026-04-26'
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN
 const LOCATION_OVERRIDE = process.env.SQUARE_LOCATION_ID || ''
 const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
+const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '5')
+const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
 
 if (!TOKEN) {
   console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
@@ -100,6 +104,37 @@ function loadExistingLinks() {
   }
 }
 
+function shippingServiceCharges() {
+  if (SHIPPING_PERCENT > 0) {
+    return [
+      {
+        name: 'Shipping',
+        percentage: String(SHIPPING_PERCENT),
+        calculation_phase: 'SUBTOTAL_PHASE',
+      },
+    ]
+  }
+  if (SHIPPING_CENTS > 0) {
+    return [
+      {
+        name: 'Shipping',
+        amount_money: { amount: SHIPPING_CENTS, currency: 'USD' },
+        calculation_phase: 'TOTAL_PHASE',
+      },
+    ]
+  }
+  return undefined
+}
+
+async function deletePaymentLink(paymentLinkId) {
+  if (!paymentLinkId) return
+  try {
+    await square(`/v2/online-checkout/payment-links/${paymentLinkId}`, { method: 'DELETE' })
+  } catch {
+    /* old link may already be gone */
+  }
+}
+
 async function createPaymentLink({ variationId, name, locationId }) {
   const order = {
     location_id: locationId,
@@ -110,15 +145,8 @@ async function createPaymentLink({ variationId, name, locationId }) {
       },
     ],
   }
-  if (SHIPPING_CENTS > 0) {
-    order.service_charges = [
-      {
-        name: 'Shipping',
-        amount_money: { amount: SHIPPING_CENTS, currency: 'USD' },
-        calculation_phase: 'TOTAL_PHASE',
-      },
-    ]
-  }
+  const charges = shippingServiceCharges()
+  if (charges) order.service_charges = charges
 
   const data = await square('/v2/online-checkout/payment-links', {
     method: 'POST',
@@ -267,9 +295,20 @@ async function upsertSnippet(content) {
 }
 
 const locationId = await primaryLocationId()
+const existingFile = existsSync(LINKS_PATH)
+  ? JSON.parse(readFileSync(LINKS_PATH, 'utf8'))
+  : { shippingPercent: null, shippingCents: 0 }
+const shippingChanged =
+  Number(existingFile.shippingPercent) !== SHIPPING_PERCENT ||
+  Number(existingFile.shippingCents || 0) !== SHIPPING_CENTS
+const mustRecreate = FORCE_RECREATE || shippingChanged
 const existing = loadExistingLinks()
 const items = await listItems()
-console.log(`Creating/reusing payment links for ${items.length} items…`)
+console.log(
+  `Creating/reusing payment links for ${items.length} items… (shipping=${SHIPPING_PERCENT}%${
+    SHIPPING_CENTS ? ` + ${SHIPPING_CENTS}¢` : ''
+  }${mustRecreate ? ', recreating' : ''})`,
+)
 
 const links = []
 const byItemId = {}
@@ -287,8 +326,11 @@ for (const item of items) {
     const variationId = variation.id
     try {
       let row = existing[variationId]
-      // Reuse only if URL still looks valid; otherwise recreate
-      if (!row?.url || !row.paymentLinkId) {
+      // Reuse only if URL still looks valid and shipping config matches
+      if (mustRecreate || !row?.url || !row.paymentLinkId) {
+        if (row?.paymentLinkId) await deletePaymentLink(row.paymentLinkId)
+        // Drop discount links so first10 script recreates them with matching shipping
+        if (row?.discountPaymentLinkId) await deletePaymentLink(row.discountPaymentLinkId)
         row = await createPaymentLink({ variationId, name, locationId })
         created += 1
         console.log(`✓ created ${name.slice(0, 60)}`)
@@ -303,6 +345,14 @@ for (const item of items) {
         paymentLinkId: row.paymentLinkId,
         url: row.url,
         longUrl: row.longUrl || row.url,
+        ...(row.discountPaymentLinkId
+          ? {
+              discountPaymentLinkId: row.discountPaymentLinkId,
+              discountUrl: row.discountUrl,
+              discountLongUrl: row.discountLongUrl,
+              discountId: row.discountId,
+            }
+          : {}),
       }
       links.push(record)
       byItemId[item.id] = record.url
@@ -319,6 +369,7 @@ const linksPayload = {
   syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
   source: 'square-payment-links',
   locationId,
+  shippingPercent: SHIPPING_PERCENT,
   shippingCents: SHIPPING_CENTS,
   count: links.length,
   links,

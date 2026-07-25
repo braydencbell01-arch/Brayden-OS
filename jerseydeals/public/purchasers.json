@@ -1,6 +1,8 @@
 {
-  "syncedAt": "2026-07-24T23:00:04Z",
+  "syncedAt": "2026-07-25T01:50:45Z",
   "source": "square-orders+customers",
-  "count": 0,
-  "emails": []
+  "count": 1,
+  "emails": [
+    "braydencbell01@gmail.com"
+  ]
 }

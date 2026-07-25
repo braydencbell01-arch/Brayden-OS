@@ -27,6 +27,9 @@ const REDIRECT_URL =
 const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
 const PURCHASERS_PATH = join(__dirname, '../public/purchasers.json')
+const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '5')
+const SHIPPING_CENTS = Number.parseInt(process.env.SQUARE_SHIPPING_CENTS || '0', 10)
+const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
 
 if (!TOKEN) {
   console.error('Missing required secret: SQUARE_ACCESS_TOKEN')
@@ -119,7 +122,46 @@ async function listItems() {
   return objects
 }
 
+function shippingServiceCharges() {
+  if (SHIPPING_PERCENT > 0) {
+    return [
+      {
+        name: 'Shipping',
+        percentage: String(SHIPPING_PERCENT),
+        calculation_phase: 'SUBTOTAL_PHASE',
+      },
+    ]
+  }
+  if (SHIPPING_CENTS > 0) {
+    return [
+      {
+        name: 'Shipping',
+        amount_money: { amount: SHIPPING_CENTS, currency: 'USD' },
+        calculation_phase: 'TOTAL_PHASE',
+      },
+    ]
+  }
+  return undefined
+}
+
+async function deletePaymentLink(paymentLinkId) {
+  if (!paymentLinkId) return
+  try {
+    await square(`/v2/online-checkout/payment-links/${paymentLinkId}`, { method: 'DELETE' })
+  } catch {
+    /* ignore */
+  }
+}
+
 async function createDiscountedLink({ variationId, name, locationId, discountId }) {
+  const order = {
+    location_id: locationId,
+    line_items: [{ catalog_object_id: variationId, quantity: '1' }],
+    discounts: [{ catalog_object_id: discountId, scope: 'ORDER' }],
+  }
+  const charges = shippingServiceCharges()
+  if (charges) order.service_charges = charges
+
   const data = await square('/v2/online-checkout/payment-links', {
     method: 'POST',
     body: {
@@ -130,11 +172,7 @@ async function createDiscountedLink({ variationId, name, locationId, discountId 
         allow_tipping: false,
         redirect_url: REDIRECT_URL,
       },
-      order: {
-        location_id: locationId,
-        line_items: [{ catalog_object_id: variationId, quantity: '1' }],
-        discounts: [{ catalog_object_id: discountId, scope: 'ORDER' }],
-      },
+      order,
     },
   })
   const link = data.payment_link
@@ -215,7 +253,14 @@ async function main() {
   const discountId = await ensureDiscount()
   const items = await listItems()
   const linksFile = loadLinks()
+  const shippingChanged =
+    Number(linksFile.shippingPercent) !== SHIPPING_PERCENT ||
+    Number(linksFile.shippingCents || 0) !== SHIPPING_CENTS
+  const mustRecreate = FORCE_RECREATE || shippingChanged
   const byVar = new Map((linksFile.links || []).map((row) => [row.variationId, row]))
+  console.log(
+    `Discount links… shipping=${SHIPPING_PERCENT}%${mustRecreate ? ' (recreating)' : ''}`,
+  )
 
   let created = 0
   let reused = 0
@@ -234,12 +279,13 @@ async function main() {
         title: name,
         sku: vd.sku || '',
       }
-      if (row.discountUrl && row.discountPaymentLinkId) {
+      if (!mustRecreate && row.discountUrl && row.discountPaymentLinkId) {
         reused += 1
         byVar.set(variationId, row)
         continue
       }
       try {
+        if (row.discountPaymentLinkId) await deletePaymentLink(row.discountPaymentLinkId)
         const disc = await createDiscountedLink({
           variationId,
           name,
@@ -264,7 +310,8 @@ async function main() {
     locationId,
     discountId,
     discountName: DISCOUNT_NAME,
-    shippingCents: linksFile.shippingCents || 0,
+    shippingPercent: SHIPPING_PERCENT,
+    shippingCents: SHIPPING_CENTS || linksFile.shippingCents || 0,
     count: links.length,
     links,
   }
