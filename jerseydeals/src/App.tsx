@@ -66,6 +66,7 @@ import {
   lowestSalePrice,
   matchesListingQuery,
   matchesPriceFilter,
+  matchesTypeFilter,
   pickFeatured,
   pickNewDrops,
   pickSaleItems,
@@ -77,12 +78,13 @@ import {
   SORT_OPTIONS,
   sortListings,
   sortSizes,
-  TAG_ORDER,
+  TYPE_FILTERS,
   type ClubInfo,
   type Listing,
   type ListingsPayload,
   type PriceFilterId,
   type SortId,
+  type TypeFilterId,
 } from './listings'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
@@ -94,7 +96,7 @@ const LOGO_SRC = {
   lg: asset('logo.png'),
 } as const
 
-type AudienceFilter = 'All' | 'Adult' | 'Youth'
+type GenderFilter = 'All' | 'Men' | 'Youth'
 
 function BrandMark({
   size = 'md',
@@ -774,8 +776,8 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<'idle' | 'sent'>('idle')
   const [navSolid, setNavSolid] = useState(false)
-  const [tagFilter, setTagFilter] = useState('All')
-  const [audienceFilter, setAudienceFilter] = useState<AudienceFilter>('All')
+  const [tagFilter, setTagFilter] = useState<TypeFilterId | string>('All')
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>('All')
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
@@ -983,11 +985,6 @@ export default function App() {
     return recentIds.map((id) => map.get(id)).filter((item): item is Listing => Boolean(item)).slice(0, 4)
   }, [listings, recentIds])
 
-  const availableTags = useMemo(() => {
-    const present = new Set(listings.map((item) => item.tag))
-    return TAG_ORDER.filter((tag) => present.has(tag))
-  }, [listings])
-
   const availableSizes = useMemo(() => {
     const present = new Set(listings.map(listingSize).filter((size) => size && size !== 'Other'))
     return sortSizes([...present])
@@ -1001,9 +998,9 @@ export default function App() {
 
   const filtered = useMemo(() => {
     const rows = listings.filter((item) => {
-      if (tagFilter !== 'All' && item.tag !== tagFilter) return false
-      if (audienceFilter === 'Adult' && !isAdultListing(item)) return false
-      if (audienceFilter === 'Youth' && !isYouthListing(item)) return false
+      if (!matchesTypeFilter(item, tagFilter)) return false
+      if (genderFilter === 'Men' && !isAdultListing(item)) return false
+      if (genderFilter === 'Youth' && !isYouthListing(item)) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
       if (clubFilter !== 'All' && inferClub(item.title)?.id !== clubFilter) return false
@@ -1011,11 +1008,11 @@ export default function App() {
       return matchesListingQuery(item, deferredQuery)
     })
     return sortListings(rows, sortBy)
-  }, [listings, tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+  }, [listings, tagFilter, genderFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
 
   useEffect(() => {
     setInventoryLimit(12)
-  }, [tagFilter, audienceFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+  }, [tagFilter, genderFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
 
   const visibleInventory = useMemo(
     () => filtered.slice(0, inventoryLimit),
@@ -1024,11 +1021,11 @@ export default function App() {
 
   const activeFilterChips = useMemo(() => {
     const chips: { key: string; label: string; clear: () => void }[] = []
-    if (audienceFilter !== 'All') {
+    if (genderFilter !== 'All') {
       chips.push({
-        key: 'audience',
-        label: audienceFilter === 'Adult' ? "Men's / adult" : 'Youth',
-        clear: () => setAudienceFilter('All'),
+        key: 'gender',
+        label: genderFilter === 'Men' ? "Men's" : 'Youth',
+        clear: () => setGenderFilter('All'),
       })
     }
     if (tagFilter !== 'All') chips.push({ key: 'tag', label: tagFilter, clear: () => setTagFilter('All') })
@@ -1059,14 +1056,14 @@ export default function App() {
       })
     }
     return chips
-  }, [audienceFilter, tagFilter, priceFilter, sizeFilter, brandFilter, clubFilter, deferredQuery, clubsData])
+  }, [genderFilter, tagFilter, priceFilter, sizeFilter, brandFilter, clubFilter, deferredQuery, clubsData])
 
   function clearAllFilters() {
     setTagFilter('All')
     setSizeFilter('All')
     setBrandFilter('All')
     setPriceFilter('All')
-    setAudienceFilter('All')
+    setGenderFilter('All')
     setClubFilter('All')
     setQuery('')
     setAppliedQuery('')
@@ -1075,10 +1072,13 @@ export default function App() {
 
   const deferredHint = useMemo(() => {
     const q = deferredQuery.trim()
-    if (!q && audienceFilter === 'All') return `${listings.length} items`
-    if (!q) return `${filtered.length} ${audienceFilter.toLowerCase()} item${filtered.length === 1 ? '' : 's'}`
+    if (!q && genderFilter === 'All') return `${listings.length} items`
+    if (!q) {
+      const genderLabel = genderFilter === 'Men' ? "men's" : genderFilter.toLowerCase()
+      return `${filtered.length} ${genderLabel} item${filtered.length === 1 ? '' : 's'}`
+    }
     return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
-  }, [deferredQuery, filtered.length, listings.length, audienceFilter])
+  }, [deferredQuery, filtered.length, listings.length, genderFilter])
 
   function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
     setFiltersOpen(true)
@@ -1110,7 +1110,8 @@ export default function App() {
     brand?: string
     price?: PriceFilterId
     query?: string
-    audience?: AudienceFilter
+    audience?: GenderFilter | 'Adult'
+    gender?: GenderFilter
     clubId?: string
     reset?: boolean
     focusSearch?: boolean
@@ -1122,7 +1123,7 @@ export default function App() {
       setQuery('')
       setAppliedQuery('')
       setTagFilter('All')
-      setAudienceFilter('All')
+      setGenderFilter('All')
       setClubFilter('All')
       setSortBy('featured')
     }
@@ -1133,7 +1134,10 @@ export default function App() {
       setQuery(next.query)
       setAppliedQuery(next.query.trim())
     }
-    if (next?.audience !== undefined) setAudienceFilter(next.audience)
+    const genderNext = next?.gender ?? next?.audience
+    if (genderNext !== undefined) {
+      setGenderFilter(genderNext === 'Adult' ? 'Men' : genderNext)
+    }
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
     scrollToInventoryBrowse({ focusSearch: next?.focusSearch })
   }
@@ -1142,7 +1146,7 @@ export default function App() {
     if (urlHydrated.current) return
     const params = new URLSearchParams(window.location.search)
     const q = params.get('q')
-    const audience = params.get('audience')
+    const gender = params.get('gender') || params.get('audience')
     const tag = params.get('tag')
     const size = params.get('size')
     const brand = params.get('brand')
@@ -1153,7 +1157,8 @@ export default function App() {
       setQuery(q)
       setAppliedQuery(q)
     }
-    if (audience === 'Adult' || audience === 'Youth' || audience === 'All') setAudienceFilter(audience)
+    if (gender === 'Men' || gender === 'Youth' || gender === 'All') setGenderFilter(gender)
+    else if (gender === 'Adult') setGenderFilter('Men')
     if (tag) setTagFilter(tag)
     if (size) setSizeFilter(size)
     if (brand) setBrandFilter(brand)
@@ -1194,7 +1199,7 @@ export default function App() {
     if (current.get('buy') || current.get('checkout')) return
     const params = new URLSearchParams()
     if (appliedQuery.trim()) params.set('q', appliedQuery.trim())
-    if (audienceFilter !== 'All') params.set('audience', audienceFilter)
+    if (genderFilter !== 'All') params.set('gender', genderFilter)
     if (tagFilter !== 'All') params.set('tag', tagFilter)
     if (sizeFilter !== 'All') params.set('size', sizeFilter)
     if (brandFilter !== 'All') params.set('brand', brandFilter)
@@ -1207,7 +1212,7 @@ export default function App() {
     // Avoid replaceState spam — iOS Safari can choke on repeated history updates.
     if (url === currentUrl) return
     window.history.replaceState(null, '', url)
-  }, [appliedQuery, audienceFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
+  }, [appliedQuery, genderFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
 
   const heroImage = asset('hero-jersey.jpg')
 
@@ -2219,35 +2224,30 @@ export default function App() {
                       filtersOpen || deferredQuery.trim() ? 'block' : 'hidden md:block'
                     }`}
                   >
-                    <FilterRow label="Audience">
+                    <FilterRow label="Gender">
                       {(
                         [
                           { id: 'All', label: 'All' },
-                          { id: 'Adult', label: "Men's / adult" },
+                          { id: 'Men', label: "Men's" },
                           { id: 'Youth', label: 'Youth' },
                         ] as const
                       ).map((option) => (
                         <FilterChip
                           key={option.id}
                           label={option.label}
-                          active={audienceFilter === option.id}
-                          onClick={() => setAudienceFilter(option.id)}
+                          active={genderFilter === option.id}
+                          onClick={() => setGenderFilter(option.id)}
                         />
                       ))}
                     </FilterRow>
 
                     <FilterRow label="Type">
-                      <FilterChip
-                        label="All"
-                        active={tagFilter === 'All'}
-                        onClick={() => setTagFilter('All')}
-                      />
-                      {availableTags.map((tag) => (
+                      {TYPE_FILTERS.map((type) => (
                         <FilterChip
-                          key={tag}
-                          label={tag}
-                          active={tagFilter === tag}
-                          onClick={() => setTagFilter(tag)}
+                          key={type}
+                          label={type}
+                          active={tagFilter === type}
+                          onClick={() => setTagFilter(type)}
                         />
                       ))}
                     </FilterRow>

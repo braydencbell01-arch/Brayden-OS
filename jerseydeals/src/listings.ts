@@ -358,8 +358,38 @@ export function clubsInStock(listings: Listing[]): ClubInfo[] {
 
 export function isAdultListing(item: Listing) {
   if (isYouthListing(item)) return false
-  // Everything non-youth counts as adult (jerseys, training, apparel, towels, etc.).
+  // Everything non-youth counts as men's / adult until women's inventory is added.
   return true
+}
+
+/** Inventory Type filter — title-based, not catalog tag. */
+export const TYPE_FILTERS = ['All', 'Training', 'Jerseys', 'Apparel'] as const
+export type TypeFilterId = (typeof TYPE_FILTERS)[number]
+
+/** Pre-match, training, or strike tops. */
+export function isTrainingTypeListing(item: Listing) {
+  const t = item.title
+  return /pre-?match/i.test(t) || /\btraining\b/i.test(t) || /\bstrike\b/i.test(t)
+}
+
+/** Any listing with “jersey” in the title. */
+export function isJerseyTypeListing(item: Listing) {
+  return /\bjerseys?\b/i.test(item.title)
+}
+
+/** Everything outside Training and Jerseys (scarves, tees, towels, etc.). */
+export function isApparelTypeListing(item: Listing) {
+  return !isTrainingTypeListing(item) && !isJerseyTypeListing(item)
+}
+
+export function matchesTypeFilter(item: Listing, filter: TypeFilterId | string) {
+  if (filter === 'All') return true
+  if (filter === 'Training') return isTrainingTypeListing(item)
+  if (filter === 'Jerseys') return isJerseyTypeListing(item)
+  if (filter === 'Apparel') return isApparelTypeListing(item)
+  // Legacy catalog tags from old deep links.
+  if (filter === 'Youth') return isYouthListing(item)
+  return item.tag === filter
 }
 
 export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' | 'Training' | 'Other' {
