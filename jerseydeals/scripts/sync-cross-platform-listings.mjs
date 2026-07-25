@@ -3,8 +3,10 @@
  * Bidirectional listing sync across eBay ↔ Square (Jersey Deals site pulls Square).
  *
  * - New / updated eBay actives → create or update Square (SKU ebay:{itemId})
- * - Linked Square items → revise eBay price / qty when Square drifts
+ * - Linked Square items → revise eBay price / qty when Square drifts (qty up or down)
  * - New Square-only sellable items → create eBay FixedPrice listing, write back SKU
+ * - Linked but ended on eBay → leave for reconcile:sold (ends Square + site)
+ * - Removals / sold are owned by reconcile-sold-inventory.mjs
  *
  * Join key: Square variation SKU = ebay:{eBayItemId}
  *
@@ -768,26 +770,29 @@ async function main() {
 
     if (row.ebayId) {
       if (!ebayActiveIds.has(row.ebayId)) {
-        // Linked but not active on eBay (ended/sold) — leave to reconcile:sold
+        // Linked but not active on eBay (ended/sold/removed) — reconcile:sold clears Square + site.
+        console.log(`  · eBay ended ${row.ebayId} — defer to reconcile:sold (${row.title.slice(0, 40)})`)
         continue
       }
       const ebay = ebayActives.find((e) => e.ebayId === row.ebayId)
       if (!ebay) continue
       try {
-        // Title/description SoT is eBay → Square. Push price always when Square drifts;
-        // only raise eBay qty (never clobber a multi-qty eBay listing down to Square's 1).
+        // Title/description SoT is eBay → Square (handled above).
+        // Price + qty: push Square → eBay whenever they drift (including qty decreases).
         const priceChanged = !nearlySamePrice(row.price, ebay.price)
-        const shouldRaiseQty = Number(row.quantity) > Number(ebay.quantity)
-        if (priceChanged || shouldRaiseQty) {
+        const sqQty = Number(row.quantity)
+        const ebQty = Number(ebay.quantity)
+        const qtyChanged = Number.isFinite(sqQty) && Number.isFinite(ebQty) && sqQty !== ebQty
+        if (priceChanged || qtyChanged) {
           const inv = await reviseEbayInventory(row.ebayId, {
             price: priceChanged ? row.price : undefined,
-            quantity: shouldRaiseQty ? row.quantity : undefined,
+            quantity: qtyChanged ? Math.max(0, sqQty) : undefined,
           })
           if (!inv.ok) throw new Error(inv.message || 'revise inventory failed')
           squareToEbayRevised += 1
           console.log(
             `  ~ eBay ${row.title.slice(0, 50)} ($${ebay.price}→$${row.price}${
-              shouldRaiseQty ? `, qty ${ebay.quantity}→${row.quantity}` : ''
+              qtyChanged ? `, qty ${ebay.quantity}→${row.quantity}` : ''
             })`,
           )
         }
