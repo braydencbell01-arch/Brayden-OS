@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-26T20:04:03Z",
+  "syncedAt": "2026-07-26T23:43:16Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 37,
+  "count": 36,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -32,19 +32,6 @@
       "discountPaymentLinkId": "VVZXA73IRVJ4QSLJ",
       "discountUrl": "https://square.link/u/rsgvWFFG",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0TIWjLkgCnTP4pmXAi0LbiUnzeIZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "4EQWZRBDZUJ64K6SWRW4D3D2",
-      "variationId": "DX72TIG4T47LOPW5S6BWHJAC",
-      "title": "Paris Saint-Germain 22/23 Pre-Match Jersey (Nike) · L",
-      "sku": "ebay:389366033549",
-      "paymentLinkId": "EJDKFT7CW6OCPCMR",
-      "url": "https://square.link/u/y56CqD5F",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YLpzAeiPj9rhJZjXCv5jVnvBxNCZY",
-      "discountPaymentLinkId": "LPCHFSKDI4JWVUPN",
-      "discountUrl": "https://square.link/u/iTprkA4d",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OChevIwwN2ZJmJ8HJis2Wx7Kn4VZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

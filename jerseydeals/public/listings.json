@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-07-26T20:04:47Z",
+  "syncedAt": "2026-07-26T23:44:01Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 37,
+  "count": 36,
   "listings": [
     {
       "id": "NK4QWAQHIVIST5HLZRY7DWRH",
@@ -713,38 +713,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "DX72TIG4T47LOPW5S6BWHJAC",
-      "itemId": "4EQWZRBDZUJ64K6SWRW4D3D2",
-      "sku": "ebay:389366033549",
-      "title": "Paris Saint-Germain 22/23 Pre-Match Jersey (Nike) · L",
-      "price": 44.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/paris-saint-germain-22-23-pre-match-jersey-nike-l/4EQWZRBDZUJ64K6SWRW4D3D2",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/M7EAAeSwwuJpPNVE/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/M7EAAeSwwuJpPNVE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UjQAAeSwm~NpPNVL/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/M10AAeSwOjZpPNVJ/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kFEAAeSwHGJpPNVK/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pbkAAeSwNu5pPNVH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7acAAeSwogdpPNVK/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PFkAAeSwDu9pPNVK/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Training",
-      "note": "Size L",
-      "size": "L",
-      "brand": "Nike",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/y56CqD5F",
-      "checkoutUrlDiscounted": "https://square.link/u/iTprkA4d",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
       "id": "TVAE6QTZ6YQL7326JAIX2I7C",
       "itemId": "K2MVDBOYRK7AH5HTPLYYU6VT",
       "sku": "ebay:800407272493",
@@ -1292,5 +1260,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-07-26T20:04:47Z"
+  "ebayDetailsSyncedAt": "2026-07-26T23:44:01Z"
 }
