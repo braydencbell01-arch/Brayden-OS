@@ -291,17 +291,16 @@ header .banner-slide-wrapper,header .w-block-wrapper.banner{
   padding:0!important;
   margin:0!important;
 }
-/* Premier League mark — in normal flow above the title (never over text) */
+/* Premier League mark — white lion on transparent (no purple/black plate) */
 .jd-epl-badge,.jd-hero-panel .jd-epl-badge{
   position:static!important;display:block!important;
   width:3.6rem!important;height:3.6rem!important;
   margin:0 auto .85rem!important;
-  /* cover crops the black square around the official purple badge */
-  object-fit:cover!important;object-position:center!important;
-  border-radius:50%!important;
+  object-fit:contain!important;object-position:center!important;
+  border-radius:0!important;
   filter:drop-shadow(0 6px 16px rgba(0,0,0,.45));
   pointer-events:none;
-  background:#37003c!important;
+  background:transparent!important;
   box-sizing:border-box!important;padding:0!important;
 }
 .jd-shop-epl,.jd-shop-all{
@@ -611,8 +610,8 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   var EPL_URL=JD_SITE+"#epl-clubs";
   var SHOP_ALL_URL="/s/shop";
   var EPL_TUNNEL=JD_SITE+"epl-tunnel.jpg";
-  // Circular crop via CSS; logo file also shipped as premier-league-logo.png
-  var EPL_BADGE=JD_SITE+"premier-league-badge.png";
+  // Transparent white lion (no purple/black plate). Cache-bust when asset changes.
+  var EPL_BADGE=JD_SITE+"premier-league-badge.png?v=lion1";
   var SITE_LOGO=JD_SITE+"logo.png";
   var FOOTER_DEMO=/Thanks for exploring this Square Online Theme/i;
   var TEMPLATE_HERO=/Get started with this free eCommerce template for retailers\\.?/i;

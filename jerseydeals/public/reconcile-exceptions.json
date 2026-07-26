@@ -1,11 +1,9 @@
 {
-  "keepInStockVariationIds": [
-    "NWSMDPZORSCBZ5KWSG3L46SO"
-  ],
+  "keepInStockVariationIds": [],
   "ignoredOrderIds": [
     "07uj1BljabQeYpsIDpJpMUSbp4FZY"
   ],
   "notes": [
-    "Man City 17/18 Youth L — test Square purchase; restocked and relisted on eBay as 800403694830"
+    "Cleared Man City 17/18 Youth L keepInStock — eBay listing 800403694830 ended; allow reconcile to delist Square + site."
   ]
 }
