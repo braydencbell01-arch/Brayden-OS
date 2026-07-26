@@ -158,13 +158,13 @@ function loadPurchaserEmails() {
   }
 }
 
-function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail = 'braydencbell01@gmail.com') {
+function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail = 'shop@jerseydeals.online') {
   const mapJson = JSON.stringify(
     map || { byItemId: {}, byVariationId: {}, byItemIdDiscount: {}, byVariationIdDiscount: {} },
   )
   const emailsJson = JSON.stringify(purchaserEmails || [])
   const collectUrlJson = JSON.stringify(collectUrl || '')
-  const contactEmailJson = JSON.stringify(contactEmail || 'braydencbell01@gmail.com')
+  const contactEmailJson = JSON.stringify(contactEmail || 'shop@jerseydeals.online')
   const collectSecretJson = JSON.stringify(process.env.JERSEYDEALS_EMAIL_API_SECRET || '')
 
   // Keep head-safe elements only (style/script/link/meta).
@@ -1512,7 +1512,7 @@ async function main() {
 
   const purchaserEmails = loadPurchaserEmails()
   const collectUrl = (process.env.JERSEYDEALS_EMAIL_API_URL || process.env.VITE_JERSEYDEALS_EMAIL_API_URL || '').trim()
-  const contactEmail = (process.env.JERSEYDEALS_CONTACT_EMAIL || 'braydencbell01@gmail.com').trim()
+  const contactEmail = (process.env.JERSEYDEALS_CONTACT_EMAIL || 'shop@jerseydeals.online').trim()
   const content = buildSnippet(map, purchaserEmails, collectUrl, contactEmail)
   console.log(
     `New snippet length: ${content.length} (prior emails: ${purchaserEmails.length}, collectUrl: ${collectUrl || 'formsubmit-only'})`,

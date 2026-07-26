@@ -10,6 +10,7 @@ import {
 import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
+  CONTACT_EMAIL,
   EBAY_RATINGS,
   EBAY_SALE_URL,
   EBAY_SELLER,
@@ -320,7 +321,11 @@ const FAQ = [
   },
   {
     q: 'What is your return policy?',
-    a: 'Returns follow the policy on the listing checkout (Square or eBay). Message us before opening a case if something arrives not as described.',
+    a: `Returns follow the policy on the listing checkout (Square or eBay). Email ${CONTACT_EMAIL} before opening a case if something arrives not as described.`,
+  },
+  {
+    q: 'How do I contact Jersey Deals?',
+    a: `Email us at ${CONTACT_EMAIL} — sizing questions, order help, or stock requests. We reply from the shop inbox.`,
   },
 ]
 
@@ -2738,7 +2743,7 @@ export default function App() {
                 },
                 {
                   title: 'Family-run',
-                  copy: 'Small shop, real people behind every sale and shipment.',
+                  copy: `Small shop, real people — reach us at ${CONTACT_EMAIL}.`,
                 },
               ].map((point, i) => (
                 <motion.li key={point.title} {...fadeUp(reduce, i * 0.07)}>
@@ -2904,6 +2909,15 @@ export default function App() {
                 <p className="mt-4 max-w-xl text-white/65">
                   {NEWSLETTER_INCENTIVE} — get notified when sale kits and youth sizes land.
                 </p>
+                <p className="mt-3 text-sm text-white/55">
+                  Questions?{' '}
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
+                    className="text-cream underline decoration-white/35 underline-offset-4 hover:decoration-white"
+                  >
+                    {CONTACT_EMAIL}
+                  </a>
+                </p>
               </div>
               <form onSubmit={onEmailSubmit} className="flex flex-col gap-3 sm:flex-row">
                 <label className="sr-only" htmlFor="restock-email">
@@ -2986,6 +3000,14 @@ export default function App() {
             <p className="mt-4 max-w-sm font-brand text-sm leading-relaxed text-cream/90">
               Premium kit shopping from live inventory — sold direct.
             </p>
+            <p className="mt-4 text-sm">
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="font-semibold text-cream underline decoration-white/35 underline-offset-4 hover:decoration-white"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </p>
           </div>
           <div>
             <p className="eyebrow text-white/75">Shop</p>
@@ -3039,8 +3061,16 @@ export default function App() {
             </ul>
           </div>
           <div>
-            <p className="eyebrow text-white/75">Links</p>
+            <p className="eyebrow text-white/75">Contact</p>
             <ul className="mt-4 space-y-2 text-sm">
+              <li>
+                <a
+                  href={`mailto:${CONTACT_EMAIL}`}
+                  className="underline decoration-white/35 underline-offset-4 hover:text-white hover:decoration-white"
+                >
+                  {CONTACT_EMAIL}
+                </a>
+              </li>
               <li>
                 <a
                   href={SQUARE_STORE_URL}
