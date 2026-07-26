@@ -784,11 +784,15 @@ export default function App() {
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
-  /** Text currently typed in the sticky search bar. */
+  /** Text currently typed in the sticky search bar (filters live as you type). */
   const [query, setQuery] = useState('')
-  /** Query applied to inventory filters — only updates when Enter / search is activated. */
+  /** Query applied to inventory — kept in sync while typing; Enter still scrolls to results. */
   const [appliedQuery, setAppliedQuery] = useState('')
   const deferredQuery = useDeferredValue(appliedQuery)
+
+  useEffect(() => {
+    setAppliedQuery(query)
+  }, [query])
   const [menuOpen, setMenuOpen] = useState(false)
   const [cart, setCart] = useState<CartState>(() => readCart())
   const [cartOpen, setCartOpen] = useState(false)
@@ -1508,7 +1512,7 @@ export default function App() {
                   onChange={(e) => {
                     setQuery(e.target.value)
                   }}
-                  placeholder="Search club, kit, size, brand…"
+                  placeholder="Search club, player, league, nickname…"
                   enterKeyHint="search"
                   className={`w-full border py-2.5 pl-4 pr-[5.75rem] text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
                     navSolid

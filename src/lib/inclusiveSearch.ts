@@ -31,33 +31,35 @@ export const SEARCH_ALIAS_GROUPS: string[][] = [
   ['liga mx', 'mexican league'],
   ['eredivisie', 'dutch league'],
   ['primeira liga', 'liga portugal', 'portuguese league'],
+  ['international', 'national team', 'country kit', 'country kits'],
 
   // Clubs / nations (common search shortcuts)
-  ['manchester united', 'man united', 'man utd', 'man u', 'mufc'],
-  ['manchester city', 'man city', 'man c', 'mcfc'],
-  ['paris saint germain', 'paris saint-germain', 'psg', 'paris sg'],
+  ['manchester united', 'man united', 'man utd', 'man u', 'mufc', 'red devils'],
+  ['manchester city', 'man city', 'mcfc', 'cityzens', 'citizens'],
+  ['paris saint germain', 'paris saint-germain', 'psg', 'paris sg', 'paris'],
   ['borussia dortmund', 'dortmund', 'bvb'],
-  ['real madrid', 'madrid', 'rma', 'real'],
+  ['real madrid', 'madrid', 'rma', 'los blancos'],
   ['barcelona', 'barca', 'barça', 'fcb', 'fc barcelona'],
   ['bayern munich', 'bayern', 'fc bayern', 'fcb munich'],
-  ['tottenham', 'tottenham hotspur', 'spurs'],
-  ['liverpool', 'liverpool fc', 'lfc'],
-  ['chelsea', 'chelsea fc', 'cfc'],
-  ['arsenal', 'arsenal fc', 'afc', 'gunners'],
-  ['juventus', 'juve'],
-  ['inter milan', 'internazionale', 'inter'],
-  ['ac milan', 'milan'],
+  ['tottenham', 'tottenham hotspur', 'spurs', 'lilywhites', 'thfc'],
+  ['liverpool', 'liverpool fc', 'lfc', 'reds'],
+  ['chelsea', 'chelsea fc', 'cfc', 'blues'],
+  ['arsenal', 'arsenal fc', 'gunners', 'gooners'],
+  ['juventus', 'juve', 'bianconeri'],
+  ['inter milan', 'internazionale', 'fc internazionale', 'nerazzurri', 'inter naz'],
+  ['ac milan', 'milan', 'rossoneri', 'acm'],
   ['atletico madrid', 'atlético madrid', 'atletico', 'atleti'],
-  ['newcastle', 'newcastle united', 'nufc', 'toon'],
-  ['west ham', 'west ham united', 'whu'],
-  ['aston villa', 'villa'],
+  ['newcastle', 'newcastle united', 'nufc', 'toon', 'magpies'],
+  ['west ham', 'west ham united', 'whu', 'hammers'],
+  ['aston villa', 'villa', 'avfc'],
   ['nottingham forest', 'nottm forest', 'forest'],
-  ['brighton', 'brighton hove albion', 'bhafc'],
+  ['brighton', 'brighton hove albion', 'bhafc', 'seagulls'],
   ['wolves', 'wolverhampton', 'wolverhampton wanderers'],
   ['leicester', 'leicester city'],
   ['ajax', 'ajax amsterdam'],
-  ['inter miami', 'miami'],
-  ['germany', 'deutschland', 'dfb', 'german national'],
+  ['inter miami', 'miami', 'inter miami cf', 'miami cf'],
+  ['syracuse', 'syracuse orange', 'cuse', 'ncaa'],
+  ['germany', 'deutschland', 'dfb', 'german national', 'die mannschaft'],
   ['spain', 'espana', 'españa', 'la roja'],
   ['argentina', 'albiceleste'],
   ['mexico', 'el tri'],
@@ -68,6 +70,32 @@ export const SEARCH_ALIAS_GROUPS: string[][] = [
   ['portugal', 'selecao portugal'],
   ['italy', 'italia', 'azzurri'],
   ['netherlands', 'holland', 'oranje'],
+]
+
+/** Ambiguous short queries that should hit multiple club families. */
+const AMBIGUOUS_QUERY_EXPANSIONS: Record<string, string[]> = {
+  inter: ['inter miami', 'miami', 'inter milan', 'internazionale', 'nerazzurri'],
+  inte: ['inter miami', 'miami', 'inter milan', 'internazionale', 'nerazzurri'],
+  real: ['real madrid', 'madrid'],
+  united: ['manchester united', 'man united', 'newcastle united'],
+  city: ['manchester city', 'man city'],
+  milan: ['ac milan', 'milan', 'inter milan', 'internazionale'],
+}
+
+/** Player → clubs (fantasy / team search). */
+const PLAYER_CLUB_GROUPS: { players: string[]; clubs: string[] }[] = [
+  { players: ['messi', 'lionel messi', 'leo messi'], clubs: ['inter miami', 'barcelona', 'paris saint germain', 'psg'] },
+  { players: ['haaland', 'erling haaland'], clubs: ['manchester city', 'borussia dortmund'] },
+  { players: ['salah', 'mohamed salah', 'mo salah'], clubs: ['liverpool'] },
+  { players: ['mbappe', 'mbappé', 'kylian mbappe'], clubs: ['paris saint germain', 'psg', 'real madrid'] },
+  { players: ['kane', 'harry kane'], clubs: ['tottenham', 'bayern munich'] },
+  { players: ['saka', 'bukayo saka'], clubs: ['arsenal'] },
+  { players: ['bellingham', 'jude bellingham'], clubs: ['real madrid', 'borussia dortmund'] },
+  { players: ['vinicius', 'vini jr'], clubs: ['real madrid'] },
+  { players: ['ronaldo', 'cristiano ronaldo', 'cr7'], clubs: ['manchester united', 'juventus', 'real madrid'] },
+  { players: ['de bruyne', 'kevin de bruyne', 'kdb'], clubs: ['manchester city'] },
+  { players: ['foden', 'phil foden'], clubs: ['manchester city'] },
+  { players: ['son', 'son heung min', 'heung min son'], clubs: ['tottenham'] },
 ]
 
 const CLUB_SUFFIXES = new Set([
@@ -88,6 +116,13 @@ const CLUB_SUFFIXES = new Set([
   'if',
   'fk',
   'sk',
+  'the',
+  'and',
+  'a',
+  'of',
+  'de',
+  'la',
+  'el',
 ])
 
 function levenshtein(a: string, b: string): number {
@@ -144,53 +179,115 @@ function aliasIndex(): Map<string, string[]> {
 
 const ALIAS_BY_KEY = aliasIndex()
 
-/** All alias variants for a phrase (including itself). */
+function rawTokens(value: string): string[] {
+  return normalizeSearchText(value).split(' ').filter(Boolean)
+}
+
+function hasContiguousWords(text: string, key: string): boolean {
+  const words = rawTokens(text)
+  const parts = rawTokens(key)
+  if (!parts.length || parts.length > words.length) return false
+  if (parts.length === 1) return words.includes(parts[0]!)
+  outer: for (let i = 0; i <= words.length - parts.length; i++) {
+    for (let j = 0; j < parts.length; j++) {
+      if (words[i + j] !== parts[j]) continue outer
+    }
+    return true
+  }
+  return false
+}
+
+/** Block "inter" from unlocking the international / country-kit group. */
+function aliasKeyMatchesQuery(key: string, query: string): boolean {
+  if (query === key) return true
+  if (query.length >= 3 && key.startsWith(query)) {
+    if (key === 'international' || key.startsWith('international ')) return false
+    if (query.length <= 2) return false
+    return true
+  }
+  if (key.length >= 3 && query.length > key.length && query.startsWith(key)) return true
+  return false
+}
+
+function playerMatchesQuery(player: string, query: string): boolean {
+  const p = normalizeSearchText(player)
+  if (!p || !query) return false
+  if (query === p) return true
+  if (query.length >= 3 && p.startsWith(query)) return true
+  if (p.length >= 3 && query.startsWith(p)) return true
+  return p.split(' ').some((part) => part.length >= 3 && (part === query || part.startsWith(query)))
+}
+
+/** All alias variants for a phrase (union of every related group). */
 export function aliasVariants(value: string): string[] {
   const n = normalizeSearchText(value)
   if (!n) return []
-  const direct = ALIAS_BY_KEY.get(n)
-  if (direct) return direct
-  // Prefix/contains against short aliases (e.g. query "barca" vs group member)
+  const out = new Set<string>([n])
+  const ambiguous = AMBIGUOUS_QUERY_EXPANSIONS[n]
+  if (ambiguous) for (const item of ambiguous) out.add(normalizeSearchText(item))
+
   for (const [key, group] of ALIAS_BY_KEY) {
     if (key.length < 2) continue
-    if (n === key || (n.length >= 3 && (key.startsWith(n) || n.startsWith(key)))) {
-      return group
+    if (!aliasKeyMatchesQuery(key, n)) continue
+    for (const item of group) out.add(item)
+  }
+
+  for (const row of PLAYER_CLUB_GROUPS) {
+    for (const player of row.players) {
+      if (!playerMatchesQuery(player, n)) continue
+      out.add(normalizeSearchText(player))
+      for (const club of row.clubs) out.add(normalizeSearchText(club))
     }
   }
-  return [n]
+
+  return [...out]
 }
 
-/** Expand text with alias group members that touch any phrase in the text. */
+/** Expand text with alias group members (contiguous whole-word keys only). */
 export function expandSearchBlob(...parts: Array<string | undefined | null>): string {
   const base = normalizeSearchText(parts.filter(Boolean).join(' '))
   if (!base) return ''
   const extras = new Set<string>()
-  for (const [key, group] of ALIAS_BY_KEY) {
-    if (key.length < 2) continue
-    if (base.includes(key)) {
-      for (const item of group) extras.add(item)
+  const words = tokenizeSearch(base)
+  const keys = [...ALIAS_BY_KEY.keys()].sort((a, b) => b.length - a.length)
+  const claimed = new Set<number>()
+
+  for (const key of keys) {
+    const partsKey = tokenizeSearch(key)
+    if (!partsKey.length) continue
+    for (let i = 0; i <= words.length - partsKey.length; i++) {
+      let ok = true
+      for (let j = 0; j < partsKey.length; j++) {
+        if (claimed.has(i + j) || words[i + j] !== partsKey[j]) {
+          ok = false
+          break
+        }
+      }
+      if (!ok) continue
+      for (let j = 0; j < partsKey.length; j++) claimed.add(i + j)
+      for (const item of ALIAS_BY_KEY.get(key) || []) extras.add(item)
     }
   }
-  // Also drop club suffixes from words for softer matching.
-  const stripped = tokenizeSearch(base)
-    .filter((t) => !CLUB_SUFFIXES.has(t))
-    .join(' ')
+
+  const stripped = words.filter((t) => !CLUB_SUFFIXES.has(t)).join(' ')
   return [base, stripped, ...extras].filter(Boolean).join(' ')
 }
 
 function maxEditDistance(token: string): number {
+  // No fuzzy on short codes — mufc≈mcfc≈cfc is worse than typos help.
   if (token.length >= 8) return 2
-  if (token.length >= 4) return 1
+  if (token.length >= 5) return 1
   return 0
 }
 
 function acronymMatches(words: string[], token: string): boolean {
   if (token.length < 2 || token.length > 6) return false
   if (!/^[a-z0-9]+$/.test(token)) return false
-  for (let i = 0; i < words.length; i++) {
+  const significant = words.filter((w) => w.length >= 3)
+  for (let i = 0; i < significant.length; i++) {
     let initials = ''
-    for (let j = i; j < words.length && initials.length < token.length; j++) {
-      const w = words[j]
+    for (let j = i; j < significant.length && initials.length < token.length; j++) {
+      const w = significant[j]
       if (!w) continue
       initials += w[0]
     }
@@ -199,28 +296,74 @@ function acronymMatches(words: string[], token: string): boolean {
   return false
 }
 
+const PREFIX_BLOCKED_WORDS = new Set([
+  'international',
+  'internacional',
+  'authentic',
+  'please',
+  'questions',
+  'training',
+  'premiere',
+  'premium',
+  'prematch',
+  'complete',
+  'completed',
+  'camiseta',
+  'maillot',
+  'mannschaft',
+])
+
+function wordMatchesToken(word: string, token: string): boolean {
+  if (!word || !token) return false
+  if (word === token) return true
+  if (token.length <= 2) return false
+  if (!word.startsWith(token)) return false
+  if (PREFIX_BLOCKED_WORDS.has(word)) return false
+  return true
+}
+
+function blobHasPhrase(blob: string, phrase: string): boolean {
+  const p = normalizeSearchText(phrase)
+  if (!p) return false
+  const words = tokenizeSearch(blob)
+  const parts = tokenizeSearch(p)
+  if (!parts.length) return false
+  if (parts.length === 1) {
+    const t = parts[0]!
+    return words.some((w) => wordMatchesToken(w, t))
+  }
+  return hasContiguousWords(blob, p)
+}
+
+function multiWordVariantMatches(words: string[], variant: string): boolean {
+  const vWords = tokenizeSearch(variant)
+  if (vWords.length < 2) return false
+  return vWords.every((part) => {
+    if (part.length <= 2) return words.includes(part)
+    return words.some((w) => wordMatchesToken(w, part))
+  })
+}
+
 function tokenMatchesBlob(blob: string, token: string): boolean {
   if (!token) return true
-  if (blob.includes(token)) return true
+  if (blobHasPhrase(blob, token)) return true
 
-  const words = blob.split(' ').filter(Boolean)
-  if (token.length >= 2 && words.some((w) => w.startsWith(token))) return true
+  const words = tokenizeSearch(blob)
   if (acronymMatches(words, token)) return true
 
   const dist = maxEditDistance(token)
   if (dist > 0) {
     for (const word of words) {
       if (word.length < 3) continue
+      if (PREFIX_BLOCKED_WORDS.has(word)) continue
       if (Math.abs(word.length - token.length) > dist) continue
       if (levenshtein(word, token) <= dist) return true
     }
   }
 
-  // Alias-expanded forms of this token
   for (const variant of aliasVariants(token)) {
-    if (variant !== token && blob.includes(variant)) return true
-    const vWords = variant.split(' ').filter(Boolean)
-    if (vWords.length > 1 && vWords.every((part) => blob.includes(part))) return true
+    if (variant !== token && blobHasPhrase(blob, variant)) return true
+    if (multiWordVariantMatches(words, variant)) return true
   }
 
   return false
@@ -241,25 +384,30 @@ export function matchesInclusive(
   const blob = expandSearchBlob(...fieldList)
   if (!blob) return false
 
-  if (blob.includes(q)) return true
+  if (blobHasPhrase(blob, q)) return true
 
-  // Whole-query alias: "man u" ↔ manchester united
   for (const variant of aliasVariants(q)) {
-    if (variant !== q && blob.includes(variant)) return true
-    const parts = variant.split(' ').filter(Boolean)
-    if (parts.length > 1 && parts.every((part) => blob.includes(part))) return true
-  }
-
-  // If any alias group member equals/contains the query, accept hay with any member.
-  for (const variant of aliasVariants(q)) {
-    const group = ALIAS_BY_KEY.get(variant)
-    if (!group) continue
-    if (group.some((alias) => alias.length >= 2 && blob.includes(alias))) return true
+    if (variant.length >= 2 && blobHasPhrase(blob, variant)) return true
   }
 
   const tokens = tokenizeSearch(q)
-  if (tokens.length === 0) return true
-  return tokens.every((token) => tokenMatchesBlob(blob, token))
+  if (tokens.length === 0) {
+    const raw = normalizeSearchText(q).split(' ').filter(Boolean)
+    if (!raw.length) return true
+    return raw.every((part) => blobHasPhrase(blob, part))
+  }
+  if (tokens.every((token) => tokenMatchesBlob(blob, token))) return true
+
+  if (tokens.length >= 2 && !ALIAS_BY_KEY.has(q) && !AMBIGUOUS_QUERY_EXPANSIONS[q]) {
+    const hits = tokens.filter((token) => tokenMatchesBlob(blob, token)).length
+    if (
+      hits >= Math.ceil(tokens.length * 0.6) &&
+      tokens.some((t) => t.length >= 4 && tokenMatchesBlob(blob, t))
+    ) {
+      return true
+    }
+  }
+  return false
 }
 
 /** Prefer a longer canonical label when query is a known abbreviation (for ESPN). */

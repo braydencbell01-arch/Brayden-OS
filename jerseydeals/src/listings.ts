@@ -273,6 +273,7 @@ export function listingSearchText(item: Listing) {
 export function matchesListingQuery(item: Listing, rawQuery: string) {
   if (!rawQuery.trim()) return true
   const club = inferClub(item.title)
+  const league = inferLeague(item.title)
   return matchesInclusive(
     [
       item.title,
@@ -287,6 +288,13 @@ export function matchesListingQuery(item: Listing, rawQuery: string) {
       item.conditionEbay,
       club?.name,
       club?.id,
+      league?.name,
+      league?.id,
+      // Help league / nickname search even when title is short.
+      club?.id === 'syracuse' ? 'ncaa college syracuse orange cuse' : '',
+      club && LEAGUE_BY_CLUB_ID[club.id]
+        ? `${LEAGUE_BY_CLUB_ID[club.id].name} ${LEAGUE_BY_CLUB_ID[club.id].id}`
+        : '',
     ],
     rawQuery,
   )
@@ -303,7 +311,12 @@ export const CLUB_CATALOG = [
   { id: 'manchester-united', name: 'Manchester United', pattern: /manchester\s*united|\bman\s*utd\b|\bman\s*u\b|\bman\s*united\b|\bmufc\b/i },
   { id: 'paris-saint-germain', name: 'Paris Saint-Germain', pattern: /paris\s*saint[-\s]?germain|\bpsg\b|\bparis\s*sg\b/i },
   { id: 'inter-miami', name: 'Inter Miami', pattern: /inter\s*miami\b/i },
-  { id: 'ac-milan', name: 'AC Milan', pattern: /\bac\s*milan\b/i },
+  {
+    id: 'inter-milan',
+    name: 'Inter Milan',
+    pattern: /inter\s*milan\b|internazionale|\bnerazzurri\b/i,
+  },
+  { id: 'ac-milan', name: 'AC Milan', pattern: /\bac\s*milan\b|(?<!inter\s)\bmilan\b/i },
   { id: 'borussia-dortmund', name: 'Borussia Dortmund', pattern: /borussia\s*dortmund|\bdortmund\b|\bbvb\b/i },
   { id: 'tottenham', name: 'Tottenham', pattern: /tottenham(?:\s*hotspur)?|\bspurs\b/i },
   { id: 'liverpool', name: 'Liverpool', pattern: /liverpool(?:\s*fc)?|\blfc\b/i },
@@ -371,6 +384,7 @@ export const LEAGUE_BY_CLUB_ID: Record<string, { id: string; name: string }> = {
   'real-madrid': { id: 'la-liga', name: 'La Liga' },
   barcelona: { id: 'la-liga', name: 'La Liga' },
   'ac-milan': { id: 'serie-a', name: 'Serie A' },
+  'inter-milan': { id: 'serie-a', name: 'Serie A' },
   juventus: { id: 'serie-a', name: 'Serie A' },
   'borussia-dortmund': { id: 'bundesliga', name: 'Bundesliga' },
   bayern: { id: 'bundesliga', name: 'Bundesliga' },
