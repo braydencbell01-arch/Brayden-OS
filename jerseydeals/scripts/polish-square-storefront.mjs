@@ -443,9 +443,57 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   font-size:1.05rem;line-height:1.5;font-weight:500;
   text-shadow:0 1px 2px rgba(0,0,0,.7),0 4px 18px rgba(0,0,0,.45)!important;
 }
+/* Injected hero — always visible content (replaces empty Square banner black box) */
+.jd-hero-panel{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:min(62vh,560px);padding:2.5rem 1.25rem 3rem;text-align:center;overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(6,16,28,.55) 0%,rgba(6,16,28,.78) 45%,rgba(6,16,28,.92) 100%),
+    url("https://jerseydeals.online/epl-tunnel.jpg") center/cover no-repeat,
+    #06101c!important;
+  color:#fff!important;
+}
+.jd-hero-panel .jd-hero-inner{position:relative;z-index:2;max-width:34rem;margin:0 auto}
+.jd-hero-panel h2{
+  font-family:"Libre Baskerville",Georgia,serif!important;color:#fff!important;
+  font-size:clamp(2rem,7vw,3.4rem)!important;line-height:1.05;margin:.35rem 0 .2rem;
+  text-shadow:0 1px 2px rgba(0,0,0,.75),0 6px 28px rgba(0,0,0,.55)!important;
+}
+.jd-hero-panel .jd-shop-epl{margin-top:1rem!important}
+.jd-hero-panel .jd-hero-sub{margin-left:auto;margin-right:auto}
+[data-jd-banner-hidden="1"]{display:none!important}
+/* Header email signup (next to logo) */
+.jd-header-email{
+  display:flex!important;align-items:center;gap:.35rem;flex:1 1 auto;min-width:0;
+  max-width:18rem;margin:0 .4rem 0 .75rem;
+}
+.jd-header-email input[type="email"]{
+  flex:1 1 auto;min-width:0;width:100%;
+  border:1px solid rgba(255,255,255,.4)!important;
+  background:rgba(255,255,255,.12)!important;color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  border-radius:999px!important;padding:.45rem .85rem!important;
+  font-size:16px!important;font-family:"Outfit",system-ui,sans-serif!important;
+  outline:none!important;
+}
+.jd-header-email input::placeholder{color:rgba(255,255,255,.75)!important;opacity:1!important}
+.jd-header-email button{
+  flex:0 0 auto;border:0!important;border-radius:999px!important;
+  background:var(--jd-crimson)!important;color:#fff!important;
+  font-weight:700!important;font-size:.62rem!important;letter-spacing:.12em;
+  text-transform:uppercase;padding:.55rem .75rem!important;cursor:pointer;
+  white-space:nowrap;
+}
+.jd-header-email .jd-header-email-ok{
+  color:#fff!important;font-size:.65rem;font-weight:600;letter-spacing:.06em;white-space:nowrap;
+}
+#jd-cart-nav svg{width:1rem;height:1rem;flex-shrink:0}
 @media (max-width:720px){
   [class*="banner"],[data-ux="Banner"]{min-height:58vh}
   .jd-trust{letter-spacing:.1em;font-size:.65rem;gap:.55rem .9rem}
+  .jd-hero-panel{min-height:52vh;padding:2rem 1rem 2.5rem}
+  .jd-header-email{max-width:none;margin-left:.4rem}
+  .jd-header-email button{padding:.55rem .6rem!important;font-size:.58rem!important}
 }
 /* First-time buyer offer modal */
 #jd-offer-root{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(6,16,28,.72)}
@@ -663,6 +711,73 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     }
   }
 
+  function ensureHeroPanel(){
+    var existing=document.getElementById("jd-hero-panel");
+    if(!existing){
+      var panel=document.createElement("section");
+      panel.id="jd-hero-panel";
+      panel.className="jd-hero-panel";
+      panel.setAttribute("aria-label","Shop Premier League");
+      panel.innerHTML=
+        '<img class="jd-epl-badge" src="'+EPL_BADGE+'" alt="Premier League" width="72" height="72"/>'
+        +'<div class="jd-hero-inner">'
+        +'<span class="jd-hero-eyebrow">Jersey Deals</span>'
+        +'<h2>Shop Premier League</h2>'
+        +'<a class="jd-shop-epl" href="'+EPL_URL+'" target="_blank" rel="noopener noreferrer">Shop EPL</a>'
+        +'<p class="jd-hero-sub">'+HERO_SUB+'</p>'
+        +'</div>';
+      var trust=document.getElementById("jd-trust-bar");
+      var header=document.querySelector("header,[class*='header'],[data-ux='Header']");
+      if(trust && trust.parentNode){
+        trust.parentNode.insertBefore(panel, trust.nextSibling);
+      } else if(header && header.parentNode){
+        header.parentNode.insertBefore(panel, header.nextSibling);
+      } else {
+        document.body.insertBefore(panel, document.body.firstChild);
+      }
+    }
+    // Hide empty/broken Square template banners so they don't leave a black void.
+    var banners=document.querySelectorAll('[class*="banner"],[data-ux="Banner"],section[class*="Banner"]');
+    for(var i=0;i<banners.length;i++){
+      var b=banners[i];
+      if(!b || b.id==="jd-hero-panel" || b.classList.contains("jd-hero-panel")) continue;
+      if(b.closest("#jd-hero-panel")) continue;
+      b.setAttribute("data-jd-banner-hidden","1");
+    }
+  }
+
+  function ensureHeaderEmail(){
+    if(document.getElementById("jd-header-email")) return;
+    var header=document.querySelector("header,[class*='header'],[data-ux='Header']");
+    if(!header) return;
+    var form=document.createElement("form");
+    form.id="jd-header-email";
+    form.className="jd-header-email";
+    form.setAttribute("aria-label","Email for special offers");
+    form.innerHTML=
+      '<input type="email" name="email" autocomplete="email" required placeholder="Email for offers" aria-label="Email for special offers"/>'
+      +'<button type="submit">Join</button>';
+    form.addEventListener("submit", function(e){
+      e.preventDefault();
+      var input=form.querySelector('input[type="email"]');
+      var val=((input&&input.value)||"").trim().toLowerCase();
+      if(!validEmail(val)){
+        if(input) input.focus();
+        return;
+      }
+      storageSet(EMAIL_KEY, val);
+      collectLead(val, "square_header_offers");
+      form.innerHTML='<span class="jd-header-email-ok">You’re on the list</span>';
+    });
+    var logo=header.querySelector('a[href="/"],[class*="logo"],[data-aid="HEADER_LOGO_RENDERED"]');
+    if(logo && logo.parentNode){
+      if(logo.nextSibling) logo.parentNode.insertBefore(form, logo.nextSibling);
+      else logo.parentNode.appendChild(form);
+    } else {
+      header.insertBefore(form, header.firstChild);
+    }
+  }
+
   function findLink(){
     try{
       var path=location.pathname||"";
@@ -859,16 +974,43 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   }
 
   function ensureCartNav(){
-    if(document.getElementById("jd-cart-nav")) return;
     var header=document.querySelector("header,[class*='header'],[data-ux='Header']");
     if(!header) return;
-    var a=document.createElement("a");
-    a.id="jd-cart-nav";
-    a.href="/s/cart";
-    a.textContent="Cart";
-    a.setAttribute("aria-label","Open cart");
-    a.style.cssText="margin-left:auto;display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .9rem;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-weight:600;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:#fff";
-    header.appendChild(a);
+    var a=document.getElementById("jd-cart-nav");
+    if(!a){
+      a=document.createElement("a");
+      a.id="jd-cart-nav";
+      a.href="/s/cart";
+      a.setAttribute("aria-label","Open cart");
+      a.style.cssText="margin-left:auto;display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .9rem;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-weight:600;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:#fff";
+      header.appendChild(a);
+    }
+    if(!a.querySelector("svg")){
+      a.innerHTML=
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        +'<circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle>'
+        +'<path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H7"></path>'
+        +'</svg><span>Cart</span>';
+    }
+    // Decorate plain Cart labels in header / cart chrome (not product copy).
+    var cartBits=document.querySelectorAll('header a, header button, [class*="header"] a, [class*="header"] button, [class*="cart"] a, [class*="Cart"] a, a[href*="/s/cart"], a[href*="/cart"]');
+    for(var i=0;i<cartBits.length;i++){
+      var p=cartBits[i];
+      if(!p || p.id==="jd-cart-nav" || p.getAttribute("data-jd-cart-icon")==="1") continue;
+      if(p.closest("#jd-cart-nav")) continue;
+      var label=(p.textContent||"").trim();
+      if(!/^cart$/i.test(label)) continue;
+      if(p.querySelector("svg")) continue;
+      p.setAttribute("data-jd-cart-icon","1");
+      p.style.display="inline-flex";
+      p.style.alignItems="center";
+      p.style.gap=".4rem";
+      var icon=document.createElement("span");
+      icon.setAttribute("aria-hidden","true");
+      icon.style.cssText="display:inline-flex;width:1rem;height:1rem";
+      icon.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H7"></path></svg>';
+      p.insertBefore(icon, p.firstChild);
+    }
   }
 
   function patchCards(){
@@ -887,6 +1029,8 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 
   function run(){
     ensureTrust();
+    ensureHeaderEmail();
+    ensureHeroPanel();
     ensureCartNav();
     polishCopy();
     hideOos(document);
