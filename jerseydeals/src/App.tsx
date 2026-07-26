@@ -1676,7 +1676,7 @@ export default function App() {
           <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/94 via-navy-deep/86 to-navy-deep/70" />
           <img
             src={asset('premier-league-badge.png')}
-            alt=""
+            alt="Premier League"
             className="absolute right-4 top-4 z-10 h-14 w-14 object-contain drop-shadow-lg md:right-8 md:top-8 md:h-20 md:w-20"
             loading="lazy"
             decoding="async"
