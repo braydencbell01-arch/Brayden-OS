@@ -1667,13 +1667,13 @@ export default function App() {
         {/* Shop Premier League */}
         <section id="epl" className="scroll-mt-44 relative overflow-hidden bg-navy-deep py-20 md:py-28">
           <img
-            src={asset('epl-tunnel.jpg')}
+            src={asset('epl-kits-bg.jpg')}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/94 via-navy-deep/86 to-navy-deep/70" />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/88 via-navy-deep/72 to-navy-deep/45" />
           <img
             src={asset('premier-league-badge.png')}
             alt="Premier League"
@@ -1695,9 +1695,6 @@ export default function App() {
               >
                 Shop EPL
               </a>
-              <p className="mt-4 max-w-md font-brand text-lg text-cream/85">
-                Club, country, and training jerseys — photographed from our inventory.
-              </p>
             </motion.div>
 
             <div id="epl-clubs" className="mt-14 scroll-mt-44">
