@@ -148,15 +148,15 @@ export function CartDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {cart.lines.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="font-display text-2xl font-bold uppercase text-navy">Cart is empty</p>
-              <p className="mt-2 text-sm text-muted">
+            <div className="rounded-sm bg-cream py-16 text-center">
+              <p className="font-display text-2xl font-bold uppercase text-navy">Your cart is empty</p>
+              <p className="mt-2 text-sm text-navy/70">
                 Browse the inventory, add a kit, then checkout securely on Square.
               </p>
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-6 inline-flex bg-crimson px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
+                className="mt-6 inline-flex bg-crimson px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-white"
               >
                 Keep shopping
               </button>
