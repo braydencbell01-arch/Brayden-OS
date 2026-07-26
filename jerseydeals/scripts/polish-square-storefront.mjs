@@ -187,18 +187,33 @@ html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   font-family:"Outfit",system-ui,sans-serif!important;
   color:var(--jd-navy)!important;
-  background:var(--jd-chalk)!important;
+  background:var(--jd-navy-deep)!important;
   -webkit-font-smoothing:antialiased;
+}
+/* Kill the “card floating on another screen” inset look */
+.w-container.main-container,.main-container{
+  padding-left:0!important;padding-right:0!important;margin:0!important;
+  max-width:none!important;width:100%!important;
+}
+.app-container,#app,.theme-square{
+  margin:0!important;border-radius:0!important;box-shadow:none!important;
+  background:var(--jd-chalk)!important;
+}
+main.main-content,.user-content,.w-cell.user-content{
+  background:var(--jd-chalk)!important;
 }
 /* Stop iOS auto-zoom on focus (fields under 16px zoom the page). */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="file"]):not([type="hidden"]),
 textarea,
 select{font-size:16px!important}
-/* Header */
-header,[class*="header"],[data-ux="Header"]{
-  background:rgba(6,16,28,.96)!important;
+/* Header — single flat bar, logo left, actions right */
+header,[class*="header"],[data-ux="Header"],
+.header-banner-wrapper,[class*="header-banner"]{
+  background:var(--jd-navy-deep)!important;
   border-bottom:1px solid rgba(255,255,255,.08)!important;
-  backdrop-filter:saturate(1.2) blur(8px);
+  backdrop-filter:none!important;
+  box-shadow:none!important;
+  border-radius:0!important;
 }
 header a,header button,header span,header svg,
 [class*="header"] a,[class*="header"] button,[class*="header"] span{
@@ -206,12 +221,24 @@ header a,header button,header span,header svg,
   fill:currentColor;
 }
 header a:hover,[class*="header"] a:hover{color:#fff!important;opacity:.88}
-/* Brand wordmark */
-header a[href="/"],header [class*="logo"],[data-aid="HEADER_LOGO_RENDERED"]{
-  font-family:"Libre Baskerville",Georgia,serif!important;
-  font-weight:700!important;
-  letter-spacing:.02em!important;
-  font-size:1.15rem!important;
+/* Force logo visible top-left */
+header .header__logo,header [class*="header__logo"],header .logo__link,
+header a[href="/"],header [data-aid="HEADER_LOGO_RENDERED"],
+#jd-header-logo{
+  display:inline-flex!important;align-items:center!important;
+  flex:0 0 auto!important;min-width:2.75rem!important;max-width:7.5rem!important;
+  width:auto!important;height:auto!important;margin:0!important;padding:0!important;
+  overflow:visible!important;opacity:1!important;visibility:visible!important;
+}
+header .header__logo img,header .logo__link img,header a[href="/"] img,
+#jd-header-logo img{
+  display:block!important;width:2.75rem!important;height:2.75rem!important;
+  max-width:2.75rem!important;max-height:2.75rem!important;min-width:2.75rem!important;
+  object-fit:contain!important;opacity:1!important;visibility:visible!important;
+  border-radius:8px!important;background:transparent!important;
+}
+#jd-header-logo{
+  margin-right:.5rem!important;text-decoration:none!important;
 }
 /* Primary buttons */
 a[class*="button"],button[class*="button"],[class*="Button"],.wsite-button,
@@ -264,21 +291,39 @@ header .banner-slide-wrapper,header .w-block-wrapper.banner{
   padding:0!important;
   margin:0!important;
 }
-.jd-epl-badge{
-  position:absolute;top:1rem;right:1rem;z-index:5;
-  width:4.5rem;height:4.5rem;object-fit:contain;
+/* Premier League mark — in normal flow above the title (never over text) */
+.jd-epl-badge,.jd-hero-panel .jd-epl-badge{
+  position:static!important;display:block!important;
+  width:3.6rem!important;height:3.6rem!important;
+  margin:0 auto .85rem!important;
+  /* cover crops the black square around the official purple badge */
+  object-fit:cover!important;object-position:center!important;
+  border-radius:50%!important;
   filter:drop-shadow(0 6px 16px rgba(0,0,0,.45));
   pointer-events:none;
+  background:#37003c!important;
+  box-sizing:border-box!important;padding:0!important;
 }
-.jd-shop-epl{
+.jd-shop-epl,.jd-shop-all{
   display:inline-flex!important;align-items:center;justify-content:center;
   margin:.9rem auto 0;padding:.9rem 1.4rem!important;
-  background:var(--jd-crimson)!important;color:#fff!important;
   border-radius:999px!important;font-weight:700!important;
   letter-spacing:.14em;text-transform:uppercase;text-decoration:none!important;
   font-size:.72rem!important;
+}
+.jd-shop-epl{
+  background:var(--jd-crimson)!important;color:#fff!important;
+  border:0!important;
   box-shadow:0 10px 28px rgba(0,0,0,.35)!important;
 }
+.jd-shop-all{
+  margin-top:.7rem!important;
+  background:rgba(6,16,28,.42)!important;color:#fff!important;
+  border:1.5px solid rgba(255,255,255,.9)!important;
+  box-shadow:0 8px 28px rgba(0,0,0,.28)!important;
+  backdrop-filter:blur(8px);
+}
+.jd-shop-all:hover{background:rgba(6,16,28,.62)!important;border-color:#fff!important}
 /* Force readable light type across Square hero chrome (overrides theme gray/transparent). */
 [class*="banner"] h1,[class*="banner"] h2,[class*="banner"] h3,
 [class*="banner"] [class*="title"],[class*="banner"] [class*="Headline"],
@@ -440,7 +485,7 @@ footer input,footer [type="email"]{
 /* Trust strip injected by JS */
 .jd-trust{
   display:flex;flex-wrap:wrap;gap:.75rem 1.25rem;justify-content:center;
-  padding:.85rem 1rem;background:var(--jd-navy);color:#fff;
+  padding:.85rem 1rem;background:var(--jd-navy-deep);color:#fff;
   font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
 }
 .jd-trust span{opacity:.92}
@@ -465,29 +510,36 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   font-size:1.05rem;line-height:1.5;font-weight:500;
   text-shadow:0 1px 2px rgba(0,0,0,.7),0 4px 18px rgba(0,0,0,.45)!important;
 }
-/* Injected hero — always visible content (replaces empty Square banner black box) */
+/* Injected hero — full-bleed, replaces empty Square banner black box */
 .jd-hero-panel{
   position:relative;display:flex;align-items:center;justify-content:center;
-  min-height:min(48vh,420px);padding:2rem 1.25rem 2.25rem;text-align:center;overflow:hidden;
+  min-height:min(48vh,420px);padding:2.25rem 1.25rem 2.25rem;text-align:center;overflow:visible;
+  width:100%!important;margin:0!important;border-radius:0!important;
   background:
     linear-gradient(180deg,rgba(6,16,28,.55) 0%,rgba(6,16,28,.78) 45%,rgba(6,16,28,.92) 100%),
     url("https://jerseydeals.online/epl-tunnel.jpg") center/cover no-repeat,
     #06101c!important;
   color:#fff!important;
 }
-.jd-hero-panel .jd-hero-inner{position:relative;z-index:2;max-width:34rem;margin:0 auto}
+.jd-hero-panel .jd-hero-inner{position:relative;z-index:2;max-width:34rem;margin:0 auto;padding:0 .25rem}
 .jd-hero-panel h2{
   font-family:"Libre Baskerville",Georgia,serif!important;color:#fff!important;
-  font-size:clamp(2rem,7vw,3.4rem)!important;line-height:1.05;margin:.35rem 0 .2rem;
+  font-size:clamp(2rem,7vw,3.25rem)!important;line-height:1.08;margin:.2rem 0 .15rem;
+  max-width:16ch;margin-left:auto;margin-right:auto;
   text-shadow:0 1px 2px rgba(0,0,0,.75),0 6px 28px rgba(0,0,0,.55)!important;
 }
 .jd-hero-panel .jd-shop-epl{margin-top:1rem!important}
 .jd-hero-panel .jd-hero-sub{margin-left:auto;margin-right:auto}
+.jd-trust{
+  width:100%!important;margin:0!important;border-radius:0!important;
+  background:var(--jd-navy-deep)!important;
+  border-bottom:1px solid rgba(255,255,255,.08)!important;
+}
 [data-jd-banner-hidden="1"]{display:none!important}
-/* Header email signup (next to logo) */
+/* Header email — compact, never crush the logo */
 .jd-header-email{
-  display:flex!important;align-items:center;gap:.35rem;flex:1 1 auto;min-width:0;
-  max-width:18rem;margin:0 .4rem 0 .75rem;
+  display:flex!important;align-items:center;gap:.3rem;flex:1 1 auto;min-width:0;
+  max-width:11.5rem;margin:0 .35rem 0 .4rem;
 }
 .jd-header-email input[type="email"]{
   flex:1 1 auto;min-width:0;width:100%;
@@ -514,8 +566,11 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   [class*="header-banner"],.header-banner-wrapper{min-height:0!important}
   .jd-trust{letter-spacing:.1em;font-size:.65rem;gap:.55rem .9rem}
   .jd-hero-panel{min-height:42vh;padding:1.75rem 1rem 2rem}
-  .jd-header-email{max-width:none;margin-left:.4rem}
-  .jd-header-email button{padding:.55rem .6rem!important;font-size:.58rem!important}
+  .jd-header-email{max-width:10.5rem;margin-left:.25rem}
+  .jd-header-email button{padding:.55rem .55rem!important;font-size:.58rem!important}
+  header .header__logo img,header .logo__link img,#jd-header-logo img{
+    width:2.4rem!important;height:2.4rem!important;max-width:2.4rem!important;max-height:2.4rem!important;
+  }
 }
 /* First-time buyer offer modal */
 #jd-offer-root{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(6,16,28,.72)}
@@ -554,8 +609,11 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   var HERO_SUB="Club, country, and training jerseys — photographed from our inventory.";
   var JD_SITE="https://jerseydeals.online/";
   var EPL_URL=JD_SITE+"#epl-clubs";
+  var SHOP_ALL_URL="/s/shop";
   var EPL_TUNNEL=JD_SITE+"epl-tunnel.jpg";
+  // Circular crop via CSS; logo file also shipped as premier-league-logo.png
   var EPL_BADGE=JD_SITE+"premier-league-badge.png";
+  var SITE_LOGO=JD_SITE+"logo.png";
   var FOOTER_DEMO=/Thanks for exploring this Square Online Theme/i;
   var TEMPLATE_HERO=/Get started with this free eCommerce template for retailers\\.?/i;
 
@@ -650,15 +708,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     if(!el) return;
     var host=el.parentElement||el;
     var banner=el.closest('[class*="banner"],[data-ux="Banner"],section')||host;
-    if(banner && !banner.querySelector(".jd-epl-badge")){
-      var badge=document.createElement("img");
-      badge.className="jd-epl-badge";
-      badge.src=EPL_BADGE;
-      badge.alt="Premier League";
-      badge.width=72;badge.height=72;
-      banner.style.position=banner.style.position||"relative";
-      banner.appendChild(badge);
-    }
+    // Badge lives inside #jd-hero-panel title stack — do not absolute-pin over copy.
     if(host && !host.querySelector(".jd-hero-eyebrow")){
       var eye=document.createElement("span");
       eye.className="jd-hero-eyebrow";
@@ -762,6 +812,55 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     }
   }
 
+  function heroMarkup(){
+    return ''
+      +'<div class="jd-hero-inner">'
+      +'<img class="jd-epl-badge" src="'+EPL_BADGE+'" alt="Premier League" width="56" height="56"/>'
+      +'<span class="jd-hero-eyebrow">Jersey Deals</span>'
+      +'<h2>Shop Premier League</h2>'
+      +'<a class="jd-shop-epl" href="'+EPL_URL+'" target="_blank" rel="noopener noreferrer">Shop EPL</a>'
+      +'<p class="jd-hero-sub">'+HERO_SUB+'</p>'
+      +'<a class="jd-shop-all" href="'+SHOP_ALL_URL+'">Shop All</a>'
+      +'</div>';
+  }
+
+  function syncHeroPanel(panel){
+    if(!panel) return;
+    var inner=panel.querySelector(".jd-hero-inner");
+    if(!inner){
+      panel.innerHTML=heroMarkup();
+      inner=panel.querySelector(".jd-hero-inner");
+    }
+    // Move any absolute/out-of-flow badge into the inner stack above the title.
+    var badge=panel.querySelector(".jd-epl-badge");
+    if(!badge){
+      badge=document.createElement("img");
+      badge.className="jd-epl-badge";
+      badge.alt="Premier League";
+      badge.width=56;badge.height=56;
+      inner.insertBefore(badge, inner.firstChild);
+    } else if(badge.parentNode!==inner){
+      inner.insertBefore(badge, inner.firstChild);
+    } else if(inner.firstChild!==badge){
+      inner.insertBefore(badge, inner.firstChild);
+    }
+    badge.src=EPL_BADGE;
+    badge.style.position="static";
+    var sub=inner.querySelector(".jd-hero-sub");
+    if(sub) sub.textContent=HERO_SUB;
+    var epl=inner.querySelector(".jd-shop-epl");
+    if(epl){ epl.href=EPL_URL; epl.target="_blank"; epl.rel="noopener noreferrer"; }
+    var shopAll=inner.querySelector(".jd-shop-all");
+    if(!shopAll){
+      shopAll=document.createElement("a");
+      shopAll.className="jd-shop-all";
+      shopAll.textContent="Shop All";
+      if(sub && sub.parentNode) sub.parentNode.insertBefore(shopAll, sub.nextSibling);
+      else inner.appendChild(shopAll);
+    }
+    shopAll.href=SHOP_ALL_URL;
+  }
+
   function ensureHeroPanel(){
     var existing=document.getElementById("jd-hero-panel");
     if(!existing){
@@ -769,14 +868,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       panel.id="jd-hero-panel";
       panel.className="jd-hero-panel";
       panel.setAttribute("aria-label","Shop Premier League");
-      panel.innerHTML=
-        '<img class="jd-epl-badge" src="'+EPL_BADGE+'" alt="Premier League" width="72" height="72"/>'
-        +'<div class="jd-hero-inner">'
-        +'<span class="jd-hero-eyebrow">Jersey Deals</span>'
-        +'<h2>Shop Premier League</h2>'
-        +'<a class="jd-shop-epl" href="'+EPL_URL+'" target="_blank" rel="noopener noreferrer">Shop EPL</a>'
-        +'<p class="jd-hero-sub">'+HERO_SUB+'</p>'
-        +'</div>';
+      panel.innerHTML=heroMarkup();
       var trust=document.getElementById("jd-trust-bar");
       var header=siteHeader();
       if(trust && trust.parentNode){
@@ -786,7 +878,9 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       } else {
         document.body.insertBefore(panel, document.body.firstChild);
       }
+      existing=panel;
     }
+    syncHeroPanel(existing);
     // Hide homepage banner slides/blocks only (not the whole header chrome).
     var banners=document.querySelectorAll(
       '.banner-1, [class*="banner-1"], .w-block-banner, [class*="banner-block"], .banner-slide-wrapper, .w-image-block--responsive.banner-1, .w-block-wrapper.banner, [data-ux="Banner"]'
@@ -826,36 +920,69 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     }
   }
 
-  function ensureHeaderEmail(){
-    if(document.getElementById("jd-header-email")) return;
+  function ensureHeaderLogo(){
     var header=siteHeader();
     if(!header) return;
-    var form=document.createElement("form");
-    form.id="jd-header-email";
-    form.className="jd-header-email";
-    form.setAttribute("aria-label","Email for special offers");
-    form.innerHTML=
-      '<input type="email" name="email" autocomplete="email" required placeholder="Email for offers" aria-label="Email for special offers"/>'
-      +'<button type="submit">Join</button>';
-    form.addEventListener("submit", function(e){
-      e.preventDefault();
-      var input=form.querySelector('input[type="email"]');
-      var val=((input&&input.value)||"").trim().toLowerCase();
-      if(!validEmail(val)){
-        if(input) input.focus();
-        return;
-      }
-      storageSet(EMAIL_KEY, val);
-      collectLead(val, "square_header_offers");
-      form.innerHTML='<span class="jd-header-email-ok">You’re on the list</span>';
-    });
-    var logo=header.querySelector('a[href="/"],[class*="logo"],[data-aid="HEADER_LOGO_RENDERED"]');
-    if(logo && logo.parentNode){
-      if(logo.nextSibling) logo.parentNode.insertBefore(form, logo.nextSibling);
-      else logo.parentNode.appendChild(form);
-    } else {
-      header.insertBefore(form, header.firstChild);
+    var host=header.querySelector(".header-banner-wrapper, [class*='header-banner'], .w-cell")||header;
+    var logo=header.querySelector(".header__logo a, a.logo__link, a[href='/'], [data-aid='HEADER_LOGO_RENDERED']");
+    var img=logo && logo.querySelector("img");
+    if(logo && img){
+      // Un-collapse Square's logo slot and force a readable mark.
+      logo.style.cssText="display:inline-flex;align-items:center;flex:0 0 auto;min-width:2.75rem;margin:0;padding:0;order:-1";
+      if(logo.parentElement) logo.parentElement.style.cssText="display:inline-flex;align-items:center;flex:0 0 auto;min-width:2.75rem;order:-1";
+      img.src=SITE_LOGO;
+      img.alt="Jersey Deals";
+      img.width=44;img.height=44;
+      img.style.cssText="display:block;width:2.75rem;height:2.75rem;object-fit:contain;border-radius:8px";
+      return;
     }
+    if(document.getElementById("jd-header-logo")) return;
+    var a=document.createElement("a");
+    a.id="jd-header-logo";
+    a.href="/";
+    a.setAttribute("aria-label","Jersey Deals home");
+    a.innerHTML='<img src="'+SITE_LOGO+'" alt="Jersey Deals" width="44" height="44"/>';
+    host.insertBefore(a, host.firstChild);
+  }
+
+  function ensureHeaderEmail(){
+    var header=siteHeader();
+    if(!header) return;
+    ensureHeaderLogo();
+    var form=document.getElementById("jd-header-email");
+    if(!form){
+      form=document.createElement("form");
+      form.id="jd-header-email";
+      form.className="jd-header-email";
+      form.setAttribute("aria-label","Email for special offers");
+      form.innerHTML=
+        '<input type="email" name="email" autocomplete="email" required placeholder="Email for offers" aria-label="Email for special offers"/>'
+        +'<button type="submit">Join</button>';
+      form.addEventListener("submit", function(e){
+        e.preventDefault();
+        var input=form.querySelector('input[type="email"]');
+        var val=((input&&input.value)||"").trim().toLowerCase();
+        if(!validEmail(val)){
+          if(input) input.focus();
+          return;
+        }
+        storageSet(EMAIL_KEY, val);
+        collectLead(val, "square_header_offers");
+        form.innerHTML='<span class="jd-header-email-ok">You are on the list</span>';
+      });
+      var logo=header.querySelector("#jd-header-logo, .header__logo, a.logo__link, a[href='/']");
+      if(logo && logo.parentNode){
+        if(logo.nextSibling) logo.parentNode.insertBefore(form, logo.nextSibling);
+        else logo.parentNode.appendChild(form);
+      } else {
+        header.insertBefore(form, header.firstChild ? header.firstChild.nextSibling : null);
+        if(!form.parentNode) header.appendChild(form);
+      }
+    }
+    // Keep the email field from eating the logo column.
+    form.style.flex="1 1 auto";
+    form.style.minWidth="0";
+    form.style.maxWidth="11.5rem";
   }
 
   function findLink(){
@@ -1058,37 +1185,16 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   }
 
   function ensureCartNav(){
-    // Remove our old full-width Cart pill — it created the extra black bar under the header.
-    // Square's native header already has a cart control.
+    // Remove our old full-width Cart pill — Square's native header cart icon is enough.
     var legacy=document.getElementById("jd-cart-nav");
     if(legacy && legacy.parentNode) legacy.parentNode.removeChild(legacy);
-
-    var cartBits=document.querySelectorAll(
-      'header a, header button, [class*="header"] a, [class*="header"] button, a[href*="/s/cart"], a[href*="/cart"]'
-    );
-    for(var i=0;i<cartBits.length;i++){
-      var p=cartBits[i];
-      if(!p || p.getAttribute("data-jd-cart-icon")==="1") continue;
-      var label=(p.textContent||"").trim();
-      var aria=(p.getAttribute("aria-label")||"");
-      var href=p.getAttribute("href")||"";
-      var looksCart=/^cart$/i.test(label) || /cart/i.test(aria) || href.indexOf("/s/cart")!==-1 || href.indexOf("/cart")!==-1;
-      if(!looksCart) continue;
-      if(p.querySelector("svg")) {
-        p.setAttribute("data-jd-cart-icon","1");
-        continue;
-      }
-      p.setAttribute("data-jd-cart-icon","1");
-      p.style.display="inline-flex";
-      p.style.alignItems="center";
-      p.style.gap=".35rem";
-      var icon=document.createElement("span");
-      icon.setAttribute("aria-hidden","true");
-      icon.style.cssText="display:inline-flex;width:1rem;height:1rem;line-height:0";
-      icon.innerHTML=cartIconSvg();
-      p.insertBefore(icon, p.firstChild);
-      // If it was icon-only, keep accessible label.
-      if(!label) p.setAttribute("aria-label", aria || "Open cart");
+    // Strip icons we previously injected so we don't show two carts.
+    var extras=document.querySelectorAll('header [data-jd-cart-icon="1"]');
+    for(var i=0;i<extras.length;i++){
+      var p=extras[i];
+      var injected=p.querySelector('span[aria-hidden="true"]');
+      if(injected && injected.querySelector("svg") && injected.parentNode===p) injected.parentNode.removeChild(injected);
+      p.removeAttribute("data-jd-cart-icon");
     }
   }
 
@@ -1108,6 +1214,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
 
   function run(){
     ensureTrust();
+    ensureHeaderLogo();
     ensureHeaderEmail();
     ensureHeroPanel();
     ensureCartNav();
