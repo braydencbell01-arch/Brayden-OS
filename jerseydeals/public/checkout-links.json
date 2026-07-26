@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-26T00:33:37Z",
+  "syncedAt": "2026-07-26T01:55:55Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 35,
+  "count": 38,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -461,6 +461,45 @@
       "discountPaymentLinkId": "S2QJNIZNMQUKUOZN",
       "discountUrl": "https://square.link/u/5I4zal4Y",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Gc6zzMDL0XViaG1HeeAaF7n5zm7YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "WA7QDAZ2WFEUGXFGZMSXB6SB",
+      "variationId": "XS7BTRL6MGQUPHSRU3ZEP3IN",
+      "title": "adidas Home Jersey · Youth L",
+      "sku": "ebay:800407734184",
+      "paymentLinkId": "G64MBYJ7VYZKRVZ6",
+      "url": "https://square.link/u/WrQThwBg",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Mj6GJ6iOAW1qVMj7LlxVcRrGO3QZY",
+      "discountPaymentLinkId": "UD4N3Z5PAV3I62UZ",
+      "discountUrl": "https://square.link/u/GYMMGisY",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/I7Nz8DDmwnLsv1Hz2rOGvnxEsHOZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "LGLVQYXDNLPGWAZV63HOLV3D",
+      "variationId": "PCRQSQ7AQOFTR2CKD3ZX4JR4",
+      "title": "Nike Home Jersey · Youth XL",
+      "sku": "ebay:800407752194",
+      "paymentLinkId": "BKCI3R54VICQP34I",
+      "url": "https://square.link/u/P6YqaPBC",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/q09rTQIZHGlbK6gTCY3HK5ZunxMZY",
+      "discountPaymentLinkId": "FTPLETFMN36FY7N4",
+      "discountUrl": "https://square.link/u/kkqmWgWc",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2SBdERF8vrBJ4ZYqggBMQjsNnBBZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "5UJTISW5ZU3VENBDVTJWBJRO",
+      "variationId": "SGQ7YT6PMDHO63KLDU6E637Y",
+      "title": "Manchester United 24/25 Third Jersey (adidas) · L",
+      "sku": "ebay:800407780713",
+      "paymentLinkId": "EYR7OBIZLXME34A3",
+      "url": "https://square.link/u/WgxCcyQK",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gd4PQEuTl0ElUFMOnXj3Y0FzGGLZY",
+      "discountPaymentLinkId": "22UJIRTWPY3WZSQL",
+      "discountUrl": "https://square.link/u/79J79XOl",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/e6PH22lONU9w5nANyF8eOW2GFNFZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
