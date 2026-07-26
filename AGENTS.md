@@ -8,15 +8,15 @@ Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-u
 
 ## Two separate products (never mix them)
 
-| Product | Source | Permanent live URL |
-|---------|--------|--------------------|
+| Product | Source | Permanent live URL (give to user) |
+|---------|--------|-----------------------------------|
 | **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
-| **Jersey Deals** | `jerseydeals/` | https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/ |
+| **Jersey Deals** | `jerseydeals/` | https://jerseydeals.online/ |
 
 - Do **not** publish BrayStats into `/jerseydeals/`.
 - Do **not** publish Jersey Deals into the Pages root.
 - Keep **email lists and form endpoints separate** (BrayStats ≠ Jersey Deals business). No shared signup storage or env vars across products.
-- When a BrayStats task finishes, report **both** URLs, labeled.
+- When a BrayStats / Jersey Deals task finishes, report **both** URLs, labeled. For Jersey Deals always use **https://jerseydeals.online/** (not the `github.io/.../jerseydeals/` path).
 
 ## BrayStats agent roles
 
