@@ -13,6 +13,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { normalizeContactLine } from './lib/listing-copy.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
@@ -176,7 +177,7 @@ async function fetchEbayDetails(itemId) {
   const conditionId = xmlText(xml, 'ConditionID')
   const conditionDisplayName = xmlText(xml, 'ConditionDisplayName')
   const descriptionHtml = xmlText(xml, 'Description')
-  const description = htmlToPlain(descriptionHtml)
+  const description = normalizeContactLine(htmlToPlain(descriptionHtml))
   const condition = normalizeCondition(conditionDisplayName, conditionId)
   return { status, title, description, condition, conditionId, conditionDisplayName }
 }

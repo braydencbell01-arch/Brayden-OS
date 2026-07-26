@@ -20,7 +20,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { polishTitle, polishDescription } from './lib/listing-copy.mjs'
+import { polishTitle, polishDescription, normalizeContactLine } from './lib/listing-copy.mjs'
 import { inferClubAbbrev } from './lib/club-abbrev.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -411,9 +411,9 @@ async function upsertSquareFromEbay(ebay, locationId, { soldOutEbayIds } = {}) {
 
   const existing = await findVariationBySku(sku)
   const displayTitle = polishTitle(details.title || ebay.title, {})
-  const description =
-    details.description ||
-    polishDescription(details.title || ebay.title, {})
+  const description = normalizeContactLine(
+    details.description || polishDescription(details.title || ebay.title, {}),
+  )
   const abbreviation = inferClubAbbrev(displayTitle)
   const variationName = 'Standard'
   const qty = Math.max(1, details.quantity || ebay.quantity || 1)
@@ -614,10 +614,9 @@ async function createEbayFromSquare(row) {
   if (!pics.length) return { ok: false, message: 'no images' }
   if (row.price == null) return { ok: false, message: 'no price' }
   const title = normalizeTitle(row.title).slice(0, 80)
-  const description =
-    row.description ||
-    polishDescription(row.title, {}) ||
-    `${row.title}`
+  const description = normalizeContactLine(
+    row.description || polishDescription(row.title, {}) || `${row.title}`,
+  )
   const conditionId = conditionIdFromText(row.description)
   const qty = Math.max(1, Number(row.quantity ?? 1) || 1)
   const pictureXml = pics.map((url) => `<PictureURL>${escapeXml(url)}</PictureURL>`).join('\n      ')

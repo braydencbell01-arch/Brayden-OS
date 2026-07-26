@@ -181,6 +181,21 @@ export function polishTitle(rawTitle, meta = {}) {
   return cleanSpaces(head)
 }
 
+/** Canonical buyer-contact sentence on listing descriptions. */
+export const CONTACT_LINE = 'Please message us if you have any questions.'
+
+/**
+ * Rewrite near-matches of "message me/us if you have questions" to CONTACT_LINE.
+ * Leaves other description text alone.
+ */
+export function normalizeContactLine(text) {
+  if (text == null || text === '') return text
+  return String(text).replace(
+    /\b(?:please\s+)?message\s+(?:me|us|up)\s+if\s+you\s+have\s+(?:any\s+)?questions\.?/gi,
+    CONTACT_LINE,
+  )
+}
+
 /**
  * Professional multi-line description for Square Online PDPs.
  */
@@ -225,7 +240,7 @@ export function polishDescription(rawTitle, meta = {}) {
   if (facts.length) lines.push(facts.join(' · '))
 
   lines.push('Ships from our US inventory. Real product photos. Secure Square checkout.')
-  lines.push('Questions on fit or condition? Message us from the store — happy to help before you buy.')
+  lines.push(CONTACT_LINE)
 
   return lines.join('\n\n')
 }
