@@ -16,7 +16,8 @@ Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-u
 
 - Do **not** publish BrayStats into `/jerseydeals/`.
 - Do **not** publish Jersey Deals into the Pages root.
-- Keep **email lists and form endpoints separate** (BrayStats ≠ Jersey Deals business). No shared signup storage or env vars across products.
+- Keep **signup storage / env vars separate** (BrayStats ≠ Jersey Deals localStorage keys and collector secrets).
+- **Notify inbox (all sites):** email every collected lead (email, phone, or other fields) to **shop@jerseydeals.online** via FormSubmit (or `NOTIFY_EMAIL` / `JERSEYDEALS_CONTACT_EMAIL`).
 - When a BrayStats / Jersey Deals task finishes, report these URLs, labeled:
   - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
   - Jersey Deals: https://jerseydeals.online/ (not the `github.io/.../jerseydeals/` path)

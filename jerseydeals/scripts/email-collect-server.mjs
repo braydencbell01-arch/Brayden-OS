@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Local / tunnel email collector → Square Customers.
+ * Local / tunnel email collector → Square Customers + notify shop inbox.
  * Same contract as email-api/worker.js
  *
  *   SQUARE_ACCESS_TOKEN=... node jerseydeals/scripts/email-collect-server.mjs
- *   Optional: PORT=8787 COLLECT_SECRET=...
+ *   Optional: PORT=8787 COLLECT_SECRET=... NOTIFY_EMAIL=shop@jerseydeals.online
  */
 
 import { createServer } from 'node:http'
@@ -13,6 +13,7 @@ import { randomUUID } from 'node:crypto'
 const PORT = Number(process.env.PORT || 8787)
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN
 const SECRET = process.env.COLLECT_SECRET || ''
+const NOTIFY_EMAIL = (process.env.NOTIFY_EMAIL || 'shop@jerseydeals.online').trim()
 const HOST = 'https://connect.squareup.com'
 const VERSION = '2025-10-16'
 
@@ -44,25 +45,84 @@ async function square(path, { method = 'GET', body } = {}) {
   return data
 }
 
-async function upsertCustomer(email, source) {
+function pickExtras(payload) {
+  const skip = new Set([
+    'email',
+    'source',
+    'product',
+    'site',
+    'list',
+    '_subject',
+    '_template',
+    '_captcha',
+    '_replyto',
+  ])
+  const out = {}
+  for (const [k, v] of Object.entries(payload || {})) {
+    if (skip.has(k)) continue
+    const val = String(v ?? '').trim()
+    if (val) out[k] = val.slice(0, 500)
+  }
+  return out
+}
+
+async function notifyOwner(fields) {
+  if (!NOTIFY_EMAIL) return
+  try {
+    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(NOTIFY_EMAIL)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        ...fields,
+        _subject: `[${fields.site || 'Lead'}] new info · ${fields.source || 'unknown'}`,
+        _template: 'table',
+        _captcha: 'false',
+        _replyto: fields.email || NOTIFY_EMAIL,
+      }),
+    })
+  } catch {
+    // non-fatal
+  }
+}
+
+async function upsertCustomer(email, source, extras) {
   const search = await square('/v2/customers/search', {
     method: 'POST',
     body: { query: { filter: { email_address: { exact: email } } }, limit: 1 },
   })
   const existing = (search.customers || [])[0]
-  const note = `Jersey Deals lead · source:${source || 'unknown'} · at:${new Date().toISOString()}`
+  const phone = extras.phone || extras.phone_number || ''
+  const note = [
+    'Jersey Deals lead',
+    `source:${source || 'unknown'}`,
+    phone ? `phone:${phone}` : null,
+    extras.name ? `name:${extras.name}` : null,
+    `at:${new Date().toISOString()}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  const customerBody = {
+    email_address: email,
+    note,
+    reference_id: existing?.reference_id || 'jerseydeals',
+  }
+  if (phone) customerBody.phone_number = phone
+  if (extras.name) {
+    const parts = extras.name.split(/\s+/)
+    customerBody.given_name = parts[0]
+    if (parts.length > 1) customerBody.family_name = parts.slice(1).join(' ')
+  }
+
   if (existing?.id) {
     const prev = existing.note || ''
-    const nextNote = prev.includes(source || '') ? prev : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
+    const nextNote = prev.includes(source || '')
+      ? prev
+      : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
+    customerBody.note = nextNote
     await square(`/v2/customers/${existing.id}`, {
       method: 'PUT',
-      body: {
-        customer: {
-          email_address: email,
-          note: nextNote,
-          reference_id: existing.reference_id || 'jerseydeals',
-        },
-      },
+      body: { customer: customerBody },
     })
     return { id: existing.id, created: false }
   }
@@ -70,9 +130,7 @@ async function upsertCustomer(email, source) {
     method: 'POST',
     body: {
       idempotency_key: randomUUID(),
-      email_address: email,
-      note,
-      reference_id: 'jerseydeals',
+      ...customerBody,
     },
   })
   return { id: created.customer?.id, created: true }
@@ -120,14 +178,28 @@ const server = createServer(async (req, res) => {
   const source = String(payload.source || 'unknown')
     .trim()
     .slice(0, 80)
+  const product = String(payload.product || 'Jersey Deals').trim().slice(0, 80)
+  const site = String(payload.site || 'Jersey Deals').trim().slice(0, 80)
+  const extras = pickExtras(payload)
   if (!isValidEmail(email)) {
     send(res, 400, { ok: false, error: 'Invalid email' }, origin)
     return
   }
 
   try {
-    const result = await upsertCustomer(email, source)
+    const result = await upsertCustomer(email, source, extras)
     console.log(`${result.created ? 'created' : 'updated'} ${email} (${source})`)
+    await notifyOwner({
+      email,
+      ...extras,
+      source,
+      product,
+      site,
+      list: 'jerseydeals_leads',
+      collected_at: new Date().toISOString(),
+      square_customer_id: result.id || '',
+      square_created: String(!!result.created),
+    })
     send(res, 200, { ok: true, customerId: result.id, created: result.created }, origin)
   } catch (err) {
     console.error(err)
@@ -136,5 +208,5 @@ const server = createServer(async (req, res) => {
 })
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Jersey Deals email collector listening on :${PORT}`)
+  console.log(`Jersey Deals email collector listening on :${PORT} → notify ${NOTIFY_EMAIL}`)
 })

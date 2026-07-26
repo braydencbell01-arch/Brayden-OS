@@ -710,31 +710,40 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     return false;
   }
 
-  function collectLead(email, source){
+  function collectLead(email, source, extras){
     var tasks=[];
+    var extra=extras||{};
+    var payload={
+      email:email,
+      source:source,
+      product:"Jersey Deals",
+      site:"Square Online",
+      list:"jerseydeals_leads",
+      collected_at:new Date().toISOString()
+    };
+    Object.keys(extra).forEach(function(k){
+      var v=String(extra[k]||"").trim();
+      if(v) payload[k]=v.slice(0,500);
+    });
     if(COLLECT_URL){
       var headers={"Content-Type":"application/json","Accept":"application/json"};
       if(COLLECT_SECRET) headers["X-JD-Collect-Secret"]=COLLECT_SECRET;
       tasks.push(fetch(COLLECT_URL,{
         method:"POST",
         headers:headers,
-        body:JSON.stringify({email:email,source:source,product:"Jersey Deals",site:"Jersey Deals"})
+        body:JSON.stringify(payload)
       }).catch(function(){ return null; }));
     }
     if(CONTACT_EMAIL){
       tasks.push(fetch("https://formsubmit.co/ajax/"+encodeURIComponent(CONTACT_EMAIL),{
         method:"POST",
         headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body:JSON.stringify({
-          email:email,
-          source:source,
-          product:"Jersey Deals",
-          site:"Square Online",
-          list:"jerseydeals_leads",
-          _subject:"[Jersey Deals] signup · "+source,
+        body:JSON.stringify(Object.assign({}, payload, {
+          _subject:"[Jersey Deals / Square] new info · "+source,
           _template:"table",
-          _captcha:"false"
-        })
+          _captcha:"false",
+          _replyto:email
+        }))
       }).catch(function(){ return null; }));
     }
     return Promise.all(tasks);

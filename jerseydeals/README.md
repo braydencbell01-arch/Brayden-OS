@@ -27,7 +27,7 @@ Edit `src/config.ts` or set env vars when building:
 | Variable | Purpose |
 |----------|---------|
 | `VITE_SQUARE_STORE_URL` | Square Online storefront URL (CTAs switch to Square when set) |
-| `VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT` | Jersey Deals–only form POST URL. Default: FormSubmit → `CONTACT_EMAIL`. Never share with BrayStats. |
+| `VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT` | Jersey Deals form POST URL. Default: FormSubmit → `shop@jerseydeals.online` (`CONTACT_EMAIL`). |
 | `VITE_JERSEYDEALS_EMAIL_API_URL` | Collector API that upserts **Square Customers** (Cloudflare Worker). |
 | `VITE_JERSEYDEALS_EMAIL_API_SECRET` | Optional shared secret header for the collector. |
 | `VITE_GA_ID` | Optional GA4 measurement ID |

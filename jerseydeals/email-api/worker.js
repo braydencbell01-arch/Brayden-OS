@@ -1,16 +1,19 @@
 /**
- * Cloudflare Worker: collect Jersey Deals emails into Square Customers.
+ * Cloudflare Worker: collect Jersey Deals leads into Square Customers
+ * and email the collected fields to shop@jerseydeals.online.
  *
  * Secrets:
  *   SQUARE_ACCESS_TOKEN
  *   (optional) COLLECT_SECRET — if set, require header X-JD-Collect-Secret
+ *   (optional) NOTIFY_EMAIL — defaults to shop@jerseydeals.online
  *
- * POST JSON: { email, source?, product? }
+ * POST JSON: { email, phone?, name?, message?, source?, product?, site?, ... }
  * OPTIONS for CORS
  */
 
 const SQUARE_HOST = 'https://connect.squareup.com'
 const SQUARE_VERSION = '2025-10-16'
+const DEFAULT_NOTIFY = 'shop@jerseydeals.online'
 
 function corsHeaders(origin) {
   return {
@@ -58,7 +61,37 @@ async function square(env, path, { method = 'GET', body } = {}) {
   return data
 }
 
-async function upsertCustomer(env, email, source) {
+function pickExtras(payload) {
+  const skip = new Set(['email', 'source', 'product', 'site', 'list', '_subject', '_template', '_captcha', '_replyto'])
+  const out = {}
+  for (const [k, v] of Object.entries(payload || {})) {
+    if (skip.has(k)) continue
+    const val = String(v ?? '').trim()
+    if (val) out[k] = val.slice(0, 500)
+  }
+  return out
+}
+
+async function notifyOwner(env, fields) {
+  const to = String(env.NOTIFY_EMAIL || DEFAULT_NOTIFY).trim() || DEFAULT_NOTIFY
+  try {
+    await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        ...fields,
+        _subject: `[${fields.site || 'Lead'}] new info · ${fields.source || 'unknown'}`,
+        _template: 'table',
+        _captcha: 'false',
+        _replyto: fields.email || to,
+      }),
+    })
+  } catch {
+    // non-fatal — Square upsert still succeeded
+  }
+}
+
+async function upsertCustomer(env, email, source, extras) {
   const search = await square(env, '/v2/customers/search', {
     method: 'POST',
     body: {
@@ -71,23 +104,35 @@ async function upsertCustomer(env, email, source) {
     },
   })
   const existing = (search.customers || [])[0]
-  const noteParts = ['Jersey Deals lead', source ? `source:${source}` : null, `at:${new Date().toISOString()}`].filter(
-    Boolean,
-  )
+  const phone = extras.phone || extras.phone_number || ''
+  const noteParts = [
+    'Jersey Deals lead',
+    source ? `source:${source}` : null,
+    phone ? `phone:${phone}` : null,
+    extras.name ? `name:${extras.name}` : null,
+    `at:${new Date().toISOString()}`,
+  ].filter(Boolean)
   const note = noteParts.join(' · ')
+
+  const customerBody = {
+    email_address: email,
+    note,
+    reference_id: existing?.reference_id || 'jerseydeals',
+  }
+  if (phone) customerBody.phone_number = phone
+  if (extras.name) {
+    const parts = extras.name.split(/\s+/)
+    customerBody.given_name = parts[0]
+    if (parts.length > 1) customerBody.family_name = parts.slice(1).join(' ')
+  }
 
   if (existing?.id) {
     const prev = existing.note || ''
     const nextNote = prev.includes(source || '') ? prev : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
+    customerBody.note = nextNote
     await square(env, `/v2/customers/${existing.id}`, {
       method: 'PUT',
-      body: {
-        customer: {
-          email_address: email,
-          note: nextNote,
-          reference_id: existing.reference_id || 'jerseydeals',
-        },
-      },
+      body: { customer: customerBody },
     })
     return { id: existing.id, created: false }
   }
@@ -96,9 +141,7 @@ async function upsertCustomer(env, email, source) {
     method: 'POST',
     body: {
       idempotency_key: crypto.randomUUID(),
-      email_address: email,
-      note,
-      reference_id: 'jerseydeals',
+      ...customerBody,
     },
   })
   return { id: created.customer?.id, created: true }
@@ -140,18 +183,27 @@ export default {
     const source = String(payload.source || 'unknown')
       .trim()
       .slice(0, 80)
+    const product = String(payload.product || 'Jersey Deals').trim().slice(0, 80)
+    const site = String(payload.site || 'Jersey Deals').trim().slice(0, 80)
+    const extras = pickExtras(payload)
 
     if (!isValidEmail(email)) {
       return json({ ok: false, error: 'Invalid email' }, 400, origin)
     }
 
-    // Block obvious trash
-    if (email.endsWith('@example.com') && source === 'agent_test') {
-      // allow test from us; still upsert
-    }
-
     try {
-      const result = await upsertCustomer(env, email, source)
+      const result = await upsertCustomer(env, email, source, extras)
+      await notifyOwner(env, {
+        email,
+        ...extras,
+        source,
+        product,
+        site,
+        list: 'jerseydeals_leads',
+        collected_at: new Date().toISOString(),
+        square_customer_id: result.id || '',
+        square_created: String(!!result.created),
+      })
       return json({ ok: true, customerId: result.id, created: result.created }, 200, origin)
     } catch (err) {
       return json({ ok: false, error: String(err.message || err).slice(0, 240) }, 502, origin)
