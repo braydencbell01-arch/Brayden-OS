@@ -1665,7 +1665,10 @@ export default function App() {
         </section>
 
         {/* Shop Premier League */}
-        <section id="epl" className="scroll-mt-44 relative overflow-hidden bg-navy-deep py-20 md:py-28">
+        <section
+          id="epl"
+          className="scroll-mt-44 relative overflow-hidden border-[3px] border-[#37003c] bg-navy-deep py-20 md:border-4 md:py-28"
+        >
           <img
             src={asset('epl-kits-bg.jpg')}
             alt=""
