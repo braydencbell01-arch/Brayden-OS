@@ -26,8 +26,8 @@ export const EBAY_RATINGS = [
   { label: 'Communication', score: 4.6 },
 ] as const
 
-/** Restock / newsletter mailto (static Pages has no backend). */
-export const CONTACT_EMAIL = 'braydencbell01@gmail.com'
+/** Official shop inbox + FormSubmit / restock mailto target. */
+export const CONTACT_EMAIL = 'shop@jerseydeals.online'
 
 /** Optional GA4 measurement ID — leave empty to skip. */
 export const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_ID as string | undefined)?.trim() || ''
