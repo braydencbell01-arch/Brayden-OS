@@ -6,6 +6,7 @@ Two **separate** products with permanent GitHub Pages URLs:
 |---------|--------|--------------------|
 | **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
 | **Jersey Deals** | [`jerseydeals/`](./jerseydeals) | https://jerseydeals.online/ |
+| **Square store** | Square Online | https://jerseydealsofficial.square.site/ |
 
 **Agents:** read [`AGENTS.md`](./AGENTS.md) before editing or deploying. Merge into `Brayden-OS` before treating work as done.
 
@@ -62,8 +63,9 @@ npm run preview
 
 Separate project — see [`jerseydeals/README.md`](./jerseydeals/README.md).
 
-**Permanent live link (always latest deploy):**  
-https://jerseydeals.online/
+**Permanent live links:**  
+- Jersey Deals: https://jerseydeals.online/  
+- Square store: https://jerseydealsofficial.square.site/  
 
 BrayStats (root of the same Pages site):  
 https://braydencbell01-arch.github.io/Brayden-OS/
