@@ -105,7 +105,7 @@ function xmlText(xml, tag) {
   return m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()
 }
 
-async function updateSquareDescription(itemId, description) {
+async function updateSquareDescription(itemId, _description) {
   const fresh = await square(`/v2/catalog/object/${itemId}`)
   const latest = fresh.object
   if (!latest || latest.type !== 'ITEM') throw new Error('not an ITEM')

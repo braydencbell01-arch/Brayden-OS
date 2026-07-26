@@ -58,12 +58,14 @@ import {
   isSquareCatalog,
   isYouthListing,
   kitType,
+  leaguesInStock,
   listingBuyUrl,
   listingImages,
   listingPrimaryImage,
   listingProductPageUrl,
   listingSize,
   lowestSalePrice,
+  matchesLeagueFilter,
   matchesListingQuery,
   matchesPriceFilter,
   matchesTypeFilter,
@@ -71,6 +73,7 @@ import {
   pickNewDrops,
   pickSaleItems,
   pickTrending,
+  premierLeagueClubsInStock,
   PRICE_FILTERS,
   pushRecentlyViewed,
   readRecentlyViewed,
@@ -80,6 +83,7 @@ import {
   sortSizes,
   TYPE_FILTERS,
   type ClubInfo,
+  type LeagueInfo,
   type Listing,
   type ListingsPayload,
   type PriceFilterId,
@@ -236,8 +240,7 @@ const BRAND_MARQUEE = [
   'Adidas',
   'Puma',
   'Club kits',
-  'National teams',
-  'Youth sizes',
+  'Country kits',
   'Training',
   'Pre-match',
   'Sale rack',
@@ -792,6 +795,7 @@ export default function App() {
   const [cartToast, setCartToast] = useState<string | null>(null)
   const [trendingFilter, setTrendingFilter] = useState<'All' | 'Youth' | 'Training' | 'Jerseys' | 'Sale'>('All')
   const [clubFilter, setClubFilter] = useState<string>('All')
+  const [leagueFilter, setLeagueFilter] = useState<string>('All')
   const [sortBy, setSortBy] = useState<SortId>('featured')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [quickView, setQuickView] = useState<Listing | null>(null)
@@ -978,6 +982,8 @@ export default function App() {
   )
   const saleFloor = lowestSalePrice(listings)
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
+  const leaguesData = useMemo<LeagueInfo[]>(() => leaguesInStock(listings), [listings])
+  const eplClubs = useMemo<ClubInfo[]>(() => premierLeagueClubsInStock(listings), [listings])
   const trendingPicks = useMemo(() => pickTrending(listings, 8), [listings])
   const channelLabel = onSquare ? 'Square' : 'eBay'
   const recentlyViewed = useMemo(() => {
@@ -1004,15 +1010,37 @@ export default function App() {
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
       if (clubFilter !== 'All' && inferClub(item.title)?.id !== clubFilter) return false
+      if (!matchesLeagueFilter(item, leagueFilter)) return false
       if (!matchesPriceFilter(item, priceFilter)) return false
       return matchesListingQuery(item, deferredQuery)
     })
     return sortListings(rows, sortBy)
-  }, [listings, tagFilter, genderFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+  }, [
+    listings,
+    tagFilter,
+    genderFilter,
+    sizeFilter,
+    brandFilter,
+    clubFilter,
+    leagueFilter,
+    priceFilter,
+    deferredQuery,
+    sortBy,
+  ])
 
   useEffect(() => {
     setInventoryLimit(12)
-  }, [tagFilter, genderFilter, sizeFilter, brandFilter, clubFilter, priceFilter, deferredQuery, sortBy])
+  }, [
+    tagFilter,
+    genderFilter,
+    sizeFilter,
+    brandFilter,
+    clubFilter,
+    leagueFilter,
+    priceFilter,
+    deferredQuery,
+    sortBy,
+  ])
 
   const visibleInventory = useMemo(
     () => filtered.slice(0, inventoryLimit),
@@ -1038,6 +1066,13 @@ export default function App() {
     }
     if (sizeFilter !== 'All') chips.push({ key: 'size', label: sizeFilter, clear: () => setSizeFilter('All') })
     if (brandFilter !== 'All') chips.push({ key: 'brand', label: brandFilter, clear: () => setBrandFilter('All') })
+    if (leagueFilter !== 'All') {
+      chips.push({
+        key: 'league',
+        label: leaguesData.find((l) => l.id === leagueFilter)?.name ?? leagueFilter,
+        clear: () => setLeagueFilter('All'),
+      })
+    }
     if (clubFilter !== 'All') {
       chips.push({
         key: 'club',
@@ -1056,7 +1091,18 @@ export default function App() {
       })
     }
     return chips
-  }, [genderFilter, tagFilter, priceFilter, sizeFilter, brandFilter, clubFilter, deferredQuery, clubsData])
+  }, [
+    genderFilter,
+    tagFilter,
+    priceFilter,
+    sizeFilter,
+    brandFilter,
+    clubFilter,
+    leagueFilter,
+    deferredQuery,
+    clubsData,
+    leaguesData,
+  ])
 
   function clearAllFilters() {
     setTagFilter('All')
@@ -1065,6 +1111,7 @@ export default function App() {
     setPriceFilter('All')
     setGenderFilter('All')
     setClubFilter('All')
+    setLeagueFilter('All')
     setQuery('')
     setAppliedQuery('')
     setSortBy('featured')
@@ -1113,6 +1160,7 @@ export default function App() {
     audience?: GenderFilter | 'Adult'
     gender?: GenderFilter
     clubId?: string
+    leagueId?: string
     reset?: boolean
     focusSearch?: boolean
   }) {
@@ -1125,6 +1173,7 @@ export default function App() {
       setTagFilter('All')
       setGenderFilter('All')
       setClubFilter('All')
+      setLeagueFilter('All')
       setSortBy('featured')
     }
     if (next?.tag !== undefined) setTagFilter(next.tag)
@@ -1139,6 +1188,7 @@ export default function App() {
       setGenderFilter(genderNext === 'Adult' ? 'Men' : genderNext)
     }
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
+    if (next?.leagueId !== undefined) setLeagueFilter(next.leagueId)
     scrollToInventoryBrowse({ focusSearch: next?.focusSearch })
   }
 
@@ -1152,6 +1202,7 @@ export default function App() {
     const brand = params.get('brand')
     const price = params.get('price')
     const club = params.get('club')
+    const league = params.get('league')
     const sort = params.get('sort')
     if (q) {
       setQuery(q)
@@ -1164,6 +1215,7 @@ export default function App() {
     if (brand) setBrandFilter(brand)
     if (price && PRICE_FILTERS.some((row) => row.id === price)) setPriceFilter(price as PriceFilterId)
     if (club) setClubFilter(club)
+    if (league) setLeagueFilter(league)
     if (sort && SORT_OPTIONS.some((row) => row.id === sort)) setSortBy(sort as SortId)
     urlHydrated.current = true
   }, [])
@@ -1205,6 +1257,7 @@ export default function App() {
     if (brandFilter !== 'All') params.set('brand', brandFilter)
     if (priceFilter !== 'All') params.set('price', priceFilter)
     if (clubFilter !== 'All') params.set('club', clubFilter)
+    if (leagueFilter !== 'All') params.set('league', leagueFilter)
     if (sortBy !== 'featured') params.set('sort', sortBy)
     const next = params.toString()
     const url = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
@@ -1212,7 +1265,17 @@ export default function App() {
     // Avoid replaceState spam — iOS Safari can choke on repeated history updates.
     if (url === currentUrl) return
     window.history.replaceState(null, '', url)
-  }, [appliedQuery, genderFilter, tagFilter, sizeFilter, brandFilter, priceFilter, clubFilter, sortBy])
+  }, [
+    appliedQuery,
+    genderFilter,
+    tagFilter,
+    sizeFilter,
+    brandFilter,
+    priceFilter,
+    clubFilter,
+    leagueFilter,
+    sortBy,
+  ])
 
   const heroImage = asset('hero-jersey.jpg')
 
@@ -1228,6 +1291,7 @@ export default function App() {
 
   const navLinks = [
     { href: '#shop', label: 'Shop' },
+    { href: '#epl', label: 'EPL' },
     { href: '#new-drops', label: 'New' },
     { href: '#clubs', label: 'Clubs' },
     { href: '#sale', label: 'Sale' },
@@ -1523,8 +1587,7 @@ export default function App() {
               </h1>
               <div className="brand-rule mt-4" aria-hidden />
               <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/80 md:text-lg">
-                Club kits, youth sizes, and sale jerseys — photographed from our inventory and sold
-                direct.
+                Club, country, and training jerseys — photographed from our inventory and sold direct.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <motion.button
@@ -1588,11 +1651,94 @@ export default function App() {
 
         {/* Service strip */}
         <section className="bg-navy text-cream">
-          <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.18em] text-cream/75 md:px-8 md:justify-between">
+          <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.18em] text-cream/90 md:px-8 md:justify-between">
             {SERVICE_POINTS.map((point) => (
               <li key={point}>{point}</li>
             ))}
           </ul>
+        </section>
+
+        {/* Shop Premier League */}
+        <section id="epl" className="scroll-mt-44 relative overflow-hidden bg-navy-deep py-20 md:py-28">
+          <img
+            src={asset('epl-tunnel.jpg')}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/92 via-navy-deep/78 to-navy/55" />
+          <img
+            src={asset('premier-league-badge.png')}
+            alt=""
+            className="absolute right-4 top-4 z-10 h-14 w-14 object-contain drop-shadow-lg md:right-8 md:top-8 md:h-20 md:w-20"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8">
+            <motion.div {...fadeUp(reduce)} className="max-w-xl">
+              <p className="eyebrow text-cream/80">English Premier League</p>
+              <div className="brand-rule mt-3" aria-hidden />
+              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-cream md:text-6xl">
+                Shop Premier League
+              </h2>
+              <p className="mt-3 max-w-md font-brand text-lg text-cream/85">
+                Real EPL stock from our US inventory — tap Shop EPL to browse every club we carry.
+              </p>
+              <a
+                href="#epl-clubs"
+                onClick={() => track('cta_click', { place: 'shop_epl' })}
+                className="mt-8 inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+              >
+                Shop EPL
+              </a>
+            </motion.div>
+
+            <div id="epl-clubs" className="mt-14 scroll-mt-44">
+              <p className="eyebrow text-cream/70">Clubs in stock</p>
+              {eplClubs.length > 0 ? (
+                <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
+                  {eplClubs.map((club, i) => (
+                    <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          track('category_click', { category: 'epl_club', club: club.id })
+                          goInventory({
+                            reset: true,
+                            clubId: club.id,
+                            leagueId: 'premier-league',
+                            query: club.name,
+                          })
+                        }}
+                        className="group flex w-full flex-col overflow-hidden border border-cream/20 bg-navy/70 text-left outline-none transition hover:border-cream/50 focus-visible:ring-2 focus-visible:ring-crimson"
+                      >
+                        <div className="aspect-square overflow-hidden bg-mist">
+                          <img
+                            src={club.image || FALLBACK_IMAGE}
+                            alt=""
+                            className="h-full w-full object-contain object-center transition duration-500 group-hover:scale-[1.04]"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        </div>
+                        <div className="px-3 py-3">
+                          <p className="font-display text-sm font-bold uppercase tracking-wide text-cream">
+                            {club.name}
+                          </p>
+                          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-cream/70">
+                            {club.count} kit{club.count === 1 ? '' : 's'} · search
+                          </p>
+                        </div>
+                      </button>
+                    </motion.li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-4 font-brand text-cream/75">Premier League kits will appear here when in stock.</p>
+              )}
+            </div>
+          </div>
         </section>
 
         {/* Editorial shop paths */}
@@ -1605,7 +1751,7 @@ export default function App() {
                 Shop the floor
               </h2>
               <p className="mt-3 font-brand text-lg text-muted">
-                Youth sizes, sale racks, or the full live catalog — pick a path.
+                Country kits, sale racks, or the full live catalog — pick a path.
               </p>
             </motion.div>
 
@@ -2251,6 +2397,27 @@ export default function App() {
                         />
                       ))}
                     </FilterRow>
+
+                    {leaguesData.length > 0 ? (
+                      <FilterRow label="League">
+                        <FilterChip
+                          label="All"
+                          active={leagueFilter === 'All'}
+                          onClick={() => setLeagueFilter('All')}
+                        />
+                        {leaguesData.map((league) => (
+                          <FilterChip
+                            key={league.id}
+                            label={league.name}
+                            active={leagueFilter === league.id}
+                            onClick={() => {
+                              setLeagueFilter(league.id)
+                              track('league_filter', { league: league.id })
+                            }}
+                          />
+                        ))}
+                      </FilterRow>
+                    ) : null}
 
                     <FilterRow label="Price">
                       {PRICE_FILTERS.map((range) => (

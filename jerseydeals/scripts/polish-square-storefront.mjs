@@ -229,16 +229,30 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
   opacity:.94;transform:translateY(-1px);
   box-shadow:0 10px 28px rgba(215,40,47,.34);
 }
-/* Hero / banner */
+/* Hero / banner — Premier League tunnel backdrop */
 [class*="banner"],[data-ux="Banner"],section[class*="Banner"]{
   position:relative;
   min-height:min(72vh,640px);
   background:
-    linear-gradient(135deg,rgba(6,16,28,.88),rgba(11,34,63,.72) 45%,rgba(215,40,47,.35)),
-    radial-gradient(1200px 500px at 80% 20%,rgba(215,40,47,.25),transparent 60%),
+    linear-gradient(135deg,rgba(6,16,28,.88),rgba(11,34,63,.72) 45%,rgba(215,40,47,.28)),
+    url("https://jerseydeals.online/epl-tunnel.jpg") center/cover no-repeat,
     #06101c!important;
   background-size:cover!important;
   background-position:center!important;
+}
+.jd-epl-badge{
+  position:absolute;top:1rem;right:1rem;z-index:5;
+  width:4.5rem;height:4.5rem;object-fit:contain;
+  filter:drop-shadow(0 6px 16px rgba(0,0,0,.45));
+  pointer-events:none;
+}
+.jd-shop-epl{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  margin:1rem auto 0;padding:.9rem 1.4rem!important;
+  background:var(--jd-crimson)!important;color:#fff!important;
+  border-radius:999px!important;font-weight:700!important;
+  letter-spacing:.14em;text-transform:uppercase;text-decoration:none!important;
+  font-size:.72rem!important;
 }
 [class*="banner"] h1,[class*="banner"] h2,[class*="banner"] [class*="title"],
 [class*="banner"] [class*="Headline"],[data-ux="Banner"] h1,[data-ux="Banner"] h2{
@@ -269,7 +283,7 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
 a[href*="/product/"]{
   text-decoration:none!important;
 }
-/* Shop / Shop All card titles under product photos */
+/* Shop / Shop All card titles — navy on light cards (never white-on-chalk). */
 a[href*="/product/"] [class*="title"],a[href*="/product/"] h2,a[href*="/product/"] h3,
 a[href*="/product/"] h4,
 [class*="ProductCard"] [class*="title"],
@@ -278,12 +292,12 @@ a[href*="/product/"] h4,
 [class*="product-grid"] [class*="title"]{
   font-family:"Outfit",system-ui,sans-serif!important;
   font-weight:600!important;
-  color:var(--jd-white)!important;
+  color:var(--jd-navy)!important;
   font-size:.95rem!important;
   line-height:1.35!important;
   letter-spacing:.01em;
 }
-/* Product detail page title (beside/under gallery photos) */
+/* Product detail page title (beside/under gallery photos) — high contrast on light PDP */
 h1.w-product-title,
 h1.text-component.w-product-title,
 .w-product-title,
@@ -294,7 +308,28 @@ h1.text-component.w-product-title,
 [class*="productDetail"] h1{
   font-family:"Outfit",system-ui,sans-serif!important;
   font-weight:700!important;
-  color:var(--jd-white)!important;
+  color:var(--jd-navy)!important;
+  text-shadow:none!important;
+}
+/* Cart / empty states — never dark-on-dark or light-on-light */
+[class*="cart"] ,[class*="Cart"],[data-ux*="Cart"],[href*="/s/cart"],
+[class*="mini-cart"],[class*="MiniCart"],[class*="drawer"]{
+  --jd-cart-fg:var(--jd-navy);
+}
+[class*="cart"] h1,[class*="cart"] h2,[class*="cart"] h3,[class*="cart"] p,
+[class*="Cart"] h1,[class*="Cart"] h2,[class*="Cart"] h3,[class*="Cart"] p,
+[data-ux*="Cart"] h1,[data-ux*="Cart"] h2,[data-ux*="Cart"] h3,[data-ux*="Cart"] p,
+[class*="cart"] [class*="empty"],[class*="Cart"] [class*="empty"],
+[class*="cart"] [class*="title"],[class*="Cart"] [class*="title"]{
+  color:var(--jd-navy)!important;
+}
+/* If a cart panel is dark, force light text */
+[class*="cart"][style*="rgb(6"],[class*="cart"][style*="#06"],
+[class*="Cart"][class*="dark"],.bg-navy [class*="cart"]{
+  color:#fff!important;
+}
+/* Hard override for common empty-cart copy */
+[class*="cart"] *:not(a):not(button),[class*="Cart"] *:not(a):not(button){
   text-shadow:none!important;
 }
 [class*="price"],[data-aid*="PRODUCT_PRICE"]{
@@ -375,8 +410,12 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   var OFFER_KEY="jerseydeals.offer.v1";
   var PURCHASED_KEY="jerseydeals.purchased.v1";
   var EMAIL_KEY="jerseydeals.buyerEmail.v1";
-  var HERO="Authentic kits. Real stock. Ships from the U.S.";
-  var HERO_SUB="Club, youth, and training jerseys — photographed from our inventory.";
+  var HERO="Shop Premier League";
+  var HERO_SUB="Club, country, and training jerseys — photographed from our inventory.";
+  var JD_SITE="https://jerseydeals.online/";
+  var EPL_URL=JD_SITE+"#epl";
+  var EPL_TUNNEL=JD_SITE+"epl-tunnel.jpg";
+  var EPL_BADGE=JD_SITE+"premier-league-badge.png";
   var FOOTER_DEMO=/Thanks for exploring this Square Online Theme/i;
   var TEMPLATE_HERO=/Get started with this free eCommerce template for retailers\\.?/i;
 
@@ -467,34 +506,77 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     var n; while((n=w.nextNode())) fn(n);
   }
 
+  function decorateHero(el){
+    if(!el || el.getAttribute("data-jd-hero")) return;
+    el.setAttribute("data-jd-hero","1");
+    var host=el.parentElement||el;
+    var banner=el.closest('[class*="banner"],[data-ux="Banner"],section')||host;
+    if(banner && !banner.querySelector(".jd-epl-badge")){
+      var badge=document.createElement("img");
+      badge.className="jd-epl-badge";
+      badge.src=EPL_BADGE;
+      badge.alt="Premier League";
+      badge.width=72;badge.height=72;
+      banner.style.position=banner.style.position||"relative";
+      banner.appendChild(badge);
+    }
+    if(host && !host.querySelector(".jd-hero-eyebrow")){
+      var eye=document.createElement("span");
+      eye.className="jd-hero-eyebrow";
+      eye.textContent="Jersey Deals";
+      host.insertBefore(eye, el);
+    }
+    if(host && !host.querySelector(".jd-hero-sub")){
+      var sub=document.createElement("p");
+      sub.className="jd-hero-sub";
+      sub.textContent=HERO_SUB;
+      sub.style.cssText="color:rgba(243,245,247,.92);max-width:36ch;margin:.75rem auto 0;text-align:center;font-size:1rem;line-height:1.5";
+      host.insertBefore(sub, el.nextSibling);
+    }
+    if(host && !host.querySelector(".jd-shop-epl")){
+      var cta=document.createElement("a");
+      cta.className="jd-shop-epl";
+      cta.href=EPL_URL;
+      cta.target="_blank";
+      cta.rel="noopener noreferrer";
+      cta.textContent="Shop EPL";
+      var after=host.querySelector(".jd-hero-sub")||el;
+      if(after.nextSibling) host.insertBefore(cta, after.nextSibling);
+      else host.appendChild(cta);
+    }
+  }
+
   function polishCopy(){
     walkText(document.body, function(n){
       var t=n.nodeValue||"";
-      if(TEMPLATE_HERO.test(t)){
-        n.nodeValue=t.replace(TEMPLATE_HERO, HERO);
-        var el=n.parentElement;
-        if(el && !el.getAttribute("data-jd-hero")){
-          el.setAttribute("data-jd-hero","1");
-          if(!el.parentElement.querySelector(".jd-hero-eyebrow")){
-            var eye=document.createElement("span");
-            eye.className="jd-hero-eyebrow";
-            eye.textContent="Jersey Deals";
-            el.parentElement.insertBefore(eye, el);
-          }
-          if(!el.parentElement.querySelector(".jd-hero-sub")){
-            var sub=document.createElement("p");
-            sub.className="jd-hero-sub";
-            sub.textContent=HERO_SUB;
-            sub.style.cssText="color:rgba(243,245,247,.88);max-width:36ch;margin:.75rem auto 0;text-align:center;font-size:1rem;line-height:1.5";
-            el.parentElement.insertBefore(sub, el.nextSibling);
-          }
+      if(TEMPLATE_HERO.test(t) || /Authentic kits\.?\s*Real stock/i.test(t) || /^Shop Premier League$/i.test(t.trim())){
+        if(TEMPLATE_HERO.test(t) || /Authentic kits\.?\s*Real stock/i.test(t)){
+          n.nodeValue=t.replace(TEMPLATE_HERO, HERO).replace(/Authentic kits\.?\s*Real stock\.?\s*Ships from the U\.S\.?/i, HERO);
         }
+        decorateHero(n.parentElement);
+      }
+      if(/Club,\s*youth,\s*and\s*training\s*jerseys/i.test(t)){
+        n.nodeValue=t.replace(/Club,\s*youth,\s*and\s*training\s*jerseys/ig, "Club, country, and training jerseys");
       }
       if(FOOTER_DEMO.test(t)){
         n.nodeValue="Thanks for signing up — we'll share new drops and deals. No spam.";
       }
       if(/^Stay in the Loop$/i.test(t.trim())){
         n.nodeValue="Join the drop list";
+      }
+      // Empty-cart contrast: force readable navy text when Square uses dark panels
+      if(/your cart is empty|cart is empty/i.test(t.trim())){
+        var p=n.parentElement;
+        if(p){
+          p.style.color="#0b223f";
+          p.style.background="#f3f5f7";
+          p.style.padding="1.25rem";
+          var box=p.closest('[class*="cart"],[class*="Cart"],[data-ux*="Cart"]')||p.parentElement;
+          if(box){
+            box.style.background="#f3f5f7";
+            box.style.color="#0b223f";
+          }
+        }
       }
     });
   }

@@ -359,6 +359,74 @@ export function clubsInStock(listings: Listing[]): ClubInfo[] {
   return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
+/** League membership for known clubs / nations (Syracuse → NCAA). */
+export const LEAGUE_BY_CLUB_ID: Record<string, { id: string; name: string }> = {
+  'manchester-city': { id: 'premier-league', name: 'Premier League' },
+  'manchester-united': { id: 'premier-league', name: 'Premier League' },
+  liverpool: { id: 'premier-league', name: 'Premier League' },
+  chelsea: { id: 'premier-league', name: 'Premier League' },
+  tottenham: { id: 'premier-league', name: 'Premier League' },
+  arsenal: { id: 'premier-league', name: 'Premier League' },
+  newcastle: { id: 'premier-league', name: 'Premier League' },
+  'real-madrid': { id: 'la-liga', name: 'La Liga' },
+  barcelona: { id: 'la-liga', name: 'La Liga' },
+  'ac-milan': { id: 'serie-a', name: 'Serie A' },
+  juventus: { id: 'serie-a', name: 'Serie A' },
+  'borussia-dortmund': { id: 'bundesliga', name: 'Bundesliga' },
+  bayern: { id: 'bundesliga', name: 'Bundesliga' },
+  'paris-saint-germain': { id: 'ligue-1', name: 'Ligue 1' },
+  ajax: { id: 'eredivisie', name: 'Eredivisie' },
+  'inter-miami': { id: 'mls', name: 'MLS' },
+  germany: { id: 'international', name: 'International' },
+  spain: { id: 'international', name: 'International' },
+  argentina: { id: 'international', name: 'International' },
+  mexico: { id: 'international', name: 'International' },
+  usa: { id: 'international', name: 'International' },
+  syracuse: { id: 'ncaa', name: 'NCAA' },
+}
+
+export const PREMIER_LEAGUE_CLUB_IDS = new Set(
+  Object.entries(LEAGUE_BY_CLUB_ID)
+    .filter(([, league]) => league.id === 'premier-league')
+    .map(([clubId]) => clubId),
+)
+
+export type LeagueInfo = {
+  id: string
+  name: string
+  count: number
+}
+
+export function inferLeague(title: string): { id: string; name: string } | null {
+  const club = inferClub(title)
+  if (!club) return null
+  return LEAGUE_BY_CLUB_ID[club.id] ?? null
+}
+
+export function leaguesInStock(listings: Listing[]): LeagueInfo[] {
+  const map = new Map<string, LeagueInfo>()
+  for (const item of listings) {
+    const league = inferLeague(item.title)
+    if (!league) continue
+    const existing = map.get(league.id)
+    if (existing) {
+      existing.count += 1
+      continue
+    }
+    map.set(league.id, { id: league.id, name: league.name, count: 1 })
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+}
+
+export function premierLeagueClubsInStock(listings: Listing[]): ClubInfo[] {
+  return clubsInStock(listings).filter((club) => PREMIER_LEAGUE_CLUB_IDS.has(club.id))
+}
+
+export function matchesLeagueFilter(item: Listing, leagueId: string) {
+  if (leagueId === 'All') return true
+  return inferLeague(item.title)?.id === leagueId
+}
+
 export function isAdultListing(item: Listing) {
   if (isYouthListing(item)) return false
   // Everything non-youth counts as men's / adult until women's inventory is added.

@@ -14,11 +14,30 @@
   --color-cream-deep: #f3e8d4;
   --color-chalk: #fcf5e9;
   --color-mist: #f3e8d4;
-  --color-muted: #5a6470;
+  /* Keep muted ≥ ~4.5:1-ish on cream; never use on dark panels without text-cream */
+  --color-muted: #4a5560;
   --color-white: #ffffff;
 }
 
 @layer base {
+  /* Contrast guardrails: dark surfaces get light text; light surfaces get dark text. */
+  .bg-navy,
+  .bg-navy-deep,
+  [class*='bg-navy'] {
+    color: var(--color-cream);
+  }
+
+  .bg-cream,
+  .bg-cream-deep,
+  .bg-chalk,
+  .bg-mist,
+  .bg-white,
+  [class*='bg-cream'],
+  [class*='bg-chalk'],
+  [class*='bg-mist'] {
+    color: var(--color-navy);
+  }
+
   html {
     /* Smooth scrolling via CSS can crash some iOS WebKit builds when JS also scrolls. */
     scroll-behavior: auto;
