@@ -1621,7 +1621,7 @@ export default function App() {
 
           <a
             href="#shop"
-            className="absolute bottom-28 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white md:bottom-6"
+            className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white md:bottom-6"
             aria-label="Scroll to shop"
           >
             <span className="flex flex-col items-center gap-2">
