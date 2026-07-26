@@ -1,0 +1,53 @@
+name: Post to Facebook Page
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Post caption / message
+        required: true
+        type: string
+      link:
+        description: Optional link (e.g. https://jerseydeals.online/)
+        required: false
+        type: string
+        default: 'https://jerseydeals.online/'
+      image_url:
+        description: Optional public image URL (posts as a photo)
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: Print payload only (do not publish)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: facebook-page-post
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Publish to Facebook
+        env:
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          MESSAGE: ${{ inputs.message }}
+          LINK: ${{ inputs.link }}
+          IMAGE_URL: ${{ inputs.image_url }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: node jerseydeals/scripts/post-facebook.mjs
