@@ -84,47 +84,49 @@ function LeagueDropdown({
             }
       }
     >
-      <div className="flex w-full items-center gap-2 px-3 py-3">
-        <LeagueLogoMark
-          leagueId={leagueId}
-          name={league.name}
-          size="sm"
-          ringColor={accent}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-cream sm:text-base">
-            {hasFavorite ? <FavoriteDot /> : null}
-            {onOpenLeague ? (
-              <button
-                type="button"
-                onClick={() => onOpenLeague(leagueId)}
-                className="profile-link min-w-0 truncate text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-              >
-                {league.name}
-              </button>
-            ) : (
-              <span className="truncate">{league.name}</span>
-            )}
-          </p>
-          <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
-            {league.country}
-            {liveCount > 0 ? (
-              <span className="ml-2 text-lime">· {liveCount} live</span>
-            ) : null}
-          </p>
-        </div>
+      <div className="flex w-full items-stretch gap-1 px-2 py-2 sm:px-3 sm:py-2.5">
         <button
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={onToggle}
-          className="flex shrink-0 items-center gap-2 rounded px-1.5 py-1 transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-1 text-left transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
         >
-          <span className="font-display text-lg tracking-wide text-cream/85 tabular-nums">
-            {matches.length}
+          <LeagueLogoMark
+            leagueId={leagueId}
+            name={league.name}
+            size="sm"
+            ringColor={accent}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-cream sm:text-base">
+              {hasFavorite ? <FavoriteDot /> : null}
+              <span className="truncate">{league.name}</span>
+            </p>
+            <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
+              {league.country}
+              {liveCount > 0 ? (
+                <span className="ml-2 text-lime">· {liveCount} live</span>
+              ) : null}
+            </p>
+          </div>
+          <span className="flex shrink-0 items-center gap-2 px-1">
+            <span className="font-display text-lg tracking-wide text-cream/85 tabular-nums">
+              {matches.length}
+            </span>
+            <Chevron open={open} />
           </span>
-          <Chevron open={open} />
         </button>
+        {onOpenLeague ? (
+          <button
+            type="button"
+            onClick={() => onOpenLeague(leagueId)}
+            className="shrink-0 self-center rounded px-2 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/80 transition hover:bg-white/[0.04] hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+            aria-label={`${league.name} profile`}
+          >
+            Profile
+          </button>
+        ) : null}
       </div>
 
       {open ? (

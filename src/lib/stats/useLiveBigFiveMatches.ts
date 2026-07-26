@@ -136,8 +136,10 @@ export function useLiveBigFiveMatches() {
         try {
           for (const gap of gaps) {
             for (const chunk of chunkRange(gap.from, gap.to, MATCH_FETCH_CHUNK_DAYS)) {
-              const { data, complete } = await fetchAndMerge(chunk.from, chunk.to)
-              if (complete) expandLoadedBounds(chunk.from, chunk.to)
+              const { data } = await fetchAndMerge(chunk.from, chunk.to)
+              // Always mark the span attempted — one flaky ESPN league must not
+              // leave the calendar gap open and refetch forever.
+              expandLoadedBounds(chunk.from, chunk.to)
               const todayKey = toDateKey(startOfDay(new Date()))
               const latest = latestMatchDate(data, todayKey)
               if (latest) bumpKnownForward(latest)
@@ -184,8 +186,8 @@ export function useLiveBigFiveMatches() {
     if (!loadedToRef.current || loadedToRef.current < initialTo) {
       const from = loadedToRef.current ? addDays(loadedToRef.current, 1) : today
       for (const chunk of chunkRange(from, initialTo, MATCH_FETCH_CHUNK_DAYS)) {
-        const { data, complete } = await fetchAndMerge(chunk.from, chunk.to)
-        if (complete) expandLoadedBounds(chunk.from, chunk.to)
+        const { data } = await fetchAndMerge(chunk.from, chunk.to)
+        expandLoadedBounds(chunk.from, chunk.to)
         noteFixtures(data)
       }
     }
@@ -195,8 +197,8 @@ export function useLiveBigFiveMatches() {
     while (cursor <= hardStop && emptyStreak < MATCH_FORWARD_EMPTY_CHUNKS_TO_STOP) {
       const chunkEnd = addDays(cursor, MATCH_FETCH_CHUNK_DAYS - 1)
       const end = chunkEnd > hardStop ? hardStop : chunkEnd
-      const { data, complete } = await fetchAndMerge(cursor, end)
-      if (complete) expandLoadedBounds(cursor, end)
+      const { data } = await fetchAndMerge(cursor, end)
+      expandLoadedBounds(cursor, end)
       if (data.length === 0) {
         emptyStreak += 1
       } else {
@@ -222,8 +224,8 @@ export function useLiveBigFiveMatches() {
         setError(null)
 
         try {
-          const { complete } = await fetchAndMerge(from, to)
-          if (complete) expandLoadedBounds(from, to)
+          await fetchAndMerge(from, to)
+          expandLoadedBounds(from, to)
           // Show today's fixtures immediately; keep long-range discovery under refreshing.
           if (!silent) setLoading(false)
 

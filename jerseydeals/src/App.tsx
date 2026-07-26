@@ -522,7 +522,14 @@ function ProductLink({
             tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
           }`}
         >
-          <ProductCardCover item={item} tone={tone} />
+          <button
+            type="button"
+            onClick={() => onQuickView(item)}
+            className="absolute inset-0 z-10 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson"
+            aria-label={`Quick view ${shortTitle(item.title)}`}
+          >
+            <ProductCardCover item={item} tone={tone} />
+          </button>
           {onSale && (
             <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
               Sale
@@ -542,16 +549,11 @@ function ProductLink({
               {photoCount} photos
             </span>
           ) : null}
-          <button
-            type="button"
-            onClick={() => onQuickView(item)}
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:pointer-events-auto md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-            aria-label={`Quick view ${shortTitle(item.title)}`}
-          >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
               Quick view
             </span>
-          </button>
+          </div>
         </div>
         <div className="mt-4 block">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
