@@ -179,7 +179,7 @@ function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail =
   --jd-crimson:#d7282f;
   --jd-chalk:#f3f5f7;
   --jd-mist:#e4e9ef;
-  --jd-muted:#5a6470;
+  --jd-muted:#3d4650;
   --jd-white:#ffffff;
 }
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
@@ -229,16 +229,18 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
   opacity:.94;transform:translateY(-1px);
   box-shadow:0 10px 28px rgba(215,40,47,.34);
 }
-/* Hero / banner — Premier League tunnel backdrop */
+/* Hero / banner — Premier League tunnel backdrop (readable over dark photo) */
 [class*="banner"],[data-ux="Banner"],section[class*="Banner"]{
   position:relative;
   min-height:min(72vh,640px);
   background:
-    linear-gradient(135deg,rgba(6,16,28,.88),rgba(11,34,63,.72) 45%,rgba(215,40,47,.28)),
+    linear-gradient(180deg,rgba(6,16,28,.62) 0%,rgba(6,16,28,.78) 42%,rgba(6,16,28,.9) 100%),
+    linear-gradient(135deg,rgba(6,16,28,.55),rgba(11,34,63,.35) 55%,rgba(215,40,47,.22)),
     url("https://jerseydeals.online/epl-tunnel.jpg") center/cover no-repeat,
     #06101c!important;
   background-size:cover!important;
   background-position:center!important;
+  color:#fff!important;
 }
 .jd-epl-badge{
   position:absolute;top:1rem;right:1rem;z-index:5;
@@ -253,21 +255,64 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
   border-radius:999px!important;font-weight:700!important;
   letter-spacing:.14em;text-transform:uppercase;text-decoration:none!important;
   font-size:.72rem!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.35)!important;
 }
-[class*="banner"] h1,[class*="banner"] h2,[class*="banner"] [class*="title"],
-[class*="banner"] [class*="Headline"],[data-ux="Banner"] h1,[data-ux="Banner"] h2{
+/* Force readable light type across Square hero chrome (overrides theme gray/transparent). */
+[class*="banner"] h1,[class*="banner"] h2,[class*="banner"] h3,
+[class*="banner"] [class*="title"],[class*="banner"] [class*="Headline"],
+[class*="banner"] [class*="heading"],[class*="banner"] [class*="Heading"],
+[data-ux="Banner"] h1,[data-ux="Banner"] h2,[data-ux="Banner"] h3,
+[class*="banner"] [data-aid*="TITLE"],[class*="banner"] [data-aid*="HEADLINE"]{
   font-family:"Libre Baskerville",Georgia,serif!important;
   color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
   font-weight:700!important;
   letter-spacing:-.01em;
   text-wrap:balance;
   max-width:18ch;
   margin-left:auto;margin-right:auto;
-  text-shadow:0 2px 24px rgba(0,0,0,.35);
+  text-shadow:0 1px 2px rgba(0,0,0,.75),0 6px 28px rgba(0,0,0,.55)!important;
+  opacity:1!important;
 }
-[class*="banner"] p,[class*="banner"] [class*="subtitle"]{
-  color:rgba(243,245,247,.88)!important;
+[class*="banner"] p,[class*="banner"] [class*="subtitle"],[class*="banner"] [class*="Subtitle"],
+[class*="banner"] [class*="description"],[class*="banner"] [class*="Description"],
+[class*="banner"] span,[class*="banner"] li,.jd-hero-sub,.jd-hero-eyebrow{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
   font-family:"Outfit",system-ui,sans-serif!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.7),0 4px 18px rgba(0,0,0,.45)!important;
+  opacity:1!important;
+}
+[class*="banner"] p,[class*="banner"] [class*="subtitle"],.jd-hero-sub{
+  color:rgba(255,255,255,.96)!important;
+  -webkit-text-fill-color:rgba(255,255,255,.96)!important;
+}
+/* Transparent-but-readable ghost CTAs in the hero (Shop All, etc.) */
+[class*="banner"] a,[data-ux="Banner"] a,
+[class*="banner"] a[class*="button"],[class*="banner"] button[class*="button"],
+[class*="banner"] [class*="Button"],[class*="banner"] [data-aid*="BUTTON"],
+[data-ux="Banner"] a[class*="button"],[data-ux="Banner"] [data-aid*="BUTTON"]{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  border:1.5px solid rgba(255,255,255,.9)!important;
+  background:rgba(6,16,28,.42)!important;
+  backdrop-filter:blur(8px) saturate(1.1);
+  -webkit-backdrop-filter:blur(8px) saturate(1.1);
+  box-shadow:0 8px 28px rgba(0,0,0,.35)!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.55)!important;
+  opacity:1!important;
+}
+[class*="banner"] a:hover,[data-ux="Banner"] a:hover,
+[class*="banner"] a[class*="button"]:hover,[class*="banner"] [data-aid*="BUTTON"]:hover{
+  background:rgba(6,16,28,.62)!important;
+  border-color:#fff!important;
+  color:#fff!important;
+}
+/* Keep primary crimson CTA (Shop EPL) solid when present */
+[class*="banner"] a.jd-shop-epl,.jd-shop-epl{
+  background:var(--jd-crimson)!important;
+  border-color:var(--jd-crimson)!important;
+  color:#fff!important;
 }
 /* Hide generic template art where possible */
 [class*="banner"] img[src*="Artboard"],[class*="banner"] [style*="Artboard"]{
@@ -345,7 +390,17 @@ a[href*="/product/"]:hover img{
 }
 /* Shop / filters chrome */
 aside,[class*="filter"],[class*="Filter"]{
-  color:var(--jd-muted)!important;
+  color:var(--jd-navy)!important;
+}
+aside [class*="label"],[class*="filter"] label,[class*="Filter"] label,
+aside span,[class*="filter"] span{
+  color:var(--jd-navy)!important;
+  opacity:1!important;
+}
+/* Featured / section headings on light backgrounds */
+[class*="featured"] h2,[class*="Featured"] h2,main h2,main h3{
+  color:var(--jd-navy)!important;
+  opacity:1!important;
 }
 /* Footer */
 footer,[class*="footer"],[data-ux="Footer"]{
@@ -377,9 +432,16 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 .jd-oos-hide,[data-jd-oos-hidden="1"]{display:none!important}
 /* Eyebrow injected above hero title */
 .jd-hero-eyebrow{
-  display:block;margin:0 auto .75rem;color:rgba(255,255,255,.72);
-  font-family:"Outfit",system-ui,sans-serif;font-size:.72rem;font-weight:600;
+  display:block;margin:0 auto .75rem;color:#fff!important;
+  font-family:"Outfit",system-ui,sans-serif;font-size:.72rem;font-weight:700;
   letter-spacing:.22em;text-transform:uppercase;text-align:center;
+  text-shadow:0 1px 2px rgba(0,0,0,.7),0 4px 18px rgba(0,0,0,.45)!important;
+}
+.jd-hero-sub{
+  color:rgba(255,255,255,.96)!important;
+  max-width:36ch;margin:.75rem auto 0;text-align:center;
+  font-size:1.05rem;line-height:1.5;font-weight:500;
+  text-shadow:0 1px 2px rgba(0,0,0,.7),0 4px 18px rgba(0,0,0,.45)!important;
 }
 @media (max-width:720px){
   [class*="banner"],[data-ux="Banner"]{min-height:58vh}
@@ -530,7 +592,6 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
       var sub=document.createElement("p");
       sub.className="jd-hero-sub";
       sub.textContent=HERO_SUB;
-      sub.style.cssText="color:rgba(243,245,247,.92);max-width:36ch;margin:.75rem auto 0;text-align:center;font-size:1rem;line-height:1.5";
       host.insertBefore(sub, el.nextSibling);
     }
     if(host && !host.querySelector(".jd-shop-epl")){

@@ -187,7 +187,7 @@ function SafeImage({
         role={alt ? 'img' : undefined}
         aria-label={alt || undefined}
       >
-        <span className="px-4 text-center font-display text-lg uppercase tracking-wide text-white/55">
+        <span className="px-4 text-center font-display text-lg uppercase tracking-wide text-white/85">
           Photo unavailable
         </span>
       </div>
@@ -507,7 +507,7 @@ function ProductLink({
   const onSale = isSaleListing(item)
   const size = listingSize(item)
   const photoCount = item.images?.length ? item.images.length : item.image ? 1 : 0
-  const muted = tone === 'dark' ? 'text-white/45' : 'text-muted'
+  const muted = tone === 'dark' ? 'text-white/75' : 'text-muted'
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
   const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
   const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
@@ -1308,7 +1308,7 @@ export default function App() {
       {/* Promo bar — always on top */}
       <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-x-2 overflow-x-auto bg-crimson px-3 py-2 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cream sm:gap-x-3 sm:px-4 sm:text-xs sm:tracking-[0.18em]">
         <span>{PROMO_BAR}</span>
-        <span className="text-cream/40" aria-hidden>
+        <span className="text-cream/70" aria-hidden>
           ·
         </span>
         <span className="inline-flex items-center gap-1.5">
@@ -1333,7 +1333,7 @@ export default function App() {
             >
               Square
             </a>
-            <span className="text-cream/40" aria-hidden>
+            <span className="text-cream/70" aria-hidden>
               ·
             </span>
             <a
@@ -1517,7 +1517,7 @@ export default function App() {
                   className={`w-full border py-2.5 pl-4 pr-[5.75rem] text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
                     navSolid
                       ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
-                      : 'border-white/20 bg-white/10 text-white placeholder:text-white/55'
+                      : 'border-white/35 bg-white/15 text-white placeholder:text-white/75'
                   }`}
                 />
               </label>
@@ -1535,7 +1535,7 @@ export default function App() {
             </form>
             <p
               className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] sm:block ${
-                navSolid ? 'text-muted' : 'text-white/55'
+                navSolid ? 'text-muted' : 'text-white/80'
               }`}
             >
               {deferredHint}
@@ -1619,7 +1619,7 @@ export default function App() {
 
           <a
             href="#shop"
-            className="absolute bottom-28 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/50 transition hover:text-white md:bottom-6"
+            className="absolute bottom-28 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white md:bottom-6"
             aria-label="Scroll to shop"
           >
             <span className="flex flex-col items-center gap-2">
@@ -1671,7 +1671,7 @@ export default function App() {
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/92 via-navy-deep/78 to-navy/55" />
+          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/94 via-navy-deep/86 to-navy-deep/70" />
           <img
             src={asset('premier-league-badge.png')}
             alt=""
@@ -1699,7 +1699,7 @@ export default function App() {
             </motion.div>
 
             <div id="epl-clubs" className="mt-14 scroll-mt-44">
-              <p className="eyebrow text-cream/70">Clubs in stock</p>
+              <p className="eyebrow text-cream/90">Clubs in stock</p>
               {eplClubs.length > 0 ? (
                 <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
                   {eplClubs.map((club, i) => (
@@ -1730,7 +1730,7 @@ export default function App() {
                           <p className="font-display text-sm font-bold uppercase tracking-wide text-cream">
                             {club.name}
                           </p>
-                          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-cream/70">
+                          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-cream/85">
                             {club.count} kit{club.count === 1 ? '' : 's'} · search
                           </p>
                         </div>
@@ -1739,7 +1739,7 @@ export default function App() {
                   ))}
                 </ul>
               ) : (
-                <p className="mt-4 font-brand text-cream/75">Premier League kits will appear here when in stock.</p>
+                <p className="mt-4 font-brand text-cream/90">Premier League kits will appear here when in stock.</p>
               )}
             </div>
           </div>
@@ -2915,7 +2915,7 @@ export default function App() {
                   placeholder="you@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="min-w-0 flex-1 border border-white/20 bg-white/5 px-4 py-3.5 text-white placeholder:text-white/35 outline-none focus:border-crimson"
+                  className="min-w-0 flex-1 border border-white/30 bg-white/10 px-4 py-3.5 text-white placeholder:text-white/70 outline-none focus:border-crimson"
                 />
                 <button
                   type="submit"
@@ -2926,7 +2926,7 @@ export default function App() {
               </form>
             </motion.div>
             {emailStatus === 'sent' ? (
-              <p className="mt-4 text-sm text-white/65">
+              <p className="mt-4 text-sm text-white/85">
                 You’re on the list — check your inbox if FormSubmit asks for a one-time confirm.
               </p>
             ) : null}
@@ -2972,7 +2972,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-36 text-white/60 md:pb-14">
+      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-36 text-white/80 md:pb-14">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
@@ -2981,12 +2981,12 @@ export default function App() {
                 Jersey Deals
               </p>
             </div>
-            <p className="mt-4 max-w-sm font-brand text-sm leading-relaxed text-cream/65">
+            <p className="mt-4 max-w-sm font-brand text-sm leading-relaxed text-cream/90">
               Premium kit shopping from live inventory — sold direct.
             </p>
           </div>
           <div>
-            <p className="eyebrow text-white/40">Shop</p>
+            <p className="eyebrow text-white/75">Shop</p>
             <ul className="mt-4 space-y-2 text-sm">
               {navLinks.map((link) => (
                 <li key={link.href}>
@@ -2998,7 +2998,7 @@ export default function App() {
             </ul>
           </div>
           <div>
-            <p className="eyebrow text-white/40">Discover</p>
+            <p className="eyebrow text-white/75">Discover</p>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <a href="#clubs" className="hover:text-white">
@@ -3037,7 +3037,7 @@ export default function App() {
             </ul>
           </div>
           <div>
-            <p className="eyebrow text-white/40">Links</p>
+            <p className="eyebrow text-white/75">Links</p>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
                 <a
@@ -3069,7 +3069,7 @@ export default function App() {
             </ul>
           </div>
         </div>
-        <p className="mx-auto mt-12 max-w-6xl px-5 text-xs text-white/40 md:px-8">
+        <p className="mx-auto mt-12 max-w-6xl px-5 text-xs text-white/70 md:px-8">
           © {new Date().getFullYear()} JerseyDeals
         </p>
       </footer>
@@ -3085,7 +3085,7 @@ export default function App() {
           >
             Square
           </a>
-          <span className="text-cream/35" aria-hidden>
+          <span className="text-cream/70" aria-hidden>
             ·
           </span>
           <a
