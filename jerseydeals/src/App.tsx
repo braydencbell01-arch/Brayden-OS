@@ -1686,16 +1686,16 @@ export default function App() {
               <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-cream md:text-6xl">
                 Shop Premier League
               </h2>
-              <p className="mt-3 max-w-md font-brand text-lg text-cream/85">
-                Real EPL stock from our US inventory — tap Shop EPL to browse every club we carry.
-              </p>
               <a
                 href="#epl-clubs"
                 onClick={() => track('cta_click', { place: 'shop_epl' })}
-                className="mt-8 inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+                className="mt-6 inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
               >
                 Shop EPL
               </a>
+              <p className="mt-4 max-w-md font-brand text-lg text-cream/85">
+                Club, country, and training jerseys — photographed from our inventory.
+              </p>
             </motion.div>
 
             <div id="epl-clubs" className="mt-14 scroll-mt-44">
