@@ -2,7 +2,7 @@
 
 Storefront landing page for **Jersey Deals** (sibling to BrayStats in this repo).
 
-**Live:** https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+**Live:** https://jerseydeals.online/
 
 ## What’s on the page
 
