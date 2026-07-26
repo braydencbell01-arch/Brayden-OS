@@ -12,11 +12,15 @@ Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-u
 |---------|--------|-----------------------------------|
 | **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
 | **Jersey Deals** | `jerseydeals/` | https://jerseydeals.online/ |
+| **Square store** | Square Online (polished via `jerseydeals/scripts`) | https://jerseydealsofficial.square.site/ |
 
 - Do **not** publish BrayStats into `/jerseydeals/`.
 - Do **not** publish Jersey Deals into the Pages root.
 - Keep **email lists and form endpoints separate** (BrayStats ≠ Jersey Deals business). No shared signup storage or env vars across products.
-- When a BrayStats / Jersey Deals task finishes, report **both** URLs, labeled. For Jersey Deals always use **https://jerseydeals.online/** (not the `github.io/.../jerseydeals/` path).
+- When a BrayStats / Jersey Deals task finishes, report these URLs, labeled:
+  - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
+  - Jersey Deals: https://jerseydeals.online/ (not the `github.io/.../jerseydeals/` path)
+  - Square store: https://jerseydealsofficial.square.site/
 
 ## BrayStats agent roles
 
@@ -91,7 +95,7 @@ Before finishing a design task:
 - [ ] PR **merged** (or clearly blocked waiting on review — and said so to the user)
 - [ ] Verified on `origin/Brayden-OS` (not only the feature branch)
 - [ ] Live Stats URL verified after merge/deploy
-- [ ] Both permanent links given to the user, labeled
+- [ ] Permanent links given to the user, labeled (BrayStats + jerseydeals.online + Square store)
 
 ## Minimal tokens / context (hard default)
 

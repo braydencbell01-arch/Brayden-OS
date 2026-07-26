@@ -8,7 +8,7 @@ alwaysApply: true
 ## Dual products
 
 - **BrayStats** lives at repo root → https://braydencbell01-arch.github.io/Brayden-OS/
-- **Jersey Deals** lives in `jerseydeals/` → https://jerseydeals.online/ (user-facing). GitHub Pages path still deploys under `/jerseydeals/` — do not give that path as the landing link.
+- **Jersey Deals** lives in `jerseydeals/` → landing https://jerseydeals.online/ (user-facing). Square storefront → https://jerseydealsofficial.square.site/. GitHub Pages path still deploys under `/jerseydeals/` — do not give that path as the landing link.
 - Never deploy one product into the other’s URL path.
 - **Email lists stay separate.** BrayStats signups use BrayStats-only storage/endpoints; Jersey Deals business emails never mix with BrayStats (separate env vars, subjects, and localStorage keys).
 
@@ -43,12 +43,13 @@ Do **not** stop at “PR opened” / draft waiting. Exceptions only: unresolved 
 - Before saying “done” / “updated” / “live”, verify with `git show origin/Brayden-OS:…` and the live site.
 - If blocked from merging, say so plainly — never imply the live URL already has the change.
 
-## After BrayStats tasks
+## After BrayStats / Jersey Deals tasks
 
-Always give the user both links, labeled:
+Always give the user these links, labeled:
 
 - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
 - Jersey Deals: https://jerseydeals.online/
+- Square store: https://jerseydealsofficial.square.site/
 
 See `AGENTS.md` for the full checklist.
 
