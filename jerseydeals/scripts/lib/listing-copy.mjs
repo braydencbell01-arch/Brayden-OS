@@ -2,19 +2,18 @@
  * Shared helpers for professional Square / Jersey Deals listing titles & descriptions.
  */
 
-const SIZE_WORD =
-  /\b(?:extra\s*large|xxl|xl|large|medium|small|xs|yth(?:xl|l|m|s)?|youth(?:\s*(?:extra\s*)?(?:large|medium|small))?|\d+\s*[-–]\s*\d+\s*yrs?|[sml])\b/gi
-
 const SIZE_TOKEN =
   /\b(XXL|XL|XS|S|M|L|YthXL|YthL|YthM|YthS|Youth\s*XL|Youth\s*L|Youth\s*M|Youth\s*S|\d+\s*[-–]\s*\d+\s*YRS?)\b/i
 
 const BRANDS = /\b(Adidas|Nike|Puma|Under\s*Armour|Pro\s*Edge)\b/i
 
+// Keep in sync with jerseydeals/src/listings.ts CLUB_CATALOG (longer / more specific first).
 const TEAMS = [
   [/manchester\s*city|\bman\s*city\b|\bmcfc\b/i, 'Manchester City'],
   [/manchester\s*united|\bman\s*utd\b|\bman\s*united\b|\bmufc\b/i, 'Manchester United'],
   [/paris\s*saint[-\s]?germain|\bpsg\b/i, 'Paris Saint-Germain'],
   [/inter\s*miami\b/i, 'Inter Miami'],
+  [/inter\s*milan\b|internazionale|\bnerazzurri\b/i, 'Inter Milan'],
   [/\bac\s*milan\b/i, 'AC Milan'],
   [/borussia\s*dortmund|\bdortmund\b|\bbvb\b/i, 'Borussia Dortmund'],
   [/tottenham(?:\s*hotspur)?|\bspurs\b/i, 'Tottenham Hotspur'],
@@ -22,8 +21,29 @@ const TEAMS = [
   [/real\s*madrid|\brma\b/i, 'Real Madrid'],
   [/fc\s*barcelona|\bbarcelona\b|\bbarca\b|\bfcb\b/i, 'FC Barcelona'],
   [/chelsea(?:\s*fc)?|\bcfc\b/i, 'Chelsea'],
+  [/ajax(?:\s*amsterdam)?/i, 'Ajax'],
   [/germany(?:\s*national(?:\s*team)?)?|\bdfb\b/i, 'Germany'],
   [/syracuse(?:\s*orange)?/i, 'Syracuse'],
+  [/arsenal(?:\s*fc)?|\bgunners\b/i, 'Arsenal'],
+  [/bayern(?:\s*munich)?|\bbayern\s*m[uü]nchen\b/i, 'Bayern Munich'],
+  [/juventus|\bjuve\b/i, 'Juventus'],
+  [/newcastle(?:\s*united)?|\bnufc\b/i, 'Newcastle United'],
+  [/\bspain(?:\s*national)?\b|\bla\s*roja\b/i, 'Spain'],
+  [/\bargentina\b|\balbiceleste\b/i, 'Argentina'],
+  [/\bmexico\b|\bel\s*tri\b/i, 'Mexico'],
+  [/\busa\b|united\s*states|\busmnt\b|\buswnt\b/i, 'USA'],
+  [/west\s*ham/i, 'West Ham'],
+  [/leicester(?:\s*city)?/i, 'Leicester City'],
+  [/aston\s*villa/i, 'Aston Villa'],
+  [/brighton/i, 'Brighton'],
+  [/wolverhampton|\bwolves\b/i, 'Wolves'],
+  [/everton/i, 'Everton'],
+  [/napoli/i, 'Napoli'],
+  [/\broma\b/i, 'Roma'],
+  [/atletico(?:\s*madrid)?/i, 'Atletico Madrid'],
+  [/portugal/i, 'Portugal'],
+  [/france(?:\s*national)?/i, 'France'],
+  [/england(?:\s*national)?/i, 'England'],
 ]
 
 function cleanSpaces(s) {
@@ -88,7 +108,7 @@ export function extractPlayer(title) {
   // Strip season tokens so "Inter Miami 22/23" does not become Miami #22
   const noSeason = text.replace(/\b\d{2}\/\d{2}\b/g, ' ')
   const block =
-    /Adidas|Nike|Puma|Under|Pro|Edge|Men|Youth|Boys|Towel|Pack|Rally|Crest|Shirt|Jersey|Home|Away|Third|Miami|City|United|Madrid|Chelsea|Liverpool|Barcelona|Dortmund|Tottenham|Paris|Saint|Germain|Orange|Germany|Syracuse|Milan|Manchester|Inter|Real|Borussia|Hotspur/i
+    /Adidas|Nike|Puma|Under|Pro|Edge|Men|Youth|Boys|Towel|Pack|Rally|Crest|Shirt|Jersey|Home|Away|Third|Miami|City|United|Madrid|Chelsea|Liverpool|Barcelona|Dortmund|Tottenham|Paris|Saint|Germain|Orange|Germany|Syracuse|Milan|Manchester|Inter|Real|Borussia|Hotspur|Newcastle|Arsenal|Bayern|Juventus|Ajax|Napoli|Roma|Everton|Brighton|Wolves|Villa|Leicester|Portugal|France|England|Spain|Argentina|Mexico/i
 
   // "Messi 10" or "Messi #10" / "Torres #9"
   const named = noSeason.match(/\b([A-Z][a-z]{2,})\s+#?\s*(\d{1,2})\b/)
@@ -147,8 +167,35 @@ export function polishTitle(rawTitle, meta = {}) {
     return bits.length > 1 ? `${bits[0]} · ${bits[1]}` : bits[0]
   }
 
+  // Unknown club: keep the seller title. Using only "brand + kit" drops names
+  // like "Newcastle United" / "Inter Milan" and ships incomplete storefront cards.
+  if (!team) {
+    let fallback = title
+      .replace(/\bMen'?s\b/gi, '')
+      .replace(/\bWomen'?s\b/gi, '')
+      .replace(/\b(?:Boys|Girls)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (size) {
+      const sizeRe = new RegExp(
+        `\\b${size.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')}\\b`,
+        'i',
+      )
+      if (!sizeRe.test(fallback)) {
+        fallback = fallback
+          .replace(
+            /\b(?:Yth(?:XXL|XL|XS|[SML])|Youth\s*(?:Extra\s*)?(?:Large|Medium|Small|XXL|XL|XS|[SML])|XXL|XL|XS|[SML])(?:\s+(?:Extra\s+)?(?:Large|Medium|Small))?\s*$/i,
+            '',
+          )
+          .trim()
+        fallback = `${fallback} · ${size}`
+      }
+    }
+    return cleanSpaces(fallback)
+  }
+
   const headParts = []
-  if (team) headParts.push(team)
+  headParts.push(team)
   if (season) headParts.push(season)
   headParts.push(kit)
 
@@ -157,26 +204,14 @@ export function polishTitle(rawTitle, meta = {}) {
     head += ` — ${player.name} #${player.number}`
   } else if (player?.number) {
     head += ` — #${player.number}`
-  } else if (brand && !team) {
-    head = `${brand} ${kit}`
   }
 
-  if (brand && team) {
+  if (brand) {
     // Keep brand subtle at end for searchability without cluttering the card
     head += ` (${brand})`
   }
 
   if (size) head += ` · ${size}`
-
-  // Fallback if parsing failed badly
-  if (!team && !season && head.length < 8) {
-    return title
-      .replace(/\bMen'?s\b/gi, '')
-      .replace(/\b(Extra\s+Large|Large|Medium|Small)\b/gi, '')
-      .replace(SIZE_WORD, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-  }
 
   return cleanSpaces(head)
 }
