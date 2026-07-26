@@ -250,7 +250,7 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
 }
 .jd-shop-epl{
   display:inline-flex!important;align-items:center;justify-content:center;
-  margin:1rem auto 0;padding:.9rem 1.4rem!important;
+  margin:.9rem auto 0;padding:.9rem 1.4rem!important;
   background:var(--jd-crimson)!important;color:#fff!important;
   border-radius:999px!important;font-weight:700!important;
   letter-spacing:.14em;text-transform:uppercase;text-decoration:none!important;
@@ -439,7 +439,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 }
 .jd-hero-sub{
   color:rgba(255,255,255,.96)!important;
-  max-width:36ch;margin:.75rem auto 0;text-align:center;
+  max-width:36ch;margin:.85rem auto 0;text-align:center;
   font-size:1.05rem;line-height:1.5;font-weight:500;
   text-shadow:0 1px 2px rgba(0,0,0,.7),0 4px 18px rgba(0,0,0,.45)!important;
 }
@@ -569,8 +569,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   }
 
   function decorateHero(el){
-    if(!el || el.getAttribute("data-jd-hero")) return;
-    el.setAttribute("data-jd-hero","1");
+    if(!el) return;
     var host=el.parentElement||el;
     var banner=el.closest('[class*="banner"],[data-ux="Banner"],section')||host;
     if(banner && !banner.querySelector(".jd-epl-badge")){
@@ -588,23 +587,31 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
       eye.textContent="Jersey Deals";
       host.insertBefore(eye, el);
     }
-    if(host && !host.querySelector(".jd-hero-sub")){
-      var sub=document.createElement("p");
-      sub.className="jd-hero-sub";
-      sub.textContent=HERO_SUB;
-      host.insertBefore(sub, el.nextSibling);
-    }
-    if(host && !host.querySelector(".jd-shop-epl")){
-      var cta=document.createElement("a");
+    // Order under the title: Shop EPL first, supporting line second.
+    var cta=host.querySelector(".jd-shop-epl");
+    if(host && !cta){
+      cta=document.createElement("a");
       cta.className="jd-shop-epl";
       cta.href=EPL_URL;
       cta.target="_blank";
       cta.rel="noopener noreferrer";
       cta.textContent="Shop EPL";
-      var after=host.querySelector(".jd-hero-sub")||el;
-      if(after.nextSibling) host.insertBefore(cta, after.nextSibling);
-      else host.appendChild(cta);
+      host.insertBefore(cta, el.nextSibling);
     }
+    var sub=host.querySelector(".jd-hero-sub");
+    if(host && !sub){
+      sub=document.createElement("p");
+      sub.className="jd-hero-sub";
+      sub.textContent=HERO_SUB;
+      host.appendChild(sub);
+    } else if(sub){
+      sub.textContent=HERO_SUB;
+    }
+    if(host && cta && sub){
+      host.insertBefore(cta, el.nextSibling);
+      host.insertBefore(sub, cta.nextSibling);
+    }
+    el.setAttribute("data-jd-hero","1");
   }
 
   function polishCopy(){
