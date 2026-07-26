@@ -38,7 +38,14 @@ export function readCart(): CartState {
     const parsed = JSON.parse(raw) as CartState
     if (!parsed || !Array.isArray(parsed.lines)) return emptyCart()
     return {
-      lines: parsed.lines.filter((line) => line?.id && line?.checkoutUrl),
+      lines: parsed.lines
+        .filter((line) => line?.id && line?.checkoutUrl)
+        .map((line) => ({
+          ...line,
+          // Payment Links charge one unit — never trust a stored qty > 1.
+          maxQuantity: 1,
+          quantity: 1,
+        })),
       updatedAt: parsed.updatedAt || Date.now(),
     }
   } catch {
@@ -82,7 +89,8 @@ export function listingToCartLine(item: Listing, productUrl?: string): CartLine 
         : item.checkoutUrlDiscounted,
     productUrl,
     size: item.size || item.note,
-    maxQuantity: Math.max(1, item.quantity || 1),
+    // Square Payment Links are single-unit; qty>1 would undercharge at checkout.
+    maxQuantity: 1,
   }
 }
 
