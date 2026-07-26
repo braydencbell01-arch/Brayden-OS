@@ -247,3 +247,25 @@ cd jerseydeals
 npm run build
 npm run preview
 ```
+
+## Facebook Page posts (Graph API)
+
+Agents can publish to the Jersey Deals Facebook Page via GitHub Actions (no password sharing).
+
+**Repo secrets (on `braydencbell01-arch/Brayden-OS`):**
+
+| Secret | Purpose |
+|--------|---------|
+| `FACEBOOK_PAGE_ID` | Numeric Page ID |
+| `FACEBOOK_PAGE_ACCESS_TOKEN` | Long-lived **Page** access token |
+
+**Permissions on the token:** `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`
+
+**Publish:** Actions → **Post to Facebook Page** → Run workflow (message / optional link / optional image URL).
+
+Local dry run:
+
+```bash
+FACEBOOK_PAGE_ID=... FACEBOOK_PAGE_ACCESS_TOKEN=... \
+  MESSAGE="Test" DRY_RUN=1 node jerseydeals/scripts/post-facebook.mjs
+```
