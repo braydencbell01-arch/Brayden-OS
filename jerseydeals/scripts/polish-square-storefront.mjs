@@ -173,6 +173,7 @@ function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail =
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style id="jd-storefront-css">
+
 :root{
   --jd-navy:#0b223f;
   --jd-navy-deep:#06101c;
@@ -229,8 +230,11 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
   opacity:.94;transform:translateY(-1px);
   box-shadow:0 10px 28px rgba(215,40,47,.34);
 }
-/* Hero / banner — Premier League tunnel backdrop (readable over dark photo) */
-[class*="banner"],[data-ux="Banner"],section[class*="Banner"]{
+/* Homepage banners only — never header-banner-wrapper (that was the huge black CART gap). */
+.banner-1,[class*="banner-1"],.w-block-banner,[class*="banner-block"],
+[data-ux="Banner"]:not([class*="header"]),
+.w-block-wrapper.banner,
+.banner-slide-wrapper{
   position:relative;
   min-height:min(72vh,640px);
   background:
@@ -241,6 +245,24 @@ a[class*="button"]:hover,button[class*="button"]:hover,[class*="Button"]:hover,.
   background-size:cover!important;
   background-position:center!important;
   color:#fff!important;
+}
+/* Undo accidental mega-height on Square's header chrome */
+header,[class*="header-banner"],.header-banner-wrapper{
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  background:rgba(6,16,28,.96)!important;
+  padding-top:.35rem!important;
+  padding-bottom:.35rem!important;
+}
+header .banner-1,header .w-block-banner,header [class*="banner-1"],
+header .banner-slide-wrapper,header .w-block-wrapper.banner{
+  display:none!important;
+  min-height:0!important;
+  height:0!important;
+  overflow:hidden!important;
+  padding:0!important;
+  margin:0!important;
 }
 .jd-epl-badge{
   position:absolute;top:1rem;right:1rem;z-index:5;
@@ -446,7 +468,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 /* Injected hero — always visible content (replaces empty Square banner black box) */
 .jd-hero-panel{
   position:relative;display:flex;align-items:center;justify-content:center;
-  min-height:min(62vh,560px);padding:2.5rem 1.25rem 3rem;text-align:center;overflow:hidden;
+  min-height:min(48vh,420px);padding:2rem 1.25rem 2.25rem;text-align:center;overflow:hidden;
   background:
     linear-gradient(180deg,rgba(6,16,28,.55) 0%,rgba(6,16,28,.78) 45%,rgba(6,16,28,.92) 100%),
     url("https://jerseydeals.online/epl-tunnel.jpg") center/cover no-repeat,
@@ -487,11 +509,11 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 .jd-header-email .jd-header-email-ok{
   color:#fff!important;font-size:.65rem;font-weight:600;letter-spacing:.06em;white-space:nowrap;
 }
-#jd-cart-nav svg{width:1rem;height:1rem;flex-shrink:0}
 @media (max-width:720px){
-  [class*="banner"],[data-ux="Banner"]{min-height:58vh}
+  .banner-1,[class*="banner-1"],.w-block-banner,[data-ux="Banner"]:not([class*="header"]){min-height:48vh}
+  [class*="header-banner"],.header-banner-wrapper{min-height:0!important}
   .jd-trust{letter-spacing:.1em;font-size:.65rem;gap:.55rem .9rem}
-  .jd-hero-panel{min-height:52vh;padding:2rem 1rem 2.5rem}
+  .jd-hero-panel{min-height:42vh;padding:1.75rem 1rem 2rem}
   .jd-header-email{max-width:none;margin-left:.4rem}
   .jd-header-email button{padding:.55rem .6rem!important;font-size:.58rem!important}
 }
@@ -509,8 +531,16 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 #jd-offer-card{position:relative}
 .jd-price-was{text-decoration:line-through;opacity:.65;margin-left:.4rem;font-size:.9em}
 .jd-offer-chip{display:inline-block;margin-top:.25rem;color:#d7282f;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+
+/* Legacy injected cart pill — hide if an old snippet left it in the DOM */
+#jd-cart-nav{display:none!important}
+a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
+  width:1rem;height:1rem;flex-shrink:0;stroke:currentColor
+}
+
 </style>
 <script id="jd-storefront-polish">
+
 (function(){
   var MAP=${mapJson};
   var PRIOR_EMAILS=${emailsJson};
@@ -523,7 +553,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   var HERO="Shop Premier League";
   var HERO_SUB="Club, country, and training jerseys — photographed from our inventory.";
   var JD_SITE="https://jerseydeals.online/";
-  var EPL_URL=JD_SITE+"#epl";
+  var EPL_URL=JD_SITE+"#epl-clubs";
   var EPL_TUNNEL=JD_SITE+"epl-tunnel.jpg";
   var EPL_BADGE=JD_SITE+"premier-league-badge.png";
   var FOOTER_DEMO=/Thanks for exploring this Square Online Theme/i;
@@ -665,14 +695,14 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   function polishCopy(){
     walkText(document.body, function(n){
       var t=n.nodeValue||"";
-      if(TEMPLATE_HERO.test(t) || /Authentic kits\.?\s*Real stock/i.test(t) || /^Shop Premier League$/i.test(t.trim())){
-        if(TEMPLATE_HERO.test(t) || /Authentic kits\.?\s*Real stock/i.test(t)){
-          n.nodeValue=t.replace(TEMPLATE_HERO, HERO).replace(/Authentic kits\.?\s*Real stock\.?\s*Ships from the U\.S\.?/i, HERO);
+      if(TEMPLATE_HERO.test(t) || /Authentic kits.?s*Real stock/i.test(t) || /^Shop Premier League$/i.test(t.trim())){
+        if(TEMPLATE_HERO.test(t) || /Authentic kits.?s*Real stock/i.test(t)){
+          n.nodeValue=t.replace(TEMPLATE_HERO, HERO).replace(/Authentic kits.?s*Real stock.?s*Ships from the U.S.?/i, HERO);
         }
         decorateHero(n.parentElement);
       }
-      if(/Club,\s*youth,\s*and\s*training\s*jerseys/i.test(t)){
-        n.nodeValue=t.replace(/Club,\s*youth,\s*and\s*training\s*jerseys/ig, "Club, country, and training jerseys");
+      if(/Club,s*youth,s*ands*trainings*jerseys/i.test(t)){
+        n.nodeValue=t.replace(/Club,s*youth,s*ands*trainings*jerseys/ig, "Club, country, and training jerseys");
       }
       if(FOOTER_DEMO.test(t)){
         n.nodeValue="Thanks for signing up — we'll share new drops and deals. No spam.";
@@ -697,17 +727,38 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     });
   }
 
+  function siteHeader(){
+    return document.querySelector(".app-container header, #app header, .main-container header, header");
+  }
+
   function ensureTrust(){
     if(document.getElementById("jd-trust-bar")) return;
     var bar=document.createElement("div");
     bar.id="jd-trust-bar";
     bar.className="jd-trust";
     bar.innerHTML="<span>Ships from US inventory</span><span>10% shipping on every order</span><span>Secure Square checkout</span><span>Real product photos</span>";
-    var header=document.querySelector("header,[class*=\\"header\\"],[data-ux=\\"Header\\"]");
+    var header=siteHeader();
     if(header && header.parentNode){
       header.parentNode.insertBefore(bar, header.nextSibling);
     } else {
       document.body.insertBefore(bar, document.body.firstChild);
+    }
+  }
+
+  function placeChrome(){
+    var header=siteHeader();
+    var trust=document.getElementById("jd-trust-bar");
+    var hero=document.getElementById("jd-hero-panel");
+    if(!header || !header.parentNode) return;
+    // If trust/hero were parked before .app-container, tuck them under the real header.
+    if(trust && trust.parentNode!==header.parentNode){
+      header.parentNode.insertBefore(trust, header.nextSibling);
+    }
+    if(hero && hero.parentNode!==header.parentNode){
+      var after=trust && trust.parentNode===header.parentNode ? trust : header;
+      after.parentNode.insertBefore(hero, after.nextSibling);
+    } else if(hero && trust && trust.parentNode===header.parentNode && hero.previousElementSibling!==trust){
+      trust.parentNode.insertBefore(hero, trust.nextSibling);
     }
   }
 
@@ -727,7 +778,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
         +'<p class="jd-hero-sub">'+HERO_SUB+'</p>'
         +'</div>';
       var trust=document.getElementById("jd-trust-bar");
-      var header=document.querySelector("header,[class*='header'],[data-ux='Header']");
+      var header=siteHeader();
       if(trust && trust.parentNode){
         trust.parentNode.insertBefore(panel, trust.nextSibling);
       } else if(header && header.parentNode){
@@ -736,19 +787,48 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
         document.body.insertBefore(panel, document.body.firstChild);
       }
     }
-    // Hide empty/broken Square template banners so they don't leave a black void.
-    var banners=document.querySelectorAll('[class*="banner"],[data-ux="Banner"],section[class*="Banner"]');
+    // Hide homepage banner slides/blocks only (not the whole header chrome).
+    var banners=document.querySelectorAll(
+      '.banner-1, [class*="banner-1"], .w-block-banner, [class*="banner-block"], .banner-slide-wrapper, .w-image-block--responsive.banner-1, .w-block-wrapper.banner, [data-ux="Banner"]'
+    );
     for(var i=0;i<banners.length;i++){
       var b=banners[i];
       if(!b || b.id==="jd-hero-panel" || b.classList.contains("jd-hero-panel")) continue;
       if(b.closest("#jd-hero-panel")) continue;
+      var cn=typeof b.className==="string"?b.className:"";
+      if(/header-banner/i.test(cn) || b.closest('[class*="header-banner"]')) {
+        b.removeAttribute("data-jd-banner-hidden");
+        continue;
+      }
       b.setAttribute("data-jd-banner-hidden","1");
+    }
+    // Unhide header chrome previously hidden by the broad banner selector.
+    var restore=document.querySelectorAll('[class*="header-banner"][data-jd-banner-hidden="1"]');
+    for(var r=0;r<restore.length;r++) restore[r].removeAttribute("data-jd-banner-hidden");
+    // Compact Square header so it can't leave a tall black void under CART.
+    var hdr=siteHeader();
+    if(hdr){
+      hdr.style.minHeight="0";
+      hdr.style.height="auto";
+      hdr.style.paddingTop="0.35rem";
+      hdr.style.paddingBottom="0.35rem";
+    }
+    // Move trust + hero under Square header so CART is not stranded in a black gap.
+    placeChrome();
+    // Keep every Shop EPL CTA on the clubs grid destination.
+    var eplLinks=document.querySelectorAll("a.jd-shop-epl");
+    for(var e=0;e<eplLinks.length;e++){
+      var a=eplLinks[e];
+      if(!a) continue;
+      a.href=EPL_URL;
+      a.target="_blank";
+      a.rel="noopener noreferrer";
     }
   }
 
   function ensureHeaderEmail(){
     if(document.getElementById("jd-header-email")) return;
-    var header=document.querySelector("header,[class*='header'],[data-ux='Header']");
+    var header=siteHeader();
     if(!header) return;
     var form=document.createElement("form");
     form.id="jd-header-email";
@@ -973,43 +1053,42 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
     else { document.body.appendChild(wrap); }
   }
 
+  function cartIconSvg(){
+    return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H7"></path></svg>';
+  }
+
   function ensureCartNav(){
-    var header=document.querySelector("header,[class*='header'],[data-ux='Header']");
-    if(!header) return;
-    var a=document.getElementById("jd-cart-nav");
-    if(!a){
-      a=document.createElement("a");
-      a.id="jd-cart-nav";
-      a.href="/s/cart";
-      a.setAttribute("aria-label","Open cart");
-      a.style.cssText="margin-left:auto;display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .9rem;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-weight:600;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:#fff";
-      header.appendChild(a);
-    }
-    if(!a.querySelector("svg")){
-      a.innerHTML=
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
-        +'<circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle>'
-        +'<path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H7"></path>'
-        +'</svg><span>Cart</span>';
-    }
-    // Decorate plain Cart labels in header / cart chrome (not product copy).
-    var cartBits=document.querySelectorAll('header a, header button, [class*="header"] a, [class*="header"] button, [class*="cart"] a, [class*="Cart"] a, a[href*="/s/cart"], a[href*="/cart"]');
+    // Remove our old full-width Cart pill — it created the extra black bar under the header.
+    // Square's native header already has a cart control.
+    var legacy=document.getElementById("jd-cart-nav");
+    if(legacy && legacy.parentNode) legacy.parentNode.removeChild(legacy);
+
+    var cartBits=document.querySelectorAll(
+      'header a, header button, [class*="header"] a, [class*="header"] button, a[href*="/s/cart"], a[href*="/cart"]'
+    );
     for(var i=0;i<cartBits.length;i++){
       var p=cartBits[i];
-      if(!p || p.id==="jd-cart-nav" || p.getAttribute("data-jd-cart-icon")==="1") continue;
-      if(p.closest("#jd-cart-nav")) continue;
+      if(!p || p.getAttribute("data-jd-cart-icon")==="1") continue;
       var label=(p.textContent||"").trim();
-      if(!/^cart$/i.test(label)) continue;
-      if(p.querySelector("svg")) continue;
+      var aria=(p.getAttribute("aria-label")||"");
+      var href=p.getAttribute("href")||"";
+      var looksCart=/^cart$/i.test(label) || /cart/i.test(aria) || href.indexOf("/s/cart")!==-1 || href.indexOf("/cart")!==-1;
+      if(!looksCart) continue;
+      if(p.querySelector("svg")) {
+        p.setAttribute("data-jd-cart-icon","1");
+        continue;
+      }
       p.setAttribute("data-jd-cart-icon","1");
       p.style.display="inline-flex";
       p.style.alignItems="center";
-      p.style.gap=".4rem";
+      p.style.gap=".35rem";
       var icon=document.createElement("span");
       icon.setAttribute("aria-hidden","true");
-      icon.style.cssText="display:inline-flex;width:1rem;height:1rem";
-      icon.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"></circle><circle cx="18" cy="20" r="1.5"></circle><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.5L21 8H7"></path></svg>';
+      icon.style.cssText="display:inline-flex;width:1rem;height:1rem;line-height:0";
+      icon.innerHTML=cartIconSvg();
       p.insertBefore(icon, p.firstChild);
+      // If it was icon-only, keep accessible label.
+      if(!label) p.setAttribute("aria-label", aria || "Open cart");
     }
   }
 
@@ -1049,6 +1128,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   else run();
   setInterval(run, 1500);
 })();
+
 </script>`
 }
 
