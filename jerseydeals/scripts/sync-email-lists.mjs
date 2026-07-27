@@ -159,6 +159,7 @@ async function main() {
                 note: nextNote,
                 reference_id: c.reference_id || 'jerseydeals',
                 ...(c.phone_number ? { phone_number: c.phone_number } : {}),
+                ...(c.version != null ? { version: c.version } : {}),
               },
             },
           })
