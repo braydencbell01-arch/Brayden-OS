@@ -1,8 +1,10 @@
 name: Collect Jersey Deals email
 
-# Creates/updates a Square Customer for each lead.
+# Creates/updates a Square Customer for each lead and appends to permanent lists:
+#   jerseydeals/public/rewards-members.json
+#   jerseydeals/public/non-member-emails.json
 # Trigger: repository_dispatch type `jerseydeals-email`
-#   client_payload: { email, source, secret }
+#   client_payload: { email, source, membership?, secret }
 # Or workflow_dispatch for manual tests.
 
 on:
@@ -19,6 +21,14 @@ on:
         required: false
         default: manual
         type: string
+      membership:
+        description: member or non_member (blank = infer from source)
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
 
 jobs:
   upsert:
@@ -26,19 +36,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Upsert Square Customer
+      - name: Upsert Square Customer + permanent email lists
         env:
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           COLLECT_SECRET: ${{ secrets.JD_EMAIL_COLLECT_SECRET }}
           EMAIL: ${{ github.event.client_payload.email || inputs.email }}
           SOURCE: ${{ github.event.client_payload.source || inputs.source || 'manual' }}
+          MEMBERSHIP: ${{ github.event.client_payload.membership || inputs.membership || '' }}
           PAYLOAD_SECRET: ${{ github.event.client_payload.secret }}
+        working-directory: jerseydeals
         run: |
           set -euo pipefail
           if [ -z "${SQUARE_ACCESS_TOKEN:-}" ]; then
@@ -55,63 +69,21 @@ jobs:
             echo "Missing email" >&2
             exit 1
           fi
-          node <<'NODE'
-          const email = String(process.env.EMAIL || '').trim().toLowerCase()
-          const source = String(process.env.SOURCE || 'manual').trim().slice(0, 80)
-          const token = process.env.SQUARE_ACCESS_TOKEN
-          const host = 'https://connect.squareup.com'
-          const version = '2025-10-16'
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            console.error('Invalid email')
-            process.exit(1)
-          }
-          async function square(path, { method = 'GET', body } = {}) {
-            const res = await fetch(`${host}${path}`, {
-              method,
-              headers: {
-                Authorization: `Bearer ${token}`,
-                'Square-Version': version,
-                Accept: 'application/json',
-                ...(body ? { 'Content-Type': 'application/json' } : {}),
-              },
-              body: body ? JSON.stringify(body) : undefined,
-            })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) {
-              throw new Error(data?.errors?.map((e) => e.detail || e.code).join('; ') || res.status)
-            }
-            return data
-          }
-          const search = await square('/v2/customers/search', {
-            method: 'POST',
-            body: { query: { filter: { email_address: { exact: email } } }, limit: 1 },
-          })
-          const existing = (search.customers || [])[0]
-          const note = `Jersey Deals lead · source:${source} · at:${new Date().toISOString()}`
-          if (existing?.id) {
-            const prev = existing.note || ''
-            const nextNote = prev.includes(source) ? prev : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
-            await square(`/v2/customers/${existing.id}`, {
-              method: 'PUT',
-              body: {
-                customer: {
-                  email_address: email,
-                  note: nextNote,
-                  reference_id: existing.reference_id || 'jerseydeals',
-                },
-              },
-            })
-            console.log('updated', existing.id, email)
-          } else {
-            const created = await square('/v2/customers', {
-              method: 'POST',
-              body: {
-                idempotency_key: crypto.randomUUID(),
-                email_address: email,
-                note,
-                reference_id: 'jerseydeals',
-              },
-            })
-            console.log('created', created.customer?.id, email)
-          }
-          NODE
+          node scripts/collect-email.mjs
+          npm run sync:email-lists
+
+      - name: Commit email lists if changed
+        run: |
+          if git diff --quiet -- \
+            jerseydeals/public/rewards-members.json \
+            jerseydeals/public/non-member-emails.json; then
+            echo "No email-list changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            jerseydeals/public/rewards-members.json \
+            jerseydeals/public/non-member-emails.json
+          git commit -m "chore(jerseydeals): update Rewards member / non-member email lists"
+          git push origin HEAD:Brayden-OS

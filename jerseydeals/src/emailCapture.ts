@@ -1,18 +1,22 @@
 /**
  * Jersey Deals–only email capture.
- * 1) Square Customers via collector API (preferred)
+ * 1) Square Customers via collector API (preferred) — tagged member vs non-member
  * 2) FormSubmit → shop@jerseydeals.online (always notify owner)
+ * Permanent lists live in public/rewards-members.json + public/non-member-emails.json
+ * (kept current by the collect/sync pipelines).
  * Never import BrayStats modules or BrayStats env vars.
  */
 import { CONTACT_EMAIL } from './config'
 import { track } from './analytics'
 
 const STORAGE_KEY = 'jd_email_signups_v1'
+const MEMBER_SOURCES = new Set(['rewards_club'])
 
 export type LeadExtras = {
   phone?: string
   name?: string
   message?: string
+  membership?: 'member' | 'non_member'
   [key: string]: string | undefined
 }
 
@@ -22,6 +26,7 @@ export type EmailSignup = {
   site: 'jerseydeals'
   product: 'Jersey Deals'
   at: string
+  membership: 'member' | 'non_member'
   phone?: string
   name?: string
   message?: string
@@ -37,6 +42,10 @@ function canStore() {
 
 export function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+}
+
+export function membershipFromSource(source: string): 'member' | 'non_member' {
+  return MEMBER_SOURCES.has(String(source || '').trim()) ? 'member' : 'non_member'
 }
 
 export function readStoredSignups(): EmailSignup[] {
@@ -86,7 +95,12 @@ function cleanExtras(extras?: LeadExtras) {
   return out
 }
 
-async function postSquareCollector(email: string, source: string, extra: Record<string, string>) {
+async function postSquareCollector(
+  email: string,
+  source: string,
+  membership: 'member' | 'non_member',
+  extra: Record<string, string>,
+) {
   const endpoint = squareCollectEndpoint()
   if (!endpoint) return { attempted: false, ok: false }
   const headers: Record<string, string> = {
@@ -101,6 +115,7 @@ async function postSquareCollector(email: string, source: string, extra: Record<
     body: JSON.stringify({
       email,
       source,
+      membership,
       product: 'Jersey Deals',
       site: 'Jersey Deals',
       ...extra,
@@ -113,7 +128,13 @@ async function postSquareCollector(email: string, source: string, extra: Record<
   return { attempted: true, ok: true }
 }
 
-async function postFormSubmit(email: string, source: string, extra: Record<string, string>, at: string) {
+async function postFormSubmit(
+  email: string,
+  source: string,
+  membership: 'member' | 'non_member',
+  extra: Record<string, string>,
+  at: string,
+) {
   const res = await fetch(formEndpoint(), {
     method: 'POST',
     headers: {
@@ -124,11 +145,12 @@ async function postFormSubmit(email: string, source: string, extra: Record<strin
       email,
       ...extra,
       source,
+      membership,
       product: 'Jersey Deals',
       site: 'Jersey Deals',
-      list: 'jerseydeals_leads',
+      list: membership === 'member' ? 'jerseydeals_rewards_members' : 'jerseydeals_non_members',
       collected_at: at,
-      _subject: `[Jersey Deals] new info · ${source}`,
+      _subject: `[Jersey Deals] ${membership} · ${source}`,
       _template: 'table',
       _captcha: 'false',
       _replyto: email,
@@ -139,6 +161,7 @@ async function postFormSubmit(email: string, source: string, extra: Record<strin
 
 /**
  * Collect + track a Jersey Deals lead: localStorage, Square Customers API, FormSubmit notify.
+ * Rewards Club (`rewards_club`) → members list; all other sources → non-members list.
  */
 export async function captureEmail(
   rawEmail: string,
@@ -151,39 +174,58 @@ export async function captureEmail(
   }
 
   const extra = cleanExtras(extras)
+  const membership =
+    extras?.membership === 'member' || extras?.membership === 'non_member'
+      ? extras.membership
+      : membershipFromSource(source)
+  // Don't send membership twice in extras spread to collector.
+  delete extra.membership
+
   const entry: EmailSignup = {
     email,
     source,
     site: 'jerseydeals',
     product: 'Jersey Deals',
     at: new Date().toISOString(),
+    membership,
     ...(extra.phone ? { phone: extra.phone } : {}),
     ...(extra.name ? { name: extra.name } : {}),
     ...(extra.message ? { message: extra.message } : {}),
   }
   persistSignup(entry)
-  track('email_captured', { source, site: 'jerseydeals', product: 'jersey_deals' })
+  track('email_captured', {
+    source,
+    site: 'jerseydeals',
+    product: 'jersey_deals',
+    membership,
+  })
 
   let squareOk = false
   try {
-    const result = await postSquareCollector(email, source, extra)
+    const result = await postSquareCollector(email, source, membership, extra)
     squareOk = result.ok
-    if (squareOk) track('email_capture_square_ok', { source, product: 'jersey_deals' })
+    if (squareOk) track('email_capture_square_ok', { source, product: 'jersey_deals', membership })
   } catch {
-    track('email_capture_square_fail', { source, product: 'jersey_deals' })
+    track('email_capture_square_fail', { source, product: 'jersey_deals', membership })
   }
 
   let formOk = false
   try {
-    formOk = await postFormSubmit(email, source, extra, entry.at)
-    if (formOk) track('email_capture_remote_ok', { source, product: 'jersey_deals' })
-    else track('email_capture_remote_fail', { source, product: 'jersey_deals' })
+    formOk = await postFormSubmit(email, source, membership, extra, entry.at)
+    if (formOk) track('email_capture_remote_ok', { source, product: 'jersey_deals', membership })
+    else track('email_capture_remote_fail', { source, product: 'jersey_deals', membership })
   } catch {
-    track('email_capture_remote_fail', { source, status: 0, product: 'jersey_deals' })
+    track('email_capture_remote_fail', { source, status: 0, product: 'jersey_deals', membership })
   }
 
   if (squareOk) {
-    return { ok: true, message: 'Saved to our Jersey Deals list.' }
+    return {
+      ok: true,
+      message:
+        membership === 'member'
+          ? 'Saved to Jersey Deals Rewards members.'
+          : 'Saved to our Jersey Deals list.',
+    }
   }
   if (formOk) {
     return {

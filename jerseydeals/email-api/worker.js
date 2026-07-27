@@ -1,19 +1,20 @@
 /**
- * Cloudflare Worker: collect Jersey Deals leads into Square Customers
- * and email the collected fields to shop@jerseydeals.online.
+ * Cloudflare Worker: collect Jersey Deals leads into Square Customers,
+ * tag Rewards members vs non-members, and email shop@jerseydeals.online.
  *
  * Secrets:
  *   SQUARE_ACCESS_TOKEN
  *   (optional) COLLECT_SECRET — if set, require header X-JD-Collect-Secret
  *   (optional) NOTIFY_EMAIL — defaults to shop@jerseydeals.online
  *
- * POST JSON: { email, phone?, name?, message?, source?, product?, site?, ... }
+ * POST JSON: { email, phone?, name?, message?, source?, membership?, product?, site?, ... }
  * OPTIONS for CORS
  */
 
 const SQUARE_HOST = 'https://connect.squareup.com'
 const SQUARE_VERSION = '2025-10-16'
 const DEFAULT_NOTIFY = 'shop@jerseydeals.online'
+const MEMBER_SOURCES = new Set(['rewards_club'])
 
 function corsHeaders(origin) {
   return {
@@ -33,6 +34,16 @@ function json(body, status, origin) {
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim())
+}
+
+function membershipFromSource(source) {
+  return MEMBER_SOURCES.has(String(source || '').trim()) ? 'member' : 'non_member'
+}
+
+function resolveMembership(payload, source) {
+  const raw = String(payload.membership || '').trim().toLowerCase()
+  if (raw === 'member' || raw === 'non_member') return raw
+  return membershipFromSource(source)
 }
 
 async function square(env, path, { method = 'GET', body } = {}) {
@@ -62,7 +73,18 @@ async function square(env, path, { method = 'GET', body } = {}) {
 }
 
 function pickExtras(payload) {
-  const skip = new Set(['email', 'source', 'product', 'site', 'list', '_subject', '_template', '_captcha', '_replyto'])
+  const skip = new Set([
+    'email',
+    'source',
+    'product',
+    'site',
+    'list',
+    'membership',
+    '_subject',
+    '_template',
+    '_captcha',
+    '_replyto',
+  ])
   const out = {}
   for (const [k, v] of Object.entries(payload || {})) {
     if (skip.has(k)) continue
@@ -70,6 +92,33 @@ function pickExtras(payload) {
     if (val) out[k] = val.slice(0, 500)
   }
   return out
+}
+
+function buildNote({ source, membership, phone, name, previousNote = '' }) {
+  const line = [
+    'Jersey Deals lead',
+    `jd_member:${membership === 'member' ? 'yes' : 'no'}`,
+    source ? `source:${source}` : null,
+    phone ? `phone:${phone}` : null,
+    name ? `name:${name}` : null,
+    `at:${new Date().toISOString()}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
+  const prev = String(previousNote || '').trim()
+  if (!prev) return line
+  let nextPrev = prev
+  if (membership === 'member') {
+    nextPrev = nextPrev.replace(/\bjd_member:no\b/gi, 'jd_member:yes')
+    if (!/\bjd_member:yes\b/i.test(nextPrev)) nextPrev = `${nextPrev}\njd_member:yes`
+  }
+  if (source && nextPrev.includes(`source:${source}`)) return nextPrev.slice(0, 2000)
+  return [nextPrev, line].filter(Boolean).join('\n').slice(0, 2000)
+}
+
+function noteSaysMember(note) {
+  return /\bjd_member:yes\b/i.test(String(note || '')) || /source:rewards_club\b/i.test(String(note || ''))
 }
 
 async function notifyOwner(env, fields) {
@@ -80,7 +129,7 @@ async function notifyOwner(env, fields) {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
         ...fields,
-        _subject: `[${fields.site || 'Lead'}] new info · ${fields.source || 'unknown'}`,
+        _subject: `[${fields.site || 'Lead'}] ${fields.membership || 'lead'} · ${fields.source || 'unknown'}`,
         _template: 'table',
         _captcha: 'false',
         _replyto: fields.email || to,
@@ -91,7 +140,7 @@ async function notifyOwner(env, fields) {
   }
 }
 
-async function upsertCustomer(env, email, source, extras) {
+async function upsertCustomer(env, email, source, membership, extras) {
   const search = await square(env, '/v2/customers/search', {
     method: 'POST',
     body: {
@@ -105,14 +154,16 @@ async function upsertCustomer(env, email, source, extras) {
   })
   const existing = (search.customers || [])[0]
   const phone = extras.phone || extras.phone_number || ''
-  const noteParts = [
-    'Jersey Deals lead',
-    source ? `source:${source}` : null,
-    phone ? `phone:${phone}` : null,
-    extras.name ? `name:${extras.name}` : null,
-    `at:${new Date().toISOString()}`,
-  ].filter(Boolean)
-  const note = noteParts.join(' · ')
+  // Never demote an existing Rewards member.
+  const finalMembership =
+    membership === 'member' || noteSaysMember(existing?.note) ? 'member' : 'non_member'
+  const note = buildNote({
+    source,
+    membership: finalMembership,
+    phone,
+    name: extras.name,
+    previousNote: existing?.note || '',
+  })
 
   const customerBody = {
     email_address: email,
@@ -127,14 +178,11 @@ async function upsertCustomer(env, email, source, extras) {
   }
 
   if (existing?.id) {
-    const prev = existing.note || ''
-    const nextNote = prev.includes(source || '') ? prev : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
-    customerBody.note = nextNote
     await square(env, `/v2/customers/${existing.id}`, {
       method: 'PUT',
       body: { customer: customerBody },
     })
-    return { id: existing.id, created: false }
+    return { id: existing.id, created: false, membership: finalMembership }
   }
 
   const created = await square(env, '/v2/customers', {
@@ -144,7 +192,7 @@ async function upsertCustomer(env, email, source, extras) {
       ...customerBody,
     },
   })
-  return { id: created.customer?.id, created: true }
+  return { id: created.customer?.id, created: true, membership: finalMembership }
 }
 
 export default {
@@ -186,25 +234,36 @@ export default {
     const product = String(payload.product || 'Jersey Deals').trim().slice(0, 80)
     const site = String(payload.site || 'Jersey Deals').trim().slice(0, 80)
     const extras = pickExtras(payload)
+    const membership = resolveMembership(payload, source)
 
     if (!isValidEmail(email)) {
       return json({ ok: false, error: 'Invalid email' }, 400, origin)
     }
 
     try {
-      const result = await upsertCustomer(env, email, source, extras)
+      const result = await upsertCustomer(env, email, source, membership, extras)
       await notifyOwner(env, {
         email,
         ...extras,
         source,
+        membership: result.membership,
         product,
         site,
-        list: 'jerseydeals_leads',
+        list: result.membership === 'member' ? 'jerseydeals_rewards_members' : 'jerseydeals_non_members',
         collected_at: new Date().toISOString(),
         square_customer_id: result.id || '',
         square_created: String(!!result.created),
       })
-      return json({ ok: true, customerId: result.id, created: result.created }, 200, origin)
+      return json(
+        {
+          ok: true,
+          customerId: result.id,
+          created: result.created,
+          membership: result.membership,
+        },
+        200,
+        origin,
+      )
     } catch (err) {
       return json({ ok: false, error: String(err.message || err).slice(0, 240) }, 502, origin)
     }

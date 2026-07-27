@@ -9,6 +9,11 @@
 
 import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
+import {
+  buildMemberNote,
+  membershipFromSource,
+  recordEmailCapture,
+} from './lib/email-lists.mjs'
 
 const PORT = Number(process.env.PORT || 8787)
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN
@@ -52,6 +57,7 @@ function pickExtras(payload) {
     'product',
     'site',
     'list',
+    'membership',
     '_subject',
     '_template',
     '_captcha',
@@ -66,6 +72,16 @@ function pickExtras(payload) {
   return out
 }
 
+function resolveMembership(payload, source) {
+  const raw = String(payload.membership || '').trim().toLowerCase()
+  if (raw === 'member' || raw === 'non_member') return raw
+  return membershipFromSource(source)
+}
+
+function noteSaysMember(note) {
+  return /\bjd_member:yes\b/i.test(String(note || '')) || /source:rewards_club\b/i.test(String(note || ''))
+}
+
 async function notifyOwner(fields) {
   if (!NOTIFY_EMAIL) return
   try {
@@ -74,7 +90,7 @@ async function notifyOwner(fields) {
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
         ...fields,
-        _subject: `[${fields.site || 'Lead'}] new info · ${fields.source || 'unknown'}`,
+        _subject: `[${fields.site || 'Lead'}] ${fields.membership || 'lead'} · ${fields.source || 'unknown'}`,
         _template: 'table',
         _captcha: 'false',
         _replyto: fields.email || NOTIFY_EMAIL,
@@ -85,22 +101,22 @@ async function notifyOwner(fields) {
   }
 }
 
-async function upsertCustomer(email, source, extras) {
+async function upsertCustomer(email, source, membership, extras) {
   const search = await square('/v2/customers/search', {
     method: 'POST',
     body: { query: { filter: { email_address: { exact: email } } }, limit: 1 },
   })
   const existing = (search.customers || [])[0]
   const phone = extras.phone || extras.phone_number || ''
-  const note = [
-    'Jersey Deals lead',
-    `source:${source || 'unknown'}`,
-    phone ? `phone:${phone}` : null,
-    extras.name ? `name:${extras.name}` : null,
-    `at:${new Date().toISOString()}`,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  const finalMembership =
+    membership === 'member' || noteSaysMember(existing?.note) ? 'member' : 'non_member'
+  const note = buildMemberNote({
+    source,
+    membership: finalMembership,
+    phone,
+    name: extras.name,
+    previousNote: existing?.note || '',
+  })
 
   const customerBody = {
     email_address: email,
@@ -115,16 +131,11 @@ async function upsertCustomer(email, source, extras) {
   }
 
   if (existing?.id) {
-    const prev = existing.note || ''
-    const nextNote = prev.includes(source || '')
-      ? prev
-      : [prev, note].filter(Boolean).join('\n').slice(0, 2000)
-    customerBody.note = nextNote
     await square(`/v2/customers/${existing.id}`, {
       method: 'PUT',
       body: { customer: customerBody },
     })
-    return { id: existing.id, created: false }
+    return { id: existing.id, created: false, membership: finalMembership }
   }
   const created = await square('/v2/customers', {
     method: 'POST',
@@ -133,7 +144,7 @@ async function upsertCustomer(email, source, extras) {
       ...customerBody,
     },
   })
-  return { id: created.customer?.id, created: true }
+  return { id: created.customer?.id, created: true, membership: finalMembership }
 }
 
 function send(res, status, body, origin) {
@@ -181,26 +192,47 @@ const server = createServer(async (req, res) => {
   const product = String(payload.product || 'Jersey Deals').trim().slice(0, 80)
   const site = String(payload.site || 'Jersey Deals').trim().slice(0, 80)
   const extras = pickExtras(payload)
+  const membership = resolveMembership(payload, source)
   if (!isValidEmail(email)) {
     send(res, 400, { ok: false, error: 'Invalid email' }, origin)
     return
   }
 
   try {
-    const result = await upsertCustomer(email, source, extras)
-    console.log(`${result.created ? 'created' : 'updated'} ${email} (${source})`)
+    const result = await upsertCustomer(email, source, membership, extras)
+    recordEmailCapture({
+      email,
+      source,
+      membership: result.membership,
+      phone: extras.phone || '',
+    })
+    console.log(
+      `${result.created ? 'created' : 'updated'} ${email} (${source}, ${result.membership})`,
+    )
     await notifyOwner({
       email,
       ...extras,
       source,
+      membership: result.membership,
       product,
       site,
-      list: 'jerseydeals_leads',
+      list:
+        result.membership === 'member' ? 'jerseydeals_rewards_members' : 'jerseydeals_non_members',
       collected_at: new Date().toISOString(),
       square_customer_id: result.id || '',
       square_created: String(!!result.created),
     })
-    send(res, 200, { ok: true, customerId: result.id, created: result.created }, origin)
+    send(
+      res,
+      200,
+      {
+        ok: true,
+        customerId: result.id,
+        created: result.created,
+        membership: result.membership,
+      },
+      origin,
+    )
   } catch (err) {
     console.error(err)
     send(res, 502, { ok: false, error: String(err.message || err).slice(0, 240) }, origin)
