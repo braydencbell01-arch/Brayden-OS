@@ -1713,18 +1713,17 @@ export default function App() {
               <p className="mt-3 max-w-md font-brand text-base text-white/80">
                 Latest home-kit looks for the clubs we stock — tap a crest lane to shop that side.
               </p>
-              <a
-                href="#epl-clubs"
-                onClick={(e) => {
-                  e.preventDefault()
+              <button
+                type="button"
+                onClick={() => {
                   track('cta_click', { place: 'shop_epl' })
-                  document.getElementById('epl-clubs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  goInventory({ reset: true, leagueId: 'premier-league' })
                 }}
                 className="mt-6 inline-flex px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110"
                 style={{ background: PL_PURPLE_SOFT, boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}
               >
                 Shop EPL
-              </a>
+              </button>
             </motion.div>
 
             <div id="epl-clubs" className="mt-14 scroll-mt-48">
