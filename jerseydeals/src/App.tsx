@@ -1707,7 +1707,7 @@ export default function App() {
                 Shop Premier League
               </h2>
               <p className="mt-3 max-w-md font-brand text-base text-white/80">
-                Latest home-kit looks for the clubs we stock — tap a crest lane to shop that side.
+                Real kits from the clubs we stock — shop the league or pick your side.
               </p>
               <button
                 type="button"
