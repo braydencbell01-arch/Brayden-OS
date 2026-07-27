@@ -6,8 +6,8 @@ function asset(path: string) {
   return `${base}${path.replace(/^\//, '')}`
 }
 
-const AUTO_SPEED = 0.7
-const RESUME_AFTER_MS = 2400
+const AUTO_SPEED = 0.75
+const RESUME_AFTER_MS = 2200
 
 export function CollectionsRail({
   onSelect,
@@ -16,8 +16,7 @@ export function CollectionsRail({
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(false)
-  const touchingRef = useRef(false)
-  const programmaticRef = useRef(false)
+  const userActiveRef = useRef(false)
   const resumeTimer = useRef<number | null>(null)
   const halfWidthRef = useRef(0)
   const suppressClickRef = useRef(false)
@@ -32,88 +31,92 @@ export function CollectionsRail({
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const measure = () => {
-      halfWidthRef.current = scroller.scrollWidth / 2
+      // First half of the duplicated track.
+      halfWidthRef.current = Math.max(0, Math.floor(scroller.scrollWidth / 2))
     }
     measure()
-    // Images loading can change width — remeasure often at first.
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
     ro?.observe(scroller)
-    const remeasureId = window.setInterval(measure, 500)
-    window.setTimeout(() => window.clearInterval(remeasureId), 4000)
+    // Remeasure after images paint.
+    const t1 = window.setTimeout(measure, 100)
+    const t2 = window.setTimeout(measure, 600)
+    const t3 = window.setTimeout(measure, 1500)
+
+    const clearResume = () => {
+      if (resumeTimer.current) {
+        window.clearTimeout(resumeTimer.current)
+        resumeTimer.current = null
+      }
+    }
+
+    const pauseForUser = () => {
+      userActiveRef.current = true
+      pausedRef.current = true
+      clearResume()
+    }
 
     const scheduleResume = () => {
+      userActiveRef.current = false
       pausedRef.current = true
-      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
+      clearResume()
       resumeTimer.current = window.setTimeout(() => {
-        // Normalize into the first loop copy before auto-rotate continues.
+        measure()
         const half = halfWidthRef.current
         if (half > 0) {
-          programmaticRef.current = true
-          scroller.scrollLeft = ((scroller.scrollLeft % half) + half) % half
-          programmaticRef.current = false
+          // Snap into the first copy without fighting the next auto tick.
+          const normalized = ((scroller.scrollLeft % half) + half) % half
+          scroller.scrollLeft = normalized
         }
         pausedRef.current = false
-        touchingRef.current = false
       }, RESUME_AFTER_MS)
     }
 
-    const onScroll = () => {
-      if (programmaticRef.current) return
-      pausedRef.current = true
-      scheduleResume()
-    }
-
-    const onTouchStart = () => {
-      touchingRef.current = true
-      pausedRef.current = true
-      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
-    }
-
-    const onTouchEnd = () => {
-      touchingRef.current = false
-      scheduleResume()
-    }
-
+    // IMPORTANT: do NOT pause on `scroll` — auto-rotate scrollLeft changes fire
+    // scroll events asynchronously and were permanently killing the marquee.
+    const onTouchStart = () => pauseForUser()
+    const onTouchEnd = () => scheduleResume()
     const onPointerDown = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return
-      touchingRef.current = true
-      pausedRef.current = true
-      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
+      // Primary button / pen only.
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      pauseForUser()
     }
-
     const onPointerUp = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return
-      touchingRef.current = false
       scheduleResume()
     }
+    const onWheel = (e: WheelEvent) => {
+      // Horizontal trackpad / shift+wheel → move rail; leave vertical page scroll alone.
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
+        pauseForUser()
+        scheduleResume()
+      }
+    }
 
-    scroller.addEventListener('scroll', onScroll, { passive: true })
     scroller.addEventListener('touchstart', onTouchStart, { passive: true })
     scroller.addEventListener('touchend', onTouchEnd, { passive: true })
     scroller.addEventListener('touchcancel', onTouchEnd, { passive: true })
     scroller.addEventListener('pointerdown', onPointerDown, { passive: true })
     scroller.addEventListener('pointerup', onPointerUp, { passive: true })
     scroller.addEventListener('pointercancel', onPointerUp, { passive: true })
+    scroller.addEventListener('wheel', onWheel, { passive: true })
 
     let raf = 0
     const tick = () => {
       if (
         !prefersReduced &&
         !pausedRef.current &&
-        !touchingRef.current &&
+        !userActiveRef.current &&
         halfWidthRef.current > 0
       ) {
         driftRef.current += AUTO_SPEED
         if (driftRef.current >= 1) {
           const step = Math.floor(driftRef.current)
           driftRef.current -= step
-          programmaticRef.current = true
-          scroller.scrollLeft += step
           const half = halfWidthRef.current
-          if (half > 0 && scroller.scrollLeft >= half) {
-            scroller.scrollLeft -= half
-          }
-          programmaticRef.current = false
+          let next = scroller.scrollLeft + step
+          if (half > 0 && next >= half) next -= half
+          scroller.scrollLeft = next
         }
       }
       raf = window.requestAnimationFrame(tick)
@@ -122,16 +125,18 @@ export function CollectionsRail({
 
     return () => {
       window.cancelAnimationFrame(raf)
-      window.clearInterval(remeasureId)
-      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      window.clearTimeout(t3)
+      clearResume()
       ro?.disconnect()
-      scroller.removeEventListener('scroll', onScroll)
       scroller.removeEventListener('touchstart', onTouchStart)
       scroller.removeEventListener('touchend', onTouchEnd)
       scroller.removeEventListener('touchcancel', onTouchEnd)
       scroller.removeEventListener('pointerdown', onPointerDown)
       scroller.removeEventListener('pointerup', onPointerUp)
       scroller.removeEventListener('pointercancel', onPointerUp)
+      scroller.removeEventListener('wheel', onWheel)
     }
   }, [])
 
