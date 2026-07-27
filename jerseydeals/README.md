@@ -269,3 +269,30 @@ Local dry run:
 FACEBOOK_PAGE_ID=... FACEBOOK_PAGE_ACCESS_TOKEN=... \
   MESSAGE="Test" DRY_RUN=1 node jerseydeals/scripts/post-facebook.mjs
 ```
+
+## Rewards / shop email (IONOS SMTP)
+
+Send from **shop@jerseydeals.online** via GitHub Actions (no password in chat).
+
+**Repo secrets:**
+
+| Secret | Example |
+|--------|---------|
+| `SMTP_HOST` | `smtp.ionos.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | `shop@jerseydeals.online` |
+| `SMTP_PASS` | mailbox password |
+| `SMTP_FROM` | `Jersey Deals <shop@jerseydeals.online>` |
+
+**Send:** Actions → **Send SMTP email** → Run workflow.
+
+- Audience **test** → emails `shop@` (self-test)
+- Audience **rewards** → everyone in `public/rewards-members.json`
+- Optional **item_name** fills the “new kit just dropped” template
+- **dry_run** prints the payload without sending
+
+```bash
+SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
+  AUDIENCE=test ITEM_NAME="Inter Milan Home" DRY_RUN=1 \
+  node jerseydeals/scripts/send-smtp-email.mjs
+```

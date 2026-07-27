@@ -1,0 +1,81 @@
+name: Send SMTP email
+
+on:
+  workflow_dispatch:
+    inputs:
+      audience:
+        description: Recipients — test (shop@) or rewards members list
+        required: true
+        type: choice
+        options:
+          - test
+          - rewards
+        default: test
+      to:
+        description: Optional override — comma-separated emails (skips audience list)
+        required: false
+        type: string
+        default: ''
+      subject:
+        description: Subject line (optional if using new-kit template)
+        required: false
+        type: string
+        default: ''
+      body:
+        description: Plain-text body (optional — leave blank for new-kit template)
+        required: false
+        type: string
+        default: ''
+      item_name:
+        description: Optional kit name for the new-inventory template
+        required: false
+        type: string
+        default: ''
+      link:
+        description: Shop link in the email
+        required: false
+        type: string
+        default: 'https://jerseydeals.online/'
+      dry_run:
+        description: Print payload only (do not send)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: send-smtp-email
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install nodemailer
+        run: npm install --no-save nodemailer@6
+
+      - name: Send email
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          AUDIENCE: ${{ inputs.audience }}
+          TO: ${{ inputs.to }}
+          SUBJECT: ${{ inputs.subject }}
+          BODY: ${{ inputs.body }}
+          ITEM_NAME: ${{ inputs.item_name }}
+          LINK: ${{ inputs.link }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+        run: node jerseydeals/scripts/send-smtp-email.mjs
