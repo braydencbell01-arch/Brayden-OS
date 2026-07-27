@@ -9,7 +9,7 @@ import {
 } from './cart'
 import { captureEmail } from './emailCapture'
 import { formatPrice, shortTitle } from './listings'
-import { isValidEmail, readBuyerEmail, writeBuyerEmail } from './offer'
+import { isValidEmail, readBuyerEmail, syncPurchasedFromKnownEmail, writeBuyerEmail } from './offer'
 import {
   OFFER_DEFS,
   OFFERS_EVENT,
@@ -89,17 +89,22 @@ export function CartDrawer({
     setSavedEmail(readBuyerEmail())
     setEmailError('')
     setOfferMessage('')
-    syncOffers()
+    void syncPurchasedFromKnownEmail().finally(() => {
+      syncOffers()
+    })
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
     const onOffers = () => syncOffers()
+    const onPurchasedCleared = () => syncOffers()
     document.addEventListener('keydown', onKey)
     window.addEventListener(OFFERS_EVENT, onOffers)
+    window.addEventListener('jerseydeals:purchased-cleared', onPurchasedCleared)
     return () => {
       document.body.style.overflow = previous
       document.removeEventListener('keydown', onKey)
       window.removeEventListener(OFFERS_EVENT, onOffers)
+      window.removeEventListener('jerseydeals:purchased-cleared', onPurchasedCleared)
     }
   }, [open, onClose, cart.lines.length])
 

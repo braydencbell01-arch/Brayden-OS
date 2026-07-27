@@ -323,9 +323,33 @@ export function offerEligibleForCart(
   return { ok: true }
 }
 
-/** Keep wallet in sync when a purchase is confirmed. */
+/** Undo a false “purchased” consume so the 10% offer can return to My offers. */
+export function restoreFirstBuyerOfferAfterFalsePurchase() {
+  if (hasPurchased()) return
+  const wallet = readOffersWallet()
+  let changed = false
+  const row = wallet.offers.find((o) => o.id === 'first10')
+  if (row && row.status === 'used') {
+    row.status = 'available'
+    delete row.usedAt
+    delete row.activatedAt
+    changed = true
+  }
+  if (wallet.activeId === 'first10') {
+    wallet.activeId = null
+    changed = true
+  }
+  if (changed) writeOffersWallet(wallet)
+  // Re-claim into wallet if they signed up via the popup (or legacy claim).
+  ensureClaimedFirstBuyerOffer()
+}
+
+/** Keep wallet in sync when a purchase is confirmed or a false mark is cleared. */
 if (typeof window !== 'undefined') {
   window.addEventListener('jerseydeals:purchased', () => {
     consumeOffersAfterPurchase()
+  })
+  window.addEventListener('jerseydeals:purchased-cleared', () => {
+    restoreFirstBuyerOfferAfterFalsePurchase()
   })
 }

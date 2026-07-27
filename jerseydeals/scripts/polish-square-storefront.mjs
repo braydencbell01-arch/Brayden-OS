@@ -647,6 +647,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   var CONTACT_EMAIL=${contactEmailJson};
   var OFFER_KEY="jerseydeals.offer.v1";
   var PURCHASED_KEY="jerseydeals.purchased.v1";
+  var PURCHASED_SOURCE_KEY="jerseydeals.purchasedSource.v1";
   var EMAIL_KEY="jerseydeals.buyerEmail.v1";
   var REWARDS_KEY="jerseydeals.rewardsMember.v1";
   var OFFERS_KEY="jerseydeals.offers.v1";
@@ -690,8 +691,10 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     if(btn) btn.onclick=function(e){ e.preventDefault(); openOffersScreen(); };
   }
   function hasPurchased(){ return storageGet(PURCHASED_KEY)==="1"; }
-  function markPurchased(){
+  function purchasedSource(){ return storageGet(PURCHASED_SOURCE_KEY)||""; }
+  function markPurchased(source){
     storageSet(PURCHASED_KEY,"1");
+    storageSet(PURCHASED_SOURCE_KEY, source||"confirmed");
     try{
       var w=JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[]}');
       var now=new Date().toISOString();
@@ -699,6 +702,41 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       w.activeId=null; storageSet(OFFERS_KEY, JSON.stringify(w));
     }catch(e){}
     writeOffer({activated:false,email:storageGet(EMAIL_KEY)||readOffer().email||"",claimed:true});
+  }
+  function clearPurchasedFlag(){
+    storageSet(PURCHASED_KEY,"");
+    storageSet(PURCHASED_SOURCE_KEY,"");
+    try{ localStorage.removeItem(PURCHASED_KEY); localStorage.removeItem(PURCHASED_SOURCE_KEY); }catch(e){}
+  }
+  function restoreFirst10AfterFalsePurchase(){
+    if(hasPurchased()) return;
+    try{
+      var w=JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[]}');
+      var changed=false;
+      (w.offers||[]).forEach(function(o){
+        if(o.id==="first10" && o.status==="used"){ o.status="available"; delete o.usedAt; delete o.activatedAt; changed=true; }
+      });
+      if(w.activeId==="first10"){ w.activeId=null; changed=true; }
+      if(changed) storageSet(OFFERS_KEY, JSON.stringify(w));
+      if(hasFirst10() || readOffer().claimed) claimOfferId("first10", storageGet(EMAIL_KEY)||readOffer().email||"");
+    }catch(e){}
+  }
+  function syncPurchasedFromList(){
+    var known=storageGet(EMAIL_KEY)||readOffer().email||"";
+    if(!known) return hasPurchased();
+    if(emailHasPurchase(known)){
+      if(!hasPurchased()) markPurchased("purchasers-sync");
+      else if(!purchasedSource()) storageSet(PURCHASED_SOURCE_KEY,"purchasers-sync");
+      return true;
+    }
+    if(hasPurchased()){
+      var src=purchasedSource();
+      if(src!=="url" && src!=="confirmed"){
+        clearPurchasedFlag();
+        restoreFirst10AfterFalsePurchase();
+      }
+    }
+    return false;
   }
   function readOffer(){
     try{
@@ -749,7 +787,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       var u=new URL(location.href);
       var f=u.searchParams.get("purchase")||u.searchParams.get("purchased");
       if(f==="1"||f==="true"){
-        markPurchased();
+        markPurchased("url");
         u.searchParams.delete("purchase");
         u.searchParams.delete("purchased");
         history.replaceState({},"",u.pathname+u.search+u.hash);
@@ -1135,8 +1173,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   function ensureOfferPopup(){
     capturePurchase();
     if(rewardsMember()) claimOfferId("pl5");
-    var known=storageGet(EMAIL_KEY)||readOffer().email||"";
-    if(known && emailHasPurchase(known)) markPurchased();
+    syncPurchasedFromList();
     if(hasPurchased()) return;
     if(hasFirst10()) return;
     if(document.getElementById("jd-offer-root")) return;
@@ -1163,7 +1200,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       err.hidden=true;
       if(!validEmail(email)){ err.textContent="Enter a valid email address."; err.hidden=false; return; }
       if(emailHasPurchase(email)){
-        markPurchased();
+        markPurchased("purchasers-sync");
         storageSet(EMAIL_KEY, email);
         collectLead(email, "first_buyer_offer_returning");
         err.textContent="This email already has a purchase — the first-time 10% offer isn’t available.";
@@ -1209,7 +1246,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
         var val=(input.value||"").trim().toLowerCase();
         err.hidden=true;
         if(!validEmail(val)){ err.textContent="Enter a valid email address."; err.hidden=false; return; }
-        if(emailHasPurchase(val)) markPurchased();
+        if(emailHasPurchase(val)) markPurchased("purchasers-sync");
         storageSet(EMAIL_KEY, val);
         collectLead(val, "square_checkout_gate");
         root.remove();

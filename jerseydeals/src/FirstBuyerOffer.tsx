@@ -82,7 +82,7 @@ export function FirstBuyerOfferModal({
     try {
       const prior = await emailHasPriorPurchase(cleaned)
       if (prior) {
-        markPurchased()
+        markPurchased('offer-form')
         writeBuyerEmail(cleaned)
         onEmailSaved(cleaned)
         setError(

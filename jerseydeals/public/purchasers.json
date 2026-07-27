@@ -1,13 +1,9 @@
 {
-  "syncedAt": "2026-07-26T02:31:58Z",
-  "source": "square-orders+customers",
-  "count": 6,
+  "syncedAt": "2026-07-27T19:21:50Z",
+  "source": "square-completed-orders+payments",
+  "count": 2,
   "emails": [
-    "braydencbell01@gmail.com",
-    "jd-collect-test@gmail.com",
-    "jd-collect-tunnel@gmail.com",
-    "live-merge-verify@gmail.com",
-    "lynne8002@aol.com",
-    "square-lead-verify@gmail.com"
+    "candkbell@gmail.com",
+    "lynne8002@aol.com"
   ]
 }

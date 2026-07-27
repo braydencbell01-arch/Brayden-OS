@@ -859,17 +859,21 @@ export default function App() {
 
   useEffect(() => {
     if (loadState !== 'ready') return
+    // Repair false “purchased” marks from failed/OPEN checkouts vs completed buyers list.
+    void syncPurchasedFromKnownEmail()
+  }, [loadState])
+
+  useEffect(() => {
+    if (loadState !== 'ready') return
     let cancelled = false
     // Wait until inventory is painted so the modal + body lock don't fight first paint on iOS.
     const timer = window.setTimeout(() => {
       void (async () => {
+        await syncPurchasedFromKnownEmail()
+        if (cancelled) return
         // Claimed welcome offer → already in My offers; never show the popup again.
         if (hasClaimedFirstBuyerOffer()) return
         if (hasPurchased()) return
-        // Returning buyers (known email on purchasers list) never see the first-order popup again.
-        if (await syncPurchasedFromKnownEmail()) return
-        if (cancelled) return
-        if (hasClaimedFirstBuyerOffer() || hasPurchased()) return
         setOfferMode('offer')
         setOfferOpen(true)
         track('offer_popup_shown', {})

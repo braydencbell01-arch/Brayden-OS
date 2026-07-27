@@ -3,6 +3,8 @@
 export const FIRST_BUYER_DISCOUNT = 0.1
 export const OFFER_STORAGE_KEY = 'jerseydeals.offer.v1'
 export const PURCHASED_STORAGE_KEY = 'jerseydeals.purchased.v1'
+/** How this device got marked purchased — used to undo false positives from failed checkouts. */
+export const PURCHASED_SOURCE_KEY = 'jerseydeals.purchasedSource.v1'
 export const BUYER_EMAIL_STORAGE_KEY = 'jerseydeals.buyerEmail.v1'
 /** Permanent flag — once the welcome popup is filled out, never show it again. */
 export const FIRST10_CLAIMED_KEY = 'jerseydeals.first10Claimed.v1'
@@ -91,12 +93,35 @@ export function hasPurchased() {
   return window.localStorage.getItem(PURCHASED_STORAGE_KEY) === '1'
 }
 
-export function markPurchased() {
+export type PurchasedSource = 'url' | 'purchasers-sync' | 'offer-form' | 'confirmed'
+
+function readPurchasedSource(): PurchasedSource | '' {
+  if (!canUseStorage()) return ''
+  const raw = window.localStorage.getItem(PURCHASED_SOURCE_KEY) || ''
+  if (raw === 'url' || raw === 'purchasers-sync' || raw === 'offer-form' || raw === 'confirmed') {
+    return raw
+  }
+  return ''
+}
+
+/**
+ * Mark this device as a completed buyer.
+ * Prefer source 'url' for Square return links — those are not cleared by list repair.
+ */
+export function markPurchased(source: PurchasedSource = 'confirmed') {
   if (!canUseStorage()) return
   window.localStorage.setItem(PURCHASED_STORAGE_KEY, '1')
+  window.localStorage.setItem(PURCHASED_SOURCE_KEY, source)
   const email = readBuyerEmail() || readOffer().email
   writeOffer({ activated: false, email, claimed: true, activatedAt: undefined })
   window.dispatchEvent(new CustomEvent('jerseydeals:purchased'))
+}
+
+/** Clear a local purchased mark without firing the “consume offers” event. */
+export function clearPurchasedFlag() {
+  if (!canUseStorage()) return
+  window.localStorage.removeItem(PURCHASED_STORAGE_KEY)
+  window.localStorage.removeItem(PURCHASED_SOURCE_KEY)
 }
 
 /** Apply 10% off for display / totals. */
@@ -109,9 +134,12 @@ export function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 }
 
-type PurchasersFile = { emails?: string[] }
+type PurchasersFile = { emails?: string[]; source?: string }
 
-/** Best-effort prior-purchase check against synced Square order emails. */
+/**
+ * Prior completed purchase check against purchasers.json
+ * (completed Square orders/payments only — not failed attempts).
+ */
 export async function emailHasPriorPurchase(email: string): Promise<boolean> {
   const cleaned = email.trim().toLowerCase()
   if (!cleaned) return false
@@ -128,17 +156,38 @@ export async function emailHasPriorPurchase(email: string): Promise<boolean> {
 }
 
 /**
- * If this device already has a known buyer/rewards email that appears in
- * purchasers.json, mark purchased so the first-order popup never returns.
+ * Align local “purchased” with completed Square buyers.
+ * - Email on purchasers.json → mark purchased
+ * - Email known but NOT a completed buyer → undo false positives (failed checkouts)
+ *   so the first-time 10% offer can return to My offers
  */
 export async function syncPurchasedFromKnownEmail(): Promise<boolean> {
-  if (hasPurchased()) return true
   const email = (readBuyerEmail() || readOffer().email || '').trim().toLowerCase()
-  if (!email) return false
+  if (!email) return hasPurchased()
+
   const prior = await emailHasPriorPurchase(email)
-  if (!prior) return false
-  markPurchased()
-  return true
+  if (prior) {
+    if (!hasPurchased()) markPurchased('purchasers-sync')
+    else if (!readPurchasedSource()) {
+      try {
+        window.localStorage.setItem(PURCHASED_SOURCE_KEY, 'purchasers-sync')
+      } catch {
+        /* ignore */
+      }
+    }
+    return true
+  }
+
+  // Not a completed Square buyer. Clear false marks from the old OPEN-order sync,
+  // but never undo a Square return (?purchase=1) confirmation.
+  if (hasPurchased()) {
+    const source = readPurchasedSource()
+    if (source !== 'url' && source !== 'confirmed') {
+      clearPurchasedFlag()
+      window.dispatchEvent(new CustomEvent('jerseydeals:purchased-cleared', { detail: { email } }))
+    }
+  }
+  return false
 }
 
 /** Capture ?purchase=1 / ?purchased=1 return from Square Payment Links. */
@@ -148,7 +197,7 @@ export function capturePurchaseReturnFromUrl() {
     const url = new URL(window.location.href)
     const flag = url.searchParams.get('purchase') || url.searchParams.get('purchased')
     if (flag === '1' || flag === 'true') {
-      markPurchased()
+      markPurchased('url')
       url.searchParams.delete('purchase')
       url.searchParams.delete('purchased')
       // Keep ?sold= for soldOut capture (called separately); only strip purchase flags here.

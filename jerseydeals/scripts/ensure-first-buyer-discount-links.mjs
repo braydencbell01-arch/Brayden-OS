@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Ensure Square Catalog 10% first-time discount + Payment Links that apply it.
- * Also sync purchaser emails from Square orders into public/purchasers.json
- * and merge discounted URLs into listings.json / checkout-links.json.
+ * Also sync purchaser emails from completed Square payments/orders into
+ * public/purchasers.json (failed / OPEN checkouts must never count).
+ * Merges discounted URLs into listings.json / checkout-links.json.
  *
  * Requires: SQUARE_ACCESS_TOKEN
  *
@@ -195,15 +196,34 @@ async function createDiscountedLink({ variationId, name, locationId, discountId 
   }
 }
 
+function collectOrderEmails(order, emails) {
+  const direct =
+    order.fulfillments?.flatMap((f) => [
+      f.shipment_details?.recipient?.email_address,
+      f.pickup_details?.recipient?.email_address,
+      f.delivery_details?.recipient?.email_address,
+    ]) || []
+  for (const e of direct) {
+    if (e && String(e).includes('@')) emails.add(String(e).trim().toLowerCase())
+  }
+}
+
+/**
+ * Only real buyers: COMPLETED orders + COMPLETED/APPROVED payments.
+ * Failed card attempts and OPEN unpaid checkouts must never land here —
+ * otherwise the first-time 10% offer is wrongly blocked.
+ */
 async function syncPurchasers() {
   const emails = new Set()
+  const locationId = await primaryLocationId()
+
   let cursor = ''
   do {
     const body = {
-      location_ids: [await primaryLocationId()],
+      location_ids: [locationId],
       query: {
         filter: {
-          state_filter: { states: ['COMPLETED', 'OPEN'] },
+          state_filter: { states: ['COMPLETED'] },
         },
         sort: { sort_field: 'UPDATED_AT', sort_order: 'DESC' },
       },
@@ -212,46 +232,36 @@ async function syncPurchasers() {
     if (cursor) body.cursor = cursor
     const data = await square('/v2/orders/search', { method: 'POST', body })
     for (const order of data.orders || []) {
-      const email =
-        order.fulfillments?.[0]?.shipment_details?.recipient?.email_address ||
-        order.fulfillments?.[0]?.pickup_details?.recipient?.email_address ||
-        order.tenders?.[0]?.customer_id ||
-        ''
-      // Prefer explicit email fields on order
-      const direct =
-        order.fulfillments?.flatMap((f) => [
-          f.shipment_details?.recipient?.email_address,
-          f.pickup_details?.recipient?.email_address,
-          f.delivery_details?.recipient?.email_address,
-        ]) || []
-      for (const e of direct) {
-        if (e && String(e).includes('@')) emails.add(String(e).trim().toLowerCase())
-      }
-      if (email && String(email).includes('@')) emails.add(String(email).trim().toLowerCase())
+      collectOrderEmails(order, emails)
     }
     cursor = data.cursor || ''
   } while (cursor)
 
-  // Also pull customer directory emails (may include buyers)
-  let cCursor = ''
+  // Payments are the ground truth for “did money capture?” — exclude FAILED.
+  let pCursor = ''
   do {
     const qs = new URLSearchParams({ limit: '100' })
-    if (cCursor) qs.set('cursor', cCursor)
-    const data = await square(`/v2/customers?${qs}`)
-    for (const c of data.customers || []) {
-      if (c.email_address) emails.add(String(c.email_address).trim().toLowerCase())
+    if (pCursor) qs.set('cursor', pCursor)
+    const data = await square(`/v2/payments?${qs}`)
+    for (const payment of data.payments || []) {
+      const status = String(payment.status || '').toUpperCase()
+      if (status !== 'COMPLETED' && status !== 'APPROVED') continue
+      const e = payment.buyer_email_address
+      if (e && String(e).includes('@')) emails.add(String(e).trim().toLowerCase())
     }
-    cCursor = data.cursor || ''
-  } while (cCursor)
+    pCursor = data.cursor || ''
+  } while (pCursor)
+
+  // Do not import Square Customers — leads / Rewards signups are not purchasers.
 
   const payload = {
     syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-    source: 'square-orders+customers',
+    source: 'square-completed-orders+payments',
     count: emails.size,
     emails: [...emails].sort(),
   }
   writeFileSync(PURCHASERS_PATH, `${JSON.stringify(payload, null, 2)}\n`)
-  console.log(`Wrote ${payload.count} purchaser/customer emails → ${PURCHASERS_PATH}`)
+  console.log(`Wrote ${payload.count} completed-buyer emails → ${PURCHASERS_PATH}`)
   return payload
 }
 
@@ -357,7 +367,14 @@ async function main() {
   await syncPurchasers()
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+if (process.env.SYNC_PURCHASERS_ONLY === '1') {
+  syncPurchasers().catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+} else {
+  main().catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+}
