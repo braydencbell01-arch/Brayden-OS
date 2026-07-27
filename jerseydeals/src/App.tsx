@@ -1092,16 +1092,7 @@ export default function App() {
         clear: () => setClubFilter('All'),
       })
     }
-    if (deferredQuery.trim()) {
-      chips.push({
-        key: 'q',
-        label: `“${deferredQuery.trim()}”`,
-        clear: () => {
-          setQuery('')
-          setAppliedQuery('')
-        },
-      })
-    }
+    // Search chip is rendered separately under all filter rows.
     return chips
   }, [
     genderFilter,
@@ -1111,10 +1102,24 @@ export default function App() {
     brandFilter,
     clubFilter,
     leagueFilter,
-    deferredQuery,
-    clubsData,
     leaguesData,
+    clubsData,
   ])
+
+  const searchFilterChip = useMemo(() => {
+    const q = deferredQuery.trim()
+    if (!q) return null
+    return {
+      key: 'q',
+      label: `“${q}”`,
+      clear: () => {
+        setQuery('')
+        setAppliedQuery('')
+      },
+    }
+  }, [deferredQuery])
+
+  const filterChipCount = activeFilterChips.length + (searchFilterChip ? 1 : 0)
 
   function clearAllFilters() {
     setTagFilter('All')
@@ -1139,10 +1144,12 @@ export default function App() {
     return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
   }, [deferredQuery, filtered.length, listings.length, genderFilter])
 
-  function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
+  function scrollToInventoryBrowse(opts?: { focusSearch?: boolean; toResults?: boolean }) {
     setFiltersOpen(true)
     const run = () => {
-      const target = document.getElementById('inventory-browse')
+      const target = opts?.toResults
+        ? document.getElementById('inventory-results') || document.getElementById('inventory-browse')
+        : document.getElementById('inventory-browse')
       if (!target) return
       const header = document.querySelector('header')
       const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
@@ -1154,14 +1161,19 @@ export default function App() {
       window.scrollTo({ top: Math.max(0, top), behavior: preferSmooth ? 'smooth' : 'auto' })
       if (opts?.focusSearch) document.getElementById('sticky-search')?.focus({ preventScroll: true })
     }
-    // Two frames so filter panel layout is open before we scroll.
-    requestAnimationFrame(() => requestAnimationFrame(run))
+    // Two frames so filter panel layout is open; search path waits a beat for chips/results.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (opts?.toResults) window.setTimeout(run, 50)
+        else run()
+      }),
+    )
   }
 
-  /** Apply sticky search + jump to filters/results — only from Enter / blue button. */
+  /** Apply sticky search + jump to product results — only from Enter / blue button. */
   function activateSearch(opts?: { focusSearch?: boolean }) {
     setAppliedQuery(query.trim())
-    scrollToInventoryBrowse({ focusSearch: opts?.focusSearch })
+    scrollToInventoryBrowse({ focusSearch: opts?.focusSearch, toResults: true })
   }
 
   function goInventory(next?: {
@@ -1201,7 +1213,11 @@ export default function App() {
     }
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
     if (next?.leagueId !== undefined) setLeagueFilter(next.leagueId)
-    scrollToInventoryBrowse({ focusSearch: next?.focusSearch })
+    const hasSearch = Boolean((next?.query ?? '').trim())
+    scrollToInventoryBrowse({
+      focusSearch: next?.focusSearch,
+      toResults: hasSearch,
+    })
   }
 
   useEffect(() => {
@@ -2365,7 +2381,7 @@ export default function App() {
                         onClick={() => setFiltersOpen((open) => !open)}
                       >
                         {filtersOpen ? 'Hide filters' : 'Filters'}
-                        {activeFilterChips.length > 0 ? ` · ${activeFilterChips.length}` : ''}
+                        {filterChipCount > 0 ? ` · ${filterChipCount}` : ''}
                       </button>
                     </div>
                   </div>
@@ -2382,13 +2398,15 @@ export default function App() {
                           {chip.label} ✕
                         </button>
                       ))}
-                      <button
-                        type="button"
-                        onClick={clearAllFilters}
-                        className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
-                      >
-                        Clear all
-                      </button>
+                      {!searchFilterChip ? (
+                        <button
+                          type="button"
+                          onClick={clearAllFilters}
+                          className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                        >
+                          Clear all
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -2495,6 +2513,26 @@ export default function App() {
                         ))}
                       </FilterRow>
                     ) : null}
+
+                    {searchFilterChip ? (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <button
+                          key={searchFilterChip.key}
+                          type="button"
+                          onClick={searchFilterChip.clear}
+                          className="border border-navy bg-navy px-2 py-0.5 font-brand text-[0.6rem] font-bold uppercase tracking-[0.1em] text-cream transition hover:bg-navy/80"
+                        >
+                          {searchFilterChip.label} ✕
+                        </button>
+                        <button
+                          type="button"
+                          onClick={clearAllFilters}
+                          className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </motion.div>
               )}
@@ -2515,6 +2553,8 @@ export default function App() {
                   .
                 </p>
               )}
+
+              <div id="inventory-results" className="scroll-mt-48" aria-hidden />
 
               {loadState === 'ready' && filtered.length === 0 && (
                 <div className="mt-10 border border-navy/10 bg-white px-6 py-10 text-center">
