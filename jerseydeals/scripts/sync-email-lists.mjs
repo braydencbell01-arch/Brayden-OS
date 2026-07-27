@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 /**
- * Rebuild permanent Rewards member / non-member email lists.
+ * Landing-page email lists only (Jersey Deals site — not Square Online, not BrayStats).
  *
- * Merges:
- *  1) Existing public JSON lists (never drop known emails)
- *  2) Square Customers notes (jd_member + source:*)
- *  3) Optional one-shot capture via env EMAIL + SOURCE (+ MEMBERSHIP)
+ * - Optional one-shot capture: EMAIL + SOURCE (+ MEMBERSHIP) appends/moves between lists
+ * - Optional Square import: ONLY customers tagged with the current list_gen (new landing captures)
+ * - Members and non-members are mutually exclusive (join Rewards moves non-member → member)
  *
  *   node jerseydeals/scripts/sync-email-lists.mjs
  *   EMAIL=a@b.com SOURCE=rewards_club node jerseydeals/scripts/sync-email-lists.mjs
+ *   RESET_LISTS=1 node jerseydeals/scripts/sync-email-lists.mjs
  */
 
 import {
+  LIST_GENERATION,
   MEMBERS_PATH,
   NON_MEMBERS_PATH,
-  buildMemberNote,
+  emptyList,
   membershipFromSource,
   normalizeEmail,
   isValidEmail,
@@ -23,6 +24,7 @@ import {
   recordEmailCapture,
   writeList,
 } from './lib/email-lists.mjs'
+import { writeFileSync } from 'node:fs'
 
 const TOKEN = process.env.SQUARE_ACCESS_TOKEN || ''
 const HOST =
@@ -87,13 +89,23 @@ function mergeInto(map, entry) {
 }
 
 async function main() {
-  // Optional single capture (used by collect workflow).
+  if (process.env.RESET_LISTS === '1') {
+    writeFileSync(MEMBERS_PATH, `${JSON.stringify(emptyList('rewards_members'), null, 2)}\n`)
+    writeFileSync(NON_MEMBERS_PATH, `${JSON.stringify(emptyList('non_members'), null, 2)}\n`)
+    console.log(`Reset landing email lists (generation ${LIST_GENERATION})`)
+  }
+
   const captureEmail = normalizeEmail(process.env.EMAIL || '')
   if (captureEmail) {
-    const source = String(process.env.SOURCE || 'manual').trim() || 'manual'
+    if (!isValidEmail(captureEmail)) {
+      console.error('Invalid EMAIL')
+      process.exit(1)
+    }
+    const source = String(process.env.SOURCE || 'landing').trim() || 'landing'
+    const membershipRaw = String(process.env.MEMBERSHIP || '').trim().toLowerCase()
     const membership =
-      process.env.MEMBERSHIP === 'member' || process.env.MEMBERSHIP === 'non_member'
-        ? process.env.MEMBERSHIP
+      membershipRaw === 'member' || membershipRaw === 'non_member'
+        ? membershipRaw
         : membershipFromSource(source)
     const result = recordEmailCapture({
       email: captureEmail,
@@ -102,7 +114,7 @@ async function main() {
       phone: process.env.PHONE || '',
     })
     console.log(
-      `Recorded ${captureEmail} as ${result.membership} (source:${source}) → members=${result.members?.count} non-members=${result.nonMembers?.count}`,
+      `Landing capture ${captureEmail} → ${result.membership} (source:${source}) · members=${result.members?.count} non-members=${result.nonMembers?.count}`,
     )
   }
 
@@ -113,67 +125,45 @@ async function main() {
     nonMembers.entries.map((e) => [e.email, { ...e, sources: [...e.sources] }]),
   )
 
-  const customers = await listSquareCustomers()
+  // Only import Square customers tagged for THIS landing list generation.
+  // Pre-reset leads (no matching list_gen) are ignored so wiped lists stay clean.
   let fromSquare = 0
-  for (const c of customers) {
-    const email = normalizeEmail(c.email_address)
-    if (!isValidEmail(email)) continue
-    const parsed = parseCustomerNote(c.note)
-    // Buyers with empty notes are not automatically leads — only tagged captures.
-    if (!parsed.membership && parsed.sources.length === 0) continue
-    const membership =
-      parsed.membership ||
-      (parsed.sources.some((s) => membershipFromSource(s) === 'member') ? 'member' : 'non_member')
-    const entry = {
-      email,
-      sources: parsed.sources,
-      firstSeen: c.created_at || new Date().toISOString(),
-      lastSeen: c.updated_at || c.created_at || new Date().toISOString(),
-      ...(c.phone_number ? { phone: c.phone_number } : {}),
-    }
-    fromSquare += 1
-    if (membership === 'member') {
-      mergeInto(memberMap, entry)
-      nonMemberMap.delete(email)
-    } else if (!memberMap.has(email)) {
-      mergeInto(nonMemberMap, entry)
-    } else {
-      mergeInto(memberMap, entry)
-    }
-
-    // Keep Square note membership flag current when we have a token.
-    if (TOKEN) {
-      const nextNote = buildMemberNote({
-        source: parsed.sources[0] || 'square_sync',
-        membership,
-        phone: c.phone_number || '',
-        previousNote: String(c.note || ''),
-      })
-      if (nextNote !== String(c.note || '').trim()) {
-        try {
-          await square(`/v2/customers/${c.id}`, {
-            method: 'PUT',
-            body: {
-              customer: {
-                email_address: email,
-                note: nextNote,
-                reference_id: c.reference_id || 'jerseydeals',
-                ...(c.phone_number ? { phone_number: c.phone_number } : {}),
-                ...(c.version != null ? { version: c.version } : {}),
-              },
-            },
-          })
-        } catch (err) {
-          console.warn(`Could not retag ${email}:`, err.message || err)
-        }
+  if (TOKEN && process.env.IMPORT_SQUARE_LANDING === '1') {
+    const customers = await listSquareCustomers()
+    for (const c of customers) {
+      const note = String(c.note || '')
+      if (!note.includes(`list_gen:${LIST_GENERATION}`)) continue
+      const email = normalizeEmail(c.email_address)
+      if (!isValidEmail(email)) continue
+      const parsed = parseCustomerNote(note)
+      const membership =
+        parsed.membership ||
+        (parsed.sources.some((s) => membershipFromSource(s) === 'member') ? 'member' : 'non_member')
+      const entry = {
+        email,
+        sources: parsed.sources,
+        firstSeen: c.created_at || new Date().toISOString(),
+        lastSeen: c.updated_at || c.created_at || new Date().toISOString(),
+        ...(c.phone_number ? { phone: c.phone_number } : {}),
+      }
+      fromSquare += 1
+      if (membership === 'member') {
+        mergeInto(memberMap, entry)
+        nonMemberMap.delete(email)
+      } else if (!memberMap.has(email)) {
+        mergeInto(nonMemberMap, entry)
+      } else {
+        mergeInto(memberMap, entry)
       }
     }
+    writeList(MEMBERS_PATH, 'rewards_members', memberMap)
+    writeList(NON_MEMBERS_PATH, 'non_members', nonMemberMap)
   }
 
-  const membersOut = writeList(MEMBERS_PATH, 'rewards_members', memberMap)
-  const nonMembersOut = writeList(NON_MEMBERS_PATH, 'non_members', nonMemberMap)
+  const membersOut = readList(MEMBERS_PATH, 'rewards_members')
+  const nonMembersOut = readList(NON_MEMBERS_PATH, 'non_members')
   console.log(
-    `Email lists synced · members=${membersOut.count} non-members=${nonMembersOut.count} (square tagged=${fromSquare})`,
+    `Landing email lists · members=${membersOut.count} non-members=${nonMembersOut.count} (square landing-tagged import=${fromSquare})`,
   )
   console.log(`→ ${MEMBERS_PATH}`)
   console.log(`→ ${NON_MEMBERS_PATH}`)

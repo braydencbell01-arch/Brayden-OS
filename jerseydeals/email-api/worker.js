@@ -15,6 +15,7 @@ const SQUARE_HOST = 'https://connect.squareup.com'
 const SQUARE_VERSION = '2025-10-16'
 const DEFAULT_NOTIFY = 'shop@jerseydeals.online'
 const MEMBER_SOURCES = new Set(['rewards_club'])
+const LIST_GENERATION = '2026-07-27-email-reset'
 
 function corsHeaders(origin) {
   return {
@@ -96,7 +97,8 @@ function pickExtras(payload) {
 
 function buildNote({ source, membership, phone, name, previousNote = '' }) {
   const line = [
-    'Jersey Deals lead',
+    'Jersey Deals landing lead',
+    `list_gen:${LIST_GENERATION}`,
     `jd_member:${membership === 'member' ? 'yes' : 'no'}`,
     source ? `source:${source}` : null,
     phone ? `phone:${phone}` : null,
@@ -112,6 +114,9 @@ function buildNote({ source, membership, phone, name, previousNote = '' }) {
   if (membership === 'member') {
     nextPrev = nextPrev.replace(/\bjd_member:no\b/gi, 'jd_member:yes')
     if (!/\bjd_member:yes\b/i.test(nextPrev)) nextPrev = `${nextPrev}\njd_member:yes`
+  }
+  if (!nextPrev.includes(`list_gen:${LIST_GENERATION}`)) {
+    nextPrev = `${nextPrev}\nlist_gen:${LIST_GENERATION}`
   }
   if (source && nextPrev.includes(`source:${source}`)) return nextPrev.slice(0, 2000)
   return [nextPrev, line].filter(Boolean).join('\n').slice(0, 2000)
@@ -137,6 +142,41 @@ async function notifyOwner(env, fields) {
     })
   } catch {
     // non-fatal — Square upsert still succeeded
+  }
+}
+
+/**
+ * Append/move the email on the landing-page member / non-member JSON lists
+ * via GitHub Actions (repository_dispatch → collect-jerseydeals-email).
+ */
+async function dispatchLandingEmailList(env, { email, source, membership, phone }) {
+  const token = String(env.GITHUB_LISTS_TOKEN || '').trim()
+  const repo = String(env.GITHUB_REPO || 'braydencbell01-arch/Brayden-OS').trim()
+  if (!token) return { attempted: false, ok: false }
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        event_type: 'jerseydeals-email',
+        client_payload: {
+          email,
+          source,
+          membership,
+          phone: phone || '',
+          secret: env.COLLECT_SECRET || '',
+          scope: 'jerseydeals-landing',
+        },
+      }),
+    })
+    return { attempted: true, ok: res.ok || res.status === 204 }
+  } catch {
+    return { attempted: true, ok: false }
   }
 }
 
@@ -240,8 +280,21 @@ export default {
       return json({ ok: false, error: 'Invalid email' }, 400, origin)
     }
 
+    // Landing-page collection only — ignore BrayStats / other sites.
+    const siteLower = site.toLowerCase()
+    if (siteLower.includes('braystats') || siteLower.includes('brayden-os stats')) {
+      return json({ ok: false, error: 'Landing-page collection only' }, 400, origin)
+    }
+
     try {
       const result = await upsertCustomer(env, email, source, membership, extras)
+      // Landing-page lists are updated via GitHub Actions (not Square Customer import).
+      await dispatchLandingEmailList(env, {
+        email,
+        source,
+        membership: result.membership,
+        phone: extras.phone || '',
+      })
       await notifyOwner(env, {
         email,
         ...extras,

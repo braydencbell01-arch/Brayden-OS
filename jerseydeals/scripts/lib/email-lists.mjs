@@ -11,12 +11,25 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+export const LIST_GENERATION = '2026-07-27-email-reset'
 export const PUBLIC_DIR = join(__dirname, '../../public')
 export const MEMBERS_PATH = join(PUBLIC_DIR, 'rewards-members.json')
 export const NON_MEMBERS_PATH = join(PUBLIC_DIR, 'non-member-emails.json')
 
 /** Sources that mean Rewards Club membership. */
 export const MEMBER_SOURCES = new Set(['rewards_club'])
+
+/** Landing-page capture sources allowed into the permanent lists. */
+export const LANDING_SOURCES = new Set([
+  'rewards_club',
+  'first_buyer_offer',
+  'checkout_gate',
+  'cart_checkout_gate',
+  'offer_activate_pl5',
+  'landing',
+  'manual',
+])
+
 
 export function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim())
@@ -36,9 +49,15 @@ export function emptyList(kind) {
   return {
     syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     kind,
+    scope: 'jerseydeals-landing',
+    listGeneration: LIST_GENERATION,
     count: 0,
     emails: [],
     entries: [],
+    note:
+      kind === 'rewards_members'
+        ? 'Jersey Deals landing-page Rewards members only (not Square Online / BrayStats).'
+        : 'Jersey Deals landing-page non-member emails only (not Square Online / BrayStats).',
   }
 }
 
@@ -105,9 +124,15 @@ export function writeList(path, kind, entryMap) {
   const payload = {
     syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     kind,
+    scope: 'jerseydeals-landing',
+    listGeneration: LIST_GENERATION,
     count: entries.length,
     emails: entries.map((e) => e.email),
     entries,
+    note:
+      kind === 'rewards_members'
+        ? 'Jersey Deals landing-page Rewards members only (not Square Online / BrayStats).'
+        : 'Jersey Deals landing-page non-member emails only (not Square Online / BrayStats).',
   }
   writeFileSync(path, `${JSON.stringify(payload, null, 2)}\n`)
   return payload
@@ -130,7 +155,12 @@ export function recordEmailCapture({
   if (!isValidEmail(cleaned)) {
     return { ok: false, message: 'Invalid email' }
   }
-  const status = membership || membershipFromSource(source)
+  const src = String(source || 'landing').trim() || 'landing'
+  // Landing-page lists only — ignore Square Online / BrayStats / unknown sources.
+  if (!LANDING_SOURCES.has(src) && !MEMBER_SOURCES.has(src)) {
+    return { ok: false, message: `Source not allowed for landing lists: ${src}` }
+  }
+  const status = membership || membershipFromSource(src)
   const when = at || new Date().toISOString()
 
   const members = readList(membersPath, 'rewards_members')
@@ -141,13 +171,13 @@ export function recordEmailCapture({
   )
 
   if (status === 'member') {
-    upsertEntry(memberMap, { email: cleaned, source, at: when, phone })
+    upsertEntry(memberMap, { email: cleaned, source: src, at: when, phone })
     nonMemberMap.delete(cleaned)
   } else if (memberMap.has(cleaned)) {
     // Already a Rewards member — keep on members list, attach source history.
-    upsertEntry(memberMap, { email: cleaned, source, at: when, phone })
+    upsertEntry(memberMap, { email: cleaned, source: src, at: when, phone })
   } else {
-    upsertEntry(nonMemberMap, { email: cleaned, source, at: when, phone })
+    upsertEntry(nonMemberMap, { email: cleaned, source: src, at: when, phone })
   }
 
   const membersOut = writeList(membersPath, 'rewards_members', memberMap)
@@ -179,7 +209,8 @@ export function parseCustomerNote(note) {
 export function buildMemberNote({ source, membership, phone, name, previousNote = '' }) {
   const status = membership || membershipFromSource(source)
   const line = [
-    'Jersey Deals lead',
+    'Jersey Deals landing lead',
+    `list_gen:${LIST_GENERATION}`,
     `jd_member:${status === 'member' ? 'yes' : 'no'}`,
     source ? `source:${source}` : null,
     phone ? `phone:${phone}` : null,
@@ -198,6 +229,9 @@ export function buildMemberNote({ source, membership, phone, name, previousNote 
     if (!/\bjd_member:yes\b/i.test(nextPrev)) {
       nextPrev = `${nextPrev}\njd_member:yes`
     }
+  }
+  if (!nextPrev.includes(`list_gen:${LIST_GENERATION}`)) {
+    nextPrev = `${nextPrev}\nlist_gen:${LIST_GENERATION}`
   }
   if (source && nextPrev.includes(`source:${source}`)) return nextPrev.slice(0, 2000)
   return [nextPrev, line].filter(Boolean).join('\n').slice(0, 2000)

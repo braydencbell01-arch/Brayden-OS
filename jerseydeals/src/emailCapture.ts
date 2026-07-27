@@ -1,10 +1,8 @@
 /**
- * Jersey Deals–only email capture.
- * 1) Square Customers via collector API (preferred) — tagged member vs non-member
- * 2) FormSubmit → shop@jerseydeals.online (always notify owner)
- * Permanent lists live in public/rewards-members.json + public/non-member-emails.json
- * (kept current by the collect/sync pipelines).
- * Never import BrayStats modules or BrayStats env vars.
+ * Jersey Deals landing-page email capture only (not BrayStats, not Square Online).
+ * 1) Collector API → permanent member / non-member JSON lists (+ optional Square CRM tag)
+ * 2) FormSubmit → shop@jerseydeals.online (notify owner)
+ * Lists: public/rewards-members.json + public/non-member-emails.json
  */
 import { CONTACT_EMAIL } from './config'
 import { track } from './analytics'

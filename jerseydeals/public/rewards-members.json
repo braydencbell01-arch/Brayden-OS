@@ -1,7 +1,10 @@
 {
-  "syncedAt": "2026-07-27T19:42:02Z",
+  "syncedAt": "2026-07-27T19:52:50Z",
   "kind": "rewards_members",
+  "scope": "jerseydeals-landing",
+  "listGeneration": "2026-07-27-email-reset",
   "count": 0,
   "emails": [],
-  "entries": []
+  "entries": [],
+  "note": "Jersey Deals landing-page Rewards members only (not Square Online / BrayStats)."
 }
