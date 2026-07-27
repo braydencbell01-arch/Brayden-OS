@@ -1144,12 +1144,12 @@ export default function App() {
     return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
   }, [deferredQuery, filtered.length, listings.length, genderFilter])
 
-  function scrollToInventoryBrowse(opts?: { focusSearch?: boolean; toResults?: boolean }) {
+  function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
     setFiltersOpen(true)
     const run = () => {
-      const target = opts?.toResults
-        ? document.getElementById('inventory-results') || document.getElementById('inventory-browse')
-        : document.getElementById('inventory-browse')
+      // Always land on the product grid (below filters), for search and every inventory CTA.
+      const target =
+        document.getElementById('inventory-results') || document.getElementById('inventory-browse')
       if (!target) return
       const header = document.querySelector('header')
       const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
@@ -1161,19 +1161,14 @@ export default function App() {
       window.scrollTo({ top: Math.max(0, top), behavior: preferSmooth ? 'smooth' : 'auto' })
       if (opts?.focusSearch) document.getElementById('sticky-search')?.focus({ preventScroll: true })
     }
-    // Two frames so filter panel layout is open; search path waits a beat for chips/results.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
-        if (opts?.toResults) window.setTimeout(run, 50)
-        else run()
-      }),
-    )
+    // Wait for filter panel / chips to layout before scrolling to products.
+    requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(run, 50)))
   }
 
   /** Apply sticky search + jump to product results — only from Enter / blue button. */
   function activateSearch(opts?: { focusSearch?: boolean }) {
     setAppliedQuery(query.trim())
-    scrollToInventoryBrowse({ focusSearch: opts?.focusSearch, toResults: true })
+    scrollToInventoryBrowse({ focusSearch: opts?.focusSearch })
   }
 
   function goInventory(next?: {
@@ -1213,11 +1208,7 @@ export default function App() {
     }
     if (next?.clubId !== undefined) setClubFilter(next.clubId)
     if (next?.leagueId !== undefined) setLeagueFilter(next.leagueId)
-    const hasSearch = Boolean((next?.query ?? '').trim())
-    scrollToInventoryBrowse({
-      focusSearch: next?.focusSearch,
-      toResults: hasSearch,
-    })
+    scrollToInventoryBrowse({ focusSearch: next?.focusSearch })
   }
 
   useEffect(() => {
