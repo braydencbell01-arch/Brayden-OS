@@ -24,6 +24,7 @@ import {
 import {
   addListingToCart,
   cartCount,
+  cartSubtotal,
   clearCart,
   readCart,
   removeCartLine,
@@ -33,6 +34,7 @@ import {
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
+import { FreeShippingBar } from './FreeShippingBar'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
 import { RewardsOffersScreen } from './RewardsOffersScreen'
@@ -961,6 +963,7 @@ export default function App() {
   }, [])
 
   const itemCount = cartCount(cart)
+  const bagSubtotal = cartSubtotal(cart)
 
   function handleAddToCart(item: Listing) {
     const productUrl = listingProductPageUrl(item, SQUARE_STORE_URL)
@@ -1572,7 +1575,7 @@ export default function App() {
         </div>
       </header>
 
-      <main id="top" className="pb-40 md:pb-24">
+      <main id="top" className="pb-36 md:pb-28">
         {/* Hero */}
         <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
@@ -3128,54 +3131,11 @@ export default function App() {
         </p>
       </footer>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 md:bottom-0">
-        <div className="border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur md:hidden">
-        <div className="mb-2 flex items-center justify-center gap-3 text-xs font-semibold text-cream/85">
-          <a
-            href={SQUARE_STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('outbound_click', { place: 'sticky_mobile', channel: 'square' })}
-            className="underline decoration-cream/50 underline-offset-4"
-          >
-            Square
-          </a>
-          <span className="text-cream/70" aria-hidden>
-            ·
-          </span>
-          <a
-            href={ebayShop}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('outbound_click', { place: 'sticky_mobile', channel: 'ebay' })}
-            className="underline decoration-cream/50 underline-offset-4"
-          >
-            eBay
-          </a>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setCartOpen(true)
-              track('cart_open', { place: 'sticky_mobile', items: itemCount })
-            }}
-            className="flex flex-1 items-center justify-center gap-2 bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
-          >
-            Cart{itemCount > 0 ? ` · ${itemCount}` : ''}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              track('cta_click', { place: 'sticky_mobile' })
-              goInventory({ reset: true })
-            }}
-            className="flex flex-1 items-center justify-center bg-navy px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream"
-          >
-            Browse kits
-          </button>
-        </div>
-        </div>
+      <div className="fixed inset-x-0 bottom-0 z-40">
+        <FreeShippingBar
+          subtotal={bagSubtotal}
+          currency={cart.lines[0]?.currency || 'USD'}
+        />
         <RewardsDock />
       </div>
 
