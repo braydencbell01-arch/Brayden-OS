@@ -27,10 +27,10 @@ alwaysApply: true
 
 ## Ship live by default (do not wait to be asked)
 
-The user should **never** need to say “make it live” or “merge it.” For finished user-visible work:
+The user should **never** need to say “make it live” or “merge it.” Shipping is automatic for finished user-visible work — same turn as the fix:
 
-1. Open/update the PR against `Brayden-OS`.
-2. **Merge into `Brayden-OS` yourself** (local merge + `git push origin Brayden-OS` is fine) — that triggers Pages deploy.
+1. Open/update the PR against `Brayden-OS` (draft OK for history only).
+2. **Immediately merge into `Brayden-OS`** (`git checkout Brayden-OS && git merge <feature> && git push origin Brayden-OS`) — triggers Pages + jerseydeals.online.
 3. Confirm the deploy ran, then verify the live URL.
 4. Only then tell the user it is live.
 

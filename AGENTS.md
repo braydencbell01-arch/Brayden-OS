@@ -45,14 +45,14 @@ User-visible work (copy, UI, bugs) fails if it only lives on a feature branch wh
 
 ### Agents merge and ship live themselves (default — do not wait to be asked)
 
-The user should **never** need to say “make it live,” “merge it,” or “deploy it.” That is part of finishing the task.
+The user should **never** need to say “make it live,” “merge it,” or “deploy it.” That is part of finishing the task. Treat “ship to production” as automatic on every finished user-visible change.
 
 Do **not** leave finished user-visible work sitting on an open PR waiting for the user to merge. When the change is ready and mergeable:
 
-1. Open/update the PR against `Brayden-OS` (for review history).
-2. **Merge it yourself** into `Brayden-OS` (merge the feature branch locally or via the host’s merge path, then `git push origin Brayden-OS`). Pushing `Brayden-OS` triggers GitHub Pages deploy.
+1. Open/update the PR against `Brayden-OS` (for review history). Draft PRs are fine for history — they are **not** a stopping point.
+2. **Immediately merge it yourself** into `Brayden-OS` in the **same turn** (local `git checkout Brayden-OS && git merge <feature> && git push origin Brayden-OS`). Pushing `Brayden-OS` triggers GitHub Pages + jerseydeals.online deploy.
 3. Wait for / confirm the Pages deploy, then verify the live URL.
-4. Only then tell the user it is live.
+4. Only then tell the user it is live (with the permanent URLs).
 
 Stopping at “PR opened” or “draft ready for review” is incomplete unless the user explicitly asked for review-only.
 
