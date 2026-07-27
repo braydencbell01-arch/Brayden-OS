@@ -598,7 +598,8 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   white-space:nowrap;
 }
 .jd-header-email .jd-header-email-ok{
-  color:#fff!important;font-size:.65rem;font-weight:600;letter-spacing:.06em;white-space:nowrap;
+  color:#fff!important;font-size:.62rem;font-weight:600;letter-spacing:.04em;line-height:1.25;
+  white-space:normal;display:block;text-align:left;
 }
 @media (max-width:720px){
   .banner-1,[class*="banner-1"],.w-block-banner,[data-ux="Banner"]:not([class*="header"]){min-height:48vh}
@@ -644,6 +645,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   var OFFER_KEY="jerseydeals.offer.v1";
   var PURCHASED_KEY="jerseydeals.purchased.v1";
   var EMAIL_KEY="jerseydeals.buyerEmail.v1";
+  var REWARDS_KEY="jerseydeals.rewardsMember.v1";
   var HERO="Shop Premier League";
   var HERO_SUB="Club, country, and training jerseys — photographed from our inventory.";
   var JD_SITE="https://jerseydeals.online/";
@@ -672,6 +674,27 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
   function sessionGet(k){ try{ return sessionStorage.getItem(k)||""; }catch(e){ return ""; } }
   function sessionSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+  function readRewardsMember(){
+    try{
+      var raw=storageGet(REWARDS_KEY);
+      if(!raw) return null;
+      var o=JSON.parse(raw);
+      if(o&&(o.email||o.phone)) return o;
+    }catch(e){}
+    return null;
+  }
+  function writeRewardsMember(email){
+    var e=(email||"").trim().toLowerCase();
+    if(!e) return;
+    storageSet(REWARDS_KEY, JSON.stringify({email:e,at:new Date().toISOString()}));
+    storageSet(EMAIL_KEY, e);
+  }
+  function showRewardsLocked(form, member){
+    if(!form) return;
+    var contact=(member&&(member.email||member.phone))||"";
+    form.innerHTML='<span class="jd-header-email-ok">You are already a Rewards member'
+      +(contact?' · '+String(contact).replace(/</g,"") :'')+'</span>';
+  }
   function hasPurchased(){ return storageGet(PURCHASED_KEY)==="1"; }
   function markPurchased(){ storageSet(PURCHASED_KEY,"1"); }
   function readOffer(){
@@ -1001,26 +1024,35 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     if(!header) return;
     ensureHeaderLogo();
     var form=document.getElementById("jd-header-email");
+    var member=readRewardsMember();
     if(!form){
       form=document.createElement("form");
       form.id="jd-header-email";
       form.className="jd-header-email";
       form.setAttribute("aria-label","Jersey Deals Rewards Club");
-      form.innerHTML=
-        '<input type="email" name="email" autocomplete="email" required placeholder="Rewards Club email" aria-label="Rewards Club email"/>'
-        +'<button type="submit">Join</button>';
-      form.addEventListener("submit", function(e){
-        e.preventDefault();
-        var input=form.querySelector('input[type="email"]');
-        var val=((input&&input.value)||"").trim().toLowerCase();
-        if(!validEmail(val)){
-          if(input) input.focus();
-          return;
-        }
-        storageSet(EMAIL_KEY, val);
-        collectLead(val, "rewards_club");
-        form.innerHTML='<span class="jd-header-email-ok">Rewards Club ✓</span>';
-      });
+      if(member){
+        showRewardsLocked(form, member);
+      } else {
+        form.innerHTML=
+          '<input type="email" name="email" autocomplete="email" required placeholder="Rewards Club email" aria-label="Rewards Club email"/>'
+          +'<button type="submit">Join</button>';
+        form.addEventListener("submit", function(e){
+          e.preventDefault();
+          if(readRewardsMember()){
+            showRewardsLocked(form, readRewardsMember());
+            return;
+          }
+          var input=form.querySelector('input[type="email"]');
+          var val=((input&&input.value)||"").trim().toLowerCase();
+          if(!validEmail(val)){
+            if(input) input.focus();
+            return;
+          }
+          writeRewardsMember(val);
+          collectLead(val, "rewards_club");
+          showRewardsLocked(form, readRewardsMember());
+        });
+      }
       var logo=header.querySelector("#jd-header-logo, .header__logo, a.logo__link, a[href='/']");
       if(logo && logo.parentNode){
         if(logo.nextSibling) logo.parentNode.insertBefore(form, logo.nextSibling);
@@ -1029,6 +1061,8 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
         header.insertBefore(form, header.firstChild ? header.firstChild.nextSibling : null);
         if(!form.parentNode) header.appendChild(form);
       }
+    } else if(member){
+      showRewardsLocked(form, member);
     } else if(!form.querySelector(".jd-header-email-ok")){
       var input=form.querySelector('input[type="email"]');
       if(input){ input.placeholder="Rewards Club email"; input.setAttribute("aria-label","Rewards Club email"); }
