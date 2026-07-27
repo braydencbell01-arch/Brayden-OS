@@ -1536,6 +1536,7 @@ export default function App() {
               autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault()
+                if (!query.trim()) return
                 activateSearch()
               }}
             >
@@ -1566,7 +1567,8 @@ export default function App() {
                 type="submit"
                 aria-label="Search"
                 title="Enter"
-                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af]"
+                disabled={!query.trim()}
+                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:cursor-not-allowed disabled:bg-[#2563eb]/60 disabled:hover:bg-[#2563eb]/60"
               >
                 Enter
                 <span aria-hidden className="text-sm font-semibold leading-none">
