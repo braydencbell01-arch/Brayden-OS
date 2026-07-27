@@ -1750,7 +1750,8 @@ export default function App() {
                               query: club.name,
                             })
                           }}
-                          className="group flex w-full flex-col overflow-hidden border border-white/20 bg-white text-left outline-none transition hover:border-white focus-visible:ring-2 focus-visible:ring-white"
+                          className="group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1"
+                          style={{ borderColor: nameColor }}
                         >
                           <div className="aspect-square overflow-hidden bg-[#120018]">
                             <img
