@@ -165,7 +165,7 @@ export function RewardsClub() {
                 />
               </div>
             </div>
-            <p className="text-xs text-cream/65">Email or phone — whichever you prefer.</p>
+            <p className="text-xs text-cream/65">Email, phone, or both - whatever you prefer.</p>
             <button
               type="submit"
               disabled={busy}
