@@ -17,14 +17,22 @@ import {
   applyOfferUnitPrice,
   checkoutUsesSquareDiscountLink,
   clearCheckoutActivation,
+  ensureClaimedFirstBuyerOffer,
   ensureRewardsOffers,
   getActiveCheckoutOffer,
+  hasClaimedFirstBuyerOffer,
   listOpenOffers,
   offerEligibleForCart,
   type OfferId,
   type WalletOffer,
 } from './offers'
+import { isRewardsMember } from './rewardsMember'
 import { amountToFreeShipping, shippingForSubtotal, totalWithShipping } from './shipping'
+
+/** Email is only required when the shopper skipped both Rewards join and the 10% popup. */
+function needsCheckoutEmailGate() {
+  return !isRewardsMember() && !hasClaimedFirstBuyerOffer()
+}
 
 export function CartDrawer({
   open,
@@ -55,6 +63,8 @@ export function CartDrawer({
 
   function syncOffers() {
     ensureRewardsOffers()
+    // Non-members who claimed the 10% popup still keep that offer activatable in cart.
+    ensureClaimedFirstBuyerOffer()
     if (cart.lines.length === 0 && getActiveCheckoutOffer()) {
       clearCheckoutActivation()
     }
@@ -107,6 +117,8 @@ export function CartDrawer({
   const shipping = shippingForSubtotal(discountedSubtotal)
   const orderTotal = totalWithShipping(discountedSubtotal)
   const hasEmail = Boolean(savedEmail)
+  const requireEmail = needsCheckoutEmailGate()
+  const canCheckout = !requireEmail || hasEmail
   const offerLabel = activeId ? OFFER_DEFS[activeId].title : ''
 
   function lineCheckoutAmount(line: CartState['lines'][number]) {
@@ -169,7 +181,7 @@ export function CartDrawer({
   }
 
   function beginCheckout(href: string, lineId: string, meta: Record<string, unknown>) {
-    if (!hasEmail) {
+    if (requireEmail && !hasEmail) {
       setEmailError('Enter your email to checkout.')
       return
     }
@@ -178,7 +190,7 @@ export function CartDrawer({
       ...meta,
       line_id: lineId,
       offer: activeId || '',
-      has_email: true,
+      has_email: Boolean(savedEmail || readBuyerEmail()),
       shipping_percent: 10,
     })
     // Keep the line until Square return (?purchase= / ?sold=) confirms payment.
@@ -372,50 +384,54 @@ export function CartDrawer({
                 </div>
               </div>
 
-              <form onSubmit={saveEmail} className="mt-4 space-y-2" noValidate>
-                <label
-                  htmlFor={emailId}
-                  className="flex items-center gap-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-navy"
-                >
-                  Email for checkout
-                  <span className="text-crimson" aria-hidden>
-                    *
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id={emailId}
-                    type="email"
-                    name="email"
-                    required
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value)
-                      setEmailError('')
-                    }}
-                    placeholder="you@email.com"
-                    className="min-w-0 flex-1 border border-navy/15 bg-cream px-3 py-2.5 text-base text-navy outline-none placeholder:text-muted focus:border-crimson"
-                  />
-                  <button
-                    type="submit"
-                    disabled={emailBusy}
-                    className="shrink-0 border border-navy/20 bg-navy px-3 py-2.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy-deep disabled:opacity-60"
+              {requireEmail ? (
+                <form onSubmit={saveEmail} className="mt-4 space-y-2" noValidate>
+                  <label
+                    htmlFor={emailId}
+                    className="flex items-center gap-1 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-navy"
                   >
-                    {hasEmail && email.trim().toLowerCase() === savedEmail
-                      ? 'Saved'
-                      : emailBusy
-                        ? '…'
-                        : 'Save'}
-                  </button>
-                </div>
-                {emailError ? <p className="text-xs font-semibold text-crimson">{emailError}</p> : null}
-                {hasEmail && !emailError ? (
-                  <p className="text-xs text-navy">Checkout unlocked for {savedEmail}</p>
-                ) : (
-                  <p className="text-xs font-semibold text-crimson">Email is required before checkout.</p>
-                )}
-              </form>
+                    Email for checkout
+                    <span className="text-crimson" aria-hidden>
+                      *
+                    </span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id={emailId}
+                      type="email"
+                      name="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value)
+                        setEmailError('')
+                      }}
+                      placeholder="you@email.com"
+                      className="min-w-0 flex-1 border border-navy/15 bg-cream px-3 py-2.5 text-base text-navy outline-none placeholder:text-muted focus:border-crimson"
+                    />
+                    <button
+                      type="submit"
+                      disabled={emailBusy}
+                      className="shrink-0 border border-navy/20 bg-navy px-3 py-2.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:bg-navy-deep disabled:opacity-60"
+                    >
+                      {hasEmail && email.trim().toLowerCase() === savedEmail
+                        ? 'Saved'
+                        : emailBusy
+                          ? '…'
+                          : 'Save'}
+                    </button>
+                  </div>
+                  {emailError ? <p className="text-xs font-semibold text-crimson">{emailError}</p> : null}
+                  {hasEmail && !emailError ? (
+                    <p className="text-xs text-navy">Checkout unlocked for {savedEmail}</p>
+                  ) : (
+                    <p className="text-xs font-semibold text-crimson">Email is required before checkout.</p>
+                  )}
+                </form>
+              ) : savedEmail ? (
+                <p className="mt-4 text-xs text-navy">Checking out as {savedEmail}</p>
+              ) : null}
 
               {activeId === 'first10' ? (
                 <p className="mt-2 text-xs font-semibold text-navy">
@@ -437,7 +453,7 @@ export function CartDrawer({
                 {cart.lines.length === 1 ? (
                   <button
                     type="button"
-                    disabled={!hasEmail}
+                    disabled={!canCheckout}
                     onClick={() =>
                       beginCheckout(
                         cartLineCheckoutUrl(cart.lines[0]!, lineUsesDiscountLink(cart.lines[0]!)),
@@ -457,7 +473,7 @@ export function CartDrawer({
                     <button
                       key={line.id}
                       type="button"
-                      disabled={!hasEmail}
+                      disabled={!canCheckout}
                       onClick={() =>
                         beginCheckout(cartLineCheckoutUrl(line, lineUsesDiscountLink(line)), line.id, {
                           items: cart.lines.length,
