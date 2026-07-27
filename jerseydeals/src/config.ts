@@ -39,8 +39,11 @@ export const SALE_URGENCY = '$25 & under · while stock lasts'
 /** Top promo bar — keep short so it stays one line under the fixed header offset. */
 export const PROMO_BAR = 'Live stock · Youth & adult sizes'
 
-/** Shipping charged on every checkout (also baked into Square Payment Links). */
-export const SHIPPING_RATE_LABEL = '10% shipping'
+/** Shipping copy — 10% under $100, free at $100+. */
+export const SHIPPING_RATE_LABEL = '10% shipping · free on $100+'
+
+/** Free shipping threshold (matches shipping.ts). */
+export const FREE_SHIPPING_THRESHOLD = 100
 
 export const FAMILY_NOTE = 'Family-run shop — real photos, sizes, and shipping from our inventory.'
 

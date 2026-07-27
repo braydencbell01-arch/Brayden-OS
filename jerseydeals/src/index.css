@@ -147,6 +147,27 @@
       animation: none;
     }
   }
+
+  .collections-rail {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-crimson) 55%, transparent) transparent;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+
+  .collections-rail > * {
+    scroll-snap-align: start;
+  }
+
+  .collections-rail::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .collections-rail::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-crimson) 55%, transparent);
+    border-radius: 999px;
+  }
 }
 
 @keyframes marquee-x {

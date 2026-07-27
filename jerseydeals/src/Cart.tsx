@@ -15,7 +15,7 @@ import {
   readBuyerEmail,
   writeBuyerEmail,
 } from './offer'
-import { shippingForSubtotal, totalWithShipping } from './shipping'
+import { amountToFreeShipping, shippingForSubtotal, totalWithShipping } from './shipping'
 
 export function CartDrawer({
   open,
@@ -245,9 +245,15 @@ export function CartDrawer({
                 </div>
                 <div className="flex items-baseline justify-between">
                   <p className="text-xs uppercase tracking-[0.12em] text-muted">Shipping</p>
-                  <p className="text-sm font-semibold text-navy">{formatPrice(shipping, currency)}</p>
+                  <p className="text-sm font-semibold text-navy">
+                    {shipping <= 0 ? 'FREE' : formatPrice(shipping, currency)}
+                  </p>
                 </div>
-                <p className="text-[0.65rem] text-muted">{SHIPPING_RATE_LABEL} on every order.</p>
+                <p className="text-[0.65rem] text-muted">
+                  {shipping <= 0
+                    ? 'Free shipping unlocked on this bag.'
+                    : `${SHIPPING_RATE_LABEL}. ${formatPrice(amountToFreeShipping(discountedSubtotal), currency)} away from free shipping.`}
+                </p>
                 <div className="flex items-baseline justify-between border-t border-navy/10 pt-2">
                   <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">Total</p>
                   <p className="font-display text-2xl font-bold text-navy">
@@ -309,8 +315,8 @@ export function CartDrawer({
               <p className="mt-2 text-xs leading-relaxed text-muted">
                 Checkout opens Square&apos;s secure payment page
                 {cart.lines.length > 1
-                  ? ' for each kit (one secure link per item, each includes 10% shipping). Items stay in your bag until payment is confirmed.'
-                  : ' (includes 10% shipping). Items stay in your bag until payment is confirmed.'}
+                  ? ' for each kit (one secure link per item). Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links. Items stay in your bag until payment is confirmed.'
+                  : '. Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links. Items stay in your bag until payment is confirmed.'}
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 {cart.lines.length === 1 ? (

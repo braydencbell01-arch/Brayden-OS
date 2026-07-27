@@ -4,7 +4,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type FormEvent,
   type ReactNode,
 } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -17,7 +16,6 @@ import {
   EBAY_SELLER_URL,
   EBAY_SHOP_URL,
   FAMILY_NOTE,
-  NEWSLETTER_INCENTIVE,
   PROMO_BAR,
   SALE_HEADLINE,
   SALE_URGENCY,
@@ -26,6 +24,7 @@ import {
 import {
   addListingToCart,
   cartCount,
+  cartSubtotal,
   clearCart,
   readCart,
   removeCartLine,
@@ -33,16 +32,18 @@ import {
   type CartState,
 } from './cart'
 import { CartDrawer } from './Cart'
+import { CollectionsRail } from './CollectionsRail'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
+import { FreeShippingBar } from './FreeShippingBar'
+import { RewardsClub } from './RewardsClub'
 import {
+  applyFirstBuyerDiscount,
   capturePurchaseReturnFromUrl,
   hasPurchased,
   readBuyerEmail,
   readOffer,
 } from './offer'
-import { captureEmail } from './emailCapture'
-import {
-  captureSoldReturnFromUrl,
+import { captureSoldReturnFromUrl,
   fetchSoldOutIds,
   isListingSoldOut,
   readLocalSoldOutIds,
@@ -235,25 +236,27 @@ function ProductCardCover({
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-const BRAND_MARQUEE = [
-  'Jersey Deals',
-  'Nike',
-  'Adidas',
-  'Puma',
-  'Club kits',
-  'Country kits',
-  'Training',
-  'Pre-match',
-  'Sale rack',
-]
-
-const SERVICE_POINTS = [
-  'Ships from US inventory',
-  'Secure card checkout',
-  'Real product photos',
-  'Adult & youth sizing',
-  'Authentic branded kits',
-]
+/** Premier League purple (logo) + club name colors for EPL tiles. */
+const PL_PURPLE = '#37003c'
+const PL_PURPLE_SOFT = '#4a0e52'
+const EPL_KIT_IMAGE: Record<string, string> = {
+  chelsea: 'epl-kits/chelsea.jpg',
+  arsenal: 'epl-kits/arsenal.jpg',
+  liverpool: 'epl-kits/liverpool.jpg',
+  'manchester-city': 'epl-kits/manchester-city.jpg',
+  'manchester-united': 'epl-kits/manchester-united.jpg',
+  tottenham: 'epl-kits/tottenham.jpg',
+  newcastle: 'epl-kits/newcastle.jpg',
+}
+const EPL_TEAM_COLOR: Record<string, string> = {
+  chelsea: '#034694',
+  arsenal: '#EF0107',
+  liverpool: '#C8102E',
+  'manchester-city': '#6CABDD',
+  'manchester-united': '#DA291C',
+  tottenham: '#132257',
+  newcastle: '#241F20',
+}
 
 function fadeUp(reduce: boolean | null, delay = 0) {
   return {
@@ -317,7 +320,7 @@ const FAQ = [
   },
   {
     q: 'Where do you ship from?',
-    a: 'Orders ship from our US inventory. Shipping is 10% of your item total and is added at Square checkout.',
+    a: 'Orders ship from our US inventory. Shipping is 10% of your item total under $100 — orders $100+ get free shipping. Shipping is calculated in your bag and confirmed at Square checkout.',
   },
   {
     q: 'What is your return policy?',
@@ -783,8 +786,6 @@ export default function App() {
   const [catalog, setCatalog] = useState<ListingsPayload | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-  const [email, setEmail] = useState('')
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sent'>('idle')
   const [navSolid, setNavSolid] = useState(false)
   const [tagFilter, setTagFilter] = useState<TypeFilterId | string>('All')
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('All')
@@ -1289,24 +1290,21 @@ export default function App() {
   ])
 
   const heroImage = asset('hero-jersey.jpg')
-
-  async function onEmailSubmit(event: FormEvent) {
-    event.preventDefault()
-    const trimmed = email.trim()
-    if (!trimmed) return
-    track('email_signup_attempt', { has_square: Boolean(SQUARE_STORE_URL) })
-    const result = await captureEmail(trimmed, 'restock_alerts')
-    setEmailStatus(result.ok ? 'sent' : 'idle')
-    if (result.ok) setEmail('')
-  }
+  const bagSubtotal = useMemo(() => {
+    if (!offerActive) return cartSubtotal(cart)
+    return cart.lines.reduce((sum, line) => {
+      const unit = applyFirstBuyerDiscount(line.price)
+      if (unit == null) return sum
+      return sum + unit * Math.max(1, line.quantity || 1)
+    }, 0)
+  }, [cart, offerActive])
 
   const navLinks = [
-    { href: '#shop', label: 'Shop' },
+    { href: '#collections', label: 'Collections' },
     { href: '#epl', label: 'EPL' },
-    { href: '#new-drops', label: 'New' },
-    { href: '#clubs', label: 'Clubs' },
-    { href: '#sale', label: 'Sale' },
+    { href: '#shop', label: 'Shop' },
     { href: '#inventory', label: 'Inventory' },
+    { href: '#rewards', label: 'Rewards' },
     { href: '#size-guide', label: 'Sizing' },
   ]
 
@@ -1565,7 +1563,7 @@ export default function App() {
         </div>
       </header>
 
-      <main id="top" className="pb-32 md:pb-0">
+      <main id="top" className="pb-40 md:pb-24">
         {/* Hero */}
         <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
@@ -1614,7 +1612,7 @@ export default function App() {
                   Browse kits
                 </motion.button>
                 <a
-                  href="#shop"
+                  href="#collections"
                   onClick={() => track('cta_click', { place: 'hero_secondary' })}
                   className="inline-flex border border-cream/40 px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream transition hover:border-cream hover:bg-cream/10"
                 >
@@ -1625,9 +1623,9 @@ export default function App() {
           </div>
 
           <a
-            href="#shop"
+            href="#collections"
             className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white md:bottom-6"
-            aria-label="Scroll to shop"
+            aria-label="Scroll to collections"
           >
             <span className="flex flex-col items-center gap-2">
               Scroll
@@ -1641,47 +1639,45 @@ export default function App() {
           </a>
         </section>
 
-        {/* Brand / category marquee */}
-        <section className="overflow-hidden border-y border-navy/10 bg-cream py-5" aria-label="Highlights">
-          <div className="marquee-track gap-10 px-4">
-            {[...BRAND_MARQUEE, ...BRAND_MARQUEE].map((item, i) => (
-              <span
-                key={`${item}-${i}`}
-                className={`whitespace-nowrap uppercase tracking-[0.2em] ${
-                  item === 'Jersey Deals'
-                    ? 'font-brand text-lg font-bold text-crimson'
-                    : 'font-display text-lg font-bold text-navy/55'
-                }`}
-              >
-                {item}
-                <span className="ml-10 text-crimson/70">◆</span>
-              </span>
-            ))}
-          </div>
-        </section>
-
-        {/* Service strip */}
-        <section className="bg-navy text-cream">
-          <ul className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-2 px-5 py-3.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.18em] text-cream/90 md:px-8 md:justify-between">
-            {SERVICE_POINTS.map((point) => (
-              <li key={point}>{point}</li>
-            ))}
-          </ul>
-        </section>
+        <CollectionsRail
+          onSelect={(action, id, label) => {
+            track('category_click', { category: 'collection_rail', collection: id, label })
+            goInventory({
+              reset: action.reset ?? true,
+              brand: action.brand,
+              tag: action.tag,
+              price: action.price === 'All' ? undefined : action.price,
+              query: action.query,
+              leagueId: action.leagueId,
+            })
+          }}
+        />
 
         {/* Shop Premier League */}
         <section
           id="epl"
-          className="scroll-mt-44 relative overflow-hidden border-[3px] border-[#37003c] bg-navy-deep py-20 md:border-4 md:py-28"
+          className="scroll-mt-44 relative overflow-hidden border-y-[3px] md:border-y-4"
+          style={{ borderColor: PL_PURPLE, background: `linear-gradient(160deg, ${PL_PURPLE} 0%, ${PL_PURPLE_SOFT} 42%, #1a0520 100%)` }}
         >
           <img
             src={asset('epl-kits-bg.jpg')}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-luminosity"
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/88 via-navy-deep/72 to-navy-deep/45" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(110deg, rgba(55,0,60,.92) 0%, rgba(55,0,60,.78) 48%, rgba(26,5,32,.55) 100%)',
+            }}
+          />
+          <div
+            className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-40 blur-3xl"
+            style={{ background: PL_PURPLE_SOFT }}
+            aria-hidden
+          />
           <img
             src={asset('premier-league-badge.png')}
             alt="Premier League"
@@ -1689,64 +1685,85 @@ export default function App() {
             loading="lazy"
             decoding="async"
           />
-          <div className="relative z-10 mx-auto max-w-6xl px-5 md:px-8">
+          <div className="relative z-10 mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
             <motion.div {...fadeUp(reduce)} className="max-w-xl">
-              <p className="eyebrow text-cream/80">English Premier League</p>
-              <div className="brand-rule mt-3" aria-hidden />
-              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-cream md:text-6xl">
+              <p className="eyebrow" style={{ color: '#c9b3d6' }}>
+                English Premier League
+              </p>
+              <div
+                className="mt-3 h-[3px] w-16"
+                style={{ background: 'linear-gradient(90deg, #a288b5, #fff)' }}
+                aria-hidden
+              />
+              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-white md:text-6xl">
                 Shop Premier League
               </h2>
+              <p className="mt-3 max-w-md font-brand text-base text-white/80">
+                Latest home-kit looks for the clubs we stock — tap a crest lane to shop that side.
+              </p>
               <a
                 href="#epl-clubs"
-                onClick={() => track('cta_click', { place: 'shop_epl' })}
-                className="mt-6 inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+                onClick={(e) => {
+                  e.preventDefault()
+                  track('cta_click', { place: 'shop_epl' })
+                  document.getElementById('epl-clubs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                className="mt-6 inline-flex px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110"
+                style={{ background: PL_PURPLE_SOFT, boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}
               >
                 Shop EPL
               </a>
             </motion.div>
 
-            <div id="epl-clubs" className="mt-14 scroll-mt-44">
-              <p className="eyebrow text-cream/90">Clubs in stock</p>
+            <div id="epl-clubs" className="mt-14 scroll-mt-48">
+              <p className="eyebrow text-white/85">Clubs in stock</p>
               {eplClubs.length > 0 ? (
                 <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
-                  {eplClubs.map((club, i) => (
-                    <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          track('category_click', { category: 'epl_club', club: club.id })
-                          goInventory({
-                            reset: true,
-                            clubId: club.id,
-                            leagueId: 'premier-league',
-                            query: club.name,
-                          })
-                        }}
-                        className="group flex w-full flex-col overflow-hidden border border-cream/20 bg-navy/70 text-left outline-none transition hover:border-cream/50 focus-visible:ring-2 focus-visible:ring-crimson"
-                      >
-                        <div className="aspect-square overflow-hidden bg-mist">
-                          <img
-                            src={club.image || FALLBACK_IMAGE}
-                            alt=""
-                            className="h-full w-full object-contain object-center transition duration-500 group-hover:scale-[1.04]"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </div>
-                        <div className="px-3 py-3">
-                          <p className="font-display text-sm font-bold uppercase tracking-wide text-cream">
-                            {club.name}
-                          </p>
-                          <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-cream/85">
-                            {club.count} kit{club.count === 1 ? '' : 's'} · search
-                          </p>
-                        </div>
-                      </button>
-                    </motion.li>
-                  ))}
+                  {eplClubs.map((club, i) => {
+                    const kitSrc = asset(EPL_KIT_IMAGE[club.id] || 'product-home.jpg')
+                    const nameColor = EPL_TEAM_COLOR[club.id] || '#0b223f'
+                    return (
+                      <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            track('category_click', { category: 'epl_club', club: club.id })
+                            goInventory({
+                              reset: true,
+                              clubId: club.id,
+                              leagueId: 'premier-league',
+                              query: club.name,
+                            })
+                          }}
+                          className="group flex w-full flex-col overflow-hidden border border-white/20 bg-white text-left outline-none transition hover:border-white focus-visible:ring-2 focus-visible:ring-white"
+                        >
+                          <div className="aspect-square overflow-hidden bg-[#120018]">
+                            <img
+                              src={kitSrc}
+                              alt=""
+                              className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+                          <div className="bg-cream px-3 py-3">
+                            <p
+                              className="font-display text-sm font-bold uppercase tracking-wide"
+                              style={{ color: nameColor }}
+                            >
+                              {club.name}
+                            </p>
+                            <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted">
+                              {club.count} kit{club.count === 1 ? '' : 's'} · shop
+                            </p>
+                          </div>
+                        </button>
+                      </motion.li>
+                    )
+                  })}
                 </ul>
               ) : (
-                <p className="mt-4 font-brand text-cream/90">Premier League kits will appear here when in stock.</p>
+                <p className="mt-4 font-brand text-white/90">Premier League kits will appear here when in stock.</p>
               )}
             </div>
           </div>
@@ -2894,60 +2911,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Alerts */}
-        <section id="alerts" className="bg-navy py-20 text-white md:py-24">
-          <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div
-              {...fadeUp(reduce)}
-              className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-end"
-            >
-              <div>
-                <p className="eyebrow text-crimson-hot">Stay close</p>
-                <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide md:text-6xl">
-                  Restock alerts
-                </h2>
-                <p className="mt-4 max-w-xl text-white/65">
-                  {NEWSLETTER_INCENTIVE} — get notified when sale kits and youth sizes land.
-                </p>
-                <p className="mt-3 text-sm text-white/55">
-                  Questions?{' '}
-                  <a
-                    href={`mailto:${CONTACT_EMAIL}`}
-                    className="text-cream underline decoration-white/35 underline-offset-4 hover:decoration-white"
-                  >
-                    {CONTACT_EMAIL}
-                  </a>
-                </p>
-              </div>
-              <form onSubmit={onEmailSubmit} className="flex flex-col gap-3 sm:flex-row">
-                <label className="sr-only" htmlFor="restock-email">
-                  Email
-                </label>
-                <input
-                  id="restock-email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="min-w-0 flex-1 border border-white/30 bg-white/10 px-4 py-3.5 text-white placeholder:text-white/70 outline-none focus:border-crimson"
-                />
-                <button
-                  type="submit"
-                  className="bg-crimson px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
-                >
-                  Get alerts
-                </button>
-              </form>
-            </motion.div>
-            {emailStatus === 'sent' ? (
-              <p className="mt-4 text-sm text-white/85">
-                You’re on the list — check your inbox if FormSubmit asks for a one-time confirm.
-              </p>
-            ) : null}
-          </div>
-        </section>
+        <RewardsClub />
 
         {/* Final CTA */}
         <section className="relative overflow-hidden bg-crimson py-24 text-white md:py-28">
@@ -3106,7 +3070,13 @@ export default function App() {
         </p>
       </footer>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 md:bottom-0">
+        <FreeShippingBar
+          subtotal={bagSubtotal}
+          currency={cart.lines[0]?.currency || 'USD'}
+          className="border-t border-navy/15"
+        />
+        <div className="border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur md:hidden">
         <div className="mb-2 flex items-center justify-center gap-3 text-xs font-semibold text-cream/85">
           <a
             href={SQUARE_STORE_URL}
@@ -3151,6 +3121,7 @@ export default function App() {
           >
             Browse kits
           </button>
+        </div>
         </div>
       </div>
 
