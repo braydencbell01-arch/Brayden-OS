@@ -650,6 +650,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   var EMAIL_KEY="jerseydeals.buyerEmail.v1";
   var REWARDS_KEY="jerseydeals.rewardsMember.v1";
   var OFFERS_KEY="jerseydeals.offers.v1";
+  var FIRST10_CLAIMED_KEY="jerseydeals.first10Claimed.v1";
   var HERO="Shop Premier League";
   var HERO_SUB="Club, country, and training jerseys — photographed from our inventory.";
   var JD_SITE="https://jerseydeals.online/";
@@ -714,6 +715,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   }
   function claimOfferId(id,email){
     if(email) writeOffer({activated:false,email:email,claimed:true});
+    if(id==="first10") storageSet(FIRST10_CLAIMED_KEY,"1");
     try{
       var w=JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[],"activeId":null}');
       if(!w.offers) w.offers=[];
@@ -724,8 +726,13 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     }catch(e){}
   }
   function hasFirst10(){
-    if(readOffer().claimed) return true;
-    try{ return (JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[]}').offers||[]).some(function(o){ return o.id==="first10"; }); }catch(e){ return false; }
+    if(storageGet(FIRST10_CLAIMED_KEY)==="1") return true;
+    if(readOffer().claimed){ storageSet(FIRST10_CLAIMED_KEY,"1"); return true; }
+    try{
+      var hit=(JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[]}').offers||[]).some(function(o){ return o.id==="first10"; });
+      if(hit) storageSet(FIRST10_CLAIMED_KEY,"1");
+      return hit;
+    }catch(e){ return false; }
   }
   function loadOffersUi(cb){
     if(window.jdOpenOffers){ if(cb) cb(); return; }

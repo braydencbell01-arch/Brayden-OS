@@ -5,7 +5,9 @@
 
 import { inferLeague } from './listings'
 import {
+  hasMarkedFirst10Claimed,
   hasPurchased,
+  markFirst10Claimed,
   readBuyerEmail,
   readOffer,
   writeOffer,
@@ -153,15 +155,24 @@ export function getActiveCheckoutOffer(): WalletOffer | null {
 }
 
 export function hasClaimedFirstBuyerOffer() {
+  if (hasMarkedFirst10Claimed()) return true
   const legacy = readOffer()
-  if (legacy.claimed) return true
-  return readOffersWallet().offers.some((o) => o.id === 'first10')
+  if (legacy.claimed) {
+    markFirst10Claimed()
+    return true
+  }
+  if (readOffersWallet().offers.some((o) => o.id === 'first10')) {
+    markFirst10Claimed()
+    return true
+  }
+  return false
 }
 
 export function claimOffer(id: OfferId) {
   const wallet = readOffersWallet()
   const existing = wallet.offers.find((o) => o.id === id)
   if (existing) {
+    if (id === 'first10') markFirst10Claimed()
     if (existing.status === 'used') return existing
     return existing
   }
@@ -172,12 +183,14 @@ export function claimOffer(id: OfferId) {
   }
   wallet.offers.push(row)
   writeOffersWallet(wallet)
+  if (id === 'first10') markFirst10Claimed()
   return row
 }
 
 /** Popup signup — claim 10% into My offers (does not apply until checkout activate). */
 export function claimFirstBuyerOffer(email: string) {
   const cleaned = email.trim().toLowerCase()
+  markFirst10Claimed()
   writeOffer({
     activated: false,
     email: cleaned,
@@ -234,7 +247,12 @@ export function clearCheckoutActivation() {
   wallet.activeId = null
   writeOffersWallet(wallet)
   const email = readBuyerEmail() || readOffer().email
-  writeOffer({ activated: false, email, claimed: readOffer().claimed || Boolean(email) })
+  // Never clear welcome-offer claim — popup must stay suppressed after signup.
+  writeOffer({
+    activated: false,
+    email,
+    claimed: hasClaimedFirstBuyerOffer() || readOffer().claimed === true,
+  })
 }
 
 /** After a confirmed purchase — remove the activated offer (and retire first10). */

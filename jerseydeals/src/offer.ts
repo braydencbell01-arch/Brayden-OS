@@ -4,6 +4,8 @@ export const FIRST_BUYER_DISCOUNT = 0.1
 export const OFFER_STORAGE_KEY = 'jerseydeals.offer.v1'
 export const PURCHASED_STORAGE_KEY = 'jerseydeals.purchased.v1'
 export const BUYER_EMAIL_STORAGE_KEY = 'jerseydeals.buyerEmail.v1'
+/** Permanent flag — once the welcome popup is filled out, never show it again. */
+export const FIRST10_CLAIMED_KEY = 'jerseydeals.first10Claimed.v1'
 
 export type OfferState = {
   /** @deprecated Prefer wallet activeId — kept for migration / Square snippet sync. */
@@ -64,6 +66,24 @@ export function writeBuyerEmail(email: string) {
   if (!canUseStorage()) return
   const cleaned = email.trim().toLowerCase()
   window.localStorage.setItem(BUYER_EMAIL_STORAGE_KEY, cleaned)
+}
+
+export function markFirst10Claimed() {
+  if (!canUseStorage()) return
+  try {
+    window.localStorage.setItem(FIRST10_CLAIMED_KEY, '1')
+  } catch {
+    /* ignore */
+  }
+}
+
+export function hasMarkedFirst10Claimed() {
+  if (!canUseStorage()) return false
+  try {
+    return window.localStorage.getItem(FIRST10_CLAIMED_KEY) === '1'
+  } catch {
+    return false
+  }
 }
 
 export function hasPurchased() {
