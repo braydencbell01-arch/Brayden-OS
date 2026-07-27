@@ -151,8 +151,8 @@
   }
 
   .collections-rail {
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--color-crimson) 55%, transparent) transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: none;
     scroll-snap-type: none;
@@ -165,17 +165,9 @@
   }
 
   .collections-rail::-webkit-scrollbar {
-    height: 8px;
-  }
-
-  .collections-rail::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--color-crimson) 65%, transparent);
-    border-radius: 999px;
-  }
-
-  .collections-rail::-webkit-scrollbar-track {
-    background: color-mix(in srgb, var(--color-navy) 8%, transparent);
-    border-radius: 999px;
+    display: none;
+    height: 0;
+    width: 0;
   }
 
   .collections-rail-viewport {

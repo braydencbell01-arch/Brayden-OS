@@ -208,7 +208,7 @@ export function CollectionsRail({
 
       <div
         ref={scrollerRef}
-        className="collections-rail mt-6 flex gap-4 overflow-x-auto overflow-y-hidden px-5 pb-3 md:gap-5 md:px-8"
+        className="collections-rail mt-6 flex gap-4 overflow-x-auto overflow-y-hidden px-5 pb-0 md:gap-5 md:px-8"
         aria-label="Collections carousel"
       >
         {loop.map((item, i) => (
