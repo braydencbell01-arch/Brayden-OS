@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useRef } from 'react'
 import { LANDING_COLLECTIONS, type CollectionAction } from './collections'
 
 function asset(path: string) {
@@ -6,83 +6,115 @@ function asset(path: string) {
   return `${base}${path.replace(/^\//, '')}`
 }
 
-const AUTO_SPEED = 0.65
-const RESUME_AFTER_MS = 2600
+const AUTO_SPEED = 0.7
+const RESUME_AFTER_MS = 2400
 
 export function CollectionsRail({
   onSelect,
 }: {
   onSelect: (action: CollectionAction, id: string, label: string) => void
 }) {
-  const trackRef = useRef<HTMLDivElement>(null)
-  const viewportRef = useRef<HTMLDivElement>(null)
-  const offsetRef = useRef(0)
+  const scrollerRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(false)
-  const draggingRef = useRef(false)
-  const movedRef = useRef(false)
-  const lastXRef = useRef(0)
+  const touchingRef = useRef(false)
+  const programmaticRef = useRef(false)
   const resumeTimer = useRef<number | null>(null)
   const halfWidthRef = useRef(0)
+  const suppressClickRef = useRef(false)
+  const driftRef = useRef(0)
 
   useEffect(() => {
-    const track = trackRef.current
-    const viewport = viewportRef.current
-    if (!track || !viewport) return
+    const scroller = scrollerRef.current
+    if (!scroller) return
 
     const prefersReduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    const apply = () => {
-      track.style.transform = `translate3d(${-offsetRef.current}px,0,0)`
-    }
-
-    const wrapOffset = () => {
-      const half = halfWidthRef.current
-      if (half <= 0) return
-      // Keep offset in [0, half) without clamping the user’s drag direction.
-      while (offsetRef.current < 0) offsetRef.current += half
-      while (offsetRef.current >= half) offsetRef.current -= half
-    }
-
     const measure = () => {
-      halfWidthRef.current = track.scrollWidth / 2
-      wrapOffset()
-      apply()
+      halfWidthRef.current = scroller.scrollWidth / 2
     }
     measure()
+    // Images loading can change width — remeasure often at first.
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
-    ro?.observe(track)
+    ro?.observe(scroller)
+    const remeasureId = window.setInterval(measure, 500)
+    window.setTimeout(() => window.clearInterval(remeasureId), 4000)
 
-    const pauseFromUser = () => {
+    const scheduleResume = () => {
       pausedRef.current = true
       if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
       resumeTimer.current = window.setTimeout(() => {
+        // Normalize into the first loop copy before auto-rotate continues.
+        const half = halfWidthRef.current
+        if (half > 0) {
+          programmaticRef.current = true
+          scroller.scrollLeft = ((scroller.scrollLeft % half) + half) % half
+          programmaticRef.current = false
+        }
         pausedRef.current = false
+        touchingRef.current = false
       }, RESUME_AFTER_MS)
     }
 
-    const onWheel = (e: WheelEvent) => {
-      const absX = Math.abs(e.deltaX)
-      const absY = Math.abs(e.deltaY)
-      // Only take over when the gesture is clearly horizontal (or Shift+wheel).
-      const horizontal = absX > absY || e.shiftKey
-      if (!horizontal) return
-      e.preventDefault()
-      pauseFromUser()
-      offsetRef.current += e.shiftKey && absX < absY ? e.deltaY : e.deltaX || e.deltaY
-      wrapOffset()
-      apply()
+    const onScroll = () => {
+      if (programmaticRef.current) return
+      pausedRef.current = true
+      scheduleResume()
     }
 
-    viewport.addEventListener('wheel', onWheel, { passive: false })
+    const onTouchStart = () => {
+      touchingRef.current = true
+      pausedRef.current = true
+      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
+    }
+
+    const onTouchEnd = () => {
+      touchingRef.current = false
+      scheduleResume()
+    }
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return
+      touchingRef.current = true
+      pausedRef.current = true
+      if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
+    }
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return
+      touchingRef.current = false
+      scheduleResume()
+    }
+
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    scroller.addEventListener('touchstart', onTouchStart, { passive: true })
+    scroller.addEventListener('touchend', onTouchEnd, { passive: true })
+    scroller.addEventListener('touchcancel', onTouchEnd, { passive: true })
+    scroller.addEventListener('pointerdown', onPointerDown, { passive: true })
+    scroller.addEventListener('pointerup', onPointerUp, { passive: true })
+    scroller.addEventListener('pointercancel', onPointerUp, { passive: true })
 
     let raf = 0
     const tick = () => {
-      if (!prefersReduced && !pausedRef.current && !draggingRef.current && halfWidthRef.current > 0) {
-        offsetRef.current += AUTO_SPEED
-        wrapOffset()
-        apply()
+      if (
+        !prefersReduced &&
+        !pausedRef.current &&
+        !touchingRef.current &&
+        halfWidthRef.current > 0
+      ) {
+        driftRef.current += AUTO_SPEED
+        if (driftRef.current >= 1) {
+          const step = Math.floor(driftRef.current)
+          driftRef.current -= step
+          programmaticRef.current = true
+          scroller.scrollLeft += step
+          const half = halfWidthRef.current
+          if (half > 0 && scroller.scrollLeft >= half) {
+            scroller.scrollLeft -= half
+          }
+          programmaticRef.current = false
+        }
       }
       raf = window.requestAnimationFrame(tick)
     }
@@ -90,64 +122,41 @@ export function CollectionsRail({
 
     return () => {
       window.cancelAnimationFrame(raf)
+      window.clearInterval(remeasureId)
       if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
       ro?.disconnect()
-      viewport.removeEventListener('wheel', onWheel)
+      scroller.removeEventListener('scroll', onScroll)
+      scroller.removeEventListener('touchstart', onTouchStart)
+      scroller.removeEventListener('touchend', onTouchEnd)
+      scroller.removeEventListener('touchcancel', onTouchEnd)
+      scroller.removeEventListener('pointerdown', onPointerDown)
+      scroller.removeEventListener('pointerup', onPointerUp)
+      scroller.removeEventListener('pointercancel', onPointerUp)
     }
   }, [])
 
-  function pauseFromUser() {
-    pausedRef.current = true
-    if (resumeTimer.current) window.clearTimeout(resumeTimer.current)
-    resumeTimer.current = window.setTimeout(() => {
-      pausedRef.current = false
-    }, RESUME_AFTER_MS)
-  }
-
-  function wrapOffset() {
-    const half = halfWidthRef.current
-    if (half <= 0) return
-    while (offsetRef.current < 0) offsetRef.current += half
-    while (offsetRef.current >= half) offsetRef.current -= half
-  }
-
-  function apply() {
-    if (trackRef.current) {
-      trackRef.current.style.transform = `translate3d(${-offsetRef.current}px,0,0)`
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    let startX = 0
+    let startY = 0
+    const down = (e: PointerEvent) => {
+      startX = e.clientX
+      startY = e.clientY
+      suppressClickRef.current = false
     }
-  }
-
-  function onPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
-    // Only left-click / primary touch; ignore right-click.
-    if (e.button !== 0 && e.pointerType === 'mouse') return
-    draggingRef.current = true
-    movedRef.current = false
-    pausedRef.current = true
-    lastXRef.current = e.clientX
-    e.currentTarget.setPointerCapture(e.pointerId)
-  }
-
-  function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
-    if (!draggingRef.current) return
-    const dx = e.clientX - lastXRef.current
-    lastXRef.current = e.clientX
-    if (Math.abs(dx) > 1.5) movedRef.current = true
-    // Dragging right (dx > 0) should reveal earlier cards → decrease offset.
-    offsetRef.current -= dx
-    wrapOffset()
-    apply()
-  }
-
-  function onPointerUp(e: ReactPointerEvent<HTMLDivElement>) {
-    if (!draggingRef.current) return
-    draggingRef.current = false
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-    } catch {
-      /* ignore */
+    const move = (e: PointerEvent) => {
+      if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+        suppressClickRef.current = true
+      }
     }
-    pauseFromUser()
-  }
+    scroller.addEventListener('pointerdown', down)
+    scroller.addEventListener('pointermove', move)
+    return () => {
+      scroller.removeEventListener('pointerdown', down)
+      scroller.removeEventListener('pointermove', move)
+    }
+  }, [])
 
   const loop = [...LANDING_COLLECTIONS, ...LANDING_COLLECTIONS]
 
@@ -168,54 +177,42 @@ export function CollectionsRail({
       </div>
 
       <div
-        ref={viewportRef}
-        className="collections-rail-viewport mt-6 cursor-grab overflow-hidden active:cursor-grabbing"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={(e) => {
-          if (draggingRef.current) onPointerUp(e)
-        }}
+        ref={scrollerRef}
+        className="collections-rail mt-6 flex gap-4 overflow-x-auto overflow-y-hidden px-5 pb-3 md:gap-5 md:px-8"
+        aria-label="Collections carousel"
       >
-        <div
-          ref={trackRef}
-          className="collections-marquee-track flex w-max gap-4 px-5 will-change-transform md:gap-5 md:px-8"
-        >
-          {loop.map((item, i) => (
-            <button
-              key={`${item.id}-${i}`}
-              type="button"
-              onClick={(e) => {
-                if (movedRef.current) {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  return
-                }
-                pauseFromUser()
-                onSelect(item.action, item.id, item.label)
-              }}
-              className="group relative h-[11.5rem] w-[9.5rem] shrink-0 overflow-hidden border-2 border-navy/15 bg-navy text-left outline-none transition hover:border-crimson focus-visible:ring-2 focus-visible:ring-crimson sm:h-[13.5rem] sm:w-[11rem] md:h-[15rem] md:w-[12.5rem]"
+        {loop.map((item, i) => (
+          <button
+            key={`${item.id}-${i}`}
+            type="button"
+            onClick={(e) => {
+              if (suppressClickRef.current) {
+                e.preventDefault()
+                e.stopPropagation()
+                return
+              }
+              onSelect(item.action, item.id, item.label)
+            }}
+            className="group relative h-[11.5rem] w-[9.5rem] shrink-0 overflow-hidden border-2 border-navy/15 bg-navy text-left outline-none transition hover:border-crimson focus-visible:ring-2 focus-visible:ring-crimson sm:h-[13.5rem] sm:w-[11rem] md:h-[15rem] md:w-[12.5rem]"
+          >
+            <img
+              src={asset(item.image)}
+              alt=""
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-navy/10" />
+            <span
+              className={`relative z-10 flex h-full items-end p-3 font-display text-lg font-bold uppercase tracking-wide text-cream sm:p-4 sm:text-xl ${
+                item.id === 'jersey-deals' ? 'text-crimson-hot' : ''
+              }`}
             >
-              <img
-                src={asset(item.image)}
-                alt=""
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-navy/10" />
-              <span
-                className={`relative z-10 flex h-full items-end p-3 font-display text-lg font-bold uppercase tracking-wide text-cream sm:p-4 sm:text-xl ${
-                  item.id === 'jersey-deals' ? 'text-crimson-hot' : ''
-                }`}
-              >
-                {item.label}
-              </span>
-            </button>
-          ))}
-        </div>
+              {item.label}
+            </span>
+          </button>
+        ))}
       </div>
     </section>
   )

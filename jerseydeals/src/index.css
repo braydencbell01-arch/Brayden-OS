@@ -155,11 +155,14 @@
     scrollbar-color: color-mix(in srgb, var(--color-crimson) 55%, transparent) transparent;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
+    /* Native swipe both ways — no snap fighting the gesture. */
+    scroll-snap-type: none;
+    touch-action: pan-x;
+    cursor: grab;
   }
 
-  .collections-rail > * {
-    scroll-snap-align: start;
+  .collections-rail:active {
+    cursor: grabbing;
   }
 
   .collections-rail::-webkit-scrollbar {
@@ -171,11 +174,14 @@
     border-radius: 999px;
   }
 
+  .collections-rail::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--color-navy) 8%, transparent);
+    border-radius: 999px;
+  }
+
   .collections-rail-viewport {
-    /* Let our pointer drag own horizontal swipes (both directions). */
-    touch-action: none;
+    touch-action: pan-x;
     user-select: none;
-    -webkit-user-select: none;
   }
 
   .collections-marquee-track {
