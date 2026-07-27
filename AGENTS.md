@@ -113,3 +113,7 @@ Non-obvious caveats:
 - Run the two dev servers on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`) since both default to 5173.
 - BrayStats fetches live data client-side from public ESPN/FotMob APIs (no keys/secrets). Data panels need outbound internet; the shell still renders offline but stays empty.
 - No automated test suite exists; `npm run lint` (oxlint) is the only check. `npm run build` runs `tsc -b` first, so it also type-checks.
+
+## Jersey Deals promo copy
+
+When writing Facebook / social captions or titles for the user, the landing-page link must be **https://JerseyDeals.online** (not the GitHub Pages URL). Square and eBay links stay as-is unless the user says otherwise.
