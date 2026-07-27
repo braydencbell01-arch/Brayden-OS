@@ -2,7 +2,6 @@ import { useEffect, useId, useState, type FormEvent } from 'react'
 import { track } from './analytics'
 import { captureEmail } from './emailCapture'
 import {
-  activateOffer,
   emailHasPriorPurchase,
   hasPurchased,
   isValidEmail,
@@ -11,6 +10,7 @@ import {
   readOffer,
   writeBuyerEmail,
 } from './offer'
+import { claimFirstBuyerOffer } from './offers'
 
 type Mode = 'offer' | 'email-gate'
 
@@ -109,8 +109,8 @@ export function FirstBuyerOfferModal({
           setError('The first-time offer is only for new buyers.')
           return
         }
-        activateOffer(cleaned)
-        track('offer_activated', { offer: 'first10' })
+        claimFirstBuyerOffer(cleaned)
+        track('offer_claimed', { offer: 'first10' })
         onActivated()
       } else {
         track('checkout_email_saved', {})
@@ -147,7 +147,7 @@ export function FirstBuyerOfferModal({
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-cream/80">
           {isOffer
-            ? 'Activate your welcome offer for first-time buyers. Enter your email, then press Activate offer.'
+            ? 'Enter your email to claim 10% off your first order. You’ll find it in My offers — activate it at checkout when you’re ready.'
             : 'We need your email before you can buy. It only takes a second.'}
         </p>
 
@@ -178,7 +178,7 @@ export function FirstBuyerOfferModal({
             disabled={busy}
             className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot disabled:opacity-60"
           >
-            {busy ? 'Checking…' : isOffer ? 'Activate offer' : 'Continue to checkout'}
+            {busy ? 'Checking…' : isOffer ? 'Claim offer' : 'Continue to checkout'}
           </button>
         </form>
       </div>

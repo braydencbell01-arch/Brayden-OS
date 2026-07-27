@@ -1,4 +1,4 @@
-/** First-time buyer 10% offer — client-side state (GitHub Pages has no backend). */
+/** First-time buyer offer signup state (GitHub Pages has no backend). */
 
 export const FIRST_BUYER_DISCOUNT = 0.1
 export const OFFER_STORAGE_KEY = 'jerseydeals.offer.v1'
@@ -6,8 +6,11 @@ export const PURCHASED_STORAGE_KEY = 'jerseydeals.purchased.v1'
 export const BUYER_EMAIL_STORAGE_KEY = 'jerseydeals.buyerEmail.v1'
 
 export type OfferState = {
+  /** @deprecated Prefer wallet activeId — kept for migration / Square snippet sync. */
   activated: boolean
   email: string
+  /** True once the shopper entered email on the welcome popup. */
+  claimed?: boolean
   activatedAt?: number
 }
 
@@ -16,18 +19,19 @@ function canUseStorage() {
 }
 
 export function readOffer(): OfferState {
-  if (!canUseStorage()) return { activated: false, email: '' }
+  if (!canUseStorage()) return { activated: false, email: '', claimed: false }
   try {
     const raw = window.localStorage.getItem(OFFER_STORAGE_KEY)
-    if (!raw) return { activated: false, email: readBuyerEmail() }
+    if (!raw) return { activated: false, email: readBuyerEmail(), claimed: false }
     const parsed = JSON.parse(raw) as OfferState
     return {
       activated: Boolean(parsed.activated),
       email: String(parsed.email || readBuyerEmail() || '').trim().toLowerCase(),
+      claimed: Boolean(parsed.claimed) || Boolean(parsed.activated),
       activatedAt: parsed.activatedAt,
     }
   } catch {
-    return { activated: false, email: readBuyerEmail() }
+    return { activated: false, email: readBuyerEmail(), claimed: false }
   }
 }
 
@@ -36,6 +40,7 @@ export function writeOffer(state: OfferState) {
   const next: OfferState = {
     activated: Boolean(state.activated),
     email: String(state.email || '').trim().toLowerCase(),
+    claimed: Boolean(state.claimed),
     activatedAt: state.activatedAt,
   }
   window.localStorage.setItem(OFFER_STORAGE_KEY, JSON.stringify(next))
@@ -43,9 +48,10 @@ export function writeOffer(state: OfferState) {
   window.dispatchEvent(new CustomEvent('jerseydeals:offer', { detail: next }))
 }
 
+/** @deprecated Use claimFirstBuyerOffer / activateOfferAtCheckout from offers.ts */
 export function activateOffer(email: string) {
   const cleaned = email.trim().toLowerCase()
-  writeOffer({ activated: true, email: cleaned, activatedAt: Date.now() })
+  writeOffer({ activated: true, email: cleaned, claimed: true, activatedAt: Date.now() })
   return readOffer()
 }
 
@@ -68,9 +74,8 @@ export function hasPurchased() {
 export function markPurchased() {
   if (!canUseStorage()) return
   window.localStorage.setItem(PURCHASED_STORAGE_KEY, '1')
-  // First-time 10% is one-time — clear activation so discounted links stop after a buy.
   const email = readBuyerEmail() || readOffer().email
-  writeOffer({ activated: false, email, activatedAt: undefined })
+  writeOffer({ activated: false, email, claimed: true, activatedAt: undefined })
   window.dispatchEvent(new CustomEvent('jerseydeals:purchased'))
 }
 

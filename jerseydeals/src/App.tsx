@@ -38,13 +38,19 @@ import { FreeShippingBar } from './FreeShippingBar'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
 import { RewardsOffersScreen } from './RewardsOffersScreen'
-import { useRewardsOffersOpen } from './rewardsMember'
+import { useRewardsOffersOpen, goToRewardsOffers } from './rewardsMember'
 import {
   capturePurchaseReturnFromUrl,
   hasPurchased,
   readBuyerEmail,
   readOffer,
 } from './offer'
+import {
+  checkoutUsesSquareDiscountLink,
+  ensureRewardsOffers,
+  getActiveCheckoutOffer,
+  hasClaimedFirstBuyerOffer,
+} from './offers'
 import { captureSoldReturnFromUrl,
   fetchSoldOutIds,
   isListingSoldOut,
@@ -817,9 +823,6 @@ export default function App() {
   const [offerOpen, setOfferOpen] = useState(false)
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
   const offersOpen = useRewardsOffersOpen()
-  const [offerActive, setOfferActive] = useState(
-    () => readOffer().activated && !hasPurchased(),
-  )
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const [inventoryPage, setInventoryPage] = useState(1)
@@ -828,8 +831,8 @@ export default function App() {
   useEffect(() => {
     initAnalytics()
     track('page_view', { page: 'landing' })
-    const purchased = capturePurchaseReturnFromUrl()
-    if (purchased) setOfferActive(false)
+    ensureRewardsOffers()
+    capturePurchaseReturnFromUrl()
     const fromReturn = captureSoldReturnFromUrl()
     if (fromReturn.length) {
       rememberSoldOutIds(fromReturn)
@@ -840,11 +843,15 @@ export default function App() {
     void fetchSoldOutIds(asset('')).then((ids) => {
       setSoldIds(new Set(ids))
     })
-    const syncOffer = () => setOfferActive(readOffer().activated && !hasPurchased())
+    const syncOffer = () => {
+      ensureRewardsOffers()
+    }
     window.addEventListener('jerseydeals:offer', syncOffer)
+    window.addEventListener('jerseydeals:offers', syncOffer)
     window.addEventListener('jerseydeals:purchased', syncOffer)
     return () => {
       window.removeEventListener('jerseydeals:offer', syncOffer)
+      window.removeEventListener('jerseydeals:offers', syncOffer)
       window.removeEventListener('jerseydeals:purchased', syncOffer)
     }
   }, [])
@@ -852,12 +859,7 @@ export default function App() {
   useEffect(() => {
     if (loadState !== 'ready') return
     if (hasPurchased()) return
-    if (readOffer().activated) return
-    try {
-      if (sessionStorage.getItem('jerseydeals.offer.dismissed') === '1') return
-    } catch {
-      /* ignore */
-    }
+    if (hasClaimedFirstBuyerOffer()) return
     // Wait until inventory is painted so the modal + body lock don't fight first paint on iOS.
     const timer = window.setTimeout(() => {
       setOfferMode('offer')
@@ -886,22 +888,16 @@ export default function App() {
       setOfferOpen(true)
       return
     }
-    const discounted = readOffer().activated
+    const active = getActiveCheckoutOffer()
+    const discounted = checkoutUsesSquareDiscountLink(active?.id ?? null)
     const url = listingBuyUrl(item, { discounted })
     if (!url) return
-    track('buy_now', { id: item.id, discounted })
+    track('buy_now', { id: item.id, discounted, offer: active?.id || '' })
     // Keep bag lines until Square return (?purchase= / ?sold=) confirms the sale.
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   function dismissOfferModal() {
-    if (offerMode === 'offer') {
-      try {
-        sessionStorage.setItem('jerseydeals.offer.dismissed', '1')
-      } catch {
-        /* ignore */
-      }
-    }
     setPendingBuy(null)
     setOfferOpen(false)
   }
@@ -3146,7 +3142,6 @@ export default function App() {
         onRemove={(id) => setCart(removeCartLine(id))}
         onClear={() => setCart(clearCart())}
         onRequestCheckout={requestCheckoutAccess}
-        discountActive={offerActive}
       />
 
       {quickView ? (
@@ -3163,9 +3158,9 @@ export default function App() {
         mode={offerMode}
         onClose={dismissOfferModal}
         onActivated={() => {
-          setOfferActive(true)
-          setCartToast('10% first-time offer activated')
-          window.setTimeout(() => setCartToast(null), 2200)
+          setCartToast('10% offer saved to My offers — activate at checkout')
+          window.setTimeout(() => setCartToast(null), 2600)
+          goToRewardsOffers()
         }}
         onEmailSaved={() => {
           if (pendingBuy) {

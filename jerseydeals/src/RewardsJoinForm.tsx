@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
 import { track } from './analytics'
 import { captureEmail, isValidEmail } from './emailCapture'
 import {
@@ -9,6 +9,7 @@ import {
   writeRewardsMember,
   type RewardsMember,
 } from './rewardsMember'
+import { ensureRewardsOffers, listOpenOffers, OFFERS_EVENT } from './offers'
 
 function isValidPhone(raw: string) {
   const digits = raw.replace(/\D/g, '')
@@ -56,6 +57,7 @@ async function submitRewardsJoin(input: {
     email: cleanedEmail || undefined,
     phone: cleanedPhone || undefined,
   })
+  ensureRewardsOffers()
   track('rewards_club_join', {
     has_email: hasEmail,
     has_phone: hasPhone,
@@ -194,6 +196,15 @@ export function RewardsDock({ className = '' }: { className?: string }) {
   const [phone, setPhone] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
+  const [hasOffers, setHasOffers] = useState(() => listOpenOffers().length > 0)
+
+  useEffect(() => {
+    ensureRewardsOffers()
+    const sync = () => setHasOffers(listOpenOffers().length > 0)
+    sync()
+    window.addEventListener(OFFERS_EVENT, sync)
+    return () => window.removeEventListener(OFFERS_EVENT, sync)
+  }, [])
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -272,9 +283,14 @@ export function RewardsDock({ className = '' }: { className?: string }) {
                 {busy ? 'Joining…' : 'Join Rewards'}
               </button>
             </div>
-            <p className="text-center text-[0.7rem] text-muted sm:text-left">
-              Email, phone, or both - whatever you prefer.
-            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-center text-[0.7rem] text-muted sm:text-left">
+                Email, phone, or both - whatever you prefer.
+              </p>
+              {hasOffers ? (
+                <SeeOffersButton className="inline-flex items-center justify-center border border-navy/20 px-4 py-2 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-navy transition hover:border-crimson hover:text-crimson" />
+              ) : null}
+            </div>
             {message ? (
               <p className="text-center text-xs font-semibold text-crimson sm:text-left">{message}</p>
             ) : null}
