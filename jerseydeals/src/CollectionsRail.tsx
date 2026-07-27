@@ -223,7 +223,7 @@ export function CollectionsRail({
               }
               onSelect(item.action, item.id, item.label)
             }}
-            className="group relative h-[11.5rem] w-[9.5rem] shrink-0 overflow-hidden border-2 border-navy/15 bg-navy text-left outline-none transition hover:border-crimson focus-visible:ring-2 focus-visible:ring-crimson sm:h-[13.5rem] sm:w-[11rem] md:h-[15rem] md:w-[12.5rem]"
+            className="group relative h-[11.5rem] w-[9.5rem] shrink-0 overflow-hidden border-2 border-crimson bg-navy text-left outline-none transition hover:border-crimson-hot focus-visible:ring-2 focus-visible:ring-crimson sm:h-[13.5rem] sm:w-[11rem] md:h-[15rem] md:w-[12.5rem]"
           >
             <img
               src={asset(item.image)}
