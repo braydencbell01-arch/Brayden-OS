@@ -44,6 +44,7 @@ import {
   hasPurchased,
   readBuyerEmail,
   readOffer,
+  syncPurchasedFromKnownEmail,
 } from './offer'
 import {
   checkoutUsesSquareDiscountLink,
@@ -858,15 +859,25 @@ export default function App() {
 
   useEffect(() => {
     if (loadState !== 'ready') return
-    if (hasPurchased()) return
-    if (hasClaimedFirstBuyerOffer()) return
+    let cancelled = false
     // Wait until inventory is painted so the modal + body lock don't fight first paint on iOS.
     const timer = window.setTimeout(() => {
-      setOfferMode('offer')
-      setOfferOpen(true)
-      track('offer_popup_shown', {})
+      void (async () => {
+        if (hasPurchased()) return
+        // Returning buyers (known email on purchasers list) never see the first-order popup again.
+        if (await syncPurchasedFromKnownEmail()) return
+        if (cancelled) return
+        if (hasPurchased()) return
+        if (hasClaimedFirstBuyerOffer()) return
+        setOfferMode('offer')
+        setOfferOpen(true)
+        track('offer_popup_shown', {})
+      })()
     }, 1200)
-    return () => window.clearTimeout(timer)
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
   }, [loadState])
 
   function hasCheckoutEmail() {

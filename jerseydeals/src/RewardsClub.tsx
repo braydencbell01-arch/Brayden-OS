@@ -24,7 +24,8 @@ export function RewardsClub() {
             Jersey Deals Rewards Club
           </h2>
           <p className="mt-3 max-w-md font-brand text-base leading-relaxed text-cream/80">
-            Drop your email or phone for special offers, restocks, and member-only drops.
+            Free to join — drop your email or phone for special offers, restocks, and member-only
+            drops.
           </p>
         </motion.div>
 

@@ -171,7 +171,9 @@ export function RewardsSectionJoin({ className = '' }: { className?: string }) {
           />
         </div>
       </div>
-      <p className="text-xs text-cream/65">Email, phone, or both - whatever you prefer.</p>
+      <p className="text-xs text-cream/65">
+        Free to join. Email, phone, or both - whatever you prefer.
+      </p>
       <button
         type="submit"
         disabled={busy}
@@ -285,7 +287,7 @@ export function RewardsDock({ className = '' }: { className?: string }) {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-center text-[0.7rem] text-muted sm:text-left">
-                Email, phone, or both - whatever you prefer.
+                Free to join · email, phone, or both - whatever you prefer.
               </p>
               {hasOffers ? (
                 <SeeOffersButton className="inline-flex items-center justify-center border border-navy/20 px-4 py-2 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-navy transition hover:border-crimson hover:text-crimson" />

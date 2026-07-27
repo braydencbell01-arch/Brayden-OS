@@ -1061,7 +1061,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
         lockRewards(form);
       } else {
         form.innerHTML=
-          '<input type="email" name="email" autocomplete="email" required placeholder="Rewards Club email" aria-label="Rewards Club email"/>'
+          '<input type="email" name="email" autocomplete="email" required placeholder="Free Rewards Club" aria-label="Email for free Rewards Club signup"/>'
           +'<button type="submit">Join</button>';
         form.addEventListener("submit", function(e){
           e.preventDefault();
@@ -1088,7 +1088,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       lockRewards(form);
     } else if(!form.querySelector(".jd-header-email-ok")){
       var input=form.querySelector('input[type="email"]');
-      if(input){ input.placeholder="Rewards Club email"; input.setAttribute("aria-label","Rewards Club email"); }
+      if(input){ input.placeholder="Free Rewards Club"; input.setAttribute("aria-label","Email for free Rewards Club signup"); }
       if(hasFirst10() && !form.querySelector("#jd-see-offers")){
         var see=document.createElement("button");
         see.type="button";
@@ -1128,6 +1128,8 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   function ensureOfferPopup(){
     capturePurchase();
     if(rewardsMember()) claimOfferId("pl5");
+    var known=storageGet(EMAIL_KEY)||readOffer().email||"";
+    if(known && emailHasPurchase(known)) markPurchased();
     if(hasPurchased()) return;
     if(hasFirst10()) return;
     if(document.getElementById("jd-offer-root")) return;

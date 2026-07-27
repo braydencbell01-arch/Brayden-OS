@@ -107,6 +107,20 @@ export async function emailHasPriorPurchase(email: string): Promise<boolean> {
   }
 }
 
+/**
+ * If this device already has a known buyer/rewards email that appears in
+ * purchasers.json, mark purchased so the first-order popup never returns.
+ */
+export async function syncPurchasedFromKnownEmail(): Promise<boolean> {
+  if (hasPurchased()) return true
+  const email = (readBuyerEmail() || readOffer().email || '').trim().toLowerCase()
+  if (!email) return false
+  const prior = await emailHasPriorPurchase(email)
+  if (!prior) return false
+  markPurchased()
+  return true
+}
+
 /** Capture ?purchase=1 / ?purchased=1 return from Square Payment Links. */
 export function capturePurchaseReturnFromUrl() {
   if (typeof window === 'undefined') return false
