@@ -80,7 +80,7 @@ export function RewardsClub() {
   }
 
   return (
-    <section id="rewards" className="scroll-mt-44 bg-navy py-20 text-cream md:py-24">
+    <section id="rewards" className="scroll-mt-44 border-y-2 border-crimson/30 bg-navy py-20 text-cream md:py-24">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-12 md:items-end md:px-8">
         <motion.div {...fadeUp(reduce)} className="md:col-span-6">
           <p className="eyebrow text-crimson-hot">Members</p>
