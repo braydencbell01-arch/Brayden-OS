@@ -1773,8 +1773,7 @@ export default function App() {
         <section id="shop" className="scroll-mt-44 bg-cream py-20 md:py-28">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="eyebrow text-crimson">Collections</p>
-              <div className="brand-rule mt-3" aria-hidden />
+              <div className="brand-rule" aria-hidden />
               <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
                 Shop the floor
               </h2>

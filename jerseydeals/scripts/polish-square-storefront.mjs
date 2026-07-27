@@ -182,12 +182,16 @@ function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail =
   --jd-mist:#e4e9ef;
   --jd-muted:#3d4650;
   --jd-white:#ffffff;
+  --jd-cream:#fcf5e9;
 }
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   font-family:"Outfit",system-ui,sans-serif!important;
   color:var(--jd-navy)!important;
-  background:var(--jd-navy-deep)!important;
+  background:
+    radial-gradient(ellipse 90% 50% at 0% 0%,rgba(215,40,47,.12),transparent 55%),
+    radial-gradient(ellipse 70% 40% at 100% 10%,rgba(11,34,63,.14),transparent 50%),
+    var(--jd-navy-deep)!important;
   -webkit-font-smoothing:antialiased;
 }
 /* Kill the “card floating on another screen” inset look */
@@ -197,10 +201,10 @@ body{
 }
 .app-container,#app,.theme-square{
   margin:0!important;border-radius:0!important;box-shadow:none!important;
-  background:var(--jd-chalk)!important;
+  background:var(--jd-cream)!important;
 }
 main.main-content,.user-content,.w-cell.user-content{
-  background:var(--jd-chalk)!important;
+  background:var(--jd-cream)!important;
 }
 /* Stop iOS auto-zoom on focus (fields under 16px zoom the page). */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="file"]):not([type="hidden"]),
@@ -463,6 +467,8 @@ h1.text-component.w-product-title,
   font-weight:700!important;
   color:var(--jd-navy)!important;
   text-shadow:none!important;
+  border-left:4px solid var(--jd-crimson)!important;
+  padding-left:.65rem!important;
 }
 /* Cart / empty states — never dark-on-dark or light-on-light */
 [class*="cart"] ,[class*="Cart"],[data-ux*="Cart"],[href*="/s/cart"],

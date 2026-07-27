@@ -57,8 +57,9 @@
     font-family: var(--font-sans);
     color: var(--color-navy);
     background:
-      radial-gradient(ellipse 90% 50% at 0% 0%, color-mix(in srgb, var(--color-crimson) 7%, transparent), transparent 55%),
-      radial-gradient(ellipse 70% 40% at 100% 10%, color-mix(in srgb, var(--color-navy) 6%, transparent), transparent 50%),
+      radial-gradient(ellipse 95% 55% at 0% 0%, color-mix(in srgb, var(--color-crimson) 14%, transparent), transparent 58%),
+      radial-gradient(ellipse 75% 45% at 100% 8%, color-mix(in srgb, var(--color-navy) 12%, transparent), transparent 52%),
+      radial-gradient(ellipse 50% 30% at 50% 100%, color-mix(in srgb, var(--color-crimson) 6%, transparent), transparent 60%),
       var(--color-cream);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -114,9 +115,10 @@
   }
 
   .brand-rule {
-    height: 3px;
-    width: 3.5rem;
-    background: linear-gradient(90deg, var(--color-crimson), var(--color-navy));
+    height: 4px;
+    width: 4rem;
+    background: linear-gradient(90deg, var(--color-crimson) 0%, var(--color-crimson) 42%, var(--color-navy) 100%);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-crimson) 18%, transparent);
   }
 
   .brand-panel {
@@ -167,6 +169,15 @@
   .collections-rail::-webkit-scrollbar-thumb {
     background: color-mix(in srgb, var(--color-crimson) 55%, transparent);
     border-radius: 999px;
+  }
+
+  .collections-rail-viewport {
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .collections-marquee-track {
+    transform: translate3d(0, 0, 0);
   }
 }
 
