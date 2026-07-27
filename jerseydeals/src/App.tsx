@@ -24,7 +24,6 @@ import {
 import {
   addListingToCart,
   cartCount,
-  cartSubtotal,
   clearCart,
   readCart,
   removeCartLine,
@@ -34,10 +33,11 @@ import {
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
-import { FreeShippingBar } from './FreeShippingBar'
+import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
+import { RewardsOffersScreen } from './RewardsOffersScreen'
+import { useRewardsOffersOpen } from './rewardsMember'
 import {
-  applyFirstBuyerDiscount,
   capturePurchaseReturnFromUrl,
   hasPurchased,
   readBuyerEmail,
@@ -814,6 +814,7 @@ export default function App() {
   const [recentIds, setRecentIds] = useState<string[]>(() => readRecentlyViewed())
   const [offerOpen, setOfferOpen] = useState(false)
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
+  const offersOpen = useRewardsOffersOpen()
   const [offerActive, setOfferActive] = useState(
     () => readOffer().activated && !hasPurchased(),
   )
@@ -1305,14 +1306,6 @@ export default function App() {
   ])
 
   const heroImage = asset('hero-jersey.jpg')
-  const bagSubtotal = useMemo(() => {
-    if (!offerActive) return cartSubtotal(cart)
-    return cart.lines.reduce((sum, line) => {
-      const unit = applyFirstBuyerDiscount(line.price)
-      if (unit == null) return sum
-      return sum + unit * Math.max(1, line.quantity || 1)
-    }, 0)
-  }, [cart, offerActive])
 
   const navLinks = [
     { href: '#collections', label: 'Collections' },
@@ -1325,6 +1318,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
+      {offersOpen ? <RewardsOffersScreen /> : null}
       {/* Promo bar — always on top */}
       <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-x-2 overflow-x-auto bg-crimson px-3 py-2 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cream sm:gap-x-3 sm:px-4 sm:text-xs sm:tracking-[0.18em]">
         <span>{PROMO_BAR}</span>
@@ -3015,7 +3009,7 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-36 text-white/80 md:pb-14">
+      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-52 text-white/80 md:pb-28">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
@@ -3134,11 +3128,6 @@ export default function App() {
       </footer>
 
       <div className="fixed inset-x-0 bottom-0 z-40 md:bottom-0">
-        <FreeShippingBar
-          subtotal={bagSubtotal}
-          currency={cart.lines[0]?.currency || 'USD'}
-          className="border-t border-navy/15"
-        />
         <div className="border-t border-cream/15 bg-navy-deep/95 p-3 backdrop-blur md:hidden">
         <div className="mb-2 flex items-center justify-center gap-3 text-xs font-semibold text-cream/85">
           <a
@@ -3186,6 +3175,7 @@ export default function App() {
           </button>
         </div>
         </div>
+        <RewardsDock />
       </div>
 
       <CartDrawer

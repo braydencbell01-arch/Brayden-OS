@@ -3,9 +3,13 @@
  * Once someone joins, the form stays locked on this device.
  */
 
+import { useEffect, useState } from 'react'
+
 const REWARDS_KEY = 'jerseydeals.rewardsMember.v1'
 /** Older email-capture list — treat prior rewards_club signups as members. */
 const LEGACY_SIGNUPS_KEY = 'jd_email_signups_v1'
+export const REWARDS_MEMBER_EVENT = 'jerseydeals:rewards-member'
+export const OFFERS_HASH = '#offers'
 
 export type RewardsMember = {
   email?: string
@@ -21,12 +25,25 @@ function canStore() {
   }
 }
 
+function notifyRewardsChange() {
+  try {
+    window.dispatchEvent(new Event(REWARDS_MEMBER_EVENT))
+  } catch {
+    /* ignore */
+  }
+}
+
 function fromLegacySignups(): RewardsMember | null {
   if (!canStore()) return null
   try {
     const raw = localStorage.getItem(LEGACY_SIGNUPS_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as Array<{ email?: string; source?: string; at?: string; phone?: string }>
+    const parsed = JSON.parse(raw) as Array<{
+      email?: string
+      source?: string
+      at?: string
+      phone?: string
+    }>
     if (!Array.isArray(parsed)) return null
     const hit = parsed.find((row) => row?.source === 'rewards_club')
     if (!hit?.email && !hit?.phone) return null
@@ -63,10 +80,7 @@ export function isRewardsMember() {
   return Boolean(readRewardsMember())
 }
 
-export function writeRewardsMember(member: {
-  email?: string
-  phone?: string
-}) {
+export function writeRewardsMember(member: { email?: string; phone?: string }) {
   if (!canStore()) return
   const email = member.email?.trim().toLowerCase() || undefined
   const phone = member.phone?.trim() || undefined
@@ -81,4 +95,44 @@ export function writeRewardsMember(member: {
   } catch {
     /* ignore quota */
   }
+  notifyRewardsChange()
+}
+
+/** Live membership for any Rewards signup UI on this device. */
+export function useRewardsMember() {
+  const [member, setMember] = useState<RewardsMember | null>(() => readRewardsMember())
+
+  useEffect(() => {
+    const sync = () => setMember(readRewardsMember())
+    window.addEventListener(REWARDS_MEMBER_EVENT, sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener(REWARDS_MEMBER_EVENT, sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+
+  return member
+}
+
+export function goToRewardsOffers() {
+  window.location.hash = 'offers'
+}
+
+export function leaveRewardsOffers() {
+  const { pathname, search } = window.location
+  window.history.pushState(null, '', `${pathname}${search}`)
+  window.dispatchEvent(new Event('hashchange'))
+}
+
+export function useRewardsOffersOpen() {
+  const [open, setOpen] = useState(() => window.location.hash === OFFERS_HASH)
+
+  useEffect(() => {
+    const sync = () => setOpen(window.location.hash === OFFERS_HASH)
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+
+  return open
 }

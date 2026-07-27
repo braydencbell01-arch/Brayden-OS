@@ -1,12 +1,5 @@
-import { useId, useState, type FormEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { track } from './analytics'
-import { captureEmail, isValidEmail } from './emailCapture'
-import {
-  isRewardsMember,
-  readRewardsMember,
-  writeRewardsMember,
-} from './rewardsMember'
+import { RewardsSectionJoin } from './RewardsJoinForm'
 
 function fadeUp(reduce: boolean | null, delay = 0) {
   const ease = [0.22, 1, 0.36, 1] as const
@@ -18,77 +11,8 @@ function fadeUp(reduce: boolean | null, delay = 0) {
   }
 }
 
-function isValidPhone(raw: string) {
-  const digits = raw.replace(/\D/g, '')
-  return digits.length >= 10 && digits.length <= 15
-}
-
 export function RewardsClub() {
   const reduce = useReducedMotion()
-  const emailId = useId()
-  const phoneId = useId()
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState('')
-  const [member, setMember] = useState(() => readRewardsMember())
-
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault()
-    if (isRewardsMember()) {
-      setMember(readRewardsMember())
-      return
-    }
-    setMessage('')
-    const cleanedEmail = email.trim().toLowerCase()
-    const cleanedPhone = phone.trim()
-    const hasEmail = Boolean(cleanedEmail)
-    const hasPhone = Boolean(cleanedPhone)
-
-    if (!hasEmail && !hasPhone) {
-      setMessage('Enter an email or phone number.')
-      return
-    }
-    if (hasEmail && !isValidEmail(cleanedEmail)) {
-      setMessage('Enter a valid email address.')
-      return
-    }
-    if (hasPhone && !isValidPhone(cleanedPhone)) {
-      setMessage('Enter a valid phone number.')
-      return
-    }
-
-    setBusy(true)
-    try {
-      const leadEmail =
-        cleanedEmail ||
-        `phone.${cleanedPhone.replace(/\D/g, '')}@rewards.jerseydeals.online`
-      const result = await captureEmail(leadEmail, 'rewards_club', {
-        ...(cleanedPhone ? { phone: cleanedPhone } : {}),
-        ...(cleanedEmail ? { email_entered: cleanedEmail } : { signup_type: 'phone_only' }),
-        message: 'Jersey Deals Rewards Club signup',
-      })
-      if (result.ok) {
-        writeRewardsMember({
-          email: cleanedEmail || undefined,
-          phone: cleanedPhone || undefined,
-        })
-        setMember(readRewardsMember())
-        setEmail('')
-        setPhone('')
-        track('rewards_club_join', {
-          has_email: hasEmail,
-          has_phone: hasPhone,
-        })
-      } else {
-        setMessage(result.message)
-      }
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const alreadyMember = Boolean(member)
 
   return (
     <section id="rewards" className="scroll-mt-44 border-y-2 border-crimson/30 bg-navy py-20 text-cream md:py-24">
@@ -105,77 +29,9 @@ export function RewardsClub() {
           </p>
         </motion.div>
 
-        {alreadyMember ? (
-          <motion.div
-            {...fadeUp(reduce, 0.08)}
-            className="space-y-3 border border-cream/20 bg-navy-deep/80 px-5 py-6 md:col-span-6"
-            role="status"
-          >
-            <p className="font-display text-2xl font-bold uppercase tracking-wide text-cream">
-              You’re already a Rewards member
-            </p>
-            <p className="font-brand text-sm leading-relaxed text-cream/80">
-              This device is locked to your Rewards Club signup
-              {member?.email ? ` (${member.email})` : member?.phone ? ` (${member.phone})` : ''}. You
-              can’t join again from here — watch your inbox or texts for offers.
-            </p>
-          </motion.div>
-        ) : (
-          <motion.form
-            {...fadeUp(reduce, 0.08)}
-            onSubmit={onSubmit}
-            className="space-y-3 md:col-span-6"
-            noValidate
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor={emailId}
-                  className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-cream/75"
-                >
-                  Email
-                </label>
-                <input
-                  id={emailId}
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@email.com"
-                  className="w-full border border-cream/25 bg-navy-deep px-3 py-3 text-base text-cream outline-none placeholder:text-cream/45 focus:border-crimson"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor={phoneId}
-                  className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-cream/75"
-                >
-                  Phone
-                </label>
-                <input
-                  id={phoneId}
-                  type="tel"
-                  name="phone"
-                  autoComplete="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(555) 000-0000"
-                  className="w-full border border-cream/25 bg-navy-deep px-3 py-3 text-base text-cream outline-none placeholder:text-cream/45 focus:border-crimson"
-                />
-              </div>
-            </div>
-            <p className="text-xs text-cream/65">Email, phone, or both - whatever you prefer.</p>
-            <button
-              type="submit"
-              disabled={busy}
-              className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot disabled:opacity-60"
-            >
-              {busy ? 'Joining…' : 'Join Rewards Club'}
-            </button>
-            {message ? <p className="text-sm font-semibold text-crimson-hot">{message}</p> : null}
-          </motion.form>
-        )}
+        <motion.div {...fadeUp(reduce, 0.08)} className="md:col-span-6">
+          <RewardsSectionJoin />
+        </motion.div>
       </div>
     </section>
   )
