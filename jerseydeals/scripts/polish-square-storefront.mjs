@@ -600,6 +600,10 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
 .jd-header-email .jd-header-email-ok{
   color:#fff!important;font-size:.62rem;font-weight:600;letter-spacing:.04em;line-height:1.25;white-space:normal;
 }
+.jd-header-email .jd-see-offers{
+  display:inline-block;margin-top:.2rem;border:0;background:transparent;color:#fff;font-size:.58rem;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-decoration:underline;cursor:pointer;padding:0;
+}
 @media (max-width:720px){
   .banner-1,[class*="banner-1"],.w-block-banner,[data-ux="Banner"]:not([class*="header"]){min-height:48vh}
   [class*="header-banner"],.header-banner-wrapper{min-height:0!important}
@@ -645,6 +649,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   var PURCHASED_KEY="jerseydeals.purchased.v1";
   var EMAIL_KEY="jerseydeals.buyerEmail.v1";
   var REWARDS_KEY="jerseydeals.rewardsMember.v1";
+  var OFFERS_KEY="jerseydeals.offers.v1";
   var HERO="Shop Premier League";
   var HERO_SUB="Club, country, and training jerseys — photographed from our inventory.";
   var JD_SITE="https://jerseydeals.online/";
@@ -677,22 +682,60 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     try{ var o=JSON.parse(storageGet(REWARDS_KEY)||"null"); return o&&(o.email||o.phone)?o:null; }catch(e){ return null; }
   }
   function lockRewards(form){
-    if(form) form.innerHTML='<span class="jd-header-email-ok">You are already a Rewards member</span>';
+    if(!form) return;
+    form.innerHTML='<span class="jd-header-email-ok">You are already a Rewards member</span>'
+      +'<button type="button" id="jd-see-offers" class="jd-see-offers">See my offers</button>';
+    var btn=form.querySelector("#jd-see-offers");
+    if(btn) btn.onclick=function(e){ e.preventDefault(); openOffersScreen(); };
   }
   function hasPurchased(){ return storageGet(PURCHASED_KEY)==="1"; }
-  function markPurchased(){ storageSet(PURCHASED_KEY,"1"); }
+  function markPurchased(){
+    storageSet(PURCHASED_KEY,"1");
+    try{
+      var w=JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[]}');
+      var now=new Date().toISOString();
+      (w.offers||[]).forEach(function(o){ if(o.id===w.activeId||o.status==="activated"||o.id==="first10"){ o.status="used"; o.usedAt=now; } });
+      w.activeId=null; storageSet(OFFERS_KEY, JSON.stringify(w));
+    }catch(e){}
+    writeOffer({activated:false,email:storageGet(EMAIL_KEY)||readOffer().email||"",claimed:true});
+  }
   function readOffer(){
     try{
-      var raw=storageGet(OFFER_KEY);
-      if(!raw) return {activated:false,email:storageGet(EMAIL_KEY)};
-      var o=JSON.parse(raw);
-      return {activated:!!o.activated,email:(o.email||storageGet(EMAIL_KEY)||"").toLowerCase()};
-    }catch(e){ return {activated:false,email:storageGet(EMAIL_KEY)}; }
+      var o=JSON.parse(storageGet(OFFER_KEY)||"null")||{};
+      return {activated:!!o.activated,email:(o.email||storageGet(EMAIL_KEY)||"").toLowerCase(),claimed:!!o.claimed||!!o.activated};
+    }catch(e){ return {activated:false,email:storageGet(EMAIL_KEY),claimed:false}; }
   }
   function writeOffer(o){
-    storageSet(OFFER_KEY, JSON.stringify(o));
+    storageSet(OFFER_KEY, JSON.stringify({activated:!!o.activated,email:(o.email||"").toLowerCase(),claimed:!!o.claimed,activatedAt:o.activatedAt}));
     if(o.email) storageSet(EMAIL_KEY, o.email);
   }
+  function activeOfferId(){
+    try{ var o=JSON.parse(storageGet(OFFERS_KEY)||"null"); return o&&(o.activeId==="first10"||o.activeId==="pl5")?o.activeId:null; }catch(e){ return null; }
+  }
+  function claimOfferId(id,email){
+    if(email) writeOffer({activated:false,email:email,claimed:true});
+    try{
+      var w=JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[],"activeId":null}');
+      if(!w.offers) w.offers=[];
+      if(!w.offers.some(function(x){ return x.id===id; })){
+        w.offers.push({id:id,status:"available",claimedAt:new Date().toISOString()});
+        storageSet(OFFERS_KEY, JSON.stringify(w));
+      }
+    }catch(e){}
+  }
+  function hasFirst10(){
+    if(readOffer().claimed) return true;
+    try{ return (JSON.parse(storageGet(OFFERS_KEY)||'{"offers":[]}').offers||[]).some(function(o){ return o.id==="first10"; }); }catch(e){ return false; }
+  }
+  function loadOffersUi(cb){
+    if(window.jdOpenOffers){ if(cb) cb(); return; }
+    if(document.getElementById("jd-square-offers-js")){ if(cb) setTimeout(cb,250); return; }
+    var s=document.createElement("script");
+    s.id="jd-square-offers-js"; s.src=JD_SITE+"square-offers.js?v=2"; s.async=true;
+    s.onload=function(){ if(cb) cb(); }; document.head.appendChild(s);
+  }
+  function openOffersScreen(){ loadOffersUi(function(){ if(window.jdOpenOffers) window.jdOpenOffers(); }); }
+  function ensureCartOffers(){ loadOffersUi(function(){ if(window.jdEnsureCartOffers) window.jdEnsureCartOffers(); }); }
   function validEmail(e){ return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test((e||"").trim()); }
   function capturePurchase(){
     try{
@@ -1029,6 +1072,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
           storageSet(REWARDS_KEY, JSON.stringify({email:val,at:new Date().toISOString()}));
           storageSet(EMAIL_KEY, val);
           collectLead(val, "rewards_club");
+          claimOfferId("pl5");
           lockRewards(form);
         });
       }
@@ -1045,6 +1089,15 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     } else if(!form.querySelector(".jd-header-email-ok")){
       var input=form.querySelector('input[type="email"]');
       if(input){ input.placeholder="Rewards Club email"; input.setAttribute("aria-label","Rewards Club email"); }
+      if(hasFirst10() && !form.querySelector("#jd-see-offers")){
+        var see=document.createElement("button");
+        see.type="button";
+        see.id="jd-see-offers";
+        see.className="jd-see-offers";
+        see.textContent="See my offers";
+        see.onclick=function(e){ e.preventDefault(); openOffersScreen(); };
+        form.appendChild(see);
+      }
     }
     form.style.flex="1 1 auto";
     form.style.minWidth="0";
@@ -1054,8 +1107,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   function findLink(){
     try{
       var path=location.pathname||"";
-      var offer=readOffer();
-      var disc=offer.activated;
+      var disc=activeOfferId()==="first10";
       var m=path.match(/\\/product\\/[^/]+\\/([A-Z0-9]+)/i);
       var id=m && m[1];
       if(id){
@@ -1075,9 +1127,9 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
 
   function ensureOfferPopup(){
     capturePurchase();
+    if(rewardsMember()) claimOfferId("pl5");
     if(hasPurchased()) return;
-    if(readOffer().activated) return;
-    if(sessionGet("jerseydeals.offer.dismissed")==="1") return;
+    if(hasFirst10()) return;
     if(document.getElementById("jd-offer-root")) return;
     var root=document.createElement("div");
     root.id="jd-offer-root";
@@ -1085,20 +1137,17 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       +'<button type="button" id="jd-offer-close" aria-label="Close">✕</button>'
       +'<div style="font-size:.68rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#d7282f">First-time buyer offer</div>'
       +'<h2>10% off all items</h2>'
-      +'<p>Activate your welcome offer for first-time buyers. Enter your email, then press Activate offer.</p>'
-      +'<label for="jd-offer-email">Email <span class="jd-req">*</span> <span class="jd-req" style="letter-spacing:0;text-transform:none;font-size:.72rem">mandatory</span></label>'
+      +'<p>Enter your email to claim 10% off your first order. Find it in My offers and activate at checkout.</p>'
+      +'<label for="jd-offer-email">Email <span class="jd-req">*</span></label>'
       +'<input id="jd-offer-email" type="email" autocomplete="email" placeholder="you@email.com" required />'
       +'<div class="jd-offer-err" id="jd-offer-err" hidden></div>'
-      +'<button type="button" id="jd-offer-activate">Activate offer</button>'
+      +'<button type="button" id="jd-offer-activate">Claim offer</button>'
       +'</div>';
     document.body.appendChild(root);
-    function close(){
-      sessionSet("jerseydeals.offer.dismissed","1");
-      root.remove();
-    }
+    function close(){ root.remove(); }
     root.querySelector("#jd-offer-close").onclick=close;
     root.addEventListener("click", function(e){ if(e.target===root) close(); });
-    root.querySelector("#jd-offer-activate").onclick=async function(){
+    root.querySelector("#jd-offer-activate").onclick=function(){
       var input=root.querySelector("#jd-offer-email");
       var err=root.querySelector("#jd-offer-err");
       var email=(input.value||"").trim().toLowerCase();
@@ -1113,15 +1162,10 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
         setTimeout(close, 1600);
         return;
       }
-      writeOffer({activated:true,email:email,activatedAt:Date.now()});
+      claimOfferId("first10", email);
       collectLead(email, "first_buyer_offer");
       close();
-      polishPrices();
-      var link=findLink();
-      if(link){
-        var btn=document.querySelector("#jd-buy-now-btn .jd-buy-now");
-        if(btn) btn.href=link;
-      }
+      openOffersScreen();
     };
   }
 
@@ -1167,7 +1211,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   }
 
   function polishPrices(){
-    if(!readOffer().activated) return;
+    if(activeOfferId()!=="first10") return;
     var nodes=document.querySelectorAll("body *");
     for(var i=0;i<nodes.length;i++){
       var el=nodes[i];
@@ -1489,6 +1533,7 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     polishCopy();
     hideOos(document);
     ensureOfferPopup();
+    ensureCartOffers();
     polishPrices();
     lockPdpHorizontalSwipe();
     var link=findLink();
@@ -1500,6 +1545,14 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       if(checkoutAnchors[i].tagName==="A") ensureEmailBeforeCheckout(checkoutAnchors[i]);
     }
   }
+
+  window.addEventListener("jd-offers-activated", function(){
+    polishPrices();
+    var link=findLink();
+    var btn=document.querySelector("#jd-buy-now-btn .jd-buy-now");
+    if(btn&&link) btn.href=link;
+  });
+  loadOffersUi();
 
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", run);
   else run();
@@ -1544,18 +1597,15 @@ async function main() {
   const collectUrl = (process.env.JERSEYDEALS_EMAIL_API_URL || process.env.VITE_JERSEYDEALS_EMAIL_API_URL || '').trim()
   const contactEmail = (process.env.JERSEYDEALS_CONTACT_EMAIL || 'shop@jerseydeals.online').trim()
   let content = buildSnippet(map, purchaserEmails, collectUrl, contactEmail)
-  // Square Online hard-caps snippet size; drop CSS/block comments first if over budget.
-  if (content.length > 65535) {
-    content = content.replace(/\/\*[\s\S]*?\*\//g, '')
+  function shrink(src) {
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n[ \t]*\/\/[^\n]*/g, '')
   }
+  // Square Online hard-caps snippet size; drop comments / optional payload if over budget.
+  if (content.length > 65535) content = shrink(content)
+  if (content.length > 65535) content = shrink(buildSnippet(map, purchaserEmails, '', contactEmail))
+  if (content.length > 65535) content = shrink(buildSnippet(map, [], '', contactEmail))
   if (content.length > 65535) {
-    content = content.replace(/\n[ \t]*\/\/[^\n]*/g, '')
-  }
-  if (content.length > 65535) {
-    // Prefer FormSubmit-only when the optional collect URL pushes us over.
-    content = buildSnippet(map, purchaserEmails, '', contactEmail)
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      .replace(/\n[ \t]*\/\/[^\n]*/g, '')
+    content = content.replace(/[ \t]{2,}/g, ' ').replace(/\n{2,}/g, '\n')
   }
   console.log(
     `New snippet length: ${content.length} (prior emails: ${purchaserEmails.length}, collectUrl: ${collectUrl || 'formsubmit-only'})`,

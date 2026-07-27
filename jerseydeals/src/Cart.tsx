@@ -16,6 +16,7 @@ import {
   activateOfferAtCheckout,
   applyOfferUnitPrice,
   checkoutUsesSquareDiscountLink,
+  clearCheckoutActivation,
   ensureRewardsOffers,
   getActiveCheckoutOffer,
   listOpenOffers,
@@ -54,9 +55,21 @@ export function CartDrawer({
 
   function syncOffers() {
     ensureRewardsOffers()
+    if (cart.lines.length === 0 && getActiveCheckoutOffer()) {
+      clearCheckoutActivation()
+    }
     setOpenOffers(listOpenOffers())
     setActiveOffer(getActiveCheckoutOffer())
   }
+
+  useEffect(() => {
+    if (cart.lines.length === 0 && getActiveCheckoutOffer()) {
+      clearCheckoutActivation()
+      setOpenOffers(listOpenOffers())
+      setActiveOffer(null)
+      setOfferMessage('')
+    }
+  }, [cart.lines.length])
 
   useEffect(() => {
     if (!open) return
@@ -78,7 +91,7 @@ export function CartDrawer({
       document.removeEventListener('keydown', onKey)
       window.removeEventListener(OFFERS_EVENT, onOffers)
     }
-  }, [open, onClose])
+  }, [open, onClose, cart.lines.length])
 
   if (!open) return null
   const count = cartCount(cart)
