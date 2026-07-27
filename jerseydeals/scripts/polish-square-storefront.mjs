@@ -182,16 +182,12 @@ function buildSnippet(map, purchaserEmails = [], collectUrl = '', contactEmail =
   --jd-mist:#e4e9ef;
   --jd-muted:#3d4650;
   --jd-white:#ffffff;
-  --jd-cream:#fcf5e9;
 }
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   font-family:"Outfit",system-ui,sans-serif!important;
   color:var(--jd-navy)!important;
-  background:
-    radial-gradient(ellipse 90% 50% at 0% 0%,rgba(215,40,47,.12),transparent 55%),
-    radial-gradient(ellipse 70% 40% at 100% 10%,rgba(11,34,63,.14),transparent 50%),
-    var(--jd-navy-deep)!important;
+  background:var(--jd-navy-deep)!important;
   -webkit-font-smoothing:antialiased;
 }
 /* Kill the “card floating on another screen” inset look */
@@ -201,10 +197,10 @@ body{
 }
 .app-container,#app,.theme-square{
   margin:0!important;border-radius:0!important;box-shadow:none!important;
-  background:var(--jd-cream)!important;
+  background:#fcf5e9!important;
 }
 main.main-content,.user-content,.w-cell.user-content{
-  background:var(--jd-cream)!important;
+  background:#fcf5e9!important;
 }
 /* Stop iOS auto-zoom on focus (fields under 16px zoom the page). */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="file"]):not([type="hidden"]),
@@ -467,8 +463,6 @@ h1.text-component.w-product-title,
   font-weight:700!important;
   color:var(--jd-navy)!important;
   text-shadow:none!important;
-  border-left:4px solid var(--jd-crimson)!important;
-  padding-left:.65rem!important;
 }
 /* Cart / empty states — never dark-on-dark or light-on-light */
 [class*="cart"] ,[class*="Cart"],[data-ux*="Cart"],[href*="/s/cart"],
@@ -536,10 +530,8 @@ footer input,footer [type="email"]{
   font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
 }
 .jd-trust span{opacity:.92}
-.jd-trust span+span::before{
-  content:"";display:inline-block;width:4px;height:4px;border-radius:50%;
-  background:var(--jd-crimson);margin-right:1.25rem;vertical-align:middle;
-}
+/* No bullet dots between trust lines */
+.jd-trust span+span::before{content:none!important;display:none!important}
 /* Buy bridge */
 .jd-buy-now{display:inline-flex!important;align-items:center;justify-content:center;gap:.4rem;
 padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:pointer}
@@ -838,17 +830,20 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   }
 
   function ensureTrust(){
-    if(document.getElementById("jd-trust-bar")) return;
-    var bar=document.createElement("div");
-    bar.id="jd-trust-bar";
-    bar.className="jd-trust";
-    bar.innerHTML="<span>Ships from US inventory</span><span>10% shipping on every order</span><span>Secure Square checkout</span><span>Real product photos</span>";
-    var header=siteHeader();
-    if(header && header.parentNode){
-      header.parentNode.insertBefore(bar, header.nextSibling);
-    } else {
-      document.body.insertBefore(bar, document.body.firstChild);
+    var bar=document.getElementById("jd-trust-bar");
+    if(!bar){
+      bar=document.createElement("div");
+      bar.id="jd-trust-bar";
+      bar.className="jd-trust";
+      var header=siteHeader();
+      if(header && header.parentNode){
+        header.parentNode.insertBefore(bar, header.nextSibling);
+      } else {
+        document.body.insertBefore(bar, document.body.firstChild);
+      }
     }
+    bar.className="jd-trust";
+    bar.innerHTML="<span>Ships from US inventory</span><span>Free shipping on $100+</span><span>Secure Square checkout</span><span>Real product photos</span>";
   }
 
   function placeChrome(){
@@ -1010,9 +1005,9 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
       form=document.createElement("form");
       form.id="jd-header-email";
       form.className="jd-header-email";
-      form.setAttribute("aria-label","Email for special offers");
+      form.setAttribute("aria-label","Jersey Deals Rewards Club");
       form.innerHTML=
-        '<input type="email" name="email" autocomplete="email" required placeholder="Email for offers" aria-label="Email for special offers"/>'
+        '<input type="email" name="email" autocomplete="email" required placeholder="Rewards Club email" aria-label="Rewards Club email"/>'
         +'<button type="submit">Join</button>';
       form.addEventListener("submit", function(e){
         e.preventDefault();
@@ -1023,8 +1018,8 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
           return;
         }
         storageSet(EMAIL_KEY, val);
-        collectLead(val, "square_header_offers");
-        form.innerHTML='<span class="jd-header-email-ok">You are on the list</span>';
+        collectLead(val, "rewards_club");
+        form.innerHTML='<span class="jd-header-email-ok">Rewards Club ✓</span>';
       });
       var logo=header.querySelector("#jd-header-logo, .header__logo, a.logo__link, a[href='/']");
       if(logo && logo.parentNode){
@@ -1034,6 +1029,9 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
         header.insertBefore(form, header.firstChild ? header.firstChild.nextSibling : null);
         if(!form.parentNode) header.appendChild(form);
       }
+    } else if(!form.querySelector(".jd-header-email-ok")){
+      var input=form.querySelector('input[type="email"]');
+      if(input){ input.placeholder="Rewards Club email"; input.setAttribute("aria-label","Rewards Club email"); }
     }
     // Keep the email field from eating the logo column.
     form.style.flex="1 1 auto";
@@ -1383,8 +1381,9 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     bindInjectedAddToCart(cart);
     wrap.appendChild(cart);
     var ship=document.createElement("div");
+    ship.setAttribute("data-jd-ship","1");
     ship.style.cssText="flex-basis:100%;font:600 12px/1.3 Outfit,system-ui,sans-serif;color:#0b223f;margin-top:.15rem";
-    ship.textContent="Shipping: 10% added at checkout · email required";
+    ship.textContent="Free shipping $100+ · else 10% · email required";
     wrap.appendChild(ship);
     var host=document.querySelector('.product__header, .badge-around.product__header, [class*="product__header"], .product_meta__wrapper, [class*="product_meta"]');
     var price=findPdpPriceEl();
@@ -1405,6 +1404,10 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   function ensureBuyButton(url){
     var wrap=mountBuyWrap();
     if(!wrap) return;
+    var shipLine=wrap.querySelector("[data-jd-ship]");
+    if(shipLine){
+      shipLine.textContent="Free shipping $100+ · else 10% · email required";
+    }
     var buy=wrap.querySelector('a.jd-buy-now:not([data-jd-role="add-to-cart"])');
     if(url){
       if(!buy){
