@@ -1161,8 +1161,13 @@ export default function App() {
       window.scrollTo({ top: Math.max(0, top), behavior: preferSmooth ? 'smooth' : 'auto' })
       if (opts?.focusSearch) document.getElementById('sticky-search')?.focus({ preventScroll: true })
     }
-    // Two frames so filter panel layout is open before we scroll.
-    requestAnimationFrame(() => requestAnimationFrame(run))
+    // Two frames so filter panel layout is open; search path waits a beat for chips/results.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (opts?.toResults) window.setTimeout(run, 50)
+        else run()
+      }),
+    )
   }
 
   /** Apply sticky search + jump to product results — only from Enter / blue button. */
