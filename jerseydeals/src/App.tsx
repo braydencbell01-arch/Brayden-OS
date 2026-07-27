@@ -1576,6 +1576,20 @@ export default function App() {
                 </span>
               </button>
             </form>
+            {query || appliedQuery ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('')
+                  setAppliedQuery('')
+                }}
+                className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${
+                  navSolid ? 'text-crimson' : 'text-crimson-hot'
+                }`}
+              >
+                Clear
+              </button>
+            ) : null}
             <button
               type="button"
               aria-label="Go to top of page"
@@ -1601,20 +1615,6 @@ export default function App() {
             >
               {deferredHint}
             </p>
-            {query || appliedQuery ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery('')
-                  setAppliedQuery('')
-                }}
-                className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${
-                  navSolid ? 'text-crimson' : 'text-crimson-hot'
-                }`}
-              >
-                Clear
-              </button>
-            ) : null}
           </div>
         </div>
       </header>
