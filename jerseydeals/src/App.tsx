@@ -1329,7 +1329,14 @@ export default function App() {
 
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
-      {offersOpen ? <RewardsOffersScreen /> : null}
+      {offersOpen ? (
+        <RewardsOffersScreen
+          onGoToCart={() => {
+            setCartOpen(true)
+            track('cart_open', { place: 'my_offers' })
+          }}
+        />
+      ) : null}
       {/* Promo bar — always on top */}
       <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-x-2 overflow-x-auto bg-crimson px-3 py-2 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cream sm:gap-x-3 sm:px-4 sm:text-xs sm:tracking-[0.18em]">
         <span>{PROMO_BAR}</span>
