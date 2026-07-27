@@ -1530,9 +1530,9 @@ export default function App() {
             navSolid ? 'border-navy/10 bg-cream/95' : 'border-white/10 bg-navy-deep/55 backdrop-blur-md'
           }`}
         >
-          <div className="mx-auto flex max-w-6xl items-center gap-3 px-5 py-2.5 md:px-8">
+          <div className="mx-auto flex max-w-6xl items-center gap-2 px-5 py-2.5 md:gap-3 md:px-8">
             <form
-              className="relative min-w-0 flex-1"
+              className="relative min-w-0 flex-1 md:max-w-xl lg:max-w-2xl"
               autoComplete="off"
               onSubmit={(e) => {
                 e.preventDefault()
@@ -1553,9 +1553,9 @@ export default function App() {
                   onChange={(e) => {
                     setQuery(e.target.value)
                   }}
-                  placeholder="Search club, player, league, nickname…"
+                  placeholder="Search club, player, league…"
                   enterKeyHint="search"
-                  className={`w-full border py-2.5 pl-4 pr-[5.75rem] text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 ${
+                  className={`w-full border py-2.5 pl-3 pr-[5.5rem] text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 sm:pl-4 ${
                     navSolid
                       ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
                       : 'border-white/35 bg-white/15 text-white placeholder:text-white/75'
@@ -1566,7 +1566,7 @@ export default function App() {
                 type="submit"
                 aria-label="Search"
                 title="Enter"
-                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-3 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af]"
+                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-2.5 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af] sm:px-3"
               >
                 Enter
                 <span aria-hidden className="text-sm font-semibold leading-none">
@@ -1574,8 +1574,26 @@ export default function App() {
                 </span>
               </button>
             </form>
+            <button
+              type="button"
+              aria-label="Go to top of page"
+              onClick={() => {
+                track('nav_home', { place: 'sticky_search' })
+                const preferSmooth =
+                  !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+                  !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
+                window.scrollTo({ top: 0, behavior: preferSmooth ? 'smooth' : 'auto' })
+              }}
+              className={`shrink-0 px-3 py-2.5 text-xs font-bold uppercase tracking-[0.14em] transition ${
+                navSolid
+                  ? 'border border-navy/15 bg-navy text-cream hover:bg-navy-deep'
+                  : 'border border-white/40 bg-white/15 text-white hover:border-white hover:bg-white/25'
+              }`}
+            >
+              Home
+            </button>
             <p
-              className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] sm:block ${
+              className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] lg:block ${
                 navSolid ? 'text-muted' : 'text-white/80'
               }`}
             >
