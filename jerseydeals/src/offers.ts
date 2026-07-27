@@ -193,6 +193,16 @@ export function ensureRewardsOffers() {
   claimOffer('pl5')
 }
 
+/**
+ * Keep the first-time 10% offer in the wallet when claimed via the popup,
+ * even if the shopper never joined Rewards Club.
+ */
+export function ensureClaimedFirstBuyerOffer() {
+  if (!hasClaimedFirstBuyerOffer()) return
+  if (hasPurchased()) return
+  claimOffer('first10')
+}
+
 export function activateOfferAtCheckout(id: OfferId): { ok: true } | { ok: false; message: string } {
   if (id === 'first10' && hasPurchased()) {
     return { ok: false, message: 'First-order offer is only for new buyers.' }

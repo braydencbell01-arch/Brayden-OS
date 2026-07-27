@@ -38,7 +38,7 @@ import { FreeShippingBar } from './FreeShippingBar'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
 import { RewardsOffersScreen } from './RewardsOffersScreen'
-import { useRewardsOffersOpen, goToRewardsOffers } from './rewardsMember'
+import { useRewardsOffersOpen, goToRewardsOffers, isRewardsMember } from './rewardsMember'
 import {
   capturePurchaseReturnFromUrl,
   hasPurchased,
@@ -884,8 +884,13 @@ export default function App() {
     return Boolean(readBuyerEmail() || readOffer().email)
   }
 
+  /** Skip email gate when already a Rewards member or they claimed the 10% popup. */
+  function needsCheckoutEmail() {
+    return !isRewardsMember() && !hasClaimedFirstBuyerOffer()
+  }
+
   function requestCheckoutAccess() {
-    if (hasCheckoutEmail()) return true
+    if (!needsCheckoutEmail() || hasCheckoutEmail()) return true
     setPendingBuy(null)
     setOfferMode('email-gate')
     setOfferOpen(true)
@@ -893,7 +898,7 @@ export default function App() {
   }
 
   function handleBuyNow(item: Listing) {
-    if (!hasCheckoutEmail()) {
+    if (needsCheckoutEmail() && !hasCheckoutEmail()) {
       setPendingBuy(item)
       setOfferMode('email-gate')
       setOfferOpen(true)
