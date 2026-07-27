@@ -154,8 +154,7 @@
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--color-crimson) 55%, transparent) transparent;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    /* Native swipe both ways — no snap fighting the gesture. */
+    overscroll-behavior-x: none;
     scroll-snap-type: none;
     touch-action: pan-x;
     cursor: grab;

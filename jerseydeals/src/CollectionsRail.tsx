@@ -17,8 +17,10 @@ export function CollectionsRail({
   const scrollerRef = useRef<HTMLDivElement>(null)
   const pausedRef = useRef(false)
   const userActiveRef = useRef(false)
+  const wrappingRef = useRef(false)
+  const seededRef = useRef(false)
   const resumeTimer = useRef<number | null>(null)
-  const halfWidthRef = useRef(0)
+  const setWidthRef = useRef(0)
   const suppressClickRef = useRef(false)
   const driftRef = useRef(0)
 
@@ -30,14 +32,39 @@ export function CollectionsRail({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+    /** Keep scroll in the middle copy so both directions stay infinite. */
+    const normalizeLoop = () => {
+      const setW = setWidthRef.current
+      if (setW <= 0 || wrappingRef.current) return
+      const x = scroller.scrollLeft
+      if (x < setW * 0.5) {
+        wrappingRef.current = true
+        scroller.scrollLeft = x + setW
+        wrappingRef.current = false
+      } else if (x >= setW * 1.5) {
+        wrappingRef.current = true
+        scroller.scrollLeft = x - setW
+        wrappingRef.current = false
+      }
+    }
+
     const measure = () => {
-      // First half of the duplicated track.
-      halfWidthRef.current = Math.max(0, Math.floor(scroller.scrollWidth / 2))
+      // Three identical copies → one set is 1/3 of the track.
+      // Keep fractional width so wrap jumps stay visually seamless.
+      setWidthRef.current = Math.max(0, scroller.scrollWidth / 3)
+      if (setWidthRef.current <= 0) return
+      if (!seededRef.current) {
+        wrappingRef.current = true
+        scroller.scrollLeft = setWidthRef.current
+        wrappingRef.current = false
+        seededRef.current = true
+      } else {
+        normalizeLoop()
+      }
     }
     measure()
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
     ro?.observe(scroller)
-    // Remeasure after images paint.
     const t1 = window.setTimeout(measure, 100)
     const t2 = window.setTimeout(measure, 600)
     const t3 = window.setTimeout(measure, 1500)
@@ -61,23 +88,19 @@ export function CollectionsRail({
       clearResume()
       resumeTimer.current = window.setTimeout(() => {
         measure()
-        const half = halfWidthRef.current
-        if (half > 0) {
-          // Snap into the first copy without fighting the next auto tick.
-          const normalized = ((scroller.scrollLeft % half) + half) % half
-          scroller.scrollLeft = normalized
-        }
         pausedRef.current = false
       }, RESUME_AFTER_MS)
     }
 
-    // IMPORTANT: do NOT pause on `scroll` — auto-rotate scrollLeft changes fire
-    // scroll events asynchronously and were permanently killing the marquee.
+    const onScroll = () => {
+      if (wrappingRef.current) return
+      normalizeLoop()
+    }
+
     const onTouchStart = () => pauseForUser()
     const onTouchEnd = () => scheduleResume()
     const onPointerDown = (e: PointerEvent) => {
       if (e.pointerType === 'touch') return
-      // Primary button / pen only.
       if (e.pointerType === 'mouse' && e.button !== 0) return
       pauseForUser()
     }
@@ -86,13 +109,13 @@ export function CollectionsRail({
       scheduleResume()
     }
     const onWheel = (e: WheelEvent) => {
-      // Horizontal trackpad / shift+wheel → move rail; leave vertical page scroll alone.
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
         pauseForUser()
         scheduleResume()
       }
     }
 
+    scroller.addEventListener('scroll', onScroll, { passive: true })
     scroller.addEventListener('touchstart', onTouchStart, { passive: true })
     scroller.addEventListener('touchend', onTouchEnd, { passive: true })
     scroller.addEventListener('touchcancel', onTouchEnd, { passive: true })
@@ -107,16 +130,16 @@ export function CollectionsRail({
         !prefersReduced &&
         !pausedRef.current &&
         !userActiveRef.current &&
-        halfWidthRef.current > 0
+        setWidthRef.current > 0
       ) {
         driftRef.current += AUTO_SPEED
         if (driftRef.current >= 1) {
           const step = Math.floor(driftRef.current)
           driftRef.current -= step
-          const half = halfWidthRef.current
-          let next = scroller.scrollLeft + step
-          if (half > 0 && next >= half) next -= half
-          scroller.scrollLeft = next
+          wrappingRef.current = true
+          scroller.scrollLeft += step
+          wrappingRef.current = false
+          normalizeLoop()
         }
       }
       raf = window.requestAnimationFrame(tick)
@@ -130,6 +153,7 @@ export function CollectionsRail({
       window.clearTimeout(t3)
       clearResume()
       ro?.disconnect()
+      scroller.removeEventListener('scroll', onScroll)
       scroller.removeEventListener('touchstart', onTouchStart)
       scroller.removeEventListener('touchend', onTouchEnd)
       scroller.removeEventListener('touchcancel', onTouchEnd)
@@ -163,7 +187,8 @@ export function CollectionsRail({
     }
   }, [])
 
-  const loop = [...LANDING_COLLECTIONS, ...LANDING_COLLECTIONS]
+  // Three copies so we can sit in the middle and loop forever either way.
+  const loop = [...LANDING_COLLECTIONS, ...LANDING_COLLECTIONS, ...LANDING_COLLECTIONS]
 
   return (
     <section
