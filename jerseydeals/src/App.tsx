@@ -819,7 +819,7 @@ export default function App() {
   )
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
-  const [inventoryLimit, setInventoryLimit] = useState(12)
+  const [inventoryPage, setInventoryPage] = useState(1)
   const urlHydrated = useRef(false)
 
   useEffect(() => {
@@ -1041,7 +1041,7 @@ export default function App() {
   ])
 
   useEffect(() => {
-    setInventoryLimit(12)
+    setInventoryPage(1)
   }, [
     tagFilter,
     genderFilter,
@@ -1054,10 +1054,18 @@ export default function App() {
     sortBy,
   ])
 
-  const visibleInventory = useMemo(
-    () => filtered.slice(0, inventoryLimit),
-    [filtered, inventoryLimit],
-  )
+  const INVENTORY_PAGE_SIZE = 12
+  const inventoryPageCount = Math.max(1, Math.ceil(filtered.length / INVENTORY_PAGE_SIZE))
+  const safeInventoryPage = Math.min(inventoryPage, inventoryPageCount)
+
+  const visibleInventory = useMemo(() => {
+    const start = (safeInventoryPage - 1) * INVENTORY_PAGE_SIZE
+    return filtered.slice(start, start + INVENTORY_PAGE_SIZE)
+  }, [filtered, safeInventoryPage])
+
+  useEffect(() => {
+    if (inventoryPage !== safeInventoryPage) setInventoryPage(safeInventoryPage)
+  }, [inventoryPage, safeInventoryPage])
 
   const activeFilterChips = useMemo(() => {
     const chips: { key: string; label: string; clear: () => void }[] = []
@@ -2577,19 +2585,44 @@ export default function App() {
                       />
                     ))}
                   </ul>
-                  {visibleInventory.length < filtered.length ? (
+                  {filtered.length > INVENTORY_PAGE_SIZE ? (
                     <div className="mt-10 flex flex-col items-center gap-3">
                       <p className="text-sm text-muted">
-                        Showing {visibleInventory.length} of {filtered.length}
+                        Page {safeInventoryPage} of {inventoryPageCount}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => setInventoryLimit((n) => n + 12)}
-                        className="bg-navy px-6 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-navy/90"
-                      >
-                        Show more kits
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={safeInventoryPage <= 1}
+                          onClick={() => {
+                            setInventoryPage((p) => Math.max(1, p - 1))
+                            document
+                              .getElementById('inventory-results')
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }}
+                          className="border border-navy bg-white px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-navy transition hover:bg-mist disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Back
+                        </button>
+                        <button
+                          type="button"
+                          disabled={safeInventoryPage >= inventoryPageCount}
+                          onClick={() => {
+                            setInventoryPage((p) => Math.min(inventoryPageCount, p + 1))
+                            document
+                              .getElementById('inventory-results')
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          }}
+                          className="bg-navy px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-navy/90 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Next
+                        </button>
+                      </div>
                     </div>
+                  ) : filtered.length > 0 ? (
+                    <p className="mt-10 text-center text-sm text-muted">
+                      Page 1 of 1
+                    </p>
                   ) : null}
                 </>
               )}
