@@ -598,8 +598,7 @@ padding:.8rem 1.25rem;margin:.5rem 0;text-decoration:none!important;cursor:point
   white-space:nowrap;
 }
 .jd-header-email .jd-header-email-ok{
-  color:#fff!important;font-size:.62rem;font-weight:600;letter-spacing:.04em;line-height:1.25;
-  white-space:normal;display:block;text-align:left;
+  color:#fff!important;font-size:.62rem;font-weight:600;letter-spacing:.04em;line-height:1.25;white-space:normal;
 }
 @media (max-width:720px){
   .banner-1,[class*="banner-1"],.w-block-banner,[data-ux="Banner"]:not([class*="header"]){min-height:48vh}
@@ -674,26 +673,11 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
   function storageSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
   function sessionGet(k){ try{ return sessionStorage.getItem(k)||""; }catch(e){ return ""; } }
   function sessionSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
-  function readRewardsMember(){
-    try{
-      var raw=storageGet(REWARDS_KEY);
-      if(!raw) return null;
-      var o=JSON.parse(raw);
-      if(o&&(o.email||o.phone)) return o;
-    }catch(e){}
-    return null;
+  function rewardsMember(){
+    try{ var o=JSON.parse(storageGet(REWARDS_KEY)||"null"); return o&&(o.email||o.phone)?o:null; }catch(e){ return null; }
   }
-  function writeRewardsMember(email){
-    var e=(email||"").trim().toLowerCase();
-    if(!e) return;
-    storageSet(REWARDS_KEY, JSON.stringify({email:e,at:new Date().toISOString()}));
-    storageSet(EMAIL_KEY, e);
-  }
-  function showRewardsLocked(form, member){
-    if(!form) return;
-    var contact=(member&&(member.email||member.phone))||"";
-    form.innerHTML='<span class="jd-header-email-ok">You are already a Rewards member'
-      +(contact?' · '+String(contact).replace(/</g,"") :'')+'</span>';
+  function lockRewards(form){
+    if(form) form.innerHTML='<span class="jd-header-email-ok">You are already a Rewards member</span>';
   }
   function hasPurchased(){ return storageGet(PURCHASED_KEY)==="1"; }
   function markPurchased(){ storageSet(PURCHASED_KEY,"1"); }
@@ -1024,33 +1008,28 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
     if(!header) return;
     ensureHeaderLogo();
     var form=document.getElementById("jd-header-email");
-    var member=readRewardsMember();
+    var member=rewardsMember();
     if(!form){
       form=document.createElement("form");
       form.id="jd-header-email";
       form.className="jd-header-email";
       form.setAttribute("aria-label","Jersey Deals Rewards Club");
       if(member){
-        showRewardsLocked(form, member);
+        lockRewards(form);
       } else {
         form.innerHTML=
           '<input type="email" name="email" autocomplete="email" required placeholder="Rewards Club email" aria-label="Rewards Club email"/>'
           +'<button type="submit">Join</button>';
         form.addEventListener("submit", function(e){
           e.preventDefault();
-          if(readRewardsMember()){
-            showRewardsLocked(form, readRewardsMember());
-            return;
-          }
+          if(rewardsMember()){ lockRewards(form); return; }
           var input=form.querySelector('input[type="email"]');
           var val=((input&&input.value)||"").trim().toLowerCase();
-          if(!validEmail(val)){
-            if(input) input.focus();
-            return;
-          }
-          writeRewardsMember(val);
+          if(!validEmail(val)){ if(input) input.focus(); return; }
+          storageSet(REWARDS_KEY, JSON.stringify({email:val,at:new Date().toISOString()}));
+          storageSet(EMAIL_KEY, val);
           collectLead(val, "rewards_club");
-          showRewardsLocked(form, readRewardsMember());
+          lockRewards(form);
         });
       }
       var logo=header.querySelector("#jd-header-logo, .header__logo, a.logo__link, a[href='/']");
@@ -1062,12 +1041,11 @@ a[data-jd-cart-icon="1"] svg,button[data-jd-cart-icon="1"] svg{
         if(!form.parentNode) header.appendChild(form);
       }
     } else if(member){
-      showRewardsLocked(form, member);
+      lockRewards(form);
     } else if(!form.querySelector(".jd-header-email-ok")){
       var input=form.querySelector('input[type="email"]');
       if(input){ input.placeholder="Rewards Club email"; input.setAttribute("aria-label","Rewards Club email"); }
     }
-    // Keep the email field from eating the logo column.
     form.style.flex="1 1 auto";
     form.style.minWidth="0";
     form.style.maxWidth="11.5rem";
@@ -1565,7 +1543,20 @@ async function main() {
   const purchaserEmails = loadPurchaserEmails()
   const collectUrl = (process.env.JERSEYDEALS_EMAIL_API_URL || process.env.VITE_JERSEYDEALS_EMAIL_API_URL || '').trim()
   const contactEmail = (process.env.JERSEYDEALS_CONTACT_EMAIL || 'shop@jerseydeals.online').trim()
-  const content = buildSnippet(map, purchaserEmails, collectUrl, contactEmail)
+  let content = buildSnippet(map, purchaserEmails, collectUrl, contactEmail)
+  // Square Online hard-caps snippet size; drop CSS/block comments first if over budget.
+  if (content.length > 65535) {
+    content = content.replace(/\/\*[\s\S]*?\*\//g, '')
+  }
+  if (content.length > 65535) {
+    content = content.replace(/\n[ \t]*\/\/[^\n]*/g, '')
+  }
+  if (content.length > 65535) {
+    // Prefer FormSubmit-only when the optional collect URL pushes us over.
+    content = buildSnippet(map, purchaserEmails, '', contactEmail)
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\n[ \t]*\/\/[^\n]*/g, '')
+  }
   console.log(
     `New snippet length: ${content.length} (prior emails: ${purchaserEmails.length}, collectUrl: ${collectUrl || 'formsubmit-only'})`,
   )
