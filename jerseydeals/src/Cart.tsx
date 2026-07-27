@@ -128,6 +128,10 @@ export function CartDrawer({
 
   function onActivateOffer(id: OfferId) {
     setOfferMessage('')
+    if (cart.lines.length === 0) {
+      setOfferMessage('Add something to your cart to activate an offer.')
+      return
+    }
     const eligible = offerEligibleForCart(
       id,
       cart.lines.map((l) => l.title),
@@ -199,7 +203,7 @@ export function CartDrawer({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="px-5 py-4">
             {cart.lines.length === 0 ? (
-              <div className="rounded-sm bg-cream py-16 text-center">
+              <div className="rounded-sm bg-cream py-10 text-center">
                 <p className="font-display text-2xl font-bold uppercase text-navy">Your cart is empty</p>
                 <p className="mt-2 text-sm text-navy/70">
                   Browse the inventory, add a kit, then checkout securely on Square.
@@ -282,48 +286,48 @@ export function CartDrawer({
                 })}
               </ul>
             )}
+
+            {openOffers.length > 0 ? (
+              <div className="mt-4 border border-navy/10 bg-chalk px-3 py-3">
+                <p className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy">
+                  My offers
+                </p>
+                <ul className="mt-2 space-y-2">
+                  {openOffers.map((offer) => {
+                    const def = OFFER_DEFS[offer.id]
+                    const isActive = activeId === offer.id
+                    return (
+                      <li
+                        key={offer.id}
+                        className="flex items-center justify-between gap-3 border border-navy/10 bg-cream px-3 py-2.5"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-navy">{def.title}</p>
+                          <p className="text-[0.65rem] uppercase tracking-[0.12em] text-muted">
+                            {isActive ? 'Active on this checkout' : def.activateHint}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isActive}
+                          onClick={() => onActivateOffer(offer.id)}
+                          className="shrink-0 bg-crimson px-3 py-2 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-crimson-hot disabled:bg-navy disabled:opacity-80"
+                        >
+                          {isActive ? 'Activated' : 'Activate'}
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+                {offerMessage ? (
+                  <p className="mt-2 text-xs font-semibold text-crimson">{offerMessage}</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           {cart.lines.length > 0 ? (
             <div className="border-t border-navy/10 bg-white px-5 py-4">
-              {openOffers.length > 0 ? (
-                <div className="mb-4 border border-navy/10 bg-chalk px-3 py-3">
-                  <p className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy">
-                    My offers
-                  </p>
-                  <ul className="mt-2 space-y-2">
-                    {openOffers.map((offer) => {
-                      const def = OFFER_DEFS[offer.id]
-                      const isActive = activeId === offer.id
-                      return (
-                        <li
-                          key={offer.id}
-                          className="flex items-center justify-between gap-3 border border-navy/10 bg-cream px-3 py-2.5"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-navy">{def.title}</p>
-                            <p className="text-[0.65rem] uppercase tracking-[0.12em] text-muted">
-                              {isActive ? 'Active on this checkout' : def.activateHint}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={isActive}
-                            onClick={() => onActivateOffer(offer.id)}
-                            className="shrink-0 bg-crimson px-3 py-2 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-crimson-hot disabled:bg-navy disabled:opacity-80"
-                          >
-                            {isActive ? 'Activated' : 'Activate'}
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                  {offerMessage ? (
-                    <p className="mt-2 text-xs font-semibold text-crimson">{offerMessage}</p>
-                  ) : null}
-                </div>
-              ) : null}
-
               <div className="space-y-1.5">
                 <div className="flex items-baseline justify-between">
                   <p className="text-xs uppercase tracking-[0.12em] text-muted">Subtotal</p>
