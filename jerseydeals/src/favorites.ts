@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
 
 const STORAGE_KEY = 'jerseydeals.favoriteClubs.v1'
 export const FAVORITES_EVENT = 'jerseydeals:favorites'
@@ -87,6 +88,7 @@ export function favoriteClubIdSet(ids: string[]): Set<string> {
 }
 
 export function goToFavoritesScreen() {
+  rememberLandingScroll()
   window.location.hash = 'favorites'
 }
 
@@ -94,15 +96,27 @@ export function leaveFavoritesScreen() {
   const { pathname, search } = window.location
   window.history.pushState(null, '', `${pathname}${search}`)
   window.dispatchEvent(new Event('hashchange'))
+  restoreLandingScroll()
 }
 
 export function useFavoritesScreenOpen() {
   const [open, setOpen] = useState(() => window.location.hash === FAVORITES_HASH)
 
   useEffect(() => {
-    const sync = () => setOpen(window.location.hash === FAVORITES_HASH)
+    const sync = () => {
+      const next = window.location.hash === FAVORITES_HASH
+      setOpen((prev) => {
+        // Browser back / forward — restore landing spot when leaving.
+        if (prev && !next) restoreLandingScroll()
+        return next
+      })
+    }
     window.addEventListener('hashchange', sync)
-    return () => window.removeEventListener('hashchange', sync)
+    window.addEventListener('popstate', sync)
+    return () => {
+      window.removeEventListener('hashchange', sync)
+      window.removeEventListener('popstate', sync)
+    }
   }, [])
 
   return open

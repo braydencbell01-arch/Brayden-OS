@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
 
 const REWARDS_KEY = 'jerseydeals.rewardsMember.v1'
 /** Older email-capture list — treat prior rewards_club signups as members. */
@@ -116,6 +117,7 @@ export function useRewardsMember() {
 }
 
 export function goToRewardsOffers() {
+  rememberLandingScroll()
   window.location.hash = 'offers'
 }
 
@@ -123,15 +125,26 @@ export function leaveRewardsOffers() {
   const { pathname, search } = window.location
   window.history.pushState(null, '', `${pathname}${search}`)
   window.dispatchEvent(new Event('hashchange'))
+  restoreLandingScroll()
 }
 
 export function useRewardsOffersOpen() {
   const [open, setOpen] = useState(() => window.location.hash === OFFERS_HASH)
 
   useEffect(() => {
-    const sync = () => setOpen(window.location.hash === OFFERS_HASH)
+    const sync = () => {
+      const next = window.location.hash === OFFERS_HASH
+      setOpen((prev) => {
+        if (prev && !next) restoreLandingScroll()
+        return next
+      })
+    }
     window.addEventListener('hashchange', sync)
-    return () => window.removeEventListener('hashchange', sync)
+    window.addEventListener('popstate', sync)
+    return () => {
+      window.removeEventListener('hashchange', sync)
+      window.removeEventListener('popstate', sync)
+    }
   }, [])
 
   return open
