@@ -100,7 +100,6 @@ import {
   listingPrimaryImage,
   listingProductPageUrl,
   listingSize,
-  lowestSalePrice,
   matchesLeagueFilter,
   matchesListingQuery,
   matchesPriceFilter,
@@ -2684,11 +2683,7 @@ export default function App() {
               <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide md:text-7xl">
                 {SALE_HEADLINE}
               </h2>
-              <p className="mt-4 text-lg text-white/80">
-                {saleFloor != null
-                  ? `${SALE_URGENCY}. From ${formatPrice(saleFloor, 'USD')}.`
-                  : SALE_URGENCY}
-              </p>
+              <p className="mt-4 text-lg text-white/80">{SALE_URGENCY}</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <button
                   type="button"
