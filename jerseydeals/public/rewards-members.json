@@ -1,12 +1,13 @@
 {
-  "syncedAt": "2026-07-28T16:30:00Z",
+  "syncedAt": "2026-07-28T20:46:09Z",
   "kind": "rewards_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 4,
+  "count": 5,
   "emails": [
     "braydencbell01@gmail.com",
     "calebrschrader@gmail.com",
+    "candkbell@gmail.com",
     "lynne8002@aol.com",
     "tbsports9@icloud.com"
   ],
@@ -31,6 +32,15 @@
       "firstSeen": "2026-07-27T20:02:10.000Z",
       "lastSeen": "2026-07-27T20:02:10.000Z",
       "phone": "5856623023"
+    },
+    {
+      "email": "candkbell@gmail.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-28T19:19:46.000Z",
+      "lastSeen": "2026-07-28T19:19:46.000Z",
+      "phone": "6158786872"
     },
     {
       "email": "lynne8002@aol.com",

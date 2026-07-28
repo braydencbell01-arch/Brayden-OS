@@ -1,13 +1,12 @@
 {
-  "syncedAt": "2026-07-28T16:30:00Z",
+  "syncedAt": "2026-07-28T20:46:09Z",
   "kind": "non_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 3,
+  "count": 2,
   "emails": [
     "bboysoccer9@icloud.com",
-    "bell29@webstercsd.org",
-    "candkbell@gmail.com"
+    "bell29@webstercsd.org"
   ],
   "entries": [
     {
@@ -27,14 +26,6 @@
       ],
       "firstSeen": "2026-07-27T15:29:03.000Z",
       "lastSeen": "2026-07-27T18:18:56.000Z"
-    },
-    {
-      "email": "candkbell@gmail.com",
-      "sources": [
-        "checkout_gate"
-      ],
-      "firstSeen": "2026-07-26T21:23:57.000Z",
-      "lastSeen": "2026-07-26T21:23:57.000Z"
     }
   ],
   "note": "Jersey Deals landing-page non-member emails only (not Square Online / BrayStats)."
