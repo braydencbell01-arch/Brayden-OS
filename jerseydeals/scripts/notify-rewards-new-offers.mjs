@@ -203,7 +203,10 @@ function main() {
   const smtpReady = Boolean((process.env.SMTP_USER || '').trim() && process.env.SMTP_PASS)
 
   let emailed = false
-  if (state.pending.length > 0 && (FORCE || !alreadyToday) && !SKIP_SEND && !smtpReady) {
+  const wantsSend =
+    state.pending.length > 0 && (FORCE || !alreadyToday) && !SKIP_SEND
+
+  if (wantsSend && !smtpReady && !DRY) {
     console.log(
       JSON.stringify(
         {
@@ -215,7 +218,7 @@ function main() {
         2,
       ),
     )
-  } else if (state.pending.length > 0 && (FORCE || !alreadyToday) && !SKIP_SEND && smtpReady) {
+  } else if (wantsSend && (smtpReady || DRY)) {
     const digest = buildDigest(state.pending)
     console.log(
       JSON.stringify(

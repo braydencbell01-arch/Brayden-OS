@@ -5,14 +5,7 @@
     {
       "id": "pl5",
       "title": "$5 off a Premier League jersey",
-      "detail": "Rewards Club offer \u2014 save $5 on a Premier League kit.",
-      "activateHint": "Activate at checkout",
-      "audience": "rewards"
-    },
-    {
-      "id": "test_offer",
-      "title": "Test member drop",
-      "detail": "Temporary test offer.",
+      "detail": "Rewards Club offer — save $5 on a Premier League kit.",
       "activateHint": "Activate at checkout",
       "audience": "rewards"
     }
