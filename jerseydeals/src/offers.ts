@@ -59,6 +59,7 @@ type CatalogOffer = {
     type?: string
     amount?: number
     league?: string
+    firstOrderOnly?: boolean
   }
 }
 
@@ -281,6 +282,13 @@ export function activateOfferAtCheckout(id: OfferId): { ok: true } | { ok: false
   if (id === 'first10' && hasPurchased()) {
     return { ok: false, message: 'First-order offer is only for new buyers.' }
   }
+  const catalogForActivate = rewardsMemberCatalogOffers().find((row) => row.id === id)
+  if (
+    (catalogForActivate?.pricing?.firstOrderOnly || id === 'freeship1') &&
+    hasPurchased()
+  ) {
+    return { ok: false, message: 'Free shipping on first order is only for new buyers.' }
+  }
   const wallet = readOffersWallet()
   const row = wallet.offers.find((o) => o.id === id)
   if (!row || row.status === 'used') {
@@ -336,8 +344,15 @@ export function consumeOffersAfterPurchase() {
       offer.status = 'used'
       offer.usedAt = now
     }
-    // First-order perk ends once they've ordered, even if unused.
-    if (offer.id === 'first10' && offer.status !== 'used') {
+    // First-order perks end once they've ordered, even if unused.
+    if (
+      (offer.id === 'first10' ||
+        offer.id === 'freeship1' ||
+        rewardsMemberCatalogOffers().some(
+          (row) => row.id === offer.id && row.pricing?.firstOrderOnly,
+        )) &&
+      offer.status !== 'used'
+    ) {
       offer.status = 'used'
       offer.usedAt = now
     }
@@ -371,6 +386,13 @@ export function applyOfferUnitPrice(
   return price
 }
 
+/** True when the activated offer makes shipping free (ignores $100 threshold). */
+export function offerGrantsFreeShipping(offerId: OfferId | null | undefined): boolean {
+  if (!offerId) return false
+  const catalog = rewardsMemberCatalogOffers().find((row) => row.id === offerId)
+  return catalog?.pricing?.type === 'free_shipping' || offerId === 'freeship1'
+}
+
 export function checkoutUsesSquareDiscountLink(offerId: OfferId | null) {
   return offerId === 'first10'
 }
@@ -384,6 +406,12 @@ export function offerEligibleForCart(
     return { ok: true }
   }
   const catalog = rewardsMemberCatalogOffers().find((row) => row.id === id)
+  if (catalog?.pricing?.firstOrderOnly || id === 'freeship1') {
+    if (hasPurchased()) {
+      return { ok: false, message: 'Free shipping on first order is only for new buyers.' }
+    }
+    return { ok: true }
+  }
   if (catalog?.pricing?.league === 'premier-league' || id === 'pl5') {
     const hasPl = cartTitles.some((t) => isPremierLeagueTitle(t))
     if (!hasPl) {

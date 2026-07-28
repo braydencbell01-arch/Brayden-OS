@@ -23,6 +23,7 @@ import {
   hasClaimedFirstBuyerOffer,
   listOpenOffers,
   offerEligibleForCart,
+  offerGrantsFreeShipping,
   type OfferId,
   type WalletOffer,
 } from './offers'
@@ -119,8 +120,10 @@ export function CartDrawer({
     return sum + price * Math.max(1, line.quantity || 1)
   }, 0)
   const currency = cart.lines[0]?.currency || 'USD'
-  const shipping = shippingForSubtotal(discountedSubtotal)
-  const orderTotal = totalWithShipping(discountedSubtotal)
+  const freeShip = offerGrantsFreeShipping(activeId)
+  const shippingOpts = { freeShippingOffer: freeShip }
+  const shipping = shippingForSubtotal(discountedSubtotal, shippingOpts)
+  const orderTotal = totalWithShipping(discountedSubtotal, shippingOpts)
   const hasEmail = Boolean(savedEmail)
   const requireEmail = needsCheckoutEmailGate()
   const canCheckout = !requireEmail || hasEmail
@@ -129,7 +132,7 @@ export function CartDrawer({
   function lineCheckoutAmount(line: CartState['lines'][number]) {
     const unit = applyOfferUnitPrice(line.price, { offerId: activeId, title: line.title })
     if (unit == null) return 0
-    return totalWithShipping(unit)
+    return totalWithShipping(unit, shippingOpts)
   }
 
   function lineUsesDiscountLink(line: CartState['lines'][number]) {
@@ -378,9 +381,11 @@ export function CartDrawer({
                   </p>
                 </div>
                 <p className="text-[0.65rem] text-muted">
-                  {shipping <= 0
-                    ? 'Free shipping unlocked on this bag.'
-                    : `${SHIPPING_RATE_LABEL}. ${formatPrice(amountToFreeShipping(discountedSubtotal), currency)} away from free shipping.`}
+                  {freeShip
+                    ? 'Free shipping offer activated on this bag.'
+                    : shipping <= 0
+                      ? 'Free shipping unlocked on this bag.'
+                      : `${SHIPPING_RATE_LABEL}. ${formatPrice(amountToFreeShipping(discountedSubtotal), currency)} away from free shipping.`}
                 </p>
                 <div className="flex items-baseline justify-between border-t border-navy/10 pt-2">
                   <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">Total</p>
@@ -449,11 +454,24 @@ export function CartDrawer({
                   $5 Premier League offer activated — we&apos;ll confirm the discount on your order.
                 </p>
               ) : null}
+              {freeShip ? (
+                <p className="mt-2 text-xs font-semibold text-navy">
+                  Free shipping on first order activated — we&apos;ll confirm it on your order.
+                </p>
+              ) : null}
               <p className="mt-2 text-xs leading-relaxed text-muted">
                 Checkout opens Square&apos;s secure payment page
                 {cart.lines.length > 1
-                  ? ' for each kit (one secure link per item). Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links. Items stay in your bag until payment is confirmed.'
-                  : '. Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links. Items stay in your bag until payment is confirmed.'}
+                  ? ` for each kit (one secure link per item). ${
+                      freeShip
+                        ? 'Free shipping offer is active for this first order.'
+                        : 'Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links.'
+                    } Items stay in your bag until payment is confirmed.`
+                  : `. ${
+                      freeShip
+                        ? 'Free shipping offer is active for this first order.'
+                        : 'Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links.'
+                    } Items stay in your bag until payment is confirmed.`}
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 {cart.lines.length === 1 ? (

@@ -5,7 +5,11 @@ export const SHIPPING_PERCENT = 0.1
 export const FREE_SHIPPING_THRESHOLD = 100
 
 /** Shipping dollars for a merchandise subtotal (2-decimal money). */
-export function shippingForSubtotal(subtotal: number) {
+export function shippingForSubtotal(
+  subtotal: number,
+  opts?: { freeShippingOffer?: boolean },
+) {
+  if (opts?.freeShippingOffer) return 0
   if (!Number.isFinite(subtotal) || subtotal <= 0) return 0
   if (subtotal >= FREE_SHIPPING_THRESHOLD) return 0
   return Math.round(subtotal * SHIPPING_PERCENT * 100) / 100
@@ -24,6 +28,9 @@ export function freeShippingProgress(subtotal: number) {
 }
 
 /** Merchandise + shipping. */
-export function totalWithShipping(subtotal: number) {
-  return Math.round((subtotal + shippingForSubtotal(subtotal)) * 100) / 100
+export function totalWithShipping(
+  subtotal: number,
+  opts?: { freeShippingOffer?: boolean },
+) {
+  return Math.round((subtotal + shippingForSubtotal(subtotal, opts)) * 100) / 100
 }
