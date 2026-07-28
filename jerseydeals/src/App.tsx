@@ -40,6 +40,7 @@ import {
   useFavoriteClubIds,
 } from './favorites'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
+import { FitOneLine } from './FitOneLine'
 import { FreeShippingBar } from './FreeShippingBar'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
@@ -2002,10 +2003,14 @@ export default function App() {
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/20 to-transparent" />
                           </div>
-                          <div className="absolute inset-x-0 bottom-0 p-3">
-                            <p className="font-display text-sm font-bold uppercase tracking-wide text-white">
+                          <div className="absolute inset-x-0 bottom-0 p-3 pr-11">
+                            <FitOneLine
+                              className="font-display font-bold uppercase tracking-wide text-white"
+                              maxFontPx={14}
+                              minFontPx={8}
+                            >
                               {club.name}
-                            </p>
+                            </FitOneLine>
                             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/65">
                               {club.count} {club.count === 1 ? 'listing' : 'listings'}
                             </p>
@@ -2166,12 +2171,14 @@ export default function App() {
                             />
                           </div>
                           <div className="bg-cream px-3 py-3 pr-11">
-                            <p
-                              className="font-display text-sm font-bold uppercase tracking-wide"
+                            <FitOneLine
+                              className="font-display font-bold uppercase tracking-wide"
                               style={{ color: nameColor }}
+                              maxFontPx={14}
+                              minFontPx={8}
                             >
                               {club.name}
-                            </p>
+                            </FitOneLine>
                             <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted">
                               {club.count} kit{club.count === 1 ? '' : 's'} · shop
                             </p>
@@ -2623,9 +2630,13 @@ export default function App() {
                           <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
                         </div>
                         <div className="absolute inset-x-0 bottom-0 p-3 pr-12 text-left">
-                          <p className="font-display text-sm font-bold uppercase leading-tight tracking-wide text-white">
+                          <FitOneLine
+                            className="font-display font-bold uppercase leading-tight tracking-wide text-white"
+                            maxFontPx={14}
+                            minFontPx={8}
+                          >
                             {club.name}
-                          </p>
+                          </FitOneLine>
                           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/60">
                             {club.count} {club.count === 1 ? 'listing' : 'listings'}
                             {favorited ? ' · favorited' : ''}
