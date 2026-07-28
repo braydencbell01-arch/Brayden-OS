@@ -1,0 +1,71 @@
+name: Send deliverability self-test
+
+# Fires once when the commit message contains [send-deliverability-test].
+# Sends a hardened self-test to shop@ only (AUDIENCE=test).
+
+on:
+  push:
+    branches: [Brayden-OS]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print payload only (do not send)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: send-jerseydeals-deliverability-test
+  cancel-in-progress: false
+
+jobs:
+  send:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[send-deliverability-test]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install nodemailer
+        run: npm install --no-save nodemailer@6
+
+      - name: Send self-test to shop@
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          AUDIENCE: test
+          SUBJECT: Jersey Deals deliverability self-test
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+          BODY: |
+            Hey —
+
+            This is a deliverability self-test from the Jersey Deals shop mailbox.
+
+            You’re seeing multipart text + HTML, Reply-To, List-Unsubscribe, and an aligned Message-ID.
+
+            If this landed in Inbox, filters like the new headers. If it’s in Junk, mark Not spam once so future Rewards mail has a cleaner path.
+
+            — Jersey Deals
+            https://JerseyDeals.online/
+        run: |
+          set -euo pipefail
+          if [ -z "${SMTP_USER:-}" ] || [ -z "${SMTP_PASS:-}" ]; then
+            echo "Missing SMTP_USER/SMTP_PASS" >&2
+            exit 1
+          fi
+          node jerseydeals/scripts/send-smtp-email.mjs

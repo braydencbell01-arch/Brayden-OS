@@ -292,11 +292,35 @@ Send from **shop@jerseydeals.online** via GitHub Actions (no password in chat).
 
 - Audience **test** → emails `shop@` (self-test)
 - Audience **rewards** → everyone in `public/rewards-members.json`
+- Audience **non_members** → everyone in `public/non-member-emails.json`
 - Optional **item_name** fills the “new kit just dropped” template
 - **dry_run** prints the payload without sending
+
+Messages are sent **one recipient at a time** (private To:), as multipart text+HTML, with
+`Reply-To`, aligned `Message-ID` (`@jerseydeals.online`), and `List-Unsubscribe` headers.
 
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
   AUDIENCE=test ITEM_NAME="Inter Milan Home" DRY_RUN=1 \
   node jerseydeals/scripts/send-smtp-email.mjs
 ```
+
+### Deliverability (keep mail out of Junk)
+
+Current DNS for `jerseydeals.online` should include:
+
+| Record | Expected |
+|--------|----------|
+| SPF TXT `@` | `v=spf1 include:_spf-us.ionos.com ~all` |
+| DKIM TXT `ionos._domainkey` | `v=DKIM1; p=…` (IONOS publishes this) |
+| DMARC TXT `_dmarc` | starts with `v=DMARC1;` |
+
+**In IONOS (Mail → Domain settings):**
+
+1. Confirm **DKIM is enabled** for `jerseydeals.online` (selector `ionos` is already live).
+2. Keep sending only from **`shop@jerseydeals.online`** over **`smtp.ionos.com`** (aligned From/SPF/DKIM).
+3. After a few clean sends, raise DMARC from `p=none` → `p=quarantine` (optional).
+
+**Still landing in Junk?** Normal for first-touch promo mail. Ask the recipient to mark
+**Not spam** once, and avoid all-caps subjects / huge link-only bodies. Warm the domain with
+occasional **test** sends to yourself before blasting lists.
