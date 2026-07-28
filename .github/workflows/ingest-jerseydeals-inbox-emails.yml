@@ -55,6 +55,7 @@ jobs:
           node-version: '22'
 
       - name: Install IMAP deps
+        working-directory: jerseydeals
         run: npm install --no-save imapflow@1 mailparser@3
 
       - name: Ingest FormSubmit leads into email lists
