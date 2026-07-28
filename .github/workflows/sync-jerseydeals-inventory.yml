@@ -6,6 +6,7 @@ name: Sync Jersey Deals inventory
 # Also syncs NEW listings + updates across eBay ↔ Square (SKU ebay:{itemId}).
 # Cross-platform + eBay-details steps no-op (skip) when EBAY_* repo secrets are unset.
 # Writes listings.json / sold-out.json / checkout-links.json and redeploys Pages when changed.
+# After sync: queues brand-new kits and emails Rewards members at most once/day.
 
 on:
   schedule:
