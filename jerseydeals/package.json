@@ -28,6 +28,7 @@
     "sync:email-lists": "node scripts/sync-email-lists.mjs",
     "email:ingest-inbox": "node scripts/ingest-formsubmit-emails.mjs",
     "email:smtp-send": "node scripts/send-smtp-email.mjs",
+    "email:notify-new-listings": "node scripts/notify-rewards-new-listings.mjs",
     "backfill:images": "node scripts/backfill-square-images-from-ebay.mjs",
     "enrich:images": "node scripts/enrich-listing-images-from-ebay.mjs",
     "square:reorder-images": "node scripts/reorder-square-images-from-ebay.mjs"

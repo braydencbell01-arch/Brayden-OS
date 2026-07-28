@@ -299,6 +299,18 @@ Send from **shop@jerseydeals.online** via GitHub Actions (no password in chat).
 Messages are sent **one recipient at a time** (private To:), as multipart text+HTML, with
 `Reply-To`, aligned `Message-ID` (`@jerseydeals.online`), and `List-Unsubscribe` headers.
 
+### Automatic “new listing” digest (Rewards only)
+
+After each inventory sync, `npm run email:notify-new-listings`:
+
+1. Diffs live `listings.json` against `public/rewards-new-listings-state.json`
+2. Queues brand-new kits (by SKU / id)
+3. Emails **Rewards members only**, plain-text, short digest
+4. **Max once per calendar day** (`America/New_York`) — if you list 8 kits in a day, members get **one** email listing them all
+5. First run bootstraps the current catalog with **no email** (so existing stock isn’t blasted)
+
+State file: `jerseydeals/public/rewards-new-listings-state.json` (committed by the inventory sync workflow).
+
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
   AUDIENCE=test ITEM_NAME="Inter Milan Home" DRY_RUN=1 \
