@@ -3321,7 +3321,7 @@ export default function App() {
         <section aria-label="Our guarantees" className="bg-navy py-16 text-white md:py-20">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="mb-10">
-              <p className="eyebrow text-crimson-hot">Why us</p>
+              <p className="eyebrow text-crimson-hot">Why Jersey Deals</p>
               <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
                 What you can count on
               </h2>
