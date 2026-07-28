@@ -147,6 +147,8 @@ async function postFormSubmit(
       product: 'Jersey Deals',
       site: 'Jersey Deals',
       list: membership === 'member' ? 'jerseydeals_rewards_members' : 'jerseydeals_non_members',
+      jd_membership: membership,
+      jd_source: source,
       collected_at: at,
       _subject: `[Jersey Deals] ${membership} · ${source}`,
       _template: 'table',

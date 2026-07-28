@@ -1,0 +1,97 @@
+name: Ingest Jersey Deals inbox emails
+
+# Reads FormSubmit lead mail from shop@jerseydeals.online (IMAP) and
+# appends addresses to:
+#   jerseydeals/public/rewards-members.json
+#   jerseydeals/public/non-member-emails.json
+#
+# Uses the same SMTP_USER / SMTP_PASS mailbox secrets as Send SMTP email.
+# Cloudflare Worker is optional — this path works with FormSubmit alone.
+
+on:
+  schedule:
+    # Every 15 minutes so new signups land in the lists quickly.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Parse only (do not write lists / mark mail)
+        required: false
+        type: boolean
+        default: false
+      lookback_days:
+        description: How many days of inbox history to scan
+        required: false
+        type: string
+        default: '45'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jerseydeals-email-inbox-ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install IMAP deps
+        run: npm install --no-save imapflow@1 mailparser@3
+
+      - name: Ingest FormSubmit leads into email lists
+        id: ingest
+        working-directory: jerseydeals
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          IMAP_HOST: ${{ secrets.IMAP_HOST }}
+          IMAP_PORT: ${{ secrets.IMAP_PORT }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
+          IMAP_LOOKBACK_DAYS: ${{ inputs.lookback_days || '45' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SMTP_USER:-}" ] || [ -z "${SMTP_PASS:-}" ]; then
+            echo "Missing SMTP_USER/SMTP_PASS — cannot read shop inbox." >&2
+            exit 1
+          fi
+          # Default IONOS IMAP when secrets omit host/port.
+          export IMAP_HOST="${IMAP_HOST:-imap.ionos.com}"
+          export IMAP_PORT="${IMAP_PORT:-993}"
+          npm run email:ingest-inbox | tee /tmp/ingest-out.json
+          # Pretty summary for the Actions UI
+          python3 - <<'PY'
+          import json, pathlib, re
+          text = pathlib.Path('/tmp/ingest-out.json').read_text()
+          # script prints one JSON object at the end
+          m = re.findall(r'\{[\s\S]*\}\s*$', text)
+          if m:
+            data = json.loads(m[-1])
+            print(f"ingested={data.get('ingested')} members={data.get('members')} nonMembers={data.get('nonMembers')}")
+          PY
+
+      - name: Commit email lists if changed
+        run: |
+          if git diff --quiet -- \
+            jerseydeals/public/rewards-members.json \
+            jerseydeals/public/non-member-emails.json; then
+            echo "No email-list changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            jerseydeals/public/rewards-members.json \
+            jerseydeals/public/non-member-emails.json
+          git commit -m "chore(jerseydeals): ingest inbox leads into member / non-member lists"
+          git push origin HEAD:Brayden-OS

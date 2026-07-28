@@ -22,12 +22,15 @@ export const MEMBER_SOURCES = new Set(['rewards_club'])
 /** Landing-page capture sources allowed into the permanent lists. */
 export const LANDING_SOURCES = new Set([
   'rewards_club',
+  'rewards_section',
+  'rewards_dock',
   'first_buyer_offer',
   'checkout_gate',
   'cart_checkout_gate',
   'offer_activate_pl5',
   'landing',
   'manual',
+  'unknown',
 ])
 
 

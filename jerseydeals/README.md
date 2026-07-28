@@ -169,7 +169,11 @@ The popup only shows for browsers that have never completed a purchase (local fl
 Offer + checkout email gates POST to:
 
 1. **Square Customers** via `jerseydeals/email-api` (Cloudflare Worker), when `VITE_JERSEYDEALS_EMAIL_API_URL` / `JERSEYDEALS_EMAIL_API_URL` is set
-2. **FormSubmit** inbox fallback → `CONTACT_EMAIL` (confirm the first activation email once)
+2. **FormSubmit** inbox → `CONTACT_EMAIL` (confirm the first activation email once)
+3. **Permanent landing lists** (member vs non-member) via Actions → **Ingest Jersey Deals inbox emails**
+   - Reads FormSubmit lead mail from `shop@jerseydeals.online` over IMAP (`SMTP_USER` / `SMTP_PASS`)
+   - Writes `public/rewards-members.json` + `public/non-member-emails.json`
+   - Runs every 15 minutes (and on manual workflow_dispatch)
 
 Deploy the worker (GitHub secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SQUARE_ACCESS_TOKEN`):
 
