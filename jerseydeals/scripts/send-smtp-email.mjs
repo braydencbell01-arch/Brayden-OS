@@ -208,7 +208,6 @@ async function main() {
     dryRun,
     headers: {
       'List-Unsubscribe': listUnsub,
-      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       'List-Id': '<rewards.jerseydeals.online>',
     },
   }
@@ -245,9 +244,6 @@ async function main() {
       messageId,
       headers: {
         'List-Unsubscribe': listUnsub,
-        // Gmail expects this paired with an HTTPS one-click endpoint eventually.
-        // Mailto + URL still helps reputation vs bare marketing blasts.
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         'List-Id': '<rewards.jerseydeals.online>',
         'Feedback-ID': `jd:rewards:${audience}:jerseydeals`,
         'X-JerseyDeals-Audience': audience,
