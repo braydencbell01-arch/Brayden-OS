@@ -81,7 +81,8 @@ jobs:
           export IMAP_PORT="${IMAP_PORT:-993}"
           echo "IMAP ${IMAP_HOST}:${IMAP_PORT} as ${SMTP_USER} lookback=${IMAP_LOOKBACK_DAYS}d dry=${DRY_RUN:-0}"
           export INGEST_SUMMARY_PATH=/tmp/jd-ingest-summary.json
-          # Prefer npm script so node resolves root node_modules the same way as before.
+          # One-shot re-scan: ignore prior $JDProcessed marks so we recover every lead.
+          export FORCE_REPROCESS=1
           npm run email:ingest-inbox
           if [ -f "$INGEST_SUMMARY_PATH" ]; then
             echo "---- ingest summary ----"

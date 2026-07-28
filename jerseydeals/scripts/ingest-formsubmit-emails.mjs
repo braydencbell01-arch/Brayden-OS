@@ -7,13 +7,9 @@
  *   SMTP_USER / SMTP_PASS  (IONOS mailbox — same as SMTP send)
  *   IMAP_HOST (default imap.ionos.com)
  *   IMAP_PORT (default 993)
- *   DRY_RUN=1  (parse only, do not write lists / mark mail)
+ *   DRY_RUN=1
  *   IMAP_LOOKBACK_DAYS (default 30)
- *
- * Looks for subjects like:
- *   [Jersey Deals] member · rewards_club
- *   [Jersey Deals] non_member · first_buyer_offer
- *   [Jersey Deals / Square] new info · …
+ *   FORCE_REPROCESS=1  (ignore $JDProcessed / re-scan)
  */
 
 import { writeFileSync } from 'node:fs'
@@ -37,7 +33,9 @@ const HOST = (process.env.IMAP_HOST || 'imap.ionos.com').trim()
 const PORT = Number(process.env.IMAP_PORT || '993')
 const DRY = process.env.DRY_RUN === '1' || process.env.DRY_RUN === 'true'
 const LOOKBACK_DAYS = Number(process.env.IMAP_LOOKBACK_DAYS || '30')
+const FORCE = process.env.FORCE_REPROCESS === '1' || process.env.FORCE_REPROCESS === 'true'
 const PROCESSED_FLAG = '$JDProcessed'
+const SUMMARY_PATH = (process.env.INGEST_SUMMARY_PATH || '/tmp/jd-ingest-summary.json').trim()
 
 const IGNORE_EMAILS = new Set([
   normalizeEmail(USER),
@@ -48,7 +46,6 @@ const IGNORE_EMAILS = new Set([
   'noreply@square.com',
   'noreply@mail.squareup.com',
 ])
-const SUMMARY_PATH = (process.env.INGEST_SUMMARY_PATH || '/tmp/jd-ingest-summary.json').trim()
 
 function isIgnoredEmail(email) {
   const e = normalizeEmail(email)
@@ -62,8 +59,15 @@ function isIgnoredEmail(email) {
 }
 
 function logLine(msg) {
-  // Line-buffer friendly for Actions pipes.
   process.stdout.write(`${msg}\n`)
+}
+
+function writeSummary(summary) {
+  try {
+    writeFileSync(SUMMARY_PATH, `${JSON.stringify(summary, null, 2)}\n`)
+  } catch (err) {
+    console.error('Failed to write summary:', err)
+  }
 }
 
 function extractField(text, keys) {
@@ -75,13 +79,11 @@ function extractField(text, keys) {
     )
     const m = raw.match(re)
     if (m?.[1]) return m[1].trim()
-    // FormSubmit table style: label on one line, value on the next.
     const re2 = new RegExp(`(?:^|\\n)\\s*${key}\\s*(?:\\n|\\r\\n)\\s*([^\\n\\r<]+)`, 'i')
     const m2 = raw.match(re2)
     if (m2?.[1] && !/^(email|source|membership|list|product|site|phone|name)$/i.test(m2[1].trim())) {
       return m2[1].trim()
     }
-    // HTML table cells: <td>email</td><td>user@x.com</td>
     const re3 = new RegExp(
       `<t[dh][^>]*>\\s*${key}\\s*</t[dh]>\\s*<t[dh][^>]*>\\s*([^<]+)\\s*</t[dh]>`,
       'i',
@@ -142,8 +144,7 @@ function parseLeadFromMessage({ subject, text, html, replyTo, from }) {
       : '') ||
     extractField(blob, ['jd_source', 'source', 'Source']) ||
     ''
-  )
-    .trim()
+  ).trim()
   source = source.replace(/[^\w.-]+/g, '').slice(0, 80) || 'landing'
 
   const list = extractField(blob, ['list', 'List']).toLowerCase()
@@ -155,13 +156,11 @@ function parseLeadFromMessage({ subject, text, html, replyTo, from }) {
   const phone = extractField(blob, ['phone', 'Phone', 'phone_number']) || undefined
   const product = extractField(blob, ['product', 'Product', 'site', 'Site'])
 
-  // Ignore BrayStats / other products.
   if (/braystats/i.test(`${product}\n${subject}\n${blob.slice(0, 400)}`)) {
     return { ok: false, reason: 'braystats' }
   }
   if (!isValidEmail(email)) return { ok: false, reason: 'no_email', subject }
   if (!LANDING_SOURCES.has(source) && !MEMBER_SOURCES.has(source)) {
-    // Still accept if subject was clearly Jersey Deals.
     if (!/\[Jersey Deals/i.test(subject || '') && !/jersey\s*deals/i.test(subject || '')) {
       return { ok: false, reason: 'bad_source', source, subject }
     }
@@ -188,6 +187,33 @@ async function main() {
   }
 
   const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000)
+  const ingested = []
+  const skipped = []
+  const skipReasons = new Map()
+  const toMark = []
+  let fatal = null
+
+  // Safety net if IMAP code aborts the event loop oddly.
+  const dumpOnExit = () => {
+    const members = readList(MEMBERS_PATH, 'rewards_members')
+    const nonMembers = readList(NON_MEMBERS_PATH, 'non_members')
+    writeSummary({
+      dryRun: DRY,
+      fatal: fatal || 'beforeExit',
+      ingested: ingested.length,
+      uniqueIngested: [...new Set(ingested.map((r) => r.email))].length,
+      skipped: skipped.length,
+      skipReasons: Object.fromEntries(skipReasons),
+      members: members.count,
+      nonMembers: nonMembers.count,
+      memberEmails: members.emails,
+      nonMemberEmails: nonMembers.emails,
+      sampleIngested: ingested.slice(0, 20),
+      sampleSkipped: skipped.filter((s) => s.reason !== 'already_processed').slice(0, 20),
+    })
+  }
+  process.once('beforeExit', dumpOnExit)
+
   const client = new ImapFlow({
     host: HOST,
     port: PORT,
@@ -196,35 +222,43 @@ async function main() {
     logger: false,
   })
 
-  const ingested = []
-  const skipped = []
-  const skipReasons = new Map()
-  let fatal = null
-
   try {
     await client.connect()
     const lock = await client.getMailboxLock('INBOX')
     try {
-      const uids = await client.search({
-        since,
-        or: [{ subject: 'Jersey Deals' }, { body: 'jerseydeals' }, { body: 'Jersey Deals' }],
-      })
-      logLine(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
+      // Request UIDs explicitly, then fetchOne per UID (never nest IMAP cmds in fetch()).
+      const uids = await client.search(
+        {
+          since,
+          or: [{ subject: 'Jersey Deals' }, { body: 'jerseydeals' }, { body: 'Jersey Deals' }],
+        },
+        { uid: true },
+      )
+      const uidList = Array.isArray(uids) ? uids : []
+      logLine(`IMAP search hits: ${uidList.length} (since ${since.toISOString().slice(0, 10)})`)
+      writeSummary({ phase: 'after_search', hits: uidList.length })
 
-      for await (const msg of client.fetch(uids, {
-        uid: true,
-        flags: true,
-        source: true,
-        envelope: true,
-      })) {
+      for (const uid of uidList) {
         try {
+          const msg = await client.fetchOne(
+            String(uid),
+            { uid: true, flags: true, source: true, envelope: true },
+            { uid: true },
+          )
+          if (!msg) {
+            skipped.push({ uid, reason: 'fetch_empty' })
+            tally(skipReasons, 'fetch_empty')
+            continue
+          }
+
           const flags = [...(msg.flags || [])]
           if (
+            !FORCE &&
             flags.some(
               (f) => String(f).toLowerCase() === 'jdprocessed' || String(f) === PROCESSED_FLAG,
             )
           ) {
-            skipped.push({ uid: msg.uid, reason: 'already_processed' })
+            skipped.push({ uid: msg.uid || uid, reason: 'already_processed' })
             tally(skipReasons, 'already_processed')
             continue
           }
@@ -237,7 +271,7 @@ async function main() {
             !/jersey\s*deals/i.test(subject) &&
             !/jerseydeals/i.test(`${text}\n${html}`.slice(0, 2000))
           ) {
-            skipped.push({ uid: msg.uid, reason: 'not_jd', subject })
+            skipped.push({ uid: msg.uid || uid, reason: 'not_jd', subject })
             tally(skipReasons, 'not_jd')
             continue
           }
@@ -250,13 +284,18 @@ async function main() {
             from: addressFromParsed(parsed, 'from'),
           })
           if (!lead.ok) {
-            skipped.push({ uid: msg.uid, reason: lead.reason, subject, source: lead.source })
+            skipped.push({
+              uid: msg.uid || uid,
+              reason: lead.reason,
+              subject,
+              source: lead.source,
+            })
             tally(skipReasons, lead.reason || 'parse_fail')
             continue
           }
 
           if (DRY) {
-            ingested.push({ ...lead, uid: msg.uid, dry: true })
+            ingested.push({ ...lead, uid: msg.uid || uid, dry: true })
             continue
           }
 
@@ -268,26 +307,37 @@ async function main() {
             at: parsed.date ? parsed.date.toISOString() : new Date().toISOString(),
           })
           if (!result.ok) {
-            skipped.push({ uid: msg.uid, reason: result.message, email: lead.email, subject })
+            skipped.push({
+              uid: msg.uid || uid,
+              reason: result.message,
+              email: lead.email,
+              subject,
+            })
             tally(skipReasons, result.message || 'record_fail')
             continue
-          }
-
-          try {
-            await client.messageFlagsAdd(msg.uid, [PROCESSED_FLAG], { uid: true })
-          } catch {
-            await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true }).catch(() => {})
           }
 
           ingested.push({
             email: lead.email,
             membership: result.membership,
             source: lead.source,
-            uid: msg.uid,
+            uid: msg.uid || uid,
           })
+          toMark.push(msg.uid || uid)
         } catch (err) {
-          skipped.push({ uid: msg.uid, reason: `msg_error:${err?.message || err}` })
+          skipped.push({ uid, reason: `msg_error:${err?.message || err}` })
           tally(skipReasons, 'msg_error')
+        }
+      }
+
+      // Mark processed AFTER the fetch loop — never inside client.fetch().
+      if (!DRY) {
+        for (const uid of toMark) {
+          try {
+            await client.messageFlagsAdd(uid, [PROCESSED_FLAG], { uid: true })
+          } catch {
+            await client.messageFlagsAdd(uid, ['\\Seen'], { uid: true }).catch(() => {})
+          }
         }
       }
     } finally {
@@ -303,12 +353,14 @@ async function main() {
     console.error(fatal)
   }
 
+  process.off('beforeExit', dumpOnExit)
+
   const members = readList(MEMBERS_PATH, 'rewards_members')
   const nonMembers = readList(NON_MEMBERS_PATH, 'non_members')
   const uniqueIngested = [...new Set(ingested.map((r) => r.email))]
-
   const summary = {
     dryRun: DRY,
+    forceReprocess: FORCE,
     fatal,
     ingested: ingested.length,
     uniqueIngested: uniqueIngested.length,
@@ -321,11 +373,7 @@ async function main() {
     sampleIngested: ingested.slice(0, 20),
     sampleSkipped: skipped.filter((s) => s.reason !== 'already_processed').slice(0, 20),
   }
-  try {
-    writeFileSync(SUMMARY_PATH, `${JSON.stringify(summary, null, 2)}\n`)
-  } catch (err) {
-    console.error('Failed to write summary:', err)
-  }
+  writeSummary(summary)
   logLine(`SUMMARY_PATH=${SUMMARY_PATH}`)
   logLine(
     `ingested=${summary.ingested} unique=${summary.uniqueIngested} members=${summary.members} nonMembers=${summary.nonMembers}`,
@@ -343,13 +391,6 @@ async function main() {
 
 main().catch((err) => {
   console.error(err)
-  try {
-    writeFileSync(
-      SUMMARY_PATH,
-      `${JSON.stringify({ fatal: String(err?.stack || err), ingested: 0 }, null, 2)}\n`,
-    )
-  } catch {
-    /* ignore */
-  }
+  writeSummary({ fatal: String(err?.stack || err), ingested: 0 })
   process.exit(1)
 })
