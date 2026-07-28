@@ -313,16 +313,16 @@ State file: `jerseydeals/public/rewards-new-listings-state.json` (committed by t
 
 ### Automatic “new offer” digest (Rewards only)
 
-Same once-daily pattern for Rewards offers:
+**You don’t manage this manually.** When a new Rewards offer is added so it shows
+under **My offers** for members, they get a short plain-text email (max once/day).
 
-1. Source of truth: `public/rewards-offers-catalog.json` (keep in sync with `src/offers.ts`)
-2. `npm run email:notify-new-offers` diffs against `public/rewards-new-offers-state.json`
-3. Emails **Rewards members only** when a new catalog offer appears
-4. **Max once per calendar day** (`America/New_York`)
-5. First run bootstraps current offers with **no email**
-6. Also runs on push when the offers catalog changes (faster than waiting for inventory cron)
+Source of truth: `src/rewardsOffersCatalog.json`
+- App auto-adds those offers to My offers for Rewards members
+- Notify job emails members when a new catalog offer appears
+- First run bootstraps with no email
 
-When you ship a new member offer: add it in `src/offers.ts` **and** append it to `rewards-offers-catalog.json`.
+When you want a new member offer: tell the agent what it is — they’ll add it to the
+catalog (My offers + email stay in sync automatically).
 
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \

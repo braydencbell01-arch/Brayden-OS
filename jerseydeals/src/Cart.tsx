@@ -11,7 +11,7 @@ import { captureEmail } from './emailCapture'
 import { formatPrice, shortTitle } from './listings'
 import { isValidEmail, readBuyerEmail, syncPurchasedFromKnownEmail, writeBuyerEmail } from './offer'
 import {
-  OFFER_DEFS,
+  getOfferDef,
   OFFERS_EVENT,
   activateOfferAtCheckout,
   applyOfferUnitPrice,
@@ -124,7 +124,7 @@ export function CartDrawer({
   const hasEmail = Boolean(savedEmail)
   const requireEmail = needsCheckoutEmailGate()
   const canCheckout = !requireEmail || hasEmail
-  const offerLabel = activeId ? OFFER_DEFS[activeId].title : ''
+  const offerLabel = activeId ? getOfferDef(activeId)?.title || '' : ''
 
   function lineCheckoutAmount(line: CartState['lines'][number]) {
     const unit = applyOfferUnitPrice(line.price, { offerId: activeId, title: line.title })
@@ -280,7 +280,7 @@ export function CartDrawer({
                         </p>
                         {saved && activeId ? (
                           <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-crimson">
-                            {OFFER_DEFS[activeId].title}
+                            {getOfferDef(activeId)?.title}
                           </p>
                         ) : null}
                         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -324,7 +324,8 @@ export function CartDrawer({
                 </p>
                 <ul className="mt-2 space-y-2">
                   {openOffers.map((offer) => {
-                    const def = OFFER_DEFS[offer.id]
+                    const def = getOfferDef(offer.id)
+                    if (!def) return null
                     const isActive = activeId === offer.id
                     return (
                       <li

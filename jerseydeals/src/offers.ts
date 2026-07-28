@@ -2,10 +2,12 @@
  * Rewards / welcome offers wallet (client-side).
  * Offers are claimed into My offers, then activated at checkout, then removed after use.
  *
- * When you add a Rewards-member offer here, also add it to
- * public/rewards-offers-catalog.json so members get the once-daily new-offer email.
+ * Rewards-member offers (auto-appear in My offers) live in
+ * `src/rewardsOffersCatalog.json`. Adding one there shows it for members and
+ * triggers the once-daily new-offer email — no separate steps.
  */
 
+import rewardsOffersCatalog from './rewardsOffersCatalog.json'
 import { inferLeague } from './listings'
 import {
   hasMarkedFirst10Claimed,
@@ -20,7 +22,8 @@ import { isRewardsMember } from './rewardsMember'
 export const OFFERS_STORAGE_KEY = 'jerseydeals.offers.v1'
 export const OFFERS_EVENT = 'jerseydeals:offers'
 
-export type OfferId = 'first10' | 'pl5'
+/** first10 = welcome popup; other ids come from the Rewards catalog. */
+export type OfferId = string
 
 export type OfferStatus = 'available' | 'activated' | 'used'
 
@@ -46,19 +49,70 @@ export type OfferDefinition = {
   activateHint: string
 }
 
-export const OFFER_DEFS: Record<OfferId, OfferDefinition> = {
+type CatalogOffer = {
+  id: string
+  title: string
+  detail: string
+  activateHint?: string
+  audience?: string
+  pricing?: {
+    type?: string
+    amount?: number
+    league?: string
+  }
+}
+
+const catalogRows: CatalogOffer[] = Array.isArray(rewardsOffersCatalog?.offers)
+  ? (rewardsOffersCatalog.offers as CatalogOffer[])
+  : []
+
+function catalogDefinition(row: CatalogOffer): OfferDefinition {
+  return {
+    id: String(row.id || '').trim(),
+    title: String(row.title || 'Rewards offer').trim(),
+    detail: String(row.detail || '').trim(),
+    activateHint: String(row.activateHint || 'Activate at checkout').trim(),
+  }
+}
+
+/** Offers that auto-appear under My offers for Rewards members. */
+export function rewardsMemberCatalogOffers(): CatalogOffer[] {
+  return catalogRows.filter((row) => {
+    const id = String(row?.id || '').trim()
+    if (!id || id === 'first10') return false
+    const audience = String(row?.audience || 'rewards').toLowerCase()
+    return audience === 'rewards' || audience === 'all'
+  })
+}
+
+export function rewardsMemberOfferIds(): OfferId[] {
+  return rewardsMemberCatalogOffers().map((row) => String(row.id).trim())
+}
+
+const catalogDefs: Record<string, OfferDefinition> = Object.fromEntries(
+  rewardsMemberCatalogOffers()
+    .map((row) => catalogDefinition(row))
+    .filter((def) => def.id)
+    .map((def) => [def.id, def]),
+)
+
+export const OFFER_DEFS: Record<string, OfferDefinition> = {
   first10: {
     id: 'first10',
     title: '10% off your first order',
     detail: 'Welcome offer for first-time buyers on any kit.',
     activateHint: 'Activate at checkout',
   },
-  pl5: {
-    id: 'pl5',
-    title: '$5 off a Premier League jersey',
-    detail: 'Rewards Club offer — save $5 on a Premier League kit.',
-    activateHint: 'Activate at checkout',
-  },
+  ...catalogDefs,
+}
+
+export function getOfferDef(id: OfferId | null | undefined): OfferDefinition | null {
+  if (!id) return null
+  return OFFER_DEFS[id] || null
+}
+
+function isKnownOfferId(id: string) {
+  return Boolean(OFFER_DEFS[id])
 }
 
 function canStore() {
@@ -123,9 +177,11 @@ export function readOffersWallet(): OffersWallet {
       const parsed = JSON.parse(raw) as OffersWallet
       if (parsed && Array.isArray(parsed.offers)) {
         wallet = {
-          offers: parsed.offers.filter((o) => o?.id === 'first10' || o?.id === 'pl5'),
+          offers: parsed.offers.filter((o) => o?.id && isKnownOfferId(String(o.id))),
           activeId:
-            parsed.activeId === 'first10' || parsed.activeId === 'pl5' ? parsed.activeId : null,
+            parsed.activeId && isKnownOfferId(String(parsed.activeId))
+              ? String(parsed.activeId)
+              : null,
         }
       }
     }
@@ -203,10 +259,12 @@ export function claimFirstBuyerOffer(email: string) {
   return claimOffer('first10')
 }
 
-/** Rewards members get the Premier League $5 offer. */
+/** Rewards members auto-receive every catalog offer under My offers. */
 export function ensureRewardsOffers() {
   if (!isRewardsMember()) return
-  claimOffer('pl5')
+  for (const id of rewardsMemberOfferIds()) {
+    claimOffer(id)
+  }
 }
 
 /**
@@ -297,6 +355,15 @@ export function applyOfferUnitPrice(
   if (opts.offerId === 'first10') {
     return Math.round(price * 0.9 * 100) / 100
   }
+  const catalog = rewardsMemberCatalogOffers().find((row) => row.id === opts.offerId)
+  const pricing = catalog?.pricing
+  if (pricing?.type === 'flat_off' && typeof pricing.amount === 'number') {
+    if (pricing.league === 'premier-league' && opts.title && !isPremierLeagueTitle(opts.title)) {
+      return price
+    }
+    return Math.max(0, Math.round((price - pricing.amount) * 100) / 100)
+  }
+  // Legacy fallback for pl5 if catalog pricing is missing.
   if (opts.offerId === 'pl5') {
     if (opts.title && !isPremierLeagueTitle(opts.title)) return price
     return Math.max(0, Math.round((price - 5) * 100) / 100)
@@ -316,7 +383,8 @@ export function offerEligibleForCart(
     if (hasPurchased()) return { ok: false, message: 'First-order offer is only for new buyers.' }
     return { ok: true }
   }
-  if (id === 'pl5') {
+  const catalog = rewardsMemberCatalogOffers().find((row) => row.id === id)
+  if (catalog?.pricing?.league === 'premier-league' || id === 'pl5') {
     const hasPl = cartTitles.some((t) => isPremierLeagueTitle(t))
     if (!hasPl) {
       return { ok: false, message: 'Add a Premier League jersey to use this offer.' }

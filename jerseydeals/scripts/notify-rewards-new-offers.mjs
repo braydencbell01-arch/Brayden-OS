@@ -2,8 +2,9 @@
 /**
  * Detect newly added Rewards offers and email members at most once per day.
  *
- * Source of truth: public/rewards-offers-catalog.json
- * (Keep ids/titles aligned with src/offers.ts OFFER_DEFS.)
+ * Source of truth: src/rewardsOffersCatalog.json
+ * (Same file the app uses so My offers and email stay in sync.)
+ * A copy is mirrored to public/rewards-offers-catalog.json for ops visibility.
  *
  * - Diffs catalog ids vs committed known set
  * - Queues new offers into pending[]
@@ -23,8 +24,9 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC = join(__dirname, '../public')
-const CATALOG_PATH = join(PUBLIC, 'rewards-offers-catalog.json')
+const CATALOG_PATH = join(__dirname, '../src/rewardsOffersCatalog.json')
 const STATE_PATH = join(PUBLIC, 'rewards-new-offers-state.json')
+const PUBLIC_CATALOG_PATH = join(PUBLIC, 'rewards-offers-catalog.json')
 const SITE = 'https://jerseydeals.online/'
 const OFFERS_URL = 'https://JerseyDeals.online/#offers'
 const TZ = 'America/New_York'
@@ -49,6 +51,14 @@ function dayKey(iso = new Date().toISOString()) {
     month: '2-digit',
     day: '2-digit',
   }).format(new Date(iso))
+}
+
+function mirrorCatalogToPublic(catalogPayload) {
+  try {
+    writeFileSync(PUBLIC_CATALOG_PATH, `${JSON.stringify(catalogPayload, null, 2)}\n`)
+  } catch {
+    /* ignore */
+  }
 }
 
 function emptyState() {
@@ -152,7 +162,10 @@ function main() {
       knownIds: [...liveIds].sort(),
       pending: [],
     }
-    if (!DRY) writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
+    if (!DRY) {
+      writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
+      mirrorCatalogToPublic(catalogPayload)
+    }
     console.log(
       JSON.stringify(
         {
@@ -265,7 +278,10 @@ function main() {
     )
   }
 
-  if (!DRY) writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
+  if (!DRY) {
+    writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
+    mirrorCatalogToPublic(catalogPayload)
+  }
   console.log(
     JSON.stringify(
       {

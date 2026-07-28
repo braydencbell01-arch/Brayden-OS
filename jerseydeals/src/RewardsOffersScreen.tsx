@@ -1,6 +1,6 @@
 import { leaveRewardsOffers } from './rewardsMember'
 import {
-  OFFER_DEFS,
+  getOfferDef,
   OFFERS_EVENT,
   ensureRewardsOffers,
   listOpenOffers,
@@ -9,7 +9,8 @@ import {
 import { useEffect, useState } from 'react'
 
 function OfferCard({ offer }: { offer: WalletOffer }) {
-  const def = OFFER_DEFS[offer.id]
+  const def = getOfferDef(offer.id)
+  if (!def) return null
   return (
     <article className="border border-navy/10 bg-cream px-5 py-5">
       <p className="font-display text-xl font-bold uppercase tracking-wide text-navy">{def.title}</p>
