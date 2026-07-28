@@ -1928,19 +1928,19 @@ export default function App() {
         </section>
 
         {/* Editorial shop paths */}
-        <section id="shop" className="scroll-mt-44 bg-cream py-20 md:py-28">
+        <section id="shop" className="scroll-mt-44 bg-cream py-12 md:py-16">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <div className="brand-rule" aria-hidden />
-              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+              <h2 className="mt-3 font-display text-3xl font-bold uppercase tracking-wide text-navy md:text-4xl">
                 Shop the floor
               </h2>
-              <p className="mt-3 font-brand text-lg text-muted">
+              <p className="mt-2 font-brand text-base text-muted">
                 Country kits, sale racks, or the full live catalog — pick a path.
               </p>
             </motion.div>
 
-            <div className="mt-12 grid gap-4 md:grid-cols-12 md:grid-rows-2 md:gap-5">
+            <div className="mt-7 grid gap-3 md:grid-cols-12 md:grid-rows-2 md:gap-3">
               {/* Large youth tile */}
               <motion.button
                 type="button"
@@ -1949,7 +1949,7 @@ export default function App() {
                   goInventory({ audience: 'Youth', reset: true })
                 }}
                 {...fadeUp(reduce, 0.05)}
-                className="group relative min-h-[320px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-7 md:row-span-2 md:min-h-[560px]"
+                className="group relative min-h-[200px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-7 md:row-span-2 md:min-h-[320px]"
               >
                 <img
                   src={asset('category-youth.jpg')}
@@ -1959,12 +1959,12 @@ export default function App() {
                   decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-7 md:p-10">
+                <div className="relative flex h-full flex-col justify-end p-5 md:p-6">
                   <p className="eyebrow text-white/70">Youth</p>
-                  <p className="mt-2 font-display text-4xl font-bold uppercase tracking-wide text-white md:text-6xl">
+                  <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-4xl">
                     Youth apparel
                   </p>
-                  <span className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                  <span className="mt-3 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
                     Shop youth →
                   </span>
                 </div>
@@ -1979,7 +1979,7 @@ export default function App() {
                     goInventory({ price: 'under-25', reset: true })
                   }}
                   {...fadeUp(reduce, 0.1)}
-                  className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
+                  className="group relative min-h-[140px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5 md:min-h-0"
                 >
                   <img
                     src={asset('category-sale.jpg')}
@@ -1989,12 +1989,12 @@ export default function App() {
                     decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
+                  <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
                     <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
-                    <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                    <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
                       {SALE_HEADLINE}
                     </p>
-                    <span className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                    <span className="mt-2 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
                       Shop sale kits →
                     </span>
                   </div>
@@ -2006,7 +2006,7 @@ export default function App() {
                   rel="noopener noreferrer"
                   onClick={() => track('category_click', { category: 'category_sale' })}
                   {...fadeUp(reduce, 0.1)}
-                  className="group relative min-h-[240px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
+                  className="group relative min-h-[140px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5 md:min-h-0"
                 >
                   <img
                     src={asset('category-sale.jpg')}
@@ -2016,9 +2016,9 @@ export default function App() {
                     decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
+                  <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
                     <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
-                    <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                    <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
                       {SALE_HEADLINE}
                     </p>
                   </div>
@@ -2033,7 +2033,7 @@ export default function App() {
                   goInventory({ tag: 'All', reset: true })
                 }}
                 {...fadeUp(reduce, 0.14)}
-                className="group relative min-h-[240px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5"
+                className="group relative min-h-[140px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5 md:min-h-0"
               >
                 <img
                   src={asset('category-catalog.jpg')}
@@ -2046,9 +2046,9 @@ export default function App() {
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-6 md:p-8">
+                <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
                   <p className="eyebrow text-white/70">Inventory</p>
-                  <p className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                  <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
                     Full catalog
                   </p>
                 </div>
