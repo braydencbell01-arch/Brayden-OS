@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react'
 
 const STORAGE_KEY = 'jerseydeals.favoriteClubs.v1'
 export const FAVORITES_EVENT = 'jerseydeals:favorites'
+/** Full-screen favorites page (mirrors #offers). */
+export const FAVORITES_HASH = '#favorites'
 
 function canUseStorage() {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -82,4 +84,26 @@ export function useFavoriteClubIds(): string[] {
 
 export function favoriteClubIdSet(ids: string[]): Set<string> {
   return new Set(ids)
+}
+
+export function goToFavoritesScreen() {
+  window.location.hash = 'favorites'
+}
+
+export function leaveFavoritesScreen() {
+  const { pathname, search } = window.location
+  window.history.pushState(null, '', `${pathname}${search}`)
+  window.dispatchEvent(new Event('hashchange'))
+}
+
+export function useFavoritesScreenOpen() {
+  const [open, setOpen] = useState(() => window.location.hash === FAVORITES_HASH)
+
+  useEffect(() => {
+    const sync = () => setOpen(window.location.hash === FAVORITES_HASH)
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+
+  return open
 }

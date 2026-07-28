@@ -1,4 +1,7 @@
+import { CLUB_CATALOG, LEAGUE_BY_CLUB_ID } from './clubCatalog'
 import { matchesInclusive } from './inclusiveSearch'
+
+export { CLUB_CATALOG, LEAGUE_BY_CLUB_ID } from './clubCatalog'
 
 export type Listing = {
   id: string
@@ -305,37 +308,6 @@ export function isSquareCatalog(catalog: ListingsPayload | null | undefined) {
 }
 
 
-/** Clubs / nations we can detect from listing titles (longer names first). */
-export const CLUB_CATALOG = [
-  { id: 'manchester-city', name: 'Manchester City', pattern: /manchester\s*city|\bman\s*city\b|\bman\s*c\b|\bmcfc\b/i },
-  { id: 'manchester-united', name: 'Manchester United', pattern: /manchester\s*united|\bman\s*utd\b|\bman\s*u\b|\bman\s*united\b|\bmufc\b/i },
-  { id: 'paris-saint-germain', name: 'Paris Saint-Germain', pattern: /paris\s*saint[-\s]?germain|\bpsg\b|\bparis\s*sg\b/i },
-  { id: 'inter-miami', name: 'Inter Miami', pattern: /inter\s*miami\b/i },
-  {
-    id: 'inter-milan',
-    name: 'Inter Milan',
-    pattern: /inter\s*milan\b|internazionale|\bnerazzurri\b/i,
-  },
-  { id: 'ac-milan', name: 'AC Milan', pattern: /\bac\s*milan\b|(?<!inter\s)\bmilan\b/i },
-  { id: 'borussia-dortmund', name: 'Borussia Dortmund', pattern: /borussia\s*dortmund|\bdortmund\b|\bbvb\b/i },
-  { id: 'tottenham', name: 'Tottenham', pattern: /tottenham(?:\s*hotspur)?|\bspurs\b/i },
-  { id: 'liverpool', name: 'Liverpool', pattern: /liverpool(?:\s*fc)?|\blfc\b/i },
-  { id: 'real-madrid', name: 'Real Madrid', pattern: /real\s*madrid|\brma\b/i },
-  { id: 'barcelona', name: 'Barcelona', pattern: /fc\s*barcelona|\bbarcelona\b|\bbarca\b|\bbarça\b|\bfcb\b/i },
-  { id: 'chelsea', name: 'Chelsea', pattern: /chelsea(?:\s*fc)?|\bcfc\b/i },
-  { id: 'ajax', name: 'Ajax', pattern: /ajax(?:\s*amsterdam)?/i },
-  { id: 'germany', name: 'Germany', pattern: /germany(?:\s*national)?|\bdfb\b/i },
-  { id: 'syracuse', name: 'Syracuse', pattern: /syracuse(?:\s*orange)?|\bcuse\b/i },
-  { id: 'arsenal', name: 'Arsenal', pattern: /arsenal(?:\s*fc)?|\bgunners\b/i },
-  { id: 'bayern', name: 'Bayern Munich', pattern: /bayern(?:\s*munich)?|\bbayern\s*m[uü]nchen\b/i },
-  { id: 'juventus', name: 'Juventus', pattern: /juventus|\bjuve\b/i },
-  { id: 'newcastle', name: 'Newcastle', pattern: /newcastle(?:\s*united)?|\bnufc\b/i },
-  { id: 'spain', name: 'Spain', pattern: /\bspain(?:\s*national)?\b|\bla\s*roja\b/i },
-  { id: 'argentina', name: 'Argentina', pattern: /\bargentina\b|\balbiceleste\b/i },
-  { id: 'mexico', name: 'Mexico', pattern: /\bmexico\b|\bel\s*tri\b/i },
-  { id: 'usa', name: 'USA', pattern: /\busa\b|united\s*states|\busmnt\b|\buswnt\b/i },
-] as const
-
 export type ClubInfo = {
   id: string
   name: string
@@ -370,33 +342,6 @@ export function clubsInStock(listings: Listing[]): ClubInfo[] {
     })
   }
   return [...map.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-}
-
-/** League membership for known clubs / nations (Syracuse → NCAA). */
-export const LEAGUE_BY_CLUB_ID: Record<string, { id: string; name: string }> = {
-  'manchester-city': { id: 'premier-league', name: 'Premier League' },
-  'manchester-united': { id: 'premier-league', name: 'Premier League' },
-  liverpool: { id: 'premier-league', name: 'Premier League' },
-  chelsea: { id: 'premier-league', name: 'Premier League' },
-  tottenham: { id: 'premier-league', name: 'Premier League' },
-  arsenal: { id: 'premier-league', name: 'Premier League' },
-  newcastle: { id: 'premier-league', name: 'Premier League' },
-  'real-madrid': { id: 'la-liga', name: 'La Liga' },
-  barcelona: { id: 'la-liga', name: 'La Liga' },
-  'ac-milan': { id: 'serie-a', name: 'Serie A' },
-  'inter-milan': { id: 'serie-a', name: 'Serie A' },
-  juventus: { id: 'serie-a', name: 'Serie A' },
-  'borussia-dortmund': { id: 'bundesliga', name: 'Bundesliga' },
-  bayern: { id: 'bundesliga', name: 'Bundesliga' },
-  'paris-saint-germain': { id: 'ligue-1', name: 'Ligue 1' },
-  ajax: { id: 'eredivisie', name: 'Eredivisie' },
-  'inter-miami': { id: 'mls', name: 'MLS' },
-  germany: { id: 'international', name: 'International' },
-  spain: { id: 'international', name: 'International' },
-  argentina: { id: 'international', name: 'International' },
-  mexico: { id: 'international', name: 'International' },
-  usa: { id: 'international', name: 'International' },
-  syracuse: { id: 'ncaa', name: 'NCAA' },
 }
 
 export const PREMIER_LEAGUE_CLUB_IDS = new Set(
