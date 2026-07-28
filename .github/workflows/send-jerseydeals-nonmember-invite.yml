@@ -50,29 +50,26 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           AUDIENCE: non_members
-          SUBJECT: You're browsing Jersey Deals — join Rewards (free)
+          SUBJECT: Quick note from Jersey Deals
+          PLAIN_TEXT_ONLY: '1'
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
           BODY: |
             Hey —
 
-            You’ve been browsing Jersey Deals, but you’re not in the Rewards Club yet.
+            Noticed you’d checked out Jersey Deals but haven’t joined Rewards yet.
 
-            It’s free to join. Members get:
+            It’s free. Members get early offers, restock alerts, and member-only drops from live inventory.
 
-            • Special offers before they go wide
-            • Restock alerts on sizes that sell out fast
-            • Member-only drops from our live inventory
-
-            Real kits. Real photos. Sold direct.
-
-            Join here (takes about 30 seconds):
+            Join here when you have a minute:
             https://JerseyDeals.online/#rewards
 
-            Once you’re in, your offers show up under My offers — activate them in your cart at checkout when you’re ready.
+            After you join, offers show up under My offers — activate them in your cart at checkout.
 
-            See you in the club,
+            Thanks,
+            Brayden
             Jersey Deals
             https://JerseyDeals.online/
+            shop@jerseydeals.online
         run: |
           set -euo pipefail
           if [ -z "${SMTP_USER:-}" ] || [ -z "${SMTP_PASS:-}" ]; then

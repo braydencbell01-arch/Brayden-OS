@@ -224,11 +224,13 @@ async function main() {
     port,
     secure: port === 465,
     auth: { user, pass },
-    // Prefer STARTTLS identity aligned with the From domain.
-    name: 'jerseydeals.online',
+    // Do NOT override EHLO/name — IONOS treats mismatched HELO as suspicious.
   })
 
   await transporter.verify()
+
+  const plainOnly =
+    process.env.PLAIN_TEXT_ONLY === '1' || process.env.PLAIN_TEXT_ONLY === 'true'
 
   // Send one message per recipient so addresses stay private.
   const results = []
@@ -240,7 +242,7 @@ async function main() {
       to: recipient,
       subject,
       text: body,
-      html,
+      ...(plainOnly ? {} : { html }),
       messageId,
       headers: {
         'List-Unsubscribe': listUnsub,

@@ -307,20 +307,31 @@ SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
 
 ### Deliverability (keep mail out of Junk)
 
-Current DNS for `jerseydeals.online` should include:
+Current DNS for `jerseydeals.online`:
 
-| Record | Expected |
-|--------|----------|
+| Record | Status |
+|--------|--------|
 | SPF TXT `@` | `v=spf1 include:_spf-us.ionos.com ~all` |
-| DKIM TXT `ionos._domainkey` | `v=DKIM1; p=…` (IONOS publishes this) |
-| DMARC TXT `_dmarc` | starts with `v=DMARC1;` |
+| DKIM CNAME `s1-ionos._domainkey` | → `s1.dkim.ionos.com` |
+| DKIM CNAME `s2-ionos._domainkey` | → `s2.dkim.ionos.com` |
+| DKIM CNAME `s42582890._domainkey` | **missing** — add → `s42582890.dkim.ionos.com` |
+| DMARC TXT `_dmarc` | `v=DMARC1; p=none;` (via IONOS) |
 
-**In IONOS (Mail → Domain settings):**
+**In IONOS DNS for `jerseydeals.online`, add the missing CNAME:**
 
-1. Confirm **DKIM is enabled** for `jerseydeals.online` (selector `ionos` is already live).
-2. Keep sending only from **`shop@jerseydeals.online`** over **`smtp.ionos.com`** (aligned From/SPF/DKIM).
-3. After a few clean sends, raise DMARC from `p=none` → `p=quarantine` (optional).
+| Hostname | Points to |
+|----------|-----------|
+| `s42582890._domainkey` | `s42582890.dkim.ionos.com` |
 
-**Still landing in Junk?** Normal for first-touch promo mail. Ask the recipient to mark
-**Not spam** once, and avoid all-caps subjects / huge link-only bodies. Warm the domain with
-occasional **test** sends to yourself before blasting lists.
+**Why promos still hit Junk (even when auth is OK):**
+
+- Shared IONOS SMTP IPs have mixed reputation for cold marketing
+- First-touch + bullet-list promo copy scores as newsletter spam (esp. iCloud / school filters)
+- Resending the **same** invite quickly makes filters *more* aggressive — wait, don’t blast again
+
+**What actually helps next:**
+
+1. Recipients mark **Not spam** / move to Inbox once
+2. Add the missing DKIM CNAME above
+3. For the next invite, use a calmer subject and plain-text (`PLAIN_TEXT_ONLY=1`)
+4. Longer term: send marketing via a dedicated ESP (Resend / Postmark) and keep IONOS for shop replies
