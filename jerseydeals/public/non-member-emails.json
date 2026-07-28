@@ -1,20 +1,58 @@
 {
-  "syncedAt": "2026-07-28T16:20:00Z",
+  "syncedAt": "2026-07-28T16:28:33Z",
   "kind": "non_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 1,
+  "count": 5,
   "emails": [
-    "braydencbell01@gmail.com"
+    "bboysoccer9@icloud.com",
+    "bell29@webstercsd.org",
+    "candkbell@gmail.com",
+    "noreply@facebookmail.com",
+    "offers-qa@example.com"
   ],
   "entries": [
     {
-      "email": "braydencbell01@gmail.com",
+      "email": "bboysoccer9@icloud.com",
+      "sources": [
+        "landing",
+        "first_buyer_offer"
+      ],
+      "firstSeen": "2026-07-26T16:49:28.000Z",
+      "lastSeen": "2026-07-27T14:59:24.000Z"
+    },
+    {
+      "email": "bell29@webstercsd.org",
+      "sources": [
+        "first_buyer_offer",
+        "offer_activate_pl5"
+      ],
+      "firstSeen": "2026-07-27T15:29:03.000Z",
+      "lastSeen": "2026-07-27T18:18:56.000Z"
+    },
+    {
+      "email": "candkbell@gmail.com",
+      "sources": [
+        "checkout_gate"
+      ],
+      "firstSeen": "2026-07-26T21:23:57.000Z",
+      "lastSeen": "2026-07-26T21:23:57.000Z"
+    },
+    {
+      "email": "noreply@facebookmail.com",
       "sources": [
         "landing"
       ],
-      "firstSeen": "2026-07-26T16:48:52.000Z",
-      "lastSeen": "2026-07-26T16:48:52.000Z"
+      "firstSeen": "2026-07-26T19:19:30.000Z",
+      "lastSeen": "2026-07-26T21:07:51.000Z"
+    },
+    {
+      "email": "offers-qa@example.com",
+      "sources": [
+        "first_buyer_offer"
+      ],
+      "firstSeen": "2026-07-27T18:14:22.000Z",
+      "lastSeen": "2026-07-27T18:14:22.000Z"
     }
   ],
   "note": "Jersey Deals landing-page non-member emails only (not Square Online / BrayStats)."

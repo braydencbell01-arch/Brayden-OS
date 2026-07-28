@@ -1,10 +1,73 @@
 {
-  "syncedAt": "2026-07-28T16:18:14Z",
+  "syncedAt": "2026-07-28T16:28:33Z",
   "kind": "rewards_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 0,
-  "emails": [],
-  "entries": [],
+  "count": 6,
+  "emails": [
+    "braydencbell01@gmail.com",
+    "calebrschrader@gmail.com",
+    "lynne8002@aol.com",
+    "member@example.com",
+    "rewards-dock-qa@example.com",
+    "tbsports9@icloud.com"
+  ],
+  "entries": [
+    {
+      "email": "braydencbell01@gmail.com",
+      "sources": [
+        "rewards_club",
+        "cart_checkout_gate",
+        "offer_activate_pl5",
+        "first_buyer_offer"
+      ],
+      "firstSeen": "2026-07-27T15:39:21.000Z",
+      "lastSeen": "2026-07-27T19:56:59.000Z",
+      "phone": "5855053244"
+    },
+    {
+      "email": "calebrschrader@gmail.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T20:02:10.000Z",
+      "lastSeen": "2026-07-27T20:02:10.000Z",
+      "phone": "5856623023"
+    },
+    {
+      "email": "lynne8002@aol.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T18:55:23.000Z",
+      "lastSeen": "2026-07-27T20:05:23.000Z",
+      "phone": "7576309980"
+    },
+    {
+      "email": "member@example.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T19:12:47.000Z",
+      "lastSeen": "2026-07-27T19:12:47.000Z"
+    },
+    {
+      "email": "rewards-dock-qa@example.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T17:33:59.000Z",
+      "lastSeen": "2026-07-27T17:33:59.000Z"
+    },
+    {
+      "email": "tbsports9@icloud.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T16:46:43.000Z",
+      "lastSeen": "2026-07-27T16:46:43.000Z",
+      "phone": "5855057726"
+    }
+  ],
   "note": "Jersey Deals landing-page Rewards members only (not Square Online / BrayStats)."
 }
