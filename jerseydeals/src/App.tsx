@@ -2707,23 +2707,45 @@ export default function App() {
         ) : null}
 
         {inventoryOpen ? (
-          <>
-            <div className="border-b border-navy/10 bg-cream px-5 pb-4 pt-28 md:px-8 md:pt-32">
-              <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-chalk text-navy">
+            <header className="border-b border-navy/10 bg-cream px-5 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">
+                  Full inventory
+                </p>
                 <button
                   type="button"
                   onClick={() => leaveInventoryPage()}
                   className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:text-crimson"
                 >
-                  ← Back to home
+                  Back
                 </button>
-                <p className="font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
-                  Full inventory
-                </p>
               </div>
-            </div>
+              <form
+                className="mt-3"
+                autoComplete="off"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  setAppliedQuery(query.trim())
+                  document.getElementById('inventory-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+              >
+                <label className="block">
+                  <span className="sr-only">Search kits</span>
+                  <input
+                    type="search"
+                    value={query}
+                    autoComplete="off"
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Search club, player, league…"
+                    className="w-full border border-navy/15 bg-white px-3 py-2.5 text-base text-navy outline-none placeholder:text-muted focus:ring-2 focus:ring-crimson/30"
+                  />
+                </label>
+              </form>
+            </header>
+            <div className="flex-1 overflow-y-auto pb-28">
         {/* Full inventory — filters first, results directly below (search scrolls here). */}
-        <section id="inventory" className="cv-auto scroll-mt-48 bg-chalk pb-20 pt-8 md:pb-28 md:pt-10">
+        <section id="inventory" className="cv-auto scroll-mt-4 bg-chalk pb-16 pt-6 md:pb-20 md:pt-8">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <div id="inventory-browse" className="scroll-mt-48">
               <motion.div {...fadeUp(reduce)} className="max-w-2xl">
@@ -3090,7 +3112,8 @@ export default function App() {
             ) : null}
           </div>
         </section>
-          </>
+            </div>
+          </div>
         ) : null}
 
         {!inventoryOpen ? (
