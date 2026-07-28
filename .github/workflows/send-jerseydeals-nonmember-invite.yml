@@ -50,25 +50,21 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           AUDIENCE: non_members
-          SUBJECT: Quick note from Jersey Deals
+          SUBJECT: One more thing from Jersey Deals
           PLAIN_TEXT_ONLY: '1'
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
           BODY: |
             Hey —
 
-            Noticed you’d checked out Jersey Deals but haven’t joined Rewards yet.
+            Quick follow-up in case the last note got buried.
 
-            It’s free. Members get early offers, restock alerts, and member-only drops from live inventory.
-
-            Join here when you have a minute:
+            Rewards is free. If you want early offers and restock alerts, you can join here:
             https://JerseyDeals.online/#rewards
 
-            After you join, offers show up under My offers — activate them in your cart at checkout.
+            No pressure either way.
 
-            Thanks,
             Brayden
             Jersey Deals
-            https://JerseyDeals.online/
             shop@jerseydeals.online
         run: |
           set -euo pipefail
