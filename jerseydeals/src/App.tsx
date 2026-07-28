@@ -44,6 +44,7 @@ import { FavoritesScreen } from './FavoritesScreen'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
 import { FitOneLine } from './FitOneLine'
 import { FreeShippingBar } from './FreeShippingBar'
+import { listingViewCountsLastWeek, recordListingView } from './listingViews'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
 import { RewardsOffersScreen } from './RewardsOffersScreen'
@@ -92,6 +93,7 @@ import {
   pickFeatured,
   pickNewDrops,
   pickSaleItems,
+  championsLeagueClubsInStock,
   pickTrending,
   premierLeagueClubsInStock,
   PRICE_FILTERS,
@@ -274,6 +276,35 @@ const EPL_TEAM_COLOR: Record<string, string> = {
   'manchester-united': '#DA291C',
   tottenham: '#132257',
   newcastle: '#241F20',
+}
+
+/** Champions League blue + club name colors for UCL tiles. */
+const UCL_BLUE = '#001E62'
+const UCL_BLUE_SOFT = '#0A2F7A'
+const UCL_GOLD = '#C4A35A'
+const UCL_KIT_IMAGE: Record<string, string> = {
+  chelsea: 'epl-kits/chelsea.jpg',
+  arsenal: 'epl-kits/arsenal.jpg',
+  liverpool: 'epl-kits/liverpool.jpg',
+  'manchester-city': 'epl-kits/manchester-city.jpg',
+  'manchester-united': 'epl-kits/manchester-united.jpg',
+  tottenham: 'epl-kits/tottenham.jpg',
+  newcastle: 'epl-kits/newcastle.jpg',
+}
+const UCL_TEAM_COLOR: Record<string, string> = {
+  ...EPL_TEAM_COLOR,
+  'real-madrid': '#FEBE10',
+  barcelona: '#A50044',
+  bayern: '#DC052D',
+  'paris-saint-germain': '#004170',
+  'inter-milan': '#010E80',
+  'ac-milan': '#FB090B',
+  juventus: '#000000',
+  napoli: '#12A0D7',
+  'atletico-madrid': '#CB3524',
+  'borussia-dortmund': '#FDE100',
+  'bayer-leverkusen': '#E32221',
+  ajax: '#D2122E',
 }
 
 function fadeUp(reduce: boolean | null, delay = 0) {
@@ -514,6 +545,7 @@ function ProductGallery({
 function ProductLink({
   item,
   tone = 'dark',
+  size: cardSize = 'default',
   favoriteSet,
   onAddToCart,
   onQuickView,
@@ -524,6 +556,8 @@ function ProductLink({
   reduce?: boolean | null
   delay?: number
   tone?: 'dark' | 'light'
+  /** Compact cards for dense rails (Trending, Training). */
+  size?: 'default' | 'compact'
   /** Club ids the shopper has favorited — drives red vs navy card outline. */
   favoriteSet?: Set<string>
   onAddToCart: (item: Listing) => void
@@ -543,6 +577,7 @@ function ProductLink({
   const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
   const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
   const used = /used|pre-?owned|worn/i.test(condition)
+  const compact = cardSize === 'compact'
 
   return (
     <li>
@@ -562,16 +597,16 @@ function ProductLink({
             <ProductCardCover item={item} tone={tone} />
           </button>
           {onSale && (
-            <span className="pointer-events-none absolute left-2 top-2 z-20 bg-crimson px-2 py-0.5 text-[0.6rem] font-bold uppercase tracking-[0.14em] text-white">
+            <span className="pointer-events-none absolute left-1.5 top-1.5 z-20 bg-crimson px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-white">
               Sale
             </span>
           )}
-          {item.quantity === 1 && (
+          {!compact && item.quantity === 1 && (
             <span className="pointer-events-none absolute right-2 top-2 z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
               Only 1 left
             </span>
           )}
-          {photoCount > 1 ? (
+          {!compact && photoCount > 1 ? (
             <span
               className={`pointer-events-none absolute z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white ${
                 item.quantity === 1 ? 'right-2 top-10' : 'right-2 top-2'
@@ -580,52 +615,68 @@ function ProductLink({
               {photoCount} photos
             </span>
           ) : null}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-            <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
-              Quick view
-            </span>
-          </div>
+          {!compact ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+              <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
+                Quick view
+              </span>
+            </div>
+          ) : null}
         </div>
-        <div className="mt-4 block">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{item.tag}</p>
-            {size && size !== 'Other' ? (
-              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{size}</span>
-            ) : null}
-            {kit !== 'Other' ? (
-              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{kit}</span>
-            ) : null}
-            {used ? (
-              <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{condition}</span>
-            ) : null}
-          </div>
+        <div className={compact ? 'mt-2 block' : 'mt-4 block'}>
+          {!compact ? (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{item.tag}</p>
+              {size && size !== 'Other' ? (
+                <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{size}</span>
+              ) : null}
+              {kit !== 'Other' ? (
+                <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{kit}</span>
+              ) : null}
+              {used ? (
+                <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{condition}</span>
+              ) : null}
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={() => onQuickView(item)}
-            className={`mt-1.5 block text-left text-[0.95rem] font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson md:text-base ${titleTone}`}
+            className={`block text-left font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson ${titleTone} ${
+              compact
+                ? 'mt-0 line-clamp-2 text-[0.7rem]'
+                : 'mt-1.5 text-[0.95rem] md:text-base'
+            }`}
           >
             {shortTitle(item.title)}
           </button>
-          <p className="mt-2 flex items-baseline gap-2">
-            <span className={`font-display text-2xl font-bold tracking-wide md:text-[1.65rem] ${priceTone}`}>
+          <p className={compact ? 'mt-1 flex items-baseline gap-2' : 'mt-2 flex items-baseline gap-2'}>
+            <span
+              className={`font-display font-bold tracking-wide ${priceTone} ${
+                compact ? 'text-base' : 'text-2xl md:text-[1.65rem]'
+              }`}
+            >
               {formatPrice(item.price, item.currency)}
             </span>
           </p>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+          <div className={`flex flex-wrap gap-x-3 gap-y-1 ${compact ? 'mt-1.5' : 'mt-3 gap-x-4 gap-y-2'}`}>
             <button
               type="button"
               onClick={() => onAddToCart(item)}
-              className={`text-[0.65rem] font-bold uppercase tracking-[0.14em] ${accent}`}
+              className={`font-bold uppercase tracking-[0.14em] ${accent} ${
+                compact ? 'text-[0.55rem]' : 'text-[0.65rem]'
+              }`}
             >
               Add to cart
             </button>
-            <button
-              type="button"
-              onClick={() => onQuickView(item)}
-              className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${muted}`}
-            >
-              Details
-            </button>
+            {!compact ? (
+              <button
+                type="button"
+                onClick={() => onQuickView(item)}
+                className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${muted}`}
+              >
+                Details
+              </button>
+            ) : null}
             {buyUrl ? (
               <button
                 type="button"
@@ -633,7 +684,9 @@ function ProductLink({
                   track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
                   onBuyNow(item)
                 }}
-                className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
+                className={`font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted} ${
+                  compact ? 'text-[0.55rem]' : 'text-[0.65rem]'
+                }`}
               >
                 Buy now
               </button>
@@ -828,7 +881,9 @@ export default function App() {
   const [cart, setCart] = useState<CartState>(() => readCart())
   const [cartOpen, setCartOpen] = useState(false)
   const [cartToast, setCartToast] = useState<string | null>(null)
-  const [trendingFilter, setTrendingFilter] = useState<'All' | 'Youth' | 'Training' | 'Jerseys' | 'Sale'>('All')
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>(() =>
+    typeof window === 'undefined' ? {} : listingViewCountsLastWeek(),
+  )
   const [clubFilter, setClubFilter] = useState<string>('All')
   const [leagueFilter, setLeagueFilter] = useState<string>('All')
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -1015,6 +1070,8 @@ export default function App() {
   function handleQuickView(item: Listing) {
     setQuickView(item)
     setRecentIds(pushRecentlyViewed(item.id))
+    recordListingView(item.id)
+    setViewCounts(listingViewCountsLastWeek())
     track('quick_view', { id: item.id, tag: item.tag })
   }
 
@@ -1029,7 +1086,7 @@ export default function App() {
   const newDrops = useMemo(() => pickNewDrops(listings, 4), [listings])
   const salePicks = useMemo(() => pickSaleItems(listings, 4), [listings])
   const trainingPicks = useMemo(
-    () => listings.filter((item) => item.tag === 'Training').slice(0, 4),
+    () => listings.filter((item) => item.tag === 'Training').slice(0, 2),
     [listings],
   )
   const saleFloor = lowestSalePrice(listings)
@@ -1037,7 +1094,8 @@ export default function App() {
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const leaguesData = useMemo<LeagueInfo[]>(() => leaguesInStock(listings), [listings])
   const eplClubs = useMemo<ClubInfo[]>(() => premierLeagueClubsInStock(listings), [listings])
-  const trendingPicks = useMemo(() => pickTrending(listings, 8), [listings])
+  const uclClubs = useMemo<ClubInfo[]>(() => championsLeagueClubsInStock(listings), [listings])
+  const trendingPicks = useMemo(() => pickTrending(listings, 4, viewCounts), [listings, viewCounts])
   const favoriteClubs = useMemo(
     () => clubsData.filter((club) => favoriteSet.has(club.id)),
     [clubsData, favoriteSet],
@@ -1148,7 +1206,10 @@ export default function App() {
     if (leagueFilter !== 'All') {
       chips.push({
         key: 'league',
-        label: leaguesData.find((l) => l.id === leagueFilter)?.name ?? leagueFilter,
+        label:
+          leagueFilter === 'champions-league'
+            ? 'Champions League'
+            : leaguesData.find((l) => l.id === leagueFilter)?.name ?? leagueFilter,
         clear: () => setLeagueFilter('All'),
       })
     }
@@ -1384,6 +1445,7 @@ export default function App() {
     { href: '#collections', label: 'Collections' },
     { href: '#favorites', label: 'Favorites' },
     { href: '#epl', label: 'EPL' },
+    { href: '#ucl', label: 'UCL' },
     { href: '#shop', label: 'Shop' },
     { href: '#inventory', label: 'Inventory' },
     { href: '#rewards', label: 'Rewards' },
@@ -1403,10 +1465,6 @@ export default function App() {
       {favoritesOpen ? (
         <FavoritesScreen
           listings={listings}
-          onShopFavorites={() => {
-            track('cta_click', { place: 'favorites_page_shop_all' })
-            goInventory({ reset: true, favoritesOnly: true })
-          }}
           onShopClub={(clubId, clubName) => {
             goInventory({ reset: true, clubId, query: clubName })
           }}
@@ -1945,8 +2003,7 @@ export default function App() {
               </p>
             </motion.div>
 
-            <div className="mt-7 grid gap-3 md:grid-cols-12 md:grid-rows-2 md:gap-3">
-              {/* Large youth tile */}
+            <div className="mt-7 grid gap-3 sm:grid-cols-3">
               <motion.button
                 type="button"
                 onClick={() => {
@@ -1954,7 +2011,7 @@ export default function App() {
                   goInventory({ audience: 'Youth', reset: true })
                 }}
                 {...fadeUp(reduce, 0.05)}
-                className="group relative min-h-[200px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-7 md:row-span-2 md:min-h-[320px]"
+                className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
               >
                 <img
                   src={asset('category-youth.jpg')}
@@ -1964,18 +2021,17 @@ export default function App() {
                   decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-5 md:p-6">
+                <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
                   <p className="eyebrow text-white/70">Youth</p>
-                  <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-4xl">
+                  <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                     Youth apparel
                   </p>
-                  <span className="mt-3 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
+                  <span className="mt-2 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
                     Shop youth →
                   </span>
                 </div>
               </motion.button>
 
-              {/* Sale */}
               {onSquare ? (
                 <motion.button
                   type="button"
@@ -1984,7 +2040,7 @@ export default function App() {
                     goInventory({ price: 'under-25', reset: true })
                   }}
                   {...fadeUp(reduce, 0.1)}
-                  className="group relative min-h-[140px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5 md:min-h-0"
+                  className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
                 >
                   <img
                     src={asset('category-sale.jpg')}
@@ -1995,8 +2051,7 @@ export default function App() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
                   <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
-                    <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
-                    <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
+                    <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                       {SALE_HEADLINE}
                     </p>
                     <span className="mt-2 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
@@ -2011,7 +2066,7 @@ export default function App() {
                   rel="noopener noreferrer"
                   onClick={() => track('category_click', { category: 'category_sale' })}
                   {...fadeUp(reduce, 0.1)}
-                  className="group relative min-h-[140px] overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5 md:min-h-0"
+                  className="group relative aspect-[4/3] w-full overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
                 >
                   <img
                     src={asset('category-sale.jpg')}
@@ -2022,15 +2077,13 @@ export default function App() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
                   <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
-                    <p className="eyebrow text-crimson-hot">{SALE_URGENCY}</p>
-                    <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
+                    <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                       {SALE_HEADLINE}
                     </p>
                   </div>
                 </motion.a>
               )}
 
-              {/* Full catalog */}
               <motion.button
                 type="button"
                 onClick={() => {
@@ -2038,7 +2091,7 @@ export default function App() {
                   goInventory({ tag: 'All', reset: true })
                 }}
                 {...fadeUp(reduce, 0.14)}
-                className="group relative min-h-[140px] overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk md:col-span-5 md:min-h-0"
+                className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
               >
                 <img
                   src={asset('category-catalog.jpg')}
@@ -2053,7 +2106,7 @@ export default function App() {
                 <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
                 <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
                   <p className="eyebrow text-white/70">Inventory</p>
-                  <p className="mt-1.5 font-display text-2xl font-bold uppercase tracking-wide text-white md:text-3xl">
+                  <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                     Full catalog
                   </p>
                 </div>
@@ -2106,108 +2159,215 @@ export default function App() {
 
         {/* Trending now */}
         {trendingPicks.length > 0 && (
-          <section id="trending" className="cv-auto scroll-mt-44 bg-mist py-20 md:py-28">
+          <section id="trending" className="cv-auto scroll-mt-44 bg-mist py-12 md:py-16">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
-              <motion.div
-                {...fadeUp(reduce)}
-                className="flex flex-col gap-4 border-b border-navy/10 pb-8 md:flex-row md:items-end md:justify-between"
-              >
-                <div>
-                  <p className="eyebrow text-crimson">Trending</p>
-                  <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                    Trending now
-                  </h2>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(['All', 'Youth', 'Training', 'Jerseys', 'Sale'] as const).map((f) => (
-                    <FilterChip
-                      key={f}
-                      label={f}
-                      active={trendingFilter === f}
-                      onClick={() => setTrendingFilter(f)}
-                    />
-                  ))}
-                </div>
+              <motion.div {...fadeUp(reduce)} className="border-b border-navy/10 pb-5">
+                <p className="eyebrow text-crimson">Trending</p>
+                <h2 className="mt-2 font-display text-3xl font-bold uppercase tracking-wide text-navy md:text-4xl">
+                  Trending now
+                </h2>
+                <p className="mt-2 max-w-xl text-sm text-muted">
+                  A handful of kits with the most views this week.
+                </p>
               </motion.div>
-              {(() => {
-                const filtered = trendingPicks.filter((item) => {
-                  if (trendingFilter === 'All') return true
-                  if (trendingFilter === 'Sale') return isSaleListing(item)
-                  return item.tag === trendingFilter
-                })
-                return filtered.length > 0 ? (
-                  <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-                    {filtered.slice(0, 8).map((item, i) => (
-                      <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-12 text-muted">No trending items match that filter.</p>
-                )
-              })()}
+              <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
+                {trendingPicks.map((item, i) => (
+                  <ProductLink
+                    key={item.id}
+                    item={item}
+                    favoriteSet={favoriteSet}
+                    reduce={reduce}
+                    delay={i * 0.03}
+                    tone="light"
+                    size="compact"
+                    onAddToCart={handleAddToCart}
+                    onQuickView={handleQuickView}
+                    onBuyNow={handleBuyNow}
+                  />
+                ))}
+              </ul>
             </div>
           </section>
         )}
 
-        {/* Lookbook campaign */}
-        <section className="cv-auto relative min-h-[70svh] overflow-hidden bg-navy-deep text-white md:min-h-[80svh]">
+        {/* Shop Champions League */}
+        <section
+          id="ucl"
+          className="scroll-mt-44 relative overflow-hidden border-y-[3px] md:border-y-4"
+          style={{
+            borderColor: UCL_GOLD,
+            background: `linear-gradient(160deg, ${UCL_BLUE} 0%, ${UCL_BLUE_SOFT} 42%, #020b24 100%)`,
+          }}
+        >
           <img
-            src={asset('lookbook-matchday.jpg')}
+            src={asset('epl-kits-bg.jpg')}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-luminosity"
             loading="lazy"
             decoding="async"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/90 via-navy-deep/55 to-transparent" />
-          <div className="relative z-10 mx-auto flex min-h-[70svh] max-w-6xl items-end px-5 py-16 md:min-h-[80svh] md:px-8 md:py-24">
-            <motion.div {...fadeUp(reduce)} className="max-w-lg">
-              <p className="eyebrow text-crimson-hot">Lookbook</p>
-              <h2 className="mt-3 font-display text-5xl font-bold uppercase leading-[0.95] tracking-wide md:text-7xl">
-                Built for matchday.
-              </h2>
-              <p className="mt-4 text-base text-white/75 md:text-lg">
-                Training tops, pre-match layers, and home kits — selected from live stock, not stock
-                photos.
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(110deg, rgba(0,30,98,.94) 0%, rgba(0,30,98,.80) 48%, rgba(2,11,36,.55) 100%)',
+            }}
+          />
+          <div
+            className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-35 blur-3xl"
+            style={{ background: UCL_GOLD }}
+            aria-hidden
+          />
+          <img
+            src={asset('ucl-badge.svg')}
+            alt="UEFA Champions League"
+            className="absolute right-4 top-4 z-10 h-14 w-14 object-contain drop-shadow-lg md:right-8 md:top-8 md:h-20 md:w-20"
+            loading="lazy"
+            decoding="async"
+          />
+          <div className="relative z-10 mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
+            <motion.div {...fadeUp(reduce)} className="max-w-xl">
+              <p className="eyebrow" style={{ color: UCL_GOLD }}>
+                UEFA Champions League
               </p>
-              <a
-                href="#featured"
-                onClick={() => track('cta_click', { place: 'lookbook' })}
-                className="mt-8 inline-flex border border-white/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:border-white hover:bg-white/10"
+              <div
+                className="mt-3 h-[3px] w-16"
+                style={{ background: `linear-gradient(90deg, ${UCL_GOLD}, #fff)` }}
+                aria-hidden
+              />
+              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-white md:text-6xl">
+                Shop Champions League
+              </h2>
+              <p className="mt-3 max-w-md font-brand text-base text-white/80">
+                Real kits from Europe’s biggest clubs — shop UCL sides we stock.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  track('cta_click', { place: 'shop_ucl' })
+                  goInventory({ reset: true, leagueId: 'champions-league' })
+                }}
+                className="mt-6 inline-flex px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110"
+                style={{ background: UCL_BLUE_SOFT, boxShadow: `0 0 0 1px ${UCL_GOLD}` }}
               >
-                View featured kits
-              </a>
+                Shop UCL
+              </button>
             </motion.div>
+
+            <div id="ucl-clubs" className="mt-14 scroll-mt-48">
+              <p className="eyebrow text-white/85">Clubs in stock</p>
+              {uclClubs.length > 0 ? (
+                <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
+                  {uclClubs.map((club, i) => {
+                    const kitSrc = UCL_KIT_IMAGE[club.id]
+                      ? asset(UCL_KIT_IMAGE[club.id])
+                      : club.image || FALLBACK_IMAGE
+                    const nameColor = UCL_TEAM_COLOR[club.id] || '#0b223f'
+                    const favorited = favoriteSet.has(club.id)
+                    return (
+                      <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            track('category_click', { category: 'ucl_club', club: club.id })
+                            goInventory({
+                              reset: true,
+                              clubId: club.id,
+                              leagueId: 'champions-league',
+                              query: club.name,
+                            })
+                          }}
+                          className="group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1"
+                          style={{ borderColor: favorited ? '#c8102e' : nameColor }}
+                        >
+                          <div className="aspect-square overflow-hidden bg-[#020b24]">
+                            <img
+                              src={kitSrc}
+                              alt=""
+                              className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
+                              loading="lazy"
+                              decoding="async"
+                              onError={(e) => {
+                                e.currentTarget.src = club.image || FALLBACK_IMAGE
+                              }}
+                            />
+                          </div>
+                          <div className="bg-cream px-3 py-3 pr-11">
+                            <FitOneLine
+                              className="font-display font-bold uppercase tracking-wide"
+                              style={{ color: nameColor }}
+                              maxFontPx={14}
+                              minFontPx={8}
+                            >
+                              {club.name}
+                            </FitOneLine>
+                            <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted">
+                              {club.count} kit{club.count === 1 ? '' : 's'} · shop
+                            </p>
+                          </div>
+                        </button>
+                        <ClubFavoriteButton
+                          clubId={club.id}
+                          clubName={club.name}
+                          favorited={favorited}
+                          place="ucl_club"
+                          className={`absolute bottom-2 right-2 z-10 h-8 w-8 border border-crimson/30 ${
+                            favorited
+                              ? 'bg-crimson text-cream'
+                              : 'bg-white text-crimson hover:bg-crimson hover:text-cream'
+                          }`}
+                        />
+                      </motion.li>
+                    )
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-4 font-brand text-white/90">
+                  Champions League kits will appear here when in stock.
+                </p>
+              )}
+            </div>
           </div>
         </section>
 
         {/* Training edit */}
         {trainingPicks.length > 0 ? (
-          <section id="training" className="cv-auto scroll-mt-44 bg-mist py-20 md:py-28">
+          <section id="training" className="cv-auto scroll-mt-44 bg-mist py-8 md:py-10">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div
                 {...fadeUp(reduce)}
-                className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+                className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"
               >
                 <div>
-                  <p className="eyebrow text-crimson">Training</p>
-                  <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                  <p className="text-[0.6rem] font-semibold uppercase tracking-[0.16em] text-crimson">
+                    Training
+                  </p>
+                  <h2 className="mt-1 font-display text-xl font-bold uppercase tracking-wide text-navy md:text-2xl">
                     Pre-match &amp; training tops
                   </h2>
-                  <p className="mt-3 max-w-xl text-muted">
-                    Warm-ups and strike layers from the clubs you follow.
-                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => goInventory({ tag: 'Training', reset: true })}
-                  className="text-xs font-semibold uppercase tracking-[0.18em] text-navy underline decoration-crimson/50 underline-offset-4 hover:decoration-crimson"
+                  className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-navy underline decoration-crimson/50 underline-offset-4 hover:decoration-crimson"
                 >
-                  View all training →
+                  View all →
                 </button>
               </motion.div>
-              <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+              <ul className="mt-4 grid max-w-md grid-cols-2 gap-x-3 gap-y-4">
                 {trainingPicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink
+                    key={item.id}
+                    item={item}
+                    favoriteSet={favoriteSet}
+                    reduce={reduce}
+                    delay={i * 0.03}
+                    tone="light"
+                    size="compact"
+                    onAddToCart={handleAddToCart}
+                    onQuickView={handleQuickView}
+                    onBuyNow={handleBuyNow}
+                  />
                 ))}
               </ul>
             </div>
@@ -2654,6 +2814,14 @@ export default function App() {
                           label="All"
                           active={leagueFilter === 'All'}
                           onClick={() => setLeagueFilter('All')}
+                        />
+                        <FilterChip
+                          label="Champions League"
+                          active={leagueFilter === 'champions-league'}
+                          onClick={() => {
+                            setLeagueFilter('champions-league')
+                            track('league_filter', { league: 'champions-league' })
+                          }}
                         />
                         {leaguesData.map((league) => (
                           <FilterChip

@@ -381,8 +381,48 @@ export function premierLeagueClubsInStock(listings: Listing[]): ClubInfo[] {
   return clubsInStock(listings).filter((club) => PREMIER_LEAGUE_CLUB_IDS.has(club.id))
 }
 
+/** Clubs commonly associated with UEFA Champions League shopping (cross-league). */
+export const CHAMPIONS_LEAGUE_CLUB_IDS = new Set([
+  'real-madrid',
+  'barcelona',
+  'bayern',
+  'paris-saint-germain',
+  'manchester-city',
+  'manchester-united',
+  'liverpool',
+  'chelsea',
+  'arsenal',
+  'tottenham',
+  'newcastle',
+  'inter-milan',
+  'ac-milan',
+  'juventus',
+  'napoli',
+  'atletico-madrid',
+  'borussia-dortmund',
+  'bayer-leverkusen',
+  'rb-leipzig',
+  'ajax',
+  'porto',
+  'benfica',
+  'sporting-cp',
+  'celtic',
+  'galatasaray',
+  'fenerbahce',
+  'olympiacos',
+  'club-brugge',
+])
+
+export function championsLeagueClubsInStock(listings: Listing[]): ClubInfo[] {
+  return clubsInStock(listings).filter((club) => CHAMPIONS_LEAGUE_CLUB_IDS.has(club.id))
+}
+
 export function matchesLeagueFilter(item: Listing, leagueId: string) {
   if (leagueId === 'All') return true
+  if (leagueId === 'champions-league') {
+    const club = inferClub(item.title)
+    return Boolean(club && CHAMPIONS_LEAGUE_CLUB_IDS.has(club.id))
+  }
   return inferLeague(item.title)?.id === leagueId
 }
 
@@ -460,7 +500,31 @@ export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' 
   return 'Other'
 }
 
-export function pickTrending(listings: Listing[], count = 8) {
+/**
+ * Handful of kits with the most views in the last week.
+ * Falls back to a light popularity mix when view data is cold.
+ */
+export function pickTrending(
+  listings: Listing[],
+  count = 4,
+  viewCounts: Record<string, number> = {},
+) {
+  const ranked = [...listings].sort((a, b) => {
+    const va = viewCounts[a.id] || 0
+    const vb = viewCounts[b.id] || 0
+    if (vb !== va) return vb - va
+    // Cold-start / ties: prefer in-stock scarcity + sale + newer sync order
+    const stockA = a.quantity > 0 ? 1 : 0
+    const stockB = b.quantity > 0 ? 1 : 0
+    if (stockB !== stockA) return stockB - stockA
+    const saleA = isSaleListing(a) ? 1 : 0
+    const saleB = isSaleListing(b) ? 1 : 0
+    if (saleB !== saleA) return saleB - saleA
+    return 0
+  })
+  const hasViews = ranked.some((item) => (viewCounts[item.id] || 0) > 0)
+  if (hasViews) return ranked.slice(0, count)
+
   const sale = listings.filter((item) => isSaleListing(item))
   const rest = listings.filter((item) => !isSaleListing(item))
   const mixed: Listing[] = []
@@ -470,10 +534,9 @@ export function pickTrending(listings: Listing[], count = 8) {
     mixed.push(item)
     used.add(item.id)
   }
-  // Prefer variety: sale + brand spread + newest
   for (const item of sale) {
     push(item)
-    if (mixed.length >= Math.min(3, count)) break
+    if (mixed.length >= Math.min(2, count)) break
   }
   for (const brand of ['Nike', 'Adidas', 'Puma']) {
     push(rest.find((item) => item.brand === brand))

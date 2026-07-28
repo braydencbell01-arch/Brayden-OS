@@ -31,12 +31,10 @@ const FALLBACK_IMAGE = asset('product-home.jpg')
 
 export function FavoritesScreen({
   listings,
-  onShopFavorites,
   onShopClub,
   onQuickView,
 }: {
   listings: Listing[]
-  onShopFavorites: () => void
   onShopClub: (clubId: string, clubName: string) => void
   onQuickView: (item: Listing) => void
 }) {
@@ -68,34 +66,20 @@ export function FavoritesScreen({
   return (
     <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-chalk text-navy">
       <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4">
-        <p className="inline-flex items-center gap-2 font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">
-          <HeartIcon filled className="h-4 w-4 text-crimson" />
-          Favorites
+        <p className="inline-flex items-center gap-2 font-brand text-sm font-bold uppercase leading-none tracking-[0.14em] text-navy">
+          <HeartIcon filled className="h-4 w-4 shrink-0 text-crimson" />
+          <span className="leading-none">Favorites</span>
           {favoriteIds.length > 0 ? (
-            <span className="text-crimson">· {favoriteIds.length}</span>
+            <span className="leading-none text-crimson">{favoriteIds.length}</span>
           ) : null}
         </p>
-        <div className="flex items-center gap-4">
-          {favoriteIds.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => {
-                leaveFavoritesScreen()
-                onShopFavorites()
-              }}
-              className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-crimson transition hover:text-crimson-hot"
-            >
-              Shop favorites
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => leaveFavoritesScreen()}
-            className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:text-crimson"
-          >
-            Back
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => leaveFavoritesScreen()}
+          className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:text-crimson"
+        >
+          Back
+        </button>
       </header>
 
       <main className="flex-1 overflow-y-auto px-5 py-6" aria-label="Favorite teams">
