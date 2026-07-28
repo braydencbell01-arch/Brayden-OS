@@ -33,12 +33,14 @@ import {
 } from './cart'
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
+import { ClubFavoriteButton, HeartIcon } from './FavoriteControls'
 import {
-  clearFavoriteClubs,
   favoriteClubIdSet,
-  toggleFavoriteClub,
+  goToFavoritesScreen,
   useFavoriteClubIds,
+  useFavoritesScreenOpen,
 } from './favorites'
+import { FavoritesScreen } from './FavoritesScreen'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
 import { FreeShippingBar } from './FreeShippingBar'
 import { RewardsDock } from './RewardsJoinForm'
@@ -508,60 +510,6 @@ function ProductGallery({
   )
 }
 
-function HeartIcon({ filled, className = 'h-4 w-4' }: { filled?: boolean; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path
-        d="M12 21s-6.7-4.35-9.33-7.4C.8 11.45.9 8.2 3.1 6.35 5.05 4.7 7.85 5 12 9.15 16.15 5 18.95 4.7 20.9 6.35c2.2 1.85 2.3 5.1.43 7.25C18.7 16.65 12 21 12 21Z"
-        fill={filled ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
-function ClubFavoriteButton({
-  clubId,
-  clubName,
-  favorited,
-  place,
-  className = '',
-}: {
-  clubId: string
-  clubName: string
-  favorited: boolean
-  place: string
-  className?: string
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={favorited}
-      aria-label={favorited ? `Remove ${clubName} from favorites` : `Favorite ${clubName}`}
-      title={favorited ? 'Remove from favorites' : 'Add to favorites'}
-      onPointerDown={(e) => {
-        e.stopPropagation()
-      }}
-      onMouseDown={(e) => {
-        // Keep focus from jumping the viewport when toggling.
-        e.preventDefault()
-        e.stopPropagation()
-      }}
-      onClick={(e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        toggleFavoriteClub(clubId)
-        track('favorite_toggle', { club: clubId, on: !favorited, place })
-      }}
-      className={`grid place-items-center outline-none transition focus-visible:ring-2 focus-visible:ring-crimson ${className}`}
-    >
-      <HeartIcon filled={favorited} />
-    </button>
-  )
-}
-
 function ProductLink({
   item,
   tone = 'dark',
@@ -745,7 +693,7 @@ function QuickViewModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[58] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label="Product quick view">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label="Product quick view">
       <button type="button" className="absolute inset-0 bg-navy-deep/60" aria-label="Close quick view" onClick={onClose} />
       <div className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-cream shadow-2xl sm:max-h-[88dvh] sm:flex-row">
         <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:h-auto sm:w-[48%]">
@@ -885,6 +833,7 @@ export default function App() {
   const [offerOpen, setOfferOpen] = useState(false)
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
   const offersOpen = useRewardsOffersOpen()
+  const favoritesOpen = useFavoritesScreenOpen()
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const [inventoryPage, setInventoryPage] = useState(1)
@@ -1087,14 +1036,6 @@ export default function App() {
     () => clubsData.filter((club) => favoriteSet.has(club.id)),
     [clubsData, favoriteSet],
   )
-  const favoriteListings = useMemo(() => {
-    if (!favoriteSet.size) return [] as Listing[]
-    const rows = listings.filter((item) => {
-      const club = inferClub(item.title)
-      return club ? favoriteSet.has(club.id) : false
-    })
-    return sortListings(rows, 'featured').slice(0, 8)
-  }, [listings, favoriteSet])
   const channelLabel = onSquare ? 'Square' : 'eBay'
   const recentlyViewed = useMemo(() => {
     const map = new Map(listings.map((item) => [item.id, item]))
@@ -1128,7 +1069,14 @@ export default function App() {
       if (!matchesPriceFilter(item, priceFilter)) return false
       return matchesListingQuery(item, deferredQuery)
     })
-    return sortListings(rows, sortBy)
+    const sorted = sortListings(rows, sortBy)
+    // In search results, kits from favorited clubs always float to the top.
+    if (!deferredQuery.trim() || !favoriteSet.size) return sorted
+    return [...sorted].sort((a, b) => {
+      const aFav = favoriteSet.has(inferClub(a.title)?.id ?? '') ? 0 : 1
+      const bFav = favoriteSet.has(inferClub(b.title)?.id ?? '') ? 0 : 1
+      return aFav - bFav
+    })
   }, [
     listings,
     tagFilter,
@@ -1436,19 +1384,6 @@ export default function App() {
     { href: '#size-guide', label: 'Sizing' },
   ]
 
-  function scrollToFavorites() {
-    track('nav_favorites', { place: 'scroll' })
-    const target = document.getElementById('favorites')
-    if (!target) return
-    const header = document.querySelector('header')
-    const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
-    const top = window.scrollY + target.getBoundingClientRect().top - headerH - 8
-    const preferSmooth =
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-      !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
-    window.scrollTo({ top: Math.max(0, top), behavior: preferSmooth ? 'smooth' : 'auto' })
-  }
-
   return (
     <div className="min-h-dvh overflow-x-hidden bg-chalk text-navy">
       {offersOpen ? (
@@ -1457,6 +1392,19 @@ export default function App() {
             setCartOpen(true)
             track('cart_open', { place: 'my_offers' })
           }}
+        />
+      ) : null}
+      {favoritesOpen ? (
+        <FavoritesScreen
+          listings={listings}
+          onShopFavorites={() => {
+            track('cta_click', { place: 'favorites_page_shop_all' })
+            goInventory({ reset: true, favoritesOnly: true })
+          }}
+          onShopClub={(clubId, clubName) => {
+            goInventory({ reset: true, clubId, query: clubName })
+          }}
+          onQuickView={handleQuickView}
         />
       ) : null}
       {/* Promo bar — always on top */}
@@ -1584,7 +1532,7 @@ export default function App() {
               }
               onClick={() => {
                 track('nav_favorites', { place: 'header', count: favoriteCount })
-                scrollToFavorites()
+                goToFavoritesScreen()
               }}
               className={`relative inline-flex items-center gap-1.5 px-2 py-2 text-xs font-bold uppercase tracking-[0.16em] transition sm:px-3 ${
                 navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
@@ -1594,7 +1542,7 @@ export default function App() {
                 filled={favoriteCount > 0}
                 className={`h-4 w-4 shrink-0 ${favoriteCount > 0 ? 'text-crimson' : ''}`}
               />
-              <span className="hidden sm:inline">Favorites</span>
+              <span className="sr-only">Favorites</span>
               {favoriteCount > 0 ? (
                 <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
                   {favoriteCount}
@@ -1747,37 +1695,6 @@ export default function App() {
             >
               Home
             </button>
-            <button
-              type="button"
-              aria-label={
-                favoriteCount > 0
-                  ? `Shop favorites, ${favoriteCount} teams`
-                  : 'Shop favorites'
-              }
-              onClick={() => {
-                track('nav_favorites', { place: 'sticky_search', count: favoriteCount })
-                if (favoriteCount > 0) {
-                  goInventory({ reset: true, favoritesOnly: true })
-                } else {
-                  scrollToFavorites()
-                }
-              }}
-              className={`relative shrink-0 px-2.5 py-2.5 text-xs font-bold uppercase tracking-[0.14em] transition sm:px-3 ${
-                navSolid
-                  ? 'border border-crimson/40 bg-cream text-crimson hover:bg-crimson hover:text-cream'
-                  : 'border border-crimson-hot/70 bg-white/10 text-crimson-hot hover:bg-crimson hover:text-cream'
-              }`}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <HeartIcon filled={favoriteCount > 0} className="h-3.5 w-3.5" />
-                <span className="hidden xs:inline sm:inline">Favs</span>
-              </span>
-              {favoriteCount > 0 ? (
-                <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-crimson px-1 text-[0.55rem] font-bold text-cream">
-                  {favoriteCount}
-                </span>
-              ) : null}
-            </button>
             <p
               className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] lg:block ${
                 navSolid ? 'text-muted' : 'text-white/80'
@@ -1878,198 +1795,6 @@ export default function App() {
             })
           }}
         />
-
-        {/* Shop favorites — teams + kits */}
-        <section id="favorites" className="scroll-mt-44 border-y border-crimson/20 bg-mist py-16 md:py-20">
-          <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div
-              {...fadeUp(reduce)}
-              className="flex flex-col gap-4 border-b border-navy/10 pb-8 md:flex-row md:items-end md:justify-between"
-            >
-              <div>
-                <p className="eyebrow text-crimson">Your clubs</p>
-                <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                  Shop favorites
-                </h2>
-                <p className="mt-3 max-w-xl font-brand text-base text-muted md:text-lg">
-                  Heart the teams you follow — we pin them here and filter inventory in one tap.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {favoriteCount > 0 ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        track('cta_click', { place: 'shop_favorites_inventory' })
-                        goInventory({ reset: true, favoritesOnly: true })
-                      }}
-                      className="inline-flex items-center gap-2 bg-crimson px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-crimson-hot"
-                    >
-                      <HeartIcon filled className="h-3.5 w-3.5" />
-                      Shop all favorites
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearFavoriteClubs()
-                        track('favorites_clear', { place: 'favorites_section' })
-                      }}
-                      className="inline-flex border border-navy/20 px-4 py-3 font-brand text-xs font-semibold uppercase tracking-[0.14em] text-navy transition hover:border-crimson hover:text-crimson"
-                    >
-                      Clear
-                    </button>
-                  </>
-                ) : (
-                  <a
-                    href="#clubs"
-                    onClick={() => track('cta_click', { place: 'favorites_pick_clubs' })}
-                    className="inline-flex border border-navy/20 px-5 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:border-crimson hover:text-crimson"
-                  >
-                    Pick clubs →
-                  </a>
-                )}
-              </div>
-            </motion.div>
-
-            {clubsData.length > 0 ? (
-              <div className="mt-8">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
-                  Tap a heart to save a club
-                </p>
-                <ul className="mt-3 flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {clubsData.map((club) => {
-                    const favorited = favoriteSet.has(club.id)
-                    return (
-                      <li key={club.id} className="shrink-0">
-                        <div
-                          className={`flex items-center gap-1 border-2 pl-3 ${
-                            favorited ? 'border-crimson bg-cream' : 'border-navy/15 bg-white'
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => {
-                              track('club_click', { club: club.id, place: 'favorites_chip' })
-                              goInventory({ clubId: club.id, reset: true })
-                            }}
-                            className="py-2 text-left font-brand text-xs font-bold uppercase tracking-[0.1em] text-navy"
-                          >
-                            {club.name}
-                            <span className="ml-1.5 font-semibold text-muted">{club.count}</span>
-                          </button>
-                          <ClubFavoriteButton
-                            clubId={club.id}
-                            clubName={club.name}
-                            favorited={favorited}
-                            place="favorites_chip"
-                            className={`h-10 w-10 ${favorited ? 'text-crimson' : 'text-navy/50 hover:text-crimson'}`}
-                          />
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            ) : null}
-
-            {favoriteClubs.length > 0 ? (
-              <div className="mt-10">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
-                  Favorited teams
-                </p>
-                <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
-                  {favoriteClubs.map((club, i) => (
-                    <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)}>
-                      <div className="relative overflow-hidden border-2 border-crimson bg-navy">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            track('club_click', { club: club.id, place: 'favorites_tile' })
-                            goInventory({ clubId: club.id, reset: true })
-                          }}
-                          className="group block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson"
-                        >
-                          <div className="relative aspect-[4/3] overflow-hidden bg-navy-deep">
-                            <img
-                              src={club.image}
-                              alt=""
-                              className="h-full w-full object-contain object-center transition duration-500 group-hover:scale-[1.03]"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.src = FALLBACK_IMAGE
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/20 to-transparent" />
-                          </div>
-                          <div className="absolute inset-x-0 bottom-0 p-3">
-                            <p className="font-display text-sm font-bold uppercase tracking-wide text-white">
-                              {club.name}
-                            </p>
-                            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/65">
-                              {club.count} {club.count === 1 ? 'listing' : 'listings'}
-                            </p>
-                          </div>
-                        </button>
-                        <ClubFavoriteButton
-                          clubId={club.id}
-                          clubName={club.name}
-                          favorited
-                          place="favorites_tile"
-                          className="absolute right-2 top-2 z-10 h-9 w-9 bg-crimson text-cream"
-                        />
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="mt-10 border border-dashed border-navy/20 bg-cream/70 px-5 py-8 text-center">
-                <HeartIcon className="mx-auto h-7 w-7 text-crimson" />
-                <p className="mt-3 font-display text-2xl font-bold uppercase tracking-wide text-navy">
-                  No favorites yet
-                </p>
-                <p className="mt-2 text-sm text-muted">
-                  Save clubs from this row or Shop by club.
-                </p>
-              </div>
-            )}
-
-            {favoriteListings.length > 0 ? (
-              <div className="mt-12">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="eyebrow text-crimson">From your clubs</p>
-                    <h3 className="mt-2 font-display text-2xl font-bold uppercase tracking-wide text-navy md:text-3xl">
-                      Favorite kits
-                    </h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => goInventory({ reset: true, favoritesOnly: true })}
-                    className="text-xs font-semibold uppercase tracking-[0.18em] text-navy underline decoration-crimson/50 underline-offset-4 hover:decoration-crimson"
-                  >
-                    See all in inventory →
-                  </button>
-                </div>
-                <ul className="mt-8 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-                  {favoriteListings.map((item, i) => (
-                    <ProductLink
-                      key={item.id}
-                      item={item}
-                      reduce={reduce}
-                      delay={i * 0.05}
-                      tone="light"
-                      onAddToCart={handleAddToCart}
-                      onQuickView={handleQuickView}
-                      onBuyNow={handleBuyNow}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        </section>
 
         {/* Shop Premier League */}
         <section
@@ -2592,7 +2317,7 @@ export default function App() {
                   Shop by club
                 </h2>
                 <p className="mt-3 text-lg text-muted">
-                  Heart your clubs to pin them — tap a tile to filter inventory.
+                  Tap a club to filter inventory — or open Favorites to save teams.
                 </p>
               </motion.div>
               <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -2878,7 +2603,7 @@ export default function App() {
                         active={favoritesOnly}
                         onClick={() => {
                           if (!favoriteCount) {
-                            scrollToFavorites()
+                            goToFavoritesScreen()
                             return
                           }
                           setFavoritesOnly(true)
