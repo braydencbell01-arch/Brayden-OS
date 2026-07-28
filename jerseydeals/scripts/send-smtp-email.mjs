@@ -11,7 +11,7 @@
  *
  * Optional:
  *   TO            Comma-separated recipients (overrides audience list)
- *   AUDIENCE      "test" | "rewards" (default test)
+ *   AUDIENCE      "test" | "rewards" | "non_members" (default test)
  *   SUBJECT
  *   BODY          Plain-text body (use \n for newlines)
  *   ITEM_NAME     Optional — fills the “new kit” template if BODY empty
@@ -43,27 +43,40 @@ function parseList(raw) {
     .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
 }
 
-function rewardsEmails() {
-  const path = join(__dirname, '../public/rewards-members.json')
+function emailsFromListFile(filename) {
+  const path = join(__dirname, '../public', filename)
   if (!existsSync(path)) return []
   try {
     const raw = JSON.parse(readFileSync(path, 'utf8'))
     const fromEntries = Array.isArray(raw.entries)
       ? raw.entries.map((e) => String(e.email || '').trim().toLowerCase())
       : []
-    const fromEmails = Array.isArray(raw.emails) ? raw.emails.map((e) => String(e).trim().toLowerCase()) : []
-    return [...new Set([...fromEntries, ...fromEmails].filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)))]
+    const fromEmails = Array.isArray(raw.emails)
+      ? raw.emails.map((e) => String(e).trim().toLowerCase())
+      : []
+    return [
+      ...new Set(
+        [...fromEntries, ...fromEmails].filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)),
+      ),
+    ]
   } catch {
     return []
   }
 }
 
+function rewardsEmails() {
+  return emailsFromListFile('rewards-members.json')
+}
+
+function nonMemberEmails() {
+  return emailsFromListFile('non-member-emails.json')
+}
+
 function defaultNewItemBody(itemName, link) {
-  const kit = itemName ? `**${itemName}**` : 'A new jersey'
   return [
     'Hey —',
     '',
-    `${kit.replace(/\*\*/g, '')} just hit inventory at Jersey Deals.`,
+    `${itemName || 'A new jersey'} just hit inventory at Jersey Deals.`,
     '',
     'Tap in, grab your size before it’s gone:',
     link,
@@ -93,11 +106,9 @@ async function main() {
 
   let to = parseList(process.env.TO)
   if (!to.length) {
-    if (audience === 'rewards') {
-      to = rewardsEmails()
-    } else {
-      to = parseList(user || 'shop@jerseydeals.online')
-    }
+    if (audience === 'rewards') to = rewardsEmails()
+    else if (audience === 'non_members' || audience === 'non-members') to = nonMemberEmails()
+    else to = parseList(user || 'shop@jerseydeals.online')
   }
 
   if (!user || !pass) {
@@ -108,7 +119,9 @@ async function main() {
     console.error(
       audience === 'rewards'
         ? 'No Rewards members in public/rewards-members.json (and no TO override).'
-        : 'No recipients. Set TO=email@example.com',
+        : audience === 'non_members' || audience === 'non-members'
+          ? 'No non-members in public/non-member-emails.json (and no TO override).'
+          : 'No recipients. Set TO=email@example.com',
     )
     process.exit(1)
   }
@@ -130,13 +143,20 @@ async function main() {
   })
 
   await transporter.verify()
-  const info = await transporter.sendMail({
-    from,
-    to: to.join(', '),
-    subject,
-    text: body,
-  })
-  console.log('Sent:', info.messageId || info.response)
+
+  // Send one message per recipient so addresses stay private.
+  const results = []
+  for (const recipient of to) {
+    const info = await transporter.sendMail({
+      from,
+      to: recipient,
+      subject,
+      text: body,
+    })
+    results.push({ to: recipient, id: info.messageId || info.response })
+    console.log('Sent:', recipient, info.messageId || info.response)
+  }
+  console.log(JSON.stringify({ sent: results.length, results }, null, 2))
 }
 
 main().catch((err) => {

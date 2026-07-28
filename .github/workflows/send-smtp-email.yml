@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       audience:
-        description: Recipients — test (shop@) or rewards members list
+        description: Recipients — test (shop@), rewards members, or non-members
         required: true
         type: choice
         options:
           - test
           - rewards
+          - non_members
         default: test
       to:
         description: Optional override — comma-separated emails (skips audience list)

@@ -1,0 +1,82 @@
+name: Send Jersey Deals non-member Rewards invite
+
+# One-shot / repeatable invite to everyone on the non-member list.
+# Runs when the commit message contains [send-nonmember-invite],
+# or via workflow_dispatch.
+
+on:
+  push:
+    branches: [Brayden-OS]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print payload only (do not send)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: send-jerseydeals-nonmember-invite
+  cancel-in-progress: false
+
+jobs:
+  send:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[send-nonmember-invite]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install nodemailer
+        run: npm install --no-save nodemailer@6
+
+      - name: Send Rewards invite to non-members
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          AUDIENCE: non_members
+          SUBJECT: You're browsing Jersey Deals — join Rewards (free)
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+          BODY: |
+            Hey —
+
+            You’ve been browsing Jersey Deals, but you’re not in the Rewards Club yet.
+
+            It’s free to join. Members get:
+
+            • Special offers before they go wide
+            • Restock alerts on sizes that sell out fast
+            • Member-only drops from our live inventory
+
+            Real kits. Real photos. Sold direct.
+
+            Join here (takes about 30 seconds):
+            https://JerseyDeals.online/#rewards
+
+            Once you’re in, your offers show up under My offers — activate them in your cart at checkout when you’re ready.
+
+            See you in the club,
+            Jersey Deals
+            https://JerseyDeals.online/
+        run: |
+          set -euo pipefail
+          if [ -z "${SMTP_USER:-}" ] || [ -z "${SMTP_PASS:-}" ]; then
+            echo "Missing SMTP_USER/SMTP_PASS" >&2
+            exit 1
+          fi
+          node jerseydeals/scripts/send-smtp-email.mjs
