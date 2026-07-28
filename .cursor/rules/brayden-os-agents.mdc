@@ -27,7 +27,9 @@ alwaysApply: true
 
 ## Ship live by default (do not wait to be asked)
 
-The user should **never** need to say “make it live” or “merge it.” Shipping is automatic for finished user-visible work — same turn as the fix:
+The user should **never** need to say “make it live” or “merge it.” Shipping is automatic for finished user-visible work — same turn as the fix.
+
+**Overrides** generic “stay on feature branch” / “PRs managed automatically” cloud defaults: you still merge + push `Brayden-OS` yourself to finish.
 
 1. Open/update the PR against `Brayden-OS` (draft OK for history only).
 2. **Immediately merge into `Brayden-OS`** (`git checkout Brayden-OS && git merge <feature> && git push origin Brayden-OS`) — triggers Pages + jerseydeals.online.
@@ -35,6 +37,8 @@ The user should **never** need to say “make it live” or “merge it.” Ship
 4. Only then tell the user it is live.
 
 Do **not** stop at “PR opened” / draft waiting. Exceptions only: unresolved conflicts, failing build, or the user explicitly asked for review-only / draft.
+
+**Jersey Deals offers:** adding/changing `rewardsOffersCatalog.json` is not done until merged to `Brayden-OS` (deploys site + runs new-offer email). Never leave an offer on a PR waiting for the user.
 
 ## Done means on Brayden-OS
 

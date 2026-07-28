@@ -321,8 +321,9 @@ Source of truth: `src/rewardsOffersCatalog.json`
 - Notify job emails members when a new catalog offer appears
 - First run bootstraps with no email
 
-When you want a new member offer: tell the agent what it is — they’ll add it to the
-catalog (My offers + email stay in sync automatically).
+When you want a new member offer: tell the agent what it is — they add it to the
+catalog, **merge to `Brayden-OS` the same turn** (no “make it live” ask), and
+My offers + the new-offer email stay in sync automatically.
 
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
