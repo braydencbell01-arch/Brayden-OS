@@ -1007,6 +1007,8 @@ export default function App() {
     const discounted = checkoutUsesSquareDiscountLink(active?.id ?? null)
     const url = listingBuyUrl(item, { discounted })
     if (!url) return
+    recordListingView(item)
+    setViewCounts(listingViewCountsLastWeek())
     track('buy_now', { id: item.id, discounted, offer: active?.id || '' })
     // Keep bag lines until Square return (?purchase= / ?sold=) confirms the sale.
     window.open(url, '_blank', 'noopener,noreferrer')
@@ -1083,6 +1085,8 @@ export default function App() {
     setCartOpen(true)
     setCartToast(`Added · ${shortTitle(item.title)}`)
     setRecentIds(pushRecentlyViewed(item.id))
+    recordListingView(item)
+    setViewCounts(listingViewCountsLastWeek())
     track('add_to_cart', { id: item.id, tag: item.tag })
     window.setTimeout(() => setCartToast(null), 2200)
   }
@@ -1090,7 +1094,7 @@ export default function App() {
   function handleQuickView(item: Listing) {
     setQuickView(item)
     setRecentIds(pushRecentlyViewed(item.id))
-    recordListingView(item.id)
+    recordListingView(item)
     setViewCounts(listingViewCountsLastWeek())
     track('quick_view', { id: item.id, tag: item.tag })
   }
@@ -2274,10 +2278,10 @@ export default function App() {
                   Trending now
                 </h2>
                 <p className="mt-2 max-w-xl text-sm text-muted">
-                  A handful of kits with the most views this week.
+                  The four most viewed kits in the last week.
                 </p>
               </motion.div>
-              <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
+              <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4">
                 {trendingPicks.map((item, i) => (
                   <ProductLink
                     key={item.id}

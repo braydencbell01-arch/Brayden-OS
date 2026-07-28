@@ -1,5 +1,6 @@
 import { CLUB_CATALOG, LEAGUE_BY_CLUB_ID } from './clubCatalog'
 import { matchesInclusive } from './inclusiveSearch'
+import { viewsForListing } from './listingViews'
 
 export { CLUB_CATALOG, LEAGUE_BY_CLUB_ID } from './clubCatalog'
 
@@ -521,7 +522,7 @@ export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' 
 }
 
 /**
- * Kits with the most views in the last week — views only.
+ * The four (or `count`) listings with the most views in the last week.
  * Sale vs full-price does not matter; empty when nobody has viewed yet.
  */
 export function pickTrending(
@@ -530,7 +531,7 @@ export function pickTrending(
   viewCounts: Record<string, number> = {},
 ) {
   return [...listings]
-    .map((item) => ({ item, views: viewCounts[item.id] || 0 }))
+    .map((item) => ({ item, views: viewsForListing(item, viewCounts) }))
     .filter((row) => row.views > 0)
     .sort((a, b) => b.views - a.views || a.item.title.localeCompare(b.item.title))
     .slice(0, count)
