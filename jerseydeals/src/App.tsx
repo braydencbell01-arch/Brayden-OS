@@ -1569,7 +1569,12 @@ export default function App() {
             onClick={(e) => {
               if (!inventoryOpen) return
               e.preventDefault()
+              // Logo = top of landing.
+              suppressLandingScrollRestore()
               leaveInventoryPage()
+              window.setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'auto' })
+              }, 40)
             }}
             className="inline-flex items-center outline-none focus-visible:ring-2 focus-visible:ring-crimson"
           >
@@ -1801,7 +1806,12 @@ export default function App() {
               onClick={() => {
                 track('nav_home', { place: 'sticky_search' })
                 if (inventoryOpen) {
+                  // Home = top of landing; Back (inventory header) restores scroll.
+                  suppressLandingScrollRestore()
                   leaveInventoryPage()
+                  window.setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'auto' })
+                  }, 40)
                   return
                 }
                 const preferSmooth =
