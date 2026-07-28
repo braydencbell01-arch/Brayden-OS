@@ -273,27 +273,35 @@ const ease = [0.22, 1, 0.36, 1] as const
 /** Premier League purple (logo) + club name colors for EPL tiles. */
 const PL_PURPLE = '#37003c'
 const PL_PURPLE_SOFT = '#4a0e52'
-const EPL_KIT_IMAGE: Record<string, string> = {
-  chelsea: 'epl-kits/chelsea.jpg',
-  arsenal: 'epl-kits/arsenal.jpg',
-  liverpool: 'epl-kits/liverpool.jpg',
-  'manchester-city': 'epl-kits/manchester-city.jpg',
-  'manchester-united': 'epl-kits/manchester-united.jpg',
-  tottenham: 'epl-kits/tottenham.jpg',
-  newcastle: 'epl-kits/newcastle.jpg',
+
+/**
+ * Newest home-kit art for Shop EPL / Shop UCL tiles (not inventory listing photos).
+ * Paths under public/home-kits/.
+ */
+const HOME_KIT_IMAGE: Record<string, string> = {
+  chelsea: 'home-kits/chelsea.jpg',
+  arsenal: 'home-kits/arsenal.jpg',
+  liverpool: 'home-kits/liverpool.jpg',
+  'manchester-city': 'home-kits/manchester-city.jpg',
+  'manchester-united': 'home-kits/manchester-united.jpg',
+  tottenham: 'home-kits/tottenham.jpg',
+  newcastle: 'home-kits/newcastle.jpg',
+  'real-madrid': 'home-kits/real-madrid.jpg',
+  barcelona: 'home-kits/barcelona.jpg',
+  'paris-saint-germain': 'home-kits/paris-saint-germain.jpg',
+  'inter-milan': 'home-kits/inter-milan.jpg',
+  'ac-milan': 'home-kits/ac-milan.jpg',
+  'borussia-dortmund': 'home-kits/borussia-dortmund.jpg',
 }
 
-/** Champions League blue + kit art for UCL tiles. */
+/** Champions League blue for UCL tiles. */
 const UCL_BLUE = '#001E62'
 const UCL_BLUE_SOFT = '#0A2F7A'
 const UCL_GOLD = '#C4A35A'
-const UCL_KIT_IMAGE: Record<string, string> = {
-  chelsea: 'epl-kits/chelsea.jpg',
-  arsenal: 'epl-kits/arsenal.jpg',
-  liverpool: 'epl-kits/liverpool.jpg',
-  'manchester-city': 'epl-kits/manchester-city.jpg',
-  'manchester-united': 'epl-kits/manchester-united.jpg',
-  tottenham: 'epl-kits/tottenham.jpg',
+
+function clubHomeKitSrc(clubId: string) {
+  const path = HOME_KIT_IMAGE[clubId]
+  return path ? asset(path) : null
 }
 
 /** Company logos used in Shop by company (reuse collection art). */
@@ -1996,7 +2004,8 @@ export default function App() {
               {eplClubs.length > 0 ? (
                 <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
                   {eplClubs.map((club, i) => {
-                    const kitSrc = asset(EPL_KIT_IMAGE[club.id] || 'product-home.jpg')
+                    const kitSrc = clubHomeKitSrc(club.id)
+                    const catalogClub = getClubById(club.id)
                     const nameColor = EPL_TEAM_COLOR[club.id] || '#0b223f'
                     const favorited = favoriteSet.has(club.id)
                     return (
@@ -2018,13 +2027,25 @@ export default function App() {
                           style={{ borderColor: nameColor }}
                         >
                           <div className="aspect-square overflow-hidden bg-[#120018]">
-                            <img
-                              src={kitSrc}
-                              alt=""
-                              className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
-                              loading="lazy"
-                              decoding="async"
-                            />
+                            {kitSrc ? (
+                              <img
+                                src={kitSrc}
+                                alt=""
+                                className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-[#2a0830] to-[#120018]">
+                                {catalogClub ? (
+                                  <ClubLogoMark club={catalogClub} size="lg" className="!h-16 !w-16" />
+                                ) : (
+                                  <span className="font-display text-2xl font-bold uppercase text-white/80">
+                                    {club.name.slice(0, 3)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="bg-cream px-3 py-3 pr-11">
                             <FitOneLine
@@ -2340,9 +2361,8 @@ export default function App() {
               {uclClubs.length > 0 ? (
                 <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
                   {uclClubs.map((club, i) => {
-                    const kitSrc = UCL_KIT_IMAGE[club.id]
-                      ? asset(UCL_KIT_IMAGE[club.id])
-                      : club.image || FALLBACK_IMAGE
+                    const kitSrc = clubHomeKitSrc(club.id)
+                    const catalogClub = getClubById(club.id)
                     const nameColor = UCL_TEAM_COLOR[club.id] || '#0b223f'
                     const favorited = favoriteSet.has(club.id)
                     return (
@@ -2364,16 +2384,25 @@ export default function App() {
                           style={{ borderColor: nameColor }}
                         >
                           <div className="aspect-square overflow-hidden bg-[#020b24]">
-                            <img
-                              src={kitSrc}
-                              alt=""
-                              className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
-                              loading="lazy"
-                              decoding="async"
-                              onError={(e) => {
-                                e.currentTarget.src = club.image || FALLBACK_IMAGE
-                              }}
-                            />
+                            {kitSrc ? (
+                              <img
+                                src={kitSrc}
+                                alt=""
+                                className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-[#0a2f7a] to-[#020b24]">
+                                {catalogClub ? (
+                                  <ClubLogoMark club={catalogClub} size="lg" className="!h-16 !w-16" />
+                                ) : (
+                                  <span className="font-display text-2xl font-bold uppercase text-white/80">
+                                    {club.name.slice(0, 3)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div className="bg-cream px-3 py-3 pr-11">
                             <FitOneLine
