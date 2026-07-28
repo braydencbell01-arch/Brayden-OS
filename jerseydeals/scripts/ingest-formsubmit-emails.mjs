@@ -199,98 +199,108 @@ async function main() {
   const ingested = []
   const skipped = []
   const skipReasons = new Map()
+  let fatal = null
 
-  await client.connect()
-  const lock = await client.getMailboxLock('INBOX')
   try {
-    const uids = await client.search({
-      since,
-      or: [{ subject: 'Jersey Deals' }, { body: 'jerseydeals' }, { body: 'Jersey Deals' }],
-    })
-    logLine(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
+    await client.connect()
+    const lock = await client.getMailboxLock('INBOX')
+    try {
+      const uids = await client.search({
+        since,
+        or: [{ subject: 'Jersey Deals' }, { body: 'jerseydeals' }, { body: 'Jersey Deals' }],
+      })
+      logLine(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
 
-    if (!uids.length) {
-      // fall through to summary
-    } else {
       for await (const msg of client.fetch(uids, {
         uid: true,
         flags: true,
         source: true,
         envelope: true,
-      }, { uid: true })) {
-        const flags = [...(msg.flags || [])]
-        if (
-          flags.some(
-            (f) => String(f).toLowerCase() === 'jdprocessed' || String(f) === PROCESSED_FLAG,
-          )
-        ) {
-          skipped.push({ uid: msg.uid, reason: 'already_processed' })
-          tally(skipReasons, 'already_processed')
-          continue
-        }
-
-        const parsed = await simpleParser(msg.source)
-        const subject = parsed.subject || msg.envelope?.subject || ''
-        const text = parsed.text || ''
-        const html = typeof parsed.html === 'string' ? parsed.html : ''
-        if (
-          !/jersey\s*deals/i.test(subject) &&
-          !/jerseydeals/i.test(`${text}\n${html}`.slice(0, 2000))
-        ) {
-          skipped.push({ uid: msg.uid, reason: 'not_jd', subject })
-          tally(skipReasons, 'not_jd')
-          continue
-        }
-
-        const lead = parseLeadFromMessage({
-          subject,
-          text,
-          html,
-          replyTo: addressFromParsed(parsed, 'replyTo'),
-          from: addressFromParsed(parsed, 'from'),
-        })
-        if (!lead.ok) {
-          skipped.push({ uid: msg.uid, reason: lead.reason, subject, source: lead.source })
-          tally(skipReasons, lead.reason || 'parse_fail')
-          continue
-        }
-
-        if (DRY) {
-          ingested.push({ ...lead, uid: msg.uid, dry: true })
-          continue
-        }
-
-        const result = recordEmailCapture({
-          email: lead.email,
-          source: lead.source,
-          membership: lead.membership,
-          phone: lead.phone,
-          at: parsed.date ? parsed.date.toISOString() : new Date().toISOString(),
-        })
-        if (!result.ok) {
-          skipped.push({ uid: msg.uid, reason: result.message, email: lead.email, subject })
-          tally(skipReasons, result.message || 'record_fail')
-          continue
-        }
-
+      })) {
         try {
-          await client.messageFlagsAdd(msg.uid, [PROCESSED_FLAG], { uid: true })
-        } catch {
-          // Custom flags may be unsupported — fall back to Seen.
-          await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true }).catch(() => {})
-        }
+          const flags = [...(msg.flags || [])]
+          if (
+            flags.some(
+              (f) => String(f).toLowerCase() === 'jdprocessed' || String(f) === PROCESSED_FLAG,
+            )
+          ) {
+            skipped.push({ uid: msg.uid, reason: 'already_processed' })
+            tally(skipReasons, 'already_processed')
+            continue
+          }
 
-        ingested.push({
-          email: lead.email,
-          membership: result.membership,
-          source: lead.source,
-          uid: msg.uid,
-        })
+          const parsed = await simpleParser(msg.source)
+          const subject = parsed.subject || msg.envelope?.subject || ''
+          const text = parsed.text || ''
+          const html = typeof parsed.html === 'string' ? parsed.html : ''
+          if (
+            !/jersey\s*deals/i.test(subject) &&
+            !/jerseydeals/i.test(`${text}\n${html}`.slice(0, 2000))
+          ) {
+            skipped.push({ uid: msg.uid, reason: 'not_jd', subject })
+            tally(skipReasons, 'not_jd')
+            continue
+          }
+
+          const lead = parseLeadFromMessage({
+            subject,
+            text,
+            html,
+            replyTo: addressFromParsed(parsed, 'replyTo'),
+            from: addressFromParsed(parsed, 'from'),
+          })
+          if (!lead.ok) {
+            skipped.push({ uid: msg.uid, reason: lead.reason, subject, source: lead.source })
+            tally(skipReasons, lead.reason || 'parse_fail')
+            continue
+          }
+
+          if (DRY) {
+            ingested.push({ ...lead, uid: msg.uid, dry: true })
+            continue
+          }
+
+          const result = recordEmailCapture({
+            email: lead.email,
+            source: lead.source,
+            membership: lead.membership,
+            phone: lead.phone,
+            at: parsed.date ? parsed.date.toISOString() : new Date().toISOString(),
+          })
+          if (!result.ok) {
+            skipped.push({ uid: msg.uid, reason: result.message, email: lead.email, subject })
+            tally(skipReasons, result.message || 'record_fail')
+            continue
+          }
+
+          try {
+            await client.messageFlagsAdd(msg.uid, [PROCESSED_FLAG], { uid: true })
+          } catch {
+            await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true }).catch(() => {})
+          }
+
+          ingested.push({
+            email: lead.email,
+            membership: result.membership,
+            source: lead.source,
+            uid: msg.uid,
+          })
+        } catch (err) {
+          skipped.push({ uid: msg.uid, reason: `msg_error:${err?.message || err}` })
+          tally(skipReasons, 'msg_error')
+        }
       }
+    } finally {
+      try {
+        lock.release()
+      } catch {
+        /* ignore */
+      }
+      await client.logout().catch(() => {})
     }
-  } finally {
-    lock.release()
-    await client.logout().catch(() => {})
+  } catch (err) {
+    fatal = String(err?.stack || err)
+    console.error(fatal)
   }
 
   const members = readList(MEMBERS_PATH, 'rewards_members')
@@ -299,6 +309,7 @@ async function main() {
 
   const summary = {
     dryRun: DRY,
+    fatal,
     ingested: ingested.length,
     uniqueIngested: uniqueIngested.length,
     skipped: skipped.length,
@@ -310,21 +321,35 @@ async function main() {
     sampleIngested: ingested.slice(0, 20),
     sampleSkipped: skipped.filter((s) => s.reason !== 'already_processed').slice(0, 20),
   }
-  writeFileSync(SUMMARY_PATH, `${JSON.stringify(summary, null, 2)}\n`)
+  try {
+    writeFileSync(SUMMARY_PATH, `${JSON.stringify(summary, null, 2)}\n`)
+  } catch (err) {
+    console.error('Failed to write summary:', err)
+  }
   logLine(`SUMMARY_PATH=${SUMMARY_PATH}`)
   logLine(
     `ingested=${summary.ingested} unique=${summary.uniqueIngested} members=${summary.members} nonMembers=${summary.nonMembers}`,
   )
   logLine(`skipReasons=${JSON.stringify(summary.skipReasons)}`)
+  if (fatal) logLine(`fatal=${fatal.split('\n')[0]}`)
   for (const row of summary.sampleIngested.slice(0, 10)) {
     logLine(`  + ${row.membership} ${row.email} (${row.source})`)
   }
   for (const row of summary.sampleSkipped.slice(0, 10)) {
     logLine(`  - ${row.reason} uid=${row.uid} ${row.subject || row.email || ''}`)
   }
+  if (fatal) process.exit(1)
 }
 
 main().catch((err) => {
   console.error(err)
+  try {
+    writeFileSync(
+      SUMMARY_PATH,
+      `${JSON.stringify({ fatal: String(err?.stack || err), ingested: 0 }, null, 2)}\n`,
+    )
+  } catch {
+    /* ignore */
+  }
   process.exit(1)
 })

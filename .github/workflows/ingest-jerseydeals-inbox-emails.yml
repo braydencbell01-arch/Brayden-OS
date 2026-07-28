@@ -80,22 +80,12 @@ jobs:
           export IMAP_PORT="${IMAP_PORT:-993}"
           echo "IMAP ${IMAP_HOST}:${IMAP_PORT} as ${SMTP_USER} lookback=${IMAP_LOOKBACK_DAYS}d dry=${DRY_RUN:-0}"
           export INGEST_SUMMARY_PATH=/tmp/jd-ingest-summary.json
-          # Run node directly (not npm) so stdout is line-buffered in Actions logs.
-          stdbuf -oL -eL node scripts/ingest-formsubmit-emails.mjs
+          # Prefer npm script so node resolves root node_modules the same way as before.
+          npm run email:ingest-inbox
           if [ -f "$INGEST_SUMMARY_PATH" ]; then
             echo "---- ingest summary ----"
             cat "$INGEST_SUMMARY_PATH"
             echo "---- end summary ----"
-            python3 - <<'PY'
-          import json, pathlib
-          data = json.loads(pathlib.Path('/tmp/jd-ingest-summary.json').read_text())
-          print(f"ingested={data.get('ingested')} unique={data.get('uniqueIngested')} members={data.get('members')} nonMembers={data.get('nonMembers')}")
-          print('skipReasons=', data.get('skipReasons'))
-          for row in (data.get('sampleIngested') or [])[:10]:
-              print(f"  + {row.get('membership')} {row.get('email')} ({row.get('source')})")
-          for row in (data.get('sampleSkipped') or [])[:10]:
-              print(f"  - {row.get('reason')} {row.get('subject') or row.get('email') or ''}")
-          PY
           else
             echo "Missing ingest summary file" >&2
             exit 1
