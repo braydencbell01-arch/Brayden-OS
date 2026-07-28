@@ -12,6 +12,14 @@ on:
   schedule:
     # Every 15 minutes so new signups land in the lists quickly.
     - cron: '*/15 * * * *'
+  # Auto-run after pipeline changes land on Brayden-OS (agents cannot
+  # workflow_dispatch — GH token is read-only for Actions).
+  push:
+    branches: [Brayden-OS]
+    paths:
+      - '.github/workflows/ingest-jerseydeals-inbox-emails.yml'
+      - 'jerseydeals/scripts/ingest-formsubmit-emails.mjs'
+      - 'jerseydeals/scripts/lib/email-lists.mjs'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -57,17 +65,20 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           IMAP_HOST: ${{ secrets.IMAP_HOST }}
           IMAP_PORT: ${{ secrets.IMAP_PORT }}
-          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
-          IMAP_LOOKBACK_DAYS: ${{ inputs.lookback_days || '45' }}
+          # workflow_dispatch inputs are empty on schedule/push — default lookback.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+          IMAP_LOOKBACK_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.lookback_days || '45' }}
         run: |
           set -euo pipefail
           if [ -z "${SMTP_USER:-}" ] || [ -z "${SMTP_PASS:-}" ]; then
             echo "Missing SMTP_USER/SMTP_PASS — cannot read shop inbox." >&2
+            echo "Add repo secrets SMTP_USER + SMTP_PASS (IONOS shop@jerseydeals.online)." >&2
             exit 1
           fi
           # Default IONOS IMAP when secrets omit host/port.
           export IMAP_HOST="${IMAP_HOST:-imap.ionos.com}"
           export IMAP_PORT="${IMAP_PORT:-993}"
+          echo "IMAP ${IMAP_HOST}:${IMAP_PORT} as ${SMTP_USER} lookback=${IMAP_LOOKBACK_DAYS}d dry=${DRY_RUN:-0}"
           npm run email:ingest-inbox | tee /tmp/ingest-out.json
           # Pretty summary for the Actions UI
           python3 - <<'PY'
@@ -78,6 +89,8 @@ jobs:
           if m:
             data = json.loads(m[-1])
             print(f"ingested={data.get('ingested')} members={data.get('members')} nonMembers={data.get('nonMembers')}")
+            for row in (data.get('sampleIngested') or [])[:10]:
+              print(f"  + {row.get('membership')} {row.get('email')} ({row.get('source')})")
           PY
 
       - name: Commit email lists if changed
