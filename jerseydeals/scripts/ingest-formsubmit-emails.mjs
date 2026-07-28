@@ -51,10 +51,21 @@ function isIgnoredEmail(email) {
   const e = normalizeEmail(email)
   if (!e) return true
   if (IGNORE_EMAILS.has(e)) return true
-  if (e.endsWith('@formsubmit.co')) return true
-  if (e.endsWith('@square.com') || e.endsWith('@squareup.com') || e.endsWith('@mail.squareup.com')) {
+  const domain = e.split('@')[1] || ''
+  if (
+    domain === 'formsubmit.co' ||
+    domain === 'example.com' ||
+    domain === 'facebookmail.com' ||
+    domain === 'square.com' ||
+    domain === 'squareup.com' ||
+    domain === 'mail.squareup.com' ||
+    domain === 'ionos.com' ||
+    domain === 'ionos.co.uk'
+  ) {
     return true
   }
+  if (e.startsWith('noreply@') || e.startsWith('no-reply@')) return true
+  if (e === 'offers@jerseydeals.online') return true
   return false
 }
 
