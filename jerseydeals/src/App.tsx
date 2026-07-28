@@ -34,6 +34,13 @@ import {
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
 import { ClubFavoriteButton, ClubLogoMark, HeartIcon } from './FavoriteControls'
+import {
+  CLUB_OUTLINE_COLOR,
+  EPL_TEAM_COLOR,
+  FAVORITE_OUTER_RING_CLASS,
+  UCL_TEAM_COLOR,
+  clubOutlineColor,
+} from './clubColors'
 import { getClubById } from './clubCatalog'
 import {
   favoriteClubIdSet,
@@ -275,17 +282,8 @@ const EPL_KIT_IMAGE: Record<string, string> = {
   tottenham: 'epl-kits/tottenham.jpg',
   newcastle: 'epl-kits/newcastle.jpg',
 }
-const EPL_TEAM_COLOR: Record<string, string> = {
-  chelsea: '#034694',
-  arsenal: '#EF0107',
-  liverpool: '#C8102E',
-  'manchester-city': '#6CABDD',
-  'manchester-united': '#DA291C',
-  tottenham: '#132257',
-  newcastle: '#241F20',
-}
 
-/** Champions League blue + club name colors for UCL tiles. */
+/** Champions League blue + kit art for UCL tiles. */
 const UCL_BLUE = '#001E62'
 const UCL_BLUE_SOFT = '#0A2F7A'
 const UCL_GOLD = '#C4A35A'
@@ -296,45 +294,6 @@ const UCL_KIT_IMAGE: Record<string, string> = {
   'manchester-city': 'epl-kits/manchester-city.jpg',
   'manchester-united': 'epl-kits/manchester-united.jpg',
   tottenham: 'epl-kits/tottenham.jpg',
-}
-const UCL_TEAM_COLOR: Record<string, string> = {
-  ...EPL_TEAM_COLOR,
-  'real-madrid': '#FEBE10',
-  barcelona: '#A50044',
-  bayern: '#DC052D',
-  'paris-saint-germain': '#004170',
-  'inter-milan': '#010E80',
-  'ac-milan': '#FB090B',
-  juventus: '#000000',
-  napoli: '#12A0D7',
-  'atletico-madrid': '#CB3524',
-  'borussia-dortmund': '#FDE100',
-  'bayer-leverkusen': '#E32221',
-  ajax: '#D2122E',
-  'aston-villa': '#95BFE5',
-  monaco: '#E31837',
-  lille: '#E01E26',
-  atalanta: '#1E71B8',
-}
-
-/** Outline color for listing cards — club primary when known, else navy (logo ring). */
-const CLUB_OUTLINE_COLOR: Record<string, string> = {
-  ...UCL_TEAM_COLOR,
-  germany: '#000000',
-  argentina: '#74ACDF',
-  brazil: '#009C3B',
-  spain: '#AA151B',
-  france: '#002395',
-  italy: '#009246',
-  portugal: '#006600',
-  mexico: '#006847',
-  usa: '#002868',
-  'inter-miami': '#F7B5CD',
-  'rb-leipzig': '#E32219',
-  marseille: '#2FA3E0',
-  lyon: '#0033A0',
-  villarreal: '#FFE500',
-  lazio: '#87D8F7',
 }
 
 /** Company logos used in Shop by company (reuse collection art). */
@@ -622,7 +581,7 @@ function ProductLink({
         {/* Cover only on cards — full swipe gallery lives in quick view. */}
         <div
           className={`relative aspect-square w-full overflow-hidden border-2 ${
-            favorited ? 'ring-[3px] ring-crimson ring-offset-1 ring-offset-cream' : ''
+            favorited ? FAVORITE_OUTER_RING_CLASS : ''
           } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
           style={{
             borderColor:
@@ -2042,8 +2001,10 @@ export default function App() {
                               query: club.name,
                             })
                           }}
-                          className="group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1"
-                          style={{ borderColor: favorited ? '#c8102e' : nameColor }}
+                          className={`group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                            favorited ? FAVORITE_OUTER_RING_CLASS : ''
+                          }`}
+                          style={{ borderColor: nameColor }}
                         >
                           <div className="aspect-square overflow-hidden bg-[#120018]">
                             <img
@@ -2386,8 +2347,10 @@ export default function App() {
                               query: club.name,
                             })
                           }}
-                          className="group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1"
-                          style={{ borderColor: favorited ? '#c8102e' : nameColor }}
+                          className={`group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1 ${
+                            favorited ? FAVORITE_OUTER_RING_CLASS : ''
+                          }`}
+                          style={{ borderColor: nameColor }}
                         >
                           <div className="aspect-square overflow-hidden bg-[#020b24]">
                             <img
@@ -2629,8 +2592,7 @@ export default function App() {
                 {clubsData.slice(0, clubsShown).map((club, i) => {
                   const favorited = favoriteSet.has(club.id)
                   const catalogClub = getClubById(club.id)
-                  const outline =
-                    CLUB_OUTLINE_COLOR[club.id] || (favorited ? '#c8102e' : '#0b223f')
+                  const outline = clubOutlineColor(club.id)
                   return (
                     <motion.li key={club.id} {...fadeUp(reduce, i * 0.02)} className="relative">
                       <button
@@ -2640,7 +2602,7 @@ export default function App() {
                           goInventory({ clubId: club.id, reset: true })
                         }}
                         className={`group flex w-full flex-col items-center gap-1.5 border-2 bg-white px-1.5 pb-2 pt-3 text-center outline-none transition focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
-                          favorited ? 'ring-2 ring-crimson ring-offset-1 ring-offset-chalk' : ''
+                          favorited ? FAVORITE_OUTER_RING_CLASS : ''
                         }`}
                         style={{ borderColor: outline }}
                       >

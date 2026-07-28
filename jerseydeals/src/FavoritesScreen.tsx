@@ -7,6 +7,7 @@ import {
   useFavoriteClubIds,
 } from './favorites'
 import { ClubFavoriteButton, ClubLogoMark, HeartIcon } from './FavoriteControls'
+import { FAVORITE_OUTER_RING_CLASS, clubOutlineColor } from './clubColors'
 import {
   getClubById,
   popularClubSuggestions,
@@ -108,9 +109,14 @@ export function FavoritesScreen({
                 return (
                   <li key={club.id} className="shrink-0">
                     <div
-                      className={`flex items-center gap-2 border-2 py-1.5 pl-2 pr-1 ${
-                        favorited ? 'border-crimson bg-cream' : 'border-navy/15 bg-white'
+                      className={`flex items-center gap-2 border-2 bg-white py-1.5 pl-2 pr-1 ${
+                        favorited ? FAVORITE_OUTER_RING_CLASS : ''
                       }`}
+                      style={{
+                        borderColor: favorited
+                          ? clubOutlineColor(club.id)
+                          : 'rgba(11, 34, 63, 0.15)',
+                      }}
                     >
                       <ClubLogoMark club={club} size="sm" />
                       <span className="max-w-[7.5rem] truncate font-brand text-xs font-bold uppercase tracking-[0.08em] text-navy">
@@ -161,7 +167,10 @@ export function FavoritesScreen({
               <ul className="mt-4 flex flex-wrap gap-3">
                 {favoritedClubs.map((club) => (
                   <li key={club.id}>
-                    <div className="relative flex w-[5.75rem] flex-col items-center gap-1.5 border border-crimson/35 bg-cream px-2 py-3">
+                    <div
+                      className={`relative flex w-[5.75rem] flex-col items-center gap-1.5 border-2 bg-cream px-2 py-3 ${FAVORITE_OUTER_RING_CLASS}`}
+                      style={{ borderColor: clubOutlineColor(club.id) }}
+                    >
                       <button
                         type="button"
                         onClick={() => {
