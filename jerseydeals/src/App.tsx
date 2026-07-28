@@ -1107,7 +1107,6 @@ export default function App() {
     () => listings.filter((item) => item.tag === 'Training').slice(0, 2),
     [listings],
   )
-  const saleFloor = lowestSalePrice(listings)
   // Stable order — do not re-sort on favorite toggle (avoids the grid jumping).
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const leaguesData = useMemo<LeagueInfo[]>(() => leaguesInStock(listings), [listings])
