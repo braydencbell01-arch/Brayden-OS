@@ -36,7 +36,6 @@ import { CollectionsRail } from './CollectionsRail'
 import {
   clearFavoriteClubs,
   favoriteClubIdSet,
-  isFavoriteClub,
   toggleFavoriteClub,
   useFavoriteClubIds,
 } from './favorites'
@@ -542,6 +541,14 @@ function ClubFavoriteButton({
       aria-pressed={favorited}
       aria-label={favorited ? `Remove ${clubName} from favorites` : `Favorite ${clubName}`}
       title={favorited ? 'Remove from favorites' : 'Add to favorites'}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+      }}
+      onMouseDown={(e) => {
+        // Keep focus from jumping the viewport when toggling.
+        e.preventDefault()
+        e.stopPropagation()
+      }}
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -576,9 +583,6 @@ function ProductLink({
   const kit = kitType(item)
   const onSale = isSaleListing(item)
   const size = listingSize(item)
-  const club = inferClub(item.title)
-  const favoriteIds = useFavoriteClubIds()
-  const favorited = club ? isFavoriteClub(club.id, favoriteIds) : false
   const photoCount = item.images?.length ? item.images.length : item.image ? 1 : 0
   const muted = tone === 'dark' ? 'text-white/75' : 'text-muted'
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
@@ -621,19 +625,6 @@ function ProductLink({
             >
               {photoCount} photos
             </span>
-          ) : null}
-          {club ? (
-            <ClubFavoriteButton
-              clubId={club.id}
-              clubName={club.name}
-              favorited={favorited}
-              place="product_card"
-              className={`absolute bottom-2 right-2 z-30 h-9 w-9 border border-crimson/40 shadow-sm transition ${
-                favorited
-                  ? 'bg-crimson text-cream'
-                  : 'bg-cream/95 text-crimson hover:bg-crimson hover:text-cream'
-              }`}
-            />
           ) : null}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
@@ -717,8 +708,6 @@ function QuickViewModal({
   const size = listingSize(item)
   const club = inferClub(item.title)
   const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle')
-  const favoriteIds = useFavoriteClubIds()
-  const favorited = club ? isFavoriteClub(club.id, favoriteIds) : false
 
   useEffect(() => {
     const previous = document.body.style.overflow
@@ -796,20 +785,7 @@ function QuickViewModal({
             {club ? (
               <div>
                 <dt className="text-[0.65rem] uppercase tracking-[0.14em] text-muted">Club</dt>
-                <dd className="mt-0.5 flex items-center gap-2 font-semibold text-navy">
-                  <span>{club.name}</span>
-                  <ClubFavoriteButton
-                    clubId={club.id}
-                    clubName={club.name}
-                    favorited={favorited}
-                    place="quick_view"
-                    className={`h-8 w-8 border border-crimson/30 ${
-                      favorited
-                        ? 'bg-crimson text-cream'
-                        : 'bg-mist text-crimson hover:bg-crimson hover:text-cream'
-                    }`}
-                  />
-                </dd>
+                <dd className="mt-0.5 font-semibold text-navy">{club.name}</dd>
               </div>
             ) : null}
             {kit !== 'Other' ? (
@@ -1102,16 +1078,8 @@ export default function App() {
     [listings],
   )
   const saleFloor = lowestSalePrice(listings)
-  const clubsData = useMemo<ClubInfo[]>(() => {
-    const clubs = clubsInStock(listings)
-    if (!favoriteSet.size) return clubs
-    return [...clubs].sort((a, b) => {
-      const aFav = favoriteSet.has(a.id) ? 0 : 1
-      const bFav = favoriteSet.has(b.id) ? 0 : 1
-      if (aFav !== bFav) return aFav - bFav
-      return b.count - a.count || a.name.localeCompare(b.name)
-    })
-  }, [listings, favoriteSet])
+  // Stable order — do not re-sort on favorite toggle (avoids the grid jumping).
+  const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const leaguesData = useMemo<LeagueInfo[]>(() => leaguesInStock(listings), [listings])
   const eplClubs = useMemo<ClubInfo[]>(() => premierLeagueClubsInStock(listings), [listings])
   const trendingPicks = useMemo(() => pickTrending(listings, 8), [listings])
@@ -2062,7 +2030,7 @@ export default function App() {
                   No favorites yet
                 </p>
                 <p className="mt-2 text-sm text-muted">
-                  Save clubs from this row, Shop by club, or any listing heart.
+                  Save clubs from this row or Shop by club.
                 </p>
               </div>
             )}
