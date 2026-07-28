@@ -3,6 +3,8 @@ export type CollectionAction = {
   brand?: string
   tag?: string
   price?: 'under-25' | '25-40' | '40-plus' | 'All'
+  /** Curated sale rack (see isSaleListing). */
+  saleOnly?: boolean
   query?: string
   leagueId?: string
   reset?: boolean
@@ -68,6 +70,6 @@ export const LANDING_COLLECTIONS: CollectionItem[] = [
     id: 'sale-rack',
     label: 'Sale rack',
     image: 'collections/sale.jpg',
-    action: { price: 'under-25', reset: true },
+    action: { saleOnly: true, reset: true },
   },
 ]

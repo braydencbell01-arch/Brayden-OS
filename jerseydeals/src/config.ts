@@ -34,7 +34,7 @@ export const GA_MEASUREMENT_ID = (import.meta.env.VITE_GA_ID as string | undefin
 
 /** Sale urgency copy — update when the promo window changes. */
 export const SALE_HEADLINE = 'Shop the sale'
-export const SALE_URGENCY = '$25 & under · while stock lasts'
+export const SALE_URGENCY = 'Hand-picked kits on sale · while stock lasts'
 
 /** Top promo bar — keep short so it stays one line under the fixed header offset. */
 export const PROMO_BAR = 'Live stock · Youth & adult sizes'
