@@ -1,7 +1,9 @@
 {
-  "syncedAt": "2026-07-28T02:05:39Z",
+  "syncedAt": "2026-07-28T08:03:57Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
+  "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
+  "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
   "count": 36,
@@ -13,7 +15,11 @@
       "sku": "ebay:389366013067",
       "paymentLinkId": "VF4I4RTBCIPLPUMY",
       "url": "https://square.link/u/JpgYzk3t",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/EbgGt54njJGGuae1J8lP9UkZhpWZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/EbgGt54njJGGuae1J8lP9UkZhpWZY",
+      "discountPaymentLinkId": "MN6MHOZRT6NUYQ6U",
+      "discountUrl": "https://square.link/u/IXChODiV",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/47LedKBB7iYUEEXtuJlC9ZKhVlJZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "ODYCQWI7KR7ACDL7C7K4EXFS",
@@ -22,7 +28,11 @@
       "sku": "ebay:800059395254",
       "paymentLinkId": "BB7DRTE55QKSKWUT",
       "url": "https://square.link/u/9ot1aKd7",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/M1vQbsx71DrB7Qju5AQv7u7G739YY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/M1vQbsx71DrB7Qju5AQv7u7G739YY",
+      "discountPaymentLinkId": "UG3XP6GRUKD2QWBJ",
+      "discountUrl": "https://square.link/u/Fb8OjDHr",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/AlCGG5kqAltg7QEDWNe5IlF1H8KZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -31,7 +41,11 @@
       "sku": "ebay:389350090839",
       "paymentLinkId": "3QDSISK4MTDGCWLU",
       "url": "https://square.link/u/HXKYa0Dr",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/64VQvYmkkaRpowpT5FBROrMPOwMZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/64VQvYmkkaRpowpT5FBROrMPOwMZY",
+      "discountPaymentLinkId": "32XOHOEPHH3NZDZA",
+      "discountUrl": "https://square.link/u/vn8q2ZVK",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UH898qhlajIl8Le3KUmDpwfpHVCZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "RU6YUCSSG45RIET3W57VMESG",
@@ -40,7 +54,11 @@
       "sku": "ebay:389383931536",
       "paymentLinkId": "OXQM6M4CXRC3MBPD",
       "url": "https://square.link/u/ZUI54mkR",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KKgp2OrGMXWuoFXDn4WieA8xQIQZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KKgp2OrGMXWuoFXDn4WieA8xQIQZY",
+      "discountPaymentLinkId": "YBYJZQTVXNGQRZBR",
+      "discountUrl": "https://square.link/u/lps0JqAq",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/k5Pqf6OG1CVhxN4l3yv7qTHo4gLZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "INNG5MMAKEJF4HYN2LRBVD56",
@@ -49,7 +67,11 @@
       "sku": "ebay:389383967457",
       "paymentLinkId": "PKCPMNFAB3SNSPVT",
       "url": "https://square.link/u/zYOpRuRo",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UfgNoXbUjzAOlDrHFdvNNF4PobVZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UfgNoXbUjzAOlDrHFdvNNF4PobVZY",
+      "discountPaymentLinkId": "R2ARQM2HFUUL5QCS",
+      "discountUrl": "https://square.link/u/HwA2dK3w",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/a2SzLA4pV7q92iff6muMWkVtRQNZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "YVMFPPDX6N3EFXYN3CITMVFG",
@@ -58,7 +80,11 @@
       "sku": "ebay:389383911874",
       "paymentLinkId": "I6XKHDP6XEERKHAH",
       "url": "https://square.link/u/zKAPwbHN",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/MfSbZSzizgssrOruGo5dJqzZz85YY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/MfSbZSzizgssrOruGo5dJqzZz85YY",
+      "discountPaymentLinkId": "TWLRAPPQYSZFQEY5",
+      "discountUrl": "https://square.link/u/yMl6Fc6F",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QBsak9Pde0gtMuxUabAkScnxOgWZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "5Z25E2DPSKA7DV7ZAWI55UCL",
@@ -67,7 +93,11 @@
       "sku": "ebay:800058609903",
       "paymentLinkId": "2V77FCSBGJLHXKXA",
       "url": "https://square.link/u/BjbUosnN",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/a0To7vuEcoLG0yr6eXmZEW5ILXYZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/a0To7vuEcoLG0yr6eXmZEW5ILXYZY",
+      "discountPaymentLinkId": "2PJV46NHALZXJ7A2",
+      "discountUrl": "https://square.link/u/Z50zQDhA",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/i4xHzXOaVJHDfHgPP30eoagxAGTZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "NLP3C7KACU2IIIRIEL4DUZUD",
@@ -76,7 +106,11 @@
       "sku": "ebay:800058538346",
       "paymentLinkId": "ZQEJ63ZW2MJZNIU3",
       "url": "https://square.link/u/2n4lqIi2",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QdyG8ncHw94HCLqUIRh4bviikJRZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QdyG8ncHw94HCLqUIRh4bviikJRZY",
+      "discountPaymentLinkId": "KO6QPAM6ZHUXLCCT",
+      "discountUrl": "https://square.link/u/riJwaBai",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/sDS8qJ9salhypPIde3WDeHohrdbZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "D2UU2DA3XDMHDSHEHQFFP2D3",
@@ -85,7 +119,11 @@
       "sku": "ebay:800058554457",
       "paymentLinkId": "FPTWC6O7YTHZVGZI",
       "url": "https://square.link/u/UC5VK1Eg",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/i8Bq97nzBoOkUjQokSMETTg9wxFZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/i8Bq97nzBoOkUjQokSMETTg9wxFZY",
+      "discountPaymentLinkId": "XXSYPTDTUPMRFBMK",
+      "discountUrl": "https://square.link/u/DnXiQ4j6",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kjiBf8El9WWkoNnwtbzwPKN7HQAZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "ZUWTVQYMYMIC4RXTPUJDIYCJ",
@@ -94,7 +132,11 @@
       "sku": "ebay:800058757741",
       "paymentLinkId": "NTYJ5SL7P5GSM74K",
       "url": "https://square.link/u/IeSsVEvQ",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/czGKtGjY9QB6VEZ4p0LVoYAtBXQZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/czGKtGjY9QB6VEZ4p0LVoYAtBXQZY",
+      "discountPaymentLinkId": "KJDZQ7DKSZX2IHWJ",
+      "discountUrl": "https://square.link/u/FsqOg9ra",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SgPEaivyfMUaXlKhIokQjwSipkIZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "UBR6QUCA7LP5WAY476FB43J7",
@@ -103,7 +145,11 @@
       "sku": "ebay:800058807470",
       "paymentLinkId": "KJCWS3TJGM5N7LJS",
       "url": "https://square.link/u/gOt4R6CN",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WiTwHyhnFUVm3UYmJ8prTHbFHHQZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WiTwHyhnFUVm3UYmJ8prTHbFHHQZY",
+      "discountPaymentLinkId": "AG5BAOC2O54DYYU3",
+      "discountUrl": "https://square.link/u/98fppkSJ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ucI3dp8mBKQU1phf2IgincSfN5FZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "E5E46BOX5Z5YC33IAF4GZI2D",
@@ -112,7 +158,11 @@
       "sku": "ebay:388851790862",
       "paymentLinkId": "5B3U4STFWBZYINIW",
       "url": "https://square.link/u/LioYy6ME",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/e08zKrV7qJhGEpA6CpbI8jztB2AZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/e08zKrV7qJhGEpA6CpbI8jztB2AZY",
+      "discountPaymentLinkId": "V4FRHUP2URVYZDIC",
+      "discountUrl": "https://square.link/u/N5hWNfD8",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OmDUsFtiwHsohx4CUNUKYOZTXmcZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "CRPQ6OS5FV6RHBJTZ54C6XHO",
@@ -121,7 +171,11 @@
       "sku": "ebay:800339659105",
       "paymentLinkId": "7LICV5BN4HJ66M3X",
       "url": "https://square.link/u/3wlOLNMx",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Cs3RVcrvi3KxOdpZfMeEGf8vgc8YY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Cs3RVcrvi3KxOdpZfMeEGf8vgc8YY",
+      "discountPaymentLinkId": "HVB5UJJMDWASXS4A",
+      "discountUrl": "https://square.link/u/4Sj4d8mC",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OSXBZw7AL9C3FGUnxUIsXCrINi6YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "AI7MS2BI5EIGYGWYMCAHVF3Z",
@@ -130,7 +184,11 @@
       "sku": "ebay:389131863371",
       "paymentLinkId": "RUMVNWZ6H2DJIXSL",
       "url": "https://square.link/u/ElmhWmhx",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/S4n0NVhkEPHYlVBWQ5n9dHZoQWWZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/S4n0NVhkEPHYlVBWQ5n9dHZoQWWZY",
+      "discountPaymentLinkId": "2HG3B3UDMJK7OCVZ",
+      "discountUrl": "https://square.link/u/s4Wnhdrq",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Y5c1MB9noMpCgyYtlBjiLYnpksMZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "DJ3DNTNYKI4YJMCNPUMKG6MX",
@@ -139,7 +197,11 @@
       "sku": "ebay:389350084218",
       "paymentLinkId": "SAA7N7UZFHV5PCAJ",
       "url": "https://square.link/u/cN7wbRzO",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cRVMWA85BATAeZF5oYRR8940nLOZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cRVMWA85BATAeZF5oYRR8940nLOZY",
+      "discountPaymentLinkId": "DEKZVFTN52DDF5ZU",
+      "discountUrl": "https://square.link/u/11TEkU5a",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/IFowFJyIYQ8cqX1Xdrl261PIOMDZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "XQENLPF2YKZMKNCX2UZICT3C",
@@ -148,16 +210,24 @@
       "sku": "ebay:389350079937",
       "paymentLinkId": "A2NJNKMJEKS6AWOE",
       "url": "https://square.link/u/1tEGS1UH",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SUrzvZ7xMWOXR9C735tR6Y7J5mMZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SUrzvZ7xMWOXR9C735tR6Y7J5mMZY",
+      "discountPaymentLinkId": "NROI47J4OZJWSNOL",
+      "discountUrl": "https://square.link/u/TmBmtEjn",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ARa9VH0qKzbhw8Ol2znmZbT1NVVZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "A52ARHAZ6DFRB3IEGELRU3AZ",
       "variationId": "Z3DE6BQ55K4EBWVLD3JZY6JP",
-      "title": "Tottenham Hotspur 23/24 Gray Strike Top (Nike) · Youth L",
+      "title": "Tottenham Hotspur 23/24 Strike Top (Nike) · Youth L",
       "sku": "ebay:389366085848",
       "paymentLinkId": "W66KI64CPPG6H2HI",
       "url": "https://square.link/u/eonL5G05",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8VFnagvPOIAI9e9m39XMOUTEMUSZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8VFnagvPOIAI9e9m39XMOUTEMUSZY",
+      "discountPaymentLinkId": "MRC6ZTO6CXVZTUGJ",
+      "discountUrl": "https://square.link/u/hSZZyx9V",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ieGqGiZfx32ydXwzDTOOLg7pHdZZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "OZPTLBOYRTJ5Q5DIMC3ROCS4",
@@ -166,16 +236,24 @@
       "sku": "ebay:800058630043",
       "paymentLinkId": "QVIF4LOOBPRKGM5Q",
       "url": "https://square.link/u/jJH6CcdF",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ojbU87jBy6rO9PNimx7xuvQXjEPZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ojbU87jBy6rO9PNimx7xuvQXjEPZY",
+      "discountPaymentLinkId": "IORAAVT753CUBITI",
+      "discountUrl": "https://square.link/u/5Tx3vuP8",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/a4BuXtsgosnS2gmNLIU2DANZA07YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "4NT3VHQTA66R54HFBO2AH5HH",
       "variationId": "ZPVVMODVRJMOICVJBS5DS4WU",
-      "title": "Real Madrid 16/17 Purple Training Jersey (Adidas) · Youth XL",
+      "title": "Real Madrid 16/17 Training Jersey (Adidas) · Youth XL",
       "sku": "ebay:389985124171",
       "paymentLinkId": "ZJV7UKCNEAMGRCCH",
       "url": "https://square.link/u/NiYzTeE6",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UFrV4Q3z9qscpG1gXMu3tDE288SZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UFrV4Q3z9qscpG1gXMu3tDE288SZY",
+      "discountPaymentLinkId": "A5VOQ5DJ7DIYFB36",
+      "discountUrl": "https://square.link/u/5OloRg3q",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/mMwG9l3Fcy2FnOarYFKO5sTyPUEZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "3OQZ6ETJMRZRSOEVDJYL7QTW",
@@ -184,7 +262,11 @@
       "sku": "ebay:800366775190",
       "paymentLinkId": "PXYKEALE56EL5LRT",
       "url": "https://square.link/u/a7FEvLYN",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QF2ysOeWIdSRkpqNv0B5Wgvj0vOZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QF2ysOeWIdSRkpqNv0B5Wgvj0vOZY",
+      "discountPaymentLinkId": "3LFKI3VHHY4PE6FK",
+      "discountUrl": "https://square.link/u/r2mgPDkx",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wb3lEFGxvrO193X9u7DJHsElS6KZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "6FT2DIWVL2DMVGUTETE23BJF",
@@ -193,7 +275,11 @@
       "sku": "ebay:389985026255",
       "paymentLinkId": "HFWIDJZVAOW3WIBR",
       "url": "https://square.link/u/1KgoU7EW",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QPf2v7cc2yn3AP07S9YSTFL6bMVZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/QPf2v7cc2yn3AP07S9YSTFL6bMVZY",
+      "discountPaymentLinkId": "2ZRGXVWRDFXWNRA2",
+      "discountUrl": "https://square.link/u/H7rX7InG",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0BddREktLeUIZv39EldSP3xJyHUZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "7QEXEFKYLJ5UXCPCFJKJCZPU",
@@ -202,7 +288,11 @@
       "sku": "ebay:800058667436",
       "paymentLinkId": "5QYUPBMA6G5GAKTK",
       "url": "https://square.link/u/7TAVcV4J",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Oil0nHp6FRGr6fjRbWmP4K0vLEdZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Oil0nHp6FRGr6fjRbWmP4K0vLEdZY",
+      "discountPaymentLinkId": "CNF53BRJL3SDTNOL",
+      "discountUrl": "https://square.link/u/omAIumHV",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/IVCFvTmibl5Cfc5notWqJ5ltml8YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "VQSG23BLZT77FFNWGXRN4XYO",
@@ -211,7 +301,11 @@
       "sku": "ebay:389980721258",
       "paymentLinkId": "WTPAXZRZHKJRWPZ2",
       "url": "https://square.link/u/CYpYakwK",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0zMGoybvwrzXv5cFiNNsKClac1IZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0zMGoybvwrzXv5cFiNNsKClac1IZY",
+      "discountPaymentLinkId": "7GCROI2GYX4SMCV6",
+      "discountUrl": "https://square.link/u/Mr5B0z8N",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aSEhhSHuXaTtybFzT2ByQBeYggBZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "IGV5HZ64I2IDIIKCLDRL6EA6",
@@ -220,7 +314,11 @@
       "sku": "ebay:800058655528",
       "paymentLinkId": "6W324ZRZXNUUBTE6",
       "url": "https://square.link/u/yaAWVC5W",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aaeuW6u0H88EnPthRsHf1crao2CZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aaeuW6u0H88EnPthRsHf1crao2CZY",
+      "discountPaymentLinkId": "ML7HMEIP4VZWERKL",
+      "discountUrl": "https://square.link/u/MVqgUz25",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/A10zE24Fctd0LKqj1jKN20X7rhOZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "IIPRTHBFFASDGQLT7XSZXT4C",
@@ -229,7 +327,11 @@
       "sku": "ebay:389383993536",
       "paymentLinkId": "OKBDKXJBKWADNKBD",
       "url": "https://square.link/u/HmJj8SgP",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GYKgnNJQ2MtMQ9nnk3Dd4YcgXw8YY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GYKgnNJQ2MtMQ9nnk3Dd4YcgXw8YY",
+      "discountPaymentLinkId": "INXDJJDQCK2NDEIX",
+      "discountUrl": "https://square.link/u/XnOQYpHm",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wlwv4tNlaP2RwbZNPe3cuFgeLLAZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "XQKZH5QRW3YTTKSM2NAZTHNH",
@@ -238,7 +340,11 @@
       "sku": "ebay:388882596658",
       "paymentLinkId": "4ZJX4IADOVB6IHOZ",
       "url": "https://square.link/u/9Zu2iWHb",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CWS0tCimKimCvOWDQblU3zP0IL8YY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CWS0tCimKimCvOWDQblU3zP0IL8YY",
+      "discountPaymentLinkId": "SX7BLQU5EJDMT24S",
+      "discountUrl": "https://square.link/u/VaUy67i9",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0JXOWbdJKWXFSO0la78FEESl7YaZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "U4MZV6JN663KJQXOXVX4EAVU",
@@ -247,7 +353,11 @@
       "sku": "ebay:389985059720",
       "paymentLinkId": "4IKR6KIN5Y6IIX6C",
       "url": "https://square.link/u/lHukh4ga",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/68HmIvlnJdit10cD48lbN1hyL3VZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/68HmIvlnJdit10cD48lbN1hyL3VZY",
+      "discountPaymentLinkId": "XMNZBYQDVUE4VCDG",
+      "discountUrl": "https://square.link/u/p9Is3goT",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OI6NrZQ8dte1sz4tbOVwc5MK7r9YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "KL5J6BT3HLBFTOVJMCUZRG7S",
@@ -256,7 +366,11 @@
       "sku": "ebay:800359738314",
       "paymentLinkId": "ZCSPZFZZPPKEYACW",
       "url": "https://square.link/u/ZEOOvMjO",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ohIrWgzsSfPQuZrHDS8m28ROyHZZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ohIrWgzsSfPQuZrHDS8m28ROyHZZY",
+      "discountPaymentLinkId": "S7ZAANVVJ5VQQCJZ",
+      "discountUrl": "https://square.link/u/Srne1pBU",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ScFUEi704n7bV1SdmYNzRjc9iqSZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "YB3RYUU4FJL7WEQGGQ7YYVVZ",
@@ -265,7 +379,11 @@
       "sku": "ebay:800407206007",
       "paymentLinkId": "EMY4YYS3QR3RISCI",
       "url": "https://square.link/u/3VGD6xiQ",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cP4EN0f3VmfBwKex9Mm7oKdXnZZZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cP4EN0f3VmfBwKex9Mm7oKdXnZZZY",
+      "discountPaymentLinkId": "LXBZCXTDFUOYZU5J",
+      "discountUrl": "https://square.link/u/oeSBsBrO",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ABud4i5vHdan4SbfMx8wngrzCvOZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "MESUKSIHUJYM6FHJIBSGKZ4Q",
@@ -274,7 +392,11 @@
       "sku": "ebay:800407234121",
       "paymentLinkId": "3ZF4ROQ5ZQWZ2OH3",
       "url": "https://square.link/u/ttOwwmqC",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YhSqgoe7Kw6RPrwaF7LcJz1sZgFZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YhSqgoe7Kw6RPrwaF7LcJz1sZgFZY",
+      "discountPaymentLinkId": "5ZU5BSOEC7AZDH6N",
+      "discountUrl": "https://square.link/u/ewyKlCET",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CC2VgbBfVXWUt67iXesEiCI3RxYZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "AHXYNZF2JKQ35R6VIZHVFZIB",
@@ -283,7 +405,11 @@
       "sku": "ebay:800407244493",
       "paymentLinkId": "DBZHKXDZ5QFVMHQ7",
       "url": "https://square.link/u/dwTWs1LD",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0fobzt0Wy398zscNdyPZCFNaTQJZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0fobzt0Wy398zscNdyPZCFNaTQJZY",
+      "discountPaymentLinkId": "LRVA6LXPR3WK2QH6",
+      "discountUrl": "https://square.link/u/F8D7Zh26",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/EvSccWNC0PCsZ3pS1Ir5e4gtxFLZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "K2MVDBOYRK7AH5HTPLYYU6VT",
@@ -292,7 +418,11 @@
       "sku": "ebay:800407272493",
       "paymentLinkId": "PZJTK6GASTTAR3U2",
       "url": "https://square.link/u/yHZesRZ9",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wdugc9qJ57HDJydTRdlHnEzzoTIZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wdugc9qJ57HDJydTRdlHnEzzoTIZY",
+      "discountPaymentLinkId": "VPWD22Z6F7QBIRYE",
+      "discountUrl": "https://square.link/u/6orjWQYi",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/62WjoOpPD5EhF9VvnLvDjx5Ew0ZZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "YADWORMUYICFV3TKSCYFG5S5",
@@ -301,7 +431,11 @@
       "sku": "ebay:800407292943",
       "paymentLinkId": "EOF4MBQBUMVDYBK6",
       "url": "https://square.link/u/0Ds6xp4N",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/k9hUQuiR7E7XqWYrzSaf8wRqMQdZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/k9hUQuiR7E7XqWYrzSaf8wRqMQdZY",
+      "discountPaymentLinkId": "Z6ZR6FXJEC2JNUCI",
+      "discountUrl": "https://square.link/u/lySvh1I9",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2W94DHmj37sb3216cmLvL8NHzTbZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "WA7QDAZ2WFEUGXFGZMSXB6SB",
@@ -310,7 +444,11 @@
       "sku": "ebay:800407734184",
       "paymentLinkId": "IZD4VR2OJJJH4ZP4",
       "url": "https://square.link/u/JqxujS6q",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YvX7R2xJstXA7XoT07Q0LeWzE0YZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YvX7R2xJstXA7XoT07Q0LeWzE0YZY",
+      "discountPaymentLinkId": "IOOJOAOKUIQSU7LX",
+      "discountUrl": "https://square.link/u/tFmNrYGQ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8PgknRa6nKnKbsZBJ11JDZ9Xc5AZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "LGLVQYXDNLPGWAZV63HOLV3D",
@@ -319,7 +457,11 @@
       "sku": "ebay:800407752194",
       "paymentLinkId": "VIRTKRQPS4UPRMYS",
       "url": "https://square.link/u/iW5gIxep",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/G4o73slDNAbPhyJ05l3HUw63I2NZY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/G4o73slDNAbPhyJ05l3HUw63I2NZY",
+      "discountPaymentLinkId": "GXEYGM5SKX4OYDTD",
+      "discountUrl": "https://square.link/u/nqGtSSk9",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gzNubLwDROe2VdJFopBIIUmt4q8YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
       "itemId": "5UJTISW5ZU3VENBDVTJWBJRO",
@@ -328,7 +470,11 @@
       "sku": "ebay:800407780713",
       "paymentLinkId": "6QBEBSCWJIBMO75G",
       "url": "https://square.link/u/A4QRYsD7",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Axsk24X5TGtnAfrAR1RZkSdujq7YY"
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Axsk24X5TGtnAfrAR1RZkSdujq7YY",
+      "discountPaymentLinkId": "JGVTWDZGDJKOKZLE",
+      "discountUrl": "https://square.link/u/zmygwoEj",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4rbO7kDTcupBbbxlycWBYsWp6i7YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
 }
