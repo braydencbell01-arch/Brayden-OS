@@ -202,8 +202,9 @@ export function pickNewDrops(listings: Listing[], count = 3) {
   return listings.slice(0, count)
 }
 
-export function pickSaleItems(listings: Listing[], count = 4) {
-  return listings.filter((item) => isSaleListing(item)).slice(0, count)
+export function pickSaleItems(listings: Listing[], count?: number) {
+  const sale = listings.filter((item) => isSaleListing(item))
+  return count == null ? sale : sale.slice(0, count)
 }
 
 export function lowestSalePrice(listings: Listing[]) {

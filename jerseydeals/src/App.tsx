@@ -880,6 +880,8 @@ export default function App() {
   const [saleOnly, setSaleOnly] = useState(false)
   /** How many clubs to show in Shop by club (grows via Show more). */
   const [clubsShown, setClubsShown] = useState(8)
+  /** How many sale picks to show (grows via Show more). */
+  const [salePicksShown, setSalePicksShown] = useState(4)
   /** Text currently typed in the sticky search bar (filters live as you type). */
   const [query, setQuery] = useState('')
   /** Query applied to inventory — kept in sync while typing; Enter still scrolls to results. */
@@ -1102,7 +1104,11 @@ export default function App() {
   }, [catalog, soldIds])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 6), [listings])
-  const salePicks = useMemo(() => pickSaleItems(listings, 4), [listings])
+  const salePicks = useMemo(() => pickSaleItems(listings), [listings])
+  const visibleSalePicks = useMemo(
+    () => salePicks.slice(0, salePicksShown),
+    [salePicks, salePicksShown],
+  )
   const trainingPicks = useMemo(
     () => listings.filter((item) => item.tag === 'Training').slice(0, 2),
     [listings],
@@ -2746,10 +2752,24 @@ export default function App() {
                 <p className="mt-2 text-white/65">Hand-picked kits from the sale rack.</p>
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-                {salePicks.map((item, i) => (
+                {visibleSalePicks.map((item, i) => (
                   <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
+              {salePicksShown < salePicks.length ? (
+                <div className="mt-10 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      track('cta_click', { place: 'sale_picks_show_more' })
+                      setSalePicksShown(salePicks.length)
+                    }}
+                    className="border border-white/35 bg-transparent px-6 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white hover:bg-white/10"
+                  >
+                    Show more
+                  </button>
+                </div>
+              ) : null}
             </div>
           </section>
         ) : null}
