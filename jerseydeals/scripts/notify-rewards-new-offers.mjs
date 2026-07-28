@@ -75,6 +75,7 @@ function emptyState() {
 
 function catalogOffers(payload) {
   const rows = Array.isArray(payload?.offers) ? payload.offers : []
+  const today = dayKey()
   return rows
     .map((row) => ({
       id: String(row?.id || '')
@@ -83,8 +84,18 @@ function catalogOffers(payload) {
       title: String(row?.title || 'New offer').trim(),
       detail: String(row?.detail || '').trim(),
       audience: String(row?.audience || 'rewards').trim().toLowerCase(),
+      expiresAt: String(row?.expiresAt || '')
+        .trim()
+        .slice(0, 10),
     }))
-    .filter((row) => row.id && (row.audience === 'rewards' || row.audience === 'all'))
+    .filter((row) => {
+      if (!row.id || !(row.audience === 'rewards' || row.audience === 'all')) return false
+      // Skip expired catalog rows (valid through expiresAt day ET).
+      if (row.expiresAt && /^\d{4}-\d{2}-\d{2}$/.test(row.expiresAt) && today > row.expiresAt) {
+        return false
+      }
+      return true
+    })
 }
 
 function buildDigest(pending) {
@@ -95,6 +106,7 @@ function buildDigest(pending) {
   const lines = pending.slice(0, 8).flatMap((p) => {
     const block = [`• ${p.title}`]
     if (p.detail) block.push(`  ${p.detail}`)
+    if (p.expiresAt) block.push(`  Expires ${p.expiresAt}`)
     return block
   })
 
@@ -194,6 +206,7 @@ function main() {
       id,
       title: row.title,
       detail: row.detail,
+      expiresAt: row.expiresAt || '',
       seenAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     }
     pendingById.set(id, entry)

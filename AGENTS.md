@@ -65,9 +65,10 @@ Exceptions (say so plainly and stop): merge conflicts you cannot resolve, failin
 When the user asks to add/change a Rewards offer:
 
 1. Edit `jerseydeals/src/rewardsOffersCatalog.json` (and mirror `public/rewards-offers-catalog.json`).
-2. Wire any new pricing type in `offers.ts` / cart / shipping if needed; `npm run build` in `jerseydeals/`.
-3. **Same turn:** merge + push `Brayden-OS` — do not wait for “make it live.”
-4. Confirm **Deploy GitHub Pages** and **Notify Rewards new offers** ran (catalog path changes email members; max once/day ET).
+2. **Default run length: 1 month.** Set `addedAt` to today (`YYYY-MM-DD`) and `expiresAt` to one month later, unless the user specifies a different window (or no expiry). The popup `first10` offer is **not** in this catalog and never expires.
+3. Wire any new pricing type in `offers.ts` / cart / shipping if needed; `npm run build` in `jerseydeals/`.
+4. **Same turn:** merge + push `Brayden-OS` — do not wait for “make it live.”
+5. Confirm **Deploy GitHub Pages** and **Notify Rewards new offers** ran (catalog path changes email members; max once/day ET).
 
 Telling the user “PR opened” for an offer without merging is a miss.
 

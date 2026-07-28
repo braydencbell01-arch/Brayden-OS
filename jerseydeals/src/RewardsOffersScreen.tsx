@@ -1,5 +1,6 @@
 import { leaveRewardsOffers } from './rewardsMember'
 import {
+  formatOfferExpiresLabel,
   getOfferDef,
   OFFERS_EVENT,
   ensureRewardsOffers,
@@ -11,10 +12,14 @@ import { useEffect, useState } from 'react'
 function OfferCard({ offer }: { offer: WalletOffer }) {
   const def = getOfferDef(offer.id)
   if (!def) return null
+  const expiresLabel = formatOfferExpiresLabel(def.expiresAt)
   return (
     <article className="border border-navy/10 bg-cream px-5 py-5">
       <p className="font-display text-xl font-bold uppercase tracking-wide text-navy">{def.title}</p>
       <p className="mt-2 font-brand text-sm leading-relaxed text-navy/75">{def.detail}</p>
+      {expiresLabel ? (
+        <p className="mt-2 font-brand text-xs text-navy/55">{expiresLabel}</p>
+      ) : null}
       <p className="mt-4 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-crimson">
         {offer.status === 'activated' ? 'Activated for checkout' : def.activateHint}
       </p>

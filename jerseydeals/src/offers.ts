@@ -47,6 +47,8 @@ export type OfferDefinition = {
   detail: string
   /** Shown on My offers cards. */
   activateHint: string
+  /** YYYY-MM-DD inclusive end date (America/New_York). Null = no expiry (first10). */
+  expiresAt?: string | null
 }
 
 type CatalogOffer = {
@@ -55,6 +57,9 @@ type CatalogOffer = {
   detail: string
   activateHint?: string
   audience?: string
+  addedAt?: string
+  /** YYYY-MM-DD — offer is valid through this day (ET). */
+  expiresAt?: string
   pricing?: {
     type?: string
     amount?: number
@@ -67,23 +72,66 @@ const catalogRows: CatalogOffer[] = Array.isArray(rewardsOffersCatalog?.offers)
   ? (rewardsOffersCatalog.offers as CatalogOffer[])
   : []
 
+const ET_TZ = 'America/New_York'
+
+/** Today's calendar date in America/New_York as YYYY-MM-DD. */
+export function todayEtDateString(now = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ET_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+}
+
+/** True when expiresAt is set and today's ET date is after it. No date = never expires. */
+export function isExpiresAtPassed(
+  expiresAt: string | null | undefined,
+  now = new Date(),
+): boolean {
+  if (!expiresAt) return false
+  const day = String(expiresAt).trim().slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false
+  return todayEtDateString(now) > day
+}
+
+export function formatOfferExpiresLabel(expiresAt: string | null | undefined): string | null {
+  if (!expiresAt) return null
+  const day = String(expiresAt).trim().slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return null
+  const d = new Date(`${day}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return null
+  return `Expires ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+}
+
 function catalogDefinition(row: CatalogOffer): OfferDefinition {
+  const expiresAt = row.expiresAt ? String(row.expiresAt).trim().slice(0, 10) : null
   return {
     id: String(row.id || '').trim(),
     title: String(row.title || 'Rewards offer').trim(),
     detail: String(row.detail || '').trim(),
     activateHint: String(row.activateHint || 'Activate at checkout').trim(),
+    expiresAt: expiresAt || null,
   }
 }
 
-/** Offers that auto-appear under My offers for Rewards members. */
+/** Catalog rows for Rewards members that are still within their run window. */
 export function rewardsMemberCatalogOffers(): CatalogOffer[] {
   return catalogRows.filter((row) => {
     const id = String(row?.id || '').trim()
     if (!id || id === 'first10') return false
     const audience = String(row?.audience || 'rewards').toLowerCase()
-    return audience === 'rewards' || audience === 'all'
+    if (!(audience === 'rewards' || audience === 'all')) return false
+    if (isExpiresAtPassed(row.expiresAt)) return false
+    return true
   })
+}
+
+export function isOfferExpired(id: OfferId | null | undefined, now = new Date()): boolean {
+  if (!id || id === 'first10') return false
+  const row = catalogRows.find((r) => String(r.id).trim() === id)
+  if (!row) return false
+  return isExpiresAtPassed(row.expiresAt, now)
 }
 
 export function rewardsMemberOfferIds(): OfferId[] {
@@ -103,6 +151,7 @@ export const OFFER_DEFS: Record<string, OfferDefinition> = {
     title: '10% off your first order',
     detail: 'Welcome offer for first-time buyers on any kit.',
     activateHint: 'Activate at checkout',
+    expiresAt: null,
   },
   ...catalogDefs,
 }
@@ -203,9 +252,25 @@ export function writeOffersWallet(wallet: OffersWallet) {
   notify()
 }
 
-/** Offers still usable (not used). */
+/** Drop expired catalog offers from the wallet (first10 never expires). */
+export function purgeExpiredOffers() {
+  const wallet = readOffersWallet()
+  let changed = false
+  const next = wallet.offers.filter((o) => {
+    if (!isOfferExpired(o.id)) return true
+    changed = true
+    return false
+  })
+  if (!changed) return
+  wallet.offers = next
+  if (wallet.activeId && isOfferExpired(wallet.activeId)) wallet.activeId = null
+  writeOffersWallet(wallet)
+}
+
+/** Offers still usable (not used, not expired). */
 export function listOpenOffers(): WalletOffer[] {
-  return readOffersWallet().offers.filter((o) => o.status !== 'used')
+  purgeExpiredOffers()
+  return readOffersWallet().offers.filter((o) => o.status !== 'used' && !isOfferExpired(o.id))
 }
 
 export function getActiveCheckoutOffer(): WalletOffer | null {
@@ -260,8 +325,9 @@ export function claimFirstBuyerOffer(email: string) {
   return claimOffer('first10')
 }
 
-/** Rewards members auto-receive every catalog offer under My offers. */
+/** Rewards members auto-receive every active (non-expired) catalog offer under My offers. */
 export function ensureRewardsOffers() {
+  purgeExpiredOffers()
   if (!isRewardsMember()) return
   for (const id of rewardsMemberOfferIds()) {
     claimOffer(id)
@@ -279,6 +345,9 @@ export function ensureClaimedFirstBuyerOffer() {
 }
 
 export function activateOfferAtCheckout(id: OfferId): { ok: true } | { ok: false; message: string } {
+  if (isOfferExpired(id)) {
+    return { ok: false, message: 'That offer has expired.' }
+  }
   if (id === 'first10' && hasPurchased()) {
     return { ok: false, message: 'First-order offer is only for new buyers.' }
   }
@@ -401,6 +470,9 @@ export function offerEligibleForCart(
   id: OfferId,
   cartTitles: string[],
 ): { ok: true } | { ok: false; message: string } {
+  if (isOfferExpired(id)) {
+    return { ok: false, message: 'That offer has expired.' }
+  }
   if (id === 'first10') {
     if (hasPurchased()) return { ok: false, message: 'First-order offer is only for new buyers.' }
     return { ok: true }

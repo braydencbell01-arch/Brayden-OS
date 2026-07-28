@@ -320,10 +320,11 @@ Source of truth: `src/rewardsOffersCatalog.json`
 - App auto-adds those offers to My offers for Rewards members
 - Notify job emails members when a new catalog offer appears
 - First run bootstraps with no email
+- **Default:** each catalog offer runs **one month** (`addedAt` + `expiresAt`). Expired offers drop out of My offers / checkout. The popup **10% first-order** offer (`first10`) is not in this catalog and has **no** expiration.
 
 When you want a new member offer: tell the agent what it is — they add it to the
-catalog, **merge to `Brayden-OS` the same turn** (no “make it live” ask), and
-My offers + the new-offer email stay in sync automatically.
+catalog with a one-month expiry (unless you say otherwise), **merge to `Brayden-OS` the same turn**,
+and My offers + the new-offer email stay in sync automatically.
 
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \

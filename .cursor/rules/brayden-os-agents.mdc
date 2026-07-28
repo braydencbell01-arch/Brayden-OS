@@ -38,7 +38,7 @@ The user should **never** need to say “make it live” or “merge it.” Ship
 
 Do **not** stop at “PR opened” / draft waiting. Exceptions only: unresolved conflicts, failing build, or the user explicitly asked for review-only / draft.
 
-**Jersey Deals offers:** adding/changing `rewardsOffersCatalog.json` is not done until merged to `Brayden-OS` (deploys site + runs new-offer email). Never leave an offer on a PR waiting for the user.
+**Jersey Deals offers:** adding/changing `rewardsOffersCatalog.json` is not done until merged to `Brayden-OS` (deploys site + runs new-offer email). Never leave an offer on a PR waiting for the user. **Default:** set `addedAt` today and `expiresAt` = today + 1 month unless the user says otherwise. Popup `first10` never expires.
 
 ## Done means on Brayden-OS
 

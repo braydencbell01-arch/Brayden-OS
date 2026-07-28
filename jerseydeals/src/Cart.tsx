@@ -19,6 +19,7 @@ import {
   clearCheckoutActivation,
   ensureClaimedFirstBuyerOffer,
   ensureRewardsOffers,
+  formatOfferExpiresLabel,
   getActiveCheckoutOffer,
   hasClaimedFirstBuyerOffer,
   listOpenOffers,
@@ -330,6 +331,7 @@ export function CartDrawer({
                     const def = getOfferDef(offer.id)
                     if (!def) return null
                     const isActive = activeId === offer.id
+                    const expiresLabel = formatOfferExpiresLabel(def.expiresAt)
                     return (
                       <li
                         key={offer.id}
@@ -340,6 +342,9 @@ export function CartDrawer({
                           <p className="text-[0.65rem] uppercase tracking-[0.12em] text-muted">
                             {isActive ? 'Active on this checkout' : def.activateHint}
                           </p>
+                          {expiresLabel ? (
+                            <p className="mt-0.5 text-[0.65rem] text-muted">{expiresLabel}</p>
+                          ) : null}
                         </div>
                         <button
                           type="button"
