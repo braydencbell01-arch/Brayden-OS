@@ -44,6 +44,12 @@ import { FavoritesScreen } from './FavoritesScreen'
 import { FirstBuyerOfferModal } from './FirstBuyerOffer'
 import { FitOneLine } from './FitOneLine'
 import { FreeShippingBar } from './FreeShippingBar'
+import {
+  goToInventoryPage,
+  inventoryHref,
+  leaveInventoryPage,
+  useInventoryPageOpen,
+} from './inventoryRoute'
 import { listingViewCountsLastWeek, recordListingView } from './listingViews'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
@@ -862,7 +868,7 @@ export default function App() {
   const [catalog, setCatalog] = useState<ListingsPayload | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-  const [navSolid, setNavSolid] = useState(false)
+  const [navScrolled, setNavScrolled] = useState(false)
   const [tagFilter, setTagFilter] = useState<TypeFilterId | string>('All')
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('All')
   const [sizeFilter, setSizeFilter] = useState('All')
@@ -895,6 +901,8 @@ export default function App() {
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
   const offersOpen = useRewardsOffersOpen()
   const favoritesOpen = useFavoritesScreenOpen()
+  const inventoryOpen = useInventoryPageOpen()
+  const navSolid = inventoryOpen || navScrolled
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const [inventoryPage, setInventoryPage] = useState(1)
@@ -930,6 +938,10 @@ export default function App() {
       window.removeEventListener('jerseydeals:purchased', syncOffer)
     }
   }, [])
+
+  useEffect(() => {
+    track('page_view', { page: inventoryOpen ? 'inventory' : 'landing' })
+  }, [inventoryOpen])
 
   useEffect(() => {
     if (loadState !== 'ready') return
@@ -1046,7 +1058,7 @@ export default function App() {
 
   useEffect(() => {
     const onScroll = () => {
-      setNavSolid(window.scrollY > 48)
+      setNavScrolled(window.scrollY > 48)
     }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -1282,27 +1294,28 @@ export default function App() {
   }, [deferredQuery, filtered.length, listings.length, genderFilter])
 
   function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
+    goToInventoryPage()
     setFiltersOpen(true)
     const run = () => {
-      // Always land on the product grid (below filters), for search and every inventory CTA.
       const target =
         document.getElementById('inventory-results') || document.getElementById('inventory-browse')
-      if (!target) return
+      if (!target) {
+        if (opts?.focusSearch) document.getElementById('sticky-search')?.focus({ preventScroll: true })
+        return
+      }
       const header = document.querySelector('header')
       const headerH = header instanceof HTMLElement ? header.getBoundingClientRect().height : 120
       const top = window.scrollY + target.getBoundingClientRect().top - headerH - 8
-      // iOS Safari can crash when smooth programmatic scrolls stack with sticky chrome.
       const preferSmooth =
         typeof window !== 'undefined' &&
         !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
       window.scrollTo({ top: Math.max(0, top), behavior: preferSmooth ? 'smooth' : 'auto' })
       if (opts?.focusSearch) document.getElementById('sticky-search')?.focus({ preventScroll: true })
     }
-    // Wait for filter panel / chips to layout before scrolling to products.
-    requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(run, 50)))
+    requestAnimationFrame(() => requestAnimationFrame(() => window.setTimeout(run, 80)))
   }
 
-  /** Apply sticky search + jump to product results — only from Enter / blue button. */
+  /** Apply sticky search + open the inventory page results. */
   function activateSearch(opts?: { focusSearch?: boolean }) {
     setAppliedQuery(query.trim())
     scrollToInventoryBrowse({ focusSearch: opts?.focusSearch })
@@ -1447,7 +1460,7 @@ export default function App() {
     { href: '#epl', label: 'EPL' },
     { href: '#ucl', label: 'UCL' },
     { href: '#shop', label: 'Shop' },
-    { href: '#inventory', label: 'Inventory' },
+    { href: inventoryHref(), label: 'Inventory', inventory: true as const },
     { href: '#rewards', label: 'Rewards' },
     { href: '#size-guide', label: 'Sizing' },
   ]
@@ -1516,7 +1529,11 @@ export default function App() {
       </div>
 
       <a
-        href="#inventory"
+        href={inventoryHref()}
+        onClick={(e) => {
+          e.preventDefault()
+          goInventory({ reset: true })
+        }}
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:bg-crimson focus:px-4 focus:py-2 focus:text-white"
       >
         Skip to inventory
@@ -1532,6 +1549,11 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 md:px-8">
           <a
             href="#top"
+            onClick={(e) => {
+              if (!inventoryOpen) return
+              e.preventDefault()
+              leaveInventoryPage()
+            }}
             className="inline-flex items-center outline-none focus-visible:ring-2 focus-visible:ring-crimson"
           >
             <BrandMark
@@ -1545,6 +1567,20 @@ export default function App() {
               <a
                 key={link.href}
                 href={link.href}
+                onClick={(e) => {
+                  if ('inventory' in link && link.inventory) {
+                    e.preventDefault()
+                    goInventory()
+                    return
+                  }
+                  if (inventoryOpen && link.href.startsWith('#')) {
+                    e.preventDefault()
+                    leaveInventoryPage()
+                    window.setTimeout(() => {
+                      document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
+                    }, 40)
+                  }
+                }}
                 className={`text-xs font-semibold uppercase tracking-[0.18em] transition ${
                   navSolid ? 'text-navy/70 hover:text-navy' : 'text-white/70 hover:text-white'
                 }`}
@@ -1743,9 +1779,13 @@ export default function App() {
             ) : null}
             <button
               type="button"
-              aria-label="Go to top of page"
+              aria-label={inventoryOpen ? 'Back to home' : 'Go to top of page'}
               onClick={() => {
                 track('nav_home', { place: 'sticky_search' })
+                if (inventoryOpen) {
+                  leaveInventoryPage()
+                  return
+                }
                 const preferSmooth =
                   !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
                   !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
@@ -1771,6 +1811,8 @@ export default function App() {
       </header>
 
       <main id="top" className="pb-36 md:pb-28">
+        {!inventoryOpen ? (
+          <>
         {/* Hero */}
         <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
           <div className="absolute inset-0" aria-hidden>
@@ -2661,9 +2703,27 @@ export default function App() {
             </button>
           ))}
         </section>
+          </>
+        ) : null}
 
+        {inventoryOpen ? (
+          <>
+            <div className="border-b border-navy/10 bg-cream px-5 pb-4 pt-28 md:px-8 md:pt-32">
+              <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+                <button
+                  type="button"
+                  onClick={() => leaveInventoryPage()}
+                  className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:text-crimson"
+                >
+                  ← Back to home
+                </button>
+                <p className="font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
+                  Full inventory
+                </p>
+              </div>
+            </div>
         {/* Full inventory — filters first, results directly below (search scrolls here). */}
-        <section id="inventory" className="cv-auto scroll-mt-48 bg-chalk py-20 md:py-28">
+        <section id="inventory" className="cv-auto scroll-mt-48 bg-chalk pb-20 pt-8 md:pb-28 md:pt-10">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <div id="inventory-browse" className="scroll-mt-48">
               <motion.div {...fadeUp(reduce)} className="max-w-2xl">
@@ -3030,7 +3090,11 @@ export default function App() {
             ) : null}
           </div>
         </section>
+          </>
+        ) : null}
 
+        {!inventoryOpen ? (
+          <>
         {/* Trust */}
         <section id="buy-direct" className="cv-auto bg-white">
           <div className="mx-auto grid max-w-6xl md:grid-cols-2">
@@ -3387,6 +3451,8 @@ export default function App() {
             </button>
           </motion.div>
         </section>
+          </>
+        ) : null}
       </main>
 
       <footer className="border-t border-white/10 bg-navy-deep py-14 pb-52 text-white/80 md:pb-28">
@@ -3587,7 +3653,21 @@ export default function App() {
               <a
                 key={link.href}
                 href={link.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => {
+                  setMenuOpen(false)
+                  if ('inventory' in link && link.inventory) {
+                    e.preventDefault()
+                    goInventory()
+                    return
+                  }
+                  if (inventoryOpen && link.href.startsWith('#')) {
+                    e.preventDefault()
+                    leaveInventoryPage()
+                    window.setTimeout(() => {
+                      document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
+                    }, 40)
+                  }
+                }}
                 className="py-4 text-sm font-semibold uppercase tracking-[0.18em] text-navy transition hover:text-crimson"
               >
                 {link.label}
