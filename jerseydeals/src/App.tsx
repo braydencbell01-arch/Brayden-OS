@@ -3457,7 +3457,7 @@ export default function App() {
             <motion.div {...fadeUp(reduce)}>
               <p className="eyebrow text-crimson">Support</p>
               <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
-                Sizing &amp; shipping
+                Q+A
               </h2>
               <p className="mt-3 text-lg text-muted">Straight answers before you checkout.</p>
             </motion.div>
