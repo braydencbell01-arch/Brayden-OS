@@ -514,6 +514,7 @@ function ProductGallery({
 function ProductLink({
   item,
   tone = 'dark',
+  favoriteSet,
   onAddToCart,
   onQuickView,
   onBuyNow,
@@ -523,6 +524,8 @@ function ProductLink({
   reduce?: boolean | null
   delay?: number
   tone?: 'dark' | 'light'
+  /** Club ids the shopper has favorited — drives red vs navy card outline. */
+  favoriteSet?: Set<string>
   onAddToCart: (item: Listing) => void
   onQuickView: (item: Listing) => void
   onBuyNow: (item: Listing) => void
@@ -533,6 +536,8 @@ function ProductLink({
   const onSale = isSaleListing(item)
   const size = listingSize(item)
   const photoCount = item.images?.length ? item.images.length : item.image ? 1 : 0
+  const club = inferClub(item.title)
+  const favorited = Boolean(club && favoriteSet?.has(club.id))
   const muted = tone === 'dark' ? 'text-white/75' : 'text-muted'
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
   const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
@@ -544,9 +549,9 @@ function ProductLink({
       <div className="group outline-none">
         {/* Cover only on cards — full swipe gallery lives in quick view. */}
         <div
-          className={`relative aspect-square w-full overflow-hidden border-2 border-crimson ${
-            tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
-          }`}
+          className={`relative aspect-square w-full overflow-hidden border-2 ${
+            favorited ? 'border-crimson' : 'border-navy'
+          } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
         >
           <button
             type="button"
@@ -1735,7 +1740,7 @@ export default function App() {
               transition={{ duration: 0.8, ease }}
             >
               <BrandMark size="hero" className="drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]" />
-              <h1 className="mt-6 max-w-xl font-display text-5xl font-bold uppercase leading-[0.9] tracking-wide text-cream sm:text-6xl md:text-7xl">
+              <h1 className="mt-6 max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
                 Jersey Deals
               </h1>
               <div className="brand-rule mt-4" aria-hidden />
@@ -2088,7 +2093,7 @@ export default function App() {
             {newDrops.length > 0 ? (
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {newDrops.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.06} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.06} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             ) : (
@@ -2133,7 +2138,7 @@ export default function App() {
                 return filtered.length > 0 ? (
                   <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                     {filtered.slice(0, 8).map((item, i) => (
-                      <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                      <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                     ))}
                   </ul>
                 ) : (
@@ -2202,7 +2207,7 @@ export default function App() {
               </motion.div>
               <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {trainingPicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             </div>
@@ -2242,7 +2247,7 @@ export default function App() {
             {featured.length > 0 && (
               <ul className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
                 {featured.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             )}
@@ -2441,7 +2446,7 @@ export default function App() {
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {salePicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
                 ))}
               </ul>
             </div>
@@ -2778,7 +2783,7 @@ export default function App() {
                     {visibleInventory.map((item) => (
                       <ProductLink
                         key={item.id}
-                        item={item}
+                        item={item} favoriteSet={favoriteSet}
                         tone="light"
                         onAddToCart={handleAddToCart}
                         onQuickView={handleQuickView}
@@ -2843,7 +2848,7 @@ export default function App() {
                   {recentlyViewed.map((item, i) => (
                     <ProductLink
                       key={`recent-${item.id}`}
-                      item={item}
+                      item={item} favoriteSet={favoriteSet}
                       reduce={reduce}
                       delay={i * 0.04}
                       tone="light"
