@@ -521,51 +521,42 @@ export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' 
 
 /**
  * Handful of kits with the most views in the last week.
- * Falls back to a light popularity mix when view data is cold.
+ * Falls back to a non-sale popularity mix when view data is cold.
+ * (Trending is not the sale rack — sale items only fill gaps.)
  */
 export function pickTrending(
   listings: Listing[],
   count = 4,
   viewCounts: Record<string, number> = {},
 ) {
-  const ranked = [...listings].sort((a, b) => {
-    const va = viewCounts[a.id] || 0
-    const vb = viewCounts[b.id] || 0
-    if (vb !== va) return vb - va
-    // Cold-start / ties: prefer in-stock scarcity + sale + newer sync order
-    const stockA = a.quantity > 0 ? 1 : 0
-    const stockB = b.quantity > 0 ? 1 : 0
-    if (stockB !== stockA) return stockB - stockA
-    const saleA = isSaleListing(a) ? 1 : 0
-    const saleB = isSaleListing(b) ? 1 : 0
-    if (saleB !== saleA) return saleB - saleA
-    return 0
-  })
-  const hasViews = ranked.some((item) => (viewCounts[item.id] || 0) > 0)
-  if (hasViews) return ranked.slice(0, count)
-
-  const sale = listings.filter((item) => isSaleListing(item))
-  const rest = listings.filter((item) => !isSaleListing(item))
-  const mixed: Listing[] = []
+  const inStock = listings.filter((item) => item.quantity > 0)
+  const pool = inStock.length > 0 ? inStock : listings
   const used = new Set<string>()
+  const out: Listing[] = []
   const push = (item: Listing | undefined) => {
-    if (!item || used.has(item.id)) return
-    mixed.push(item)
+    if (!item || used.has(item.id) || out.length >= count) return
+    out.push(item)
     used.add(item.id)
   }
-  for (const item of sale) {
-    push(item)
-    if (mixed.length >= Math.min(2, count)) break
-  }
+
+  const viewed = [...pool]
+    .map((item) => ({ item, views: viewCounts[item.id] || 0 }))
+    .filter((row) => row.views > 0)
+    .sort((a, b) => b.views - a.views || a.item.title.localeCompare(b.item.title))
+
+  for (const row of viewed) push(row.item)
+
+  if (out.length >= count) return out.slice(0, count)
+
+  // Cold start / pad: brand variety from non-sale first, then other non-sale, sale last.
+  const nonSale = pool.filter((item) => !isSaleListing(item))
+  const sale = pool.filter((item) => isSaleListing(item))
   for (const brand of ['Nike', 'Adidas', 'Puma']) {
-    push(rest.find((item) => item.brand === brand))
-    if (mixed.length >= count) break
+    push(nonSale.find((item) => item.brand === brand))
   }
-  for (const item of listings) {
-    push(item)
-    if (mixed.length >= count) break
-  }
-  return mixed.slice(0, count)
+  for (const item of nonSale) push(item)
+  for (const item of sale) push(item)
+  return out.slice(0, count)
 }
 
 export function listingsMatchingClub(listings: Listing[], clubId: string) {
