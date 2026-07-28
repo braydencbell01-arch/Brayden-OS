@@ -79,19 +79,27 @@ jobs:
           export IMAP_HOST="${IMAP_HOST:-imap.ionos.com}"
           export IMAP_PORT="${IMAP_PORT:-993}"
           echo "IMAP ${IMAP_HOST}:${IMAP_PORT} as ${SMTP_USER} lookback=${IMAP_LOOKBACK_DAYS}d dry=${DRY_RUN:-0}"
-          npm run email:ingest-inbox | tee /tmp/ingest-out.json
-          # Pretty summary for the Actions UI
-          python3 - <<'PY'
-          import json, pathlib, re
-          text = pathlib.Path('/tmp/ingest-out.json').read_text()
-          # script prints one JSON object at the end
-          m = re.findall(r'\{[\s\S]*\}\s*$', text)
-          if m:
-            data = json.loads(m[-1])
-            print(f"ingested={data.get('ingested')} members={data.get('members')} nonMembers={data.get('nonMembers')}")
-            for row in (data.get('sampleIngested') or [])[:10]:
+          export INGEST_SUMMARY_PATH=/tmp/jd-ingest-summary.json
+          # Run node directly (not npm) so stdout is line-buffered in Actions logs.
+          stdbuf -oL -eL node scripts/ingest-formsubmit-emails.mjs
+          if [ -f "$INGEST_SUMMARY_PATH" ]; then
+            echo "---- ingest summary ----"
+            cat "$INGEST_SUMMARY_PATH"
+            echo "---- end summary ----"
+            python3 - <<'PY'
+          import json, pathlib
+          data = json.loads(pathlib.Path('/tmp/jd-ingest-summary.json').read_text())
+          print(f"ingested={data.get('ingested')} unique={data.get('uniqueIngested')} members={data.get('members')} nonMembers={data.get('nonMembers')}")
+          print('skipReasons=', data.get('skipReasons'))
+          for row in (data.get('sampleIngested') or [])[:10]:
               print(f"  + {row.get('membership')} {row.get('email')} ({row.get('source')})")
+          for row in (data.get('sampleSkipped') or [])[:10]:
+              print(f"  - {row.get('reason')} {row.get('subject') or row.get('email') or ''}")
           PY
+          else
+            echo "Missing ingest summary file" >&2
+            exit 1
+          fi
 
       - name: Commit email lists if changed
         run: |

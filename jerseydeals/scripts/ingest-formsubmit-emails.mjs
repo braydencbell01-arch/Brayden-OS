@@ -16,6 +16,7 @@
  *   [Jersey Deals / Square] new info · …
  */
 
+import { writeFileSync } from 'node:fs'
 import { ImapFlow } from 'imapflow'
 import { simpleParser } from 'mailparser'
 import {
@@ -43,20 +44,26 @@ const IGNORE_EMAILS = new Set([
   'shop@jerseydeals.online',
   'noreply@formsubmit.co',
   'form@formsubmit.co',
+  'submissions@formsubmit.co',
   'noreply@square.com',
   'noreply@mail.squareup.com',
 ])
+const SUMMARY_PATH = (process.env.INGEST_SUMMARY_PATH || '/tmp/jd-ingest-summary.json').trim()
 
-function log(...args) {
-  // Always flush — stdout is often fully buffered when piped in Actions.
-  console.log(...args)
-  if (typeof process.stdout.write === 'function') {
-    try {
-      process.stdout.write('')
-    } catch {
-      /* ignore */
-    }
+function isIgnoredEmail(email) {
+  const e = normalizeEmail(email)
+  if (!e) return true
+  if (IGNORE_EMAILS.has(e)) return true
+  if (e.endsWith('@formsubmit.co')) return true
+  if (e.endsWith('@square.com') || e.endsWith('@squareup.com') || e.endsWith('@mail.squareup.com')) {
+    return true
   }
+  return false
+}
+
+function logLine(msg) {
+  // Line-buffer friendly for Actions pipes.
+  process.stdout.write(`${msg}\n`)
 }
 
 function extractField(text, keys) {
@@ -91,7 +98,7 @@ function addressFromParsed(parsed, field) {
   const vals = Array.isArray(block.value) ? block.value : []
   for (const v of vals) {
     const addr = normalizeEmail(v?.address || '')
-    if (isValidEmail(addr) && !IGNORE_EMAILS.has(addr)) return addr
+    if (isValidEmail(addr) && !isIgnoredEmail(addr)) return addr
   }
   return ''
 }
@@ -101,9 +108,7 @@ function firstLeadEmail(blob) {
   for (const raw of matches) {
     const email = normalizeEmail(raw)
     if (!isValidEmail(email)) continue
-    if (IGNORE_EMAILS.has(email)) continue
-    if (/formsubmit\.co$/i.test(email)) continue
-    if (/squareup?\.com$/i.test(email)) continue
+    if (isIgnoredEmail(email)) continue
     if (/ionos\./i.test(email)) continue
     return email
   }
@@ -123,7 +128,7 @@ function parseLeadFromMessage({ subject, text, html, replyTo, from }) {
     from ||
     ''
   email = normalizeEmail(email)
-  if (IGNORE_EMAILS.has(email)) email = ''
+  if (isIgnoredEmail(email)) email = ''
 
   let membership = (subjectMatch?.[1] || extractField(blob, ['jd_membership', 'membership', 'Membership']) || '')
     .trim()
@@ -202,7 +207,7 @@ async function main() {
       since,
       or: [{ subject: 'Jersey Deals' }, { body: 'jerseydeals' }, { body: 'Jersey Deals' }],
     })
-    log(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
+    logLine(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
 
     if (!uids.length) {
       // fall through to summary
@@ -212,7 +217,7 @@ async function main() {
         flags: true,
         source: true,
         envelope: true,
-      })) {
+      }, { uid: true })) {
         const flags = [...(msg.flags || [])]
         if (
           flags.some(
@@ -300,10 +305,23 @@ async function main() {
     skipReasons: Object.fromEntries(skipReasons),
     members: members.count,
     nonMembers: nonMembers.count,
+    memberEmails: members.emails,
+    nonMemberEmails: nonMembers.emails,
     sampleIngested: ingested.slice(0, 20),
     sampleSkipped: skipped.filter((s) => s.reason !== 'already_processed').slice(0, 20),
   }
-  log(JSON.stringify(summary, null, 2))
+  writeFileSync(SUMMARY_PATH, `${JSON.stringify(summary, null, 2)}\n`)
+  logLine(`SUMMARY_PATH=${SUMMARY_PATH}`)
+  logLine(
+    `ingested=${summary.ingested} unique=${summary.uniqueIngested} members=${summary.members} nonMembers=${summary.nonMembers}`,
+  )
+  logLine(`skipReasons=${JSON.stringify(summary.skipReasons)}`)
+  for (const row of summary.sampleIngested.slice(0, 10)) {
+    logLine(`  + ${row.membership} ${row.email} (${row.source})`)
+  }
+  for (const row of summary.sampleSkipped.slice(0, 10)) {
+    logLine(`  - ${row.reason} uid=${row.uid} ${row.subject || row.email || ''}`)
+  }
 }
 
 main().catch((err) => {
