@@ -58,6 +58,7 @@ import {
   leaveInventoryPage,
   useInventoryPageOpen,
 } from './inventoryRoute'
+import { suppressLandingScrollRestore } from './landingScroll'
 import { listingViewCountsLastWeek, recordListingView } from './listingViews'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
@@ -1591,6 +1592,7 @@ export default function App() {
                   }
                   if (inventoryOpen && link.href.startsWith('#')) {
                     e.preventDefault()
+                    suppressLandingScrollRestore()
                     leaveInventoryPage()
                     window.setTimeout(() => {
                       document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
@@ -3749,6 +3751,7 @@ export default function App() {
                   }
                   if (inventoryOpen && link.href.startsWith('#')) {
                     e.preventDefault()
+                    suppressLandingScrollRestore()
                     leaveInventoryPage()
                     window.setTimeout(() => {
                       document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
