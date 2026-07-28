@@ -2064,7 +2064,7 @@ export default function App() {
               </p>
             </motion.div>
 
-            <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            <div className="mt-7 flex flex-col">
               <motion.button
                 type="button"
                 onClick={() => {
@@ -2072,17 +2072,17 @@ export default function App() {
                   goInventory({ audience: 'Youth', reset: true })
                 }}
                 {...fadeUp(reduce, 0.05)}
-                className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
+                className="group relative aspect-[16/9] w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
               >
                 <img
                   src={asset('category-youth.jpg')}
                   alt=""
-                  className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover transition duration-700 group-hover:scale-[1.04]"
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
                   loading="lazy"
                   decoding="async"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
                   <p className="eyebrow text-white/70">Youth</p>
                   <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                     Youth apparel
@@ -2101,17 +2101,17 @@ export default function App() {
                     goInventory({ saleOnly: true, reset: true })
                   }}
                   {...fadeUp(reduce, 0.1)}
-                  className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
+                  className="group relative aspect-[16/9] w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
                 >
                   <img
                     src={asset('category-sale.jpg')}
                     alt=""
-                    className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover transition duration-700 group-hover:scale-[1.04]"
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
+                  <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
                     <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                       {SALE_HEADLINE}
                     </p>
@@ -2127,17 +2127,17 @@ export default function App() {
                   rel="noopener noreferrer"
                   onClick={() => track('category_click', { category: 'category_sale' })}
                   {...fadeUp(reduce, 0.1)}
-                  className="group relative aspect-[4/3] w-full overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
+                  className="group relative aspect-[16/9] w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
                 >
                   <img
                     src={asset('category-sale.jpg')}
                     alt=""
-                    className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover transition duration-700 group-hover:scale-[1.04]"
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
                     loading="lazy"
                     decoding="async"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
+                  <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
                     <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                       {SALE_HEADLINE}
                     </p>
@@ -2152,20 +2152,20 @@ export default function App() {
                   goInventory({ tag: 'All', reset: true })
                 }}
                 {...fadeUp(reduce, 0.14)}
-                className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
+                className="group relative aspect-[16/9] w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
               >
                 <img
                   src={asset('category-catalog.jpg')}
                   alt=""
-                  className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover object-center transition duration-700 group-hover:scale-[1.04]"
+                  className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.03]"
                   loading="lazy"
                   decoding="async"
                   onError={(e) => {
                     e.currentTarget.src = FALLBACK_IMAGE
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/50 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-4 md:p-5">
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
+                <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
                   <p className="eyebrow text-white/70">Inventory</p>
                   <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
                     Full catalog
