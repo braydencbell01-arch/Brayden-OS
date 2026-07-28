@@ -1,10 +1,21 @@
 {
-  "syncedAt": "2026-07-27T19:52:50Z",
+  "syncedAt": "2026-07-28T16:15:30Z",
   "kind": "non_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 0,
-  "emails": [],
-  "entries": [],
+  "count": 1,
+  "emails": [
+    "braydencbell01@gmail.com"
+  ],
+  "entries": [
+    {
+      "email": "braydencbell01@gmail.com",
+      "sources": [
+        "landing"
+      ],
+      "firstSeen": "2026-07-26T16:48:52.000Z",
+      "lastSeen": "2026-07-26T16:48:52.000Z"
+    }
+  ],
   "note": "Jersey Deals landing-page non-member emails only (not Square Online / BrayStats)."
 }
