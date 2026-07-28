@@ -1,15 +1,13 @@
 {
-  "syncedAt": "2026-07-28T16:28:33Z",
+  "syncedAt": "2026-07-28T16:30:00Z",
   "kind": "rewards_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 6,
+  "count": 4,
   "emails": [
     "braydencbell01@gmail.com",
     "calebrschrader@gmail.com",
     "lynne8002@aol.com",
-    "member@example.com",
-    "rewards-dock-qa@example.com",
     "tbsports9@icloud.com"
   ],
   "entries": [
@@ -42,22 +40,6 @@
       "firstSeen": "2026-07-27T18:55:23.000Z",
       "lastSeen": "2026-07-27T20:05:23.000Z",
       "phone": "7576309980"
-    },
-    {
-      "email": "member@example.com",
-      "sources": [
-        "rewards_club"
-      ],
-      "firstSeen": "2026-07-27T19:12:47.000Z",
-      "lastSeen": "2026-07-27T19:12:47.000Z"
-    },
-    {
-      "email": "rewards-dock-qa@example.com",
-      "sources": [
-        "rewards_club"
-      ],
-      "firstSeen": "2026-07-27T17:33:59.000Z",
-      "lastSeen": "2026-07-27T17:33:59.000Z"
     },
     {
       "email": "tbsports9@icloud.com",
