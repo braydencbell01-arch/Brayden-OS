@@ -33,7 +33,8 @@ import {
 } from './cart'
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
-import { ClubFavoriteButton, HeartIcon } from './FavoriteControls'
+import { ClubFavoriteButton, ClubLogoMark, HeartIcon } from './FavoriteControls'
+import { getClubById } from './clubCatalog'
 import {
   favoriteClubIdSet,
   goToFavoritesScreen,
@@ -295,7 +296,6 @@ const UCL_KIT_IMAGE: Record<string, string> = {
   'manchester-city': 'epl-kits/manchester-city.jpg',
   'manchester-united': 'epl-kits/manchester-united.jpg',
   tottenham: 'epl-kits/tottenham.jpg',
-  newcastle: 'epl-kits/newcastle.jpg',
 }
 const UCL_TEAM_COLOR: Record<string, string> = {
   ...EPL_TEAM_COLOR,
@@ -311,6 +311,37 @@ const UCL_TEAM_COLOR: Record<string, string> = {
   'borussia-dortmund': '#FDE100',
   'bayer-leverkusen': '#E32221',
   ajax: '#D2122E',
+  'aston-villa': '#95BFE5',
+  monaco: '#E31837',
+  lille: '#E01E26',
+  atalanta: '#1E71B8',
+}
+
+/** Outline color for listing cards — club primary when known, else navy (logo ring). */
+const CLUB_OUTLINE_COLOR: Record<string, string> = {
+  ...UCL_TEAM_COLOR,
+  germany: '#000000',
+  argentina: '#74ACDF',
+  brazil: '#009C3B',
+  spain: '#AA151B',
+  france: '#002395',
+  italy: '#009246',
+  portugal: '#006600',
+  mexico: '#006847',
+  usa: '#002868',
+  'inter-miami': '#F7B5CD',
+  'rb-leipzig': '#E32219',
+  marseille: '#2FA3E0',
+  lyon: '#0033A0',
+  villarreal: '#FFE500',
+  lazio: '#87D8F7',
+}
+
+/** Company logos used in Shop by company (reuse collection art). */
+const COMPANY_LOGO: Record<string, string> = {
+  nike: 'collections/nike.jpg',
+  adidas: 'collections/adidas.jpg',
+  puma: 'collections/puma.jpg',
 }
 
 function fadeUp(reduce: boolean | null, delay = 0) {
@@ -591,8 +622,12 @@ function ProductLink({
         {/* Cover only on cards — full swipe gallery lives in quick view. */}
         <div
           className={`relative aspect-square w-full overflow-hidden border-2 ${
-            favorited ? 'border-crimson' : 'border-navy'
+            favorited ? 'ring-[3px] ring-crimson ring-offset-1 ring-offset-cream' : ''
           } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
+          style={{
+            borderColor:
+              (club && CLUB_OUTLINE_COLOR[club.id]) || (tone === 'dark' ? '#fcf5e9' : '#0b223f'),
+          }}
         >
           <button
             type="button"
@@ -874,6 +909,10 @@ export default function App() {
   const [sizeFilter, setSizeFilter] = useState('All')
   const [brandFilter, setBrandFilter] = useState('All')
   const [priceFilter, setPriceFilter] = useState<PriceFilterId>('All')
+  /** Curated sale rack (hand-picked titles), independent of price bands. */
+  const [saleOnly, setSaleOnly] = useState(false)
+  /** How many clubs to show in Shop by club (grows via Show more). */
+  const [clubsShown, setClubsShown] = useState(8)
   /** Text currently typed in the sticky search bar (filters live as you type). */
   const [query, setQuery] = useState('')
   /** Query applied to inventory — kept in sync while typing; Enter still scrolls to results. */
@@ -1095,7 +1134,7 @@ export default function App() {
     return dedupeListingsByTitle(rows)
   }, [catalog, soldIds])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
-  const newDrops = useMemo(() => pickNewDrops(listings, 4), [listings])
+  const newDrops = useMemo(() => pickNewDrops(listings, 6), [listings])
   const salePicks = useMemo(() => pickSaleItems(listings, 4), [listings])
   const trainingPicks = useMemo(
     () => listings.filter((item) => item.tag === 'Training').slice(0, 2),
@@ -1141,6 +1180,7 @@ export default function App() {
         const club = inferClub(item.title)
         if (!club || !favoriteSet.has(club.id)) return false
       }
+      if (saleOnly && !isSaleListing(item)) return false
       if (!matchesLeagueFilter(item, leagueFilter)) return false
       if (!matchesPriceFilter(item, priceFilter)) return false
       return matchesListingQuery(item, deferredQuery)
@@ -1162,6 +1202,7 @@ export default function App() {
     clubFilter,
     favoritesOnly,
     favoriteSet,
+    saleOnly,
     leagueFilter,
     priceFilter,
     deferredQuery,
@@ -1177,6 +1218,7 @@ export default function App() {
     brandFilter,
     clubFilter,
     favoritesOnly,
+    saleOnly,
     leagueFilter,
     priceFilter,
     deferredQuery,
@@ -1206,6 +1248,13 @@ export default function App() {
       })
     }
     if (tagFilter !== 'All') chips.push({ key: 'tag', label: tagFilter, clear: () => setTagFilter('All') })
+    if (saleOnly) {
+      chips.push({
+        key: 'sale',
+        label: 'Sale rack',
+        clear: () => setSaleOnly(false),
+      })
+    }
     if (priceFilter !== 'All') {
       chips.push({
         key: 'price',
@@ -1245,6 +1294,7 @@ export default function App() {
     genderFilter,
     tagFilter,
     priceFilter,
+    saleOnly,
     sizeFilter,
     brandFilter,
     clubFilter,
@@ -1274,6 +1324,7 @@ export default function App() {
     setSizeFilter('All')
     setBrandFilter('All')
     setPriceFilter('All')
+    setSaleOnly(false)
     setGenderFilter('All')
     setClubFilter('All')
     setLeagueFilter('All')
@@ -1325,6 +1376,7 @@ export default function App() {
     tag?: string
     brand?: string
     price?: PriceFilterId
+    saleOnly?: boolean
     query?: string
     audience?: GenderFilter | 'Adult'
     gender?: GenderFilter
@@ -1338,6 +1390,7 @@ export default function App() {
       setSizeFilter('All')
       setBrandFilter('All')
       setPriceFilter('All')
+      setSaleOnly(false)
       setQuery('')
       setAppliedQuery('')
       setTagFilter('All')
@@ -1350,6 +1403,7 @@ export default function App() {
     if (next?.tag !== undefined) setTagFilter(next.tag)
     if (next?.brand !== undefined) setBrandFilter(next.brand)
     if (next?.price !== undefined) setPriceFilter(next.price)
+    if (next?.saleOnly !== undefined) setSaleOnly(next.saleOnly)
     if (next?.query !== undefined) {
       setQuery(next.query)
       setAppliedQuery(next.query.trim())
@@ -1386,6 +1440,7 @@ export default function App() {
     if (size) setSizeFilter(size)
     if (brand) setBrandFilter(brand)
     if (price && PRICE_FILTERS.some((row) => row.id === price)) setPriceFilter(price as PriceFilterId)
+    if (params.get('sale') === '1' || params.get('saleOnly') === '1') setSaleOnly(true)
     if (club) setClubFilter(club)
     if (league) setLeagueFilter(league)
     if (params.get('favorites') === '1' || params.get('fav') === '1') setFavoritesOnly(true)
@@ -1429,6 +1484,7 @@ export default function App() {
     if (sizeFilter !== 'All') params.set('size', sizeFilter)
     if (brandFilter !== 'All') params.set('brand', brandFilter)
     if (priceFilter !== 'All') params.set('price', priceFilter)
+    if (saleOnly) params.set('sale', '1')
     if (clubFilter !== 'All') params.set('club', clubFilter)
     if (leagueFilter !== 'All') params.set('league', leagueFilter)
     if (favoritesOnly) params.set('favorites', '1')
@@ -1446,6 +1502,7 @@ export default function App() {
     sizeFilter,
     brandFilter,
     priceFilter,
+    saleOnly,
     clubFilter,
     leagueFilter,
     favoritesOnly,
@@ -1828,8 +1885,8 @@ export default function App() {
               fetchPriority="high"
               loading="eager"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/80 to-navy-deep/25" />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-transparent to-navy-deep/45" />
+            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/90 via-navy-deep/45 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 via-transparent to-navy-deep/25" />
           </div>
 
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-44 md:justify-center md:px-8 md:pb-28 md:pt-48">
@@ -1896,6 +1953,7 @@ export default function App() {
               brand: action.brand,
               tag: action.tag,
               price: action.price === 'All' ? undefined : action.price,
+              saleOnly: action.saleOnly,
               query: action.query,
               leagueId: action.leagueId,
             })
@@ -1911,7 +1969,7 @@ export default function App() {
           <img
             src={asset('epl-kits-bg.jpg')}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-35 mix-blend-luminosity"
+            className="absolute inset-0 h-full w-full object-cover opacity-55 mix-blend-luminosity"
             loading="lazy"
             decoding="async"
           />
@@ -1919,7 +1977,7 @@ export default function App() {
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(110deg, rgba(55,0,60,.92) 0%, rgba(55,0,60,.78) 48%, rgba(26,5,32,.55) 100%)',
+                'linear-gradient(110deg, rgba(55,0,60,.72) 0%, rgba(55,0,60,.52) 48%, rgba(26,5,32,.35) 100%)',
             }}
           />
           <div
@@ -2041,7 +2099,7 @@ export default function App() {
                 Shop the floor
               </h2>
               <p className="mt-2 font-brand text-base text-muted">
-                Country kits, sale racks, or the full live catalog — pick a path.
+                Youth sizes, sale picks, or the full catalog — start where you want.
               </p>
             </motion.div>
 
@@ -2058,7 +2116,7 @@ export default function App() {
                 <img
                   src={asset('category-youth.jpg')}
                   alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                  className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover transition duration-700 group-hover:scale-[1.04]"
                   loading="lazy"
                   decoding="async"
                 />
@@ -2079,7 +2137,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     track('category_click', { category: 'category_sale' })
-                    goInventory({ price: 'under-25', reset: true })
+                    goInventory({ saleOnly: true, reset: true })
                   }}
                   {...fadeUp(reduce, 0.1)}
                   className="group relative aspect-[4/3] w-full overflow-hidden bg-navy text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-4 focus-visible:ring-offset-chalk"
@@ -2087,7 +2145,7 @@ export default function App() {
                   <img
                     src={asset('category-sale.jpg')}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                    className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover transition duration-700 group-hover:scale-[1.04]"
                     loading="lazy"
                     decoding="async"
                   />
@@ -2113,7 +2171,7 @@ export default function App() {
                   <img
                     src={asset('category-sale.jpg')}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+                    className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover transition duration-700 group-hover:scale-[1.04]"
                     loading="lazy"
                     decoding="async"
                   />
@@ -2138,7 +2196,7 @@ export default function App() {
                 <img
                   src={asset('category-catalog.jpg')}
                   alt=""
-                  className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
+                  className="absolute left-1/2 top-1/2 h-[72%] w-[72%] -translate-x-1/2 -translate-y-1/2 object-cover object-center transition duration-700 group-hover:scale-[1.04]"
                   loading="lazy"
                   decoding="async"
                   onError={(e) => {
@@ -2158,20 +2216,18 @@ export default function App() {
         </section>
 
         {/* New drops */}
-        <section id="new-drops" className="cv-auto scroll-mt-44 bg-white py-20 md:py-28">
+        <section id="new-drops" className="cv-auto scroll-mt-44 bg-white py-14 md:py-20">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
               {...fadeUp(reduce)}
-              className="flex flex-col gap-4 border-b border-navy/10 pb-8 md:flex-row md:items-end md:justify-between"
+              className="flex flex-col gap-4 border-b border-navy/10 pb-6 md:flex-row md:items-end md:justify-between"
             >
               <div>
                 <p className="eyebrow text-crimson">Just in</p>
-                <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide text-navy md:text-6xl">
+                <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
                   New drops
                 </h2>
-                <p className="mt-3 max-w-xl text-muted">
-                  Fresh arrivals from the rack — newest active listings first.
-                </p>
+                <p className="mt-2 max-w-xl text-muted">Fresh arrivals</p>
               </div>
               <button
                 type="button"
@@ -2186,9 +2242,20 @@ export default function App() {
             </motion.div>
 
             {newDrops.length > 0 ? (
-              <ul className="mt-12 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+              <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
                 {newDrops.map((item, i) => (
-                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.06} tone="light" onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink
+                    key={item.id}
+                    item={item}
+                    favoriteSet={favoriteSet}
+                    reduce={reduce}
+                    delay={i * 0.04}
+                    tone="light"
+                    size="compact"
+                    onAddToCart={handleAddToCart}
+                    onQuickView={handleQuickView}
+                    onBuyNow={handleBuyNow}
+                  />
                 ))}
               </ul>
             ) : (
@@ -2260,13 +2327,13 @@ export default function App() {
             style={{ background: UCL_GOLD }}
             aria-hidden
           />
-          <img
-            src={asset('ucl-badge.svg')}
-            alt="UEFA Champions League"
-            className="absolute right-4 top-4 z-10 h-14 w-14 object-contain drop-shadow-lg md:right-8 md:top-8 md:h-20 md:w-20"
-            loading="lazy"
-            decoding="async"
-          />
+          <p
+            className="absolute right-4 top-4 z-10 font-display text-2xl font-bold uppercase tracking-[0.18em] text-white drop-shadow-lg md:right-8 md:top-8 md:text-4xl"
+            style={{ color: UCL_GOLD }}
+            aria-label="UEFA Champions League"
+          >
+            UCL
+          </p>
           <div className="relative z-10 mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
             <motion.div {...fadeUp(reduce)} className="max-w-xl">
               <p className="eyebrow" style={{ color: UCL_GOLD }}>
@@ -2417,14 +2484,14 @@ export default function App() {
         ) : null}
 
         {/* Featured */}
-        <section id="featured" className="cv-auto scroll-mt-44 bg-navy py-20 text-white md:py-28">
+        <section id="featured" className="cv-auto scroll-mt-44 bg-navy py-14 text-white md:py-20">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <p className="eyebrow text-crimson-hot">Selected</p>
-              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide md:text-7xl">
+              <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
                 Featured gear
               </h2>
-              <p className="mt-4 text-lg text-white/65">
+              <p className="mt-3 text-base text-white/65">
                 Editor picks from live inventory — quick view details, then add to cart.
               </p>
             </motion.div>
@@ -2447,15 +2514,25 @@ export default function App() {
             )}
 
             {featured.length > 0 && (
-              <ul className="mt-14 grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
                 {featured.map((item, i) => (
-                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink
+                    key={item.id}
+                    item={item}
+                    favoriteSet={favoriteSet}
+                    reduce={reduce}
+                    delay={i * 0.03}
+                    size="compact"
+                    onAddToCart={handleAddToCart}
+                    onQuickView={handleQuickView}
+                    onBuyNow={handleBuyNow}
+                  />
                 ))}
               </ul>
             )}
 
             {listings.length > featured.length && (
-              <motion.div {...fadeUp(reduce, 0.15)} className="mt-14 flex flex-wrap gap-3">
+              <motion.div {...fadeUp(reduce, 0.15)} className="mt-10 flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -2481,37 +2558,55 @@ export default function App() {
           </div>
         </section>
 
-        {/* Shop by brand */}
+        {/* Shop by company */}
         {availableBrands.length > 0 && (
           <section id="brands" className="scroll-mt-44 border-y border-navy/10 bg-white py-16 md:py-20">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div {...fadeUp(reduce)}>
-                <p className="eyebrow text-crimson">Brands</p>
+                <p className="eyebrow text-crimson">Companies</p>
                 <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                  Shop by maker
+                  Shop by company
                 </h2>
               </motion.div>
               <ul className="mt-10 grid gap-3 sm:grid-cols-3">
-                {availableBrands.map((brand, i) => (
-                  <motion.li key={brand} {...fadeUp(reduce, i * 0.05)}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        track('brand_click', { brand })
-                        goInventory({ brand, tag: 'All', reset: true })
-                        setBrandFilter(brand)
-                      }}
-                      className="group flex w-full items-center justify-between border border-navy/10 bg-chalk px-5 py-5 text-left transition hover:border-navy/30 hover:bg-white"
-                    >
-                      <span className="font-display text-2xl font-bold uppercase tracking-wide text-navy">
-                        {brand}
-                      </span>
-                      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted transition group-hover:text-crimson">
-                        Shop →
-                      </span>
-                    </button>
-                  </motion.li>
-                ))}
+                {availableBrands.map((brand, i) => {
+                  const logoSrc = COMPANY_LOGO[brand.toLowerCase()]
+                  return (
+                    <motion.li key={brand} {...fadeUp(reduce, i * 0.05)}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          track('brand_click', { brand })
+                          goInventory({ brand, tag: 'All', reset: true })
+                          setBrandFilter(brand)
+                        }}
+                        className="group flex w-full items-center gap-4 border border-navy/10 bg-chalk px-5 py-4 text-left transition hover:border-navy/30 hover:bg-white"
+                      >
+                        {logoSrc ? (
+                          <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden border border-navy/10 bg-white">
+                            <img
+                              src={asset(logoSrc)}
+                              alt=""
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </span>
+                        ) : (
+                          <span className="grid h-12 w-12 shrink-0 place-items-center border border-navy/10 bg-white font-display text-sm font-bold uppercase text-navy">
+                            {brand.slice(0, 2)}
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1 font-display text-2xl font-bold uppercase tracking-wide text-navy">
+                          {brand}
+                        </span>
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted transition group-hover:text-crimson">
+                          Shop →
+                        </span>
+                      </button>
+                    </motion.li>
+                  )
+                })}
               </ul>
             </div>
           </section>
@@ -2530,53 +2625,49 @@ export default function App() {
                   Tap a club to filter inventory — or open Favorites to save teams.
                 </p>
               </motion.div>
-              <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {clubsData.map((club, i) => {
+              <ul className="mt-8 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 md:gap-3 lg:grid-cols-8">
+                {clubsData.slice(0, clubsShown).map((club, i) => {
                   const favorited = favoriteSet.has(club.id)
+                  const catalogClub = getClubById(club.id)
+                  const outline =
+                    CLUB_OUTLINE_COLOR[club.id] || (favorited ? '#c8102e' : '#0b223f')
                   return (
-                    <motion.li key={club.id} {...fadeUp(reduce, i * 0.04)} className="relative">
+                    <motion.li key={club.id} {...fadeUp(reduce, i * 0.02)} className="relative">
                       <button
                         type="button"
                         onClick={() => {
                           track('club_click', { club: club.id })
                           goInventory({ clubId: club.id, reset: true })
                         }}
-                        className={`group relative w-full overflow-hidden bg-navy outline-none focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
-                          favorited ? 'ring-2 ring-crimson ring-offset-2 ring-offset-chalk' : ''
+                        className={`group flex w-full flex-col items-center gap-1.5 border-2 bg-white px-1.5 pb-2 pt-3 text-center outline-none transition focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
+                          favorited ? 'ring-2 ring-crimson ring-offset-1 ring-offset-chalk' : ''
                         }`}
+                        style={{ borderColor: outline }}
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden border-2 border-crimson bg-navy-deep">
-                          <img
-                            src={club.image}
-                            alt={club.name}
-                            className="h-full w-full object-contain object-center transition duration-700 group-hover:scale-[1.03]"
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.src = FALLBACK_IMAGE
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
-                        </div>
-                        <div className="absolute inset-x-0 bottom-0 p-3 pr-12 text-left">
-                          <FitOneLine
-                            className="font-display font-bold uppercase leading-tight tracking-wide text-white"
-                            maxFontPx={14}
-                            minFontPx={8}
-                          >
-                            {club.name}
-                          </FitOneLine>
-                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/60">
-                            {club.count} {club.count === 1 ? 'listing' : 'listings'}
-                            {favorited ? ' · favorited' : ''}
-                          </p>
-                        </div>
+                        {catalogClub ? (
+                          <ClubLogoMark club={catalogClub} size="md" className="!h-10 !w-10" />
+                        ) : (
+                          <span className="grid h-10 w-10 place-items-center rounded-full border border-navy/15 bg-mist font-display text-[0.65rem] font-bold text-navy">
+                            {club.name.slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                        <FitOneLine
+                          className="w-full px-0.5 font-display font-bold uppercase leading-tight tracking-wide text-navy"
+                          maxFontPx={11}
+                          minFontPx={7}
+                        >
+                          {club.name}
+                        </FitOneLine>
+                        <p className="text-[0.55rem] font-semibold uppercase tracking-[0.1em] text-muted">
+                          {club.count}
+                        </p>
                       </button>
                       <ClubFavoriteButton
                         clubId={club.id}
                         clubName={club.name}
                         favorited={favorited}
                         place="shop_by_club"
-                        className={`absolute bottom-2 right-2 z-10 h-9 w-9 border border-crimson/40 ${
+                        className={`absolute -right-1 -top-1 z-10 h-6 w-6 border border-crimson/40 ${
                           favorited
                             ? 'bg-crimson text-cream'
                             : 'bg-cream/95 text-crimson hover:bg-crimson hover:text-cream'
@@ -2586,6 +2677,17 @@ export default function App() {
                   )
                 })}
               </ul>
+              {clubsShown < clubsData.length ? (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setClubsShown((n) => Math.min(n + 8, clubsData.length))}
+                    className="border border-navy/20 bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-navy transition hover:border-crimson hover:text-crimson"
+                  >
+                    Show more clubs
+                  </button>
+                </div>
+              ) : null}
             </div>
           </section>
         )}
@@ -2610,7 +2712,7 @@ export default function App() {
               </h2>
               <p className="mt-4 text-lg text-white/80">
                 {saleFloor != null
-                  ? `${SALE_URGENCY}. Starting at ${formatPrice(saleFloor, 'USD')}.`
+                  ? `${SALE_URGENCY}. From ${formatPrice(saleFloor, 'USD')}.`
                   : SALE_URGENCY}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -2618,7 +2720,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     track('cta_click', { place: 'sale_banner' })
-                    goInventory({ price: 'under-25', reset: true })
+                    goInventory({ saleOnly: true, reset: true })
                   }}
                   className="inline-flex bg-crimson px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
                 >
@@ -2644,7 +2746,7 @@ export default function App() {
                 <h2 className="font-display text-3xl font-bold uppercase tracking-wide md:text-4xl">
                   Sale picks
                 </h2>
-                <p className="mt-2 text-white/65">Under $25 from live inventory.</p>
+                <p className="mt-2 text-white/65">Hand-picked kits from the sale rack.</p>
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {salePicks.map((item, i) => (

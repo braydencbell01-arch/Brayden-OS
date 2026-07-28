@@ -144,8 +144,17 @@ export function isYouthListing(item: Listing) {
   return /youth|yth|boys|girls|9-12|yrs/i.test(`${item.title} ${item.tag} ${item.note}`)
 }
 
-export function isSaleListing(item: Listing, maxPrice = 25) {
-  return item.price != null && item.price <= maxPrice
+/** Title matchers for the current sale rack (hand-picked). */
+export const SALE_TITLE_PATTERNS: RegExp[] = [
+  /newcastle\s*united/i,
+  /tottenham.*22\s*\/\s*23.*training/i,
+  /barcelona.*crest\s*t-?shirt/i,
+  /\bgermany\b.*22\s*\/\s*23/i,
+]
+
+export function isSaleListing(item: Listing, _maxPrice = 25) {
+  // Curated sale rack — update SALE_TITLE_PATTERNS when the shop picks new sale kits.
+  return SALE_TITLE_PATTERNS.some((pattern) => pattern.test(item.title))
 }
 
 /** Inventory price toggles — keep ranges aligned with typical kit pricing. */
@@ -381,37 +390,45 @@ export function premierLeagueClubsInStock(listings: Listing[]): ClubInfo[] {
   return clubsInStock(listings).filter((club) => PREMIER_LEAGUE_CLUB_IDS.has(club.id))
 }
 
-/** Clubs commonly associated with UEFA Champions League shopping (cross-league). */
+/** Clubs in recent / upcoming UEFA Champions League seasons (not a historic mega-list). */
 export const CHAMPIONS_LEAGUE_CLUB_IDS = new Set([
   'real-madrid',
   'barcelona',
   'bayern',
   'paris-saint-germain',
   'manchester-city',
-  'manchester-united',
   'liverpool',
-  'chelsea',
   'arsenal',
-  'tottenham',
-  'newcastle',
+  'chelsea',
   'inter-milan',
   'ac-milan',
-  'juventus',
-  'napoli',
   'atletico-madrid',
   'borussia-dortmund',
   'bayer-leverkusen',
-  'rb-leipzig',
-  'ajax',
-  'porto',
+  'napoli',
+  'juventus',
+  'aston-villa',
   'benfica',
   'sporting-cp',
-  'celtic',
-  'galatasaray',
-  'fenerbahce',
-  'olympiacos',
+  'porto',
   'club-brugge',
+  'monaco',
+  'lille',
+  'atalanta',
+  'bologna',
+  'stuttgart',
+  'brest',
+  'feyenoord',
+  'celtic',
+  'dinamo-zagreb',
+  'red-star',
+  'young-boys',
+  'slovan-bratislava',
+  'sparta-prague',
+  'salzburg',
+  'shakhtar',
 ])
+// Note: Newcastle omitted — not in the upcoming UCL season.
 
 export function championsLeagueClubsInStock(listings: Listing[]): ClubInfo[] {
   return clubsInStock(listings).filter((club) => CHAMPIONS_LEAGUE_CLUB_IDS.has(club.id))

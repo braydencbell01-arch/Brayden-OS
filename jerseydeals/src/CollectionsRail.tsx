@@ -193,22 +193,19 @@ export function CollectionsRail({
   return (
     <section
       id="collections"
-      className="scroll-mt-44 border-y-2 border-crimson/25 bg-gradient-to-b from-cream via-cream to-mist py-8 md:py-11"
+      className="scroll-mt-44 border-y border-navy/10 bg-cream py-7 md:py-9"
       aria-label="Collections"
     >
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <div className="brand-rule" aria-hidden />
-        <h2 className="mt-3 font-display text-3xl font-bold uppercase tracking-wide text-navy md:text-4xl">
+        <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-navy md:text-4xl">
           Collections
         </h2>
-        <p className="mt-2 max-w-xl font-brand text-sm text-muted md:text-base">
-          Swipe the rail or tap a collection to shop.
-        </p>
+        <p className="mt-1.5 font-brand text-sm text-muted">Tap a collection to shop.</p>
       </div>
 
       <div
         ref={scrollerRef}
-        className="collections-rail mt-6 flex gap-4 overflow-x-auto overflow-y-hidden px-5 pb-0 md:gap-5 md:px-8"
+        className="collections-rail mt-5 flex gap-3 overflow-x-auto overflow-y-hidden px-5 pb-0 md:gap-4 md:px-8"
         aria-label="Collections carousel"
       >
         {loop.map((item, i) => (
@@ -223,19 +220,19 @@ export function CollectionsRail({
               }
               onSelect(item.action, item.id, item.label)
             }}
-            className="group relative h-[11.5rem] w-[9.5rem] shrink-0 overflow-hidden border-2 border-crimson bg-navy text-left outline-none transition hover:border-crimson-hot focus-visible:ring-2 focus-visible:ring-crimson sm:h-[13.5rem] sm:w-[11rem] md:h-[15rem] md:w-[12.5rem]"
+            className="group relative h-[10.5rem] w-[8.75rem] shrink-0 overflow-hidden border-2 border-navy/15 bg-navy text-left outline-none transition hover:border-crimson focus-visible:ring-2 focus-visible:ring-crimson sm:h-[12rem] sm:w-[10rem] md:h-[13.5rem] md:w-[11rem]"
           >
             <img
               src={asset(item.image)}
               alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.05]"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
               loading="lazy"
               decoding="async"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep via-navy-deep/40 to-navy/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/95 via-navy-deep/35 to-transparent" />
             <span
-              className={`relative z-10 flex h-full items-end p-3 font-display text-lg font-bold uppercase tracking-wide text-cream sm:p-4 sm:text-xl ${
+              className={`relative z-10 flex h-full items-end p-3 font-display text-base font-bold uppercase tracking-wide text-cream sm:p-3.5 sm:text-lg ${
                 item.id === 'jersey-deals' ? 'text-crimson-hot' : ''
               }`}
             >
