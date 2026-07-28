@@ -1,0 +1,76 @@
+name: Notify Rewards new offers
+
+# Runs when the offers catalog changes on Brayden-OS (or manually),
+# so members get emailed soon after a new Rewards offer is shipped —
+# without waiting for the inventory cron. Still capped at once/day.
+
+on:
+  push:
+    branches: [Brayden-OS]
+    paths:
+      - 'jerseydeals/public/rewards-offers-catalog.json'
+      - 'jerseydeals/scripts/notify-rewards-new-offers.mjs'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Parse/queue only (do not send)
+        required: false
+        type: boolean
+        default: false
+      force_send:
+        description: Ignore once-per-day gate
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jerseydeals-rewards-new-offers
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install nodemailer
+        run: npm install --no-save nodemailer@6
+
+      - name: Notify Rewards members of new offers
+        working-directory: jerseydeals
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+          FORCE_SEND: ${{ github.event_name == 'workflow_dispatch' && inputs.force_send && '1' || '' }}
+        run: npm run email:notify-new-offers
+
+      - name: Commit offer notify state if changed
+        run: |
+          if git diff --quiet -- \
+            jerseydeals/public/rewards-new-offers-state.json \
+            jerseydeals/public/rewards-offers-catalog.json; then
+            echo "No offer-state changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            jerseydeals/public/rewards-new-offers-state.json \
+            jerseydeals/public/rewards-offers-catalog.json
+          git commit -m "chore(jerseydeals): update Rewards new-offer notify state"
+          git push origin HEAD:Brayden-OS

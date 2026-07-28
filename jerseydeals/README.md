@@ -311,6 +311,19 @@ After each inventory sync, `npm run email:notify-new-listings`:
 
 State file: `jerseydeals/public/rewards-new-listings-state.json` (committed by the inventory sync workflow).
 
+### Automatic “new offer” digest (Rewards only)
+
+Same once-daily pattern for Rewards offers:
+
+1. Source of truth: `public/rewards-offers-catalog.json` (keep in sync with `src/offers.ts`)
+2. `npm run email:notify-new-offers` diffs against `public/rewards-new-offers-state.json`
+3. Emails **Rewards members only** when a new catalog offer appears
+4. **Max once per calendar day** (`America/New_York`)
+5. First run bootstraps current offers with **no email**
+6. Also runs on push when the offers catalog changes (faster than waiting for inventory cron)
+
+When you ship a new member offer: add it in `src/offers.ts` **and** append it to `rewards-offers-catalog.json`.
+
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
   AUDIENCE=test ITEM_NAME="Inter Milan Home" DRY_RUN=1 \

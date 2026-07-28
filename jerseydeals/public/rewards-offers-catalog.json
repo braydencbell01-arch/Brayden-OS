@@ -1,0 +1,20 @@
+{
+  "updatedAt": "2026-07-28T18:45:00Z",
+  "note": "Rewards-member offers that trigger the once-daily new-offer email. Keep ids in sync with jerseydeals/src/offers.ts (OFFER_DEFS). Add a new offer here when you ship it to members.",
+  "offers": [
+    {
+      "id": "pl5",
+      "title": "$5 off a Premier League jersey",
+      "detail": "Rewards Club offer \u2014 save $5 on a Premier League kit.",
+      "activateHint": "Activate at checkout",
+      "audience": "rewards"
+    },
+    {
+      "id": "test_offer",
+      "title": "Test member drop",
+      "detail": "Temporary test offer.",
+      "activateHint": "Activate at checkout",
+      "audience": "rewards"
+    }
+  ]
+}

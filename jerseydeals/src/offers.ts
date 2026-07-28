@@ -1,6 +1,9 @@
 /**
  * Rewards / welcome offers wallet (client-side).
  * Offers are claimed into My offers, then activated at checkout, then removed after use.
+ *
+ * When you add a Rewards-member offer here, also add it to
+ * public/rewards-offers-catalog.json so members get the once-daily new-offer email.
  */
 
 import { inferLeague } from './listings'
