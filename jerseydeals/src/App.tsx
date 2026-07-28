@@ -2284,7 +2284,7 @@ export default function App() {
           <img
             src={asset('epl-kits-bg.jpg')}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-luminosity"
+            className="absolute inset-0 h-full w-full object-cover opacity-55 mix-blend-luminosity"
             loading="lazy"
             decoding="async"
           />
@@ -2292,11 +2292,11 @@ export default function App() {
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(110deg, rgba(0,30,98,.94) 0%, rgba(0,30,98,.80) 48%, rgba(2,11,36,.55) 100%)',
+                'linear-gradient(110deg, rgba(0,30,98,.72) 0%, rgba(0,30,98,.52) 48%, rgba(2,11,36,.35) 100%)',
             }}
           />
           <div
-            className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-35 blur-3xl"
+            className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-40 blur-3xl"
             style={{ background: UCL_GOLD }}
             aria-hidden
           />
