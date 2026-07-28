@@ -204,7 +204,7 @@ export function CartDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-[55] flex justify-end" role="dialog" aria-modal aria-label="Shopping cart">
+    <div className="fixed inset-0 z-[80] flex justify-end" role="dialog" aria-modal aria-label="Shopping cart">
       <button
         type="button"
         className="absolute inset-0 bg-navy-deep/55"
