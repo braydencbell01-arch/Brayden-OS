@@ -520,43 +520,20 @@ export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' 
 }
 
 /**
- * Handful of kits with the most views in the last week.
- * Falls back to a non-sale popularity mix when view data is cold.
- * (Trending is not the sale rack — sale items only fill gaps.)
+ * Kits with the most views in the last week — views only.
+ * Sale vs full-price does not matter; empty when nobody has viewed yet.
  */
 export function pickTrending(
   listings: Listing[],
   count = 4,
   viewCounts: Record<string, number> = {},
 ) {
-  const inStock = listings.filter((item) => item.quantity > 0)
-  const pool = inStock.length > 0 ? inStock : listings
-  const used = new Set<string>()
-  const out: Listing[] = []
-  const push = (item: Listing | undefined) => {
-    if (!item || used.has(item.id) || out.length >= count) return
-    out.push(item)
-    used.add(item.id)
-  }
-
-  const viewed = [...pool]
+  return [...listings]
     .map((item) => ({ item, views: viewCounts[item.id] || 0 }))
     .filter((row) => row.views > 0)
     .sort((a, b) => b.views - a.views || a.item.title.localeCompare(b.item.title))
-
-  for (const row of viewed) push(row.item)
-
-  if (out.length >= count) return out.slice(0, count)
-
-  // Cold start / pad: brand variety from non-sale first, then other non-sale, sale last.
-  const nonSale = pool.filter((item) => !isSaleListing(item))
-  const sale = pool.filter((item) => isSaleListing(item))
-  for (const brand of ['Nike', 'Adidas', 'Puma']) {
-    push(nonSale.find((item) => item.brand === brand))
-  }
-  for (const item of nonSale) push(item)
-  for (const item of sale) push(item)
-  return out.slice(0, count)
+    .slice(0, count)
+    .map((row) => row.item)
 }
 
 export function listingsMatchingClub(listings: Listing[], clubId: string) {
