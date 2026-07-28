@@ -8,10 +8,12 @@
  *   IMAP_HOST (default imap.ionos.com)
  *   IMAP_PORT (default 993)
  *   DRY_RUN=1  (parse only, do not write lists / mark mail)
+ *   IMAP_LOOKBACK_DAYS (default 30)
  *
  * Looks for subjects like:
  *   [Jersey Deals] member · rewards_club
  *   [Jersey Deals] non_member · first_buyer_offer
+ *   [Jersey Deals / Square] new info · …
  */
 
 import { ImapFlow } from 'imapflow'
@@ -36,6 +38,27 @@ const DRY = process.env.DRY_RUN === '1' || process.env.DRY_RUN === 'true'
 const LOOKBACK_DAYS = Number(process.env.IMAP_LOOKBACK_DAYS || '30')
 const PROCESSED_FLAG = '$JDProcessed'
 
+const IGNORE_EMAILS = new Set([
+  normalizeEmail(USER),
+  'shop@jerseydeals.online',
+  'noreply@formsubmit.co',
+  'form@formsubmit.co',
+  'noreply@square.com',
+  'noreply@mail.squareup.com',
+])
+
+function log(...args) {
+  // Always flush — stdout is often fully buffered when piped in Actions.
+  console.log(...args)
+  if (typeof process.stdout.write === 'function') {
+    try {
+      process.stdout.write('')
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 function extractField(text, keys) {
   const raw = String(text || '')
   for (const key of keys) {
@@ -48,36 +71,74 @@ function extractField(text, keys) {
     // FormSubmit table style: label on one line, value on the next.
     const re2 = new RegExp(`(?:^|\\n)\\s*${key}\\s*(?:\\n|\\r\\n)\\s*([^\\n\\r<]+)`, 'i')
     const m2 = raw.match(re2)
-    if (m2?.[1] && !/^(email|source|membership|list|product|site)$/i.test(m2[1].trim())) {
+    if (m2?.[1] && !/^(email|source|membership|list|product|site|phone|name)$/i.test(m2[1].trim())) {
       return m2[1].trim()
     }
+    // HTML table cells: <td>email</td><td>user@x.com</td>
+    const re3 = new RegExp(
+      `<t[dh][^>]*>\\s*${key}\\s*</t[dh]>\\s*<t[dh][^>]*>\\s*([^<]+)\\s*</t[dh]>`,
+      'i',
+    )
+    const m3 = raw.match(re3)
+    if (m3?.[1]) return m3[1].trim()
   }
   return ''
 }
 
-function parseLeadFromMessage({ subject, text, html }) {
+function addressFromParsed(parsed, field) {
+  const block = parsed?.[field]
+  if (!block) return ''
+  const vals = Array.isArray(block.value) ? block.value : []
+  for (const v of vals) {
+    const addr = normalizeEmail(v?.address || '')
+    if (isValidEmail(addr) && !IGNORE_EMAILS.has(addr)) return addr
+  }
+  return ''
+}
+
+function firstLeadEmail(blob) {
+  const matches = String(blob || '').match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi) || []
+  for (const raw of matches) {
+    const email = normalizeEmail(raw)
+    if (!isValidEmail(email)) continue
+    if (IGNORE_EMAILS.has(email)) continue
+    if (/formsubmit\.co$/i.test(email)) continue
+    if (/squareup?\.com$/i.test(email)) continue
+    if (/ionos\./i.test(email)) continue
+    return email
+  }
+  return ''
+}
+
+function parseLeadFromMessage({ subject, text, html, replyTo, from }) {
   const blob = `${subject || ''}\n${text || ''}\n${html || ''}`
   const subjectMatch = String(subject || '').match(
-    /\[Jersey Deals\]\s*(member|non_member)\s*·\s*([^\s|]+)/i,
+    /\[Jersey Deals(?:\s*\/\s*Square)?\]\s*(member|non_member|new info|lead)?\s*(?:·|-)?\s*([^\s|]+)?/i,
   )
 
   let email =
     extractField(blob, ['email', 'Email', '_replyto', 'Reply-To']) ||
-    (blob.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i) || [])[0] ||
+    replyTo ||
+    firstLeadEmail(blob) ||
+    from ||
     ''
   email = normalizeEmail(email)
+  if (IGNORE_EMAILS.has(email)) email = ''
 
   let membership = (subjectMatch?.[1] || extractField(blob, ['jd_membership', 'membership', 'Membership']) || '')
     .trim()
     .toLowerCase()
+  if (membership === 'new info' || membership === 'lead') membership = ''
   if (membership !== 'member' && membership !== 'non_member') membership = ''
 
-  let source =
-    (
-      subjectMatch?.[2] ||
-      extractField(blob, ['jd_source', 'source', 'Source']) ||
-      ''
-    ).trim() || 'landing'
+  let source = (
+    (subjectMatch?.[2] && !/^(member|non_member|lead)$/i.test(subjectMatch[2])
+      ? subjectMatch[2]
+      : '') ||
+    extractField(blob, ['jd_source', 'source', 'Source']) ||
+    ''
+  )
+    .trim()
   source = source.replace(/[^\w.-]+/g, '').slice(0, 80) || 'landing'
 
   const list = extractField(blob, ['list', 'List']).toLowerCase()
@@ -91,21 +152,28 @@ function parseLeadFromMessage({ subject, text, html }) {
 
   // Ignore BrayStats / other products.
   if (/braystats/i.test(`${product}\n${subject}\n${blob.slice(0, 400)}`)) {
-    return null
+    return { ok: false, reason: 'braystats' }
   }
-  if (!isValidEmail(email)) return null
+  if (!isValidEmail(email)) return { ok: false, reason: 'no_email', subject }
   if (!LANDING_SOURCES.has(source) && !MEMBER_SOURCES.has(source)) {
     // Still accept if subject was clearly Jersey Deals.
-    if (!/\[Jersey Deals\]/i.test(subject || '')) return null
+    if (!/\[Jersey Deals/i.test(subject || '') && !/jersey\s*deals/i.test(subject || '')) {
+      return { ok: false, reason: 'bad_source', source, subject }
+    }
     source = 'landing'
   }
 
   return {
+    ok: true,
     email,
     source,
     membership: membership === 'member' ? 'member' : 'non_member',
     phone,
   }
+}
+
+function tally(map, key) {
+  map.set(key, (map.get(key) || 0) + 1)
 }
 
 async function main() {
@@ -125,76 +193,95 @@ async function main() {
 
   const ingested = []
   const skipped = []
+  const skipReasons = new Map()
 
   await client.connect()
   const lock = await client.getMailboxLock('INBOX')
   try {
-    // Search recent messages mentioning Jersey Deals.
     const uids = await client.search({
       since,
       or: [{ subject: 'Jersey Deals' }, { body: 'jerseydeals' }, { body: 'Jersey Deals' }],
     })
-    console.log(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
+    log(`IMAP search hits: ${uids.length} (since ${since.toISOString().slice(0, 10)})`)
 
-    for await (const msg of client.fetch(uids, {
-      uid: true,
-      flags: true,
-      source: true,
-      envelope: true,
-    })) {
-      const flags = [...(msg.flags || [])]
-      if (flags.some((f) => String(f).toLowerCase() === 'jdprocessed' || String(f) === PROCESSED_FLAG)) {
-        skipped.push({ uid: msg.uid, reason: 'already_processed' })
-        continue
+    if (!uids.length) {
+      // fall through to summary
+    } else {
+      for await (const msg of client.fetch(uids, {
+        uid: true,
+        flags: true,
+        source: true,
+        envelope: true,
+      })) {
+        const flags = [...(msg.flags || [])]
+        if (
+          flags.some(
+            (f) => String(f).toLowerCase() === 'jdprocessed' || String(f) === PROCESSED_FLAG,
+          )
+        ) {
+          skipped.push({ uid: msg.uid, reason: 'already_processed' })
+          tally(skipReasons, 'already_processed')
+          continue
+        }
+
+        const parsed = await simpleParser(msg.source)
+        const subject = parsed.subject || msg.envelope?.subject || ''
+        const text = parsed.text || ''
+        const html = typeof parsed.html === 'string' ? parsed.html : ''
+        if (
+          !/jersey\s*deals/i.test(subject) &&
+          !/jerseydeals/i.test(`${text}\n${html}`.slice(0, 2000))
+        ) {
+          skipped.push({ uid: msg.uid, reason: 'not_jd', subject })
+          tally(skipReasons, 'not_jd')
+          continue
+        }
+
+        const lead = parseLeadFromMessage({
+          subject,
+          text,
+          html,
+          replyTo: addressFromParsed(parsed, 'replyTo'),
+          from: addressFromParsed(parsed, 'from'),
+        })
+        if (!lead.ok) {
+          skipped.push({ uid: msg.uid, reason: lead.reason, subject, source: lead.source })
+          tally(skipReasons, lead.reason || 'parse_fail')
+          continue
+        }
+
+        if (DRY) {
+          ingested.push({ ...lead, uid: msg.uid, dry: true })
+          continue
+        }
+
+        const result = recordEmailCapture({
+          email: lead.email,
+          source: lead.source,
+          membership: lead.membership,
+          phone: lead.phone,
+          at: parsed.date ? parsed.date.toISOString() : new Date().toISOString(),
+        })
+        if (!result.ok) {
+          skipped.push({ uid: msg.uid, reason: result.message, email: lead.email, subject })
+          tally(skipReasons, result.message || 'record_fail')
+          continue
+        }
+
+        try {
+          await client.messageFlagsAdd(msg.uid, [PROCESSED_FLAG], { uid: true })
+        } catch {
+          // Custom flags may be unsupported — fall back to Seen.
+          await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true }).catch(() => {})
+        }
+
+        ingested.push({
+          email: lead.email,
+          membership: result.membership,
+          source: lead.source,
+          uid: msg.uid,
+        })
       }
-
-      const parsed = await simpleParser(msg.source)
-      const subject = parsed.subject || msg.envelope?.subject || ''
-      if (!/jersey\s*deals/i.test(subject) && !/jerseydeals/i.test(String(parsed.text || ''))) {
-        skipped.push({ uid: msg.uid, reason: 'not_jd', subject })
-        continue
-      }
-
-      const lead = parseLeadFromMessage({
-        subject,
-        text: parsed.text || '',
-        html: typeof parsed.html === 'string' ? parsed.html : '',
-      })
-      if (!lead) {
-        skipped.push({ uid: msg.uid, reason: 'parse_fail', subject })
-        continue
-      }
-
-      if (DRY) {
-        ingested.push({ ...lead, uid: msg.uid, dry: true })
-        continue
-      }
-
-      const result = recordEmailCapture({
-        email: lead.email,
-        source: lead.source,
-        membership: lead.membership,
-        phone: lead.phone,
-        at: parsed.date ? parsed.date.toISOString() : new Date().toISOString(),
-      })
-      if (!result.ok) {
-        skipped.push({ uid: msg.uid, reason: result.message, email: lead.email })
-        continue
-      }
-
-      try {
-        await client.messageFlagsAdd(msg.uid, [PROCESSED_FLAG], { uid: true })
-      } catch {
-        // Custom flags may be unsupported — fall back to Seen.
-        await client.messageFlagsAdd(msg.uid, ['\\Seen'], { uid: true }).catch(() => {})
-      }
-
-      ingested.push({
-        email: lead.email,
-        membership: result.membership,
-        source: lead.source,
-        uid: msg.uid,
-      })
     }
   } finally {
     lock.release()
@@ -203,22 +290,20 @@ async function main() {
 
   const members = readList(MEMBERS_PATH, 'rewards_members')
   const nonMembers = readList(NON_MEMBERS_PATH, 'non_members')
+  const uniqueIngested = [...new Set(ingested.map((r) => r.email))]
 
-  console.log(
-    JSON.stringify(
-      {
-        dryRun: DRY,
-        ingested: ingested.length,
-        skipped: skipped.length,
-        members: members.count,
-        nonMembers: nonMembers.count,
-        sampleIngested: ingested.slice(0, 10),
-        sampleSkipped: skipped.slice(0, 10),
-      },
-      null,
-      2,
-    ),
-  )
+  const summary = {
+    dryRun: DRY,
+    ingested: ingested.length,
+    uniqueIngested: uniqueIngested.length,
+    skipped: skipped.length,
+    skipReasons: Object.fromEntries(skipReasons),
+    members: members.count,
+    nonMembers: nonMembers.count,
+    sampleIngested: ingested.slice(0, 20),
+    sampleSkipped: skipped.filter((s) => s.reason !== 'already_processed').slice(0, 20),
+  }
+  log(JSON.stringify(summary, null, 2))
 }
 
 main().catch((err) => {
