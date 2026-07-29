@@ -1,0 +1,75 @@
+name: Notify order thank-you emails
+
+# Sends thank-you emails for newly completed Square orders.
+# Also runs on push when the script/workflow changes so today’s
+# buyers can be emailed without waiting for inventory cron.
+
+on:
+  push:
+    branches: [Brayden-OS]
+    paths:
+      - 'jerseydeals/scripts/notify-order-thanks.mjs'
+      - '.github/workflows/notify-jerseydeals-order-thanks.yml'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Parse only (do not send)
+        required: false
+        type: boolean
+        default: false
+      force_resend_today:
+        description: Re-send thank-you for orders completed today (ET)
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jerseydeals-order-thanks
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install nodemailer
+        run: npm install --no-save nodemailer@6
+
+      - name: Send thank-you emails for completed orders
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
+          FORCE_RESEND_TODAY: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_resend_today && '1') || (github.event_name == 'push' && '1') || '' }}
+        run: npm run email:notify-order-thanks
+
+      - name: Commit order-thanks state if changed
+        run: |
+          if git diff --quiet -- jerseydeals/public/order-thanks-state.json; then
+            echo "No order-thanks state changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add jerseydeals/public/order-thanks-state.json
+          git commit -m "chore(jerseydeals): update order thank-you notify state"
+          git push origin HEAD:Brayden-OS

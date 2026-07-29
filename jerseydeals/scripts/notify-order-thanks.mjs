@@ -228,6 +228,21 @@ function sendThanksEmail({ to, subject, body }) {
   }
 }
 
+function dayKeyEt(iso = new Date().toISOString()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(iso))
+}
+
+function isOrderFromToday(order, today = dayKeyEt()) {
+  const stamp = order.createdAt || order.updatedAt || null
+  if (!stamp) return false
+  return dayKeyEt(stamp) === today
+}
+
 async function main() {
   const locationId = await primaryLocationId()
   const [orders, paymentEmails] = await Promise.all([
@@ -244,43 +259,55 @@ async function main() {
       id,
       email,
       titles: itemTitles(order),
-      createdAt: order.created_at || order.updated_at || null,
+      createdAt: order.created_at || null,
+      updatedAt: order.updated_at || null,
     })
   }
 
   let state = readJson(STATE_PATH, null) || emptyState()
   if (!Array.isArray(state.emailedOrderIds)) state.emailedOrderIds = []
 
-  // Bootstrap: remember current completed orders without emailing.
+  const today = dayKeyEt()
+  const forceResendToday =
+    process.env.FORCE_RESEND_TODAY === '1' || process.env.FORCE_RESEND_TODAY === 'true'
+
+  // Bootstrap: remember older completed orders without emailing.
+  // Orders from today (ET) stay pending so buyers still get a thank-you.
   if (!state.bootstrappedAt) {
+    const olderIds = live.filter((o) => !isOrderFromToday(o, today)).map((o) => o.id)
     state = {
       ...emptyState(),
       bootstrappedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-      emailedOrderIds: live.map((o) => o.id).sort(),
+      emailedOrderIds: [...olderIds].sort(),
     }
     if (!DRY) writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
     console.log(
       JSON.stringify(
         {
           bootstrapped: true,
-          knownOrders: state.emailedOrderIds.length,
-          emailed: false,
+          knownOlderOrders: olderIds.length,
+          pendingToday: live.filter((o) => isOrderFromToday(o, today)).length,
           dryRun: DRY,
         },
         null,
         2,
       ),
     )
-    return
+    // Fall through to send today's pending orders.
   }
 
   const already = new Set(state.emailedOrderIds.map((id) => String(id)))
+  if (forceResendToday) {
+    for (const o of live) {
+      if (isOrderFromToday(o, today)) already.delete(o.id)
+    }
+  }
   const pending = live.filter((o) => !already.has(o.id))
 
   if (!pending.length) {
     state.updatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
     if (!DRY) writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
-    console.log(JSON.stringify({ pending: 0, emailed: 0, dryRun: DRY }, null, 2))
+    console.log(JSON.stringify({ pending: 0, emailed: 0, dryRun: DRY, today }, null, 2))
     return
   }
 
