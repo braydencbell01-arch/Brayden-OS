@@ -12,7 +12,8 @@
  *   SQUARE_ENVIRONMENT / SQUARE_LOCATION_ID
  *   SMTP_* — same secrets as send-smtp-email.mjs
  *   DRY_RUN=1 / SKIP_SEND=1
- *   FORCE_RESEND_TODAY=1 — re-queue orders completed today (America/New_York)
+ *   FORCE_RESEND_TODAY=1 — re-queue recent unsent window (see THANKS_EMAIL_RECENT_DAYS)
+ *   THANKS_EMAIL_RECENT_DAYS (default 1 = today ET) — bootstrap still emails this window
  *   THANKS_LOOKBACK_DAYS (default 30)
  *   DELIVERY_DAYS (default "3–7") — “delivered in X days” copy
  */
@@ -126,7 +127,8 @@ function itemTitles(order) {
   return titles
 }
 
-async function paymentEmailsByOrderId() {
+async function paymentInfoByOrderId() {
+  /** @type {Map<string, { email: string, paidAt: string | null }>} */
   const map = new Map()
   const begin = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
   let cursor = ''
@@ -138,11 +140,18 @@ async function paymentEmailsByOrderId() {
       const status = String(payment.status || '').toUpperCase()
       if (status !== 'COMPLETED' && status !== 'APPROVED') continue
       const orderId = String(payment.order_id || '').trim()
+      if (!orderId) continue
       const email = String(payment.buyer_email_address || '')
         .trim()
         .toLowerCase()
-      if (!orderId || !isEmail(email)) continue
-      if (!map.has(orderId)) map.set(orderId, email)
+      const paidAt = payment.updated_at || payment.created_at || null
+      const prev = map.get(orderId)
+      if (!prev) {
+        map.set(orderId, { email: isEmail(email) ? email : '', paidAt })
+        continue
+      }
+      if (!prev.email && isEmail(email)) prev.email = email
+      if (paidAt && (!prev.paidAt || paidAt > prev.paidAt)) prev.paidAt = paidAt
     }
     cursor = data.cursor || ''
   } while (cursor)
@@ -238,44 +247,86 @@ function dayKeyEt(iso = new Date().toISOString()) {
   }).format(new Date(iso))
 }
 
+/** True when any order/payment timestamp falls on today's ET calendar date. */
 function isOrderFromToday(order, today = dayKeyEt()) {
-  const stamp = order.createdAt || order.updatedAt || null
-  if (!stamp) return false
-  return dayKeyEt(stamp) === today
+  return [order.createdAt, order.updatedAt, order.paidAt].some(
+    (stamp) => stamp && dayKeyEt(stamp) === today,
+  )
+}
+
+/** True when any timestamp is within the last N ET calendar days (including today). */
+function isOrderWithinRecentDays(order, recentDays, today = dayKeyEt()) {
+  if (!Number.isFinite(recentDays) || recentDays <= 0) return isOrderFromToday(order, today)
+  const stamps = [order.createdAt, order.updatedAt, order.paidAt].filter(Boolean)
+  if (!stamps.length) return false
+  for (const stamp of stamps) {
+    const day = dayKeyEt(stamp)
+    // Compare YYYY-MM-DD lexicographically after computing the oldest allowed day.
+    const oldest = new Date(`${today}T12:00:00-04:00`)
+    oldest.setDate(oldest.getDate() - (recentDays - 1))
+    const oldestKey = dayKeyEt(oldest.toISOString())
+    if (day >= oldestKey && day <= today) return true
+  }
+  return false
 }
 
 async function main() {
   const locationId = await primaryLocationId()
-  const [orders, paymentEmails] = await Promise.all([
+  const [orders, paymentInfo] = await Promise.all([
     completedOrders(locationId),
-    paymentEmailsByOrderId(),
+    paymentInfoByOrderId(),
   ])
 
   const live = []
   for (const order of orders) {
     const id = String(order.id)
     const fromOrder = emailsFromOrder(order)
-    const email = fromOrder[0] || paymentEmails.get(id) || ''
+    const pay = paymentInfo.get(id)
+    const email = fromOrder[0] || pay?.email || ''
     live.push({
       id,
       email,
       titles: itemTitles(order),
       createdAt: order.created_at || null,
       updatedAt: order.updated_at || null,
+      paidAt: pay?.paidAt || null,
     })
   }
+
+  console.log(
+    JSON.stringify(
+      {
+        scannedOrders: live.length,
+        orders: live.map((o) => ({
+          id: o.id,
+          email: o.email || null,
+          createdAt: o.createdAt,
+          updatedAt: o.updatedAt,
+          paidAt: o.paidAt,
+          createdEt: o.createdAt ? dayKeyEt(o.createdAt) : null,
+          updatedEt: o.updatedAt ? dayKeyEt(o.updatedAt) : null,
+          paidEt: o.paidAt ? dayKeyEt(o.paidAt) : null,
+        })),
+      },
+      null,
+      2,
+    ),
+  )
 
   let state = readJson(STATE_PATH, null) || emptyState()
   if (!Array.isArray(state.emailedOrderIds)) state.emailedOrderIds = []
 
   const today = dayKeyEt()
+  const recentDays = Number.parseInt(process.env.THANKS_EMAIL_RECENT_DAYS || '1', 10)
   const forceResendToday =
     process.env.FORCE_RESEND_TODAY === '1' || process.env.FORCE_RESEND_TODAY === 'true'
 
   // Bootstrap: remember older completed orders without emailing.
-  // Orders from today (ET) stay pending so buyers still get a thank-you.
+  // Recent orders (default: today ET) stay pending so buyers still get a thank-you.
   if (!state.bootstrappedAt) {
-    const olderIds = live.filter((o) => !isOrderFromToday(o, today)).map((o) => o.id)
+    const olderIds = live
+      .filter((o) => !isOrderWithinRecentDays(o, recentDays, today))
+      .map((o) => o.id)
     state = {
       ...emptyState(),
       bootstrappedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
@@ -287,20 +338,22 @@ async function main() {
         {
           bootstrapped: true,
           knownOlderOrders: olderIds.length,
-          pendingToday: live.filter((o) => isOrderFromToday(o, today)).length,
+          pendingRecent: live.filter((o) => isOrderWithinRecentDays(o, recentDays, today)).length,
+          recentDays,
+          today,
           dryRun: DRY,
         },
         null,
         2,
       ),
     )
-    // Fall through to send today's pending orders.
+    // Fall through to send recent pending orders.
   }
 
   const already = new Set(state.emailedOrderIds.map((id) => String(id)))
   if (forceResendToday) {
     for (const o of live) {
-      if (isOrderFromToday(o, today)) already.delete(o.id)
+      if (isOrderWithinRecentDays(o, recentDays, today)) already.delete(o.id)
     }
   }
   const pending = live.filter((o) => !already.has(o.id))
@@ -308,7 +361,7 @@ async function main() {
   if (!pending.length) {
     state.updatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
     if (!DRY) writeFileSync(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`)
-    console.log(JSON.stringify({ pending: 0, emailed: 0, dryRun: DRY, today }, null, 2))
+    console.log(JSON.stringify({ pending: 0, emailed: 0, dryRun: DRY, today, recentDays }, null, 2))
     return
   }
 

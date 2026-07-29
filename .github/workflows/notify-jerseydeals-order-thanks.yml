@@ -60,16 +60,18 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
           FORCE_RESEND_TODAY: ${{ github.event_name == 'workflow_dispatch' && inputs.force_resend_today && '1' || '' }}
+          # On push, catch today + yesterday (ET) so same-day timezone edges still get mailed.
+          THANKS_EMAIL_RECENT_DAYS: ${{ github.event_name == 'push' && '2' || '1' }}
         run: npm run email:notify-order-thanks
 
       - name: Commit order-thanks state if changed
         run: |
-          if git diff --quiet -- jerseydeals/public/order-thanks-state.json; then
+          git add jerseydeals/public/order-thanks-state.json 2>/dev/null || true
+          if git diff --cached --quiet -- jerseydeals/public/order-thanks-state.json; then
             echo "No order-thanks state changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add jerseydeals/public/order-thanks-state.json
           git commit -m "chore(jerseydeals): update order thank-you notify state"
           git push origin HEAD:Brayden-OS
