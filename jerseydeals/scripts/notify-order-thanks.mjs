@@ -12,6 +12,7 @@
  *   SQUARE_ENVIRONMENT / SQUARE_LOCATION_ID
  *   SMTP_* — same secrets as send-smtp-email.mjs
  *   DRY_RUN=1 / SKIP_SEND=1
+ *   FORCE_RESEND_TODAY=1 — re-queue orders completed today (America/New_York)
  *   THANKS_LOOKBACK_DAYS (default 30)
  *   DELIVERY_DAYS (default "3–7") — “delivered in X days” copy
  */

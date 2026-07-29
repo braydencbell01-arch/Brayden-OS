@@ -59,7 +59,7 @@ jobs:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
-          FORCE_RESEND_TODAY: ${{ (github.event_name == 'workflow_dispatch' && inputs.force_resend_today && '1') || (github.event_name == 'push' && '1') || '' }}
+          FORCE_RESEND_TODAY: ${{ github.event_name == 'workflow_dispatch' && inputs.force_resend_today && '1' || '' }}
         run: npm run email:notify-order-thanks
 
       - name: Commit order-thanks state if changed
