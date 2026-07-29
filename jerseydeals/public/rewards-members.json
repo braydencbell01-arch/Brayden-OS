@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-07-28T20:46:09Z",
+  "syncedAt": "2026-07-29T16:05:54Z",
   "kind": "rewards_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
@@ -45,10 +45,11 @@
     {
       "email": "lynne8002@aol.com",
       "sources": [
-        "rewards_club"
+        "rewards_club",
+        "landing"
       ],
       "firstSeen": "2026-07-27T18:55:23.000Z",
-      "lastSeen": "2026-07-27T20:05:23.000Z",
+      "lastSeen": "2026-07-29T16:00:26.000Z",
       "phone": "7576309980"
     },
     {

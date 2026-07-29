@@ -1,14 +1,23 @@
 {
-  "syncedAt": "2026-07-28T20:46:09Z",
+  "syncedAt": "2026-07-29T16:05:54Z",
   "kind": "non_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 2,
+  "count": 3,
   "emails": [
+    "aqsmith08@gmail.com",
     "bboysoccer9@icloud.com",
     "bell29@webstercsd.org"
   ],
   "entries": [
+    {
+      "email": "aqsmith08@gmail.com",
+      "sources": [
+        "cart_checkout_gate"
+      ],
+      "firstSeen": "2026-07-29T12:42:51.000Z",
+      "lastSeen": "2026-07-29T12:42:51.000Z"
+    },
     {
       "email": "bboysoccer9@icloud.com",
       "sources": [
