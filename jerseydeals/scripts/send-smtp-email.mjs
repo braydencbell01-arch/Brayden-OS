@@ -11,7 +11,7 @@
  *
  * Optional:
  *   TO            Comma-separated recipients (overrides audience list)
- *   AUDIENCE      "test" | "rewards" | "non_members" (default test)
+ *   AUDIENCE      "test" | "rewards" | "non_members" | "order" (default test)
  *   SUBJECT
  *   BODY          Plain-text body (use \n for newlines)
  *   ITEM_NAME     Optional — fills the “new kit” template if BODY empty
@@ -19,6 +19,8 @@
  *   REPLY_TO      Default shop@jerseydeals.online
  *   UNSUBSCRIBE_MAILTO  Default shop@jerseydeals.online
  *   UNSUBSCRIBE_URL     Default https://jerseydeals.online/#rewards
+ *   PLAIN_TEXT_ONLY=1   Send text only (no HTML part)
+ *   TRANSACTIONAL=1     Order / receipt style — no List-Unsubscribe marketing headers
  *   DRY_RUN=1     Print payload only
  */
 
@@ -94,8 +96,14 @@ function defaultNewItemBody(itemName, link) {
   ].join('\n')
 }
 
-function withFooter(body, { unsubMailto, unsubUrl }) {
+function withFooter(body, { unsubMailto, unsubUrl, transactional }) {
   const text = String(body || '').trim()
+  if (transactional) {
+    if (/jerseydeals\.online/i.test(text) && /shop@jerseydeals\.online/i.test(text)) return text
+    return [text, '', '—', 'Jersey Deals · shop@jerseydeals.online · https://JerseyDeals.online/'].join(
+      '\n',
+    )
+  }
   if (/unsubscribe/i.test(text)) return text
   return [
     text,
@@ -162,6 +170,10 @@ async function main() {
   const itemName = (process.env.ITEM_NAME || '').trim()
   const audience = (process.env.AUDIENCE || 'test').trim().toLowerCase()
   const dryRun = process.env.DRY_RUN === '1' || process.env.DRY_RUN === 'true'
+  const transactional =
+    process.env.TRANSACTIONAL === '1' ||
+    process.env.TRANSACTIONAL === 'true' ||
+    audience === 'order'
   const unsubMailto = (process.env.UNSUBSCRIBE_MAILTO || SHOP).trim()
   const unsubUrl = (process.env.UNSUBSCRIBE_URL || `${SITE}#rewards`).trim()
   const subject =
@@ -169,7 +181,7 @@ async function main() {
     (itemName ? `New kit just dropped: ${itemName}` : 'New kit just dropped')
   const rawBody =
     (process.env.BODY || '').replace(/\\n/g, '\n').trim() || defaultNewItemBody(itemName, link)
-  const body = withFooter(rawBody, { unsubMailto, unsubUrl })
+  const body = withFooter(rawBody, { unsubMailto, unsubUrl, transactional })
   const html = textToHtml(body)
 
   let to = parseList(process.env.TO)
@@ -196,6 +208,18 @@ async function main() {
 
   const listUnsub = `<mailto:${unsubMailto}?subject=unsubscribe>, <${unsubUrl}>`
 
+  const headers = transactional
+    ? {
+        'Feedback-ID': `jd:order:${audience}:jerseydeals`,
+        'X-JerseyDeals-Audience': audience || 'order',
+      }
+    : {
+        'List-Unsubscribe': listUnsub,
+        'List-Id': '<rewards.jerseydeals.online>',
+        'Feedback-ID': `jd:rewards:${audience}:jerseydeals`,
+        'X-JerseyDeals-Audience': audience,
+      }
+
   const payload = {
     from,
     replyTo,
@@ -205,11 +229,9 @@ async function main() {
     host,
     port,
     audience,
+    transactional,
     dryRun,
-    headers: {
-      'List-Unsubscribe': listUnsub,
-      'List-Id': '<rewards.jerseydeals.online>',
-    },
+    headers,
   }
   console.log(JSON.stringify({ ...payload, pass: '[redacted]', htmlBytes: html.length }, null, 2))
 
@@ -244,12 +266,7 @@ async function main() {
       text: body,
       ...(plainOnly ? {} : { html }),
       messageId,
-      headers: {
-        'List-Unsubscribe': listUnsub,
-        'List-Id': '<rewards.jerseydeals.online>',
-        'Feedback-ID': `jd:rewards:${audience}:jerseydeals`,
-        'X-JerseyDeals-Audience': audience,
-      },
+      headers,
     })
     results.push({ to: recipient, id: info.messageId || info.response })
     console.log('Sent:', recipient, info.messageId || info.response)

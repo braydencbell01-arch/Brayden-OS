@@ -326,6 +326,16 @@ When you want a new member offer: tell the agent what it is — they add it to t
 catalog with a one-month expiry (unless you say otherwise), **merge to `Brayden-OS` the same turn**,
 and My offers + the new-offer email stay in sync automatically.
 
+### Order thank-you emails (buyers)
+
+After each **completed** Square order, inventory sync emails the buyer a short plain-text
+thank-you from `shop@jerseydeals.online` (transactional — not a Rewards marketing digest).
+
+- Runs on **Sync Jersey Deals inventory** (~every 10 minutes)
+- First run bootstraps existing orders with **no email**
+- Copy includes kit title(s) and: “Your order will be delivered in **3–7** days.”
+- Override window with `DELIVERY_DAYS` if needed
+
 ```bash
 SMTP_HOST=smtp.ionos.com SMTP_PORT=587 SMTP_USER=... SMTP_PASS=... \
   AUDIENCE=test ITEM_NAME="Inter Milan Home" DRY_RUN=1 \

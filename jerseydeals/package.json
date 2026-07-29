@@ -30,6 +30,7 @@
     "email:smtp-send": "node scripts/send-smtp-email.mjs",
     "email:notify-new-listings": "node scripts/notify-rewards-new-listings.mjs",
     "email:notify-new-offers": "node scripts/notify-rewards-new-offers.mjs",
+    "email:notify-order-thanks": "node scripts/notify-order-thanks.mjs",
     "backfill:images": "node scripts/backfill-square-images-from-ebay.mjs",
     "enrich:images": "node scripts/enrich-listing-images-from-ebay.mjs",
     "square:reorder-images": "node scripts/reorder-square-images-from-ebay.mjs"
