@@ -60,8 +60,8 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '' }}
           FORCE_RESEND_TODAY: ${{ github.event_name == 'workflow_dispatch' && inputs.force_resend_today && '1' || '' }}
-          # Push catch-up: include recent completed Square orders (ET window).
-          THANKS_EMAIL_RECENT_DAYS: ${{ github.event_name == 'push' && '14' || '1' }}
+          # On push, catch today + yesterday (ET) for timezone edges.
+          THANKS_EMAIL_RECENT_DAYS: ${{ github.event_name == 'push' && '2' || '1' }}
         run: npm run email:notify-order-thanks
 
       - name: Commit order-thanks state if changed
