@@ -30,7 +30,7 @@ import {
   type WalletOffer,
 } from './offers'
 import { isRewardsMember } from './rewardsMember'
-import { amountToFreeShipping, shippingForSubtotal, totalWithShipping } from './shipping'
+import { amountToFreeShipping, FREE_SHIPPING_THRESHOLD, shippingForSubtotal, totalWithShipping } from './shipping'
 
 /** Email is only required when the shopper skipped both Rewards join and the 10% popup. */
 function needsCheckoutEmailGate() {
@@ -154,12 +154,15 @@ export function CartDrawer({
       mode: 'checkout_all',
       offer: activeId || '',
       has_email: Boolean(savedEmail || readBuyerEmail()),
-      shipping_percent: freeShip ? 0 : 10,
+      shipping_percent: freeShip || discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 10,
     }
 
-    // Single kit + no free-shipping override → reuse the prebuilt Payment Link (fast path).
+    const squareFreeShip = freeShip || discountedSubtotal >= FREE_SHIPPING_THRESHOLD
+
+    // Single kit + shipping still charged on the static Payment Link → only use when Square
+    // should also charge 10% shipping (under $100 and no free-ship offer).
     const canUseStaticSingle =
-      cart.lines.length === 1 && !freeShip && Boolean(cart.lines[0]?.checkoutUrl)
+      cart.lines.length === 1 && !squareFreeShip && Boolean(cart.lines[0]?.checkoutUrl)
 
     if (canUseStaticSingle) {
       const line = cart.lines[0]!
@@ -172,7 +175,8 @@ export function CartDrawer({
       const result = await createCartCheckoutLink({
         variationIds: cart.lines.map((line) => line.id),
         first10: useSquareDiscount,
-        freeShipping: freeShip,
+        freeShipping: squareFreeShip,
+        merchandiseTotal: discountedSubtotal,
       })
       if (!result.ok) {
         // Last resort: one kit still in the bag → static Payment Link.
@@ -515,8 +519,8 @@ export function CartDrawer({
               ) : null}
               <p className="mt-2 text-xs leading-relaxed text-muted">
                 Checkout all opens one Square payment page for everything in your bag.
-                {freeShip
-                  ? ' Free shipping offer is active for this first order.'
+                {freeShip || discountedSubtotal >= FREE_SHIPPING_THRESHOLD
+                  ? ' Free shipping applies on this order.'
                   : ' Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links.'}{' '}
                 Items stay in your bag until payment is confirmed.
               </p>

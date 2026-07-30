@@ -2,27 +2,33 @@
  * Create / resolve a Square Payment Link for every line in the cart (Checkout all).
  *
  * Resolution order:
- * 1) Dedicated cart API / email API worker (`POST /cart-checkout`) — any size
- * 2) Prefetched 2-item combo links in `cart-combo-links.json` — pairs only
+ * 1) Prefetched 2-item combo links in `cart-combo-links.json` — pairs only
+ * 2) Dedicated cart API / email API worker (`POST /cart-checkout`) — any size
  * 3) Single-item static Payment Links (handled by Cart.tsx fast path)
  */
 import { track } from './analytics'
+import { FREE_SHIPPING_THRESHOLD } from './shipping'
 
 export type CartCheckoutRequest = {
   variationIds: string[]
   /** Apply catalog first-time buyer 10% when true. */
   first10?: boolean
-  /** Omit Payment Link shipping charge when a free-shipping offer is active. */
+  /** Free-shipping offer activated in My offers. */
   freeShipping?: boolean
+  /** Merchandise subtotal (after offers) — unlocks free shipping at $100+. */
+  merchandiseTotal?: number
 }
 
 export type CartCheckoutResult =
   | { ok: true; url: string; paymentLinkId?: string; source?: string }
   | { ok: false; message: string }
 
+type ComboRow = { url?: string; paymentLinkId?: string }
 type ComboFile = {
-  pairs?: Record<string, { url?: string; paymentLinkId?: string }>
-  pairsFirst10?: Record<string, { url?: string; paymentLinkId?: string }>
+  pairs?: Record<string, ComboRow>
+  pairsFirst10?: Record<string, ComboRow>
+  pairsFreeShip?: Record<string, ComboRow>
+  pairsFirst10FreeShip?: Record<string, ComboRow>
 }
 
 function apiBaseUrl() {
@@ -49,9 +55,16 @@ function comboKey(ids: string[]) {
   return [...ids].map(String).sort().join('|')
 }
 
+function wantsFreeShipping(req: CartCheckoutRequest) {
+  if (req.freeShipping) return true
+  const total = Number(req.merchandiseTotal)
+  return Number.isFinite(total) && total >= FREE_SHIPPING_THRESHOLD
+}
+
 async function lookupPrefetchedPair(
   ids: string[],
   first10: boolean,
+  freeShipping: boolean,
 ): Promise<CartCheckoutResult | null> {
   if (ids.length !== 2) return null
   try {
@@ -60,9 +73,30 @@ async function lookupPrefetchedPair(
     if (!res.ok) return null
     const data = (await res.json()) as ComboFile
     const key = comboKey(ids)
-    const row = (first10 ? data.pairsFirst10?.[key] : data.pairs?.[key]) || data.pairs?.[key]
-    if (!row?.url) return null
-    return { ok: true, url: row.url, paymentLinkId: row.paymentLinkId, source: 'combo' }
+
+    const preferred = freeShipping
+      ? first10
+        ? data.pairsFirst10FreeShip?.[key] || data.pairsFreeShip?.[key]
+        : data.pairsFreeShip?.[key]
+      : first10
+        ? data.pairsFirst10?.[key] || data.pairs?.[key]
+        : data.pairs?.[key]
+
+    // Last resort: any matching pair link (better than blocking checkout).
+    const fallback =
+      preferred ||
+      data.pairsFreeShip?.[key] ||
+      data.pairsFirst10FreeShip?.[key] ||
+      data.pairs?.[key] ||
+      data.pairsFirst10?.[key]
+
+    if (!fallback?.url) return null
+    return {
+      ok: true,
+      url: fallback.url,
+      paymentLinkId: fallback.paymentLinkId,
+      source: freeShipping ? 'combo_freeship' : 'combo',
+    }
   } catch {
     return null
   }
@@ -83,6 +117,7 @@ async function createViaApi(req: CartCheckoutRequest, ids: string[]): Promise<Ca
   }
   const secret = apiSecret()
   if (secret) headers['X-JD-Collect-Secret'] = secret
+  const freeShipping = wantsFreeShipping(req)
 
   try {
     const res = await fetch(endpoint, {
@@ -92,7 +127,7 @@ async function createViaApi(req: CartCheckoutRequest, ids: string[]): Promise<Ca
         action: 'cart_checkout',
         variationIds: ids,
         first10: Boolean(req.first10),
-        freeShipping: Boolean(req.freeShipping),
+        freeShipping,
         site: 'Jersey Deals',
         product: 'Jersey Deals',
       }),
@@ -108,7 +143,12 @@ async function createViaApi(req: CartCheckoutRequest, ids: string[]): Promise<Ca
       track('cart_checkout_all_fail', { status: res.status, items: ids.length })
       return { ok: false, message }
     }
-    track('cart_checkout_all_ok', { items: ids.length, first10: Boolean(req.first10), source: 'api' })
+    track('cart_checkout_all_ok', {
+      items: ids.length,
+      first10: Boolean(req.first10),
+      free_shipping: freeShipping,
+      source: 'api',
+    })
     return { ok: true, url: data.url, paymentLinkId: data.paymentLinkId, source: 'api' }
   } catch {
     track('cart_checkout_all_fail', { status: 0, items: ids.length })
@@ -128,14 +168,16 @@ export async function createCartCheckoutLink(
     return { ok: false, message: 'Your cart is empty.' }
   }
 
-  // Prefetched pair links work offline / without the email API (not for free-shipping override).
-  if (ids.length === 2 && !req.freeShipping) {
-    const prefetched = await lookupPrefetchedPair(ids, Boolean(req.first10))
+  const freeShipping = wantsFreeShipping(req)
+
+  if (ids.length === 2) {
+    const prefetched = await lookupPrefetchedPair(ids, Boolean(req.first10), freeShipping)
     if (prefetched?.ok) {
       track('cart_checkout_all_ok', {
         items: 2,
         first10: Boolean(req.first10),
-        source: 'combo',
+        free_shipping: freeShipping,
+        source: prefetched.source || 'combo',
       })
       return prefetched
     }

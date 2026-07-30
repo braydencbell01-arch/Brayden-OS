@@ -3,8 +3,13 @@
  * Prefetch Square Payment Links for every 2-item cart combo so "Checkout all"
  * works on the static landing page without a live cart-checkout API.
  *
+ * Buckets:
+ *   pairs / pairsFirst10           — 10% shipping (under $100, no free-ship offer)
+ *   pairsFreeShip / pairsFirst10FreeShip — no shipping ($100+ or free-ship offer)
+ *
  * Requires: SQUARE_ACCESS_TOKEN
  * Optional: SQUARE_LOCATION_ID, SQUARE_SHIPPING_PERCENT (default 10), FORCE_RECREATE=1
+ *   ONLY_FREE_SHIP=1 — only create/refresh free-shipping combo buckets
  *
  *   node jerseydeals/scripts/ensure-cart-combo-links.mjs
  */
@@ -24,6 +29,7 @@ const TOKEN = process.env.SQUARE_ACCESS_TOKEN
 const LOCATION_OVERRIDE = process.env.SQUARE_LOCATION_ID || ''
 const SHIPPING_PERCENT = Number.parseFloat(process.env.SQUARE_SHIPPING_PERCENT || '10')
 const FORCE_RECREATE = process.env.FORCE_RECREATE === '1'
+const ONLY_FREE_SHIP = process.env.ONLY_FREE_SHIP === '1'
 const DISCOUNT_ID = process.env.FIRST10_DISCOUNT_ID || 'OLPMVGCGLRBDCULSOPQOY2FI'
 const REDIRECT_BASE =
   process.env.SQUARE_PURCHASE_REDIRECT_URL || 'https://jerseydeals.online/?purchase=1'
@@ -80,20 +86,30 @@ function redirectFor(ids) {
   return url.toString()
 }
 
-function loadExisting() {
-  if (!existsSync(COMBOS_PATH)) return { pairs: {}, pairsFirst10: {} }
-  try {
-    const raw = JSON.parse(readFileSync(COMBOS_PATH, 'utf8'))
-    return {
-      pairs: raw.pairs && typeof raw.pairs === 'object' ? raw.pairs : {},
-      pairsFirst10: raw.pairsFirst10 && typeof raw.pairsFirst10 === 'object' ? raw.pairsFirst10 : {},
-    }
-  } catch {
-    return { pairs: {}, pairsFirst10: {} }
+function emptyBuckets() {
+  return {
+    pairs: {},
+    pairsFirst10: {},
+    pairsFreeShip: {},
+    pairsFirst10FreeShip: {},
   }
 }
 
-async function createPairLink({ locationId, ids, first10 }) {
+function loadExisting() {
+  if (!existsSync(COMBOS_PATH)) return emptyBuckets()
+  try {
+    const raw = JSON.parse(readFileSync(COMBOS_PATH, 'utf8'))
+    const base = emptyBuckets()
+    for (const key of Object.keys(base)) {
+      if (raw[key] && typeof raw[key] === 'object') base[key] = raw[key]
+    }
+    return base
+  } catch {
+    return emptyBuckets()
+  }
+}
+
+async function createPairLink({ locationId, ids, first10, freeShipping }) {
   const order = {
     location_id: locationId,
     line_items: ids.map((id) => ({ catalog_object_id: id, quantity: '1' })),
@@ -101,7 +117,7 @@ async function createPairLink({ locationId, ids, first10 }) {
   if (first10 && DISCOUNT_ID) {
     order.discounts = [{ catalog_object_id: DISCOUNT_ID, scope: 'ORDER' }]
   }
-  if (SHIPPING_PERCENT > 0) {
+  if (!freeShipping && SHIPPING_PERCENT > 0) {
     order.service_charges = [
       {
         name: 'Shipping',
@@ -110,11 +126,19 @@ async function createPairLink({ locationId, ids, first10 }) {
       },
     ]
   }
+  const label = [
+    'JD cart',
+    `${ids.length} kits`,
+    first10 ? 'first10' : null,
+    freeShipping ? 'freeship' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
   const data = await square('/v2/online-checkout/payment-links', {
     method: 'POST',
     body: {
       idempotency_key: randomUUID(),
-      description: `JD cart · ${ids.length} kits${first10 ? ' · first10' : ''}`.slice(0, 100),
+      description: label.slice(0, 100),
       checkout_options: {
         ask_for_shipping_address: true,
         allow_tipping: false,
@@ -133,13 +157,20 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms))
 }
 
+function writeCombos(payload) {
+  mkdirSync(dirname(COMBOS_PATH), { recursive: true })
+  writeFileSync(COMBOS_PATH, `${JSON.stringify(payload, null, 2)}\n`)
+}
+
 const listings = JSON.parse(readFileSync(LISTINGS_PATH, 'utf8'))
-const variationIds = [...new Set(
-  (listings.listings || [])
-    .filter((row) => row?.id && row?.checkoutUrl)
-    .map((row) => String(row.id).trim())
-    .filter(Boolean),
-)].slice(0, MAX_ITEMS)
+const variationIds = [
+  ...new Set(
+    (listings.listings || [])
+      .filter((row) => row?.id && row?.checkoutUrl)
+      .map((row) => String(row.id).trim())
+      .filter(Boolean),
+  ),
+].slice(0, MAX_ITEMS)
 
 if (variationIds.length < 2) {
   console.log('Need at least 2 checkout-ready listings; skipping combo links.')
@@ -147,89 +178,93 @@ if (variationIds.length < 2) {
 }
 
 const locationId = await primaryLocationId()
-const existing = loadExisting()
-const pairs = { ...existing.pairs }
-const pairsFirst10 = { ...existing.pairsFirst10 }
+const buckets = loadExisting()
+
+const variants = ONLY_FREE_SHIP
+  ? [
+      { first10: false, freeShipping: true, bucket: 'pairsFreeShip' },
+      { first10: true, freeShipping: true, bucket: 'pairsFirst10FreeShip' },
+    ]
+  : [
+      { first10: false, freeShipping: false, bucket: 'pairs' },
+      { first10: true, freeShipping: false, bucket: 'pairsFirst10' },
+      { first10: false, freeShipping: true, bucket: 'pairsFreeShip' },
+      { first10: true, freeShipping: true, bucket: 'pairsFirst10FreeShip' },
+    ]
 
 let created = 0
 let reused = 0
 let failed = 0
 
-console.log(`Building pair checkout links for ${variationIds.length} items…`)
+console.log(
+  `Building pair checkout links for ${variationIds.length} items (${variants.length} buckets)…`,
+)
 
 for (let i = 0; i < variationIds.length; i += 1) {
   for (let j = i + 1; j < variationIds.length; j += 1) {
     const ids = [variationIds[i], variationIds[j]]
     const key = comboKey(ids)
 
-    for (const first10 of [false, true]) {
-      const bucket = first10 ? pairsFirst10 : pairs
+    for (const variant of variants) {
+      const bucket = buckets[variant.bucket]
       if (!FORCE_RECREATE && bucket[key]?.url) {
         reused += 1
         continue
       }
       try {
-        const link = await createPairLink({ locationId, ids, first10 })
+        const link = await createPairLink({
+          locationId,
+          ids,
+          first10: variant.first10,
+          freeShipping: variant.freeShipping,
+        })
         if (!link.url) throw new Error('No URL returned')
         bucket[key] = {
           url: link.url,
           paymentLinkId: link.paymentLinkId,
           ids,
-          first10,
+          first10: variant.first10,
+          freeShipping: variant.freeShipping,
           updatedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
         }
         created += 1
         if (created % 25 === 0) {
           console.log(`…created ${created} (reused ${reused}, failed ${failed})`)
-          mkdirSync(dirname(COMBOS_PATH), { recursive: true })
-          writeFileSync(
-            COMBOS_PATH,
-            `${JSON.stringify(
-              {
-                syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-                source: 'square-cart-combo-links',
-                locationId,
-                shippingPercent: SHIPPING_PERCENT,
-                itemCount: variationIds.length,
-                pairCount: Object.keys(pairs).length,
-                pairFirst10Count: Object.keys(pairsFirst10).length,
-                pairs,
-                pairsFirst10,
-              },
-              null,
-              2,
-            )}\n`,
-          )
+          writeCombos({
+            syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+            source: 'square-cart-combo-links',
+            locationId,
+            shippingPercent: SHIPPING_PERCENT,
+            itemCount: variationIds.length,
+            pairCount: Object.keys(buckets.pairs).length,
+            pairFirst10Count: Object.keys(buckets.pairsFirst10).length,
+            pairFreeShipCount: Object.keys(buckets.pairsFreeShip).length,
+            pairFirst10FreeShipCount: Object.keys(buckets.pairsFirst10FreeShip).length,
+            ...buckets,
+          })
         }
         await sleep(120)
       } catch (err) {
         failed += 1
-        console.error(`✗ ${key}${first10 ? ' first10' : ''}: ${err.message}`)
+        console.error(`✗ ${key} ${variant.bucket}: ${err.message}`)
         await sleep(400)
       }
     }
   }
 }
 
-mkdirSync(dirname(COMBOS_PATH), { recursive: true })
-writeFileSync(
-  COMBOS_PATH,
-  `${JSON.stringify(
-    {
-      syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-      source: 'square-cart-combo-links',
-      locationId,
-      shippingPercent: SHIPPING_PERCENT,
-      itemCount: variationIds.length,
-      pairCount: Object.keys(pairs).length,
-      pairFirst10Count: Object.keys(pairsFirst10).length,
-      pairs,
-      pairsFirst10,
-    },
-    null,
-    2,
-  )}\n`,
-)
+writeCombos({
+  syncedAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+  source: 'square-cart-combo-links',
+  locationId,
+  shippingPercent: SHIPPING_PERCENT,
+  itemCount: variationIds.length,
+  pairCount: Object.keys(buckets.pairs).length,
+  pairFirst10Count: Object.keys(buckets.pairsFirst10).length,
+  pairFreeShipCount: Object.keys(buckets.pairsFreeShip).length,
+  pairFirst10FreeShipCount: Object.keys(buckets.pairsFirst10FreeShip).length,
+  ...buckets,
+})
 console.log(
-  `Done. created=${created} reused=${reused} failed=${failed} → ${COMBOS_PATH} (pairs=${Object.keys(pairs).length})`,
+  `Done. created=${created} reused=${reused} failed=${failed} → ${COMBOS_PATH} (pairs=${Object.keys(buckets.pairs).length}, freeShip=${Object.keys(buckets.pairsFreeShip).length})`,
 )
