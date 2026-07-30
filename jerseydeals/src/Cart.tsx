@@ -7,7 +7,7 @@ import {
   cartSubtotal,
   type CartState,
 } from './cart'
-import { cartCheckoutApiConfigured, createCartCheckoutLink } from './cartCheckout'
+import { createCartCheckoutLink } from './cartCheckout'
 import { captureEmail } from './emailCapture'
 import { formatPrice, shortTitle } from './listings'
 import { isValidEmail, readBuyerEmail, syncPurchasedFromKnownEmail, writeBuyerEmail } from './offer'
@@ -167,16 +167,6 @@ export function CartDrawer({
       return
     }
 
-    if (!cartCheckoutApiConfigured()) {
-      if (cart.lines.length === 1) {
-        const line = cart.lines[0]!
-        beginCheckout(cartLineCheckoutUrl(line, lineUsesDiscountLink(line)), 'all', meta)
-        return
-      }
-      setCheckoutError('Multi-item checkout isn’t available right now. Try again shortly.')
-      return
-    }
-
     setCheckoutBusy(true)
     try {
       const result = await createCartCheckoutLink({
@@ -185,6 +175,12 @@ export function CartDrawer({
         freeShipping: freeShip,
       })
       if (!result.ok) {
+        // Last resort: one kit still in the bag → static Payment Link.
+        if (cart.lines.length === 1 && cart.lines[0]?.checkoutUrl) {
+          const line = cart.lines[0]!
+          beginCheckout(cartLineCheckoutUrl(line, lineUsesDiscountLink(line)), 'all', meta)
+          return
+        }
         setCheckoutError(result.message)
         return
       }

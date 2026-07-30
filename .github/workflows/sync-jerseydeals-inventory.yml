@@ -94,6 +94,15 @@ jobs:
           SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
         run: npm run square:first10-links
 
+      - name: Ensure 2-item cart Checkout all Payment Links
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+        run: npm run square:cart-combo-links
+
       - name: Sync Rewards member / non-member email lists
         working-directory: jerseydeals
         env:

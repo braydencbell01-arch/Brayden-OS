@@ -155,11 +155,84 @@ function send(res, status, body, origin) {
     'Access-Control-Allow-Headers': 'Content-Type, X-JD-Collect-Secret',
   }
   res.writeHead(status, headers)
-  res.end(JSON.stringify(body))
+  res.end(status === 204 ? '' : JSON.stringify(body))
+}
+
+const LOCATION = process.env.SQUARE_LOCATION_ID || 'L6ZVPG4Q71605'
+const DISCOUNT_ID = process.env.FIRST10_DISCOUNT_ID || 'OLPMVGCGLRBDCULSOPQOY2FI'
+const REDIRECT = 'https://jerseydeals.online/?purchase=1'
+const SHIPPING_PERCENT = String(process.env.SQUARE_SHIPPING_PERCENT || '10')
+
+async function createCartPaymentLink(payload) {
+  const variationIds = [
+    ...new Set(
+      (Array.isArray(payload.variationIds) ? payload.variationIds : [])
+        .map((id) => String(id || '').trim().toUpperCase())
+        .filter((id) => /^[A-Z0-9]+$/.test(id)),
+    ),
+  ].slice(0, 20)
+  if (!variationIds.length) {
+    return { status: 400, body: { ok: false, error: 'variationIds required' } }
+  }
+  const first10 = Boolean(payload.first10 || payload.discounted || payload.offer === 'first10')
+  const freeShipping = Boolean(payload.freeShipping || payload.freeShip)
+  const order = {
+    location_id: LOCATION,
+    line_items: variationIds.map((id) => ({ catalog_object_id: id, quantity: '1' })),
+  }
+  if (first10 && DISCOUNT_ID) {
+    order.discounts = [{ catalog_object_id: DISCOUNT_ID, scope: 'ORDER' }]
+  }
+  if (!freeShipping) {
+    order.service_charges = [
+      {
+        name: 'Shipping',
+        percentage: SHIPPING_PERCENT,
+        calculation_phase: 'SUBTOTAL_PHASE',
+      },
+    ]
+  }
+  const redirect = new URL(REDIRECT.includes('?') ? REDIRECT : `${REDIRECT}?purchase=1`)
+  redirect.searchParams.set('purchase', '1')
+  redirect.searchParams.set('sold', variationIds.join(','))
+  const data = await square('/v2/online-checkout/payment-links', {
+    method: 'POST',
+    body: {
+      idempotency_key: randomUUID(),
+      description: `Jersey Deals cart · ${variationIds.length} item${variationIds.length === 1 ? '' : 's'}`.slice(
+        0,
+        100,
+      ),
+      checkout_options: {
+        ask_for_shipping_address: true,
+        allow_tipping: false,
+        redirect_url: redirect.toString(),
+      },
+      order,
+    },
+  })
+  const link = data.payment_link
+  if (!link?.url) {
+    return { status: 502, body: { ok: false, error: 'Square did not return a checkout URL' } }
+  }
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      url: link.url,
+      paymentLinkId: link.id || '',
+      items: variationIds.length,
+      first10,
+      freeShipping,
+    },
+  }
 }
 
 const server = createServer(async (req, res) => {
   const origin = req.headers.origin || '*'
+  const url = new URL(req.url || '/', `http://localhost:${PORT}`)
+  const path = (url.pathname || '/').replace(/\/+$/, '') || '/'
+
   if (req.method === 'OPTIONS') {
     send(res, 204, {}, origin)
     return
@@ -180,6 +253,19 @@ const server = createServer(async (req, res) => {
     payload = raw ? JSON.parse(raw) : {}
   } catch {
     send(res, 400, { ok: false, error: 'Invalid JSON' }, origin)
+    return
+  }
+
+  const isCartCheckout =
+    path.endsWith('/cart-checkout') || String(payload.action || '').trim() === 'cart_checkout'
+  if (isCartCheckout) {
+    try {
+      const result = await createCartPaymentLink(payload)
+      send(res, result.status, result.body, origin)
+    } catch (err) {
+      console.error(err)
+      send(res, 502, { ok: false, error: String(err.message || err).slice(0, 240) }, origin)
+    }
     return
   }
 
@@ -240,5 +326,5 @@ const server = createServer(async (req, res) => {
 })
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Jersey Deals email collector listening on :${PORT} → notify ${NOTIFY_EMAIL}`)
+  console.log(`Jersey Deals email + cart-checkout listening on :${PORT} → notify ${NOTIFY_EMAIL}`)
 })
