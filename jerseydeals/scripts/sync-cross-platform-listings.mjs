@@ -7,6 +7,8 @@
  * - New Square-only sellable items → create eBay FixedPrice listing, write back SKU
  * - Linked but ended on eBay → leave for reconcile:sold (ends Square + site)
  * - Removals / sold are owned by reconcile-sold-inventory.mjs
+ * - Qty SoT is Square after create: never bump Square stock up from eBay (that undid
+ *   Payment Link sales when eBay still showed the pre-sale qty). Decreases from eBay OK.
  *
  * Join key: Square variation SKU = ebay:{eBayItemId}
  *
@@ -478,7 +480,14 @@ async function upsertSquareFromEbay(ebay, locationId, { soldOutEbayIds } = {}) {
           }
         }
       }
-      await setSquareQty(variationId, locationId, qty)
+      // Never restore / raise Square qty from eBay on update — Square Payment Link
+      // sales already decremented stock; eBay often still shows the old available qty.
+      // Allow decreases only (eBay sold a unit first).
+      const currentSq = await inventoryQty(variationId, locationId)
+      if (currentSq == null || qty < currentSq) {
+        await setSquareQty(variationId, locationId, qty)
+        changed = true
+      }
     }
     return { status: changed ? 'updated' : 'unchanged', sku, variationId, itemId }
   }
