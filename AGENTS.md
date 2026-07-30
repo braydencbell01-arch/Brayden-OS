@@ -131,3 +131,5 @@ Non-obvious caveats:
 ## Jersey Deals promo copy
 
 When writing Facebook / social captions or titles for the user, the landing-page link must be **https://JerseyDeals.online** (not the GitHub Pages URL). Square and eBay links stay as-is unless the user says otherwise.
+
+Listing captions: use **“new with tags and authentic”** — never “tags still on.”
