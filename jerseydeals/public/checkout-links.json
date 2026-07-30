@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-30T20:25:20Z",
+  "syncedAt": "2026-07-30T23:47:59Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 36,
+  "count": 35,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -19,19 +19,6 @@
       "discountPaymentLinkId": "MN6MHOZRT6NUYQ6U",
       "discountUrl": "https://square.link/u/IXChODiV",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/47LedKBB7iYUEEXtuJlC9ZKhVlJZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "ODYCQWI7KR7ACDL7C7K4EXFS",
-      "variationId": "5IGOAAVG5N3HVSBTOXMQ6AH7",
-      "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · XL",
-      "sku": "ebay:800059395254",
-      "paymentLinkId": "BB7DRTE55QKSKWUT",
-      "url": "https://square.link/u/9ot1aKd7",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/M1vQbsx71DrB7Qju5AQv7u7G739YY",
-      "discountPaymentLinkId": "UG3XP6GRUKD2QWBJ",
-      "discountUrl": "https://square.link/u/Fb8OjDHr",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/AlCGG5kqAltg7QEDWNe5IlF1H8KZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

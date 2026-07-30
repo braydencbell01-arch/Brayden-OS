@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-07-30T20:26:03Z",
+  "syncedAt": "2026-07-30T23:48:46Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 36,
+  "count": 35,
   "listings": [
     {
       "id": "NK4QWAQHIVIST5HLZRY7DWRH",
@@ -289,40 +289,6 @@
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/IeSsVEvQ",
       "checkoutUrlDiscounted": "https://square.link/u/FsqOg9ra",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "5IGOAAVG5N3HVSBTOXMQ6AH7",
-      "itemId": "ODYCQWI7KR7ACDL7C7K4EXFS",
-      "sku": "ebay:800059395254",
-      "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · XL",
-      "price": 49.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/manchester-city-25-26-pre-match-jersey-puma-xl/ODYCQWI7KR7ACDL7C7K4EXFS",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/320AAeSw0k5qEf7X/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/320AAeSw0k5qEf7X/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/uIEAAeSwh5VqEf7b/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ha8AAeSwRZlqEf7Z/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vWgAAeSwsj1qEf7Y/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BGwAAeSw0rNqEf7Z/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/nbMAAeSwpB1qEf7Z/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MGMAAeSwEPFqEf7a/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7JEAAeSwd2xqEf7a/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/KWsAAeSwa5xqEf7a/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Training",
-      "note": "Size XL",
-      "size": "XL",
-      "brand": "Puma",
-      "source": "square",
-      "category": "Training",
-      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/9ot1aKd7",
-      "checkoutUrlDiscounted": "https://square.link/u/Fb8OjDHr",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -1260,5 +1226,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-07-30T20:26:03Z"
+  "ebayDetailsSyncedAt": "2026-07-30T23:48:46Z"
 }
