@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-07-30T15:50:55Z",
+  "syncedAt": "2026-07-30T16:00:13Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 35,
+  "count": 36,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -266,6 +266,19 @@
       "discountPaymentLinkId": "3LFKI3VHHY4PE6FK",
       "discountUrl": "https://square.link/u/r2mgPDkx",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wb3lEFGxvrO193X9u7DJHsElS6KZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "6FT2DIWVL2DMVGUTETE23BJF",
+      "variationId": "WSZKEVL3YZH5CD73UCGFDP7K",
+      "title": "Chelsea 12/13 Home Jersey — Torres #9 (Adidas) · Youth XL",
+      "sku": "ebay:800433372360",
+      "paymentLinkId": "T5BYGMFAQ5HQ7HT6",
+      "url": "https://square.link/u/Lpx6Dxsl",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8PgukZ6Fab1Wk2KZvv3m82nmx15YY",
+      "discountPaymentLinkId": "JHAR6VUKL773MV57",
+      "discountUrl": "https://square.link/u/NvbrJnra",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kdrtUfxwEA4yNcnhRRDVSNTnluPZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

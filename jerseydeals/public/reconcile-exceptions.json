@@ -1,9 +1,11 @@
 {
   "keepInStockVariationIds": [],
   "ignoredOrderIds": [
-    "07uj1BljabQeYpsIDpJpMUSbp4FZY"
+    "07uj1BljabQeYpsIDpJpMUSbp4FZY",
+    "QvJJkEoi0ORiOx7rPu7UCFEzZURZY"
   ],
   "notes": [
-    "Cleared Man City 17/18 Youth L keepInStock — eBay listing 800403694830 ended; allow reconcile to delist Square + site."
+    "Cleared Man City 17/18 Youth L keepInStock — eBay listing 800403694830 ended; allow reconcile to delist Square + site.",
+    "Ignore QvJJkEoi0ORiOx7rPu7UCFEzZURZY — Chelsea Torres Youth XL card payment FAILED (not a sale). Restored listing; eBay relisted as 800433372360."
   ]
 }

@@ -582,7 +582,10 @@ function orderIsPaid(order) {
   const state = String(order?.state || '').toUpperCase()
   if (state === 'COMPLETED') return true
   if (state !== 'OPEN') return false
-  // Payment Link checkouts stay OPEN until fulfilled; tenders mean the card captured.
+  // Payment Link checkouts stay OPEN until fulfilled. Failed card attempts still
+  // leave a tender on the order — only treat as sold when nothing is still due.
+  const due = order.net_amount_due_money?.amount
+  if (due !== 0 && due !== '0') return false
   return Array.isArray(order.tenders) && order.tenders.length > 0
 }
 
