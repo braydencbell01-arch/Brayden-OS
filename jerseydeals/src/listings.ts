@@ -153,6 +153,7 @@ export const SALE_TITLE_PATTERNS: RegExp[] = [
   /\bgermany\b.*22\s*\/\s*23/i,
   /tottenham.*gray\s*strike\s*top/i,
   /real\s*madrid.*purple\s*training/i,
+  /manchester\s*united.*24\s*\/\s*25.*third/i,
 ]
 
 export function isSaleListing(item: Listing, _maxPrice = 25) {

@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-07-30T16:00:13Z",
+  "syncedAt": "2026-07-30T16:31:37Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
@@ -468,12 +468,12 @@
       "variationId": "SGQ7YT6PMDHO63KLDU6E637Y",
       "title": "Manchester United 24/25 Third Jersey (adidas) · Youth XL",
       "sku": "ebay:800407780713",
-      "paymentLinkId": "6QBEBSCWJIBMO75G",
-      "url": "https://square.link/u/A4QRYsD7",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Axsk24X5TGtnAfrAR1RZkSdujq7YY",
-      "discountPaymentLinkId": "JGVTWDZGDJKOKZLE",
-      "discountUrl": "https://square.link/u/zmygwoEj",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4rbO7kDTcupBbbxlycWBYsWp6i7YY",
+      "paymentLinkId": "ZD26JLJW6E7LFGGF",
+      "url": "https://square.link/u/D9gQgFvd",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0f4Nm0GnBj6o5t7TgYSbPlHeYgGZY",
+      "discountPaymentLinkId": "54LAMMWE5MBZGVYG",
+      "discountUrl": "https://square.link/u/3OPbhF89",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6iae2s1cxTjxSCzNA99zLHiZ0deZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
