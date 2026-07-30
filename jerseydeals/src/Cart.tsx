@@ -7,6 +7,7 @@ import {
   cartSubtotal,
   type CartState,
 } from './cart'
+import { cartCheckoutApiConfigured, createCartCheckoutLink } from './cartCheckout'
 import { captureEmail } from './emailCapture'
 import { formatPrice, shortTitle } from './listings'
 import { isValidEmail, readBuyerEmail, syncPurchasedFromKnownEmail, writeBuyerEmail } from './offer'
@@ -62,6 +63,8 @@ export function CartDrawer({
   const [openOffers, setOpenOffers] = useState<WalletOffer[]>(() => listOpenOffers())
   const [activeOffer, setActiveOffer] = useState(() => getActiveCheckoutOffer())
   const [offerMessage, setOfferMessage] = useState('')
+  const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [checkoutError, setCheckoutError] = useState('')
 
   function syncOffers() {
     ensureRewardsOffers()
@@ -91,6 +94,7 @@ export function CartDrawer({
     setSavedEmail(readBuyerEmail())
     setEmailError('')
     setOfferMessage('')
+    setCheckoutError('')
     void syncPurchasedFromKnownEmail().finally(() => {
       syncOffers()
     })
@@ -130,15 +134,64 @@ export function CartDrawer({
   const canCheckout = !requireEmail || hasEmail
   const offerLabel = activeId ? getOfferDef(activeId)?.title || '' : ''
 
-  function lineCheckoutAmount(line: CartState['lines'][number]) {
-    const unit = applyOfferUnitPrice(line.price, { offerId: activeId, title: line.title })
-    if (unit == null) return 0
-    return totalWithShipping(unit, shippingOpts)
-  }
-
   function lineUsesDiscountLink(line: CartState['lines'][number]) {
     if (!useSquareDiscount) return false
     return Boolean(line.checkoutUrlDiscounted)
+  }
+
+  /** Prefer one Square Payment Link for the whole bag; fall back to a single static link. */
+  async function checkoutAll() {
+    setCheckoutError('')
+    if (requireEmail && !hasEmail) {
+      setEmailError('Enter your email to checkout.')
+      return
+    }
+    if (!onRequestCheckout()) return
+    if (cart.lines.length === 0) return
+
+    const meta = {
+      items: cart.lines.length,
+      mode: 'checkout_all',
+      offer: activeId || '',
+      has_email: Boolean(savedEmail || readBuyerEmail()),
+      shipping_percent: freeShip ? 0 : 10,
+    }
+
+    // Single kit + no free-shipping override → reuse the prebuilt Payment Link (fast path).
+    const canUseStaticSingle =
+      cart.lines.length === 1 && !freeShip && Boolean(cart.lines[0]?.checkoutUrl)
+
+    if (canUseStaticSingle) {
+      const line = cart.lines[0]!
+      beginCheckout(cartLineCheckoutUrl(line, lineUsesDiscountLink(line)), 'all', meta)
+      return
+    }
+
+    if (!cartCheckoutApiConfigured()) {
+      if (cart.lines.length === 1) {
+        const line = cart.lines[0]!
+        beginCheckout(cartLineCheckoutUrl(line, lineUsesDiscountLink(line)), 'all', meta)
+        return
+      }
+      setCheckoutError('Multi-item checkout isn’t available right now. Try again shortly.')
+      return
+    }
+
+    setCheckoutBusy(true)
+    try {
+      const result = await createCartCheckoutLink({
+        variationIds: cart.lines.map((line) => line.id),
+        first10: useSquareDiscount,
+        freeShipping: freeShip,
+      })
+      if (!result.ok) {
+        setCheckoutError(result.message)
+        return
+      }
+      beginCheckout(result.url, 'all', meta)
+    } finally {
+      setCheckoutBusy(false)
+    }
   }
 
   async function saveEmail(event: FormEvent) {
@@ -465,60 +518,26 @@ export function CartDrawer({
                 </p>
               ) : null}
               <p className="mt-2 text-xs leading-relaxed text-muted">
-                Checkout opens Square&apos;s secure payment page
-                {cart.lines.length > 1
-                  ? ` for each kit (one secure link per item). ${
-                      freeShip
-                        ? 'Free shipping offer is active for this first order.'
-                        : 'Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links.'
-                    } Items stay in your bag until payment is confirmed.`
-                  : `. ${
-                      freeShip
-                        ? 'Free shipping offer is active for this first order.'
-                        : 'Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links.'
-                    } Items stay in your bag until payment is confirmed.`}
+                Checkout all opens one Square payment page for everything in your bag.
+                {freeShip
+                  ? ' Free shipping offer is active for this first order.'
+                  : ' Free shipping at $100+ merchandise; otherwise 10% shipping applies on Payment Links.'}{' '}
+                Items stay in your bag until payment is confirmed.
               </p>
+              {checkoutError ? (
+                <p className="mt-2 text-xs font-semibold text-crimson">{checkoutError}</p>
+              ) : null}
               <div className="mt-4 flex flex-col gap-2">
-                {cart.lines.length === 1 ? (
-                  <button
-                    type="button"
-                    disabled={!canCheckout}
-                    onClick={() =>
-                      beginCheckout(
-                        cartLineCheckoutUrl(cart.lines[0]!, lineUsesDiscountLink(cart.lines[0]!)),
-                        cart.lines[0]!.id,
-                        {
-                          items: 1,
-                          mode: 'single',
-                        },
-                      )
-                    }
-                    className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    Checkout on Square · {formatPrice(orderTotal, currency)}
-                  </button>
-                ) : (
-                  cart.lines.map((line, index) => (
-                    <button
-                      key={line.id}
-                      type="button"
-                      disabled={!canCheckout}
-                      onClick={() =>
-                        beginCheckout(cartLineCheckoutUrl(line, lineUsesDiscountLink(line)), line.id, {
-                          items: cart.lines.length,
-                          mode: 'line',
-                          index,
-                        })
-                      }
-                      className="flex w-full items-center justify-between gap-3 border border-navy/15 bg-navy px-4 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy-deep disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      <span className="truncate">
-                        Checkout {index + 1}/{cart.lines.length}
-                      </span>
-                      <span>{formatPrice(lineCheckoutAmount(line), line.currency)}</span>
-                    </button>
-                  ))
-                )}
+                <button
+                  type="button"
+                  disabled={!canCheckout || checkoutBusy}
+                  onClick={() => void checkoutAll()}
+                  className="flex w-full items-center justify-center bg-crimson px-4 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-crimson-hot disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {checkoutBusy
+                    ? 'Preparing checkout…'
+                    : `Checkout all · ${formatPrice(orderTotal, currency)}`}
+                </button>
                 <button
                   type="button"
                   onClick={onClear}

@@ -64,18 +64,24 @@ export function rememberSoldOutIds(ids: string[]) {
   writeIds('local', [...new Set([...readIds('local'), ...next])])
 }
 
-/** Capture ?sold=VARIATION_ID (and purchase flags) from Square return URLs. */
+/** Capture ?sold=VARIATION_ID (and purchase flags) from Square return URLs.
+ * Multi-item checkout may pass comma/pipe-separated IDs: ?sold=ID1,ID2
+ */
 export function captureSoldReturnFromUrl() {
   if (typeof window === 'undefined') return [] as string[]
   try {
     const url = new URL(window.location.href)
-    const sold = [
+    const raw = [
       url.searchParams.get('sold'),
       url.searchParams.get('item'),
       url.searchParams.get('variation'),
     ]
       .filter(Boolean)
       .map(String)
+    const sold = raw
+      .flatMap((value) => value.split(/[,|]/))
+      .map((value) => value.trim())
+      .filter(Boolean)
     if (sold.length) {
       rememberSoldOutIds(sold)
       url.searchParams.delete('sold')

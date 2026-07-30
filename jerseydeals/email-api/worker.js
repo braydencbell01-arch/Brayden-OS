@@ -1,13 +1,15 @@
 /**
  * Cloudflare Worker: collect Jersey Deals leads into Square Customers,
- * tag Rewards members vs non-members, and email shop@jerseydeals.online.
+ * tag Rewards members vs non-members, email shop@jerseydeals.online,
+ * and create multi-item Square Payment Links for cart "Checkout all".
  *
  * Secrets:
  *   SQUARE_ACCESS_TOKEN
  *   (optional) COLLECT_SECRET — if set, require header X-JD-Collect-Secret
  *   (optional) NOTIFY_EMAIL — defaults to shop@jerseydeals.online
  *
- * POST JSON: { email, phone?, name?, message?, source?, membership?, product?, site?, ... }
+ * POST /  → { email, phone?, name?, message?, source?, membership?, product?, site?, ... }
+ * POST /cart-checkout → { variationIds: string[], first10?, freeShipping? }
  * OPTIONS for CORS
  */
 
@@ -16,6 +18,11 @@ const SQUARE_VERSION = '2025-10-16'
 const DEFAULT_NOTIFY = 'shop@jerseydeals.online'
 const MEMBER_SOURCES = new Set(['rewards_club'])
 const LIST_GENERATION = '2026-07-27-email-reset'
+/** First-time buyer 10% catalog discount (see checkout-links.json). */
+const DEFAULT_FIRST10_DISCOUNT_ID = 'OLPMVGCGLRBDCULSOPQOY2FI'
+const DEFAULT_REDIRECT = 'https://jerseydeals.online/?purchase=1'
+const SHIPPING_PERCENT = '10'
+const MAX_CART_LINES = 20
 
 function corsHeaders(origin) {
   return {
@@ -235,9 +242,174 @@ async function upsertCustomer(env, email, source, membership, extras) {
   return { id: created.customer?.id, created: true, membership: finalMembership }
 }
 
+function normalizeVariationIds(raw) {
+  const list = Array.isArray(raw) ? raw : []
+  const out = []
+  const seen = new Set()
+  for (const value of list) {
+    const id = String(value || '')
+      .trim()
+      .toUpperCase()
+    if (!id || seen.has(id)) continue
+    // Square catalog IDs are alphanumeric.
+    if (!/^[A-Z0-9]+$/.test(id)) continue
+    seen.add(id)
+    out.push(id)
+    if (out.length >= MAX_CART_LINES) break
+  }
+  return out
+}
+
+async function resolveLocationId(env) {
+  if (env.SQUARE_LOCATION_ID) return String(env.SQUARE_LOCATION_ID).trim()
+  const data = await square(env, '/v2/locations')
+  const active = (data.locations || []).filter((l) => l.status === 'ACTIVE')
+  const loc = active[0] || (data.locations || [])[0]
+  if (!loc?.id) throw new Error('No Square location found')
+  return loc.id
+}
+
+function redirectForCart(variationIds) {
+  const base = (DEFAULT_REDIRECT.includes('?') ? DEFAULT_REDIRECT : `${DEFAULT_REDIRECT}?purchase=1`)
+  const url = new URL(base)
+  url.searchParams.set('purchase', '1')
+  url.searchParams.set('sold', variationIds.join(','))
+  return url.toString()
+}
+
+async function createCartPaymentLink(env, payload) {
+  const variationIds = normalizeVariationIds(payload.variationIds || payload.ids || [])
+  if (variationIds.length === 0) {
+    return { status: 400, body: { ok: false, error: 'variationIds required' } }
+  }
+
+  const first10 = Boolean(payload.first10 || payload.discounted || payload.offer === 'first10')
+  const freeShipping = Boolean(payload.freeShipping || payload.freeShip)
+  const discountId = String(payload.discountId || env.FIRST10_DISCOUNT_ID || DEFAULT_FIRST10_DISCOUNT_ID).trim()
+  const locationId = await resolveLocationId(env)
+
+  const order = {
+    location_id: locationId,
+    line_items: variationIds.map((id) => ({
+      catalog_object_id: id,
+      quantity: '1',
+    })),
+  }
+
+  if (first10 && discountId) {
+    order.discounts = [{ catalog_object_id: discountId, scope: 'ORDER' }]
+  }
+
+  if (!freeShipping) {
+    order.service_charges = [
+      {
+        name: 'Shipping',
+        percentage: SHIPPING_PERCENT,
+        calculation_phase: 'SUBTOTAL_PHASE',
+      },
+    ]
+  }
+
+  const data = await square(env, '/v2/online-checkout/payment-links', {
+    method: 'POST',
+    body: {
+      idempotency_key: crypto.randomUUID(),
+      description: `Jersey Deals cart · ${variationIds.length} item${variationIds.length === 1 ? '' : 's'}`.slice(
+        0,
+        100,
+      ),
+      checkout_options: {
+        ask_for_shipping_address: true,
+        allow_tipping: false,
+        redirect_url: redirectForCart(variationIds),
+      },
+      order,
+    },
+  })
+
+  const link = data.payment_link
+  if (!link?.url) {
+    return { status: 502, body: { ok: false, error: 'Square did not return a checkout URL' } }
+  }
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      url: link.url,
+      longUrl: link.long_url || '',
+      paymentLinkId: link.id || '',
+      orderId: link.order_id || '',
+      items: variationIds.length,
+      first10,
+      freeShipping,
+    },
+  }
+}
+
+async function handleLeadCollect(env, payload, origin) {
+  const email = String(payload.email || '')
+    .trim()
+    .toLowerCase()
+  const source = String(payload.source || 'unknown')
+    .trim()
+    .slice(0, 80)
+  const product = String(payload.product || 'Jersey Deals').trim().slice(0, 80)
+  const site = String(payload.site || 'Jersey Deals').trim().slice(0, 80)
+  const extras = pickExtras(payload)
+  const membership = resolveMembership(payload, source)
+
+  if (!isValidEmail(email)) {
+    return json({ ok: false, error: 'Invalid email' }, 400, origin)
+  }
+
+  // Landing-page collection only — ignore BrayStats / other sites.
+  const siteLower = site.toLowerCase()
+  if (siteLower.includes('braystats') || siteLower.includes('brayden-os stats')) {
+    return json({ ok: false, error: 'Landing-page collection only' }, 400, origin)
+  }
+
+  try {
+    const result = await upsertCustomer(env, email, source, membership, extras)
+    // Landing-page lists are updated via GitHub Actions (not Square Customer import).
+    await dispatchLandingEmailList(env, {
+      email,
+      source,
+      membership: result.membership,
+      phone: extras.phone || '',
+    })
+    await notifyOwner(env, {
+      email,
+      ...extras,
+      source,
+      membership: result.membership,
+      product,
+      site,
+      list: result.membership === 'member' ? 'jerseydeals_rewards_members' : 'jerseydeals_non_members',
+      collected_at: new Date().toISOString(),
+      square_customer_id: result.id || '',
+      square_created: String(!!result.created),
+    })
+    return json(
+      {
+        ok: true,
+        customerId: result.id,
+        created: result.created,
+        membership: result.membership,
+      },
+      200,
+      origin,
+    )
+  } catch (err) {
+    return json({ ok: false, error: String(err.message || err).slice(0, 240) }, 502, origin)
+  }
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '*'
+    const url = new URL(request.url)
+    const path = (url.pathname || '/').replace(/\/+$/, '') || '/'
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) })
@@ -265,60 +437,19 @@ export default {
       return json({ ok: false, error: 'Invalid JSON' }, 400, origin)
     }
 
-    const email = String(payload.email || '')
-      .trim()
-      .toLowerCase()
-    const source = String(payload.source || 'unknown')
-      .trim()
-      .slice(0, 80)
-    const product = String(payload.product || 'Jersey Deals').trim().slice(0, 80)
-    const site = String(payload.site || 'Jersey Deals').trim().slice(0, 80)
-    const extras = pickExtras(payload)
-    const membership = resolveMembership(payload, source)
+    const isCartCheckout =
+      path.endsWith('/cart-checkout') ||
+      String(payload.action || '').trim() === 'cart_checkout'
 
-    if (!isValidEmail(email)) {
-      return json({ ok: false, error: 'Invalid email' }, 400, origin)
+    if (isCartCheckout) {
+      try {
+        const result = await createCartPaymentLink(env, payload)
+        return json(result.body, result.status, origin)
+      } catch (err) {
+        return json({ ok: false, error: String(err.message || err).slice(0, 240) }, 502, origin)
+      }
     }
 
-    // Landing-page collection only — ignore BrayStats / other sites.
-    const siteLower = site.toLowerCase()
-    if (siteLower.includes('braystats') || siteLower.includes('brayden-os stats')) {
-      return json({ ok: false, error: 'Landing-page collection only' }, 400, origin)
-    }
-
-    try {
-      const result = await upsertCustomer(env, email, source, membership, extras)
-      // Landing-page lists are updated via GitHub Actions (not Square Customer import).
-      await dispatchLandingEmailList(env, {
-        email,
-        source,
-        membership: result.membership,
-        phone: extras.phone || '',
-      })
-      await notifyOwner(env, {
-        email,
-        ...extras,
-        source,
-        membership: result.membership,
-        product,
-        site,
-        list: result.membership === 'member' ? 'jerseydeals_rewards_members' : 'jerseydeals_non_members',
-        collected_at: new Date().toISOString(),
-        square_customer_id: result.id || '',
-        square_created: String(!!result.created),
-      })
-      return json(
-        {
-          ok: true,
-          customerId: result.id,
-          created: result.created,
-          membership: result.membership,
-        },
-        200,
-        origin,
-      )
-    } catch (err) {
-      return json({ ok: false, error: String(err.message || err).slice(0, 240) }, 502, origin)
-    }
+    return handleLeadCollect(env, payload, origin)
   },
 }
