@@ -24,6 +24,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { polishTitle, polishDescription, normalizeContactLine } from './lib/listing-copy.mjs'
 import { inferClubAbbrev } from './lib/club-abbrev.mjs'
+import { maySetSquareQtyFromEbay } from './lib/sold-inventory-rules.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const SOLD_OUT_PATH = join(__dirname, '../public/sold-out.json')
@@ -484,7 +485,7 @@ async function upsertSquareFromEbay(ebay, locationId, { soldOutEbayIds } = {}) {
       // sales already decremented stock; eBay often still shows the old available qty.
       // Allow decreases only (eBay sold a unit first).
       const currentSq = await inventoryQty(variationId, locationId)
-      if (currentSq == null || qty < currentSq) {
+      if (maySetSquareQtyFromEbay(currentSq, qty)) {
         await setSquareQty(variationId, locationId, qty)
         changed = true
       }

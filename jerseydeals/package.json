@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "oxlint && npm run test:sold-rules",
+    "test:sold-rules": "node --test scripts/lib/sold-inventory-rules.test.mjs",
     "preview": "vite preview",
     "sync:ebay": "node scripts/sync-ebay-listings.mjs",
     "sync:square": "node scripts/sync-square-catalog.mjs",

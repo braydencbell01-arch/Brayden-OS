@@ -9,6 +9,8 @@
  *
  * Sale / removal signals:
  *  - Square COMPLETED orders + paid OPEN orders (Payment Links stay OPEN until fulfilled)
+ *    — OPEN only counts when net_amount_due=0 AND payment status is COMPLETED/APPROVED
+ *    — FAILED card tenders must never delist (Chelsea Torres regression)
  *  - Square inventory qty 0
  *  - Square variation marked unsellable (still linked to an active eBay item)
  *  - eBay SoldList (GetMyeBaySelling) mapped via sku ebay:{itemId}
@@ -16,6 +18,9 @@
  *
  * Multi-qty: Square/eBay unit sales decrement remaining stock (remove sold qty only).
  * Full delist (qty 0, unsellable, end eBay, drop site) only when nothing remains.
+ *
+ * Re-apply: if cross-platform sync overwrites Square qty after a captured sale,
+ * the next reconcile re-applies the SOLD adjustment (processedOrderIds alone is not enough).
  *
  * Requires: SQUARE_ACCESS_TOKEN
  * Optional: EBAY_* (needed for eBay sold/ended detection + EndItem), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
@@ -28,12 +33,19 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  appliedSaleStillSettled,
+  openOrderHasCapturedPayment,
+  orderLooksLikePaidCandidate,
+  shouldFullDelist,
+} from './lib/sold-inventory-rules.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
 const LINKS_PATH = join(__dirname, '../public/checkout-links.json')
 const SOLD_OUT_PATH = join(__dirname, '../public/sold-out.json')
 const EXCEPTIONS_PATH = join(__dirname, '../public/reconcile-exceptions.json')
+const APPLIED_SALES_PATH = join(__dirname, '../public/reconcile-applied-sales.json')
 const STATE_PATH = join(__dirname, '../.sold-reconcile-state.json')
 
 const ENV = (process.env.SQUARE_ENVIRONMENT || 'production').toLowerCase()
@@ -534,8 +546,8 @@ async function adjustInventorySold(variationId, locationId, qty) {
   })
 }
 
-/** True when this order's SOLD adjustment is still reflected (not overwritten by a later physical count). */
-async function saleReflectedInCurrentCount(variationId, locationId, orderId) {
+/** True when this order's sale is still reflected in live Square qty. */
+async function saleReflectedInCurrentCount(variationId, locationId, orderId, appliedSales) {
   if (!orderId) return false
   const data = await square('/v2/inventory/changes/batch-retrieve', {
     method: 'POST',
@@ -546,11 +558,16 @@ async function saleReflectedInCurrentCount(variationId, locationId, orderId) {
     },
   })
   let lastPhysicalAt = ''
+  let lastPhysicalQty = null
   for (const ch of data.changes || []) {
     if (ch.type !== 'PHYSICAL_COUNT') continue
     const at = ch.physical_count?.occurred_at || ''
-    if (at > lastPhysicalAt) lastPhysicalAt = at
+    if (at > lastPhysicalAt) {
+      lastPhysicalAt = at
+      lastPhysicalQty = Number.parseFloat(ch.physical_count?.quantity || '0')
+    }
   }
+  // Native Payment Link sale still present after any later sync physical count.
   for (const ch of data.changes || []) {
     if (ch.type !== 'ADJUSTMENT') continue
     const adj = ch.adjustment || {}
@@ -558,6 +575,11 @@ async function saleReflectedInCurrentCount(variationId, locationId, orderId) {
     if (String(adj.to_state || '').toUpperCase() !== 'SOLD') continue
     const at = adj.occurred_at || ''
     if (!lastPhysicalAt || at > lastPhysicalAt) return true
+  }
+  // Our re-apply (no transaction_id) — settled unless a later physical raised stock again.
+  const row = appliedSales?.orders?.[orderId]
+  if (row && row.variationId === variationId) {
+    return appliedSaleStillSettled(row, lastPhysicalAt, lastPhysicalQty)
   }
   return false
 }
@@ -579,14 +601,37 @@ async function reviseEbayQuantity(ebayId, quantity) {
 }
 
 function orderIsPaid(order) {
-  const state = String(order?.state || '').toUpperCase()
-  if (state === 'COMPLETED') return true
-  if (state !== 'OPEN') return false
-  // Payment Link checkouts stay OPEN until fulfilled. Failed card attempts still
-  // leave a tender on the order — only treat as sold when nothing is still due.
-  const due = order.net_amount_due_money?.amount
-  if (due !== 0 && due !== '0') return false
-  return Array.isArray(order.tenders) && order.tenders.length > 0
+  // Synchronous shape check only — OPEN orders also need payment capture verify below.
+  return orderLooksLikePaidCandidate(order)
+}
+
+async function paymentStatusesForOrders(orders) {
+  /** @type {Record<string, string>} */
+  const byId = {}
+  const ids = new Set()
+  for (const order of orders || []) {
+    if (String(order?.state || '').toUpperCase() !== 'OPEN') continue
+    if (!orderLooksLikePaidCandidate(order)) continue
+    for (const tender of order.tenders || []) {
+      const pid = tender?.payment_id || tender?.id
+      if (pid) ids.add(pid)
+    }
+  }
+  for (const paymentId of ids) {
+    try {
+      const data = await square(`/v2/payments/${paymentId}`)
+      byId[paymentId] = String(data.payment?.status || '')
+    } catch {
+      byId[paymentId] = ''
+    }
+  }
+  return byId
+}
+
+async function orderIsCapturedSale(order, paymentStatusById) {
+  if (!orderLooksLikePaidCandidate(order)) return false
+  if (String(order?.state || '').toUpperCase() === 'COMPLETED') return true
+  return openOrderHasCapturedPayment(order, paymentStatusById)
 }
 
 async function markVariationUnsellable(variationId) {
@@ -629,13 +674,14 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
   const keep = new Set(keepInStock || [])
   const sold = new Map() // variationId -> { orderIds, orderLines, title, qty, sources... }
   const start = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString()
+  const openOrCompleted = []
   let cursor = ''
   do {
     const body = {
       location_ids: [locationId],
       query: {
         filter: {
-          // OPEN + tenders = paid Payment Link orders waiting on fulfillment.
+          // OPEN + captured payment = paid Payment Link orders waiting on fulfillment.
           state_filter: { states: ['COMPLETED', 'OPEN'] },
           date_time_filter: {
             updated_at: { start_at: start },
@@ -650,27 +696,40 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
     for (const order of data.orders || []) {
       if (ignoredOrders.has(order.id)) continue
       if (!orderIsPaid(order)) continue
-      for (const line of order.line_items || []) {
-        const variationId = line.catalog_object_id
-        if (!variationId || keep.has(variationId)) continue
-        const lineQty = Number.parseFloat(line.quantity || '1') || 1
-        const prev = sold.get(variationId) || {
-          orderIds: [],
-          orderLines: [],
-          title: line.name || variationId,
-          qty: 0,
-          fromSquareOrder: true,
-        }
-        if (!prev.orderIds.includes(order.id)) prev.orderIds.push(order.id)
-        prev.orderLines.push({ orderId: order.id, qty: lineQty })
-        prev.qty += lineQty
-        prev.title = line.name || prev.title
-        prev.fromSquareOrder = true
-        sold.set(variationId, prev)
-      }
+      openOrCompleted.push(order)
     }
     cursor = data.cursor || ''
   } while (cursor)
+
+  const paymentStatusById = await paymentStatusesForOrders(openOrCompleted)
+  let skippedFailedOpen = 0
+  for (const order of openOrCompleted) {
+    if (!(await orderIsCapturedSale(order, paymentStatusById))) {
+      if (String(order.state || '').toUpperCase() === 'OPEN') skippedFailedOpen += 1
+      continue
+    }
+    for (const line of order.line_items || []) {
+      const variationId = line.catalog_object_id
+      if (!variationId || keep.has(variationId)) continue
+      const lineQty = Number.parseFloat(line.quantity || '1') || 1
+      const prev = sold.get(variationId) || {
+        orderIds: [],
+        orderLines: [],
+        title: line.name || variationId,
+        qty: 0,
+        fromSquareOrder: true,
+      }
+      if (!prev.orderIds.includes(order.id)) prev.orderIds.push(order.id)
+      prev.orderLines.push({ orderId: order.id, qty: lineQty })
+      prev.qty += lineQty
+      prev.title = line.name || prev.title
+      prev.fromSquareOrder = true
+      sold.set(variationId, prev)
+    }
+  }
+  if (skippedFailedOpen) {
+    console.log(`Skipped ${skippedFailedOpen} OPEN order(s) without captured payment (not sold)`)
+  }
 
   // Also catch tracked variations already at qty 0 (Payment Link may have decremented)
   const links = loadJson(LINKS_PATH, { links: [] })
@@ -834,8 +893,9 @@ async function delistVariation(variationId, meta, locationId, linksFile) {
 /**
  * Apply unprocessed Square unit sales: decrement remaining stock on Square + eBay + site.
  * Returns remainingQty after applying. Caller full-delists when remainingQty <= 0.
+ * Records applied sales so CI re-runs do not over-decrement (manual ADJ has no transaction_id).
  */
-async function applySquareUnitSales(variationId, meta, locationId, freshLines) {
+async function applySquareUnitSales(variationId, meta, locationId, freshLines, appliedSales) {
   const result = {
     variationId,
     title: meta.title,
@@ -848,15 +908,36 @@ async function applySquareUnitSales(variationId, meta, locationId, freshLines) {
     processedOrderIds: [],
   }
 
+  let current = await getInventoryQty(variationId, locationId)
   for (const line of freshLines) {
     const qty = Math.max(1, Math.floor(Number(line.qty) || 1))
     try {
-      const already = await saleReflectedInCurrentCount(variationId, locationId, line.orderId)
-      if (!already && !DRY) {
-        await adjustInventorySold(variationId, locationId, qty)
+      const already = await saleReflectedInCurrentCount(
+        variationId,
+        locationId,
+        line.orderId,
+        appliedSales,
+      )
+      if (already) {
+        result.processedOrderIds.push(line.orderId)
+        continue
       }
+      const target = Math.max(0, current - qty)
+      if (!DRY) {
+        // Absolute set — safe under re-runs; ADJUSTMENT alone over-decrements without txn id.
+        await setInventoryQty(variationId, locationId, target)
+      }
+      current = target
       result.appliedQty += qty
       result.processedOrderIds.push(line.orderId)
+      const appliedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+      appliedSales.orders = appliedSales.orders || {}
+      appliedSales.orders[line.orderId] = {
+        variationId,
+        qty,
+        qtyAfter: target,
+        appliedAt,
+      }
     } catch (err) {
       result.error = [result.error, `adjust ${line.orderId}: ${err.message}`]
         .filter(Boolean)
@@ -864,16 +945,7 @@ async function applySquareUnitSales(variationId, meta, locationId, freshLines) {
     }
   }
 
-  try {
-    const remaining = DRY
-      ? Math.max(0, (await getInventoryQty(variationId, locationId)) - result.appliedQty)
-      : await getInventoryQty(variationId, locationId)
-    result.remainingQty = remaining
-  } catch (err) {
-    result.error = [result.error, `qty: ${err.message}`].filter(Boolean).join('; ')
-    result.remainingQty = 0
-  }
-
+  result.remainingQty = current
   result.ebayId = result.ebayId || ebayIdFromSku(meta.sku || '')
   if (result.ebayId && result.remainingQty != null && result.remainingQty > 0) {
     if (DRY) {
@@ -911,6 +983,7 @@ async function main() {
   const ignoredOrderIds = [
     ...new Set([...(state.ignoredOrderIds || []), ...(exceptions.ignoredOrderIds || [])]),
   ]
+  const ignoredOrderSet = new Set(ignoredOrderIds)
   const keepInStock = [
     ...new Set([
       ...(state.keepInStockVariationIds || []),
@@ -925,6 +998,8 @@ async function main() {
 
   const already = new Set(state.soldVariationIds || [])
   const processedOrders = new Set(state.processedOrderIds || [])
+  const appliedSales = loadJson(APPLIED_SALES_PATH, { orders: {}, syncedAt: '' })
+  appliedSales.orders = appliedSales.orders || {}
   const linksFile = loadJson(LINKS_PATH, { links: [] })
   const listingsFile = loadJson(LISTINGS_PATH, { listings: [] })
   const soldOutFile = loadJson(SOLD_OUT_PATH, { syncedAt: '', count: 0, items: [] })
@@ -949,38 +1024,62 @@ async function main() {
       sku: info.sku || listing?.sku || link?.sku || '',
       itemId: info.itemId || listing?.itemId || link?.itemId || '',
     }
-    const forceDelist =
+    const forceRemoval =
       info.fromInventoryZero ||
       info.fromEbayEnded ||
       info.fromEbayUnsold ||
-      info.fromSquareUnsellable ||
-      // eBay SoldList historically meant "gone"; multi-qty Square unit sales use decrement below.
-      (info.fromEbaySold && !info.fromSquareOrder)
+      info.fromSquareUnsellable
+    // eBay SoldList while listing still active (multi-qty) is NOT a full delist —
+    // Square unit sales / inventory alignment handle remaining stock.
 
-    const freshLines = (info.orderLines || []).filter(
-      (l) => l?.orderId && !processedOrders.has(l.orderId),
-    )
-    // Legacy rows without orderLines: treat each unprocessed orderId as qty 1.
-    if (!freshLines.length && info.fromSquareOrder) {
-      for (const oid of info.orderIds || []) {
-        if (processedOrders.has(oid)) continue
-        freshLines.push({ orderId: oid, qty: 1 })
+    const candidateLines =
+      (info.orderLines || []).length > 0
+        ? info.orderLines
+        : (info.orderIds || []).map((orderId) => ({ orderId, qty: 1 }))
+
+    const freshLines = []
+    for (const line of candidateLines) {
+      if (!line?.orderId || ignoredOrderSet.has(line.orderId)) continue
+      try {
+        const reflected = await saleReflectedInCurrentCount(
+          variationId,
+          locationId,
+          line.orderId,
+          appliedSales,
+        )
+        if (reflected) {
+          processedOrders.add(line.orderId)
+          if (!state.processedOrderIds.includes(line.orderId)) {
+            state.processedOrderIds.push(line.orderId)
+          }
+          continue
+        }
+      } catch {
+        /* treat as needing apply */
       }
+      // Re-apply even if previously "processed" — sync may have restored qty from eBay.
+      freshLines.push(line)
     }
 
-    const canDecrement = info.fromSquareOrder && freshLines.length > 0 && !forceDelist
+    const canDecrement = info.fromSquareOrder && freshLines.length > 0 && !forceRemoval
 
     if (canDecrement) {
       const units = freshLines.reduce((s, l) => s + (Number(l.qty) || 1), 0)
       console.log(
         `→ decrement ${meta.title.slice(0, 70)} (${variationId}) [square-order ×${units}]`,
       )
-      const dec = await applySquareUnitSales(variationId, meta, locationId, freshLines)
+      const dec = await applySquareUnitSales(
+        variationId,
+        meta,
+        locationId,
+        freshLines,
+        appliedSales,
+      )
       for (const oid of dec.processedOrderIds) {
         processedOrders.add(oid)
         if (!state.processedOrderIds.includes(oid)) state.processedOrderIds.push(oid)
       }
-      if (dec.remainingQty != null && dec.remainingQty > 0) {
+      if (!shouldFullDelist({ forceRemoval: false, remainingQty: dec.remainingQty ?? 0 })) {
         decrementedIds.set(variationId, dec.remainingQty)
         dec.sources = ['square-order']
         results.push(dec)
@@ -991,10 +1090,45 @@ async function main() {
       console.log(`  remaining qty=0 — full delist`)
     }
 
+    const forceDelist =
+      forceRemoval ||
+      // eBay sold and no remaining Square/site stock path above → clear twins.
+      (info.fromEbaySold && !info.fromSquareOrder && !listing)
+
     // Nothing new to apply and still listed with stock — skip noisy re-delist.
-    if (!forceDelist && !freshLines.length && !info.fromEbaySold && listing) {
+    if (!forceDelist && !freshLines.length && listing) {
       const liveQty = Number(listing.quantity)
       if (Number.isFinite(liveQty) && liveQty > 0) continue
+    }
+
+    // Multi-qty still listed after eBay unit sale: align Square down, do not wipe.
+    if (info.fromEbaySold && !forceRemoval && listing && !info.fromSquareOrder) {
+      try {
+        const sqQty = await getInventoryQty(variationId, locationId)
+        const soldUnits = Math.max(1, Math.floor(Number(info.qty) || 1))
+        const remaining = Math.max(0, sqQty - soldUnits)
+        if (remaining > 0) {
+          if (!DRY) await setInventoryQty(variationId, locationId, remaining)
+          const ebayId = ebayIdFromSku(meta.sku) || info.ebayId
+          if (ebayId && !DRY) await reviseEbayQuantity(ebayId, remaining)
+          decrementedIds.set(variationId, remaining)
+          results.push({
+            variationId,
+            title: meta.title,
+            action: 'decrement',
+            remainingQty: remaining,
+            ebayId,
+            sources: ['ebay-sold'],
+            error: '',
+          })
+          console.log(
+            `→ decrement ${meta.title.slice(0, 70)} (${variationId}) [ebay-sold → qty ${remaining}]`,
+          )
+          continue
+        }
+      } catch (err) {
+        console.warn(`ebay-sold decrement failed ${variationId}: ${err.message}`)
+      }
     }
 
     const why = [
@@ -1065,11 +1199,18 @@ async function main() {
   state.soldVariationIds = [...soldIds]
   state.processedOrderIds = (state.processedOrderIds || []).slice(-500)
   state.syncedAt = listingsFile.syncedAt
+  appliedSales.syncedAt = listingsFile.syncedAt
+  // Keep applied-sale ledger bounded but large enough for SOLD_LOOKBACK_DAYS re-runs.
+  const orderEntries = Object.entries(appliedSales.orders || {}).sort((a, b) =>
+    String(b[1]?.appliedAt || '').localeCompare(String(a[1]?.appliedAt || '')),
+  )
+  appliedSales.orders = Object.fromEntries(orderEntries.slice(0, 500))
 
   if (!DRY) {
     saveJson(LISTINGS_PATH, listingsFile)
     saveJson(LINKS_PATH, linksFile)
     saveJson(SOLD_OUT_PATH, soldOutPayload)
+    saveJson(APPLIED_SALES_PATH, appliedSales)
     saveJson(STATE_PATH, state)
   }
 

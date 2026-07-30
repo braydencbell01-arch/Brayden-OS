@@ -38,6 +38,12 @@ jobs:
           cache: npm
           cache-dependency-path: jerseydeals/package-lock.json
 
+      - name: Install + sold-inventory regression tests
+        working-directory: jerseydeals
+        run: |
+          npm ci
+          npm run test:sold-rules
+
       - name: Reconcile sold inventory (Square + eBay + site)
         working-directory: jerseydeals
         env:
@@ -182,6 +188,7 @@ jobs:
             jerseydeals/public/checkout-links.json \
             jerseydeals/public/cart-combo-links.json \
             jerseydeals/public/reconcile-exceptions.json \
+            jerseydeals/public/reconcile-applied-sales.json \
             jerseydeals/public/purchasers.json \
             jerseydeals/public/rewards-members.json \
             jerseydeals/public/non-member-emails.json \
