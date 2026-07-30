@@ -1,19 +1,19 @@
 {
-  "syncedAt": "2026-07-30T15:50:55Z",
+  "syncedAt": "2026-07-30T20:25:20Z",
   "orders": {
-    "k9hUQuiR7E7XqWYrzSaf8wRqMQdZY": {
-      "variationId": "3J2OXHY3PHBWVK264JTYPLBD",
-      "qty": 1,
-      "qtyAfter": 1,
-      "appliedAt": "2026-07-30T15:50:50Z",
-      "note": "Inter Miami 24/25 Home Youth XL — paid OPEN Payment Link; re-applied after sync restored qty"
-    },
     "cP4EN0f3VmfBwKex9Mm7oKdXnZZZY": {
       "variationId": "6DXVTBZHQXRZQ7Q5G23SYRWL",
       "qty": 1,
       "qtyAfter": 1,
       "appliedAt": "2026-07-30T15:50:51Z",
       "note": "Inter Miami 23/24 Away Youth XL — paid OPEN Payment Link; re-applied after sync restored qty"
+    },
+    "k9hUQuiR7E7XqWYrzSaf8wRqMQdZY": {
+      "variationId": "3J2OXHY3PHBWVK264JTYPLBD",
+      "qty": 1,
+      "qtyAfter": 1,
+      "appliedAt": "2026-07-30T15:50:50Z",
+      "note": "Inter Miami 24/25 Home Youth XL — paid OPEN Payment Link; re-applied after sync restored qty"
     }
   }
 }
