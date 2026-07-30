@@ -180,6 +180,7 @@ jobs:
             jerseydeals/public/listings.json \
             jerseydeals/public/sold-out.json \
             jerseydeals/public/checkout-links.json \
+            jerseydeals/public/cart-combo-links.json \
             jerseydeals/public/reconcile-exceptions.json \
             jerseydeals/public/purchasers.json \
             jerseydeals/public/rewards-members.json \
