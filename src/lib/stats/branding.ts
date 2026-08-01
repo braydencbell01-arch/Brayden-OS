@@ -56,6 +56,7 @@ export const LEAGUE_BRAND_COLORS: Record<LeagueId, string> = {
   'afc-champions': '#c8102e',
   'concacaf-champions': '#c8102e',
   'fifa-club-world-cup': '#326295',
+  'club-friendly': '#1a5f4a',
 
   // International / nations
   'fifa-world': '#326295',

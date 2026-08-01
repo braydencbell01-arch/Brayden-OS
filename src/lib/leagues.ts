@@ -26,6 +26,7 @@ export type LeagueId =
   | 'afc-champions'
   | 'concacaf-champions'
   | 'fifa-club-world-cup'
+  | 'club-friendly'
   | 'uefa-super-cup'
   | 'fifa-world'
   | 'fifa-friendly'
@@ -379,6 +380,16 @@ export const LEAGUES: League[] = [
     kind: 'continental',
     format: 'cup',
     hasStandings: true,
+  },
+  {
+    id: 'club-friendly',
+    name: 'Club Friendlies',
+    short: 'CF',
+    country: 'International',
+    espnCode: 'club.friendly',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: false,
   },
   {
     id: 'uefa-super-cup',
