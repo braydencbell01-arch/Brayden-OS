@@ -167,7 +167,7 @@ function HomeScreen({
           <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
             <span>{formatUpdatedAt(updatedAt)}</span>
             {hasLive && <span className="text-lime/80">· Live</span>}
-            {refreshing && <span>· Syncing…</span>}
+            {refreshing && <span>· Loading…</span>}
             <button
               type="button"
               onClick={onRefresh}
@@ -222,7 +222,7 @@ function HomeScreen({
                 ].join(' ')}
                 aria-label="Refresh fixtures"
               >
-                {refreshing ? 'Syncing…' : 'Refresh'}
+                {refreshing ? 'Loading…' : 'Refresh'}
               </button>
               <p className="font-display text-lg tracking-wide text-cream/80">
                 {loading ? '…' : `${dayMatches.length}`}

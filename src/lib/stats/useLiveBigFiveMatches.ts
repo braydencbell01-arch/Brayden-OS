@@ -64,7 +64,7 @@ export function useLiveBigFiveMatches() {
   const loadedToRef = useRef<Date | null>(null)
   const queueRef = useRef(Promise.resolve())
   const discoveryStartedRef = useRef(false)
-  /** Nested ensureRange / poll / discovery must not clear each other's Syncing… state. */
+  /** Nested ensureRange / poll / discovery must not clear each other's Loading… state. */
   const refreshDepthRef = useRef(0)
 
   const beginRefresh = useCallback(() => {
