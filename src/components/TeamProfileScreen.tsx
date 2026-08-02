@@ -36,7 +36,9 @@ import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { useTeamSchedule } from '../lib/stats/useTeamSchedule'
 import { useTeamSeasons } from '../lib/stats/useTeamSeasons'
 import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
+import { useTeamTransfers } from '../lib/stats/useTeamTransfers'
 import { teamAccentFromFacts } from '../lib/stats/teamFacts'
+import { transferKindLabel } from '../lib/stats/teamTransfers'
 import { teamLogoUrl, withAlpha } from '../lib/stats/branding'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
@@ -48,6 +50,8 @@ import { StandingsTable } from './StandingsTable'
 import { TeamRosterPanel } from './TeamRosterPanel'
 import { TeamSeasonXiPitch } from './TeamSeasonXiPitch'
 import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
+
+const OVERVIEW_PREVIEW = 5
 
 type TeamTab = 'overview' | 'matches' | 'table' | 'stats' | 'squad'
 type OverviewSection =
@@ -149,20 +153,24 @@ export function TeamProfileScreen({
     competitions: true,
     nextOpponent: true,
     form: true,
-    transfers: false,
-    trophies: false,
+    transfers: true,
+    trophies: true,
     stadium: true,
   })
+  const [showAllTransfers, setShowAllTransfers] = useState(false)
+  const [showAllTrophies, setShowAllTrophies] = useState(false)
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const matchesScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
 
   const rosterEnabled = tab === 'squad'
   const leadersEnabled = tab === 'stats' || tab === 'overview'
-  const overviewXiEnabled = tab === 'overview' && !isNational
+  const overviewEnabled = tab === 'overview' && !isNational
+  const overviewXiEnabled = overviewEnabled
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
   const leaders = useTeamStatLeaders(team.leagueId, team.id, !isNational && leadersEnabled)
   const schedule = useTeamSchedule(team.id, team.leagueId, true)
+  const transfers = useTeamTransfers(team.leagueId, team.id, overviewEnabled)
   const overviewSeasons = useTeamSeasons(
     team.leagueId,
     team.id,
@@ -262,15 +270,25 @@ export function TeamProfileScreen({
 
   useEffect(() => {
     setTab('overview')
+    setShowAllTransfers(false)
+    setShowAllTrophies(false)
     setOpenOverview({
       competitions: true,
       nextOpponent: true,
       form: true,
-      transfers: false,
-      trophies: false,
+      transfers: true,
+      trophies: true,
       stadium: true,
     })
   }, [team.id])
+
+  const trophyWins = facts.data?.trophyWins ?? []
+  const visibleTrophies = showAllTrophies
+    ? trophyWins
+    : trophyWins.slice(0, OVERVIEW_PREVIEW)
+  const visibleTransfers = showAllTransfers
+    ? transfers.data
+    : transfers.data.slice(0, OVERVIEW_PREVIEW)
 
   const toggleOverview = (section: OverviewSection) => {
     setOpenOverview((current) => ({ ...current, [section]: !current[section] }))
@@ -631,42 +649,130 @@ export function TeamProfileScreen({
 
             <OverviewCard
               title="Transfers"
+              subtitle={
+                transfers.data.length > 0
+                  ? `${transfers.data.length} recent moves`
+                  : undefined
+              }
               open={openOverview.transfers}
               onToggle={() => toggleOverview('transfers')}
             >
-              <p className="text-sm text-mist/70">
-                Transfer in/out lists are not available for this club yet.
-              </p>
+              {transfers.loading && transfers.data.length === 0 ? (
+                <p className="text-sm text-mist/70">Loading transfers…</p>
+              ) : transfers.error && transfers.data.length === 0 ? (
+                <p className="text-sm text-mist/70">{transfers.error}</p>
+              ) : transfers.data.length === 0 ? (
+                <p className="text-sm text-mist/70">No recent transfers listed yet.</p>
+              ) : (
+                <div>
+                  <ul className="flex flex-col gap-2">
+                    {visibleTransfers.map((row) => {
+                      const other =
+                        row.direction === 'in'
+                          ? row.fromTeamName || 'Unknown'
+                          : row.toTeamName || 'Unknown'
+                      return (
+                        <li
+                          key={row.id}
+                          className="border-b border-white/8 pb-2 last:border-0 last:pb-0"
+                        >
+                          <div className="flex items-baseline justify-between gap-3">
+                            <button
+                              type="button"
+                              disabled={!row.playerId}
+                              onClick={() => {
+                                if (!row.playerId) return
+                                onOpenPlayer({
+                                  id: row.playerId,
+                                  leagueId: team.leagueId,
+                                  name: row.playerName,
+                                  shortName: row.playerName,
+                                  teamId: team.id,
+                                  teamName: displayName,
+                                })
+                              }}
+                              className={`min-w-0 truncate text-left text-sm font-semibold ${
+                                row.playerId
+                                  ? 'profile-link text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime'
+                                  : 'text-cream'
+                              }`}
+                            >
+                              {row.playerName}
+                            </button>
+                            <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-lime/80">
+                              {transferKindLabel(row)}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-mist/65">
+                            {formatMatchDayHeading(row.dateKey)}
+                            {row.direction === 'in' ? ' · from ' : ' · to '}
+                            {other}
+                            {row.feeLabel && row.feeLabel !== row.feeType
+                              ? ` · ${row.feeLabel}`
+                              : ''}
+                          </p>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  {transfers.data.length > OVERVIEW_PREVIEW ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTransfers((value) => !value)}
+                      className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {showAllTransfers
+                        ? 'Show less'
+                        : `Show more · ${transfers.data.length - OVERVIEW_PREVIEW} more`}
+                    </button>
+                  ) : null}
+                </div>
+              )}
             </OverviewCard>
 
             <OverviewCard
               title="Trophies"
               subtitle={
-                facts.data?.trophyCount != null
-                  ? `${facts.data.trophyCount} major titles`
-                  : undefined
+                trophyWins.length > 0
+                  ? `${trophyWins.length} titles`
+                  : facts.data?.trophyCount != null
+                    ? `${facts.data.trophyCount} major titles`
+                    : undefined
               }
               open={openOverview.trophies}
               onToggle={() => toggleOverview('trophies')}
             >
-              {facts.loading && !facts.data?.trophies?.length ? (
+              {facts.loading && trophyWins.length === 0 ? (
                 <p className="text-sm text-mist/70">Loading trophies…</p>
-              ) : facts.data?.trophies && facts.data.trophies.length > 0 ? (
-                <ul className="flex flex-col gap-2">
-                  {facts.data.trophies.map((row) => (
-                    <li
-                      key={`${row.competition}-${row.seasons}`}
-                      className="flex items-baseline justify-between gap-3 border-b border-white/8 pb-2 last:border-0 last:pb-0"
+              ) : trophyWins.length > 0 ? (
+                <div>
+                  <ul className="flex flex-col gap-2">
+                    {visibleTrophies.map((row) => (
+                      <li
+                        key={`${row.competition}-${row.season}-${row.sortYear}`}
+                        className="flex items-baseline justify-between gap-3 border-b border-white/8 pb-2 last:border-0 last:pb-0"
+                      >
+                        <span className="min-w-0 text-sm font-semibold text-cream">
+                          {row.competition}
+                        </span>
+                        <span className="shrink-0 text-right text-xs text-mist/65">
+                          {row.season}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {trophyWins.length > OVERVIEW_PREVIEW ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTrophies((value) => !value)}
+                      className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
-                      <span className="min-w-0 text-sm font-semibold text-cream">
-                        {row.competition}
-                      </span>
-                      <span className="shrink-0 text-right text-xs text-mist/65">
-                        {row.seasons}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                      {showAllTrophies
+                        ? 'Show less'
+                        : `Show more · ${trophyWins.length - OVERVIEW_PREVIEW} more`}
+                    </button>
+                  ) : null}
+                </div>
               ) : facts.data?.trophyCount != null ? (
                 <p className="text-sm text-mist/70">
                   About {facts.data.trophyCount} major titles
