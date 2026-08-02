@@ -2,8 +2,11 @@ import {
   compareLeaguesForDisplay,
   continentalLeagues,
   domesticCupsForCountry,
+  inferSoccerSeasonStartYear,
+  isFriendlyLeagueId,
   internationalLeagues,
   LEAGUES,
+  regularSeasonCupsForLeague,
   type LeagueId,
 } from './leagues'
 import { addDays, dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
@@ -589,6 +592,38 @@ export function matchInSeasonYear(match: Match, seasonYear: number): boolean {
   const start = `${seasonYear}-06-01`
   const end = `${seasonYear + 1}-05-31`
   return match.dateKey >= start && match.dateKey <= end
+}
+
+/**
+ * Competitions for a club profile: primary league + regular domestic cups for
+ * the current/upcoming season, plus any non-friendly comps with fixtures in
+ * that season (e.g. UCL). Friendlies are never included.
+ */
+export function teamSeasonCompetitionIds(
+  teamId: string,
+  primaryLeagueId: LeagueId,
+  matches: Match[],
+  seasonYear: number | null,
+): LeagueId[] {
+  const year = seasonYear ?? inferSoccerSeasonStartYear()
+  const ids = new Set<LeagueId>()
+
+  if (!isFriendlyLeagueId(primaryLeagueId)) {
+    ids.add(primaryLeagueId)
+  }
+
+  for (const cupId of regularSeasonCupsForLeague(primaryLeagueId)) {
+    ids.add(cupId)
+  }
+
+  for (const match of matches) {
+    if (match.home.id !== teamId && match.away.id !== teamId) continue
+    if (isFriendlyLeagueId(match.leagueId)) continue
+    if (!matchInSeasonYear(match, year)) continue
+    ids.add(match.leagueId)
+  }
+
+  return [...ids].sort((a, b) => compareLeaguesForDisplay(a, b))
 }
 
 /** Merge Match Day cache with schedule extras; cache rows win on id collisions. */
