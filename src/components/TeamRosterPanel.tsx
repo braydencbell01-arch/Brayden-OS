@@ -18,6 +18,7 @@ export function TeamRosterPanel({
   seasons,
   seasonsLoading,
   selectedSeason,
+  selectedKey,
   onSelectSeason,
   onOpenPlayer,
 }: {
@@ -31,7 +32,8 @@ export function TeamRosterPanel({
   seasons: LeagueSeasonOption[]
   seasonsLoading: boolean
   selectedSeason: number | null
-  onSelectSeason: (year: number) => void
+  selectedKey?: string | null
+  onSelectSeason: (year: number, option: LeagueSeasonOption) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
   return (
@@ -39,6 +41,7 @@ export function TeamRosterPanel({
       <SeasonPicker
         seasons={seasons}
         selectedSeason={selectedSeason ?? data?.season ?? null}
+        selectedKey={selectedKey}
         loading={seasonsLoading}
         onSelect={onSelectSeason}
       />

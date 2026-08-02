@@ -82,6 +82,7 @@ export function TeamStatLeadersPanel({
   seasons,
   seasonsLoading,
   selectedSeason,
+  selectedKey,
   onSelectSeason,
   onOpenPlayer,
 }: {
@@ -92,7 +93,8 @@ export function TeamStatLeadersPanel({
   seasons: LeagueSeasonOption[]
   seasonsLoading: boolean
   selectedSeason: number | null
-  onSelectSeason: (year: number) => void
+  selectedKey?: string | null
+  onSelectSeason: (year: number, option: LeagueSeasonOption) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
 }) {
   return (
@@ -100,6 +102,7 @@ export function TeamStatLeadersPanel({
       <SeasonPicker
         seasons={seasons}
         selectedSeason={selectedSeason ?? data?.season ?? null}
+        selectedKey={selectedKey}
         loading={seasonsLoading}
         onSelect={onSelectSeason}
       />
@@ -122,7 +125,8 @@ export function TeamStatLeadersPanel({
             </p>
           ) : (
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-              {data.seasonShortLabel || data.seasonLabel}
+              {data.seasonShortLabel ? `${data.seasonShortLabel} · ` : ''}
+              All competitions
             </p>
           )}
 

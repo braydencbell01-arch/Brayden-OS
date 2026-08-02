@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react'
 import type { LeagueId } from '../leagues'
 import { fetchTeamStatLeaders } from './espn'
 import type { TeamStatLeaders } from './types'
-import { useLeagueSeasons } from './useLeagueSeasons'
+import { useTeamSeasons } from './useTeamSeasons'
 
 export function useTeamStatLeaders(
   leagueId: LeagueId,
   teamId: string | null,
   enabled: boolean,
 ) {
-  const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
-    leagueId,
-    enabled && Boolean(teamId),
-    'leaders',
-  )
+  const {
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectedKey,
+    selectedEspnCode,
+    selectSeason,
+  } = useTeamSeasons(leagueId, teamId, enabled && Boolean(teamId), 'all-competitions')
   const [data, setData] = useState<TeamStatLeaders | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,7 +33,13 @@ export function useTeamStatLeaders(
     setLoading(true)
     setError(null)
 
-    fetchTeamStatLeaders(leagueId, teamId, 3, selectedSeason ?? undefined)
+    fetchTeamStatLeaders(
+      leagueId,
+      teamId,
+      3,
+      selectedSeason ?? undefined,
+      selectedEspnCode,
+    )
       .then((leaders) => {
         if (cancelled) return
         setData(leaders)
@@ -47,7 +56,7 @@ export function useTeamStatLeaders(
     return () => {
       cancelled = true
     }
-  }, [leagueId, teamId, enabled, selectedSeason, seasonsLoading])
+  }, [leagueId, teamId, enabled, selectedSeason, selectedEspnCode, seasonsLoading])
 
   return {
     data,
@@ -56,6 +65,7 @@ export function useTeamStatLeaders(
     seasons,
     seasonsLoading,
     selectedSeason,
+    selectedKey,
     selectSeason,
   }
 }

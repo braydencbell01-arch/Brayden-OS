@@ -730,6 +730,7 @@ export function TeamProfileScreen({
               seasons={leaders.seasons}
               seasonsLoading={leaders.seasonsLoading}
               selectedSeason={leaders.selectedSeason}
+              selectedKey={leaders.selectedKey}
               onSelectSeason={leaders.selectSeason}
               onOpenPlayer={onOpenPlayer}
             />
@@ -748,6 +749,7 @@ export function TeamProfileScreen({
             seasons={roster.seasons}
             seasonsLoading={roster.seasonsLoading}
             selectedSeason={roster.selectedSeason}
+            selectedKey={roster.selectedKey}
             onSelectSeason={roster.selectSeason}
             onOpenPlayer={onOpenPlayer}
           />

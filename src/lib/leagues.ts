@@ -899,6 +899,48 @@ export const LEAGUES: League[] = [
   }
 ]
 
+/**
+ * Domestic league-table ESPN codes to probe for a club's historical division
+ * (e.g. Premier League ↔ Championship ↔ League One). Cups are excluded.
+ */
+const DOMESTIC_PYRAMID_BY_COUNTRY: Record<string, string[]> = {
+  England: ['eng.1', 'eng.2', 'eng.3', 'eng.4'],
+  Spain: ['esp.1', 'esp.2'],
+  Italy: ['ita.1', 'ita.2'],
+  Germany: ['ger.1', 'ger.2'],
+  France: ['fra.1', 'fra.2'],
+  Netherlands: ['ned.1', 'ned.2'],
+  Portugal: ['por.1', 'por.2'],
+  Scotland: ['sco.1', 'sco.2'],
+  Belgium: ['bel.1', 'bel.2'],
+  Turkey: ['tur.1', 'tur.2'],
+  'United States': ['usa.1', 'usa.2'],
+  Mexico: ['mex.1', 'mex.2'],
+  Brazil: ['bra.1', 'bra.2'],
+  Argentina: ['arg.1', 'arg.2'],
+}
+
+/** ESPN league slugs to check when resolving a club's division for a season. */
+export function domesticPyramidEspnCodes(leagueId: LeagueId): string[] {
+  const league = getLeague(leagueId)
+  if (league.kind !== 'domestic' || league.format !== 'league') {
+    return [league.espnCode]
+  }
+  const pyramid = DOMESTIC_PYRAMID_BY_COUNTRY[league.country]
+  if (pyramid?.length) {
+    return pyramid.includes(league.espnCode)
+      ? pyramid
+      : [league.espnCode, ...pyramid.filter((code) => code !== league.espnCode)]
+  }
+  const sameCountry = LEAGUES.filter(
+    (item) =>
+      item.country === league.country &&
+      item.kind === 'domestic' &&
+      item.format === 'league',
+  ).map((item) => item.espnCode)
+  return [...new Set([league.espnCode, ...sameCountry])]
+}
+
 export function findLeague(id: string | null | undefined): League | undefined {
   if (!id) return undefined
   return LEAGUES.find((item) => item.id === id)

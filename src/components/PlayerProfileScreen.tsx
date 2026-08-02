@@ -478,7 +478,7 @@ function SeasonStatsCompare({
 }) {
   if (current.length === 0) {
     return (
-      <p className="text-sm text-mist/70">No full-season stats for this league yet.</p>
+      <p className="text-sm text-mist/70">No full-season stats for this season yet.</p>
     )
   }
 

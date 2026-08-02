@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
-import { getLeague, type LeagueId } from '../leagues'
+import type { LeagueId } from '../leagues'
 import { fetchTeamRoster } from './espn'
 import type { TeamRoster } from './types'
-import { useLeagueSeasons } from './useLeagueSeasons'
+import { useTeamSeasons } from './useTeamSeasons'
 
 export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled: boolean) {
-  // Prefer seasons with real tables so the default year is not an empty preseason shell.
-  const seasonMode = getLeague(leagueId).hasStandings ? 'standings' : 'all'
-  const { seasons, seasonsLoading, selectedSeason, selectSeason } = useLeagueSeasons(
-    leagueId,
-    enabled && Boolean(teamId),
-    seasonMode,
-  )
+  const {
+    seasons,
+    seasonsLoading,
+    selectedSeason,
+    selectedKey,
+    selectedEspnCode,
+    selectSeason,
+  } = useTeamSeasons(leagueId, teamId, enabled && Boolean(teamId), 'division')
   const [data, setData] = useState<TeamRoster | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +28,7 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
     setLoading(true)
     setError(null)
 
-    fetchTeamRoster(leagueId, teamId, selectedSeason ?? undefined)
+    fetchTeamRoster(leagueId, teamId, selectedSeason ?? undefined, selectedEspnCode)
       .then((roster) => {
         if (cancelled) return
         setData(roster)
@@ -44,7 +45,7 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
     return () => {
       cancelled = true
     }
-  }, [leagueId, teamId, enabled, selectedSeason, seasonsLoading])
+  }, [leagueId, teamId, enabled, selectedSeason, selectedEspnCode, seasonsLoading])
 
   return {
     data,
@@ -53,6 +54,7 @@ export function useTeamRoster(leagueId: LeagueId, teamId: string | null, enabled
     seasons,
     seasonsLoading,
     selectedSeason,
+    selectedKey,
     selectSeason,
   }
 }
