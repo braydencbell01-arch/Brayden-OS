@@ -202,15 +202,50 @@ function cleanCompetitionName(raw: string): string {
   return parts[parts.length - 1] || cleaned
 }
 
+/**
+ * True for youth / academy / reserve competitions that should not appear
+ * on the senior club trophies list.
+ */
+export function isYouthOrReserveCompetition(name: string): boolean {
+  const n = name.trim()
+  if (!n) return true
+  if (
+    /\b(youth|academy|academies|reserves?|development|nextgen|next gen)\b/i.test(n)
+  ) {
+    return true
+  }
+  if (/\bunder[-\s]?(1[5-9]|2[0-3])\b/i.test(n)) return true
+  if (/\bu[-\s]?(1[5-9]|2[0-3])\b/i.test(n)) return true
+  if (
+    /\b(fa youth cup|uefa youth league|premier league 2|\bpl2\b|professional development league|milk cup)\b/i.test(
+      n,
+    )
+  ) {
+    return true
+  }
+  // e.g. Middlesex Junior Cup — junior/age-group competitions
+  if (/\bjunior\b/i.test(n)) return true
+  return false
+}
+
+/** Drop youth/academy subsections that sometimes sit inside a club Honours block. */
+function stripYouthHonoursSections(html: string): string {
+  return html.replace(
+    /<h[3-6]\b[^>]*>[\s\S]*?\b(youth|academy|academies|reserves?|under[-\s]?(?:1[5-9]|2[0-3])|u[-\s]?(?:1[5-9]|2[0-3]))\b[\s\S]*?<\/h[3-6]>[\s\S]*?(?=<h[2-6]\b|$)/gi,
+    ' ',
+  )
+}
+
 function finalizeTrophyWins(wins: TeamTrophyWin[]): TeamTrophyWin[] {
-  wins.sort(
+  const senior = wins.filter((win) => !isYouthOrReserveCompetition(win.competition))
+  senior.sort(
     (a, b) =>
       b.sortYear - a.sortYear ||
       b.season.localeCompare(a.season) ||
       a.competition.localeCompare(b.competition),
   )
   const seen = new Set<string>()
-  return wins.filter((win) => {
+  return senior.filter((win) => {
     const key = `${win.competition.toLowerCase()}|${win.season}`
     if (seen.has(key)) return false
     seen.add(key)
@@ -243,7 +278,9 @@ export function parseWikipediaHonoursTable(html: string): TeamTrophyWin[] {
       // [Type, Competition, Titles, Seasons] or [Competition, Titles, Seasons]
       let competition = ''
       let seasonsRaw = ''
+      let typeLabel = ''
       if (cells.length >= 4 && /\d{4}/.test(cells[cells.length - 1] || '')) {
+        typeLabel = cells[0] || ''
         competition = cells[cells.length - 3] || ''
         seasonsRaw = cells[cells.length - 1] || ''
       } else if (cells.length >= 3 && /\d{4}/.test(cells[cells.length - 1] || '')) {
@@ -256,10 +293,13 @@ export function parseWikipediaHonoursTable(html: string): TeamTrophyWin[] {
         continue
       }
 
+      if (typeLabel && isYouthOrReserveCompetition(typeLabel)) continue
+
       const name = cleanCompetitionName(competition)
       if (
         !name ||
         name.length < 3 ||
+        isYouthOrReserveCompetition(name) ||
         /^(type|competition|titles?|seasons?|domestic|continental|worldwide|regional|national)$/i.test(
           name,
         )
@@ -311,18 +351,34 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
 
   const skipLine =
     /^(honou?rs?|league|cup|domestic|european|international|regional|wartime|main articles?|further information|source:|cite error|list of)\b/i
+  const youthSection =
+    /^(youth|academy|academies|reserves?|under[-\s]?(?:1[5-9]|2[0-3])|u[-\s]?(?:1[5-9]|2[0-3]))\b/i
   const winLine = /^(champions?|winners?|play-off winners?)\s*:\s*(.+)$/i
   const compactWin =
     /^([A-Z][A-Za-z0-9 .'/&-]{2,70}?)\s*:\s*winners?\s*\((\d+)\)\s*:\s*(.+)$/i
+
+  let inYouthSection = false
 
   for (const line of lines) {
     if (skipLine.test(line)) continue
     if (/^[,.]$/.test(line) || /^and$/i.test(line)) continue
 
+    if (youthSection.test(line)) {
+      inYouthSection = true
+      competition = ''
+      continue
+    }
+    // Leaving a youth block when a normal competition heading appears is handled below.
+
     const compact = line.match(compactWin)
     if (compact) {
+      if (inYouthSection) continue
       const name = cleanCompetitionName(compact[1] || '')
-      if (name && !/^(national|domestic|european|international|regional)\b/i.test(name)) {
+      if (
+        name &&
+        !/^(national|domestic|european|international|regional)\b/i.test(name) &&
+        !isYouthOrReserveCompetition(name)
+      ) {
         for (const season of extractSeasonTokens(compact[3] || '')) {
           wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
         }
@@ -331,7 +387,7 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
     }
 
     const won = line.match(winLine)
-    if (won && competition) {
+    if (won && competition && !inYouthSection && !isYouthOrReserveCompetition(competition)) {
       for (const season of extractSeasonTokens(won[2] || '')) {
         wins.push({
           competition,
@@ -351,7 +407,14 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
       !/^\d/.test(line) &&
       !/^(champions?|winners?|play-off|runners-up|promoted)\b/i.test(line)
     ) {
-      competition = cleanCompetitionName(line)
+      const name = cleanCompetitionName(line)
+      if (isYouthOrReserveCompetition(name) || youthSection.test(name)) {
+        inYouthSection = true
+        competition = ''
+        continue
+      }
+      inYouthSection = false
+      competition = name
     }
   }
 
@@ -366,7 +429,13 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
       /([A-Z][A-Za-z0-9 .'/&-]{2,60}?)\s*:\s*Winners?\s*\((\d+)\)\s*:\s*([0-9–,\s-]+?)(?=(?:[A-Z][A-Za-z0-9 .'/&-]{2,60}?\s*:\s*(?:Winners?|Runners-up))|$)/g,
     )) {
       const name = cleanCompetitionName(match[1] || '')
-      if (!name || /^(national|domestic|european|international|regional)\b/i.test(name)) continue
+      if (
+        !name ||
+        isYouthOrReserveCompetition(name) ||
+        /^(national|domestic|european|international|regional)\b/i.test(name)
+      ) {
+        continue
+      }
       for (const season of extractSeasonTokens(match[3] || '')) {
         wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
       }
@@ -376,11 +445,12 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
   return finalizeTrophyWins(wins)
 }
 
-/** Prefer table parsing, then prose parsing. */
+/** Prefer table parsing, then prose parsing. Senior-team titles only. */
 export function parseWikipediaHonours(html: string): TeamTrophyWin[] {
-  const fromTable = parseWikipediaHonoursTable(html)
+  const seniorHtml = stripYouthHonoursSections(html)
+  const fromTable = parseWikipediaHonoursTable(seniorHtml)
   if (fromTable.length > 0) return fromTable
-  return parseWikipediaHonoursText(stripWikiHtml(html))
+  return parseWikipediaHonoursText(stripWikiHtml(seniorHtml))
 }
 
 /** Collapse wins back into competition → seasons rows for compact summaries. */
