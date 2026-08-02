@@ -459,6 +459,27 @@ export function nextMatchForTeam(
   return upcoming[0] ?? null
 }
 
+/** All fixtures for a league, chronological (team-profile Matches timeline style). */
+export function matchesForLeague(matches: Match[], leagueId: LeagueId): Match[] {
+  return matches
+    .filter((match) => match.leagueId === leagueId)
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+}
+
+/** First upcoming (or live) fixture in a league timeline. */
+export function nextMatchForLeague(
+  matches: Match[],
+  leagueId: LeagueId,
+  todayKey: string,
+): Match | null {
+  return matchesForLeague(matches, leagueId).find(
+    (match) =>
+      match.status === 'live' ||
+      match.status === 'scheduled' ||
+      (match.status === 'other' && match.dateKey >= todayKey),
+  ) ?? null
+}
+
 /** Finished league matches newest-first (for a league profile Results accordion). */
 export function recentLeagueResults(matches: Match[], leagueId: LeagueId, limit = 40): Match[] {
   return matches

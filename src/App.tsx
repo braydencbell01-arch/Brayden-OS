@@ -846,6 +846,7 @@ export default function App() {
               onBack={closeLeagueProfile}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
+              onNeedPastRange={(from, to) => ensureRange(from, to)}
               reduce={reduce}
             />
           </motion.div>

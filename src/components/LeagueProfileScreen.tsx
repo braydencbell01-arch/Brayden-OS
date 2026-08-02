@@ -1,22 +1,36 @@
-import { useMemo, useState } from 'react'
-import { formatMatchDayHeading, toDateKey } from '../lib/dates'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { MISSING_SHORT } from '../lib/display'
-import { useToday } from '../lib/useToday'
+import {
+  addDays,
+  CALENDAR_INITIAL_PAST_DAYS,
+  CALENDAR_PAST_CHUNK_DAYS,
+  formatKickoffTime,
+  formatMatchDayHeading,
+  startOfDay,
+} from '../lib/dates'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import type { League } from '../lib/leagues'
 import {
-  groupMatchesByDate,
   leagueFormTable,
+  matchesForLeague,
   matchesForLeagueFrom,
-  recentLeagueResults,
+  nextMatchForLeague,
   type Match,
 } from '../lib/matches'
-import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
+import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
 import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
+import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
+import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
-import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
-import { leagueAccentColor } from '../lib/stats/branding'
+import { useToday, useTodayKey } from '../lib/useToday'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { LeagueExpectedGoalsPanel } from './LeagueExpectedGoalsPanel'
@@ -35,6 +49,37 @@ import {
 } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
 
+type LeagueTab = 'overview' | 'matches' | 'table' | 'stats'
+type OverviewSection = 'form' | 'nextMatch'
+type StatsSection = 'player-stats' | 'team-leaders' | 'xg'
+
+const TABS: Array<{ id: LeagueTab; label: string; needsStandings?: boolean }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'matches', label: 'Matches' },
+  { id: 'table', label: 'Table', needsStandings: true },
+  { id: 'stats', label: 'Stats' },
+]
+
+function OverviewCard({
+  title,
+  subtitle,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  subtitle?: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <ProfileAccordion title={title} subtitle={subtitle} open={open} onToggle={onToggle}>
+      {children}
+    </ProfileAccordion>
+  )
+}
+
 export function LeagueProfileScreen({
   league,
   matches,
@@ -44,6 +89,7 @@ export function LeagueProfileScreen({
   onBack,
   onOpenTeam,
   onOpenPlayer,
+  onNeedPastRange,
   reduce,
 }: {
   league: League
@@ -54,15 +100,23 @@ export function LeagueProfileScreen({
   onBack: () => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
+  /** Expand the shared fixture cache further into the past for infinite Matches. */
+  onNeedPastRange?: (from: Date, to: Date) => void | Promise<unknown>
   reduce: boolean | null
 }) {
   const today = useToday()
-  const leagueMatches = useMemo(
-    () => matchesForLeagueFrom(matches, league.id, today),
-    [matches, league.id, today],
-  )
-  const grouped = useMemo(() => groupMatchesByDate(leagueMatches), [leagueMatches])
-  const standings = useLeagueStandings(league.id, league.hasStandings)
+  const todayKey = useTodayKey()
+  const [tab, setTab] = useState<LeagueTab>('overview')
+  const [openOverview, setOpenOverview] = useState<Record<OverviewSection, boolean>>({
+    form: true,
+    nextMatch: true,
+  })
+  const [openStats, setOpenStats] = useState<Record<StatsSection, boolean>>({
+    'player-stats': true,
+    'team-leaders': false,
+    xg: false,
+  })
+
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
   const isInternational = league.kind === 'international'
   const isDomesticCup = league.kind === 'domestic' && league.format !== 'league'
@@ -70,36 +124,36 @@ export function LeagueProfileScreen({
   const formatLabel =
     league.format === 'supercup' ? 'Super cup' : league.format === 'cup' ? 'Cup' : 'League'
 
-  const recentResults = useMemo(
-    () => recentLeagueResults(matches, league.id, 48),
+  const standings = useLeagueStandings(league.id, league.hasStandings)
+  const statsEnabled = tab === 'stats'
+  const leaders = useLeagueLeaders(league.id, statsEnabled && openStats['team-leaders'])
+  // Warm player boards for the top-scorer metric on Overview.
+  const playerStats = useLeaguePlayerStats(league.id, true)
+  const expectedGoals = useLeagueExpectedGoals(
+    league.id,
+    statsEnabled && openStats.xg,
+    { withSeasonPicker: true },
+  )
+
+  const upcomingCount = useMemo(
+    () => matchesForLeagueFrom(matches, league.id, today).length,
+    [matches, league.id, today],
+  )
+
+  const timelineMatches = useMemo(
+    () => matchesForLeague(matches, league.id),
     [matches, league.id],
   )
-  const recentGrouped = useMemo(
-    () => groupMatchesByDate(recentResults).slice().reverse(),
-    [recentResults],
+
+  const nextMatch = useMemo(
+    () => nextMatchForLeague(matches, league.id, todayKey),
+    [matches, league.id, todayKey],
   )
+
   const formRows = useMemo(
     () => leagueFormTable(matches, standings.rows, 5),
     [matches, standings.rows],
   )
-
-  const [openSection, setOpenSection] = useState<
-    'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | 'xg' | null
-  >(null)
-  const statsEnabled = openSection === 'stats'
-  const xgEnabled = openSection === 'xg'
-  // Warm player leaderboards for the top-scorer metric even when the accordion is closed.
-  const leaders = useLeagueLeaders(league.id, statsEnabled)
-  const playerStats = useLeaguePlayerStats(league.id, true)
-  const expectedGoals = useLeagueExpectedGoals(league.id, xgEnabled, {
-    withSeasonPicker: true,
-  })
-
-  const toggleSection = (
-    section: 'table' | 'form' | 'fixtures' | 'results' | 'player-stats' | 'stats' | 'xg',
-  ) => {
-    setOpenSection((current) => (current === section ? null : section))
-  }
 
   const leader = standings.rows[0] ?? null
   const clubCount = standings.rows.length
@@ -110,6 +164,142 @@ export function LeagueProfileScreen({
 
   const { logoUrl } = useLeagueLogo(league.id)
   const accent = leagueAccentColor(league.id)
+
+  const visibleTabs = useMemo(
+    () =>
+      TABS.filter((entry) => {
+        if (entry.needsStandings) return league.hasStandings
+        return true
+      }),
+    [league.hasStandings],
+  )
+
+  useEffect(() => {
+    if (!visibleTabs.some((entry) => entry.id === tab)) {
+      setTab('overview')
+    }
+  }, [tab, visibleTabs])
+
+  useEffect(() => {
+    setTab('overview')
+    setOpenOverview({ form: true, nextMatch: true })
+    setOpenStats({ 'player-stats': true, 'team-leaders': false, xg: false })
+  }, [league.id])
+
+  const toggleOverview = (section: OverviewSection) => {
+    setOpenOverview((current) => ({ ...current, [section]: !current[section] }))
+  }
+
+  const toggleStats = (section: StatsSection) => {
+    setOpenStats((current) => ({ ...current, [section]: !current[section] }))
+  }
+
+  const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
+  const [pastExhausted, setPastExhausted] = useState(false)
+  const matchesScrollRef = useRef<HTMLDivElement>(null)
+  const loadingMoreRef = useRef(false)
+  const pendingPastCountRef = useRef<number | null>(null)
+  const matchCountRef = useRef(0)
+  matchCountRef.current = timelineMatches.length
+  const centeredNextRef = useRef<string | null>(null)
+  const pendingTopLoadRef = useRef<{ height: number; top: number } | null>(null)
+
+  useEffect(() => {
+    setPastExhausted(false)
+    pendingPastCountRef.current = null
+    setPastHorizonDays(CALENDAR_INITIAL_PAST_DAYS)
+  }, [league.id])
+
+  useEffect(() => {
+    const pending = pendingPastCountRef.current
+    if (pending == null) return
+    if (timelineMatches.length > pending) pendingPastCountRef.current = null
+  }, [timelineMatches.length])
+
+  const loadEarlierResults = useCallback(() => {
+    if (!onNeedPastRange || loadingMoreRef.current || pastExhausted) return
+    loadingMoreRef.current = true
+    const beforeCount = matchCountRef.current
+    pendingPastCountRef.current = beforeCount
+    const next = pastHorizonDays + CALENDAR_PAST_CHUNK_DAYS
+    setPastHorizonDays(next)
+    const day = startOfDay(new Date())
+    void Promise.resolve(onNeedPastRange(addDays(day, -next), day)).finally(() => {
+      loadingMoreRef.current = false
+      window.setTimeout(() => {
+        if (
+          pendingPastCountRef.current === beforeCount &&
+          matchCountRef.current <= beforeCount
+        ) {
+          setPastExhausted(true)
+        }
+        if (pendingPastCountRef.current === beforeCount) {
+          pendingPastCountRef.current = null
+        }
+      }, 450)
+    })
+  }, [onNeedPastRange, pastExhausted, pastHorizonDays])
+
+  const scrollNextMatchToCenter = useCallback(() => {
+    const scroller = matchesScrollRef.current
+    if (!scroller) return
+    const target = scroller.querySelector<HTMLElement>('[data-next-match="true"]')
+    if (!target) return
+    const scrollerRect = scroller.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    const delta =
+      targetRect.top -
+      scrollerRect.top -
+      scroller.clientHeight / 2 +
+      targetRect.height / 2
+    scroller.scrollTop += delta
+  }, [])
+
+  useEffect(() => {
+    if (tab !== 'matches') {
+      centeredNextRef.current = null
+      return
+    }
+    if (loading || !nextMatch || timelineMatches.length === 0) return
+    const anchor = `${league.id}:${nextMatch.id}`
+    if (centeredNextRef.current === anchor) return
+    const id = window.requestAnimationFrame(() => {
+      scrollNextMatchToCenter()
+      centeredNextRef.current = anchor
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [
+    tab,
+    league.id,
+    nextMatch,
+    timelineMatches.length,
+    loading,
+    scrollNextMatchToCenter,
+  ])
+
+  useEffect(() => {
+    const pending = pendingTopLoadRef.current
+    const scroller = matchesScrollRef.current
+    if (!pending || !scroller || tab !== 'matches') return
+    const delta = scroller.scrollHeight - pending.height
+    if (delta > 0) {
+      scroller.scrollTop = pending.top + delta
+      pendingTopLoadRef.current = null
+    }
+  }, [timelineMatches.length, tab])
+
+  const onMatchesScroll = () => {
+    const scroller = matchesScrollRef.current
+    if (!scroller || tab !== 'matches') return
+    if (scroller.scrollTop < 120) {
+      if (!onNeedPastRange || loadingMoreRef.current || pastExhausted) return
+      pendingTopLoadRef.current = {
+        height: scroller.scrollHeight,
+        top: scroller.scrollTop,
+      }
+      loadEarlierResults()
+    }
+  }
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce} accentColor={accent}>
@@ -132,266 +322,321 @@ export function LeagueProfileScreen({
           <>
             {league.short}
             {isDomesticCup ? ` · ${formatLabel}` : ''}
-            {!loading && !error ? ` · ${leagueMatches.length} upcoming games` : ''}
+            {!loading && !error ? ` · ${upcomingCount} upcoming` : ''}
           </>
         }
       />
 
-      <ProfileMetricsRow>
-        {league.hasStandings ? (
-          <ProfileMetric
-            label={isInternational ? 'Teams' : 'Clubs'}
-            value={standings.loading ? '…' : clubCount || MISSING_SHORT}
-          />
-        ) : (
-          <ProfileMetric label="Format" value={formatLabel} />
-        )}
-        <ProfileMetric label="Upcoming games" value={loading ? '…' : leagueMatches.length} />
-        {league.hasStandings ? (
-          <ProfileMetric
-            label="Leader"
-            value={
-              standings.loading ? (
-                '…'
-              ) : leader ? (
+      <nav
+        className="sticky top-[3.35rem] z-20 -mx-5 mt-5 border-b border-white/10 bg-pitch-deep/92 px-5 backdrop-blur-md md:-mx-6 md:px-6"
+        aria-label="League sections"
+      >
+        <div className="flex gap-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {visibleTabs.map((entry) => {
+            const active = tab === entry.id
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => setTab(entry.id)}
+                className={`relative shrink-0 px-3 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
+                  active ? 'text-cream' : 'text-mist/55 hover:text-mist'
+                }`}
+                aria-current={active ? 'page' : undefined}
+              >
+                {entry.label}
+                {active ? (
+                  <span
+                    className="absolute inset-x-2 bottom-0 h-0.5 bg-cream"
+                    style={accent ? { background: accent } : undefined}
+                    aria-hidden
+                  />
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+
+      <div className="mt-5">
+        {tab === 'overview' ? (
+          <div className="flex flex-col gap-3">
+            <ProfileMetricsRow>
+              {league.hasStandings ? (
+                <ProfileMetric
+                  label={isInternational ? 'Teams' : 'Clubs'}
+                  value={standings.loading ? '…' : clubCount || MISSING_SHORT}
+                />
+              ) : (
+                <ProfileMetric label="Format" value={formatLabel} />
+              )}
+              <ProfileMetric
+                label="Upcoming"
+                value={loading ? '…' : upcomingCount}
+              />
+              {league.hasStandings ? (
+                <ProfileMetric
+                  label="Leader"
+                  value={
+                    standings.loading ? (
+                      '…'
+                    ) : leader ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenTeam({
+                            id: leader.teamId,
+                            name: leader.team,
+                            shortName: leader.shortName,
+                            leagueId: league.id,
+                            kind: isInternational ? 'national' : 'club',
+                          })
+                        }
+                        className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {leader.shortName}
+                      </button>
+                    ) : (
+                      MISSING_SHORT
+                    )
+                  }
+                />
+              ) : (
+                <ProfileMetric
+                  label="Matches"
+                  value={loading ? '…' : timelineMatches.length || MISSING_SHORT}
+                />
+              )}
+              <ProfileMetric
+                label="Top scorer"
+                value={
+                  playerStats.loading && !topScorer ? (
+                    '…'
+                  ) : topScorer ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenPlayer({
+                          id: topScorer.id,
+                          leagueId: league.id,
+                          name: topScorer.name,
+                          shortName: topScorer.shortName,
+                          jersey: topScorer.jersey,
+                          teamId: topScorer.teamId,
+                          teamName: topScorer.teamName,
+                        })
+                      }
+                      className="profile-link block truncate text-lg font-semibold leading-8 text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {topScorer.shortName || topScorer.name}
+                    </button>
+                  ) : (
+                    MISSING_SHORT
+                  )
+                }
+              />
+            </ProfileMetricsRow>
+
+            {showTimeline ? (
+              <div className="mt-2">
+                <LeagueSeasonTimeline leagueId={league.id} />
+              </div>
+            ) : null}
+
+            {nextMatch ? (
+              <OverviewCard
+                title="Next match"
+                subtitle={formatMatchDayHeading(nextMatch.dateKey)}
+                open={openOverview.nextMatch}
+                onToggle={() => toggleOverview('nextMatch')}
+              >
                 <button
                   type="button"
-                  onClick={() =>
-                    onOpenTeam({
-                      id: leader.teamId,
-                      name: leader.team,
-                      shortName: leader.shortName,
-                      leagueId: league.id,
-                      kind: isInternational ? 'national' : 'club',
-                    })
-                  }
-                  className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                  onClick={() => setTab('matches')}
+                  className="flex w-full items-center gap-3 text-left transition hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                 >
-                  {leader.shortName}
-                </button>
-              ) : (
-                MISSING_SHORT
-              )
-            }
-          />
-        ) : (
-          <ProfileMetric label="Recent results" value={loading ? '…' : recentResults.length} />
-        )}
-        <ProfileMetric
-          label="Top scorer"
-          value={
-            playerStats.loading && !topScorer ? (
-              '…'
-            ) : topScorer ? (
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenPlayer({
-                    id: topScorer.id,
-                    leagueId: league.id,
-                    name: topScorer.name,
-                    shortName: topScorer.shortName,
-                    jersey: topScorer.jersey,
-                    teamId: topScorer.teamId,
-                    teamName: topScorer.teamName,
-                  })
-                }
-                className="profile-link block truncate text-lg font-semibold leading-8 text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-              >
-                {topScorer.shortName || topScorer.name}
-              </button>
-            ) : (
-              MISSING_SHORT
-            )
-          }
-        />
-      </ProfileMetricsRow>
-
-      {showTimeline ? (
-        <div className="mt-5">
-          <LeagueSeasonTimeline leagueId={league.id} />
-        </div>
-      ) : null}
-
-      <div className="mt-6 flex flex-col gap-3">
-        {league.hasStandings ? (
-          <ProfileAccordion
-            title="Standings"
-            open={openSection === 'table'}
-            onToggle={() => toggleSection('table')}
-          >
-            <StandingsTable
-              rows={standings.rows}
-              loading={standings.loading}
-              error={standings.error}
-              leagueId={league.id}
-              isTeamFavorite={favorites.isTeamFavorite}
-              onToggleTeam={favorites.toggleTeam}
-              onOpenTeam={onOpenTeam}
-              onRetry={() => void standings.reload()}
-              seasons={standings.seasons}
-              seasonsLoading={standings.seasonsLoading}
-              selectedSeason={standings.selectedSeason}
-              onSelectSeason={standings.selectSeason}
-            />
-          </ProfileAccordion>
-        ) : null}
-
-        {league.hasStandings ? (
-          <ProfileAccordion
-            title="Form"
-            subtitle="Last 5 results per club"
-            open={openSection === 'form'}
-            onToggle={() => toggleSection('form')}
-          >
-            {standings.loading && formRows.length === 0 ? (
-              <p className="text-sm text-mist/70">Loading form…</p>
-            ) : (
-              <LeagueFormTable rows={formRows} leagueId={league.id} onOpenTeam={onOpenTeam} />
-            )}
-          </ProfileAccordion>
-        ) : null}
-
-        <ProfileAccordion
-          title="Upcoming games"
-          open={openSection === 'fixtures'}
-          onToggle={() => toggleSection('fixtures')}
-        >
-          {loading && grouped.length === 0 ? (
-            <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : (
-            <>
-              {error && grouped.length === 0 ? (
-                <p className="text-sm text-mist/80">{error}</p>
-              ) : null}
-              {error && grouped.length > 0 ? (
-                <p className="mb-3 text-sm text-mist/70">{error}</p>
-              ) : null}
-              {!error || grouped.length > 0 ? (
-                grouped.length === 0 ? (
-                  <p className="text-sm text-mist/70">
-                    No upcoming {league.name} matches known yet.
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-5">
-                    {grouped.map(({ dateKey, matches: dayMatches }) => (
-                      <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                        <div className="mb-2 flex items-baseline justify-between px-0.5">
-                          <h2 className="font-display text-xl tracking-wide text-cream">
-                            {formatMatchDayHeading(dateKey)}
-                          </h2>
-                          {dateKey === toDateKey(today) && (
-                            <span className="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime">
-                              Today
-                            </span>
-                          )}
-                        </div>
-                        <MatchList
-                          matches={dayMatches}
-                          onOpenTeam={onOpenTeam}
-                          onOpenPlayer={onOpenPlayer}
-                          favoriteLeagueIds={favorites.leagueIds}
-                          favoriteTeamIds={favorites.teamIds}
-                          emptyLabel="No matches"
-                        />
-                      </section>
-                    ))}
-                  </div>
-                )
-              ) : null}
-            </>
-          )}
-        </ProfileAccordion>
-
-        <ProfileAccordion
-          title="Recent results"
-          open={openSection === 'results'}
-          onToggle={() => toggleSection('results')}
-        >
-          {loading && recentGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">Loading results…</p>
-          ) : error && recentGrouped.length === 0 ? (
-            <p className="text-sm text-mist/80">{error}</p>
-          ) : recentGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">No finished matches in the loaded window yet.</p>
-          ) : (
-            <div className="flex max-h-[28rem] flex-col gap-5 overflow-y-auto overscroll-contain pr-1">
-              {recentGrouped.map(({ dateKey, matches: dayMatches }) => (
-                <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                  <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
-                    {formatMatchDayHeading(dateKey)}
-                  </h2>
-                  <MatchList
-                    matches={dayMatches}
-                    onOpenTeam={onOpenTeam}
-                    onOpenPlayer={onOpenPlayer}
-                    favoriteLeagueIds={favorites.leagueIds}
-                    favoriteTeamIds={favorites.teamIds}
-                    emptyLabel="No matches"
+                  <EntityLogo
+                    name={nextMatch.home.name}
+                    src={teamLogoUrl(nextMatch.home.id)}
+                    size="md"
                   />
-                </section>
-              ))}
-            </div>
-          )}
-        </ProfileAccordion>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-cream">
+                      {nextMatch.home.shortName} vs {nextMatch.away.shortName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-mist/65">
+                      {formatKickoffTime(nextMatch.kickoff)}
+                      {nextMatch.venue ? ` · ${nextMatch.venue}` : ''}
+                    </p>
+                  </div>
+                  <EntityLogo
+                    name={nextMatch.away.name}
+                    src={teamLogoUrl(nextMatch.away.id)}
+                    size="md"
+                  />
+                </button>
+                <div className="mt-3 flex justify-center gap-6">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenTeam({
+                        id: nextMatch.home.id,
+                        name: nextMatch.home.name,
+                        shortName: nextMatch.home.shortName,
+                        leagueId: league.id,
+                        kind: isInternational ? 'national' : 'club',
+                      })
+                    }
+                    className="profile-link text-xs font-semibold text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                  >
+                    {nextMatch.home.shortName}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenTeam({
+                        id: nextMatch.away.id,
+                        name: nextMatch.away.name,
+                        shortName: nextMatch.away.shortName,
+                        leagueId: league.id,
+                        kind: isInternational ? 'national' : 'club',
+                      })
+                    }
+                    className="profile-link text-xs font-semibold text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                  >
+                    {nextMatch.away.shortName}
+                  </button>
+                </div>
+              </OverviewCard>
+            ) : null}
 
-        <ProfileAccordion
-          title="Player stats"
-          subtitle="Scorers, assists, shots, cards, and more"
-          open={openSection === 'player-stats'}
-          onToggle={() => toggleSection('player-stats')}
-        >
-          <LeaguePlayerStatsPanel
-            data={playerStats.data}
-            loading={playerStats.loading}
-            error={playerStats.error}
-            leagueId={league.id}
-            seasons={playerStats.seasons}
-            seasonsLoading={playerStats.seasonsLoading}
-            selectedSeason={playerStats.selectedSeason}
-            onSelectSeason={playerStats.selectSeason}
-            onOpenPlayer={onOpenPlayer}
-            onOpenTeam={onOpenTeam}
-          />
-        </ProfileAccordion>
+            {league.hasStandings ? (
+              <OverviewCard
+                title="Form"
+                subtitle="Last 5 results per club"
+                open={openOverview.form}
+                onToggle={() => toggleOverview('form')}
+              >
+                {standings.loading && formRows.length === 0 ? (
+                  <p className="text-sm text-mist/70">Loading form…</p>
+                ) : formRows.length === 0 ? (
+                  <p className="text-sm text-mist/70">No form data yet.</p>
+                ) : (
+                  <LeagueFormTable
+                    rows={formRows}
+                    leagueId={league.id}
+                    onOpenTeam={onOpenTeam}
+                  />
+                )}
+              </OverviewCard>
+            ) : null}
+          </div>
+        ) : null}
 
-        <ProfileAccordion
-          title="Team leaders"
-          subtitle="Table-derived and category boards"
-          open={openSection === 'stats'}
-          onToggle={() => toggleSection('stats')}
-        >
-          <LeagueStatsPanel
-            data={leaders.data}
-            loading={leaders.loading}
-            error={leaders.error}
-            leagueId={league.id}
-            seasons={leaders.seasons}
-            seasonsLoading={leaders.seasonsLoading}
-            selectedSeason={leaders.selectedSeason}
-            onSelectSeason={leaders.selectSeason}
-            onOpenPlayer={onOpenPlayer}
-            onOpenTeam={onOpenTeam}
-          />
-        </ProfileAccordion>
-
-        {expectedGoals.supported ? (
-          <ProfileAccordion
-            title="Expected goals"
-            subtitle="xG · xA · club chance quality"
-            open={openSection === 'xg'}
-            onToggle={() => toggleSection('xg')}
+        {tab === 'matches' ? (
+          <div
+            ref={matchesScrollRef}
+            onScroll={onMatchesScroll}
+            className="max-h-[min(70dvh,40rem)] overflow-y-auto overscroll-contain pr-1"
+            aria-label="League match timeline"
           >
-            <LeagueExpectedGoalsPanel
-              data={expectedGoals.data}
-              loading={expectedGoals.loading}
-              error={expectedGoals.error}
-              seasons={expectedGoals.seasons}
-              seasonsLoading={expectedGoals.seasonsLoading}
-              selectedSeason={expectedGoals.selectedSeason}
-              onSelectSeason={expectedGoals.selectSeason}
-            />
-          </ProfileAccordion>
+            {loading && timelineMatches.length === 0 ? (
+              <p className="text-sm text-mist/70">Loading matches…</p>
+            ) : error && timelineMatches.length === 0 ? (
+              <p className="text-sm text-mist/80">{error}</p>
+            ) : (
+              <MatchList
+                matches={timelineMatches}
+                allMatches={timelineMatches}
+                nextMatchId={nextMatch?.id}
+                onOpenTeam={onOpenTeam}
+                onOpenPlayer={onOpenPlayer}
+                favoriteLeagueIds={favorites.leagueIds}
+                favoriteTeamIds={favorites.teamIds}
+                emptyLabel="No matches yet."
+              />
+            )}
+          </div>
+        ) : null}
+
+        {tab === 'table' && league.hasStandings ? (
+          <StandingsTable
+            rows={standings.rows}
+            loading={standings.loading}
+            error={standings.error}
+            leagueId={league.id}
+            isTeamFavorite={favorites.isTeamFavorite}
+            onToggleTeam={favorites.toggleTeam}
+            onOpenTeam={onOpenTeam}
+            onRetry={() => void standings.reload()}
+            seasons={standings.seasons}
+            seasonsLoading={standings.seasonsLoading}
+            selectedSeason={standings.selectedSeason}
+            onSelectSeason={standings.selectSeason}
+          />
+        ) : null}
+
+        {tab === 'stats' ? (
+          <div className="flex flex-col gap-3">
+            <OverviewCard
+              title="Player stats"
+              subtitle="Scorers, assists, shots, cards, and more"
+              open={openStats['player-stats']}
+              onToggle={() => toggleStats('player-stats')}
+            >
+              <LeaguePlayerStatsPanel
+                data={playerStats.data}
+                loading={playerStats.loading}
+                error={playerStats.error}
+                leagueId={league.id}
+                seasons={playerStats.seasons}
+                seasonsLoading={playerStats.seasonsLoading}
+                selectedSeason={playerStats.selectedSeason}
+                onSelectSeason={playerStats.selectSeason}
+                onOpenPlayer={onOpenPlayer}
+                onOpenTeam={onOpenTeam}
+              />
+            </OverviewCard>
+
+            <OverviewCard
+              title="Team leaders"
+              subtitle="Table-derived and category boards"
+              open={openStats['team-leaders']}
+              onToggle={() => toggleStats('team-leaders')}
+            >
+              <LeagueStatsPanel
+                data={leaders.data}
+                loading={leaders.loading}
+                error={leaders.error}
+                leagueId={league.id}
+                seasons={leaders.seasons}
+                seasonsLoading={leaders.seasonsLoading}
+                selectedSeason={leaders.selectedSeason}
+                onSelectSeason={leaders.selectSeason}
+                onOpenPlayer={onOpenPlayer}
+                onOpenTeam={onOpenTeam}
+              />
+            </OverviewCard>
+
+            {expectedGoals.supported ? (
+              <OverviewCard
+                title="Expected goals"
+                subtitle="xG · xA · club chance quality"
+                open={openStats.xg}
+                onToggle={() => toggleStats('xg')}
+              >
+                <LeagueExpectedGoalsPanel
+                  data={expectedGoals.data}
+                  loading={expectedGoals.loading}
+                  error={expectedGoals.error}
+                  seasons={expectedGoals.seasons}
+                  seasonsLoading={expectedGoals.seasonsLoading}
+                  selectedSeason={expectedGoals.selectedSeason}
+                  onSelectSeason={expectedGoals.selectSeason}
+                />
+              </OverviewCard>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </ProfileShell>
