@@ -2,8 +2,11 @@ import {
   compareLeaguesForDisplay,
   continentalLeagues,
   domesticCupsForCountry,
+  getLeague,
+  inferInternationalSeasonStartYear,
   inferSoccerSeasonStartYear,
   isFriendlyLeagueId,
+  isInternationalLeague,
   internationalLeagues,
   LEAGUES,
   regularSeasonCupsForLeague,
@@ -510,13 +513,34 @@ export function splitTeamFixtures(
 async function fetchScheduleForLeague(teamId: string, leagueId: LeagueId): Promise<Match[]> {
   const league = LEAGUES.find((entry) => entry.id === leagueId)
   if (!league) return []
-  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/schedule`
-  const res = await fetch(url)
-  if (!res.ok) return []
-  const data = (await res.json()) as EspnScoreboard
-  return (data.events ?? [])
-    .map((event) => normalizeEvent(event, league.id))
-    .filter((match): match is Match => match != null)
+  const base = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/teams/${encodeURIComponent(teamId)}/schedule`
+  const seasonHints =
+    league.kind === 'international'
+      ? [
+          undefined,
+          inferInternationalSeasonStartYear(),
+          inferInternationalSeasonStartYear() - 1,
+          inferInternationalSeasonStartYear() + 1,
+        ]
+      : [undefined, inferSoccerSeasonStartYear(), inferSoccerSeasonStartYear() - 1]
+
+  const byEvent = new Map<string, Match>()
+  for (const season of seasonHints) {
+    const url = new URL(base)
+    if (season != null) url.searchParams.set('season', String(season))
+    try {
+      const res = await fetch(url)
+      if (!res.ok) continue
+      const data = (await res.json()) as EspnScoreboard
+      for (const event of data.events ?? []) {
+        const match = normalizeEvent(event, league.id)
+        if (match && !byEvent.has(match.espnEventId)) byEvent.set(match.espnEventId, match)
+      }
+    } catch {
+      // try next season hint
+    }
+  }
+  return [...byEvent.values()]
 }
 
 /**
@@ -569,6 +593,7 @@ export async function fetchTeamSchedule(
     leagueId,
     ...cupIds.filter((id) => id !== leagueId),
     ...continentalIds.filter((id) => id !== leagueId),
+    'club-friendly' as LeagueId,
   ]
   const results = await Promise.allSettled(
     codes.map((id) => fetchScheduleForLeague(teamId, id)),
@@ -585,19 +610,28 @@ export async function fetchTeamSchedule(
 }
 
 /**
- * Soccer seasons labeled by start year (e.g. 2026 → 2026/27) generally run
- * from early summer of that year through the following spring.
+ * Club seasons (e.g. 2026 → 2026/27) generally run June–May.
+ * National seasons use Aug 1 – Jul 31 when `international` is set.
  */
-export function matchInSeasonYear(match: Match, seasonYear: number): boolean {
+export function matchInSeasonYear(
+  match: Match,
+  seasonYear: number,
+  opts?: { international?: boolean },
+): boolean {
+  if (opts?.international) {
+    const start = `${seasonYear}-08-01`
+    const end = `${seasonYear + 1}-07-31`
+    return match.dateKey >= start && match.dateKey <= end
+  }
   const start = `${seasonYear}-06-01`
   const end = `${seasonYear + 1}-05-31`
   return match.dateKey >= start && match.dateKey <= end
 }
 
 /**
- * Competitions for a club profile: primary league + regular domestic cups for
- * the current/upcoming season, plus any non-friendly comps with fixtures in
- * that season (e.g. UCL). Friendlies are never included.
+ * Competitions for a team profile: primary league + regular domestic cups for
+ * the current/upcoming season, plus any comps with fixtures in that season
+ * (including friendlies when the side played them).
  */
 export function teamSeasonCompetitionIds(
   teamId: string,
@@ -605,7 +639,11 @@ export function teamSeasonCompetitionIds(
   matches: Match[],
   seasonYear: number | null,
 ): LeagueId[] {
-  const year = seasonYear ?? inferSoccerSeasonStartYear()
+  const international =
+    isInternationalLeague(primaryLeagueId) || getLeague(primaryLeagueId).kind === 'international'
+  const year =
+    seasonYear ??
+    (international ? inferInternationalSeasonStartYear() : inferSoccerSeasonStartYear())
   const ids = new Set<LeagueId>()
 
   if (!isFriendlyLeagueId(primaryLeagueId)) {
@@ -618,8 +656,7 @@ export function teamSeasonCompetitionIds(
 
   for (const match of matches) {
     if (match.home.id !== teamId && match.away.id !== teamId) continue
-    if (isFriendlyLeagueId(match.leagueId)) continue
-    if (!matchInSeasonYear(match, year)) continue
+    if (!matchInSeasonYear(match, year, { international })) continue
     ids.add(match.leagueId)
   }
 
