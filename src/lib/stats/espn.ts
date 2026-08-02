@@ -10,6 +10,7 @@ import {
   LEAGUES,
   type LeagueId,
 } from '../leagues'
+import { playoffWinnersLabel } from './divisionLabels'
 import { layoutPlayersOnPitch } from './formationPitch'
 import { leagueIdFromTeamSlug, resolveTeamDomesticLeagueId } from '../search'
 import {
@@ -881,22 +882,6 @@ function leagueNameFromSeasonDisplay(displayName: string | undefined, year: numb
     .replace(/^\d{4}\s*[-/]\s*\d{2,4}\s*/i, '')
     .replace(new RegExp(`^${year}\\s*`, 'i'), '')
     .trim()
-}
-
-/** Compact division name for outcome labels (Championship, League One, …). */
-function shortDivisionName(divisionName: string): string {
-  let name = divisionName
-    .replace(/^English\s+/i, '')
-    .replace(/^EFL\s+/i, '')
-    .trim()
-  name = name.replace(/^League\s+Championship$/i, 'Championship')
-  return name || divisionName
-}
-
-function playoffWinnersLabel(divisionName: string): string {
-  const short = shortDivisionName(divisionName)
-  if (/play-?off/i.test(short)) return short
-  return `${short} play-off winners`
 }
 
 type EspnStandingNoteEntry = {

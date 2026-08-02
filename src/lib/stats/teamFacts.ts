@@ -1,6 +1,7 @@
 import { getLeague, type LeagueId } from '../leagues'
 import type { StandingRow } from './types'
 import { normalizeHexColor, pickEspnLogoUrl, safeAccentColor, teamLogoUrl } from './branding'
+import { playoffWinnersLabel } from './divisionLabels'
 
 export type TeamClubFacts = {
   teamId: string
@@ -328,7 +329,7 @@ function normalizeHonoursText(text: string): string {
     .replace(/\n\s*\(((?:level|tier)\s*\d+)\)\s*\n/gi, ' ($1)\n')
     // Attach seasons that wrap after the colon
     .replace(
-      /(Champions?|Winners?|Play-off winners?|Runners-up|Promoted)\s*:\s*\n+/gi,
+      /(Champions?|Winners?|Play-?offs?\s*winners?|Runners-up|Promoted)\s*:\s*\n+/gi,
       '$1: ',
     )
     .replace(/(\d{4}(?:\s*[–/-]\s*\d{2,4})?)\s*\n\s*,\s*\n\s*/g, '$1, ')
@@ -353,7 +354,8 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
     /^(honou?rs?|league|cup|domestic|european|international|regional|wartime|main articles?|further information|source:|cite error|list of)\b/i
   const youthSection =
     /^(youth|academy|academies|reserves?|under[-\s]?(?:1[5-9]|2[0-3])|u[-\s]?(?:1[5-9]|2[0-3]))\b/i
-  const winLine = /^(champions?|winners?|play-off winners?)\s*:\s*(.+)$/i
+  const winLine =
+    /^(champions?|winners?|play-?offs?\s*winners?)\s*:\s*(.+)$/i
   const compactWin =
     /^([A-Z][A-Za-z0-9 .'/&-]{2,70}?)\s*:\s*winners?\s*\((\d+)\)\s*:\s*(.+)$/i
 
@@ -388,9 +390,14 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
 
     const won = line.match(winLine)
     if (won && competition && !inYouthSection && !isYouthOrReserveCompetition(competition)) {
+      const kind = won[1] || ''
+      const isPlayoffWin = /play-?off/i.test(kind)
+      // Play-off promotion is not a league title — label it like season pickers do.
+      const title = isPlayoffWin ? playoffWinnersLabel(competition) : competition
+      if (isYouthOrReserveCompetition(title)) continue
       for (const season of extractSeasonTokens(won[2] || '')) {
         wins.push({
-          competition,
+          competition: title,
           season,
           sortYear: seasonSortYear(season),
         })
