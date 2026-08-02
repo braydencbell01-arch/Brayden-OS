@@ -501,22 +501,22 @@ export function TeamProfileScreen({
               {competitionIds.length === 0 ? (
                 <p className="text-sm text-mist/70">No competitions in the loaded window.</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <ul className="flex flex-col gap-2">
                   {competitionIds.map((id) => {
                     const item = getLeague(id)
                     return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => onOpenLeague(id)}
-                        className="border border-white/12 bg-white/[0.03] px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/35 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                        title={item.name}
-                      >
-                        {item.short}
-                      </button>
+                      <li key={id}>
+                        <button
+                          type="button"
+                          onClick={() => onOpenLeague(id)}
+                          className="profile-link text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                        >
+                          {item.name}
+                        </button>
+                      </li>
                     )
                   })}
-                </div>
+                </ul>
               )}
             </OverviewCard>
 
