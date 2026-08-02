@@ -1,4 +1,4 @@
-import { getLeague, inferSoccerSeasonStartYear, type LeagueId } from '../leagues'
+import { getLeague, type LeagueId } from '../leagues'
 import { dateKeyFromIso } from '../dates'
 
 export type TeamTransfer = {
@@ -7,14 +7,17 @@ export type TeamTransfer = {
   dateKey: string
   playerId?: string
   playerName: string
-  /** ESPN fee type: Loan, Free, Undisclosed, etc. */
+  /** ESPN fee type: Loan, Free, Undisclosed, Fee, etc. */
   feeType: string
+  /** Raw ESPN amount when provided (often 0). */
+  amount?: number
   direction: 'in' | 'out'
   isLoan: boolean
   fromTeamId?: string
   fromTeamName?: string
   toTeamId?: string
   toTeamName?: string
+  /** Raw ESPN displayAmount when present. */
   feeLabel?: string
 }
 
@@ -56,7 +59,52 @@ function transferKindLabel(transfer: TeamTransfer): string {
   return transfer.direction === 'in' ? 'Signed' : 'Departed'
 }
 
-export { transferKindLabel }
+/** Transfer date with year (e.g. "Mon, Sep 1, 2025"). */
+function formatTransferDate(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  if (!y || !m || !d) return dateKey
+  const date = new Date(y, m - 1, d)
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
+function formatMoneyAmount(amount: number): string {
+  if (!Number.isFinite(amount) || amount <= 0) return ''
+  if (amount >= 1_000_000) {
+    const millions = amount / 1_000_000
+    const rounded = millions >= 10 ? Math.round(millions) : Math.round(millions * 10) / 10
+    return `£${rounded}m`
+  }
+  if (amount >= 1_000) return `£${Math.round(amount / 1_000)}k`
+  return `£${Math.round(amount)}`
+}
+
+/**
+ * Human fee line: Free / Loan / Undisclosed / £12m.
+ * ESPN rarely publishes exact fees; when missing we surface their label.
+ */
+function formatTransferFee(transfer: TeamTransfer): string {
+  if (transfer.isLoan || /loan/i.test(transfer.feeType)) return 'Loan'
+  if (/free/i.test(transfer.feeType) || /free/i.test(transfer.feeLabel || '')) return 'Free'
+
+  const fromAmount = transfer.amount && transfer.amount > 0 ? formatMoneyAmount(transfer.amount) : ''
+  if (fromAmount) return fromAmount
+
+  const raw = (transfer.feeLabel || '').trim()
+  if (raw && /^\d+(\.\d+)?$/.test(raw)) {
+    const money = formatMoneyAmount(Number(raw))
+    if (money) return money
+  }
+  if (raw && !/^(fee|transfer|undisclosed)$/i.test(raw)) return raw
+  if (/undisclosed/i.test(transfer.feeType) || /undisclosed/i.test(raw)) return 'Undisclosed'
+  return transfer.feeType || 'Undisclosed'
+}
+
+export { transferKindLabel, formatTransferDate, formatTransferFee }
 
 function normalizeTransfer(
   row: EspnTransaction,
@@ -83,6 +131,7 @@ function normalizeTransfer(
     playerId: row.athlete?.id,
     playerName,
     feeType,
+    amount: typeof row.amount === 'number' && row.amount > 0 ? row.amount : undefined,
     direction,
     isLoan,
     fromTeamId: fromId,
@@ -123,7 +172,7 @@ async function fetchLeagueSeasonTransactions(
 
 /**
  * Recent club transfers (signings, departures, loans) from ESPN transaction feeds.
- * Newest first across the current and previous couple of seasons.
+ * Newest first across recent calendar years (ESPN indexes this endpoint by calendar year).
  */
 export async function fetchTeamTransfers(
   leagueId: LeagueId,
@@ -133,8 +182,10 @@ export async function fetchTeamTransfers(
   if (league.kind === 'international') return []
 
   const espnCode = league.espnCode
-  const current = inferSoccerSeasonStartYear()
-  const seasons = [current, current - 1, current - 2]
+  // ESPN's soccer transactions `season` param is calendar year (Jan–Dec), not
+  // soccer season-start year. Fetch current + previous two calendar years.
+  const calendarYear = new Date().getFullYear()
+  const seasons = [calendarYear, calendarYear - 1, calendarYear - 2]
 
   const bySeason = await Promise.all(
     seasons.map(async (year) => {

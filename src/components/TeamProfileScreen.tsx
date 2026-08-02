@@ -38,7 +38,11 @@ import { useTeamSeasons } from '../lib/stats/useTeamSeasons'
 import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
 import { useTeamTransfers } from '../lib/stats/useTeamTransfers'
 import { teamAccentFromFacts } from '../lib/stats/teamFacts'
-import { transferKindLabel } from '../lib/stats/teamTransfers'
+import {
+  formatTransferDate,
+  formatTransferFee,
+  transferKindLabel,
+} from '../lib/stats/teamTransfers'
 import { teamLogoUrl, withAlpha } from '../lib/stats/branding'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
@@ -704,12 +708,11 @@ export function TeamProfileScreen({
                             </span>
                           </div>
                           <p className="mt-0.5 text-xs text-mist/65">
-                            {formatMatchDayHeading(row.dateKey)}
+                            {formatTransferDate(row.dateKey)}
                             {row.direction === 'in' ? ' · from ' : ' · to '}
                             {other}
-                            {row.feeLabel && row.feeLabel !== row.feeType
-                              ? ` · ${row.feeLabel}`
-                              : ''}
+                            {' · '}
+                            {formatTransferFee(row)}
                           </p>
                         </li>
                       )
