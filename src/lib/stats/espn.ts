@@ -429,18 +429,20 @@ type SeasonLineupEvent = {
   leagueId: LeagueId
 }
 
-async function listTeamSeasonLineupEvents(
+/** Competitive ESPN slugs for a club season (domestic + cups + continental; no friendlies). */
+function competitiveEspnCodesForClub(
   leagueId: LeagueId,
-  teamId: string,
-  seasonYear: number,
-  espnCodeOverride?: string,
-): Promise<SeasonLineupEvent[]> {
+  domesticEspnCode?: string,
+): string[] {
   const league = getLeague(leagueId)
   const codes = new Set<string>()
-  if (espnCodeOverride) codes.add(espnCodeOverride)
+  if (domesticEspnCode) codes.add(domesticEspnCode)
   codes.add(league.espnCode)
 
   if (league.kind === 'domestic') {
+    if (league.format === 'league') {
+      for (const code of domesticPyramidEspnCodes(leagueId)) codes.add(code)
+    }
     for (const cup of domesticCupsForCountry(league.country)) {
       if (!isFriendlyLeagueId(cup.id)) codes.add(cup.espnCode)
     }
@@ -457,7 +459,26 @@ async function listTeamSeasonLineupEvents(
     }
   }
 
-  const codeList = [...codes]
+  return [...codes].filter((code) => {
+    const match = LEAGUES.find((item) => item.espnCode === code)
+    return !match || !isFriendlyLeagueId(match.id)
+  })
+}
+
+function isCompetitiveEspnCode(espnCode: string): boolean {
+  if (/friendly/i.test(espnCode)) return false
+  const match = LEAGUES.find((item) => item.espnCode === espnCode)
+  if (!match) return true
+  return !isFriendlyLeagueId(match.id)
+}
+
+async function listTeamSeasonLineupEvents(
+  leagueId: LeagueId,
+  teamId: string,
+  seasonYear: number,
+  espnCodeOverride?: string,
+): Promise<SeasonLineupEvent[]> {
+  const codeList = competitiveEspnCodesForClub(leagueId, espnCodeOverride)
   const chunks = await mapPool(codeList, 4, async (espnCode) => {
     try {
       const url = new URL(
@@ -1392,6 +1413,43 @@ export async function fetchLeaguePlayerStatsOverview(
  * Filters ESPN core league leaders down to the requested team.
  * Pass `seasonYear` to load a specific season; otherwise picks the newest with data.
  */
+async function fetchTeamLeadersPayload(
+  espnCode: string,
+  year: number,
+  teamId: string,
+): Promise<EspnCoreLeadersResponse | null> {
+  const teamUrl = new URL(
+    `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/teams/${encodeURIComponent(teamId)}/leaders`,
+  )
+  teamUrl.searchParams.set('limit', '50')
+  try {
+    const teamRes = await fetch(teamUrl)
+    if (teamRes.ok) {
+      const teamData = (await teamRes.json()) as EspnCoreLeadersResponse
+      if (teamData.categories?.length) return teamData
+    }
+  } catch {
+    // fall through
+  }
+
+  const url = new URL(
+    `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/leaders`,
+  )
+  url.searchParams.set('limit', '1000')
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const data = (await res.json()) as EspnCoreLeadersResponse
+    return data.categories?.length ? data : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Club player leaders for a season, summed across domestic + cups + continental
+ * (friendlies excluded). Matches the Stats tab “All competitions” label.
+ */
 export async function fetchTeamStatLeaders(
   leagueId: LeagueId,
   teamId: string,
@@ -1401,11 +1459,6 @@ export async function fetchTeamStatLeaders(
 ): Promise<TeamStatLeaders> {
   const league = getLeague(leagueId)
   const perCategoryCap = Math.max(1, Math.min(limit, 8))
-
-  let payload: EspnCoreLeadersResponse | null = null
-  let season = seasonYear ?? new Date().getUTCFullYear()
-  let seasonMeta: { label: string; shortLabel: string } | null = null
-  let resolvedEspnCode = espnCodeOverride || league.espnCode
 
   const yearsToTry =
     seasonYear != null
@@ -1417,55 +1470,91 @@ export async function fetchTeamStatLeaders(
           new Date().getUTCFullYear() - 3,
         ]
 
-  const codesToTry = [
-    ...(espnCodeOverride ? [espnCodeOverride] : []),
-    league.espnCode,
-    ...(league.kind === 'domestic' && league.format === 'league'
-      ? domesticPyramidEspnCodes(leagueId).filter(
-          (code) => code !== league.espnCode && code !== espnCodeOverride,
-        )
-      : []),
-  ]
+  const codes = competitiveEspnCodesForClub(leagueId, espnCodeOverride || league.espnCode)
 
-  outer: for (const year of yearsToTry) {
-    for (const espnCode of codesToTry) {
-      const teamUrl = new URL(
-        `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/teams/${encodeURIComponent(teamId)}/leaders`,
-      )
-      teamUrl.searchParams.set('limit', '50')
-      try {
-        const teamRes = await fetch(teamUrl)
-        if (teamRes.ok) {
-          const teamData = (await teamRes.json()) as EspnCoreLeadersResponse
-          if (teamData.categories?.length) {
-            payload = teamData
-            season = year
-            resolvedEspnCode = espnCode
-            seasonMeta = await fetchSeasonLabels(espnCode, year)
-            break outer
+  let season = yearsToTry[0]!
+  let seasonMeta: { label: string; shortLabel: string } | null = null
+  let labelEspnCode = espnCodeOverride || league.espnCode
+  type AggLeader = {
+    athleteId: string
+    athleteRef?: string
+    value: number
+    label: string
+    categoryId: string
+  }
+  let mergedByCategory = new Map<string, Map<string, AggLeader>>()
+  let categoryLabels = new Map<string, string>()
+
+  for (const year of yearsToTry) {
+    const payloads = await mapPool(codes, 4, async (espnCode) => {
+      const payload = await fetchTeamLeadersPayload(espnCode, year, teamId)
+      return payload ? { espnCode, payload } : null
+    })
+    if (payloads.length === 0) continue
+
+    const nextMerged = new Map<string, Map<string, AggLeader>>()
+    const nextLabels = new Map<string, string>()
+
+    for (const { espnCode, payload } of payloads) {
+      for (const category of payload.categories ?? []) {
+        const categoryId = category.name
+        if (!categoryId || !(PLAYER_STAT_CATEGORY_ORDER as readonly string[]).includes(categoryId)) {
+          continue
+        }
+        if (!nextLabels.has(categoryId)) {
+          nextLabels.set(
+            categoryId,
+            category.displayName || category.shortDisplayName || categoryId,
+          )
+        }
+        const byAthlete = nextMerged.get(categoryId) ?? new Map<string, AggLeader>()
+        for (const leader of category.leaders ?? []) {
+          const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
+          if (!athleteId) continue
+          const leaderTeamId = idFromCoreRef(leader.team?.$ref, 'teams')
+          if (leaderTeamId && leaderTeamId !== teamId) continue
+          const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
+          if (value <= 0) continue
+          const current = byAthlete.get(athleteId)
+          if (current) {
+            current.value += value
+          } else {
+            byAthlete.set(athleteId, {
+              athleteId,
+              athleteRef: leader.athlete?.$ref,
+              value,
+              label: nextLabels.get(categoryId) || categoryId,
+              categoryId,
+            })
           }
         }
-      } catch {
-        // fall through to league-wide leaders
+        nextMerged.set(categoryId, byAthlete)
       }
-
-      const url = new URL(
-        `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/leaders`,
-      )
-      url.searchParams.set('limit', '1000')
-      const res = await fetch(url)
-      if (!res.ok) continue
-      const data = (await res.json()) as EspnCoreLeadersResponse
-      if (!data.categories?.length) continue
-      payload = data
-      season = year
-      resolvedEspnCode = espnCode
-      seasonMeta = await fetchSeasonLabels(espnCode, year)
-      break outer
+      if (!seasonMeta && espnCode === (espnCodeOverride || league.espnCode)) {
+        labelEspnCode = espnCode
+      }
     }
+
+    const hasLeaders = [...nextMerged.values()].some((map) => map.size > 0)
+    if (!hasLeaders) continue
+
+    season = year
+    mergedByCategory = nextMerged
+    categoryLabels = nextLabels
+    seasonMeta = await fetchSeasonLabels(labelEspnCode, year)
+    break
   }
 
-  if (!payload?.categories?.length) {
+  if (!seasonMeta) {
+    seasonMeta = await fetchSeasonLabels(labelEspnCode, season)
+  }
+
+  const orderedCategoryIds = PLAYER_STAT_CATEGORY_ORDER.filter((id) => {
+    const map = mergedByCategory.get(id)
+    return Boolean(map && [...map.values()].some((row) => row.value > 0))
+  })
+
+  if (orderedCategoryIds.length === 0) {
     throw new Error(
       seasonYear != null
         ? `No player stats for that season`
@@ -1473,46 +1562,13 @@ export async function fetchTeamStatLeaders(
     )
   }
 
-  if (!seasonMeta) {
-    seasonMeta = await fetchSeasonLabels(resolvedEspnCode, season)
-  }
-
-  const byName = new Map(
-    payload.categories
-      .filter((category) => category.name)
-      .map((category) => [category.name as string, category]),
-  )
-
-  const selected = PLAYER_STAT_CATEGORY_ORDER.map((name) => byName.get(name)).filter(
-    (category): category is NonNullable<typeof category> => Boolean(category?.leaders?.length),
-  )
-
-  const teamLeadersByCategory = selected
-    .map((category) => {
-      const forTeam = (category.leaders ?? [])
-        .filter((leader) => {
-          // Team-scoped leaders endpoint already belongs to this club.
-          const leaderTeamId = idFromCoreRef(leader.team?.$ref, 'teams')
-          return !leaderTeamId || leaderTeamId === teamId
-        })
-        .filter((leader) => {
-          const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
-          return value > 0
-        })
-        .slice(0, perCategoryCap)
-      return { category, leaders: forTeam }
-    })
-    .filter((entry) => entry.leaders.length > 0)
-
-  if (teamLeadersByCategory.length === 0) {
-    throw new Error(`No stat leaders available for this club in ${seasonMeta.shortLabel}`)
-  }
-
   const athleteRefs = new Map<string, string>()
-  for (const { leaders } of teamLeadersByCategory) {
+  for (const categoryId of orderedCategoryIds) {
+    const leaders = [...(mergedByCategory.get(categoryId)?.values() ?? [])]
+      .sort((a, b) => b.value - a.value)
+      .slice(0, perCategoryCap)
     for (const leader of leaders) {
-      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
-      if (athleteId && leader.athlete?.$ref) athleteRefs.set(athleteId, leader.athlete.$ref)
+      if (leader.athleteRef) athleteRefs.set(leader.athleteId, leader.athleteRef)
     }
   }
 
@@ -1521,27 +1577,31 @@ export async function fetchTeamStatLeaders(
   )
   const athleteById = new Map(athletes)
 
-  const categories: LeaderCategory[] = teamLeadersByCategory.map(({ category, leaders }) => ({
-    id: category.name || 'stat',
-    label: category.displayName || category.shortDisplayName || category.name || 'Stat',
-    kind: 'player' as const,
-    leaders: leaders.map((leader, index) => {
-      const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes') || `${category.name}-${index}`
-      const athlete = athleteId ? athleteById.get(athleteId) : null
-      const name = athlete?.displayName || ''
-      const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
-      return {
-        rank: index + 1,
-        id: athleteId,
-        name,
-        shortName: athlete?.shortName || athlete?.shortDisplayName || name,
-        jersey: athlete?.jersey,
-        teamId,
-        value,
-        displayValue: String(value),
-      }
-    }),
-  }))
+  const categories: LeaderCategory[] = orderedCategoryIds.map((categoryId) => {
+    const leaders = [...(mergedByCategory.get(categoryId)?.values() ?? [])]
+      .sort((a, b) => b.value - a.value)
+      .slice(0, perCategoryCap)
+    return {
+      id: categoryId,
+      label: categoryLabels.get(categoryId) || categoryId,
+      kind: 'player' as const,
+      leaders: leaders.map((leader, index) => {
+        const athlete = athleteById.get(leader.athleteId)
+        const name = athlete?.displayName || ''
+        const value = Math.round(leader.value * 10) / 10
+        return {
+          rank: index + 1,
+          id: leader.athleteId,
+          name,
+          shortName: athlete?.shortName || athlete?.shortDisplayName || name,
+          jersey: athlete?.jersey,
+          teamId,
+          value,
+          displayValue: Number.isInteger(value) ? String(value) : value.toFixed(1),
+        }
+      }),
+    }
+  })
 
   return {
     leagueId,
@@ -1921,6 +1981,52 @@ function buildOrderedSeasonStatsFromArrays(
   return ordered
 }
 
+function parseSeasonStatNumber(raw: string | undefined): number {
+  if (raw == null || raw === '') return 0
+  const n = Number(String(raw).replace(/[^\d.-]/g, ''))
+  return Number.isFinite(n) ? n : 0
+}
+
+/** Sum numeric season-stat columns across competitions (aligned by alias key). */
+function sumSeasonStatParts(
+  parts: Array<{ names: string[]; labels: string[]; values: string[] }>,
+): PlayerSeasonStatLine[] {
+  const totals = new Map<string, number>()
+  const labelByKey = new Map<string, string>()
+
+  for (const part of parts) {
+    part.names.forEach((name, index) => {
+      if (!name) return
+      const key = SEASON_STAT_ALIASES[name] || name
+      if (SEASON_STAT_HIDDEN.has(name) || SEASON_STAT_HIDDEN.has(key)) return
+      if (!labelByKey.has(key)) labelByKey.set(key, part.labels[index] || name)
+      totals.set(key, (totals.get(key) || 0) + parseSeasonStatNumber(part.values[index]))
+    })
+  }
+
+  if (totals.size === 0) return []
+
+  const ordered: PlayerSeasonStatLine[] = []
+  const used = new Set<string>()
+  for (const { key, label } of SEASON_STAT_ORDER) {
+    if (!totals.has(key)) continue
+    const value = totals.get(key) || 0
+    ordered.push({
+      label,
+      value: Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10),
+    })
+    used.add(key)
+  }
+  for (const [key, value] of totals) {
+    if (used.has(key)) continue
+    ordered.push({
+      label: labelByKey.get(key) || key,
+      value: Number.isInteger(value) ? String(value) : String(Math.round(value * 10) / 10),
+    })
+  }
+  return ordered
+}
+
 function buildOrderedSeasonStatsFromOverview(
   overview: EspnOverviewPayload,
   leagueSlug: string,
@@ -1989,6 +2095,200 @@ async function fetchCoreSeasonAppearances(
   return Number.isFinite(value) ? value : null
 }
 
+async function fetchAthleteStatsPayload(
+  playerId: string,
+  opts: { teamId?: string; leagueSlug?: string },
+): Promise<EspnAthleteStatsPayload | null> {
+  const url = new URL(
+    `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats`,
+  )
+  if (opts.teamId) url.searchParams.set('team', opts.teamId)
+  if (opts.leagueSlug) url.searchParams.set('league', opts.leagueSlug)
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return (await res.json()) as EspnAthleteStatsPayload
+  } catch {
+    return null
+  }
+}
+
+function seasonRowForYear(
+  payload: EspnAthleteStatsPayload,
+  year: number,
+  leagueSlug?: string,
+): { names: string[]; labels: string[]; values: string[]; leagueSlug?: string } | null {
+  const category = payload.categories?.[0]
+  const names = category?.names ?? []
+  const labels = category?.displayNames ?? []
+  const rows = category?.statistics ?? []
+  const row =
+    rows.find(
+      (item) =>
+        item.season?.year === year &&
+        (!leagueSlug || item.leagueSlug === leagueSlug),
+    ) || null
+  if (!row?.stats?.length || names.length === 0) return null
+  return {
+    names: [...names],
+    labels: [...labels],
+    values: [...row.stats],
+    leagueSlug: row.leagueSlug,
+  }
+}
+
+async function sumAppearancesAcrossCodes(
+  playerId: string,
+  year: number,
+  espnCodes: string[],
+): Promise<number | null> {
+  const apps = await mapPool(espnCodes, 4, async (code) =>
+    fetchCoreSeasonAppearances(code, year, playerId),
+  )
+  const total = apps.reduce<number>((sum, value) => sum + (value ?? 0), 0)
+  return total > 0 ? total : null
+}
+
+/**
+ * Club season totals across every competitive competition for a team stint
+ * (league + cups + continental). Friendlies are skipped.
+ */
+async function fetchAthleteAllCompetitionsSeasonStats(
+  playerId: string,
+  teamId: string,
+  preferredYear?: number,
+  primaryEspnCode?: string,
+): Promise<{
+  stats: PlayerSeasonStatLine[]
+  seasonLabel: string | null
+  seasonYear: number | null
+  previousStats: PlayerSeasonStatLine[]
+  previousSeasonLabel: string | null
+  availableYears: number[]
+}> {
+  const seed = await fetchAthleteStatsPayload(playerId, { teamId })
+  if (!seed) {
+    return {
+      stats: [],
+      seasonLabel: null,
+      seasonYear: null,
+      previousStats: [],
+      previousSeasonLabel: null,
+      availableYears: [],
+    }
+  }
+
+  const leagueFilter = seed.filters?.find((filter) => filter.name === 'league')
+  const filterCodes = (leagueFilter?.options ?? [])
+    .map((option) => option.value)
+    .filter((value): value is string => Boolean(value && isCompetitiveEspnCode(value)))
+
+  const codes = [
+    ...new Set([
+      ...(primaryEspnCode ? [primaryEspnCode] : []),
+      ...filterCodes,
+      ...((seed.categories?.[0]?.statistics ?? [])
+        .map((row) => row.leagueSlug)
+        .filter((slug): slug is string => Boolean(slug && isCompetitiveEspnCode(slug)))),
+    ]),
+  ]
+
+  const availableYears = [
+    ...new Set(
+      (seed.categories?.[0]?.statistics ?? [])
+        .filter((row) => row.leagueSlug && isCompetitiveEspnCode(row.leagueSlug))
+        .map((row) => row.season?.year)
+        .filter((year): year is number => typeof year === 'number'),
+    ),
+  ].sort((a, b) => b - a)
+
+  // Also collect years from each competition feed (seed may only include one slug).
+  const perCodeYears = await mapPool(codes, 4, async (espnCode) => {
+    const payload = await fetchAthleteStatsPayload(playerId, { teamId, leagueSlug: espnCode })
+    if (!payload) return [] as number[]
+    return (payload.categories?.[0]?.statistics ?? [])
+      .map((row) => row.season?.year)
+      .filter((year): year is number => typeof year === 'number')
+  })
+  const years = [...new Set([...availableYears, ...perCodeYears.flat()])].sort((a, b) => b - a)
+  const seasonYear =
+    (preferredYear != null && years.includes(preferredYear) ? preferredYear : null) ??
+    years[0] ??
+    null
+
+  if (seasonYear == null || codes.length === 0) {
+    return {
+      stats: [],
+      seasonLabel: null,
+      seasonYear: null,
+      previousStats: [],
+      previousSeasonLabel: null,
+      availableYears: years,
+    }
+  }
+
+  const buildForYear = async (year: number) => {
+    const parts = (
+      await mapPool(codes, 4, async (espnCode) => {
+        const payload = await fetchAthleteStatsPayload(playerId, { teamId, leagueSlug: espnCode })
+        if (!payload) return null
+        return seasonRowForYear(payload, year, espnCode)
+      })
+    ).filter((part): part is NonNullable<typeof part> => part != null)
+
+    // Strip appearances from per-comp rows — core apps are summed once below.
+    const summed = sumSeasonStatParts(
+      parts.map((part) => {
+        const keep = part.names.map((name, index) => ({ name, index })).filter(({ name }) => {
+          const key = SEASON_STAT_ALIASES[name] || name
+          return key !== 'appearances'
+        })
+        return {
+          names: keep.map(({ name }) => name),
+          labels: keep.map(({ index }) => part.labels[index] || part.names[index]),
+          values: keep.map(({ index }) => part.values[index] || '0'),
+        }
+      }),
+    )
+
+    const apps = await sumAppearancesAcrossCodes(playerId, year, codes)
+    if (apps != null && apps > 0) {
+      const appearanceLine = { label: 'Appearances', value: String(Math.round(apps)) }
+      const startsIdx = summed.findIndex((line) => /start/i.test(line.label))
+      if (startsIdx >= 0) summed.splice(startsIdx, 0, appearanceLine)
+      else summed.unshift(appearanceLine)
+    }
+    return summed
+  }
+
+  const stats = await buildForYear(seasonYear)
+  const labels = primaryEspnCode
+    ? await fetchSeasonLabels(primaryEspnCode, seasonYear)
+    : { label: String(seasonYear), shortLabel: formatSeasonShortLabel(seasonYear) }
+
+  let previousStats: PlayerSeasonStatLine[] = []
+  let previousSeasonLabel: string | null = null
+  const prevYear = seasonYear - 1
+  if (years.includes(prevYear) || years.length > 0) {
+    previousStats = await buildForYear(prevYear)
+    if (previousStats.length > 0) {
+      const prevLabels = primaryEspnCode
+        ? await fetchSeasonLabels(primaryEspnCode, prevYear)
+        : { shortLabel: formatSeasonShortLabel(prevYear) }
+      previousSeasonLabel = `${prevLabels.shortLabel} · All competitions`
+    }
+  }
+
+  return {
+    stats,
+    seasonLabel: `${labels.shortLabel} · All competitions`,
+    seasonYear,
+    previousStats,
+    previousSeasonLabel,
+    availableYears: years,
+  }
+}
+
 async function fetchAthleteLeagueSeasonStats(
   playerId: string,
   leagueSlug: string,
@@ -2002,13 +2302,18 @@ async function fetchAthleteLeagueSeasonStats(
   previousSeasonLabel: string | null
   availableYears: number[]
 }> {
-  // Past clubs must be loaded with ?team= — ?league= alone often returns the
-  // current club's competitions (or the wrong slug) after a transfer.
-  const url = teamId
-    ? `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?team=${encodeURIComponent(teamId)}`
-    : `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?league=${encodeURIComponent(leagueSlug)}`
-  const res = await fetch(url)
-  if (!res.ok) {
+  // Club seasons default to all competitions for that team stint.
+  if (teamId) {
+    return fetchAthleteAllCompetitionsSeasonStats(
+      playerId,
+      teamId,
+      preferredYear,
+      leagueSlug,
+    )
+  }
+
+  const payload = await fetchAthleteStatsPayload(playerId, { leagueSlug })
+  if (!payload) {
     return {
       stats: [],
       seasonLabel: null,
@@ -2018,7 +2323,6 @@ async function fetchAthleteLeagueSeasonStats(
       availableYears: [],
     }
   }
-  const payload = (await res.json()) as EspnAthleteStatsPayload
   const category = payload.categories?.[0]
   const rows = category?.statistics ?? []
   const availableYears = [
@@ -2081,19 +2385,16 @@ function isDomesticTableEspnCode(espnCode: string): boolean {
 }
 
 /**
- * Collect domestic-league seasons across every club stint (not just the current team).
- * ESPN's default athlete stats feed is scoped to the active club/league.
+ * Collect club seasons across every team stint for the Season stats board.
+ * One option per team/year — totals are loaded as all competitions.
  */
 async function fetchAthleteCareerDomesticSeasonOptions(
   playerId: string,
   fallbackEspnCode: string,
 ): Promise<LeagueSeasonOption[]> {
-  const seedRes = await fetch(
-    `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats`,
-  )
+  const seed = await fetchAthleteStatsPayload(playerId, {})
   let teamIds: string[] = []
-  if (seedRes.ok) {
-    const seed = (await seedRes.json()) as EspnAthleteStatsPayload
+  if (seed) {
     const teamFilter = seed.filters?.find((filter) => filter.name === 'team')
     teamIds = (teamFilter?.options ?? [])
       .map((option) => option.value)
@@ -2108,9 +2409,9 @@ async function fetchAthleteCareerDomesticSeasonOptions(
         const labels = await fetchSeasonLabels(fallbackEspnCode, year)
         return {
           year,
-          label: labels.label,
+          label: 'All competitions',
           shortLabel: labels.shortLabel,
-          key: `${fallbackEspnCode}:${year}`,
+          key: `${fallbackEspnCode}:all:${year}`,
           espnCode: fallbackEspnCode,
         } satisfies LeagueSeasonOption
       }),
@@ -2118,45 +2419,58 @@ async function fetchAthleteCareerDomesticSeasonOptions(
   }
 
   const perTeam = await mapPool(teamIds, 4, async (teamId) => {
-    const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?team=${encodeURIComponent(teamId)}`
-    const res = await fetch(url)
-    if (!res.ok) return [] as LeagueSeasonOption[]
-    const payload = (await res.json()) as EspnAthleteStatsPayload
-    const rows = payload.categories?.[0]?.statistics ?? []
-    const options: LeagueSeasonOption[] = []
-    for (const row of rows) {
+    const payload = await fetchAthleteStatsPayload(playerId, { teamId })
+    if (!payload) return [] as LeagueSeasonOption[]
+
+    const leagueFilter = payload.filters?.find((filter) => filter.name === 'league')
+    const competitiveCodes = (leagueFilter?.options ?? [])
+      .map((option) => option.value)
+      .filter((value): value is string => Boolean(value && isCompetitiveEspnCode(value)))
+
+    const years = new Set<number>()
+    const domesticCodeByYear = new Map<number, string>()
+
+    for (const row of payload.categories?.[0]?.statistics ?? []) {
       const year = row.season?.year
       const espnCode = row.leagueSlug
-      if (typeof year !== 'number' || !espnCode) continue
-      // Season stats board = domestic league tables only (skip cups / UCL / friendlies).
-      if (!isDomesticTableEspnCode(espnCode)) continue
-      const leagueMeta = payload.leagues?.[espnCode]
-      const seasonName =
-        row.season?.type?.name ||
-        row.season?.displayName ||
-        row.season?.shortDisplayName ||
-        String(year)
-      const leagueName =
-        leagueMeta?.displayName ||
-        leagueMeta?.name ||
-        LEAGUES.find((league) => league.espnCode === espnCode)?.name ||
-        espnCode
-      options.push({
+      if (typeof year !== 'number' || !espnCode || !isCompetitiveEspnCode(espnCode)) continue
+      years.add(year)
+      if (isDomesticTableEspnCode(espnCode) && !domesticCodeByYear.has(year)) {
+        domesticCodeByYear.set(year, espnCode)
+      }
+    }
+
+    // Pull years from each competition feed so cup-only seasons aren't missed.
+    await mapPool(competitiveCodes, 4, async (espnCode) => {
+      const compPayload = await fetchAthleteStatsPayload(playerId, { teamId, leagueSlug: espnCode })
+      for (const row of compPayload?.categories?.[0]?.statistics ?? []) {
+        const year = row.season?.year
+        if (typeof year !== 'number') continue
+        years.add(year)
+        if (isDomesticTableEspnCode(espnCode) && !domesticCodeByYear.has(year)) {
+          domesticCodeByYear.set(year, espnCode)
+        }
+      }
+      return true
+    })
+
+    return [...years].map((year) => {
+      const espnCode = domesticCodeByYear.get(year) || competitiveCodes[0] || fallbackEspnCode
+      return {
         year,
-        label: `${seasonName} · ${leagueName}`,
+        label: 'All competitions',
         shortLabel: formatSeasonShortLabel(year),
-        key: `${teamId}:${espnCode}:${year}`,
+        key: `${teamId}:all:${year}`,
         espnCode,
         teamId,
-      })
-    }
-    return options
+      } satisfies LeagueSeasonOption
+    })
   })
 
   const flat = perTeam.flat()
   const seen = new Set<string>()
   const unique = flat.filter((option) => {
-    const key = option.key ?? `${option.espnCode}:${option.year}`
+    const key = option.key ?? `${option.teamId}:${option.year}`
     if (seen.has(key)) return false
     seen.add(key)
     return true
@@ -2166,10 +2480,9 @@ async function fetchAthleteCareerDomesticSeasonOptions(
     (a, b) =>
       b.year - a.year ||
       (a.espnCode === fallbackEspnCode ? -1 : 0) - (b.espnCode === fallbackEspnCode ? -1 : 0) ||
-      (a.label || '').localeCompare(b.label || ''),
+      (a.teamId || '').localeCompare(b.teamId || ''),
   )
 
-  // Prefer ESPN's official short labels when we can resolve them quickly.
   return Promise.all(
     unique.map(async (option) => {
       if (!option.espnCode) return option
@@ -2177,10 +2490,8 @@ async function fetchAthleteCareerDomesticSeasonOptions(
         const labels = await fetchSeasonLabels(option.espnCode, option.year)
         return {
           ...option,
-          label: option.label.includes('·')
-            ? `${labels.label} · ${option.label.split('·').slice(1).join('·').trim()}`
-            : labels.label,
           shortLabel: labels.shortLabel,
+          label: 'All competitions',
         }
       } catch {
         return option
@@ -3132,7 +3443,12 @@ export async function fetchPlayerProfile(
     fetch(
       `https://site.api.espn.com/apis/common/v3/sports/soccer/${league.espnCode}/athletes/${playerId}/overview`,
     ),
-    fetchAthleteLeagueSeasonStats(playerId, league.espnCode),
+    fetchAthleteLeagueSeasonStats(
+      playerId,
+      league.espnCode,
+      undefined,
+      athlete.team?.id,
+    ),
   ])
 
   const bioJson = bioRes.ok ? ((await bioRes.json()) as EspnBioPayload) : { teamHistory: [] }
@@ -3162,7 +3478,7 @@ export async function fetchPlayerProfile(
       : buildOrderedSeasonStatsFromOverview(overviewJson, league.espnCode)
   const seasonStatsLabel =
     seasonStatsBundle.seasonLabel ||
-    (seasonStats.length > 0 ? `${league.name} season` : undefined)
+    (seasonStats.length > 0 ? 'All competitions' : undefined)
 
   const clubHistory: PlayerClubStint[] = []
   const nationalHistory: PlayerClubStint[] = []
