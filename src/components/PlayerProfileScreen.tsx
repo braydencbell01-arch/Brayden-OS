@@ -564,6 +564,7 @@ export function PlayerProfileScreen({
     seasons,
     seasonsLoading,
     selectedSeason,
+    selectedSeasonKey,
     selectSeason,
     statsLoading,
   } = usePlayerProfile(player.leagueId, player.id)
@@ -923,6 +924,7 @@ export function PlayerProfileScreen({
                 <SeasonPicker
                   seasons={seasons}
                   selectedSeason={selectedSeason ?? profile.seasonYear ?? null}
+                  selectedKey={selectedSeasonKey}
                   loading={seasonsLoading}
                   onSelect={selectSeason}
                   emptyLabel="No season stats years available"

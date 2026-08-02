@@ -139,6 +139,15 @@ export type LeagueSeasonOption = {
   label: string
   /** Compact picker label, e.g. "25/26" or "2025". */
   shortLabel: string
+  /**
+   * Stable picker id when year alone isn't unique (player career across clubs).
+   * Defaults to String(year) for league-scoped boards.
+   */
+  key?: string
+  /** ESPN league slug for player season stats loaded outside the nav league. */
+  espnCode?: string
+  /** ESPN team id for the club stint that owns this season row. */
+  teamId?: string
 }
 
 export type TeamRosterPlayer = {

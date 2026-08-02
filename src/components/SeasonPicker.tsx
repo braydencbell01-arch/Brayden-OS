@@ -1,25 +1,37 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { LeagueSeasonOption } from '../lib/stats/types'
 
+function optionKey(season: LeagueSeasonOption): string {
+  return season.key ?? String(season.year)
+}
+
 /** Scrollable season dropdown used across profiles (e.g. 25/26 → pick any year). */
 export function SeasonPicker({
   seasons,
   selectedSeason,
+  selectedKey,
   loading,
   onSelect,
   emptyLabel = 'No seasons available',
 }: {
   seasons: LeagueSeasonOption[]
   selectedSeason: number | null
+  /** When set, disambiguates transfer years / cross-club career rows. */
+  selectedKey?: string | null
   loading?: boolean
-  onSelect: (year: number) => void
+  onSelect: (year: number, option: LeagueSeasonOption) => void
   emptyLabel?: string
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const listId = useId()
   const selected =
-    seasons.find((season) => season.year === selectedSeason) || seasons[0] || null
+    (selectedKey
+      ? seasons.find((season) => optionKey(season) === selectedKey)
+      : null) ||
+    seasons.find((season) => season.year === selectedSeason) ||
+    seasons[0] ||
+    null
 
   useEffect(() => {
     if (!open) return
@@ -87,15 +99,15 @@ export function SeasonPicker({
           className="absolute left-0 right-0 z-20 mt-1 max-h-56 overflow-y-auto overscroll-contain border border-white/15 bg-pitch-deep shadow-lg"
         >
           {seasons.map((season) => {
-            const active = season.year === selected.year
+            const active = optionKey(season) === optionKey(selected)
             return (
               <button
-                key={season.year}
+                key={optionKey(season)}
                 type="button"
                 role="option"
                 aria-selected={active}
                 onClick={() => {
-                  onSelect(season.year)
+                  onSelect(season.year, season)
                   setOpen(false)
                 }}
                 className={`flex w-full items-baseline justify-between gap-3 px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-lime ${

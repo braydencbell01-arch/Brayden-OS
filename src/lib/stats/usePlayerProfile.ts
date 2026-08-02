@@ -21,6 +21,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   const [seasons, setSeasons] = useState<LeagueSeasonOption[]>([])
   const [seasonsLoading, setSeasonsLoading] = useState(false)
   const [selectedSeason, setSelectedSeason] = useState<number | null>(null)
+  const [selectedSeasonKey, setSelectedSeasonKey] = useState<string | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const requestId = useRef(0)
   // Dedicated generation for season-stats fetches so out-of-order responses
@@ -42,6 +43,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     setHasMoreRatings(false)
     setSeasons([])
     setSelectedSeason(null)
+    setSelectedSeasonKey(null)
     ratingsCursor.current = null
     try {
       const data = await fetchPlayerProfile(league, id)
@@ -53,44 +55,48 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       ratingsCursor.current = data.ratingsCursor
       setHasMoreRatings(!data.ratingsCursor.done)
 
-      // Build picker options from the remapped club league, not the nav/cup id.
-      const years = data.profile.availableSeasonYears ?? []
-      if (years.length > 0) {
-        setSeasonsLoading(true)
-        fetchPlayerSeasonOptions(data.profile.leagueId, id)
-          .then((options) => {
-            if (requestId.current !== req) return
-            const ordered =
-              options.length > 0
-                ? [...options].sort((a, b) => b.year - a.year)
-                : [...years]
-                    .sort((a, b) => b - a)
-                    .map((year) => ({
-                      year,
-                      label: `${year} season`,
-                      shortLabel: formatSeasonShortLabel(year),
-                    }))
-            setSeasons(ordered)
-            const top = ordered[0]?.year ?? null
-            // Don't override a season the user picked while options were loading.
-            if (top != null && !userPickedSeason.current) setSelectedSeason(top)
-          })
-          .catch(() => {
-            if (requestId.current !== req) return
-            setSeasons(
-              [...years]
-                .sort((a, b) => b - a)
-                .map((year) => ({
-                  year,
-                  label: `${year} season`,
-                  shortLabel: formatSeasonShortLabel(year),
-                })),
-            )
-          })
-          .finally(() => {
-            if (requestId.current === req) setSeasonsLoading(false)
-          })
-      }
+      // Career-wide domestic seasons (every club), not only the current team league.
+      setSeasonsLoading(true)
+      fetchPlayerSeasonOptions(data.profile.leagueId, id)
+        .then((options) => {
+          if (requestId.current !== req) return
+          const years = data.profile.availableSeasonYears ?? []
+          const ordered =
+            options.length > 0
+              ? [...options].sort((a, b) => b.year - a.year)
+              : [...years]
+                  .sort((a, b) => b - a)
+                  .map((year) => ({
+                    year,
+                    label: `${year} season`,
+                    shortLabel: formatSeasonShortLabel(year),
+                    key: String(year),
+                  }))
+          setSeasons(ordered)
+          const top = ordered[0] ?? null
+          // Don't override a season the user picked while options were loading.
+          if (top != null && !userPickedSeason.current) {
+            setSelectedSeason(top.year)
+            setSelectedSeasonKey(top.key ?? String(top.year))
+          }
+        })
+        .catch(() => {
+          if (requestId.current !== req) return
+          const years = data.profile.availableSeasonYears ?? []
+          setSeasons(
+            [...years]
+              .sort((a, b) => b - a)
+              .map((year) => ({
+                year,
+                label: `${year} season`,
+                shortLabel: formatSeasonShortLabel(year),
+                key: String(year),
+              })),
+          )
+        })
+        .finally(() => {
+          if (requestId.current === req) setSeasonsLoading(false)
+        })
 
       // Keep season stats aligned with the newest year when profile loaded another.
       if (
@@ -135,16 +141,25 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
   }, [])
 
   const selectSeason = useCallback(
-    (year: number) => {
+    (year: number, option?: LeagueSeasonOption) => {
       if (!playerId || !profile) return
-      if (selectedSeason === year) return
+      const nextKey = option?.key ?? selectedSeasonKey ?? String(year)
+      if (selectedSeason === year && selectedSeasonKey === nextKey && option == null) return
+      if (option?.key && selectedSeasonKey === option.key) return
       userPickedSeason.current = true
       setSelectedSeason(year)
+      setSelectedSeasonKey(nextKey)
       setStatsLoading(true)
       // Bump the season-stats generation so a slower earlier request can't
       // land after this one and show the wrong season.
       const req = ++seasonStatsReq.current
-      fetchPlayerSeasonStatsForYear(profile.leagueId, playerId, year)
+      const espnCode =
+        option?.espnCode ||
+        seasons.find((row) => (row.key ?? String(row.year)) === nextKey)?.espnCode
+      const teamId =
+        option?.teamId ||
+        seasons.find((row) => (row.key ?? String(row.year)) === nextKey)?.teamId
+      fetchPlayerSeasonStatsForYear(profile.leagueId, playerId, year, espnCode, teamId)
         .then((bundle) => {
           if (seasonStatsReq.current !== req) return
           // Keep picker honest — only accept rows for the requested year.
@@ -168,7 +183,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
           if (seasonStatsReq.current === req) setStatsLoading(false)
         })
     },
-    [playerId, profile, selectedSeason],
+    [playerId, profile, seasons, selectedSeason, selectedSeasonKey],
   )
 
   const loadMoreRatings = useCallback(async () => {
@@ -230,6 +245,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       setHasMoreRatings(false)
       setSeasons([])
       setSelectedSeason(null)
+      setSelectedSeasonKey(null)
       setStatsLoading(false)
       ratingsCursor.current = null
       return
@@ -250,6 +266,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
     seasons,
     seasonsLoading,
     selectedSeason,
+    selectedSeasonKey,
     selectSeason,
     statsLoading,
   }

@@ -283,17 +283,6 @@ export function HomeSearch({
             Clear
           </button>
         ) : null}
-        <button
-          type="submit"
-          aria-label="Search"
-          title="Enter"
-          className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-[#2563eb] px-3 py-2 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af]"
-        >
-          Enter
-          <span aria-hidden className="text-sm font-semibold leading-none">
-            ↵
-          </span>
-        </button>
       </form>
 
       {showPanel ? (

@@ -1304,6 +1304,11 @@ type EspnOverviewPayload = {
 }
 
 type EspnAthleteStatsPayload = {
+  filters?: Array<{
+    name?: string
+    value?: string
+    options?: Array<{ value?: string; displayValue?: string }>
+  }>
   leagues?: Record<
     string,
     {
@@ -1500,6 +1505,7 @@ async function fetchAthleteLeagueSeasonStats(
   playerId: string,
   leagueSlug: string,
   preferredYear?: number,
+  teamId?: string,
 ): Promise<{
   stats: PlayerSeasonStatLine[]
   seasonLabel: string | null
@@ -1508,7 +1514,11 @@ async function fetchAthleteLeagueSeasonStats(
   previousSeasonLabel: string | null
   availableYears: number[]
 }> {
-  const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${playerId}/stats?league=${encodeURIComponent(leagueSlug)}`
+  // Past clubs must be loaded with ?team= — ?league= alone often returns the
+  // current club's competitions (or the wrong slug) after a transfer.
+  const url = teamId
+    ? `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?team=${encodeURIComponent(teamId)}`
+    : `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?league=${encodeURIComponent(leagueSlug)}`
   const res = await fetch(url)
   if (!res.ok) {
     return {
@@ -1577,23 +1587,127 @@ async function fetchAthleteLeagueSeasonStats(
   }
 }
 
-/** Season years available for a player's club-league season stats board. */
+function isDomesticTableEspnCode(espnCode: string): boolean {
+  const league = LEAGUES.find((item) => item.espnCode === espnCode)
+  return Boolean(league && league.kind === 'domestic' && league.format === 'league')
+}
+
+/**
+ * Collect domestic-league seasons across every club stint (not just the current team).
+ * ESPN's default athlete stats feed is scoped to the active club/league.
+ */
+async function fetchAthleteCareerDomesticSeasonOptions(
+  playerId: string,
+  fallbackEspnCode: string,
+): Promise<LeagueSeasonOption[]> {
+  const seedRes = await fetch(
+    `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats`,
+  )
+  let teamIds: string[] = []
+  if (seedRes.ok) {
+    const seed = (await seedRes.json()) as EspnAthleteStatsPayload
+    const teamFilter = seed.filters?.find((filter) => filter.name === 'team')
+    teamIds = (teamFilter?.options ?? [])
+      .map((option) => option.value)
+      .filter((value): value is string => Boolean(value && /^\d+$/.test(value)))
+  }
+
+  // If filters are missing, still return the current-league years.
+  if (teamIds.length === 0) {
+    const bundle = await fetchAthleteLeagueSeasonStats(playerId, fallbackEspnCode)
+    return Promise.all(
+      bundle.availableYears.map(async (year) => {
+        const labels = await fetchSeasonLabels(fallbackEspnCode, year)
+        return {
+          year,
+          label: labels.label,
+          shortLabel: labels.shortLabel,
+          key: `${fallbackEspnCode}:${year}`,
+          espnCode: fallbackEspnCode,
+        } satisfies LeagueSeasonOption
+      }),
+    )
+  }
+
+  const perTeam = await mapPool(teamIds, 4, async (teamId) => {
+    const url = `https://site.web.api.espn.com/apis/common/v3/sports/soccer/athletes/${encodeURIComponent(playerId)}/stats?team=${encodeURIComponent(teamId)}`
+    const res = await fetch(url)
+    if (!res.ok) return [] as LeagueSeasonOption[]
+    const payload = (await res.json()) as EspnAthleteStatsPayload
+    const rows = payload.categories?.[0]?.statistics ?? []
+    const options: LeagueSeasonOption[] = []
+    for (const row of rows) {
+      const year = row.season?.year
+      const espnCode = row.leagueSlug
+      if (typeof year !== 'number' || !espnCode) continue
+      // Season stats board = domestic league tables only (skip cups / UCL / friendlies).
+      if (!isDomesticTableEspnCode(espnCode)) continue
+      const leagueMeta = payload.leagues?.[espnCode]
+      const seasonName =
+        row.season?.type?.name ||
+        row.season?.displayName ||
+        row.season?.shortDisplayName ||
+        String(year)
+      const leagueName =
+        leagueMeta?.displayName ||
+        leagueMeta?.name ||
+        LEAGUES.find((league) => league.espnCode === espnCode)?.name ||
+        espnCode
+      options.push({
+        year,
+        label: `${seasonName} · ${leagueName}`,
+        shortLabel: formatSeasonShortLabel(year),
+        key: `${teamId}:${espnCode}:${year}`,
+        espnCode,
+        teamId,
+      })
+    }
+    return options
+  })
+
+  const flat = perTeam.flat()
+  const seen = new Set<string>()
+  const unique = flat.filter((option) => {
+    const key = option.key ?? `${option.espnCode}:${option.year}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+
+  unique.sort(
+    (a, b) =>
+      b.year - a.year ||
+      (a.espnCode === fallbackEspnCode ? -1 : 0) - (b.espnCode === fallbackEspnCode ? -1 : 0) ||
+      (a.label || '').localeCompare(b.label || ''),
+  )
+
+  // Prefer ESPN's official short labels when we can resolve them quickly.
+  return Promise.all(
+    unique.map(async (option) => {
+      if (!option.espnCode) return option
+      try {
+        const labels = await fetchSeasonLabels(option.espnCode, option.year)
+        return {
+          ...option,
+          label: option.label.includes('·')
+            ? `${labels.label} · ${option.label.split('·').slice(1).join('·').trim()}`
+            : labels.label,
+          shortLabel: labels.shortLabel,
+        }
+      } catch {
+        return option
+      }
+    }),
+  )
+}
+
+/** Season years available for a player's season stats board (every club stint). */
 export async function fetchPlayerSeasonOptions(
   leagueId: LeagueId,
   playerId: string,
 ): Promise<LeagueSeasonOption[]> {
   const league = getLeague(leagueId)
-  const bundle = await fetchAthleteLeagueSeasonStats(playerId, league.espnCode)
-  return Promise.all(
-    bundle.availableYears.map(async (year) => {
-      const labels = await fetchSeasonLabels(league.espnCode, year)
-      return {
-        year,
-        label: labels.label,
-        shortLabel: labels.shortLabel,
-      } satisfies LeagueSeasonOption
-    }),
-  )
+  return fetchAthleteCareerDomesticSeasonOptions(playerId, league.espnCode)
 }
 
 /** Reload a player's season stats (+ prior year compare) for a chosen season. */
@@ -1601,6 +1715,8 @@ export async function fetchPlayerSeasonStatsForYear(
   leagueId: LeagueId,
   playerId: string,
   seasonYear?: number,
+  espnCode?: string,
+  teamId?: string,
 ): Promise<{
   stats: PlayerSeasonStatLine[]
   seasonLabel: string | null
@@ -1609,7 +1725,8 @@ export async function fetchPlayerSeasonStatsForYear(
   previousSeasonLabel: string | null
 }> {
   const league = getLeague(leagueId)
-  const bundle = await fetchAthleteLeagueSeasonStats(playerId, league.espnCode, seasonYear)
+  const slug = espnCode || league.espnCode
+  const bundle = await fetchAthleteLeagueSeasonStats(playerId, slug, seasonYear, teamId)
   return {
     stats: bundle.stats,
     seasonLabel: bundle.seasonLabel,
