@@ -161,6 +161,35 @@ export type LeagueSeasonOption = {
   teamId?: string
 }
 
+/** Player slot on the Overview “most used starting 11” pitch. */
+export type MostUsedXiPlayer = {
+  id: string
+  name: string
+  shortName: string
+  jersey?: string
+  photoUrl: string
+  positionAbbrev: string
+  formationPlace: number
+  starts: number
+  goals: number
+  assists: number
+  avgRating: number | null
+  /** 0–100 left→right on the pitch. */
+  x: number
+  /** 0–100 attack(top)→goalkeeper(bottom). */
+  y: number
+}
+
+/** Aggregated most-used XI for a club season (all competitions). */
+export type MostUsedStartingXi = {
+  teamId: string
+  seasonYear: number
+  formation: string
+  matchesSampled: number
+  players: MostUsedXiPlayer[]
+  fetchedAt: number
+}
+
 export type TeamRosterPlayer = {
   id: string
   name: string

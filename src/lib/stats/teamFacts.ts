@@ -14,6 +14,12 @@ export type TeamClubFacts = {
   country: string
   city?: string
   stadium?: string
+  /** Seating capacity when known. */
+  stadiumCapacity?: number
+  /** Playing surface label (e.g. Grass). */
+  stadiumSurface?: string
+  /** Year the current stadium opened. */
+  stadiumOpenedYear?: number
   foundedYear?: number
   standingSummary?: string
   logoUrl?: string
@@ -70,6 +76,9 @@ type SportsDbTeam = {
   strCountry?: string
   strStadium?: string
   strStadiumLocation?: string
+  intStadiumCapacity?: string | number
+  strStadiumCapacity?: string
+  strSurface?: string
   intFormedYear?: string
   strLeague?: string
   strKeywords?: string
@@ -234,12 +243,57 @@ async function fetchWikipediaTrophies(teamName: string): Promise<{
   }
 }
 
+function parseCapacity(raw: string | number | undefined): number | undefined {
+  if (raw == null || raw === '') return undefined
+  const n = typeof raw === 'number' ? raw : Number(String(raw).replace(/[^\d]/g, ''))
+  return Number.isFinite(n) && n > 500 && n < 300_000 ? n : undefined
+}
+
+async function fetchStadiumMeta(stadiumName: string): Promise<{
+  openedYear?: number
+  surface?: string
+  capacity?: number
+}> {
+  try {
+    const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
+      stadiumName.replace(/ /g, '_'),
+    )}`
+    const res = await fetch(summaryUrl, { headers: { Accept: 'application/json' } })
+    if (!res.ok) return {}
+    const json = (await res.json()) as { extract?: string }
+    const extract = json.extract || ''
+    const opened = extract.match(
+      /(?:opened|inaugurated|completed)\s+(?:on\s+)?(?:\d{1,2}\s+\w+\s+)?(\d{4})/i,
+    )
+    const openedYear = opened ? Number(opened[1]) : undefined
+    const surfaceMatch = extract.match(
+      /\b(grass|hybrid grass|artificial turf|artificial|astroturf|fieldturf)\b/i,
+    )
+    let surface: string | undefined
+    if (surfaceMatch) {
+      const raw = surfaceMatch[1].toLowerCase()
+      surface = raw.includes('artificial') || raw.includes('turf') ? 'Artificial' : 'Grass'
+    }
+    const capacityMatch = extract.match(/capacity of ([\d,]+)/i)
+    return {
+      openedYear:
+        openedYear && openedYear > 1850 && openedYear < 2100 ? openedYear : undefined,
+      surface,
+      capacity: parseCapacity(capacityMatch?.[1]),
+    }
+  } catch {
+    return {}
+  }
+}
+
 async function fetchSportsDbFacts(teamName: string): Promise<{
   country?: string
   stadium?: string
   city?: string
   foundedYear?: number
   nickname?: string
+  stadiumCapacity?: number
+  stadiumSurface?: string
 }> {
   try {
     const url = new URL('https://www.thesportsdb.com/api/v1/json/3/searchteams.php')
@@ -256,6 +310,8 @@ async function fetchSportsDbFacts(teamName: string): Promise<{
       city: team.strStadiumLocation || undefined,
       foundedYear: parseFoundedYear(team.intFormedYear),
       nickname,
+      stadiumCapacity: parseCapacity(team.intStadiumCapacity ?? team.strStadiumCapacity),
+      stadiumSurface: team.strSurface?.trim() || undefined,
     }
   } catch {
     return {}
@@ -296,6 +352,10 @@ export async function fetchTeamClubFacts(
     sportsDb.country ||
     (isNational ? siteTeam?.location || league.country : league.country)
 
+  const stadium = coreJson.venue?.fullName || sportsDb.stadium
+  const stadiumMeta =
+    !isNational && stadium ? await fetchStadiumMeta(stadium) : {}
+
   const primaryRaw = siteTeam?.color || coreJson.color
   const secondaryRaw = siteTeam?.alternateColor || coreJson.alternateColor
   const logoFromApi = pickEspnLogoUrl(siteTeam?.logos, 'default')
@@ -310,7 +370,10 @@ export async function fetchTeamClubFacts(
     leagueName: siteTeam?.defaultLeague?.name || league.name,
     country,
     city: coreJson.venue?.address?.city || sportsDb.city,
-    stadium: coreJson.venue?.fullName || sportsDb.stadium,
+    stadium,
+    stadiumCapacity: sportsDb.stadiumCapacity ?? stadiumMeta.capacity,
+    stadiumSurface: sportsDb.stadiumSurface || stadiumMeta.surface,
+    stadiumOpenedYear: stadiumMeta.openedYear,
     foundedYear: sportsDb.foundedYear,
     standingSummary: siteTeam?.standingSummary,
     logoUrl,

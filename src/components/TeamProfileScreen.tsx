@@ -31,8 +31,10 @@ import {
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
+import { useMostUsedStartingXi } from '../lib/stats/useMostUsedStartingXi'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { useTeamSchedule } from '../lib/stats/useTeamSchedule'
+import { useTeamSeasons } from '../lib/stats/useTeamSeasons'
 import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
 import { teamAccentFromFacts } from '../lib/stats/teamFacts'
 import { teamLogoUrl, withAlpha } from '../lib/stats/branding'
@@ -44,6 +46,7 @@ import { ProfileAccordion } from './ProfileAccordion'
 import { ProfileShell } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
 import { TeamRosterPanel } from './TeamRosterPanel'
+import { TeamSeasonXiPitch } from './TeamSeasonXiPitch'
 import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
 
 type TeamTab = 'overview' | 'matches' | 'table' | 'stats' | 'squad'
@@ -53,6 +56,7 @@ type OverviewSection =
   | 'form'
   | 'transfers'
   | 'trophies'
+  | 'stadium'
 
 const TABS: Array<{ id: TeamTab; label: string; clubsOnly?: boolean }> = [
   { id: 'overview', label: 'Overview' },
@@ -147,6 +151,7 @@ export function TeamProfileScreen({
     form: true,
     transfers: false,
     trophies: false,
+    stadium: true,
   })
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const matchesScrollRef = useRef<HTMLDivElement>(null)
@@ -154,9 +159,23 @@ export function TeamProfileScreen({
 
   const rosterEnabled = tab === 'squad'
   const leadersEnabled = tab === 'stats' || tab === 'overview'
+  const overviewXiEnabled = tab === 'overview' && !isNational
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
   const leaders = useTeamStatLeaders(team.leagueId, team.id, !isNational && leadersEnabled)
   const schedule = useTeamSchedule(team.id, team.leagueId, true)
+  const overviewSeasons = useTeamSeasons(
+    team.leagueId,
+    team.id,
+    overviewXiEnabled,
+    'all-competitions',
+  )
+  const mostUsedXi = useMostUsedStartingXi(
+    team.leagueId,
+    team.id,
+    overviewSeasons.selectedSeason,
+    overviewXiEnabled,
+    overviewSeasons.selectedEspnCode,
+  )
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
@@ -249,6 +268,7 @@ export function TeamProfileScreen({
       form: true,
       transfers: false,
       trophies: false,
+      stadium: true,
     })
   }, [team.id])
 
@@ -478,6 +498,23 @@ export function TeamProfileScreen({
               )}
             </OverviewCard>
 
+            {!isNational ? (
+              <TeamSeasonXiPitch
+                data={mostUsedXi.data}
+                loading={mostUsedXi.loading || overviewSeasons.seasonsLoading}
+                error={mostUsedXi.error}
+                seasons={overviewSeasons.seasons}
+                seasonsLoading={overviewSeasons.seasonsLoading}
+                selectedSeason={overviewSeasons.selectedSeason}
+                selectedKey={overviewSeasons.selectedKey}
+                onSelectSeason={overviewSeasons.selectSeason}
+                onOpenPlayer={onOpenPlayer}
+                leagueId={team.leagueId}
+                teamId={team.id}
+                teamName={displayName}
+              />
+            ) : null}
+
             <OverviewCard
               title="Next opponent"
               subtitle={
@@ -642,6 +679,75 @@ export function TeamProfileScreen({
                 <p className="text-sm text-mist/70">{MISSING_LONG}</p>
               )}
             </OverviewCard>
+
+            {!isNational ? (
+              <OverviewCard
+                title="Stadium"
+                subtitle={facts.data?.stadium || undefined}
+                open={openOverview.stadium}
+                onToggle={() => toggleOverview('stadium')}
+              >
+                {facts.loading && !facts.data?.stadium ? (
+                  <p className="text-sm text-mist/70">Loading stadium…</p>
+                ) : !facts.data?.stadium ? (
+                  <p className="text-sm text-mist/70">{MISSING_LONG}</p>
+                ) : (
+                  <div>
+                    <div className="flex items-start gap-3">
+                      <span
+                        className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center border border-white/12 bg-white/[0.04] text-mist/70"
+                        aria-hidden
+                      >
+                        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+                          <path
+                            d="M3 18h18M5 18V9l7-4 7 4v9M9 18v-4h6v4"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-cream">{facts.data.stadium}</p>
+                        <p className="mt-0.5 text-xs text-mist/65">
+                          {[facts.data.city, facts.data.country].filter(Boolean).join(', ') ||
+                            league.country}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/10 pt-3">
+                      <div className="min-w-0 text-center">
+                        <p className="text-sm font-semibold text-cream">
+                          {facts.data.stadiumSurface || MISSING_LONG}
+                        </p>
+                        <p className="mt-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
+                          Surface
+                        </p>
+                      </div>
+                      <div className="min-w-0 text-center border-x border-white/10">
+                        <p className="text-sm font-semibold tabular-nums text-cream">
+                          {facts.data.stadiumCapacity != null
+                            ? facts.data.stadiumCapacity.toLocaleString()
+                            : MISSING_LONG}
+                        </p>
+                        <p className="mt-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
+                          Capacity
+                        </p>
+                      </div>
+                      <div className="min-w-0 text-center">
+                        <p className="text-sm font-semibold tabular-nums text-cream">
+                          {facts.data.stadiumOpenedYear ?? MISSING_LONG}
+                        </p>
+                        <p className="mt-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
+                          Opened
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </OverviewCard>
+            ) : null}
           </div>
         ) : null}
 
