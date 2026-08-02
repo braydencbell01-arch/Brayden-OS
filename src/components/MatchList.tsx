@@ -246,6 +246,7 @@ export function MatchList({
   showLeague = false,
   flat = false,
   emptyLabel,
+  nextMatchId,
   onOpenTeam,
   onOpenPlayer,
   onOpenLeague,
@@ -258,6 +259,8 @@ export function MatchList({
   /** Divider rows instead of nested bordered cards (for league shells). */
   flat?: boolean
   emptyLabel: string
+  /** When set, renders a "Next Match" label above that row (team timeline). */
+  nextMatchId?: string | null
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
   onOpenLeague?: (id: LeagueId) => void
@@ -274,20 +277,32 @@ export function MatchList({
 
   return (
     <ul className={flat ? 'flex flex-col' : 'flex flex-col gap-2'}>
-      {matches.map((match) => (
-        <li key={match.id}>
-          <ExpandableMatchRow
-            match={match}
-            allMatches={briefingPool}
-            showLeague={showLeague}
-            flat={flat}
-            isFavorite={isFavoriteMatch(match, leagueIds, teamIds)}
-            onOpenTeam={onOpenTeam}
-            onOpenPlayer={onOpenPlayer}
-            onOpenLeague={onOpenLeague}
-          />
-        </li>
-      ))}
+      {matches.map((match) => {
+        const isNext = Boolean(nextMatchId && match.id === nextMatchId)
+        return (
+          <li
+            key={match.id}
+            data-match-id={match.id}
+            data-next-match={isNext ? 'true' : undefined}
+          >
+            {isNext ? (
+              <p className="mb-1.5 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime">
+                Next Match
+              </p>
+            ) : null}
+            <ExpandableMatchRow
+              match={match}
+              allMatches={briefingPool}
+              showLeague={showLeague}
+              flat={flat}
+              isFavorite={isFavoriteMatch(match, leagueIds, teamIds)}
+              onOpenTeam={onOpenTeam}
+              onOpenPlayer={onOpenPlayer}
+              onOpenLeague={onOpenLeague}
+            />
+          </li>
+        )
+      })}
     </ul>
   )
 }

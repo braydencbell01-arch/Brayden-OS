@@ -10,11 +10,10 @@ import {
 } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
-  groupMatchesByDate,
+  matchesForTeam,
   mergeTeamMatches,
   nextMatchForTeam,
   recentFormMatchesForTeam,
-  splitTeamFixtures,
   teamResult,
   teamSeasonCompetitionIds,
   type Match,
@@ -150,7 +149,6 @@ export function TeamProfileScreen({
     trophies: false,
   })
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
-  const [loadingEarlier, setLoadingEarlier] = useState(false)
   const matchesScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
 
@@ -177,9 +175,9 @@ export function TeamProfileScreen({
     [teamMatches, team.id],
   )
 
-  const { recent, upcoming } = useMemo(
-    () => splitTeamFixtures(teamMatches, team.id, todayKey),
-    [teamMatches, team.id, todayKey],
+  const timelineMatches = useMemo(
+    () => matchesForTeam(teamMatches, team.id),
+    [teamMatches, team.id],
   )
 
   const nextMatch = useMemo(
@@ -201,11 +199,6 @@ export function TeamProfileScreen({
     }
   }, [nextMatch, standings.rows, team.id])
 
-  const upcomingGrouped = useMemo(() => groupMatchesByDate(upcoming), [upcoming])
-  const recentGrouped = useMemo(
-    () => groupMatchesByDate(recent).slice().reverse(),
-    [recent],
-  )
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
   const fixturesLoading = loading || schedule.loading
@@ -283,7 +276,6 @@ export function TeamProfileScreen({
   const loadEarlierResults = useCallback(() => {
     if (!onNeedPastRange || loadingMoreRef.current || pastExhausted) return
     loadingMoreRef.current = true
-    setLoadingEarlier(true)
     const beforeCount = matchCountRef.current
     pendingPastCountRef.current = beforeCount
     const next = pastHorizonDays + CALENDAR_PAST_CHUNK_DAYS
@@ -291,7 +283,6 @@ export function TeamProfileScreen({
     const today = startOfDay(new Date())
     void Promise.resolve(onNeedPastRange(addDays(today, -next), today)).finally(() => {
       loadingMoreRef.current = false
-      setLoadingEarlier(false)
       window.setTimeout(() => {
         if (
           pendingPastCountRef.current === beforeCount &&
@@ -306,11 +297,63 @@ export function TeamProfileScreen({
     })
   }, [onNeedPastRange, pastExhausted, pastHorizonDays])
 
+  const centeredNextRef = useRef<string | null>(null)
+  const pendingTopLoadRef = useRef<{ height: number; top: number } | null>(null)
+
+  const scrollNextMatchToCenter = useCallback(() => {
+    const scroller = matchesScrollRef.current
+    if (!scroller) return
+    const target = scroller.querySelector<HTMLElement>('[data-next-match="true"]')
+    if (!target) return
+    const scrollerRect = scroller.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    const delta =
+      targetRect.top -
+      scrollerRect.top -
+      scroller.clientHeight / 2 +
+      targetRect.height / 2
+    scroller.scrollTop += delta
+  }, [])
+
+  useEffect(() => {
+    if (tab !== 'matches') {
+      centeredNextRef.current = null
+      return
+    }
+    if (!nextMatch || timelineMatches.length === 0) return
+    // Center once per team/next fixture — don't yank scroll when older results prepend.
+    const anchor = `${team.id}:${nextMatch.id}`
+    if (centeredNextRef.current === anchor) return
+    const id = window.requestAnimationFrame(() => {
+      scrollNextMatchToCenter()
+      centeredNextRef.current = anchor
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [tab, team.id, nextMatch, timelineMatches.length, scrollNextMatchToCenter])
+
+  useEffect(() => {
+    const pending = pendingTopLoadRef.current
+    const scroller = matchesScrollRef.current
+    if (!pending || !scroller || tab !== 'matches') return
+    const delta = scroller.scrollHeight - pending.height
+    if (delta > 0) {
+      scroller.scrollTop = pending.top + delta
+      pendingTopLoadRef.current = null
+    }
+  }, [timelineMatches.length, tab])
+
   const onMatchesScroll = () => {
     const scroller = matchesScrollRef.current
     if (!scroller || tab !== 'matches') return
-    const remaining = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight
-    if (remaining < 120) loadEarlierResults()
+    // Past matches sit above the next fixture — load more when near the top.
+    if (scroller.scrollTop < 120) {
+      if (!onNeedPastRange || loadingMoreRef.current || pastExhausted) return
+      pendingTopLoadRef.current = {
+        height: scroller.scrollHeight,
+        top: scroller.scrollTop,
+      }
+      loadEarlierResults()
+    }
   }
 
   const accent = teamAccentFromFacts(facts.data)
@@ -607,93 +650,25 @@ export function TeamProfileScreen({
             ref={matchesScrollRef}
             onScroll={onMatchesScroll}
             className="max-h-[min(70dvh,40rem)] overflow-y-auto overscroll-contain pr-1"
+            aria-label="Team match timeline"
           >
-            {fixturesLoading && upcomingGrouped.length === 0 && recentGrouped.length === 0 ? (
+            {fixturesLoading && timelineMatches.length === 0 ? (
               <p className="text-sm text-mist/70">Loading matches…</p>
+            ) : (error || schedule.error) && timelineMatches.length === 0 ? (
+              <p className="text-sm text-mist/80">{error || schedule.error}</p>
             ) : (
-              <>
-                {(error || schedule.error) &&
-                upcomingGrouped.length === 0 &&
-                recentGrouped.length === 0 ? (
-                  <p className="text-sm text-mist/80">{error || schedule.error}</p>
-                ) : null}
-
-                <section aria-label="Upcoming matches">
-                  <h2 className="mb-3 font-display text-xl tracking-wide text-cream">
-                    Upcoming
-                  </h2>
-                  {upcomingGrouped.length === 0 ? (
-                    <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
-                  ) : (
-                    <div className="flex flex-col gap-5">
-                      {upcomingGrouped.map(({ dateKey, matches: dayMatches }) => (
-                        <section key={`up-${dateKey}`} aria-label={formatMatchDayHeading(dateKey)}>
-                          <h3 className="mb-2 px-0.5 text-sm font-semibold text-mist/70">
-                            {formatMatchDayHeading(dateKey)}
-                          </h3>
-                          <MatchList
-                            matches={dayMatches}
-                            onOpenTeam={onOpenTeam}
-                            onOpenPlayer={onOpenPlayer}
-                            onOpenLeague={onOpenLeague}
-                            favoriteLeagueIds={favorites.leagueIds}
-                            favoriteTeamIds={favorites.teamIds}
-                            emptyLabel="No matches"
-                          />
-                        </section>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <section className="mt-8" aria-label="Past matches">
-                  <h2 className="mb-3 font-display text-xl tracking-wide text-cream">
-                    Results
-                  </h2>
-                  {recentGrouped.length === 0 ? (
-                    <p className="text-sm text-mist/70">
-                      No recent results in the current window.
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-5">
-                      {recentGrouped.map(({ dateKey, matches: dayMatches }) => (
-                        <section
-                          key={`past-${dateKey}`}
-                          aria-label={formatMatchDayHeading(dateKey)}
-                        >
-                          <h3 className="mb-2 px-0.5 text-sm font-semibold text-mist/70">
-                            {formatMatchDayHeading(dateKey)}
-                          </h3>
-                          <MatchList
-                            matches={dayMatches}
-                            onOpenTeam={onOpenTeam}
-                            onOpenPlayer={onOpenPlayer}
-                            onOpenLeague={onOpenLeague}
-                            favoriteLeagueIds={favorites.leagueIds}
-                            favoriteTeamIds={favorites.teamIds}
-                            emptyLabel="No matches"
-                          />
-                        </section>
-                      ))}
-                    </div>
-                  )}
-                </section>
-
-                <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
-                  <button
-                    type="button"
-                    onClick={loadEarlierResults}
-                    disabled={loadingEarlier || pastExhausted || !onNeedPastRange}
-                    className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
-                  >
-                    {loadingEarlier
-                      ? 'Loading earlier…'
-                      : pastExhausted
-                        ? 'No earlier results in range'
-                        : `Load earlier results · ${pastHorizonDays}+ days`}
-                  </button>
-                </div>
-              </>
+              <MatchList
+                matches={timelineMatches}
+                allMatches={teamMatches}
+                showLeague
+                nextMatchId={nextMatch?.id}
+                onOpenTeam={onOpenTeam}
+                onOpenPlayer={onOpenPlayer}
+                onOpenLeague={onOpenLeague}
+                favoriteLeagueIds={favorites.leagueIds}
+                favoriteTeamIds={favorites.teamIds}
+                emptyLabel="No matches yet."
+              />
             )}
           </div>
         ) : null}
