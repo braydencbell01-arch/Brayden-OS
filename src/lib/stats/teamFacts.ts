@@ -33,12 +33,22 @@ export type TeamClubFacts = {
   trophySource?: string
   /** Parsed honour lines (e.g. "Serie A · 1969–70"). */
   trophies?: TeamTrophyTitle[]
+  /** Individual trophy wins, newest first. */
+  trophyWins?: TeamTrophyWin[]
   fetchedAt: number
 }
 
 export type TeamTrophyTitle = {
   competition: string
   seasons: string
+}
+
+/** One competition title won in a specific season/year. */
+export type TeamTrophyWin = {
+  competition: string
+  season: string
+  /** Sort key — end year of a cross-year season when available. */
+  sortYear: number
 }
 
 type EspnSiteTeamPayload = {
@@ -128,51 +138,274 @@ async function resolveWikipediaTitle(teamName: string): Promise<string | null> {
   )
 }
 
-function stripWikiHtml(raw: string): string {
+function decodeWikiEntities(raw: string): string {
   return raw
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<[^>]+>/g, '\n')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
     .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+}
+
+function stripWikiHtml(raw: string): string {
+  return decodeWikiEntities(
+    raw
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<[^>]+>/g, '\n'),
+  ).replace(/\n+/g, '\n')
+}
+
+function cellText(html: string): string {
+  return decodeWikiEntities(html.replace(/<[^>]+>/g, ' '))
+    .replace(/\[\s*(?:note\s*)?\d+\s*\]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function seasonSortYear(season: string): number {
+  const range = season.match(/(20\d{2}|19\d{2})\s*[–/-]\s*(\d{2}|\d{4})/)
+  if (range) {
+    const start = Number(range[1])
+    const endRaw = range[2]
+    const end =
+      endRaw.length === 2 ? Number(String(start).slice(0, 2) + endRaw) : Number(endRaw)
+    return Number.isFinite(end) ? end : start
+  }
+  const single = season.match(/(20\d{2}|19\d{2})/)
+  return single ? Number(single[1]) : 0
+}
+
+function extractSeasonTokens(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((part) =>
+      part
+        .replace(/\[\s*[^\]]*\]/g, '')
+        .replace(/\(\s*shared\s*\)/gi, '')
+        .replace(/[*†‡#]+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    )
+    .filter((part) => /\d{4}/.test(part))
+}
+
+function cleanCompetitionName(raw: string): string {
+  const cleaned = raw
+    .replace(/\(\s*level\s*\d+\s*\)/gi, '')
+    .replace(/\(\s*Tier\s*\d+\s*\)/gi, '')
+    .replace(/\[\s*[^\]]*\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const parts = cleaned.split(/\s*\/\s*/).map((part) => part.trim()).filter(Boolean)
+  return parts[parts.length - 1] || cleaned
+}
+
+function finalizeTrophyWins(wins: TeamTrophyWin[]): TeamTrophyWin[] {
+  wins.sort(
+    (a, b) =>
+      b.sortYear - a.sortYear ||
+      b.season.localeCompare(a.season) ||
+      a.competition.localeCompare(b.competition),
+  )
+  const seen = new Set<string>()
+  return wins.filter((win) => {
+    const key = `${win.competition.toLowerCase()}|${win.season}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+/**
+ * Parse Wikipedia "Honours" tables (Competition / Titles / Seasons).
+ * Used by Arsenal, City, Barcelona, etc.
+ */
+export function parseWikipediaHonoursTable(html: string): TeamTrophyWin[] {
+  const wins: TeamTrophyWin[] = []
+  const tables = html.match(/<table[\s\S]*?<\/table>/gi) ?? []
+
+  for (const table of tables) {
+    const header = cellText(
+      (table.match(/<tr[\s\S]*?<\/tr>/i)?.[0] || '').replace(/<\/?t[hd][^>]*>/gi, ' '),
+    )
+    if (!/competition/i.test(header) || !/season/i.test(header)) continue
+
+    const rows = [...table.matchAll(/<tr[\s\S]*?<\/tr>/gi)].slice(1)
+    for (const row of rows) {
+      const cells = [...row[0].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((match) =>
+        cellText(match[1] || ''),
+      )
+      if (cells.length < 2) continue
+
+      // Typical shapes:
+      // [Type, Competition, Titles, Seasons] or [Competition, Titles, Seasons]
+      let competition = ''
+      let seasonsRaw = ''
+      if (cells.length >= 4 && /\d{4}/.test(cells[cells.length - 1] || '')) {
+        competition = cells[cells.length - 3] || ''
+        seasonsRaw = cells[cells.length - 1] || ''
+      } else if (cells.length >= 3 && /\d{4}/.test(cells[cells.length - 1] || '')) {
+        competition = cells[cells.length - 3] || cells[0] || ''
+        seasonsRaw = cells[cells.length - 1] || ''
+      } else if (cells.length === 2 && /\d{4}/.test(cells[1] || '')) {
+        competition = cells[0] || ''
+        seasonsRaw = cells[1] || ''
+      } else {
+        continue
+      }
+
+      const name = cleanCompetitionName(competition)
+      if (
+        !name ||
+        name.length < 3 ||
+        /^(type|competition|titles?|seasons?|domestic|continental|worldwide|regional|national)$/i.test(
+          name,
+        )
+      ) {
+        continue
+      }
+
+      for (const season of extractSeasonTokens(seasonsRaw)) {
+        wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
+      }
+    }
+  }
+
+  return finalizeTrophyWins(wins)
+}
+
+function normalizeHonoursText(text: string): string {
+  return text
+    .replace(/\[\s*edit\s*\]/gi, ' ')
+    .replace(/\[\d+\]/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    // Footnotes split across lines: "\n[\n2\n]"
+    .replace(/\n\s*\[\s*\n\s*\d+\s*\n\s*\]\s*\n/g, '\n')
+    // Competition aliases: "Second Division\n/\nChampionship\n(level 2)"
+    .replace(/\n\s*\/\s*\n/g, ' / ')
+    .replace(/\n\s*\(((?:level|tier)\s*\d+)\)\s*\n/gi, ' ($1)\n')
+    // Attach seasons that wrap after the colon
+    .replace(
+      /(Champions?|Winners?|Play-off winners?|Runners-up|Promoted)\s*:\s*\n+/gi,
+      '$1: ',
+    )
+    .replace(/(\d{4}(?:\s*[–/-]\s*\d{2,4})?)\s*\n\s*,\s*\n\s*/g, '$1, ')
+    .replace(/,\s*\n\s*(?=\d{4})/g, ', ')
     .replace(/\n+/g, '\n')
 }
 
-/** Parse "Serie A … Winners (1): 1969–70" style honour blocks into title rows. */
-export function parseWikipediaHonoursText(text: string): TeamTrophyTitle[] {
-  const cleaned = text
-    .replace(/\[\s*edit\s*\]/gi, ' ')
-    .replace(/\(\s*Tier\s*\d+\s*\)/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  if (!cleaned) return []
+/**
+ * Parse Wikipedia honours prose into individual trophy wins (newest first).
+ * Supports "Winners (n): years" and "Champions: 1934–35" styles.
+ */
+export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
+  const lines = normalizeHonoursText(text)
+    .split(/\n+/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
 
-  const titles: TeamTrophyTitle[] = []
-  const winnerBlocks =
-    cleaned.matchAll(
-      /([A-Z][A-Za-z0-9 .'/&-]{2,60}?)\s*:\s*Winners?\s*\((\d+)\)\s*:\s*([0-9–,\s-]+?)(?=(?:[A-Z][A-Za-z0-9 .'/&-]{2,60}?\s*:\s*(?:Winners?|Runners-up))|$)/g,
-    )
+  const wins: TeamTrophyWin[] = []
+  let competition = ''
 
-  for (const match of winnerBlocks) {
-    const competition = match[1]?.trim()
-    const seasons = match[3]?.replace(/\s+/g, ' ').replace(/,\s*$/, '').trim()
-    if (!competition || !seasons) continue
-    if (/^(national|domestic|european|international|regional)\b/i.test(competition)) continue
-    titles.push({ competition, seasons })
+  const skipLine =
+    /^(honou?rs?|league|cup|domestic|european|international|regional|wartime|main articles?|further information|source:|cite error|list of)\b/i
+  const winLine = /^(champions?|winners?|play-off winners?)\s*:\s*(.+)$/i
+  const compactWin =
+    /^([A-Z][A-Za-z0-9 .'/&-]{2,70}?)\s*:\s*winners?\s*\((\d+)\)\s*:\s*(.+)$/i
+
+  for (const line of lines) {
+    if (skipLine.test(line)) continue
+    if (/^[,.]$/.test(line) || /^and$/i.test(line)) continue
+
+    const compact = line.match(compactWin)
+    if (compact) {
+      const name = cleanCompetitionName(compact[1] || '')
+      if (name && !/^(national|domestic|european|international|regional)\b/i.test(name)) {
+        for (const season of extractSeasonTokens(compact[3] || '')) {
+          wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
+        }
+      }
+      continue
+    }
+
+    const won = line.match(winLine)
+    if (won && competition) {
+      for (const season of extractSeasonTokens(won[2] || '')) {
+        wins.push({
+          competition,
+          season,
+          sortYear: seasonSortYear(season),
+        })
+      }
+      continue
+    }
+
+    if (/^(runners-up|promoted)\s*:/i.test(line)) continue
+
+    // Treat remaining short lines as competition headings.
+    if (
+      line.length >= 3 &&
+      line.length <= 90 &&
+      !/^\d/.test(line) &&
+      !/^(champions?|winners?|play-off|runners-up|promoted)\b/i.test(line)
+    ) {
+      competition = cleanCompetitionName(line)
+    }
   }
 
-  return titles.slice(0, 12)
+  // Also catch compact "Competition Winners (n): years" packed into one paragraph.
+  if (wins.length === 0) {
+    const cleaned = text
+      .replace(/\[\s*edit\s*\]/gi, ' ')
+      .replace(/\(\s*Tier\s*\d+\s*\)/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+    for (const match of cleaned.matchAll(
+      /([A-Z][A-Za-z0-9 .'/&-]{2,60}?)\s*:\s*Winners?\s*\((\d+)\)\s*:\s*([0-9–,\s-]+?)(?=(?:[A-Z][A-Za-z0-9 .'/&-]{2,60}?\s*:\s*(?:Winners?|Runners-up))|$)/g,
+    )) {
+      const name = cleanCompetitionName(match[1] || '')
+      if (!name || /^(national|domestic|european|international|regional)\b/i.test(name)) continue
+      for (const season of extractSeasonTokens(match[3] || '')) {
+        wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
+      }
+    }
+  }
+
+  return finalizeTrophyWins(wins)
+}
+
+/** Prefer table parsing, then prose parsing. */
+export function parseWikipediaHonours(html: string): TeamTrophyWin[] {
+  const fromTable = parseWikipediaHonoursTable(html)
+  if (fromTable.length > 0) return fromTable
+  return parseWikipediaHonoursText(stripWikiHtml(html))
+}
+
+/** Collapse wins back into competition → seasons rows for compact summaries. */
+export function groupTrophyWins(wins: TeamTrophyWin[]): TeamTrophyTitle[] {
+  const byComp = new Map<string, string[]>()
+  for (const win of wins) {
+    const seasons = byComp.get(win.competition) ?? []
+    seasons.push(win.season)
+    byComp.set(win.competition, seasons)
+  }
+  return [...byComp.entries()].map(([competition, seasons]) => ({
+    competition,
+    seasons: seasons.join(', '),
+  }))
 }
 
 async function fetchWikipediaTrophies(teamName: string): Promise<{
   count: number | null
   source?: string
   trophies: TeamTrophyTitle[]
+  trophyWins: TeamTrophyWin[]
 }> {
   try {
     const preferred = await resolveWikipediaTitle(teamName)
-    if (!preferred) return { count: null, trophies: [] }
+    if (!preferred) return { count: null, trophies: [], trophyWins: [] }
 
     const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
       preferred.replace(/ /g, '_'),
@@ -185,7 +418,7 @@ async function fetchWikipediaTrophies(teamName: string): Promise<{
       : null
     const countFromExtract = estimateTrophyCountFromText(summary?.extract || '')
 
-    let trophies: TeamTrophyTitle[] = []
+    let trophyWins: TeamTrophyWin[] = []
     try {
       const sectionsUrl = new URL('https://en.wikipedia.org/w/api.php')
       sectionsUrl.searchParams.set('action', 'parse')
@@ -199,7 +432,7 @@ async function fetchWikipediaTrophies(teamName: string): Promise<{
           parse?: { sections?: Array<{ index: string; line: string }> }
         }
         const honour = (sectionsJson.parse?.sections ?? []).find((section) =>
-          /^honou?rs?$/i.test(section.line.trim()),
+          /honou?rs?|achievements|club honours/i.test(section.line.trim()),
         )
         if (honour) {
           const textUrl = new URL('https://en.wikipedia.org/w/api.php')
@@ -214,9 +447,7 @@ async function fetchWikipediaTrophies(teamName: string): Promise<{
             const textJson = (await textRes.json()) as {
               parse?: { text?: { ['*']?: string } }
             }
-            trophies = parseWikipediaHonoursText(
-              stripWikiHtml(textJson.parse?.text?.['*'] || ''),
-            )
+            trophyWins = parseWikipediaHonours(textJson.parse?.text?.['*'] || '')
           }
         }
       }
@@ -224,22 +455,20 @@ async function fetchWikipediaTrophies(teamName: string): Promise<{
       // keep extract count only
     }
 
-    const count =
-      trophies.length > 0
-        ? trophies.reduce((sum, row) => {
-            const years = row.seasons.split(',').map((part) => part.trim()).filter(Boolean)
-            return sum + Math.max(1, years.length)
-          }, 0)
-        : countFromExtract
+    const trophies = groupTrophyWins(trophyWins)
+    const count = trophyWins.length > 0 ? trophyWins.length : countFromExtract
 
-    if (count == null && trophies.length === 0) return { count: null, trophies: [] }
+    if (count == null && trophyWins.length === 0) {
+      return { count: null, trophies: [], trophyWins: [] }
+    }
     return {
-      count: count ?? trophies.length,
+      count: count ?? trophyWins.length,
       source: summary?.title || preferred,
       trophies,
+      trophyWins,
     }
   } catch {
-    return { count: null, trophies: [] }
+    return { count: null, trophies: [], trophyWins: [] }
   }
 }
 
@@ -344,7 +573,12 @@ export async function fetchTeamClubFacts(
 
   const sportsDb = await fetchSportsDbFacts(name)
   const wiki = isNational
-    ? { count: null as number | null, source: undefined, trophies: [] as TeamTrophyTitle[] }
+    ? {
+        count: null as number | null,
+        source: undefined,
+        trophies: [] as TeamTrophyTitle[],
+        trophyWins: [] as TeamTrophyWin[],
+      }
     : await fetchWikipediaTrophies(name)
 
   const country =
@@ -383,6 +617,7 @@ export async function fetchTeamClubFacts(
     trophyCount: wiki.count ?? undefined,
     trophySource: wiki.source,
     trophies: wiki.trophies.length > 0 ? wiki.trophies : undefined,
+    trophyWins: wiki.trophyWins.length > 0 ? wiki.trophyWins : undefined,
     fetchedAt: Date.now(),
   }
 }
