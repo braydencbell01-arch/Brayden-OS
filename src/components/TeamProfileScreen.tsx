@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { MISSING_LONG } from '../lib/display'
 import {
   getLeague,
+  inferInternationalSeasonStartYear,
   inferSoccerSeasonStartYear,
   isInternationalLeague,
   confederationForNationalTeam,
@@ -242,15 +243,22 @@ export function TeamProfileScreen({
       'International'
     : facts.data?.country || league.country
 
-  const seasonYear =
-    standings.selectedSeason ??
-    standings.seasons[0]?.year ??
-    inferSoccerSeasonStartYear()
+  const seasonYear = isNational
+    ? inferInternationalSeasonStartYear()
+    : (standings.selectedSeason ??
+      standings.seasons[0]?.year ??
+      inferSoccerSeasonStartYear())
   const seasonShortLabel = useMemo(() => {
+    if (isNational) {
+      return formatSeasonShortLabel(
+        seasonYear,
+        `${seasonYear}-${String(seasonYear + 1).slice(2)}`,
+      )
+    }
     const fromStandings = standings.seasons.find((season) => season.year === seasonYear)
     if (fromStandings?.shortLabel) return fromStandings.shortLabel
     return formatSeasonShortLabel(seasonYear)
-  }, [standings.seasons, seasonYear])
+  }, [isNational, standings.seasons, seasonYear])
 
   const competitionIds = useMemo(
     () => teamSeasonCompetitionIds(team.id, team.leagueId, teamMatches, seasonYear),
@@ -362,7 +370,8 @@ export function TeamProfileScreen({
       centeredNextRef.current = null
       return
     }
-    if (!nextMatch || timelineMatches.length === 0) return
+    // Wait for schedule merge so nationals get the same next-match anchor as clubs.
+    if (fixturesLoading || !nextMatch || timelineMatches.length === 0) return
     // Center once per team/next fixture — don't yank scroll when older results prepend.
     const anchor = `${team.id}:${nextMatch.id}`
     if (centeredNextRef.current === anchor) return
@@ -371,7 +380,14 @@ export function TeamProfileScreen({
       centeredNextRef.current = anchor
     })
     return () => window.cancelAnimationFrame(id)
-  }, [tab, team.id, nextMatch, timelineMatches.length, scrollNextMatchToCenter])
+  }, [
+    tab,
+    team.id,
+    nextMatch,
+    timelineMatches.length,
+    fixturesLoading,
+    scrollNextMatchToCenter,
+  ])
 
   useEffect(() => {
     const pending = pendingTopLoadRef.current
@@ -634,87 +650,89 @@ export function TeamProfileScreen({
               )}
             </OverviewCard>
 
-            <OverviewCard
-              title="Transfers"
-              subtitle={
-                transfers.data.length > 0
-                  ? `${transfers.data.length} recent moves`
-                  : undefined
-              }
-              open={openOverview.transfers}
-              onToggle={() => toggleOverview('transfers')}
-            >
-              {transfers.loading && transfers.data.length === 0 ? (
-                <p className="text-sm text-mist/70">Loading transfers…</p>
-              ) : transfers.error && transfers.data.length === 0 ? (
-                <p className="text-sm text-mist/70">{transfers.error}</p>
-              ) : transfers.data.length === 0 ? (
-                <p className="text-sm text-mist/70">No recent transfers listed yet.</p>
-              ) : (
-                <div>
-                  <ul className="flex flex-col gap-2">
-                    {visibleTransfers.map((row) => {
-                      const other =
-                        row.direction === 'in'
-                          ? row.fromTeamName || 'Unknown'
-                          : row.toTeamName || 'Unknown'
-                      return (
-                        <li
-                          key={row.id}
-                          className="border-b border-white/8 pb-2 last:border-0 last:pb-0"
-                        >
-                          <div className="flex items-baseline justify-between gap-3">
-                            <button
-                              type="button"
-                              disabled={!row.playerId}
-                              onClick={() => {
-                                if (!row.playerId) return
-                                onOpenPlayer({
-                                  id: row.playerId,
-                                  leagueId: team.leagueId,
-                                  name: row.playerName,
-                                  shortName: row.playerName,
-                                  teamId: team.id,
-                                  teamName: displayName,
-                                })
-                              }}
-                              className={`min-w-0 truncate text-left text-sm font-semibold ${
-                                row.playerId
-                                  ? 'profile-link text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime'
-                                  : 'text-cream'
-                              }`}
-                            >
-                              {row.playerName}
-                            </button>
-                            <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-lime/80">
-                              {transferKindLabel(row)}
-                            </span>
-                          </div>
-                          <p className="mt-0.5 text-xs text-mist/65">
-                            {formatTransferDate(row.dateKey)}
-                            {row.direction === 'in' ? ' · from ' : ' · to '}
-                            {other}
-                            {' · '}
-                            {formatTransferFee(row)}
-                          </p>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                  {transfers.data.length > OVERVIEW_PREVIEW ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllTransfers((value) => !value)}
-                      className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    >
-                      {showAllTransfers
-                        ? 'Show less'
-                        : `Show more · ${transfers.data.length - OVERVIEW_PREVIEW} more`}
-                    </button>
-                  ) : null}
-                </div>
-              )}
-            </OverviewCard>
+            {!isNational ? (
+              <OverviewCard
+                title="Transfers"
+                subtitle={
+                  transfers.data.length > 0
+                    ? `${transfers.data.length} recent moves`
+                    : undefined
+                }
+                open={openOverview.transfers}
+                onToggle={() => toggleOverview('transfers')}
+              >
+                {transfers.loading && transfers.data.length === 0 ? (
+                  <p className="text-sm text-mist/70">Loading transfers…</p>
+                ) : transfers.error && transfers.data.length === 0 ? (
+                  <p className="text-sm text-mist/70">{transfers.error}</p>
+                ) : transfers.data.length === 0 ? (
+                  <p className="text-sm text-mist/70">No recent transfers listed yet.</p>
+                ) : (
+                  <div>
+                    <ul className="flex flex-col gap-2">
+                      {visibleTransfers.map((row) => {
+                        const other =
+                          row.direction === 'in'
+                            ? row.fromTeamName || 'Unknown'
+                            : row.toTeamName || 'Unknown'
+                        return (
+                          <li
+                            key={row.id}
+                            className="border-b border-white/8 pb-2 last:border-0 last:pb-0"
+                          >
+                            <div className="flex items-baseline justify-between gap-3">
+                              <button
+                                type="button"
+                                disabled={!row.playerId}
+                                onClick={() => {
+                                  if (!row.playerId) return
+                                  onOpenPlayer({
+                                    id: row.playerId,
+                                    leagueId: team.leagueId,
+                                    name: row.playerName,
+                                    shortName: row.playerName,
+                                    teamId: team.id,
+                                    teamName: displayName,
+                                  })
+                                }}
+                                className={`min-w-0 truncate text-left text-sm font-semibold ${
+                                  row.playerId
+                                    ? 'profile-link text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime'
+                                    : 'text-cream'
+                                }`}
+                              >
+                                {row.playerName}
+                              </button>
+                              <span className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-lime/80">
+                                {transferKindLabel(row)}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-xs text-mist/65">
+                              {formatTransferDate(row.dateKey)}
+                              {row.direction === 'in' ? ' · from ' : ' · to '}
+                              {other}
+                              {' · '}
+                              {formatTransferFee(row)}
+                            </p>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {transfers.data.length > OVERVIEW_PREVIEW ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTransfers((value) => !value)}
+                        className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {showAllTransfers
+                          ? 'Show less'
+                          : `Show more · ${transfers.data.length - OVERVIEW_PREVIEW} more`}
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </OverviewCard>
+            ) : null}
 
             <OverviewCard
               title="Trophies"

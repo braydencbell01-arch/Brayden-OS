@@ -1,7 +1,36 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { LeagueId } from '../leagues'
-import { fetchTeamSeasonOptions } from './espn'
+import {
+  getLeague,
+  inferInternationalSeasonStartYear,
+  inferSoccerSeasonStartYear,
+  type LeagueId,
+} from '../leagues'
+import { formatSeasonShortLabel, fetchTeamSeasonOptions } from './espn'
 import type { LeagueSeasonOption } from './types'
+
+function defaultSeasonOption(
+  leagueId: LeagueId,
+  options: LeagueSeasonOption[],
+): LeagueSeasonOption | undefined {
+  if (options.length === 0) return undefined
+  const league = getLeague(leagueId)
+  const currentYear =
+    league.kind === 'international'
+      ? inferInternationalSeasonStartYear()
+      : inferSoccerSeasonStartYear()
+  const currentShort = formatSeasonShortLabel(
+    currentYear,
+    `${currentYear}-${String(currentYear + 1).slice(2)}`,
+  )
+  return (
+    options.find((option) => {
+      const fromKey = option.key?.split(':')[2]
+      return fromKey === String(currentYear) || option.shortLabel === currentShort
+    }) ||
+    options.find((option) => option.year === currentYear) ||
+    options[0]
+  )
+}
 
 /**
  * Club season list labeled by the division the team actually played
@@ -32,7 +61,7 @@ export function useTeamSeasons(
       .then((options) => {
         if (cancelled) return
         setSeasons(options)
-        const first = options[0]
+        const first = defaultSeasonOption(leagueId, options)
         setSelectedSeason(first?.year ?? null)
         setSelectedKey(first?.key ?? null)
         setSelectedEspnCode(first?.espnCode)

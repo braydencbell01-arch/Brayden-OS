@@ -4,11 +4,13 @@ import {
   domesticPyramidEspnCodes,
   getLeague,
   inferInternationalSeasonStartYear,
+  inferSoccerSeasonStartYear,
   internationalLeagues,
   internationalSeasonDateBounds,
   isContinentalLeague,
   isFriendlyLeagueId,
   isInternationalLeague,
+  leagueImportanceRank,
   LEAGUES,
   type LeagueId,
 } from '../leagues'
@@ -432,7 +434,10 @@ type SeasonLineupEvent = {
   leagueId: LeagueId
 }
 
-/** Competitive ESPN slugs for a club season (domestic + cups + continental; no friendlies). */
+/**
+ * ESPN slugs for a club “all competitions” season — domestic + cups + continental
+ * + club friendlies.
+ */
 function competitiveEspnCodesForClub(
   leagueId: LeagueId,
   domesticEspnCode?: string,
@@ -447,25 +452,24 @@ function competitiveEspnCodesForClub(
       for (const code of domesticPyramidEspnCodes(leagueId)) codes.add(code)
     }
     for (const cup of domesticCupsForCountry(league.country)) {
-      if (!isFriendlyLeagueId(cup.id)) codes.add(cup.espnCode)
+      codes.add(cup.espnCode)
     }
     for (const continental of continentalLeagues()) {
-      if (!isFriendlyLeagueId(continental.id)) codes.add(continental.espnCode)
+      codes.add(continental.espnCode)
     }
+    codes.add('club.friendly')
   } else if (league.kind === 'international') {
     for (const item of internationalLeagues()) {
-      if (!isFriendlyLeagueId(item.id)) codes.add(item.espnCode)
+      codes.add(item.espnCode)
     }
   } else {
     for (const continental of continentalLeagues()) {
-      if (!isFriendlyLeagueId(continental.id)) codes.add(continental.espnCode)
+      codes.add(continental.espnCode)
     }
+    codes.add('club.friendly')
   }
 
-  return [...codes].filter((code) => {
-    const match = LEAGUES.find((item) => item.espnCode === code)
-    return !match || !isFriendlyLeagueId(match.id)
-  })
+  return [...codes]
 }
 
 /** All international ESPN slugs for national-team season stats (includes friendlies). */
@@ -473,11 +477,16 @@ function nationalTeamEspnCodes(): string[] {
   return internationalLeagues().map((item) => item.espnCode)
 }
 
-type NationalLeaderSource = { espnCode: string; year: number }
+type NationalLeaderSource = {
+  espnCode: string
+  year: number
+  /** Completed or scheduled matches inside the Aug–Jul window. */
+  matchCount: number
+}
 
 /**
- * ESPN competition/year pairs that contributed matches inside the national
- * Aug 1 – Jul 31 window for this side.
+ * ESPN competition/year pairs with matches inside the national
+ * Aug 1 – Jul 31 window (scheduled or completed).
  */
 async function nationalTeamLeaderSources(
   teamId: string,
@@ -499,25 +508,48 @@ async function nationalTeamLeaderSources(
       const res = await fetch(url)
       if (!res.ok) return null
       const data = (await res.json()) as {
-        events?: Array<{
-          date?: string
-          competitions?: Array<{ status?: { type?: { completed?: boolean; name?: string } } }>
-        }>
+        events?: Array<{ date?: string }>
       }
-      const inWindow = (data.events ?? []).some((event) => {
-        const competition = event.competitions?.[0]
-        const completed =
-          competition?.status?.type?.completed ||
-          competition?.status?.type?.name === 'STATUS_FULL_TIME'
-        if (!completed || !event.date) return false
+      let matchCount = 0
+      for (const event of data.events ?? []) {
+        if (!event.date) continue
         const ms = new Date(event.date).getTime()
-        return Number.isFinite(ms) && ms >= fromMs && ms <= toMs
-      })
-      return inWindow ? { espnCode, year } : null
+        if (Number.isFinite(ms) && ms >= fromMs && ms <= toMs) matchCount += 1
+      }
+      return matchCount > 0 ? { espnCode, year, matchCount } : null
     } catch {
       return null
     }
   })
+}
+
+/** Biggest non-friendly tournament a nation played in an Aug–Jul season. */
+function biggestNationalTournament(
+  sources: NationalLeaderSource[],
+): { espnCode: string; year: number; leagueId: LeagueId; name: string } | null {
+  const competitive = sources
+    .map((source) => {
+      const league = LEAGUES.find((item) => item.espnCode === source.espnCode)
+      if (!league || isFriendlyLeagueId(league.id)) return null
+      return { source, league }
+    })
+    .filter((row): row is { source: NationalLeaderSource; league: (typeof LEAGUES)[number] } =>
+      Boolean(row),
+    )
+  if (competitive.length === 0) return null
+
+  competitive.sort((a, b) => {
+    const rank = leagueImportanceRank(a.league.id) - leagueImportanceRank(b.league.id)
+    if (rank !== 0) return rank
+    return b.source.matchCount - a.source.matchCount
+  })
+  const top = competitive[0]!
+  return {
+    espnCode: top.source.espnCode,
+    year: top.source.year,
+    leagueId: top.league.id,
+    name: top.league.name,
+  }
 }
 
 function isCompetitiveEspnCode(espnCode: string): boolean {
@@ -550,7 +582,6 @@ async function listTeamSeasonLineupEvents(
       }
       const leagueForCode =
         LEAGUES.find((item) => item.espnCode === espnCode)?.id ?? leagueId
-      if (isFriendlyLeagueId(leagueForCode)) return [] as SeasonLineupEvent[]
 
       return (data.events ?? []).flatMap((event) => {
         const id = event.id
@@ -1096,21 +1127,49 @@ export async function fetchTeamSeasonOptions(
   if (league.kind === 'international') {
     const current = inferInternationalSeasonStartYear()
     const years = Array.from({ length: 8 }, (_, index) => current - index)
-    const resolved = await mapPool(years, 2, async (year) => {
-      const sources = await nationalTeamLeaderSources(teamId, year)
-      if (sources.length === 0) return null
-      const shortLabel = formatSeasonShortLabel(year, `${year}-${String(year + 1).slice(2)}`)
+    const resolved = await mapPool(years, 2, async (seasonStartYear) => {
+      const sources = await nationalTeamLeaderSources(teamId, seasonStartYear)
+      const shortLabel = formatSeasonShortLabel(
+        seasonStartYear,
+        `${seasonStartYear}-${String(seasonStartYear + 1).slice(2)}`,
+      )
+
+      // Always keep the open current season even before first match.
+      if (sources.length === 0 && seasonStartYear !== current) return null
+
+      if (labelMode === 'all-competitions') {
+        return {
+          year: seasonStartYear,
+          shortLabel,
+          label: 'All competitions',
+          key: `national-stats:${teamId}:${seasonStartYear}`,
+          espnCode: sources[0]?.espnCode || league.espnCode,
+          teamId,
+        } satisfies LeagueSeasonOption
+      }
+
+      // Squad: label by biggest tournament that year (WC, Gold Cup, Copa, …).
+      const biggest = biggestNationalTournament(sources)
+      const friendly = sources.find((source) => /friendly/i.test(source.espnCode))
+      const espnCode = biggest?.espnCode || friendly?.espnCode || league.espnCode
+      const rosterYear = biggest?.year || friendly?.year || seasonStartYear
+      const label = biggest?.name || 'International Friendlies'
       return {
-        year,
+        year: rosterYear,
         shortLabel,
-        label: labelMode === 'all-competitions' ? 'All competitions' : shortLabel,
-        key: `national:${teamId}:${year}`,
-        espnCode: sources[0]!.espnCode,
+        label,
+        key: `national-squad:${teamId}:${seasonStartYear}:${espnCode}:${rosterYear}`,
+        espnCode,
         teamId,
       } satisfies LeagueSeasonOption
     })
     const options = resolved.flatMap((option) => (option ? [option] : []))
-    options.sort((a, b) => b.year - a.year)
+    // Newest Aug–Jul season-start year first (encoded in key as …:YYYY:…).
+    options.sort((a, b) => {
+      const aYear = Number(a.key?.split(':')[2]) || a.year
+      const bYear = Number(b.key?.split(':')[2]) || b.year
+      return bYear - aYear
+    })
     teamSeasonOptionsCache.set(cacheKey, options)
     return options
   }
@@ -1123,7 +1182,10 @@ export async function fetchTeamSeasonOptions(
       return [] as number[]
     }
   })
-  const years = [...new Set(yearSets.flat())].sort((a, b) => b - a).slice(0, 24)
+  const currentClubSeason = inferSoccerSeasonStartYear()
+  const years = [...new Set([currentClubSeason, ...yearSets.flat()])]
+    .sort((a, b) => b - a)
+    .slice(0, 24)
 
   const resolved = await mapPool(years, 4, async (year) => {
     for (const espnCode of codes) {
@@ -1133,9 +1195,36 @@ export async function fetchTeamSeasonOptions(
         )
         url.searchParams.set('season', String(year))
         const res = await fetch(url)
-        if (!res.ok) continue
+        if (!res.ok) {
+          // Keep the open current season even if ESPN has no roster yet.
+          if (year === currentClubSeason && espnCode === codes[0]) {
+            const labels = await fetchSeasonLabels(espnCode, year)
+            return {
+              year,
+              shortLabel: labels.shortLabel,
+              label: labelMode === 'all-competitions' ? 'All competitions' : labels.label,
+              key: `${espnCode}:${year}`,
+              espnCode,
+              teamId,
+            } satisfies LeagueSeasonOption
+          }
+          continue
+        }
         const data = (await res.json()) as EspnTeamRosterResponse
-        if (!(data.athletes ?? []).length) continue
+        if (!(data.athletes ?? []).length) {
+          if (year === currentClubSeason && espnCode === codes[0]) {
+            const labels = await fetchSeasonLabels(espnCode, year)
+            return {
+              year,
+              shortLabel: labels.shortLabel,
+              label: labelMode === 'all-competitions' ? 'All competitions' : labels.label,
+              key: `${espnCode}:${year}`,
+              espnCode,
+              teamId,
+            } satisfies LeagueSeasonOption
+          }
+          continue
+        }
         const labels = await fetchSeasonLabels(espnCode, year)
         const divisionName =
           leagueNameFromSeasonDisplay(data.season?.displayName, year) ||
