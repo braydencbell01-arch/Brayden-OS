@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MISSING_LONG } from '../lib/display'
-import { getLeague, domesticCupsForCountry, isInternationalLeague, confederationForNationalTeam, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
+import {
+  compareLeaguesForDisplay,
+  getLeague,
+  isInternationalLeague,
+  confederationForNationalTeam,
+  teamSubtitleLeagueId,
+  type LeagueId,
+} from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   formatSideRecord,
   groupMatchesByDate,
   homeAwayRecordForTeam,
+  matchInSeasonYear,
   mergeTeamMatches,
   nextMatchForTeam,
   recentFormForTeam,
@@ -13,6 +21,7 @@ import {
   type Match,
   type TeamFormResult,
 } from '../lib/matches'
+import { formatSeasonShortLabel } from '../lib/stats/espn'
 import {
   addDays,
   CALENDAR_INITIAL_PAST_DAYS,
@@ -193,21 +202,26 @@ export function TeamProfileScreen({
       .slice(0, 5)
   }, [expectedGoals.data, displayName])
 
+  const seasonYear =
+    standings.selectedSeason ?? standings.seasons[0]?.year ?? null
+  const seasonShortLabel = useMemo(() => {
+    const fromStandings = standings.seasons.find((season) => season.year === seasonYear)
+    if (fromStandings?.shortLabel) return fromStandings.shortLabel
+    if (seasonYear == null) return null
+    return formatSeasonShortLabel(seasonYear)
+  }, [standings.seasons, seasonYear])
+
   const competitionIds = useMemo(() => {
     const ids = new Set<LeagueId>()
+    // Always include the profile's primary competition for the season.
     ids.add(team.leagueId)
     for (const match of teamMatches) {
-      if (match.home.id === team.id || match.away.id === team.id) {
-        ids.add(match.leagueId)
-      }
+      if (match.home.id !== team.id && match.away.id !== team.id) continue
+      if (seasonYear != null && !matchInSeasonYear(match, seasonYear)) continue
+      ids.add(match.leagueId)
     }
-    if (!isNational) {
-      for (const cup of domesticCupsForCountry(league.country)) {
-        ids.add(cup.id)
-      }
-    }
-    return [...ids]
-  }, [team.id, team.leagueId, teamMatches, isNational, league.country])
+    return [...ids].sort((a, b) => compareLeaguesForDisplay(a, b))
+  }, [team.id, team.leagueId, teamMatches, seasonYear])
 
   const topScorers = useMemo(() => {
     const goalsBoard =
@@ -457,10 +471,10 @@ export function TeamProfileScreen({
         </ProfileMetricsRow>
       ) : null}
 
-      {competitionIds.length > 1 ? (
+      {competitionIds.length > 0 ? (
         <div className="mt-4" aria-label="Competitions">
           <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-            Competitions
+            {seasonShortLabel ? `${seasonShortLabel} competitions` : 'Competitions'}
           </p>
           <div className="flex flex-wrap gap-2">
             {competitionIds.map((id) => {
@@ -470,22 +484,7 @@ export function TeamProfileScreen({
                   key={id}
                   type="button"
                   onClick={() => onOpenLeague(id)}
-                  className={`border px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
-                    id === team.leagueId
-                      ? accent
-                        ? 'text-cream'
-                        : 'border-lime/45 bg-lime/15 text-lime'
-                      : 'border-white/12 bg-white/[0.03] text-mist/80 hover:border-lime/35 hover:text-lime'
-                  }`}
-                  style={
-                    id === team.leagueId && accent
-                      ? {
-                          borderColor: withAlpha(accent, 0.55),
-                          background: withAlpha(accent, 0.18),
-                          color: accent,
-                        }
-                      : undefined
-                  }
+                  className="border border-white/12 bg-white/[0.03] px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/35 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                   title={item.name}
                 >
                   {item.short}

@@ -1,5 +1,6 @@
 import {
   compareLeaguesForDisplay,
+  continentalLeagues,
   domesticCupsForCountry,
   internationalLeagues,
   LEAGUES,
@@ -539,7 +540,7 @@ export async function fetchNationalTeamSchedules(
 
 /**
  * Club (or national) schedule from ESPN to fill Match Day cache gaps.
- * Clubs: preferred league + same-country domestic cups.
+ * Clubs: preferred league + same-country domestic cups + continental club comps.
  * Nationals: all international comps.
  */
 export async function fetchTeamSchedule(
@@ -553,7 +554,12 @@ export async function fetchTeamSchedule(
   }
 
   const cupIds = domesticCupsForCountry(league.country).map((cup) => cup.id)
-  const codes = [leagueId, ...cupIds.filter((id) => id !== leagueId)]
+  const continentalIds = continentalLeagues().map((entry) => entry.id)
+  const codes = [
+    leagueId,
+    ...cupIds.filter((id) => id !== leagueId),
+    ...continentalIds.filter((id) => id !== leagueId),
+  ]
   const results = await Promise.allSettled(
     codes.map((id) => fetchScheduleForLeague(teamId, id)),
   )
@@ -566,6 +572,16 @@ export async function fetchTeamSchedule(
     }
   }
   return [...byEvent.values()].sort((a, b) => a.kickoff.localeCompare(b.kickoff))
+}
+
+/**
+ * Soccer seasons labeled by start year (e.g. 2026 → 2026/27) generally run
+ * from early summer of that year through the following spring.
+ */
+export function matchInSeasonYear(match: Match, seasonYear: number): boolean {
+  const start = `${seasonYear}-06-01`
+  const end = `${seasonYear + 1}-05-31`
+  return match.dateKey >= start && match.dateKey <= end
 }
 
 /** Merge Match Day cache with schedule extras; cache rows win on id collisions. */
