@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { scoringBlurb, SCORING_PRESET_OPTIONS } from '../../lib/fantasy/scoringPresets'
-import type { DraftMode, FantasyGameMode, ScoringPreset } from '../../lib/fantasy/types'
+import type { DraftMode, FantasyGameMode, FantasyLeague, ScoringPreset } from '../../lib/fantasy/types'
 import {
   ALLOWED_DRAFT_CLOCKS,
   ALLOWED_SURVIVAL_LIVES,
@@ -27,6 +27,104 @@ import {
 import { FantasyResearchPanel } from './FantasyResearchPanel'
 
 type HomeMode = 'menu' | 'create' | 'join'
+
+function LeagueSettingsButton({
+  league,
+  isOwner,
+  busy,
+  onDelete,
+  onLeave,
+}: {
+  league: FantasyLeague
+  isOwner: boolean
+  busy: boolean
+  onDelete: () => void
+  onLeave: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onPointer = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  return (
+    <div ref={rootRef} className="relative shrink-0 self-center">
+      <button
+        type="button"
+        aria-label={`Settings for ${league.name}`}
+        aria-expanded={open}
+        disabled={busy}
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+        className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-mist/80 transition hover:border-lime/40 hover:bg-white/[0.08] hover:text-lime disabled:opacity-40"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+          />
+          <path
+            d="M19.4 13.5a7.8 7.8 0 0 0 .05-1.5l2.05-1.55-2-3.45-2.45.9a7.6 7.6 0 0 0-1.3-.75L15.4 3h-4l-.35 2.15c-.45.2-.9.45-1.3.75l-2.45-.9-2 3.45L7.4 10a7.8 7.8 0 0 0 0 3l-2.05 1.55 2 3.45 2.45-.9c.4.3.85.55 1.3.75L11.4 21h4l.35-2.15c.45-.2.9-.45 1.3-.75l2.45.9 2-3.45L19.4 13.5Z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 top-[calc(100%+6px)] z-20 min-w-[10.5rem] rounded-xl border border-white/15 bg-[#0a2f24] p-1.5 shadow-xl shadow-black/40"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {isOwner ? (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={busy}
+              onClick={() => {
+                setOpen(false)
+                onDelete()
+              }}
+              className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:opacity-40"
+            >
+              Delete league
+            </button>
+          ) : (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={busy}
+              onClick={() => {
+                setOpen(false)
+                onLeave()
+              }}
+              className="w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-200 transition hover:bg-red-500/20 disabled:opacity-40"
+            >
+              Leave league
+            </button>
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 function SeasonStatusBanner({ fantasy }: { fantasy: FantasyApi }) {
   const finished = fantasy.catalog?.finishedGws ?? 0
@@ -166,31 +264,69 @@ export function FantasyHome({
                 Your leagues
               </h2>
               <ul className="space-y-2">
-                {fantasy.leagues.map((league) => (
-                  <li key={league.id}>
-                    <button
-                      type="button"
-                      onClick={() => fantasy.setActiveLeagueId(league.id)}
-                      className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-lime/40 hover:bg-white/[0.07]"
-                    >
-                      <span>
-                        <span className="block font-semibold text-cream">{league.name}</span>
-                        <span className="text-xs text-mist/60">
-                          {phaseLabel(league.phase)} ·{' '}
-                          {league.gameMode === 'survival'
-                            ? `survival · ${league.survival?.lives ?? 1} ${
-                                (league.survival?.lives ?? 1) === 1 ? 'life' : 'lives'
-                              }`
-                            : `${league.draftMode} · ${league.draftClockSeconds || 90}s clock`}{' '}
-                          · {league.members.length}/{league.teamCount}
-                        </span>
-                      </span>
-                      <span className="text-lime" aria-hidden>
-                        →
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {fantasy.leagues.map((league) => {
+                  const isOwner = league.commissionerId === fantasy.identity.memberId
+                  return (
+                    <li key={league.id}>
+                      <div className="flex items-stretch gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fantasy.setActiveLeagueId(league.id)}
+                          className="flex min-w-0 flex-1 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left transition hover:border-lime/40 hover:bg-white/[0.07]"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold text-cream">
+                              {league.name}
+                            </span>
+                            <span className="text-xs text-mist/60">
+                              {phaseLabel(league.phase)} ·{' '}
+                              {league.gameMode === 'survival'
+                                ? `survival · ${league.survival?.lives ?? 1} ${
+                                    (league.survival?.lives ?? 1) === 1 ? 'life' : 'lives'
+                                  }`
+                                : `${league.draftMode} · ${league.draftClockSeconds || 90}s clock`}{' '}
+                              · {league.members.length}/{league.teamCount}
+                            </span>
+                          </span>
+                          <span className="ml-2 shrink-0 text-lime" aria-hidden>
+                            →
+                          </span>
+                        </button>
+                        <LeagueSettingsButton
+                          league={league}
+                          isOwner={isOwner}
+                          busy={busy || fantasy.syncing}
+                          onDelete={() => {
+                            if (
+                              !window.confirm(
+                                `Delete “${league.name}”? This removes it from your leagues.`,
+                              )
+                            ) {
+                              return
+                            }
+                            runBusy(
+                              () => fantasy.deleteLeague(league.id),
+                              'Could not delete league',
+                            )
+                          }}
+                          onLeave={() => {
+                            if (
+                              !window.confirm(
+                                `Leave “${league.name}”? You can rejoin later with an invite.`,
+                              )
+                            ) {
+                              return
+                            }
+                            runBusy(
+                              () => fantasy.leaveLeague(league.id),
+                              'Could not leave league',
+                            )
+                          }}
+                        />
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ) : null}

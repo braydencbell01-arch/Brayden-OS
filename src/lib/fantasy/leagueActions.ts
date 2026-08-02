@@ -289,6 +289,44 @@ export function joinLeague(
   }, 'member_joined', `${member.name} joined the league`, member.id)
 }
 
+/** Remove a non-commissioner member from the league (leave). */
+export function leaveLeague(league: FantasyLeague, memberId: string): FantasyLeague {
+  if (league.commissionerId === memberId) {
+    throw new Error('Commissioners must delete the league instead of leaving')
+  }
+  const member = league.members.find((m) => m.id === memberId)
+  if (!member) throw new Error('You are not in this league')
+
+  const members = league.members.filter((m) => m.id !== memberId)
+  const waiverOrder = league.waiverOrder.filter((id) => id !== memberId)
+  const draftOrder = league.draftOrder.filter((id) => id !== memberId)
+  const waiverClaims = league.waiverClaims.filter(
+    (c) => c.memberId !== memberId || c.status !== 'pending',
+  )
+  const trades = league.trades.map((t) => {
+    if (t.status !== 'pending' && t.status !== 'veto_pending') return t
+    if (t.fromMemberId === memberId || t.toMemberId === memberId) {
+      return { ...t, status: 'canceled' as const }
+    }
+    return t
+  })
+
+  return pushActivity(
+    {
+      ...league,
+      members,
+      waiverOrder,
+      draftOrder,
+      waiverClaims,
+      trades,
+      updatedAt: Date.now(),
+    },
+    'member_left',
+    `${member.name} left the league`,
+    memberId,
+  )
+}
+
 export function setMemberAutodraft(
   league: FantasyLeague,
   memberId: string,

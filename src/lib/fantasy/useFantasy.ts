@@ -13,6 +13,7 @@ import {
   draftPlayer,
   dropToWaivers,
   joinLeague,
+  leaveLeague,
   lockSurvivalGw,
   moveToIr,
   nominatePlayer,
@@ -495,6 +496,55 @@ export function useFantasy() {
     return league
   }, [catalog?.currentGw, persistLeague, playerMap])
 
+  const removeLeagueFromStore = useCallback((leagueId: string) => {
+    setStore((prev) => {
+      const leagues = { ...prev.leagues }
+      delete leagues[leagueId]
+      return {
+        ...prev,
+        leagues,
+        activeLeagueId: prev.activeLeagueId === leagueId ? null : prev.activeLeagueId,
+      }
+    })
+  }, [])
+
+  const deleteLeague = useCallback(
+    async (leagueId: string) => {
+      const league = store.leagues[leagueId]
+      if (!league) throw new Error('League not found')
+      if (league.commissionerId !== store.identity.memberId) {
+        throw new Error('Only the commissioner can delete this league')
+      }
+      removeLeagueFromStore(leagueId)
+    },
+    [removeLeagueFromStore, store.identity.memberId, store.leagues],
+  )
+
+  const leaveLeagueById = useCallback(
+    async (leagueId: string) => {
+      const league = store.leagues[leagueId]
+      if (!league) throw new Error('League not found')
+      if (league.commissionerId === store.identity.memberId) {
+        throw new Error('Commissioners must delete the league instead of leaving')
+      }
+      const next = leaveLeague(league, store.identity.memberId)
+      if (next.syncBlobId) {
+        setSyncing(true)
+        setSyncError(null)
+        try {
+          await pushLeague(next.syncBlobId, next)
+        } catch (err: unknown) {
+          setSyncError(err instanceof Error ? err.message : 'Could not sync leave')
+          throw err
+        } finally {
+          setSyncing(false)
+        }
+      }
+      removeLeagueFromStore(leagueId)
+    },
+    [removeLeagueFromStore, store.identity.memberId, store.leagues],
+  )
+
   const runAutos = useCallback(() => updateActive(runLeagueAutos), [runLeagueAutos, updateActive])
 
   return {
@@ -516,6 +566,8 @@ export function useFantasy() {
     create,
     createQuickLeague,
     loadDemoLeague,
+    deleteLeague,
+    leaveLeague: leaveLeagueById,
     join,
     joinByBlob,
     importLeague: (league: FantasyLeague) => {
