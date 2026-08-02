@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { MISSING_LONG } from '../lib/display'
 import {
   compareLeaguesForDisplay,
@@ -10,14 +10,13 @@ import {
 } from '../lib/leagues'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
-  formatSideRecord,
   groupMatchesByDate,
-  homeAwayRecordForTeam,
   matchInSeasonYear,
   mergeTeamMatches,
   nextMatchForTeam,
-  recentFormForTeam,
+  recentFormMatchesForTeam,
   splitTeamFixtures,
+  teamResult,
   type Match,
   type TeamFormResult,
 } from '../lib/matches'
@@ -26,43 +25,65 @@ import {
   addDays,
   CALENDAR_INITIAL_PAST_DAYS,
   CALENDAR_PAST_CHUNK_DAYS,
+  formatKickoffTime,
   formatMatchDayHeading,
   startOfDay,
 } from '../lib/dates'
 import { useTodayKey } from '../lib/useToday'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
-import { teamXgForName } from '../lib/stats/fotmob'
-import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
 import { useTeamClubFacts } from '../lib/stats/useTeamClubFacts'
 import { useTeamRoster } from '../lib/stats/useTeamRoster'
 import { useTeamSchedule } from '../lib/stats/useTeamSchedule'
 import { useTeamStatLeaders } from '../lib/stats/useTeamStatLeaders'
 import { teamAccentFromFacts } from '../lib/stats/teamFacts'
-import { withAlpha } from '../lib/stats/branding'
+import { teamLogoUrl, withAlpha } from '../lib/stats/branding'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
-import { ProfileHeader, ProfileMetric, ProfileMetricsRow, ProfileShell } from './ProfileShell'
+import { ProfileShell } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
-import { TeamSeasonStory } from './TeamSeasonStory'
 import { TeamRosterPanel } from './TeamRosterPanel'
 import { TeamStatLeadersPanel } from './TeamStatLeadersPanel'
 
-function FormDot({ result, accent }: { result: TeamFormResult; accent?: string | null }) {
-  const styles =
+type TeamTab = 'overview' | 'matches' | 'table' | 'stats' | 'squad'
+type OverviewSection =
+  | 'competitions'
+  | 'nextOpponent'
+  | 'form'
+  | 'transfers'
+  | 'trophies'
+
+const TABS: Array<{ id: TeamTab; label: string; clubsOnly?: boolean }> = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'matches', label: 'Matches' },
+  { id: 'table', label: 'Table', clubsOnly: true },
+  { id: 'stats', label: 'Stats' },
+  { id: 'squad', label: 'Squad' },
+]
+
+function FormScoreBox({
+  result,
+  score,
+  accent,
+}: {
+  result: TeamFormResult
+  score: string
+  accent?: string | null
+}) {
+  const base =
     result === 'W'
       ? accent
         ? 'text-ink'
         : 'bg-lime text-ink'
       : result === 'D'
         ? 'bg-white/20 text-cream'
-        : 'bg-white/10 text-mist/80'
+        : 'bg-white/10 text-mist/85'
 
   return (
     <span
-      className={`inline-flex h-7 w-7 items-center justify-center text-[0.7rem] font-bold ${styles}`}
+      className={`inline-flex min-w-[2.4rem] items-center justify-center px-1.5 py-1 text-[0.7rem] font-bold tabular-nums ${base}`}
       style={
         result === 'W' && accent
           ? { background: accent, color: '#0a1f18' }
@@ -70,8 +91,28 @@ function FormDot({ result, accent }: { result: TeamFormResult; accent?: string |
       }
       title={result === 'W' ? 'Win' : result === 'D' ? 'Draw' : 'Loss'}
     >
-      {result}
+      {score}
     </span>
+  )
+}
+
+function OverviewCard({
+  title,
+  subtitle,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  subtitle?: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <ProfileAccordion title={title} subtitle={subtitle} open={open} onToggle={onToggle}>
+      {children}
+    </ProfileAccordion>
   )
 }
 
@@ -107,22 +148,26 @@ export function TeamProfileScreen({
   const isNational =
     team.kind === 'national' ||
     (team.kind == null && isInternationalLeague(team.leagueId))
-  const standings = useLeagueStandings(team.leagueId)
+  const standings = useLeagueStandings(team.leagueId, !isNational && league.hasStandings)
   const todayKey = useTodayKey()
-  const [openSection, setOpenSection] = useState<
-    'table' | 'upcoming' | 'recent' | 'roster' | 'leaders' | null
-  >(null)
+  const [tab, setTab] = useState<TeamTab>('overview')
+  const [openOverview, setOpenOverview] = useState<Record<OverviewSection, boolean>>({
+    competitions: true,
+    nextOpponent: true,
+    form: true,
+    transfers: false,
+    trophies: false,
+  })
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
   const [loadingEarlier, setLoadingEarlier] = useState(false)
-  const recentScrollRef = useRef<HTMLDivElement>(null)
+  const matchesScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
 
-  const rosterEnabled = openSection === 'roster'
-  const leadersEnabled = true
+  const rosterEnabled = tab === 'squad'
+  const leadersEnabled = tab === 'stats' || tab === 'overview'
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
   const leaders = useTeamStatLeaders(team.leagueId, team.id, !isNational && leadersEnabled)
   const schedule = useTeamSchedule(team.id, team.leagueId, true)
-  const expectedGoals = useLeagueExpectedGoals(team.leagueId, !isNational)
 
   const standing = useMemo(
     () => standings.rows.find((row) => row.teamId === team.id) ?? null,
@@ -136,13 +181,8 @@ export function TeamProfileScreen({
     [matches, schedule.data],
   )
 
-  const form = useMemo(
-    () => recentFormForTeam(teamMatches, team.id, 5),
-    [teamMatches, team.id],
-  )
-
-  const homeAway = useMemo(
-    () => homeAwayRecordForTeam(teamMatches, team.id),
+  const formMatches = useMemo(
+    () => recentFormMatchesForTeam(teamMatches, team.id, 5),
     [teamMatches, team.id],
   )
 
@@ -162,15 +202,13 @@ export function TeamProfileScreen({
     const opponent = isHome ? nextMatch.away : nextMatch.home
     const opponentStanding =
       standings.rows.find((row) => row.teamId === opponent.id) ?? null
-    const opponentForm = recentFormForTeam(teamMatches, opponent.id, 5)
     return {
       match: nextMatch,
       opponent,
       isHome,
       standing: opponentStanding,
-      form: opponentForm,
     }
-  }, [nextMatch, standings.rows, team.id, teamMatches])
+  }, [nextMatch, standings.rows, team.id])
 
   const upcomingGrouped = useMemo(() => groupMatchesByDate(upcoming), [upcoming])
   const recentGrouped = useMemo(
@@ -180,27 +218,14 @@ export function TeamProfileScreen({
   const favorited = favorites.isTeamFavorite(team.id)
   const displayName = standing?.team || team.name
   const fixturesLoading = loading || schedule.loading
-  const teamXg = useMemo(
-    () =>
-      expectedGoals.data
-        ? teamXgForName(expectedGoals.data.teamsXg, displayName)
-        : null,
-    [expectedGoals.data, displayName],
-  )
-  const teamPlayerXg = useMemo(() => {
-    if (!expectedGoals.data) return []
-    const needle = displayName.toLowerCase().replace(/^afc\s+|^fc\s+/, '')
-    return expectedGoals.data.playersXg
-      .filter((row) => {
-        const teamName = (row.teamName || '').toLowerCase().replace(/^afc\s+|^fc\s+/, '')
-        if (!teamName) return false
-        if (teamName === needle) return true
-        // Require a long enough token so "City" / "United" don't steal another club's board.
-        if (needle.length < 6) return false
-        return teamName.includes(needle) || needle.includes(teamName)
-      })
-      .slice(0, 5)
-  }, [expectedGoals.data, displayName])
+  const countryLine = isNational
+    ? confederationForNationalTeam({
+        name: team.name,
+        shortName: team.shortName,
+      }) ||
+      facts.data?.country ||
+      'International'
+    : facts.data?.country || league.country
 
   const seasonYear =
     standings.selectedSeason ?? standings.seasons[0]?.year ?? null
@@ -213,7 +238,6 @@ export function TeamProfileScreen({
 
   const competitionIds = useMemo(() => {
     const ids = new Set<LeagueId>()
-    // Always include the profile's primary competition for the season.
     ids.add(team.leagueId)
     for (const match of teamMatches) {
       if (match.home.id !== team.id && match.away.id !== team.id) continue
@@ -223,16 +247,34 @@ export function TeamProfileScreen({
     return [...ids].sort((a, b) => compareLeaguesForDisplay(a, b))
   }, [team.id, team.leagueId, teamMatches, seasonYear])
 
-  const topScorers = useMemo(() => {
-    const goalsBoard =
-      leaders.data?.categories.find((category) =>
-        /goal/i.test(category.id) || /goal/i.test(category.label),
-      ) || leaders.data?.categories[0]
-    return goalsBoard?.leaders.slice(0, 3) ?? []
-  }, [leaders.data])
+  const visibleTabs = useMemo(
+    () =>
+      TABS.filter((entry) => {
+        if (entry.id === 'table') return league.hasStandings && !isNational
+        return true
+      }),
+    [isNational, league.hasStandings],
+  )
 
-  const toggle = (section: 'table' | 'upcoming' | 'recent' | 'roster' | 'leaders') => {
-    setOpenSection((current) => (current === section ? null : section))
+  useEffect(() => {
+    if (!visibleTabs.some((entry) => entry.id === tab)) {
+      setTab('overview')
+    }
+  }, [tab, visibleTabs])
+
+  useEffect(() => {
+    setTab('overview')
+    setOpenOverview({
+      competitions: true,
+      nextOpponent: true,
+      form: true,
+      transfers: false,
+      trophies: false,
+    })
+  }, [team.id])
+
+  const toggleOverview = (section: OverviewSection) => {
+    setOpenOverview((current) => ({ ...current, [section]: !current[section] }))
   }
 
   const [pastExhausted, setPastExhausted] = useState(false)
@@ -264,7 +306,6 @@ export function TeamProfileScreen({
     void Promise.resolve(onNeedPastRange(addDays(today, -next), today)).finally(() => {
       loadingMoreRef.current = false
       setLoadingEarlier(false)
-      // Wait for parent merge to commit; only exhaust if count never grew.
       window.setTimeout(() => {
         if (
           pendingPastCountRef.current === beforeCount &&
@@ -279,559 +320,437 @@ export function TeamProfileScreen({
     })
   }, [onNeedPastRange, pastExhausted, pastHorizonDays])
 
-  const onRecentScroll = () => {
-    const scroller = recentScrollRef.current
-    if (!scroller || openSection !== 'recent') return
+  const onMatchesScroll = () => {
+    const scroller = matchesScrollRef.current
+    if (!scroller || tab !== 'matches') return
     const remaining = scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight
     if (remaining < 120) loadEarlierResults()
   }
-
-  const factRows = useMemo(() => {
-    const club = facts.data
-    const rows: Array<[string, string]> = []
-
-    rows.push([isNational ? 'Competition' : 'League', club?.leagueName || league.name])
-
-    if (!isNational) {
-      rows.push(['Country', club?.country || league.country])
-      if (club?.city) rows.push(['City', club.city])
-    }
-
-    if (club?.stadium) rows.push(['Stadium', club.stadium])
-    if (club?.nickname) rows.push(['Nickname', club.nickname])
-    if (club?.foundedYear) rows.push(['Founded', String(club.foundedYear)])
-
-    if (club?.trophyCount != null) {
-      rows.push([
-        'Trophies',
-        `${club.trophyCount}${club.trophySource ? ' · major titles' : ''}`,
-      ])
-    } else if (!isNational && !facts.loading) {
-      rows.push(['Trophies', MISSING_LONG])
-    }
-
-    if (!isNational && (homeAway.home.played > 0 || homeAway.away.played > 0)) {
-      rows.push(['Home', formatSideRecord(homeAway.home)])
-      rows.push(['Away', formatSideRecord(homeAway.away)])
-    }
-
-    return rows
-  }, [
-    facts.data,
-    facts.loading,
-    homeAway,
-    isNational,
-    league.country,
-    league.name,
-  ])
 
   const accent = teamAccentFromFacts(facts.data)
 
   return (
     <ProfileShell onBack={onBack} reduce={reduce} accentColor={accent}>
-      <ProfileHeader
-        reduce={reduce}
-        accentColor={accent}
-        star={
-          <FavoriteStar
-            active={favorited}
-            label={displayName}
-            onToggle={() =>
-              favorites.toggleTeam({
-                id: team.id,
-                name: displayName,
-                shortName: team.shortName,
-                leagueId: team.leagueId,
-                kind: isNational ? 'national' : 'club',
-              })
-            }
-          />
-        }
-        trailing={
+      <header className="border-b border-white/10 pb-5">
+        <div className="flex items-start gap-3.5">
           <EntityLogo
             name={displayName}
             src={facts.data?.logoUrl}
             size="lg"
             ringColor={accent}
           />
-        }
-        eyebrow={
-          <button
-            type="button"
-            onClick={() => onOpenLeague(isNational ? teamSubtitleLeagueId(team) : team.leagueId)}
-            className="profile-link text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-          >
-            {isNational
-              ? `National team · ${
-                  confederationForNationalTeam({
-                    name: team.name,
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h1 className="font-display text-[clamp(2rem,8vw,2.85rem)] leading-[0.95] tracking-[0.03em] text-cream">
+                  {displayName}
+                </h1>
+                <p className="mt-1.5 text-sm text-mist/75">{countryLine}</p>
+              </div>
+              <FavoriteStar
+                active={favorited}
+                label={displayName}
+                onToggle={() =>
+                  favorites.toggleTeam({
+                    id: team.id,
+                    name: displayName,
                     shortName: team.shortName,
-                  }) || league.name
-                }`
-              : league.name}
-          </button>
-        }
-        title={displayName}
-        meta={
-          <>
-            {team.shortName}
-            {facts.data?.country ? ` · ${facts.data.country}` : ` · ${league.country}`}
-            {isNational
-              ? ` · ${
-                  confederationForNationalTeam({
-                    name: team.name,
-                    shortName: team.shortName,
-                  }) || 'International'
-                }`
-              : standing
-                ? ` · #${standing.rank}${
-                    standing.group ? ` · ${standing.group}` : ''
-                  } · ${standing.points} pts`
-                : ''}
-          </>
-        }
-      />
-
-      {!isNational && standing?.group ? (
-        <p
-          className={
-            accent
-              ? 'mt-4 border px-3 py-2 text-sm font-semibold'
-              : 'mt-4 border border-lime/35 bg-lime/10 px-3 py-2 text-sm font-semibold text-lime'
-          }
-          style={
-            accent
-              ? {
-                  borderColor: withAlpha(accent, 0.45),
-                  background: withAlpha(accent, 0.12),
-                  color: accent,
-                }
-              : undefined
-          }
-        >
-          {standing.group}
-        </p>
-      ) : null}
-
-      {!isNational ? (
-        <ProfileMetricsRow>
-          <ProfileMetric
-            label="Pos"
-            value={standings.loading && !standing ? '…' : standing ? `#${standing.rank}` : '—'}
-          />
-          <ProfileMetric
-            label="Pts"
-            value={standings.loading && !standing ? '…' : standing ? standing.points : '—'}
-            accent
-          />
-          <ProfileMetric
-            label="GD"
-            value={
-              standings.loading && !standing
-                ? '…'
-                : standing
-                  ? standing.goalDiff > 0
-                    ? `+${standing.goalDiff}`
-                    : String(standing.goalDiff)
-                  : '—'
-            }
-          />
-          <ProfileMetric
-            label="Record"
-            value={
-              <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                {standing
-                  ? `${standing.won}W-${standing.drawn}D-${standing.lost}L`
-                  : '—'}
-              </span>
-            }
-          />
-          <ProfileMetric
-            label="xG"
-            value={
-              <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                {expectedGoals.loading && !teamXg
-                  ? '…'
-                  : teamXg
-                    ? teamXg.xg.toFixed(1)
-                    : '—'}
-              </span>
-            }
-          />
-          <ProfileMetric
-            label="G − xG"
-            value={
-              <span className="block truncate text-lg font-semibold leading-8 text-cream">
-                {teamXg?.overperformance != null
-                  ? `${teamXg.overperformance > 0 ? '+' : ''}${teamXg.overperformance.toFixed(1)}`
-                  : '—'}
-              </span>
-            }
-          />
-        </ProfileMetricsRow>
-      ) : null}
-
-      {competitionIds.length > 0 ? (
-        <div className="mt-4" aria-label="Competitions">
-          <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-            {seasonShortLabel ? `${seasonShortLabel} competitions` : 'Competitions'}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {competitionIds.map((id) => {
-              const item = getLeague(id)
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => onOpenLeague(id)}
-                  className="border border-white/12 bg-white/[0.03] px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/35 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                  title={item.name}
-                >
-                  {item.short}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      <section className="mt-6" aria-label={isNational ? 'Team facts' : 'Club facts'}>
-        {facts.loading && factRows.length <= 2 ? (
-          <p className="text-sm text-mist/70">
-            {isNational ? 'Loading team facts…' : 'Loading club facts…'}
-          </p>
-        ) : null}
-
-        <dl
-          className="border border-white/10"
-          style={
-            accent
-              ? {
-                  borderColor: withAlpha(accent, 0.35),
-                  boxShadow: `inset 3px 0 0 ${accent}`,
-                }
-              : undefined
-          }
-        >
-          {factRows.map(([label, value], index) => (
-            <div
-              key={`${label}-${index}`}
-              className={`flex items-baseline justify-between gap-4 px-3.5 py-2.5 ${
-                index > 0 ? 'border-t border-white/8' : ''
-              }`}
-            >
-              <dt className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-                {label}
-              </dt>
-              <dd className="min-w-0 text-right text-sm font-semibold text-cream">{value}</dd>
-            </div>
-          ))}
-        </dl>
-
-        {facts.error ? (
-          <p className="mt-2 text-xs text-mist/55">
-            {isNational
-              ? 'Some team details could not be loaded.'
-              : 'Some club details could not be loaded.'}
-          </p>
-        ) : null}
-        {facts.data?.trophyCount != null && facts.data.trophySource ? (
-          <p className="mt-2 text-[0.65rem] text-mist/45">
-            Trophy total estimated from public records ({facts.data.trophySource}).
-          </p>
-        ) : null}
-
-        {standing?.note ? <p className="mt-2 text-xs text-mist/60">{standing.note}</p> : null}
-
-        <div className="mt-4">
-          <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/55">
-            Form
-          </p>
-          {form.length === 0 ? (
-            <p className="text-sm text-mist/70">No finished matches in the loaded window.</p>
-          ) : (
-            <div className="flex gap-1.5" aria-label="Recent form">
-              {form.map((result, index) => (
-                <FormDot key={`${result}-${index}`} result={result} accent={accent} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4">
-          <TeamSeasonStory
-            matches={teamMatches}
-            teamId={team.id}
-            teamName={displayName}
-          />
-        </div>
-
-        {nextOpponent ? (
-          <div className="mt-5 border border-white/10 bg-white/[0.03] px-3.5 py-3">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
-              Next opponent
-            </p>
-            <div className="mt-2 flex items-baseline justify-between gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  onOpenTeam({
-                    id: nextOpponent.opponent.id,
-                    name: nextOpponent.opponent.name,
-                    shortName: nextOpponent.opponent.shortName,
-                    leagueId: nextOpponent.match.leagueId,
-                    kind: isInternationalLeague(nextOpponent.match.leagueId)
-                      ? 'national'
-                      : 'club',
+                    leagueId: team.leagueId,
+                    kind: isNational ? 'national' : 'club',
                   })
                 }
-                className="profile-link text-left text-base font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-              >
-                {nextOpponent.opponent.name}
-              </button>
-              <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-mist/65">
-                {nextOpponent.isHome ? 'Home' : 'Away'}
-              </span>
+              />
             </div>
-            <p className="mt-1 text-xs text-mist/70">
-              {formatMatchDayHeading(nextOpponent.match.dateKey)}
-              {!isNational && nextOpponent.standing
-                ? ` · #${nextOpponent.standing.rank}${
-                    nextOpponent.standing.group ? ` · ${nextOpponent.standing.group}` : ''
-                  } · ${nextOpponent.standing.points} pts`
-                : nextOpponent.standing?.group
-                  ? ` · ${nextOpponent.standing.group}`
-                  : ''}
-            </p>
-            {nextOpponent.form.length > 0 ? (
-              <div className="mt-2 flex gap-1" aria-label="Opponent form">
-                {nextOpponent.form.map((result, index) => (
-                  <FormDot key={`opp-${result}-${index}`} result={result} />
-                ))}
-              </div>
-            ) : null}
+            <button
+              type="button"
+              onClick={() =>
+                onOpenLeague(isNational ? teamSubtitleLeagueId(team) : team.leagueId)
+              }
+              className="profile-link mt-2 text-left text-xs font-semibold uppercase tracking-[0.14em] text-mist/60 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+              style={accent ? { color: withAlpha(accent, 0.95) } : undefined}
+            >
+              {isNational
+                ? `National team · ${
+                    confederationForNationalTeam({
+                      name: team.name,
+                      shortName: team.shortName,
+                    }) || league.name
+                  }`
+                : league.name}
+              {!isNational && standing
+                ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''}`
+                : ''}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <nav
+        className="sticky top-[3.35rem] z-20 -mx-5 mt-5 border-b border-white/10 bg-pitch-deep/92 px-5 backdrop-blur-md md:-mx-6 md:px-6"
+        aria-label="Team sections"
+      >
+        <div className="flex gap-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {visibleTabs.map((entry) => {
+            const active = tab === entry.id
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => setTab(entry.id)}
+                className={`relative shrink-0 px-3 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime ${
+                  active ? 'text-cream' : 'text-mist/55 hover:text-mist'
+                }`}
+                aria-current={active ? 'page' : undefined}
+              >
+                {entry.label}
+                {active ? (
+                  <span
+                    className="absolute inset-x-2 bottom-0 h-0.5 bg-cream"
+                    style={accent ? { background: accent } : undefined}
+                    aria-hidden
+                  />
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+      </nav>
+
+      <div className="mt-5">
+        {tab === 'overview' ? (
+          <div className="flex flex-col gap-3">
+            <OverviewCard
+              title="Competitions"
+              subtitle={
+                seasonShortLabel ? `${seasonShortLabel} season` : undefined
+              }
+              open={openOverview.competitions}
+              onToggle={() => toggleOverview('competitions')}
+            >
+              {competitionIds.length === 0 ? (
+                <p className="text-sm text-mist/70">No competitions in the loaded window.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {competitionIds.map((id) => {
+                    const item = getLeague(id)
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => onOpenLeague(id)}
+                        className="border border-white/12 bg-white/[0.03] px-2.5 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/35 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                        title={item.name}
+                      >
+                        {item.short}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </OverviewCard>
+
+            <OverviewCard
+              title="Next opponent"
+              subtitle={
+                nextOpponent
+                  ? formatMatchDayHeading(nextOpponent.match.dateKey)
+                  : undefined
+              }
+              open={openOverview.nextOpponent}
+              onToggle={() => toggleOverview('nextOpponent')}
+            >
+              {fixturesLoading && !nextOpponent ? (
+                <p className="text-sm text-mist/70">Loading next match…</p>
+              ) : !nextOpponent ? (
+                <p className="text-sm text-mist/70">No upcoming opponent yet.</p>
+              ) : (
+                <div>
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/55">
+                    {getLeague(nextOpponent.match.leagueId).name}
+                    {nextOpponent.match.kickoffTimeKnown
+                      ? ` · ${formatKickoffTime(nextOpponent.match.kickoff)}`
+                      : ''}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <EntityLogo
+                        name={displayName}
+                        src={facts.data?.logoUrl}
+                        size="sm"
+                        ringColor={accent}
+                      />
+                      <span className="truncate text-sm font-semibold text-cream">
+                        {displayName}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold uppercase tracking-[0.12em] text-mist/60">
+                      {nextOpponent.isHome ? 'Home' : 'Away'}
+                    </span>
+                    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenTeam({
+                            id: nextOpponent.opponent.id,
+                            name: nextOpponent.opponent.name,
+                            shortName: nextOpponent.opponent.shortName,
+                            leagueId: nextOpponent.match.leagueId,
+                            kind: isInternationalLeague(nextOpponent.match.leagueId)
+                              ? 'national'
+                              : 'club',
+                          })
+                        }
+                        className="profile-link truncate text-right text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {nextOpponent.opponent.name}
+                      </button>
+                      <EntityLogo
+                        name={nextOpponent.opponent.name}
+                        src={teamLogoUrl(nextOpponent.opponent.id)}
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                  {!isNational && nextOpponent.standing ? (
+                    <p className="mt-2 text-xs text-mist/65">
+                      #{nextOpponent.standing.rank}
+                      {nextOpponent.standing.group
+                        ? ` · ${nextOpponent.standing.group}`
+                        : ''}{' '}
+                      · {nextOpponent.standing.points} pts
+                    </p>
+                  ) : null}
+                </div>
+              )}
+            </OverviewCard>
+
+            <OverviewCard
+              title="Form"
+              subtitle={formMatches.length > 0 ? 'Last 5' : undefined}
+              open={openOverview.form}
+              onToggle={() => toggleOverview('form')}
+            >
+              {formMatches.length === 0 ? (
+                <p className="text-sm text-mist/70">
+                  No finished matches in the loaded window.
+                </p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Recent form">
+                  {formMatches.map((match) => {
+                    const result = teamResult(match, team.id)
+                    if (!result) return null
+                    const opponent =
+                      match.home.id === team.id ? match.away : match.home
+                    const hs = match.home.score
+                    const as = match.away.score
+                    const score =
+                      hs != null && as != null ? `${hs}-${as}` : MISSING_LONG
+                    return (
+                      <div
+                        key={match.id}
+                        className="flex w-14 shrink-0 flex-col items-center gap-1.5"
+                      >
+                        <FormScoreBox result={result} score={score} accent={accent} />
+                        <EntityLogo
+                          name={opponent.name}
+                          src={teamLogoUrl(opponent.id)}
+                          size="sm"
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </OverviewCard>
+
+            <OverviewCard
+              title="Transfers"
+              open={openOverview.transfers}
+              onToggle={() => toggleOverview('transfers')}
+            >
+              <p className="text-sm text-mist/70">
+                Transfer in/out lists are not available for this club yet.
+              </p>
+            </OverviewCard>
+
+            <OverviewCard
+              title="Trophies"
+              subtitle={
+                facts.data?.trophyCount != null
+                  ? `${facts.data.trophyCount} major titles`
+                  : undefined
+              }
+              open={openOverview.trophies}
+              onToggle={() => toggleOverview('trophies')}
+            >
+              {facts.loading && !facts.data?.trophies?.length ? (
+                <p className="text-sm text-mist/70">Loading trophies…</p>
+              ) : facts.data?.trophies && facts.data.trophies.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {facts.data.trophies.map((row) => (
+                    <li
+                      key={`${row.competition}-${row.seasons}`}
+                      className="flex items-baseline justify-between gap-3 border-b border-white/8 pb-2 last:border-0 last:pb-0"
+                    >
+                      <span className="min-w-0 text-sm font-semibold text-cream">
+                        {row.competition}
+                      </span>
+                      <span className="shrink-0 text-right text-xs text-mist/65">
+                        {row.seasons}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : facts.data?.trophyCount != null ? (
+                <p className="text-sm text-mist/70">
+                  About {facts.data.trophyCount} major titles
+                  {facts.data.trophySource
+                    ? ` (from ${facts.data.trophySource})`
+                    : ''}
+                  .
+                </p>
+              ) : (
+                <p className="text-sm text-mist/70">{MISSING_LONG}</p>
+              )}
+            </OverviewCard>
           </div>
         ) : null}
 
-        {!isNational && (topScorers.length > 0 || leaders.loading) ? (
-          <div className="mt-5 border border-white/10 bg-white/[0.03] px-3.5 py-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
-                Top scorers
-              </p>
-              <button
-                type="button"
-                onClick={() => toggle('leaders')}
-                className="text-[0.6rem] font-semibold uppercase tracking-[0.12em] text-mist/60 transition hover:text-lime"
-              >
-                All leaders
-              </button>
-            </div>
-            {leaders.loading && topScorers.length === 0 ? (
-              <p className="mt-2 text-sm text-mist/70">Loading scorers…</p>
+        {tab === 'matches' ? (
+          <div
+            ref={matchesScrollRef}
+            onScroll={onMatchesScroll}
+            className="max-h-[min(70dvh,40rem)] overflow-y-auto overscroll-contain pr-1"
+          >
+            {fixturesLoading && upcomingGrouped.length === 0 && recentGrouped.length === 0 ? (
+              <p className="text-sm text-mist/70">Loading matches…</p>
             ) : (
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {topScorers.map((leader) => (
-                  <li key={leader.id} className="flex items-baseline justify-between gap-3 text-sm">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onOpenPlayer({
-                          id: leader.id,
-                          leagueId: team.leagueId,
-                          name: leader.name,
-                          shortName: leader.shortName,
-                          jersey: leader.jersey,
-                          teamId: leader.teamId || team.id,
-                          teamName: leader.teamName || displayName,
-                        })
-                      }
-                      className="profile-link min-w-0 truncate text-left font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    >
-                      {leader.name}
-                    </button>
-                    <span className="shrink-0 tabular-nums text-lime">{leader.displayValue}</span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                {(error || schedule.error) &&
+                upcomingGrouped.length === 0 &&
+                recentGrouped.length === 0 ? (
+                  <p className="text-sm text-mist/80">{error || schedule.error}</p>
+                ) : null}
+
+                <section aria-label="Upcoming matches">
+                  <h2 className="mb-3 font-display text-xl tracking-wide text-cream">
+                    Upcoming
+                  </h2>
+                  {upcomingGrouped.length === 0 ? (
+                    <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
+                  ) : (
+                    <div className="flex flex-col gap-5">
+                      {upcomingGrouped.map(({ dateKey, matches: dayMatches }) => (
+                        <section key={`up-${dateKey}`} aria-label={formatMatchDayHeading(dateKey)}>
+                          <h3 className="mb-2 px-0.5 text-sm font-semibold text-mist/70">
+                            {formatMatchDayHeading(dateKey)}
+                          </h3>
+                          <MatchList
+                            matches={dayMatches}
+                            onOpenTeam={onOpenTeam}
+                            onOpenPlayer={onOpenPlayer}
+                            onOpenLeague={onOpenLeague}
+                            favoriteLeagueIds={favorites.leagueIds}
+                            favoriteTeamIds={favorites.teamIds}
+                            emptyLabel="No matches"
+                          />
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="mt-8" aria-label="Past matches">
+                  <h2 className="mb-3 font-display text-xl tracking-wide text-cream">
+                    Results
+                  </h2>
+                  {recentGrouped.length === 0 ? (
+                    <p className="text-sm text-mist/70">
+                      No recent results in the current window.
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-5">
+                      {recentGrouped.map(({ dateKey, matches: dayMatches }) => (
+                        <section
+                          key={`past-${dateKey}`}
+                          aria-label={formatMatchDayHeading(dateKey)}
+                        >
+                          <h3 className="mb-2 px-0.5 text-sm font-semibold text-mist/70">
+                            {formatMatchDayHeading(dateKey)}
+                          </h3>
+                          <MatchList
+                            matches={dayMatches}
+                            onOpenTeam={onOpenTeam}
+                            onOpenPlayer={onOpenPlayer}
+                            onOpenLeague={onOpenLeague}
+                            favoriteLeagueIds={favorites.leagueIds}
+                            favoriteTeamIds={favorites.teamIds}
+                            emptyLabel="No matches"
+                          />
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
+                  <button
+                    type="button"
+                    onClick={loadEarlierResults}
+                    disabled={loadingEarlier || pastExhausted || !onNeedPastRange}
+                    className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
+                  >
+                    {loadingEarlier
+                      ? 'Loading earlier…'
+                      : pastExhausted
+                        ? 'No earlier results in range'
+                        : `Load earlier results · ${pastHorizonDays}+ days`}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         ) : null}
 
-        {teamPlayerXg.length > 0 ? (
-          <div className="mt-5 border border-white/10 bg-white/[0.03] px-3.5 py-3">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-lime/80">
-              Squad xG leaders
-            </p>
-            <ul className="mt-2 flex flex-col gap-1.5">
-              {teamPlayerXg.map((row) => (
-                <li
-                  key={row.fotmobPlayerId}
-                  className="flex items-baseline justify-between gap-3 text-sm"
-                >
-                  <span className="min-w-0 truncate font-semibold text-cream">{row.name}</span>
-                  <span className="shrink-0 tabular-nums text-lime">
-                    {row.xg.toFixed(1)} xG
-                    {row.goals != null ? ` · ${row.goals} G` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </section>
-
-      <div className="mt-6 flex flex-col gap-3">
-        {league.hasStandings ? (
-          <ProfileAccordion
-            title="Table"
-            subtitle={
-              standing?.group ? `${standing.group} · ${league.name}` : league.name
-            }
-            open={openSection === 'table'}
-            onToggle={() => toggle('table')}
-          >
-            <StandingsTable
-              rows={standings.rows}
-              loading={standings.loading}
-              error={standings.error}
-              leagueId={team.leagueId}
-              isTeamFavorite={favorites.isTeamFavorite}
-              onToggleTeam={favorites.toggleTeam}
-              onOpenTeam={onOpenTeam}
-              highlightedTeamId={team.id}
-              onRetry={() => void standings.reload()}
-              seasons={standings.seasons}
-              seasonsLoading={standings.seasonsLoading}
-              selectedSeason={standings.selectedSeason}
-              onSelectSeason={standings.selectSeason}
-            />
-          </ProfileAccordion>
-        ) : null}
-
-        <ProfileAccordion
-          title="Upcoming Fixtures"
-          open={openSection === 'upcoming'}
-          onToggle={() => toggle('upcoming')}
-        >
-          {fixturesLoading && upcomingGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">Loading fixtures…</p>
-          ) : (
-            <>
-              {(error || schedule.error) && upcomingGrouped.length === 0 ? (
-                <p className="text-sm text-mist/80">{error || schedule.error}</p>
-              ) : null}
-              {(error || schedule.error) && upcomingGrouped.length > 0 ? (
-                <p className="mb-3 text-sm text-mist/70">{error || schedule.error}</p>
-              ) : null}
-              {(!error && !schedule.error) || upcomingGrouped.length > 0 ? (
-                upcomingGrouped.length === 0 ? (
-                  <p className="text-sm text-mist/70">No upcoming matches known yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-5">
-                    {upcomingGrouped.map(({ dateKey, matches: dayMatches }) => (
-                      <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                        <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
-                          {formatMatchDayHeading(dateKey)}
-                        </h2>
-                        <MatchList
-                          matches={dayMatches}
-                          onOpenTeam={onOpenTeam}
-                          onOpenPlayer={onOpenPlayer}
-                          onOpenLeague={onOpenLeague}
-                          favoriteLeagueIds={favorites.leagueIds}
-                          favoriteTeamIds={favorites.teamIds}
-                          emptyLabel="No matches"
-                        />
-                      </section>
-                    ))}
-                  </div>
-                )
-              ) : null}
-            </>
-          )}
-        </ProfileAccordion>
-
-        <ProfileAccordion
-          title="Past Fixtures"
-          open={openSection === 'recent'}
-          onToggle={() => toggle('recent')}
-        >
-          {fixturesLoading && recentGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">Loading results…</p>
-          ) : (error || schedule.error) && recentGrouped.length === 0 ? (
-            <div>
-              <p className="text-sm text-mist/80">{error || schedule.error}</p>
-            </div>
-          ) : recentGrouped.length === 0 ? (
-            <p className="text-sm text-mist/70">No recent results in the current window.</p>
-          ) : (
-            <div
-              ref={recentScrollRef}
-              onScroll={onRecentScroll}
-              className="max-h-[28rem] overflow-y-auto overscroll-contain pr-1"
-            >
-              <div className="flex flex-col gap-5">
-                {recentGrouped.map(({ dateKey, matches: dayMatches }) => (
-                  <section key={dateKey} aria-label={formatMatchDayHeading(dateKey)}>
-                    <h2 className="mb-2 px-0.5 font-display text-xl tracking-wide text-cream">
-                      {formatMatchDayHeading(dateKey)}
-                    </h2>
-                    <MatchList
-                      matches={dayMatches}
-                      onOpenTeam={onOpenTeam}
-                      onOpenPlayer={onOpenPlayer}
-                      onOpenLeague={onOpenLeague}
-                      favoriteLeagueIds={favorites.leagueIds}
-                      favoriteTeamIds={favorites.teamIds}
-                      emptyLabel="No matches"
-                    />
-                  </section>
-                ))}
-              </div>
-
-              <div className="sticky bottom-0 mt-4 bg-gradient-to-t from-pitch via-pitch/95 to-transparent pt-3 pb-1">
-                <button
-                  type="button"
-                  onClick={loadEarlierResults}
-                  disabled={loadingEarlier || pastExhausted || !onNeedPastRange}
-                  className="w-full border border-dashed border-white/15 bg-white/[0.03] px-3 py-2.5 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime disabled:opacity-50"
-                >
-                  {loadingEarlier
-                    ? 'Loading earlier…'
-                    : pastExhausted
-                      ? 'No earlier results in range'
-                      : `Load earlier results · ${pastHorizonDays}+ days`}
-                </button>
-              </div>
-            </div>
-          )}
-        </ProfileAccordion>
-
-        <ProfileAccordion
-          title="Stat Leaders"
-          open={openSection === 'leaders'}
-          onToggle={() => toggle('leaders')}
-        >
-          <TeamStatLeadersPanel
-            data={leaders.data}
-            loading={leaders.loading}
-            error={leaders.error}
+        {tab === 'table' && league.hasStandings && !isNational ? (
+          <StandingsTable
+            rows={standings.rows}
+            loading={standings.loading}
+            error={standings.error}
             leagueId={team.leagueId}
-            seasons={leaders.seasons}
-            seasonsLoading={leaders.seasonsLoading}
-            selectedSeason={leaders.selectedSeason}
-            onSelectSeason={leaders.selectSeason}
-            onOpenPlayer={onOpenPlayer}
+            isTeamFavorite={favorites.isTeamFavorite}
+            onToggleTeam={favorites.toggleTeam}
+            onOpenTeam={onOpenTeam}
+            highlightedTeamId={team.id}
+            onRetry={() => void standings.reload()}
+            seasons={standings.seasons}
+            seasonsLoading={standings.seasonsLoading}
+            selectedSeason={standings.selectedSeason}
+            onSelectSeason={standings.selectSeason}
           />
-        </ProfileAccordion>
+        ) : null}
 
-        <ProfileAccordion
-          title="Squad"
-          subtitle={isNational ? 'Current camp / tournament squad' : 'Full roster by position'}
-          open={openSection === 'roster'}
-          onToggle={() => toggle('roster')}
-        >
+        {tab === 'stats' ? (
+          isNational ? (
+            <p className="text-sm text-mist/70">
+              Club-style season leaders are not available for national teams.
+            </p>
+          ) : (
+            <TeamStatLeadersPanel
+              data={leaders.data}
+              loading={leaders.loading}
+              error={leaders.error}
+              leagueId={team.leagueId}
+              seasons={leaders.seasons}
+              seasonsLoading={leaders.seasonsLoading}
+              selectedSeason={leaders.selectedSeason}
+              onSelectSeason={leaders.selectSeason}
+              onOpenPlayer={onOpenPlayer}
+            />
+          )
+        ) : null}
+
+        {tab === 'squad' ? (
           <TeamRosterPanel
             data={roster.data}
             loading={roster.loading}
@@ -846,7 +765,7 @@ export function TeamProfileScreen({
             onSelectSeason={roster.selectSeason}
             onOpenPlayer={onOpenPlayer}
           />
-        </ProfileAccordion>
+        ) : null}
       </div>
     </ProfileShell>
   )

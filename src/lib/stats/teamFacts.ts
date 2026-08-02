@@ -25,7 +25,14 @@ export type TeamClubFacts = {
   /** Best-effort major trophy total from public encyclopedic sources. */
   trophyCount?: number
   trophySource?: string
+  /** Parsed honour lines (e.g. "Serie A · 1969–70"). */
+  trophies?: TeamTrophyTitle[]
   fetchedAt: number
+}
+
+export type TeamTrophyTitle = {
+  competition: string
+  seasons: string
 }
 
 type EspnSiteTeamPayload = {
@@ -92,27 +99,71 @@ export function estimateTrophyCountFromText(extract: string): number | null {
   return total
 }
 
-async function fetchWikipediaTrophyCount(teamName: string): Promise<{
+async function resolveWikipediaTitle(teamName: string): Promise<string | null> {
+  const searchUrl = new URL('https://en.wikipedia.org/w/api.php')
+  searchUrl.searchParams.set('action', 'opensearch')
+  searchUrl.searchParams.set('search', teamName)
+  searchUrl.searchParams.set('limit', '6')
+  searchUrl.searchParams.set('namespace', '0')
+  searchUrl.searchParams.set('format', 'json')
+  searchUrl.searchParams.set('origin', '*')
+  const searchRes = await fetch(searchUrl)
+  if (!searchRes.ok) return null
+  const searchJson = (await searchRes.json()) as [string, string[], string[], string[]]
+  const titles = searchJson[1] ?? []
+  return (
+    titles.find((title) => /F\.?C\.?$|C\.?F\.?$|S\.?C\.?$|A\.?C\.?$/i.test(title)) ||
+    titles.find((title) => /football|soccer|club|calcio/i.test(title)) ||
+    titles[0] ||
+    null
+  )
+}
+
+function stripWikiHtml(raw: string): string {
+  return raw
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, '\n')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/\n+/g, '\n')
+}
+
+/** Parse "Serie A … Winners (1): 1969–70" style honour blocks into title rows. */
+export function parseWikipediaHonoursText(text: string): TeamTrophyTitle[] {
+  const cleaned = text
+    .replace(/\[\s*edit\s*\]/gi, ' ')
+    .replace(/\(\s*Tier\s*\d+\s*\)/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!cleaned) return []
+
+  const titles: TeamTrophyTitle[] = []
+  const winnerBlocks =
+    cleaned.matchAll(
+      /([A-Z][A-Za-z0-9 .'/&-]{2,60}?)\s*:\s*Winners?\s*\((\d+)\)\s*:\s*([0-9–,\s-]+?)(?=(?:[A-Z][A-Za-z0-9 .'/&-]{2,60}?\s*:\s*(?:Winners?|Runners-up))|$)/g,
+    )
+
+  for (const match of winnerBlocks) {
+    const competition = match[1]?.trim()
+    const seasons = match[3]?.replace(/\s+/g, ' ').replace(/,\s*$/, '').trim()
+    if (!competition || !seasons) continue
+    if (/^(national|domestic|european|international|regional)\b/i.test(competition)) continue
+    titles.push({ competition, seasons })
+  }
+
+  return titles.slice(0, 12)
+}
+
+async function fetchWikipediaTrophies(teamName: string): Promise<{
   count: number | null
   source?: string
+  trophies: TeamTrophyTitle[]
 }> {
   try {
-    const searchUrl = new URL('https://en.wikipedia.org/w/api.php')
-    searchUrl.searchParams.set('action', 'opensearch')
-    searchUrl.searchParams.set('search', teamName)
-    searchUrl.searchParams.set('limit', '6')
-    searchUrl.searchParams.set('namespace', '0')
-    searchUrl.searchParams.set('format', 'json')
-    searchUrl.searchParams.set('origin', '*')
-    const searchRes = await fetch(searchUrl)
-    if (!searchRes.ok) return { count: null }
-    const searchJson = (await searchRes.json()) as [string, string[], string[], string[]]
-    const titles = searchJson[1] ?? []
-    const preferred =
-      titles.find((title) => /F\.?C\.?$|C\.?F\.?$|S\.?C\.?$|A\.?C\.?$/i.test(title)) ||
-      titles.find((title) => /football|soccer|club/i.test(title)) ||
-      titles[0]
-    if (!preferred) return { count: null }
+    const preferred = await resolveWikipediaTitle(teamName)
+    if (!preferred) return { count: null, trophies: [] }
 
     const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
       preferred.replace(/ /g, '_'),
@@ -120,13 +171,66 @@ async function fetchWikipediaTrophyCount(teamName: string): Promise<{
     const summaryRes = await fetch(summaryUrl, {
       headers: { Accept: 'application/json' },
     })
-    if (!summaryRes.ok) return { count: null }
-    const summary = (await summaryRes.json()) as { extract?: string; title?: string }
-    const count = estimateTrophyCountFromText(summary.extract || '')
-    if (count == null) return { count: null }
-    return { count, source: summary.title || preferred }
+    const summary = summaryRes.ok
+      ? ((await summaryRes.json()) as { extract?: string; title?: string })
+      : null
+    const countFromExtract = estimateTrophyCountFromText(summary?.extract || '')
+
+    let trophies: TeamTrophyTitle[] = []
+    try {
+      const sectionsUrl = new URL('https://en.wikipedia.org/w/api.php')
+      sectionsUrl.searchParams.set('action', 'parse')
+      sectionsUrl.searchParams.set('page', preferred)
+      sectionsUrl.searchParams.set('prop', 'sections')
+      sectionsUrl.searchParams.set('format', 'json')
+      sectionsUrl.searchParams.set('origin', '*')
+      const sectionsRes = await fetch(sectionsUrl)
+      if (sectionsRes.ok) {
+        const sectionsJson = (await sectionsRes.json()) as {
+          parse?: { sections?: Array<{ index: string; line: string }> }
+        }
+        const honour = (sectionsJson.parse?.sections ?? []).find((section) =>
+          /^honou?rs?$/i.test(section.line.trim()),
+        )
+        if (honour) {
+          const textUrl = new URL('https://en.wikipedia.org/w/api.php')
+          textUrl.searchParams.set('action', 'parse')
+          textUrl.searchParams.set('page', preferred)
+          textUrl.searchParams.set('prop', 'text')
+          textUrl.searchParams.set('section', honour.index)
+          textUrl.searchParams.set('format', 'json')
+          textUrl.searchParams.set('origin', '*')
+          const textRes = await fetch(textUrl)
+          if (textRes.ok) {
+            const textJson = (await textRes.json()) as {
+              parse?: { text?: { ['*']?: string } }
+            }
+            trophies = parseWikipediaHonoursText(
+              stripWikiHtml(textJson.parse?.text?.['*'] || ''),
+            )
+          }
+        }
+      }
+    } catch {
+      // keep extract count only
+    }
+
+    const count =
+      trophies.length > 0
+        ? trophies.reduce((sum, row) => {
+            const years = row.seasons.split(',').map((part) => part.trim()).filter(Boolean)
+            return sum + Math.max(1, years.length)
+          }, 0)
+        : countFromExtract
+
+    if (count == null && trophies.length === 0) return { count: null, trophies: [] }
+    return {
+      count: count ?? trophies.length,
+      source: summary?.title || preferred,
+      trophies,
+    }
   } catch {
-    return { count: null }
+    return { count: null, trophies: [] }
   }
 }
 
@@ -184,8 +288,8 @@ export async function fetchTeamClubFacts(
 
   const sportsDb = await fetchSportsDbFacts(name)
   const wiki = isNational
-    ? { count: null as number | null, source: undefined }
-    : await fetchWikipediaTrophyCount(name)
+    ? { count: null as number | null, source: undefined, trophies: [] as TeamTrophyTitle[] }
+    : await fetchWikipediaTrophies(name)
 
   const country =
     coreJson.venue?.address?.country ||
@@ -215,6 +319,7 @@ export async function fetchTeamClubFacts(
     isNational,
     trophyCount: wiki.count ?? undefined,
     trophySource: wiki.source,
+    trophies: wiki.trophies.length > 0 ? wiki.trophies : undefined,
     fetchedAt: Date.now(),
   }
 }

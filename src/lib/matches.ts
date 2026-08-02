@@ -376,15 +376,22 @@ export function recentFormForTeam(
   teamId: string,
   limit = 5,
 ): TeamFormResult[] {
-  const finished = matchesForTeam(matches, teamId)
+  return recentFormMatchesForTeam(matches, teamId, limit)
+    .map((match) => teamResult(match, teamId))
+    .filter((result): result is TeamFormResult => result != null)
+}
+
+/** Finished matches backing the form strip (oldest → newest). */
+export function recentFormMatchesForTeam(
+  matches: Match[],
+  teamId: string,
+  limit = 5,
+): Match[] {
+  return matchesForTeam(matches, teamId)
     .filter((match) => match.status === 'finished')
     .sort((a, b) => b.kickoff.localeCompare(a.kickoff))
     .slice(0, limit)
     .reverse()
-
-  return finished
-    .map((match) => teamResult(match, teamId))
-    .filter((result): result is TeamFormResult => result != null)
 }
 
 export type SideRecord = {
