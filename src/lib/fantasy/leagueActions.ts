@@ -17,9 +17,11 @@ import { estimateGwPoints } from './scoring'
 import type { FantasyPlayer } from './types'
 import {
   ALLOWED_DRAFT_CLOCKS,
+  ALLOWED_SURVIVAL_TEAM_COUNTS,
   ALLOWED_TEAM_COUNTS,
   DEFAULT_DRAFT_CLOCK_SECONDS,
   DEFAULT_AUCTION_BUDGET,
+  DEFAULT_GAME_MODE,
   DEFAULT_ROSTER_SPOTS,
   DEFAULT_STARTER_SPOTS,
   DEFAULT_TRADE_VETO_HOURS,
@@ -27,12 +29,23 @@ import {
   POSITION_LIMITS,
   SEASON_GWS,
   type DraftMode,
+  type FantasyGameMode,
   type FantasyLeague,
   type FantasyMember,
   type FantasyPosition,
   type ScoringPreset,
+  type SurvivalSettings,
   type TradeOffer,
 } from './types'
+import { normalizeSurvivalSettings } from './survival'
+
+export {
+  applySurvivalGwResults,
+  autoPickSurvivalBots,
+  lockSurvivalGw,
+  setSurvivalPick,
+  startSurvivalSeason,
+} from './survival'
 import { canAddPosition } from './lineup'
 import {
   cancelWaiverClaim,
@@ -57,6 +70,7 @@ function blankMember(
   name: string,
   isCommissioner: boolean,
   now: number,
+  lives = 1,
 ): FantasyMember {
   return {
     id,
@@ -75,12 +89,17 @@ function blankMember(
     ties: 0,
     pointsFor: 0,
     pointsAgainst: 0,
+    survivalPicks: [],
+    survivalLivesRemaining: lives,
   }
 }
 
 /** Migrate older local/cloud leagues to FF-style defaults. */
 export function normalizeLeague(raw: FantasyLeague): FantasyLeague {
   const leagueAuctionBudget = raw.auctionBudget || DEFAULT_AUCTION_BUDGET
+  // Existing saves without gameMode stay on H2H so demos/draft leagues keep working.
+  const gameMode: FantasyGameMode = raw.gameMode ?? 'h2h'
+  const survival = normalizeSurvivalSettings(raw.survival)
   const members = (raw.members ?? []).map((m) => ({
     ...m,
     autodraft: Boolean(m.autodraft),
@@ -94,10 +113,17 @@ export function normalizeLeague(raw: FantasyLeague): FantasyLeague {
     ties: m.ties ?? 0,
     pointsFor: m.pointsFor ?? 0,
     pointsAgainst: m.pointsAgainst ?? 0,
+    survivalPicks: m.survivalPicks ?? [],
+    survivalLivesRemaining: m.survivalLivesRemaining ?? survival.lives,
+    eliminatedAtGw: m.eliminatedAtGw,
   }))
 
   return {
     ...raw,
+    gameMode,
+    survival,
+    survivalLockedGws: raw.survivalLockedGws ?? [],
+    survivalScoredGws: raw.survivalScoredGws ?? [],
     members,
     rosterSpots: raw.rosterSpots || DEFAULT_ROSTER_SPOTS,
     starterSpots: raw.starterSpots || DEFAULT_STARTER_SPOTS,
@@ -137,18 +163,36 @@ export function createLeague(input: {
   draftClockSeconds?: number
   draftMode?: DraftMode
   scoringPreset?: ScoringPreset
+  gameMode?: FantasyGameMode
+  survival?: Partial<SurvivalSettings>
   quickFillBots?: boolean
   currentGw?: number
 }): FantasyLeague {
-  if (!ALLOWED_TEAM_COUNTS.includes(input.teamCount as (typeof ALLOWED_TEAM_COUNTS)[number])) {
-    throw new Error('Team count must be 4, 6, 8, 10, or 12')
+  const gameMode = input.gameMode ?? DEFAULT_GAME_MODE
+  const survival = normalizeSurvivalSettings(input.survival)
+  const allowedOk =
+    gameMode === 'survival'
+      ? (ALLOWED_SURVIVAL_TEAM_COUNTS as readonly number[]).includes(input.teamCount)
+      : (ALLOWED_TEAM_COUNTS as readonly number[]).includes(input.teamCount)
+  if (!allowedOk) {
+    throw new Error(
+      gameMode === 'survival'
+        ? 'Team count must be 2, 4, 6, 8, 10, 12, 16, or 20'
+        : 'Team count must be 4, 6, 8, 10, or 12',
+    )
   }
   const clock = input.draftClockSeconds ?? DEFAULT_DRAFT_CLOCK_SECONDS
   if (!ALLOWED_DRAFT_CLOCKS.includes(clock as (typeof ALLOWED_DRAFT_CLOCKS)[number])) {
     throw new Error('Invalid draft clock')
   }
   const now = Date.now()
-  const commissioner = blankMember(input.commissionerId, input.commissionerName, true, now)
+  const commissioner = blankMember(
+    input.commissionerId,
+    input.commissionerName,
+    true,
+    now,
+    survival.lives,
+  )
   let members: FantasyMember[] = [commissioner]
   if (input.quickFillBots) {
     let botIndex = 1
@@ -157,21 +201,24 @@ export function createLeague(input: {
       botIndex += 1
       if (id === input.commissionerId) continue
       members.push({
-        ...blankMember(id, `CPU Manager ${members.length}`, false, now),
+        ...blankMember(id, `CPU Manager ${members.length}`, false, now, survival.lives),
         autodraft: true,
       })
     }
   }
-  const draftOrder = input.quickFillBots ? members.map((m) => m.id) : []
-  if (input.quickFillBots) {
+  const draftOrder =
+    gameMode === 'h2h' && input.quickFillBots ? members.map((m) => m.id) : []
+  if (gameMode === 'h2h' && input.quickFillBots) {
     members = members.map((m, i) => ({ ...m, draftSlot: i + 1 }))
   }
 
+  const defaultName = gameMode === 'survival' ? 'EPL Survival' : 'FPL League'
   const league: FantasyLeague = {
     id: uid('lg'),
     inviteCode: inviteCode(),
-    name: input.name.trim() || 'FPL League',
+    name: input.name.trim() || defaultName,
     competition: 'premier-league',
+    gameMode,
     createdAt: now,
     updatedAt: now,
     commissionerId: input.commissionerId,
@@ -180,13 +227,19 @@ export function createLeague(input: {
     starterSpots: DEFAULT_STARTER_SPOTS,
     draftMode: input.draftMode ?? 'snake',
     scoringPreset: input.scoringPreset ?? 'classic',
+    survival,
+    survivalLockedGws: [],
+    survivalScoredGws: [],
     activity: [],
     tradeVetoHours: DEFAULT_TRADE_VETO_HOURS,
     autoScore: true,
     lineupLockedGws: [],
     auctionBudget: DEFAULT_AUCTION_BUDGET,
     draftClockSeconds: clock,
-    phase: input.quickFillBots ? 'draft_setup' : 'lobby',
+    phase:
+      gameMode === 'h2h' && input.quickFillBots
+        ? 'draft_setup'
+        : 'lobby',
     members,
     draftOrder,
     draftPicks: [],
@@ -198,7 +251,7 @@ export function createLeague(input: {
     matchups: [],
     playoffs: [],
     playerGwPoints: {},
-    currentGw: input.currentGw ?? 1,
+    currentGw: input.currentGw ?? survival.startGw,
     playoffStartGw: PLAYOFF_START_GW,
     seasonGws: SEASON_GWS,
   }
@@ -214,10 +267,20 @@ export function joinLeague(
   if (league.members.length >= league.teamCount) {
     throw new Error('League is full')
   }
-  if (league.phase !== 'lobby' && league.phase !== 'draft_setup') {
+  if (league.gameMode === 'survival') {
+    if (league.phase !== 'lobby') {
+      throw new Error('Survival season already started — joining is closed')
+    }
+  } else if (league.phase !== 'lobby' && league.phase !== 'draft_setup') {
     throw new Error('Draft already started — joining is closed')
   }
-  const member = blankMember(memberId, name, false, Date.now())
+  const member = blankMember(
+    memberId,
+    name,
+    false,
+    Date.now(),
+    league.survival?.lives ?? 1,
+  )
   return pushActivity({
     ...league,
     members: [...league.members, member],

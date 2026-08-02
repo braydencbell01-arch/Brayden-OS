@@ -1,6 +1,8 @@
 export type FantasyPosition = 'GKP' | 'DEF' | 'MID' | 'FWD'
 export type DraftMode = 'snake' | 'auction'
 export type ScoringPreset = 'classic' | 'offense' | 'clean_sheet'
+/** Survival = weekly club pick LMS. H2H = American FF draft league. */
+export type FantasyGameMode = 'survival' | 'h2h'
 
 export type LeaguePhase =
   | 'lobby'
@@ -10,6 +12,27 @@ export type LeaguePhase =
   | 'semifinals'
   | 'finals'
   | 'complete'
+
+export type SurvivalPickResult = 'W' | 'D' | 'L' | 'bye' | 'pending'
+
+export type SurvivalPick = {
+  gw: number
+  /** FPL team id from the catalog. */
+  teamId: number
+  result?: SurvivalPickResult
+  survived?: boolean
+}
+
+export type SurvivalSettings = {
+  /** Losses allowed before elimination (1 = classic last man standing). */
+  lives: number
+  /** When true, a draw keeps you alive (“must not lose”). */
+  drawCountsAsSurvive: boolean
+  startGw: number
+  endGw: number
+  /** If a picked club does not play that GW, survive (true) or count as a loss. */
+  byeCountsAsSurvive: boolean
+}
 
 export type FantasyPlayer = {
   id: number
@@ -57,6 +80,10 @@ export type FantasyMember = {
   ties: number
   pointsFor: number
   pointsAgainst: number
+  /** Survival mode: weekly club picks (each club at most once). */
+  survivalPicks?: SurvivalPick[]
+  survivalLivesRemaining?: number
+  eliminatedAtGw?: number
 }
 
 export type DraftPick = {
@@ -136,6 +163,8 @@ export type FantasyLeague = {
   syncBlobId?: string
   name: string
   competition: 'premier-league'
+  /** Defaults to survival for new leagues; older saves normalize to h2h. */
+  gameMode: FantasyGameMode
   createdAt: number
   updatedAt: number
   commissionerId: string
@@ -144,6 +173,11 @@ export type FantasyLeague = {
   starterSpots: number
   draftMode: DraftMode
   scoringPreset: ScoringPreset
+  survival: SurvivalSettings
+  /** Survival GWs where picks are locked (no further changes). */
+  survivalLockedGws: number[]
+  /** Survival GWs that have been scored against club results. */
+  survivalScoredGws: number[]
   activity: ActivityEvent[]
   tradeVetoHours: number
   autoScore: boolean
@@ -190,6 +224,9 @@ export type FantasyStoreState = {
 }
 
 export const ALLOWED_TEAM_COUNTS = [4, 6, 8, 10, 12] as const
+/** Survival lobbies can be larger than H2H (no weekly matchup pairing). */
+export const ALLOWED_SURVIVAL_TEAM_COUNTS = [2, 4, 6, 8, 10, 12, 16, 20] as const
+export const ALLOWED_SURVIVAL_LIVES = [1, 2, 3] as const
 /** Fantasy-football depth: 11 starters + 7 bench. */
 export const DEFAULT_ROSTER_SPOTS = 18
 export const DEFAULT_STARTER_SPOTS = 11
@@ -203,6 +240,18 @@ export const MAX_IR_SLOTS = 2
 export const DEFAULT_TRADE_VETO_HOURS = 24
 export const DEFAULT_AUCTION_BUDGET = 200
 export const ACTIVITY_LIMIT = 80
+export const DEFAULT_GAME_MODE: FantasyGameMode = 'survival'
+
+export function defaultSurvivalSettings(overrides?: Partial<SurvivalSettings>): SurvivalSettings {
+  return {
+    lives: 1,
+    drawCountsAsSurvive: true,
+    startGw: 1,
+    endGw: SEASON_GWS,
+    byeCountsAsSurvive: true,
+    ...overrides,
+  }
+}
 
 /** Max on full roster (must sum to DEFAULT_ROSTER_SPOTS). */
 export const POSITION_LIMITS: Record<FantasyPosition, number> = {

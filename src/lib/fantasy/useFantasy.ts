@@ -3,6 +3,8 @@ import { loadFplCatalog, type FplCatalog } from './fplData'
 import {
   addFreeAgent,
   activateFromIr,
+  applySurvivalGwResults,
+  autoPickSurvivalBots,
   autoSetStarters,
   autoProcessDueGameweeks,
   beginDraft,
@@ -11,6 +13,7 @@ import {
   draftPlayer,
   dropToWaivers,
   joinLeague,
+  lockSurvivalGw,
   moveToIr,
   nominatePlayer,
   normalizeLeague,
@@ -25,15 +28,31 @@ import {
   setDraftQueue,
   setDraftOrder,
   setMemberAutodraft,
+  setSurvivalPick,
   setStarters,
+  startSurvivalSeason,
   submitWaiverClaim,
   tickTradeVetoes,
   voteTradeVeto,
 } from './leagueActions'
 import { buildDemoLeague } from './demoLeague'
 import { snakeMemberForPick } from './draft'
+import {
+  fetchSurvivalResultsForGw,
+  loadEplGameweekCalendar,
+  playingTeamIdsForGw,
+} from './eplResults'
 import { createSyncBlob, looksLikeBlobId, pullLeague, pushLeague } from './sync'
-import type { DraftMode, FantasyIdentity, FantasyLeague, FantasyStoreState, ScoringPreset } from './types'
+import type {
+  DraftMode,
+  FantasyGameMode,
+  FantasyIdentity,
+  FantasyLeague,
+  FantasyStoreState,
+  ScoringPreset,
+  SurvivalPickResult,
+  SurvivalSettings,
+} from './types'
 
 const STORAGE_KEY = 'brayden-stats-fantasy-v1'
 
@@ -41,6 +60,8 @@ type CreateOptions = {
   draftClockSeconds?: number
   draftMode?: DraftMode
   scoringPreset?: ScoringPreset
+  gameMode?: FantasyGameMode
+  survival?: Partial<SurvivalSettings>
   quickFillBots?: boolean
 }
 
@@ -169,8 +190,10 @@ export function useFantasy() {
         draftClockSeconds: options.draftClockSeconds,
         draftMode: options.draftMode,
         scoringPreset: options.scoringPreset,
+        gameMode: options.gameMode,
+        survival: options.survival,
         quickFillBots: options.quickFillBots,
-        currentGw: catalog?.currentGw ?? 1,
+        currentGw: options.survival?.startGw ?? catalog?.currentGw ?? 1,
       })
       setSyncing(true)
       setSyncError(null)
@@ -451,10 +474,15 @@ export function useFantasy() {
 
   const createQuickLeague = useCallback(
     () =>
-      create('Quick League', 8, {
-        draftClockSeconds: 90,
-        draftMode: 'snake',
-        scoringPreset: 'classic',
+      create('Quick Survival', 8, {
+        gameMode: 'survival',
+        survival: {
+          lives: 1,
+          drawCountsAsSurvive: true,
+          startGw: 1,
+          endGw: 38,
+          byeCountsAsSurvive: true,
+        },
         quickFillBots: true,
       }),
     [create],
@@ -564,6 +592,49 @@ export function useFantasy() {
       return updateActive((l) => voteTradeVeto(l, tradeId, me.id))
     },
     runScoreGw: (gw: number) => updateActive((l) => scoreGameweek(l, gw, playerMap)),
+    startSurvival: () => updateActive((l) => startSurvivalSeason(l, l.currentGw)),
+    setSurvivalClubPick: (gw: number, teamId: number) => {
+      if (!me) throw new Error('You are not in this league')
+      const teams = catalog?.teams ?? []
+      return updateActive((l) => setSurvivalPick(l, me.id, gw, teamId, teams))
+    },
+    lockSurvivalPicks: (gw: number) => updateActive((l) => lockSurvivalGw(l, gw)),
+    autoPickSurvivalBots: async () => {
+      const teams = catalog?.teams ?? []
+      const calendar = await loadEplGameweekCalendar()
+      return updateActive((l) => {
+        const playing = playingTeamIdsForGw(calendar, l.currentGw)
+        return autoPickSurvivalBots(l, teams, playing)
+      })
+    },
+    resolveSurvivalGw: async (gw: number, manualResults?: Record<number, SurvivalPickResult>) => {
+      const teams = catalog?.teams ?? []
+      const calendar = await loadEplGameweekCalendar()
+      const playing = playingTeamIdsForGw(calendar, gw)
+      const results = manualResults ?? (await fetchSurvivalResultsForGw(gw, teams, calendar))
+      if (!manualResults) {
+        if (Object.keys(results).length === 0) {
+          throw new Error(`No finished EPL results found for GW ${gw} yet`)
+        }
+        const missing = [...playing].filter((id) => results[id] == null)
+        if (missing.length > 0) {
+          const labels = missing
+            .slice(0, 6)
+            .map((id) => teams.find((t) => t.id === id)?.short ?? `#${id}`)
+            .join(', ')
+          throw new Error(
+            `GW ${gw} still has unfinished clubs (${labels}${missing.length > 6 ? '…' : ''}). Try again after full-time.`,
+          )
+        }
+      }
+      return updateActive((l) => {
+        let next = l
+        if (l.gameMode === 'survival') {
+          next = autoPickSurvivalBots(next, teams, playing)
+        }
+        return applySurvivalGwResults(next, gw, results, teams)
+      })
+    },
     runAutos,
   }
 }

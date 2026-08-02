@@ -27,6 +27,8 @@ import { FantasyCommissionerChecklist } from './FantasyCommissionerChecklist'
 import { FantasyHome } from './FantasyHome'
 import { FantasyMatchupCenter } from './FantasyMatchupCenter'
 import { FantasyResearchPanel } from './FantasyResearchPanel'
+import { FantasySurvivalPanel } from './FantasySurvivalPanel'
+import { isSurvivalLeague, survivalStandings, isMemberAlive } from '../../lib/fantasy/survival'
 import { downloadLeagueJson, parseLeagueImport } from '../../lib/fantasy/exportImport'
 import { matchesInclusive } from '../../lib/inclusiveSearch'
 import type { PlayerNavRef } from '../PlayerProfileScreen'
@@ -41,6 +43,8 @@ type HubTab =
   | 'standings'
   | 'bracket'
   | 'research'
+  | 'picks'
+  | 'survival-table'
 
 function playerLabel(p: FantasyPlayer | undefined, id: number): string {
   if (!p) return `#${id}`
@@ -66,6 +70,10 @@ function useClockLabel(deadlineAt: number | undefined): string {
 }
 
 function defaultTab(league: FantasyLeague): HubTab {
+  if (isSurvivalLeague(league)) {
+    if (league.phase === 'regular' || league.phase === 'complete') return 'picks'
+    return 'home'
+  }
   if (league.phase === 'drafting' || league.phase === 'draft_setup') return 'draft'
   if (league.phase === 'regular' || league.phase === 'semifinals' || league.phase === 'finals') {
     return 'matchup'
@@ -125,25 +133,43 @@ function FantasyLeagueHub({
   initialResearchTab?: 'value' | 'compare'
 }) {
   const league = fantasy.activeLeague!
+  const survival = isSurvivalLeague(league)
   const [tab, setTab] = useState<HubTab>(() =>
-    initialResearchTab ? 'research' : defaultTab(league),
+    initialResearchTab && !survival ? 'research' : defaultTab(league),
   )
 
   const draftPhase =
     league.phase === 'lobby' || league.phase === 'draft_setup' || league.phase === 'drafting'
-  const tabs: Array<{ id: HubTab; label: string; hidden?: boolean }> = [
-    { id: 'home', label: 'Home' },
-    { id: 'draft', label: 'Draft', hidden: !draftPhase },
-    { id: 'matchup', label: 'Matchup', hidden: draftPhase },
-    { id: 'roster', label: 'Roster' },
-    { id: 'research', label: 'Research' },
-    { id: 'waivers', label: 'Waivers', hidden: draftPhase },
-    { id: 'trades', label: 'Trades', hidden: draftPhase },
-    { id: 'standings', label: 'Table', hidden: draftPhase },
-    { id: 'bracket', label: 'Bracket', hidden: league.playoffs.length === 0 },
-  ]
+  const tabs: Array<{ id: HubTab; label: string; hidden?: boolean }> = survival
+    ? [
+        { id: 'home', label: 'Home' },
+        { id: 'picks', label: 'Picks', hidden: league.phase === 'lobby' },
+        {
+          id: 'survival-table',
+          label: 'Table',
+          hidden: league.phase === 'lobby',
+        },
+      ]
+    : [
+        { id: 'home', label: 'Home' },
+        { id: 'draft', label: 'Draft', hidden: !draftPhase },
+        { id: 'matchup', label: 'Matchup', hidden: draftPhase },
+        { id: 'roster', label: 'Roster' },
+        { id: 'research', label: 'Research' },
+        { id: 'waivers', label: 'Waivers', hidden: draftPhase },
+        { id: 'trades', label: 'Trades', hidden: draftPhase },
+        { id: 'standings', label: 'Table', hidden: draftPhase },
+        { id: 'bracket', label: 'Bracket', hidden: league.playoffs.length === 0 },
+      ]
 
   useEffect(() => {
+    if (survival) {
+      const hidden =
+        (league.phase === 'lobby' && (tab === 'picks' || tab === 'survival-table')) ||
+        (!['home', 'picks', 'survival-table'].includes(tab))
+      if (hidden) setTab(defaultTab(league))
+      return
+    }
     const hidden =
       (!draftPhase && tab === 'draft') ||
       (draftPhase &&
@@ -151,9 +177,11 @@ function FantasyLeagueHub({
           tab === 'waivers' ||
           tab === 'trades' ||
           tab === 'standings')) ||
-      (league.playoffs.length === 0 && tab === 'bracket')
+      (league.playoffs.length === 0 && tab === 'bracket') ||
+      tab === 'picks' ||
+      tab === 'survival-table'
     if (hidden) setTab(defaultTab(league))
-  }, [league, tab, draftPhase])
+  }, [league, tab, draftPhase, survival])
 
   return (
     <FantasyShell reduce={reduce}>
@@ -170,8 +198,13 @@ function FantasyLeagueHub({
             {league.name}
           </h1>
           <p className="mt-1 text-xs text-mist/60">
-            Premier League - {phaseLabel(league.phase)} - {league.draftMode} - {league.scoringPreset} -{' '}
-            {league.members.length}/{league.teamCount} - {league.rosterSpots}-man
+            Premier League - {phaseLabel(league.phase)} -{' '}
+            {survival
+              ? `Survival · ${league.survival.lives} ${
+                  league.survival.lives === 1 ? 'life' : 'lives'
+                } · GW ${league.currentGw}`
+              : `${league.draftMode} - ${league.scoringPreset} - ${league.rosterSpots}-man`}{' '}
+            - {league.members.length}/{league.teamCount}
           </p>
         </div>
         <FantasyButton variant="ghost" onClick={() => void fantasy.refreshActive()}>
@@ -197,6 +230,8 @@ function FantasyLeagueHub({
       </div>
 
       {tab === 'home' ? <LobbyPanel fantasy={fantasy} /> : null}
+      {tab === 'picks' ? <FantasySurvivalPanel fantasy={fantasy} /> : null}
+      {tab === 'survival-table' ? <SurvivalTableOnly fantasy={fantasy} /> : null}
       {tab === 'draft' ? <DraftPanel fantasy={fantasy} /> : null}
       {tab === 'matchup' ? (
         <FantasyMatchupCenter fantasy={fantasy} onOpenBracket={() => setTab('bracket')} />
@@ -222,11 +257,112 @@ function FantasyLeagueHub({
   )
 }
 
+function SurvivalTableOnly({ fantasy }: { fantasy: FantasyApi }) {
+  const league = fantasy.activeLeague!
+  const teams = fantasy.catalog?.teams ?? []
+  const standings = survivalStandings(league)
+  return (
+    <ul className="space-y-2">
+      {standings.map((member, index) => (
+        <li
+          key={member.id}
+          className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
+        >
+          <div>
+            <p className="font-semibold text-cream">
+              <span className="mr-2 text-lime">{index + 1}.</span>
+              {member.name}
+            </p>
+            <p className="text-xs text-mist/60">
+              {isMemberAlive(member)
+                ? `${member.survivalLivesRemaining ?? league.survival.lives} lives · ${
+                    (member.survivalPicks ?? []).filter((p) => p.survived).length
+                  } weeks survived`
+                : `Eliminated GW ${member.eliminatedAtGw}`}
+            </p>
+            <p className="mt-1 text-[11px] text-mist/50">
+              Used:{' '}
+              {(member.survivalPicks ?? [])
+                .filter((p) => p.teamId > 0)
+                .map((p) => teams.find((t) => t.id === p.teamId)?.short ?? '?')
+                .join(' · ') || '—'}
+            </p>
+          </div>
+          <span
+            className={`text-xs font-bold ${isMemberAlive(member) ? 'text-lime' : 'text-star'}`}
+          >
+            {isMemberAlive(member) ? 'IN' : 'OUT'}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function LobbyPanel({ fantasy }: { fantasy: FantasyApi }) {
   const league = fantasy.activeLeague!
+  const survival = isSurvivalLeague(league)
   const isCommish = fantasy.me?.isCommissioner
   const [copied, setCopied] = useState(false)
   const [copyError, setCopyError] = useState<string | null>(null)
+
+  if (survival) {
+    return (
+      <div className="space-y-5">
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-lime">Invite</h2>
+          <p className="mt-2 text-xs text-mist/55">Share the short code and link with managers.</p>
+          <div className="mt-3 rounded-2xl border border-lime/30 bg-lime/10 px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-lime">Code</p>
+            <p className="font-display text-4xl tracking-[0.12em] text-cream">{league.inviteCode}</p>
+          </div>
+          {league.syncBlobId ? (
+            <p className="mt-2 break-all rounded-xl bg-black/30 px-3 py-2 font-mono text-xs text-mist/70">
+              {league.syncBlobId}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <FantasyButton
+              onClick={() => {
+                setCopyError(null)
+                const text = shareInviteText(league)
+                void navigator.clipboard
+                  .writeText(text)
+                  .then(() => {
+                    setCopied(true)
+                    window.setTimeout(() => setCopied(false), 1500)
+                  })
+                  .catch(() => {
+                    setCopyError('Clipboard blocked — copy the code above manually.')
+                  })
+              }}
+            >
+              {copied ? 'Copied' : 'Share invite'}
+            </FantasyButton>
+            {copyError ? <p className="text-xs text-star">{copyError}</p> : null}
+          </div>
+        </section>
+
+        <FantasyCommissionerChecklist fantasy={fantasy} />
+        <ManagersList league={league} fantasy={fantasy} />
+
+        {league.phase === 'lobby' ? <FantasySurvivalPanel fantasy={fantasy} /> : null}
+
+        {league.phase !== 'lobby' ? (
+          <section className="rounded-2xl border border-white/10 bg-black/20 p-4 text-xs leading-relaxed text-mist/65">
+            <p className="font-semibold text-cream">Survival season</p>
+            <p className="mt-2">
+              GW {league.survival.startGw}–{league.survival.endGw}. Current GW {league.currentGw}.{' '}
+              {league.survival.lives} {league.survival.lives === 1 ? 'life' : 'lives'}.{' '}
+              {league.survival.drawCountsAsSurvive ? 'Draws survive.' : 'Must win.'}
+            </p>
+          </section>
+        ) : null}
+
+        <FantasyActivityFeed league={league} />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -431,7 +567,13 @@ function ManagersList({ league, fantasy }: { league: FantasyLeague; fantasy: Fan
             </span>
             <span className="text-xs text-mist/50">
               {m.isCommissioner ? 'Commissioner' : 'Member'}
-              {m.draftSlot ? ` - Pick ${m.draftSlot}` : ''}
+              {isSurvivalLeague(league)
+                ? m.eliminatedAtGw != null
+                  ? ` - Out GW ${m.eliminatedAtGw}`
+                  : ` - ${m.survivalLivesRemaining ?? league.survival.lives} lives`
+                : m.draftSlot
+                  ? ` - Pick ${m.draftSlot}`
+                  : ''}
             </span>
           </li>
         ))}
@@ -441,7 +583,11 @@ function ManagersList({ league, fantasy }: { league: FantasyLeague; fantasy: Fan
           Waiting for {league.teamCount - league.members.length} more...
         </p>
       ) : (
-        <p className="mt-2 text-xs text-lime/90">League is full. Set draft order when ready.</p>
+        <p className="mt-2 text-xs text-lime/90">
+          {isSurvivalLeague(league)
+            ? 'Lobby full. Commissioner can start Survival.'
+            : 'League is full. Set draft order when ready.'}
+        </p>
       )}
     </section>
   )
