@@ -1,12 +1,16 @@
 import {
+  continentalLeagues,
+  domesticCupsForCountry,
   domesticPyramidEspnCodes,
   getLeague,
   internationalLeagues,
   isContinentalLeague,
+  isFriendlyLeagueId,
   isInternationalLeague,
   LEAGUES,
   type LeagueId,
 } from '../leagues'
+import { layoutPlayersOnPitch } from './formationPitch'
 import { leagueIdFromTeamSlug, resolveTeamDomesticLeagueId } from '../search'
 import {
   positionGroupFromAbbrev,
@@ -26,6 +30,8 @@ import type {
   MatchLineupPlayer,
   MatchLineupSide,
   MatchMoment,
+  MostUsedStartingXi,
+  MostUsedXiPlayer,
   PlayerCareerSeason,
   PlayerClubStint,
   PlayerProfile,
@@ -414,6 +420,303 @@ export async function fetchMatchDetailStats(
     lineups: buildLineups(data, leagueId, live, elapsedMinutes),
     live,
     elapsedMinutes,
+  }
+}
+
+type SeasonLineupEvent = {
+  espnEventId: string
+  espnCode: string
+  leagueId: LeagueId
+}
+
+async function listTeamSeasonLineupEvents(
+  leagueId: LeagueId,
+  teamId: string,
+  seasonYear: number,
+  espnCodeOverride?: string,
+): Promise<SeasonLineupEvent[]> {
+  const league = getLeague(leagueId)
+  const codes = new Set<string>()
+  if (espnCodeOverride) codes.add(espnCodeOverride)
+  codes.add(league.espnCode)
+
+  if (league.kind === 'domestic') {
+    for (const cup of domesticCupsForCountry(league.country)) {
+      if (!isFriendlyLeagueId(cup.id)) codes.add(cup.espnCode)
+    }
+    for (const continental of continentalLeagues()) {
+      if (!isFriendlyLeagueId(continental.id)) codes.add(continental.espnCode)
+    }
+  } else if (league.kind === 'international') {
+    for (const item of internationalLeagues()) {
+      if (!isFriendlyLeagueId(item.id)) codes.add(item.espnCode)
+    }
+  } else {
+    for (const continental of continentalLeagues()) {
+      if (!isFriendlyLeagueId(continental.id)) codes.add(continental.espnCode)
+    }
+  }
+
+  const codeList = [...codes]
+  const chunks = await mapPool(codeList, 4, async (espnCode) => {
+    try {
+      const url = new URL(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/teams/${encodeURIComponent(teamId)}/schedule`,
+      )
+      url.searchParams.set('season', String(seasonYear))
+      const res = await fetch(url)
+      if (!res.ok) return [] as SeasonLineupEvent[]
+      const data = (await res.json()) as {
+        events?: Array<{
+          id?: string
+          competitions?: Array<{ status?: { type?: { completed?: boolean; name?: string } } }>
+        }>
+      }
+      const leagueForCode =
+        LEAGUES.find((item) => item.espnCode === espnCode)?.id ?? leagueId
+      if (isFriendlyLeagueId(leagueForCode)) return [] as SeasonLineupEvent[]
+
+      return (data.events ?? []).flatMap((event) => {
+        const id = event.id
+        if (!id) return []
+        const competition = event.competitions?.[0]
+        const completed =
+          competition?.status?.type?.completed ||
+          competition?.status?.type?.name === 'STATUS_FULL_TIME'
+        if (!completed) return []
+        return [{ espnEventId: id, espnCode, leagueId: leagueForCode }]
+      })
+    } catch {
+      return [] as SeasonLineupEvent[]
+    }
+  })
+
+  const byId = new Map<string, SeasonLineupEvent>()
+  for (const list of chunks) {
+    for (const event of list) {
+      if (!byId.has(event.espnEventId)) byId.set(event.espnEventId, event)
+    }
+  }
+  return [...byId.values()]
+}
+
+/**
+ * Most common starting XI for a club season across competitive fixtures.
+ * Samples recent finished matches (excludes friendlies).
+ */
+export async function fetchMostUsedStartingXi(
+  leagueId: LeagueId,
+  teamId: string,
+  seasonYear: number,
+  espnCodeOverride?: string,
+): Promise<MostUsedStartingXi> {
+  const events = await listTeamSeasonLineupEvents(
+    leagueId,
+    teamId,
+    seasonYear,
+    espnCodeOverride,
+  )
+  // Prefer newest fixtures first; cap to keep Overview snappy.
+  const sample = events.slice(-18).reverse()
+
+  type PlaceStat = {
+    id: string
+    name: string
+    shortName: string
+    jersey?: string
+    positionAbbrev: string
+    starts: number
+    goals: number
+    assists: number
+    ratingSum: number
+    ratingCount: number
+  }
+
+  type MatchXiSample = {
+    formation: string
+    starters: Array<{
+      place: number
+      id: string
+      name: string
+      shortName: string
+      jersey?: string
+      positionAbbrev: string
+      goals: number
+      assists: number
+      rating: number | null
+    }>
+  }
+
+  const samples = await mapPool(sample, 4, async (event) => {
+    try {
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${event.espnCode}/summary?event=${event.espnEventId}`
+      const res = await fetch(url)
+      if (!res.ok) return null
+      const data = (await res.json()) as EspnSummary
+      const side = (data.rosters ?? []).find((entry) => entry.team?.id === teamId)
+      if (!side) return null
+      const formation = side.formation?.trim()
+      if (!formation) return null
+
+      const starters: MatchXiSample['starters'] = []
+      for (const entry of side.roster ?? []) {
+        if (!entry.starter || !entry.athlete?.id) continue
+        const place = Number(entry.formationPlace)
+        if (!Number.isFinite(place) || place <= 0) continue
+        const stats = toMatchPlayerStats(entry)
+        const breakdown = rateMatchPerformance(
+          stats,
+          positionGroupFromAbbrev(entry.position?.abbreviation || ''),
+          { minutesPlayed: 90, live: false },
+        )
+        starters.push({
+          place,
+          id: entry.athlete.id,
+          name: entry.athlete.displayName || '',
+          shortName: entry.athlete.shortName || entry.athlete.displayName || '',
+          jersey: entry.jersey,
+          positionAbbrev: entry.position?.abbreviation || '',
+          goals: stats.totalGoals,
+          assists: stats.goalAssists,
+          rating: breakdown?.rating ?? null,
+        })
+      }
+      if (starters.length === 0) return null
+      return { formation, starters } satisfies MatchXiSample
+    } catch {
+      return null
+    }
+  })
+
+  const matchesSampled = samples.length
+  const formationCounts = new Map<string, number>()
+  for (const sampleRow of samples) {
+    formationCounts.set(
+      sampleRow.formation,
+      (formationCounts.get(sampleRow.formation) || 0) + 1,
+    )
+  }
+
+  let formation = '4-3-3'
+  let bestCount = 0
+  for (const [key, count] of formationCounts) {
+    if (count > bestCount) {
+      formation = key
+      bestCount = count
+    }
+  }
+
+  const formationSamples = samples.filter((row) => row.formation === formation)
+  const placeSource = formationSamples.length >= 3 ? formationSamples : samples
+  const placePlayers = new Map<number, Map<string, PlaceStat>>()
+
+  for (const sampleRow of placeSource) {
+    for (const starter of sampleRow.starters) {
+      const byPlayer = placePlayers.get(starter.place) ?? new Map<string, PlaceStat>()
+      const current = byPlayer.get(starter.id) ?? {
+        id: starter.id,
+        name: starter.name,
+        shortName: starter.shortName,
+        jersey: starter.jersey,
+        positionAbbrev: starter.positionAbbrev,
+        starts: 0,
+        goals: 0,
+        assists: 0,
+        ratingSum: 0,
+        ratingCount: 0,
+      }
+      current.starts += 1
+      current.goals += starter.goals
+      current.assists += starter.assists
+      if (starter.rating != null) {
+        current.ratingSum += starter.rating
+        current.ratingCount += 1
+      }
+      if (!current.positionAbbrev && starter.positionAbbrev) {
+        current.positionAbbrev = starter.positionAbbrev
+      }
+      byPlayer.set(starter.id, current)
+      placePlayers.set(starter.place, byPlayer)
+    }
+  }
+
+  const xiCore: Array<Omit<MostUsedXiPlayer, 'x' | 'y'>> = []
+  const places = [...placePlayers.keys()].sort((a, b) => a - b)
+  for (const place of places) {
+    const candidates = [...(placePlayers.get(place)?.values() ?? [])]
+    candidates.sort((a, b) => b.starts - a.starts || b.goals - a.goals)
+    const top = candidates[0]
+    if (!top) continue
+    if (xiCore.some((player) => player.id === top.id)) continue
+    xiCore.push({
+      id: top.id,
+      name: top.name,
+      shortName: top.shortName,
+      jersey: top.jersey,
+      photoUrl: playerHeadshotUrl(top.id),
+      positionAbbrev: top.positionAbbrev,
+      formationPlace: place,
+      starts: top.starts,
+      goals: top.goals,
+      assists: top.assists,
+      avgRating:
+        top.ratingCount > 0
+          ? Math.round((top.ratingSum / top.ratingCount) * 10) / 10
+          : null,
+    })
+    if (xiCore.length >= 11) break
+  }
+
+  // If places were sparse, fill with overall most-started players.
+  if (xiCore.length < 11) {
+    const overall = new Map<string, PlaceStat>()
+    for (const byPlayer of placePlayers.values()) {
+      for (const stat of byPlayer.values()) {
+        const current = overall.get(stat.id)
+        if (!current) {
+          overall.set(stat.id, { ...stat })
+          continue
+        }
+        current.starts += stat.starts
+        current.goals += stat.goals
+        current.assists += stat.assists
+        current.ratingSum += stat.ratingSum
+        current.ratingCount += stat.ratingCount
+      }
+    }
+    const fillers = [...overall.values()]
+      .filter((stat) => !xiCore.some((player) => player.id === stat.id))
+      .sort((a, b) => b.starts - a.starts)
+    for (const top of fillers) {
+      xiCore.push({
+        id: top.id,
+        name: top.name,
+        shortName: top.shortName,
+        jersey: top.jersey,
+        photoUrl: playerHeadshotUrl(top.id),
+        positionAbbrev: top.positionAbbrev,
+        formationPlace: top.starts,
+        starts: top.starts,
+        goals: top.goals,
+        assists: top.assists,
+        avgRating:
+          top.ratingCount > 0
+            ? Math.round((top.ratingSum / top.ratingCount) * 10) / 10
+            : null,
+      })
+      if (xiCore.length >= 11) break
+    }
+  }
+
+  const players = layoutPlayersOnPitch(formation, xiCore.slice(0, 11))
+
+  return {
+    teamId,
+    seasonYear,
+    formation,
+    matchesSampled,
+    players,
+    fetchedAt: Date.now(),
   }
 }
 
