@@ -12,6 +12,15 @@ export type MatchMoment = {
   clock: string
   text: string
   kind: 'goal' | 'card' | 'other'
+  /** Goal scorer or booked player. */
+  primaryPlayer?: string
+  /** Assist on goals when ESPN provides a second participant. */
+  secondaryPlayer?: string
+  teamName?: string
+  /** Narrower card label for UI (yellow vs red). */
+  cardKind?: 'yellow' | 'red'
+  /** Short event label, e.g. Goal, Penalty, Red card. */
+  label?: string
 }
 
 export type MatchDetailStats = {
@@ -47,6 +56,8 @@ export type MatchLineupSide = {
   teamId: string
   teamName: string
   homeAway: 'home' | 'away'
+  /** Formation string from ESPN when available (e.g. "4-3-3"). */
+  formation?: string
   starters: MatchLineupPlayer[]
   bench: MatchLineupPlayer[]
 }

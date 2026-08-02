@@ -89,6 +89,9 @@ function SideBlock({
           teamName
         )}
         <span className="ml-2 text-mist/55">{side.homeAway}</span>
+        {side.formation ? (
+          <span className="ml-2 text-cream/90">{missingShort(side.formation)}</span>
+        ) : null}
       </p>
       {empty ? (
         <p className="text-xs text-mist/65">{MISSING_LONG}</p>

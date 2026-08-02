@@ -1,7 +1,54 @@
 import type { FavoriteTeam } from '../lib/favorites'
 import { MISSING_LONG, missingLong, missingShort } from '../lib/display'
-import type { MatchDetailStats, MatchLineupPlayer } from '../lib/stats/types'
+import type { MatchDetailStats, MatchLineupPlayer, MatchMoment } from '../lib/stats/types'
 import { MatchLineupPanel } from './MatchLineupPanel'
+
+function MomentRow({ moment }: { moment: MatchMoment }) {
+  const isGoal = moment.kind === 'goal'
+  const isRed = moment.cardKind === 'red'
+  const label = moment.label || (isGoal ? 'Goal' : 'Card')
+  const primary = moment.primaryPlayer
+  const assist = isGoal ? moment.secondaryPlayer : undefined
+
+  return (
+    <li className="flex gap-2.5 text-xs">
+      <span
+        className={[
+          'w-11 shrink-0 pt-0.5 font-bold tabular-nums',
+          isGoal ? 'text-lime' : isRed ? 'text-red-300' : 'text-mist/70',
+        ].join(' ')}
+      >
+        {missingShort(moment.clock)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span
+          className={[
+            'font-semibold',
+            isGoal ? 'text-cream' : isRed ? 'text-red-200' : 'text-cream',
+          ].join(' ')}
+        >
+          {label}
+        </span>
+        {moment.teamName ? (
+          <span className="text-mist/55"> · {missingShort(moment.teamName)}</span>
+        ) : null}
+        {primary ? (
+          <span className="mt-0.5 block text-cream">
+            {missingShort(primary)}
+            {assist ? (
+              <span className="text-mist/65">
+                {' '}
+                · Assist: {missingShort(assist)}
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          <span className="mt-0.5 block text-mist/80">{missingLong(moment.text)}</span>
+        )}
+      </span>
+    </li>
+  )
+}
 
 export function MatchStatsPanel({
   stats,
@@ -47,11 +94,30 @@ export function MatchStatsPanel({
     return <p className="mt-3 text-xs text-mist/65">{MISSING_LONG}</p>
   }
 
+  const majorMoments = stats.moments.filter(
+    (moment) => moment.kind === 'goal' || moment.kind === 'card',
+  )
+
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
       <div className="mb-4">
         <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
-          Lineups + ratings
+          Key moments
+        </p>
+        {majorMoments.length > 0 ? (
+          <ul className="flex flex-col gap-2">
+            {majorMoments.map((moment) => (
+              <MomentRow key={moment.id} moment={moment} />
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-mist/65">No goals or cards yet.</p>
+        )}
+      </div>
+
+      <div className="mb-4 border-t border-white/10 pt-3">
+        <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
+          Lineups
         </p>
         <p className="mb-3 text-xs text-mist/65">
           Tap a player for their profile. Ratings start at 5.0 and average out over the match.
@@ -63,46 +129,33 @@ export function MatchStatsPanel({
         />
       </div>
 
-      {stats.lines.length > 0 ? (
-        <ul className="flex flex-col gap-1.5 border-t border-white/10 pt-3">
-          {stats.lines.map((line) => (
-            <li
-              key={line.key}
-              className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs"
-            >
-              <span className="text-right font-semibold tabular-nums text-cream">
-                {missingShort(line.home)}
-              </span>
-              <span className="min-w-[5.5rem] text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/65">
-                {line.label}
-              </span>
-              <span className="text-left font-semibold tabular-nums text-cream">
-                {missingShort(line.away)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-xs text-mist/65">{MISSING_LONG}</p>
-      )}
-
-      {stats.moments.length > 0 && (
-        <ul className="mt-3 flex flex-col gap-1.5 border-t border-white/10 pt-3">
-          {stats.moments.map((moment) => (
-            <li key={moment.id} className="flex gap-2 text-xs text-mist/85">
-              <span
-                className={[
-                  'w-10 shrink-0 font-bold tabular-nums',
-                  moment.kind === 'goal' ? 'text-lime' : 'text-mist/70',
-                ].join(' ')}
+      <div className="border-t border-white/10 pt-3">
+        <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime/80">
+          Match stats
+        </p>
+        {stats.lines.length > 0 ? (
+          <ul className="flex flex-col gap-1.5">
+            {stats.lines.map((line) => (
+              <li
+                key={line.key}
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-xs"
               >
-                {missingShort(moment.clock)}
-              </span>
-              <span>{missingLong(moment.text)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+                <span className="text-right font-semibold tabular-nums text-cream">
+                  {missingShort(line.home)}
+                </span>
+                <span className="min-w-[5.5rem] text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-mist/65">
+                  {line.label}
+                </span>
+                <span className="text-left font-semibold tabular-nums text-cream">
+                  {missingShort(line.away)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-mist/65">{MISSING_LONG}</p>
+        )}
+      </div>
     </div>
   )
 }

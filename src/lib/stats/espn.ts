@@ -60,9 +60,12 @@ type EspnBoxTeam = {
 type EspnKeyEvent = {
   id?: string
   text?: string
+  shortText?: string
   scoringPlay?: boolean
   clock?: { displayValue?: string }
   type?: { text?: string; type?: string }
+  team?: { id?: string; displayName?: string }
+  participants?: Array<{ athlete?: { id?: string; displayName?: string } }>
 }
 
 type EspnRosterEntry = {
@@ -84,6 +87,7 @@ type EspnRosterSide = {
   homeAway?: string
   team?: { id?: string; displayName?: string; shortDisplayName?: string }
   roster?: EspnRosterEntry[]
+  formation?: string
 }
 
 type EspnSummary = {
@@ -150,19 +154,55 @@ function classifyMoment(event: EspnKeyEvent): MatchMoment['kind'] {
   return 'other'
 }
 
+function momentCardKind(event: EspnKeyEvent): MatchMoment['cardKind'] | undefined {
+  const type = (event.type?.type || event.type?.text || '').toLowerCase()
+  if (type.includes('red')) return 'red'
+  if (type.includes('yellow') || type.includes('card')) return 'yellow'
+  return undefined
+}
+
+function momentLabel(event: EspnKeyEvent, kind: MatchMoment['kind']): string {
+  const type = (event.type?.type || '').toLowerCase()
+  const typeText = event.type?.text || ''
+  if (kind === 'goal') {
+    if (type.includes('own')) return 'Own goal'
+    if (type.includes('penalty') || typeText.toLowerCase().includes('penalty')) return 'Penalty'
+    return 'Goal'
+  }
+  if (kind === 'card') {
+    if (type.includes('yellow') && type.includes('red')) return 'Second yellow'
+    if (type.includes('red')) return 'Red card'
+    if (type.includes('yellow')) return 'Yellow card'
+    return typeText || 'Card'
+  }
+  return typeText || 'Event'
+}
+
 function buildMoments(events: EspnKeyEvent[] | undefined): MatchMoment[] {
   return (events ?? [])
     .filter((event) => {
       const kind = classifyMoment(event)
       return kind === 'goal' || kind === 'card'
     })
-    .slice(0, 12)
-    .map((event, index) => ({
-      id: event.id || `moment-${index}`,
-      clock: event.clock?.displayValue || '',
-      text: event.text || event.type?.text || 'Event',
-      kind: classifyMoment(event),
-    }))
+    .map((event, index) => {
+      const kind = classifyMoment(event)
+      const participants = event.participants ?? []
+      const primaryPlayer = participants[0]?.athlete?.displayName || undefined
+      // Goals: second participant is typically the assister. Cards/subs use other roles.
+      const secondaryPlayer =
+        kind === 'goal' ? participants[1]?.athlete?.displayName || undefined : undefined
+      return {
+        id: event.id || `moment-${index}`,
+        clock: event.clock?.displayValue || '',
+        text: event.text || event.shortText || event.type?.text || 'Event',
+        kind,
+        primaryPlayer,
+        secondaryPlayer,
+        teamName: event.team?.displayName || undefined,
+        cardKind: kind === 'card' ? momentCardKind(event) : undefined,
+        label: momentLabel(event, kind),
+      } satisfies MatchMoment
+    })
 }
 
 function readNumericStat(stats: EspnStat[] | undefined, name: string): number {
@@ -324,10 +364,12 @@ function buildLineups(
           return [player]
         })
 
+      const formation = side.formation?.trim() || undefined
       return {
         teamId,
         teamName,
         homeAway,
+        formation,
         starters: players.filter((player) => player.starter),
         // Keep unused substitutes visible — they just have no rating.
         bench: players.filter((player) => !player.starter),
