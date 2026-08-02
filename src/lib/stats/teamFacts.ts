@@ -165,7 +165,7 @@ function cellText(html: string): string {
 }
 
 function seasonSortYear(season: string): number {
-  const range = season.match(/(20\d{2}|19\d{2})\s*[–\/-]\s*(\d{2}|\d{4})/)
+  const range = season.match(/(20\d{2}|19\d{2})\s*[–/-]\s*(\d{2}|\d{4})/)
   if (range) {
     const start = Number(range[1])
     const endRaw = range[2]
@@ -291,7 +291,7 @@ function normalizeHonoursText(text: string): string {
       /(Champions?|Winners?|Play-off winners?|Runners-up|Promoted)\s*:\s*\n+/gi,
       '$1: ',
     )
-    .replace(/(\d{4}(?:\s*[–\/-]\s*\d{2,4})?)\s*\n\s*,\s*\n\s*/g, '$1, ')
+    .replace(/(\d{4}(?:\s*[–/-]\s*\d{2,4})?)\s*\n\s*,\s*\n\s*/g, '$1, ')
     .replace(/,\s*\n\s*(?=\d{4})/g, ', ')
     .replace(/\n+/g, '\n')
 }
