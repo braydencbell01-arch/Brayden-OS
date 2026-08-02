@@ -1,9 +1,10 @@
 import type { LeagueId } from '../leagues'
 import type { LeagueSeasonOption } from './types'
 
-/** FotMob tournament ids for leagues where advanced stats (xG) are published. */
+/** FotMob tournament ids (xG boards + team/transfer resolution). */
 const FOTMOB_LEAGUE_IDS: Partial<Record<LeagueId, number>> = {
   'premier-league': 47,
+  'eng-championship': 48,
   'la-liga': 87,
   'serie-a': 55,
   bundesliga: 54,
@@ -17,6 +18,7 @@ const FOTMOB_LEAGUE_IDS: Partial<Record<LeagueId, number>> = {
   'scottish-premiership': 64,
   'austrian-bundesliga': 38,
   'liga-profesional': 112,
+  brasileirao: 268,
 }
 
 export function fotmobLeagueId(leagueId: LeagueId): number | null {
@@ -573,4 +575,188 @@ export function teamXgForName(
   // Avoid short ambiguous tokens like "city" / "united" matching the wrong club.
   if (full && (needle.length >= 6 || full.name === needle)) return full.row
   return null
+}
+
+type FotmobTeamSuggest = {
+  teamSuggest?: Array<{
+    options?: Array<{
+      text?: string
+      score?: number
+      payload?: { id?: string | number; leagueId?: number; leagueName?: string }
+    }>
+  }>
+}
+
+const YOUTH_OR_WOMEN =
+  /\b(u1[89]|u2[013]|u23|\(w\)|women|wfc| ladies| girls|\s+b$|\s+ii$)/i
+
+function teamSuggestLabel(text: string | undefined): string {
+  return (text || '').split('|')[0]?.trim() || ''
+}
+
+const fotmobTeamIdCache = new Map<string, string | null>()
+
+/**
+ * Resolve a club name to a FotMob team id (prefers the club's domestic league).
+ * Skips youth / women's sides when a senior men's club matches.
+ */
+export async function resolveFotmobTeamId(
+  teamName: string,
+  leagueId?: LeagueId,
+): Promise<string | null> {
+  const name = teamName.trim()
+  if (!name) return null
+  const preferredLeague = leagueId ? fotmobLeagueId(leagueId) : null
+  const cacheKey = `${leagueId || ''}:${name.toLowerCase()}`
+  if (fotmobTeamIdCache.has(cacheKey)) return fotmobTeamIdCache.get(cacheKey) ?? null
+
+  const data = await fetchJson<FotmobTeamSuggest>(
+    `https://apigw.fotmob.com/searchapi/suggest?term=${encodeURIComponent(name)}`,
+  )
+  const options = data?.teamSuggest?.[0]?.options ?? []
+  const needle = name.toLowerCase().replace(/^afc\s+|^fc\s+/, '')
+
+  const scored = options
+    .map((option) => {
+      const label = teamSuggestLabel(option.text)
+      const id = option.payload?.id != null ? String(option.payload.id) : null
+      const idFromText = option.text?.includes('|') ? option.text.split('|')[1]?.trim() : null
+      const teamId = id || (idFromText || null)
+      if (!teamId || !label) return null
+      if (YOUTH_OR_WOMEN.test(label)) return null
+      const normalized = label.toLowerCase().replace(/^afc\s+|^fc\s+/, '')
+      const exact = normalized === needle
+      const starts = normalized.startsWith(needle) || needle.startsWith(normalized)
+      const includes = normalized.includes(needle) || needle.includes(normalized)
+      if (!exact && !starts && !includes) return null
+      // Avoid short ambiguous tokens matching the wrong club.
+      if (!exact && needle.length < 6 && !starts) return null
+      let score = exact ? 100 : starts ? 60 : 30
+      if (preferredLeague != null && option.payload?.leagueId === preferredLeague) score += 50
+      score += Math.min(20, Math.max(0, Number(option.score) / 50_000))
+      return { id: teamId, score }
+    })
+    .filter((row): row is { id: string; score: number } => Boolean(row))
+    .sort((a, b) => b.score - a.score)
+
+  const resolved = scored[0]?.id ?? null
+  fotmobTeamIdCache.set(cacheKey, resolved)
+  return resolved
+}
+
+export type FotmobClubTransfer = {
+  id: string
+  date: string
+  playerName: string
+  direction: 'in' | 'out'
+  isLoan: boolean
+  feeType: string
+  amount?: number
+  feeLabel?: string
+  fromTeamName?: string
+  toTeamName?: string
+  fromTeamId?: string
+  toTeamId?: string
+}
+
+type FotmobTransferFee = {
+  feeText?: string
+  localizedFeeText?: string
+  value?: number | null
+}
+
+type FotmobTransferRow = {
+  name?: string
+  playerId?: number
+  transferDate?: string
+  fromClub?: string
+  toClub?: string
+  fromClubId?: number
+  toClubId?: number
+  fee?: FotmobTransferFee | null
+  transferType?: { text?: string } | null
+}
+
+type FotmobTeamTransfersPayload = {
+  transfers?: {
+    data?: {
+      'Players in'?: FotmobTransferRow[]
+      'Players out'?: FotmobTransferRow[]
+    }
+  }
+}
+
+function normalizeFotmobFee(row: FotmobTransferRow): {
+  feeType: string
+  isLoan: boolean
+  amount?: number
+  feeLabel?: string
+} {
+  const feeText = (row.fee?.feeText || row.transferType?.text || '').trim()
+  const localized = (row.fee?.localizedFeeText || '').trim()
+  const combined = `${feeText} ${localized}`.toLowerCase()
+  const isLoan = /\bloan\b/.test(combined)
+  if (isLoan) return { feeType: 'Loan', isLoan: true }
+
+  if (/free/.test(combined)) return { feeType: 'Free', isLoan: false }
+  if (/undisclosed/.test(combined)) return { feeType: 'Undisclosed', isLoan: false }
+
+  const value = typeof row.fee?.value === 'number' && row.fee.value > 0 ? row.fee.value : undefined
+  if (value != null) {
+    return {
+      feeType: 'Fee',
+      isLoan: false,
+      amount: value,
+      feeLabel: formatEuro(value),
+    }
+  }
+  if (feeText) return { feeType: feeText.replace(/^\w/, (c) => c.toUpperCase()), isLoan: false }
+  return { feeType: 'Transfer', isLoan: false }
+}
+
+function mapFotmobTransferRow(
+  row: FotmobTransferRow,
+  direction: 'in' | 'out',
+): FotmobClubTransfer | null {
+  const playerName = (row.name || '').trim()
+  const date = (row.transferDate || '').trim()
+  if (!playerName || !date) return null
+  const fee = normalizeFotmobFee(row)
+  return {
+    id: `fotmob-${direction}-${row.playerId || playerName}-${date}-${row.fromClubId || ''}-${row.toClubId || ''}`,
+    date,
+    playerName,
+    direction,
+    isLoan: fee.isLoan,
+    feeType: fee.feeType,
+    amount: fee.amount,
+    feeLabel: fee.feeLabel,
+    fromTeamName: row.fromClub || undefined,
+    toTeamName: row.toClub || undefined,
+    fromTeamId: row.fromClubId != null ? String(row.fromClubId) : undefined,
+    toTeamId: row.toClubId != null ? String(row.toClubId) : undefined,
+  }
+}
+
+/** Latest club arrivals / departures from FotMob’s team page (includes current window). */
+export async function fetchFotmobClubTransfers(
+  fotmobTeamId: string,
+): Promise<FotmobClubTransfer[]> {
+  const payload = await fetchJson<FotmobTeamTransfersPayload>(
+    `https://www.fotmob.com/api/data/teams?id=${encodeURIComponent(fotmobTeamId)}`,
+  )
+  const data = payload?.transfers?.data
+  if (!data) return []
+
+  const rows: FotmobClubTransfer[] = []
+  for (const row of data['Players in'] ?? []) {
+    const mapped = mapFotmobTransferRow(row, 'in')
+    if (mapped) rows.push(mapped)
+  }
+  for (const row of data['Players out'] ?? []) {
+    const mapped = mapFotmobTransferRow(row, 'out')
+    if (mapped) rows.push(mapped)
+  }
+
+  return rows.sort((a, b) => b.date.localeCompare(a.date))
 }

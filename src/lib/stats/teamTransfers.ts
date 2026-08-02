@@ -1,5 +1,10 @@
 import { getLeague, type LeagueId } from '../leagues'
 import { dateKeyFromIso } from '../dates'
+import {
+  fetchFotmobClubTransfers,
+  resolveFotmobTeamId,
+  type FotmobClubTransfer,
+} from './fotmob'
 
 export type TeamTransfer = {
   id: string
@@ -7,9 +12,9 @@ export type TeamTransfer = {
   dateKey: string
   playerId?: string
   playerName: string
-  /** ESPN fee type: Loan, Free, Undisclosed, Fee, etc. */
+  /** Fee type: Loan, Free, Undisclosed, Fee, etc. */
   feeType: string
-  /** Raw ESPN amount when provided (often 0). */
+  /** Fee amount when known (FotMob values are EUR). */
   amount?: number
   direction: 'in' | 'out'
   isLoan: boolean
@@ -17,7 +22,7 @@ export type TeamTransfer = {
   fromTeamName?: string
   toTeamId?: string
   toTeamName?: string
-  /** Raw ESPN displayAmount when present. */
+  /** Display fee label when present (e.g. "€48m"). */
   feeLabel?: string
 }
 
@@ -77,24 +82,27 @@ function formatMoneyAmount(amount: number): string {
   if (amount >= 1_000_000) {
     const millions = amount / 1_000_000
     const rounded = millions >= 10 ? Math.round(millions) : Math.round(millions * 10) / 10
-    return `£${rounded}m`
+    return `€${rounded}m`
   }
-  if (amount >= 1_000) return `£${Math.round(amount / 1_000)}k`
-  return `£${Math.round(amount)}`
+  if (amount >= 1_000) return `€${Math.round(amount / 1_000)}k`
+  return `€${Math.round(amount)}`
 }
 
 /**
- * Human fee line: Free / Loan / Undisclosed / £12m.
- * ESPN rarely publishes exact fees; when missing we surface their label.
+ * Human fee line: Free / Loan / Undisclosed / €12m.
+ * Prefer an explicit feeLabel (FotMob) when present.
  */
 function formatTransferFee(transfer: TeamTransfer): string {
   if (transfer.isLoan || /loan/i.test(transfer.feeType)) return 'Loan'
   if (/free/i.test(transfer.feeType) || /free/i.test(transfer.feeLabel || '')) return 'Free'
 
+  const labeled = (transfer.feeLabel || '').trim()
+  if (labeled && /[€£$]/.test(labeled)) return labeled
+
   const fromAmount = transfer.amount && transfer.amount > 0 ? formatMoneyAmount(transfer.amount) : ''
   if (fromAmount) return fromAmount
 
-  const raw = (transfer.feeLabel || '').trim()
+  const raw = labeled
   if (raw && /^\d+(\.\d+)?$/.test(raw)) {
     const money = formatMoneyAmount(Number(raw))
     if (money) return money
@@ -125,9 +133,9 @@ function normalizeTransfer(
   const isLoan = /loan/i.test(feeType)
 
   return {
-    id: `${row.date}-${row.athlete?.id || playerName}-${fromId || ''}-${toId || ''}-${feeType}`,
+    id: `espn-${row.date}-${row.athlete?.id || playerName}-${fromId || ''}-${toId || ''}-${feeType}`,
     date: row.date,
-    dateKey: dateKeyFromIso(row.date),
+    dateKey: transferDateKey(row.date),
     playerId: row.athlete?.id,
     playerName,
     feeType,
@@ -140,6 +148,37 @@ function normalizeTransfer(
     toTeamName: teamLabel(row.to),
     feeLabel: row.displayAmount || undefined,
   }
+}
+
+function transferDateKey(iso: string): string {
+  // Prefer the calendar day in the source timestamp so UTC evening deals
+  // don't shift to the previous local day.
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(iso)
+  if (match?.[1]) return match[1]
+  return dateKeyFromIso(iso)
+}
+
+function fromFotmob(row: FotmobClubTransfer): TeamTransfer {
+  return {
+    id: row.id,
+    date: row.date,
+    dateKey: transferDateKey(row.date),
+    // FotMob player ids are not ESPN athlete ids — omit so profile links stay valid.
+    playerName: row.playerName,
+    feeType: row.feeType,
+    amount: row.amount,
+    direction: row.direction,
+    isLoan: row.isLoan,
+    fromTeamId: row.fromTeamId,
+    fromTeamName: row.fromTeamName,
+    toTeamId: row.toTeamId,
+    toTeamName: row.toTeamName,
+    feeLabel: row.feeLabel,
+  }
+}
+
+function dedupeKey(transfer: TeamTransfer): string {
+  return `${transfer.direction}|${transfer.dateKey}|${transfer.playerName.trim().toLowerCase()}`
 }
 
 async function fetchLeagueSeasonTransactions(
@@ -170,18 +209,33 @@ async function fetchLeagueSeasonTransactions(
   return collected
 }
 
-/**
- * Recent club transfers (signings, departures, loans) from ESPN transaction feeds.
- * Newest first across recent calendar years (ESPN indexes this endpoint by calendar year).
- */
-export async function fetchTeamTransfers(
-  leagueId: LeagueId,
+async function fetchEspnTeamDisplayName(
+  espnCode: string,
+  teamId: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/teams/${encodeURIComponent(teamId)}`,
+    )
+    if (!res.ok) return null
+    const data = (await res.json()) as {
+      team?: { displayName?: string; name?: string; shortDisplayName?: string }
+    }
+    return (
+      data.team?.displayName ||
+      data.team?.name ||
+      data.team?.shortDisplayName ||
+      null
+    )
+  } catch {
+    return null
+  }
+}
+
+async function fetchEspnTeamTransfers(
+  espnCode: string,
   teamId: string,
 ): Promise<TeamTransfer[]> {
-  const league = getLeague(leagueId)
-  if (league.kind === 'international') return []
-
-  const espnCode = league.espnCode
   // ESPN's soccer transactions `season` param is calendar year (Jan–Dec), not
   // soccer season-start year. Fetch current + previous two calendar years.
   const calendarYear = new Date().getFullYear()
@@ -206,5 +260,47 @@ export async function fetchTeamTransfers(
     }
   }
 
-  return [...byId.values()].sort((a, b) => b.date.localeCompare(a.date))
+  return [...byId.values()]
+}
+
+/**
+ * Recent club transfers (signings, departures, loans).
+ * Prefers FotMob (current window / newest deals) and merges older ESPN rows.
+ */
+export async function fetchTeamTransfers(
+  leagueId: LeagueId,
+  teamId: string,
+): Promise<TeamTransfer[]> {
+  const league = getLeague(leagueId)
+  if (league.kind === 'international') return []
+
+  const espnCode = league.espnCode
+  const teamName = await fetchEspnTeamDisplayName(espnCode, teamId)
+
+  const [fotmobRows, espnRows] = await Promise.all([
+    (async () => {
+      if (!teamName) return [] as TeamTransfer[]
+      try {
+        const fotmobId = await resolveFotmobTeamId(teamName, leagueId)
+        if (!fotmobId) return []
+        const rows = await fetchFotmobClubTransfers(fotmobId)
+        return rows.map(fromFotmob)
+      } catch {
+        return [] as TeamTransfer[]
+      }
+    })(),
+    fetchEspnTeamTransfers(espnCode, teamId).catch(() => [] as TeamTransfer[]),
+  ])
+
+  const byKey = new Map<string, TeamTransfer>()
+  // FotMob first so newest / fee-rich rows win on collisions.
+  for (const row of fotmobRows) {
+    byKey.set(dedupeKey(row), row)
+  }
+  for (const row of espnRows) {
+    const key = dedupeKey(row)
+    if (!byKey.has(key)) byKey.set(key, row)
+  }
+
+  return [...byKey.values()].sort((a, b) => b.date.localeCompare(a.date))
 }
