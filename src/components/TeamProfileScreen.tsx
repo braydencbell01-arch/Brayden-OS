@@ -66,29 +66,20 @@ const TABS: Array<{ id: TeamTab; label: string; clubsOnly?: boolean }> = [
 function FormScoreBox({
   result,
   score,
-  accent,
 }: {
   result: TeamFormResult
   score: string
-  accent?: string | null
 }) {
   const base =
     result === 'W'
-      ? accent
-        ? 'text-ink'
-        : 'bg-lime text-ink'
+      ? 'bg-lime/85 text-ink'
       : result === 'D'
         ? 'bg-white/20 text-cream'
-        : 'bg-white/10 text-mist/85'
+        : 'bg-red-500/75 text-cream'
 
   return (
     <span
       className={`inline-flex min-w-[2.4rem] items-center justify-center px-1.5 py-1 text-[0.7rem] font-bold tabular-nums ${base}`}
-      style={
-        result === 'W' && accent
-          ? { background: accent, color: '#0a1f18' }
-          : undefined
-      }
       title={result === 'W' ? 'Win' : result === 'D' ? 'Draw' : 'Loss'}
     >
       {score}
@@ -550,7 +541,7 @@ export function TeamProfileScreen({
                         key={match.id}
                         className="flex w-14 shrink-0 flex-col items-center gap-1.5"
                       >
-                        <FormScoreBox result={result} score={score} accent={accent} />
+                        <FormScoreBox result={result} score={score} />
                         <EntityLogo
                           name={opponent.name}
                           src={teamLogoUrl(opponent.id)}
