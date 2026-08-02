@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { MISSING_LONG } from '../lib/display'
 import {
-  compareLeaguesForDisplay,
   getLeague,
+  inferSoccerSeasonStartYear,
   isInternationalLeague,
   confederationForNationalTeam,
   teamSubtitleLeagueId,
@@ -11,12 +11,12 @@ import {
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   groupMatchesByDate,
-  matchInSeasonYear,
   mergeTeamMatches,
   nextMatchForTeam,
   recentFormMatchesForTeam,
   splitTeamFixtures,
   teamResult,
+  teamSeasonCompetitionIds,
   type Match,
   type TeamFormResult,
 } from '../lib/matches'
@@ -219,24 +219,19 @@ export function TeamProfileScreen({
     : facts.data?.country || league.country
 
   const seasonYear =
-    standings.selectedSeason ?? standings.seasons[0]?.year ?? null
+    standings.selectedSeason ??
+    standings.seasons[0]?.year ??
+    inferSoccerSeasonStartYear()
   const seasonShortLabel = useMemo(() => {
     const fromStandings = standings.seasons.find((season) => season.year === seasonYear)
     if (fromStandings?.shortLabel) return fromStandings.shortLabel
-    if (seasonYear == null) return null
     return formatSeasonShortLabel(seasonYear)
   }, [standings.seasons, seasonYear])
 
-  const competitionIds = useMemo(() => {
-    const ids = new Set<LeagueId>()
-    ids.add(team.leagueId)
-    for (const match of teamMatches) {
-      if (match.home.id !== team.id && match.away.id !== team.id) continue
-      if (seasonYear != null && !matchInSeasonYear(match, seasonYear)) continue
-      ids.add(match.leagueId)
-    }
-    return [...ids].sort((a, b) => compareLeaguesForDisplay(a, b))
-  }, [team.id, team.leagueId, teamMatches, seasonYear])
+  const competitionIds = useMemo(
+    () => teamSeasonCompetitionIds(team.id, team.leagueId, teamMatches, seasonYear),
+    [team.id, team.leagueId, teamMatches, seasonYear],
+  )
 
   const visibleTabs = useMemo(
     () =>

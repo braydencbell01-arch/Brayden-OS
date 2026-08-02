@@ -112,7 +112,7 @@ export const LEAGUES: League[] = [
   {
     id: 'premier-league',
     name: 'Premier League',
-    short: 'ENG',
+    short: 'EPL',
     country: 'England',
     espnCode: 'eng.1',
     kind: 'domestic',
@@ -163,7 +163,7 @@ export const LEAGUES: League[] = [
   {
     id: 'la-liga',
     name: 'La Liga',
-    short: 'ESP',
+    short: 'LAL',
     country: 'Spain',
     espnCode: 'esp.1',
     kind: 'domestic',
@@ -193,7 +193,7 @@ export const LEAGUES: League[] = [
   {
     id: 'serie-a',
     name: 'Serie A',
-    short: 'ITA',
+    short: 'SEA',
     country: 'Italy',
     espnCode: 'ita.1',
     kind: 'domestic',
@@ -223,7 +223,7 @@ export const LEAGUES: League[] = [
   {
     id: 'bundesliga',
     name: 'Bundesliga',
-    short: 'GER',
+    short: 'BUN',
     country: 'Germany',
     espnCode: 'ger.1',
     kind: 'domestic',
@@ -253,7 +253,7 @@ export const LEAGUES: League[] = [
   {
     id: 'ligue-1',
     name: 'Ligue 1',
-    short: 'FRA',
+    short: 'FL1',
     country: 'France',
     espnCode: 'fra.1',
     kind: 'domestic',
@@ -496,7 +496,7 @@ export const LEAGUES: League[] = [
   {
     id: 'brasileirao',
     name: 'Brasileirão',
-    short: 'BRA',
+    short: 'BRZ',
     country: 'Brazil',
     espnCode: 'bra.1',
     kind: 'domestic',
@@ -526,7 +526,7 @@ export const LEAGUES: League[] = [
   {
     id: 'liga-mx',
     name: 'Liga MX',
-    short: 'MEX',
+    short: 'LMX',
     country: 'Mexico',
     espnCode: 'mex.1',
     kind: 'domestic',
@@ -557,7 +557,7 @@ export const LEAGUES: League[] = [
   {
     id: 'mls',
     name: 'MLS',
-    short: 'USA',
+    short: 'MLS',
     country: 'USA',
     espnCode: 'usa.1',
     kind: 'domestic',
@@ -577,7 +577,7 @@ export const LEAGUES: League[] = [
   {
     id: 'liga-profesional',
     name: 'Liga Profesional',
-    short: 'ARG',
+    short: 'LPF',
     country: 'Argentina',
     espnCode: 'arg.1',
     kind: 'domestic',
@@ -619,7 +619,7 @@ export const LEAGUES: League[] = [
   {
     id: 'eredivisie',
     name: 'Eredivisie',
-    short: 'NED',
+    short: 'ERE',
     country: 'Netherlands',
     espnCode: 'ned.1',
     kind: 'domestic',
@@ -649,7 +649,7 @@ export const LEAGUES: League[] = [
   {
     id: 'primeira-liga',
     name: 'Primeira Liga',
-    short: 'POR',
+    short: 'LGP',
     country: 'Portugal',
     espnCode: 'por.1',
     kind: 'domestic',
@@ -669,7 +669,7 @@ export const LEAGUES: League[] = [
   {
     id: 'belgian-pro-league',
     name: 'Pro League',
-    short: 'BEL',
+    short: 'JPL',
     country: 'Belgium',
     espnCode: 'bel.1',
     kind: 'domestic',
@@ -679,7 +679,7 @@ export const LEAGUES: League[] = [
   {
     id: 'turkish-super-lig',
     name: 'Super Lig',
-    short: 'TUR',
+    short: 'TSL',
     country: 'Turkey',
     espnCode: 'tur.1',
     kind: 'domestic',
@@ -689,7 +689,7 @@ export const LEAGUES: League[] = [
   {
     id: 'austrian-bundesliga',
     name: 'Austrian Bundesliga',
-    short: 'AUT',
+    short: 'ABL',
     country: 'Austria',
     espnCode: 'aut.1',
     kind: 'domestic',
@@ -699,7 +699,7 @@ export const LEAGUES: League[] = [
   {
     id: 'swiss-super-league',
     name: 'Super League',
-    short: 'SUI',
+    short: 'SSL',
     country: 'Switzerland',
     espnCode: 'sui.1',
     kind: 'domestic',
@@ -709,7 +709,7 @@ export const LEAGUES: League[] = [
   {
     id: 'scottish-premiership',
     name: 'Scottish Premiership',
-    short: 'SCO',
+    short: 'SPFL',
     country: 'Scotland',
     espnCode: 'sco.1',
     kind: 'domestic',
@@ -750,7 +750,7 @@ export const LEAGUES: League[] = [
   {
     id: 'superliga',
     name: 'Superliga',
-    short: 'DEN',
+    short: 'DSL',
     country: 'Denmark',
     espnCode: 'den.1',
     kind: 'domestic',
@@ -760,7 +760,7 @@ export const LEAGUES: League[] = [
   {
     id: 'allsvenskan',
     name: 'Allsvenskan',
-    short: 'SWE',
+    short: 'ALL',
     country: 'Sweden',
     espnCode: 'swe.1',
     kind: 'domestic',
@@ -770,7 +770,7 @@ export const LEAGUES: League[] = [
   {
     id: 'eliteserien',
     name: 'Eliteserien',
-    short: 'NOR',
+    short: 'ELI',
     country: 'Norway',
     espnCode: 'nor.1',
     kind: 'domestic',
@@ -780,7 +780,7 @@ export const LEAGUES: League[] = [
   {
     id: 'j1-league',
     name: 'J1 League',
-    short: 'JPN',
+    short: 'J1',
     country: 'Japan',
     espnCode: 'jpn.1',
     kind: 'domestic',
@@ -790,7 +790,7 @@ export const LEAGUES: League[] = [
   {
     id: 'chinese-super-league',
     name: 'Chinese Super League',
-    short: 'CHN',
+    short: 'CSL',
     country: 'China',
     espnCode: 'chn.1',
     kind: 'domestic',
@@ -800,7 +800,7 @@ export const LEAGUES: League[] = [
   {
     id: 'saudi-pro-league',
     name: 'Saudi Pro League',
-    short: 'KSA',
+    short: 'SPL',
     country: 'Saudi Arabia',
     espnCode: 'ksa.1',
     kind: 'domestic',
@@ -820,7 +820,7 @@ export const LEAGUES: League[] = [
   {
     id: 'a-league',
     name: 'A-League Men',
-    short: 'AUS',
+    short: 'ALM',
     country: 'Australia',
     espnCode: 'aus.1',
     kind: 'domestic',
@@ -830,7 +830,7 @@ export const LEAGUES: League[] = [
   {
     id: 'eng-championship',
     name: 'EFL Championship',
-    short: 'ENG2',
+    short: 'CHA',
     country: 'England',
     espnCode: 'eng.2',
     kind: 'domestic',
@@ -840,7 +840,7 @@ export const LEAGUES: League[] = [
   {
     id: 'esp-segunda',
     name: 'La Liga 2',
-    short: 'ESP2',
+    short: 'LL2',
     country: 'Spain',
     espnCode: 'esp.2',
     kind: 'domestic',
@@ -850,7 +850,7 @@ export const LEAGUES: League[] = [
   {
     id: 'ita-serie-b',
     name: 'Serie B',
-    short: 'ITA2',
+    short: 'SEB',
     country: 'Italy',
     espnCode: 'ita.2',
     kind: 'domestic',
@@ -860,7 +860,7 @@ export const LEAGUES: League[] = [
   {
     id: 'ger-2-bundesliga',
     name: '2. Bundesliga',
-    short: 'GER2',
+    short: '2BL',
     country: 'Germany',
     espnCode: 'ger.2',
     kind: 'domestic',
@@ -870,7 +870,7 @@ export const LEAGUES: League[] = [
   {
     id: 'fra-ligue-2',
     name: 'Ligue 2',
-    short: 'FRA2',
+    short: 'FL2',
     country: 'France',
     espnCode: 'fra.2',
     kind: 'domestic',
@@ -880,7 +880,7 @@ export const LEAGUES: League[] = [
   {
     id: 'czech-first-league',
     name: 'Czech First League',
-    short: 'CZE',
+    short: 'CZL',
     country: 'Czechia',
     espnCode: 'cze.1',
     kind: 'domestic',
@@ -890,7 +890,7 @@ export const LEAGUES: League[] = [
   {
     id: 'cyprus-first-division',
     name: 'Cyprus First Division',
-    short: 'CYP',
+    short: 'CYL',
     country: 'Cyprus',
     espnCode: 'cyp.1',
     kind: 'domestic',
@@ -959,6 +959,39 @@ export function domesticCupsForCountry(country: string): League[] {
   return domesticCupCompetitions().filter((league) => league.country === country)
 }
 
+/** Club / international friendlies — never listed as profile “competitions”. */
+export function isFriendlyLeagueId(id: LeagueId): boolean {
+  return id === 'club-friendly' || id === 'fifa-friendly'
+}
+
+/**
+ * Domestic knockout cups a club from this league enters each season.
+ * Excludes supercups (invite-only) and friendlies.
+ */
+export function regularSeasonCupsForLeague(leagueId: LeagueId): LeagueId[] {
+  const league = getLeague(leagueId)
+  if (league.kind !== 'domestic' || league.format !== 'league') return []
+
+  if (league.country === 'England') {
+    if (leagueId === 'premier-league') return ['fa-cup', 'efl-cup']
+    if (leagueId === 'eng-championship') return ['fa-cup', 'efl-cup', 'efl-trophy']
+    return ['fa-cup', 'efl-cup']
+  }
+
+  return domesticCupsForCountry(league.country)
+    .filter((cup) => cup.format === 'cup')
+    .map((cup) => cup.id)
+}
+
+/**
+ * Soccer seasons are labeled by start year (2026 → 26/27).
+ * Treat June onward as the new season’s start year.
+ */
+export function inferSoccerSeasonStartYear(date = new Date()): number {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  return month >= 5 ? year : year - 1
+}
 
 /** FIFA confederations shown on national-team cards instead of “FR”. */
 export type ConfederationId = 'UEFA' | 'CONCACAF' | 'CONMEBOL' | 'CAF' | 'AFC' | 'OFC'
