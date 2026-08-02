@@ -114,7 +114,7 @@ export function TeamStatLeadersPanel({
       {error && !data ? <p className="text-sm text-mist/80">{error}</p> : null}
 
       {!loading && !error && (!data || data.categories.length === 0) ? (
-        <p className="text-sm text-mist/70">No stat leaders available for this club yet.</p>
+        <p className="text-sm text-mist/70">No stat leaders available for this team yet.</p>
       ) : null}
 
       {data && data.categories.length > 0 ? (

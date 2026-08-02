@@ -1035,6 +1035,27 @@ export function inferSoccerSeasonStartYear(date = new Date()): number {
   return month >= 5 ? year : year - 1
 }
 
+/**
+ * National-team seasons are Aug 1 – Jul 31, labeled by start year
+ * (Aug 2025 → 25/26). August = month index 7.
+ */
+export function inferInternationalSeasonStartYear(date = new Date()): number {
+  const year = date.getFullYear()
+  const month = date.getMonth()
+  return month >= 7 ? year : year - 1
+}
+
+/** Inclusive national-team season window: Aug 1 startYear → Jul 31 startYear+1. */
+export function internationalSeasonDateBounds(seasonStartYear: number): {
+  from: Date
+  to: Date
+} {
+  return {
+    from: new Date(seasonStartYear, 7, 1),
+    to: new Date(seasonStartYear + 1, 6, 31, 23, 59, 59, 999),
+  }
+}
+
 /** FIFA confederations shown on national-team cards instead of “FR”. */
 export type ConfederationId = 'UEFA' | 'CONCACAF' | 'CONMEBOL' | 'CAF' | 'AFC' | 'OFC'
 

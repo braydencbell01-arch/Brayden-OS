@@ -168,11 +168,11 @@ export function TeamProfileScreen({
   const loadingMoreRef = useRef(false)
 
   const rosterEnabled = tab === 'squad'
-  const leadersEnabled = tab === 'stats' || tab === 'overview'
+  const leadersEnabled = tab === 'stats'
   const overviewEnabled = tab === 'overview' && !isNational
   const overviewXiEnabled = overviewEnabled
   const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
-  const leaders = useTeamStatLeaders(team.leagueId, team.id, !isNational && leadersEnabled)
+  const leaders = useTeamStatLeaders(team.leagueId, team.id, leadersEnabled)
   const schedule = useTeamSchedule(team.id, team.leagueId, true)
   const transfers = useTeamTransfers(team.leagueId, team.id, overviewEnabled)
   const overviewSeasons = useTeamSeasons(
@@ -907,24 +907,18 @@ export function TeamProfileScreen({
         ) : null}
 
         {tab === 'stats' ? (
-          isNational ? (
-            <p className="text-sm text-mist/70">
-              Club-style season leaders are not available for national teams.
-            </p>
-          ) : (
-            <TeamStatLeadersPanel
-              data={leaders.data}
-              loading={leaders.loading}
-              error={leaders.error}
-              leagueId={team.leagueId}
-              seasons={leaders.seasons}
-              seasonsLoading={leaders.seasonsLoading}
-              selectedSeason={leaders.selectedSeason}
-              selectedKey={leaders.selectedKey}
-              onSelectSeason={leaders.selectSeason}
-              onOpenPlayer={onOpenPlayer}
-            />
-          )
+          <TeamStatLeadersPanel
+            data={leaders.data}
+            loading={leaders.loading}
+            error={leaders.error}
+            leagueId={team.leagueId}
+            seasons={leaders.seasons}
+            seasonsLoading={leaders.seasonsLoading}
+            selectedSeason={leaders.selectedSeason}
+            selectedKey={leaders.selectedKey}
+            onSelectSeason={leaders.selectSeason}
+            onOpenPlayer={onOpenPlayer}
+          />
         ) : null}
 
         {tab === 'squad' ? (
