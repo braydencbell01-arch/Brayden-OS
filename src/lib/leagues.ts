@@ -98,8 +98,9 @@ export type League = {
 }
 
 /**
- * Display / Match day order: most important competitions first.
- * Favorited leagues are pinned above this order via `leaguesInDisplayOrder`.
+ * Competition catalog (grouped by country / confederation for readability).
+ * Match day / display priority uses `LEAGUE_IMPORTANCE_ORDER` instead — favorites
+ * pin above that via `leaguesInDisplayOrder` / `compareLeaguesForDisplay`.
  *
  * Only include competitions with a working ESPN scoreboard slug.
  * Domestic cups share `kind: 'domestic'` with top flights; use `format` to tell them apart.
@@ -1200,7 +1201,118 @@ export function teamSubtitleLeagueId(team: {
   return team.leagueId
 }
 
-const LEAGUE_IMPORTANCE_RANK = new Map(LEAGUES.map((league, index) => [league.id, index]))
+/**
+ * Biggest / most important competitions first for Match day (and display sorts).
+ * Favorites still pin above this via `compareLeaguesForDisplay`.
+ * Kept separate from the `LEAGUES` catalog array so country grouping there can stay readable.
+ */
+export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
+  // Elite club competitions
+  'uefa-champions',
+  'premier-league',
+  'la-liga',
+  'serie-a',
+  'bundesliga',
+  'ligue-1',
+  'uefa-europa',
+  'uefa-conference',
+  'fifa-club-world-cup',
+  'uefa-super-cup',
+  'conmebol-libertadores',
+  'conmebol-sudamericana',
+  'caf-champions',
+  'afc-champions',
+  'concacaf-champions',
+
+  // Major national-team tournaments
+  'fifa-world',
+  'uefa-euro',
+  'conmebol-america',
+  'caf-nations',
+  'afc-asian-cup',
+  'concacaf-gold',
+  'uefa-nations',
+  'fifa-worldq',
+  'fifa-friendly',
+
+  // Other strong domestic top flights
+  'brasileirao',
+  'liga-mx',
+  'mls',
+  'liga-profesional',
+  'eredivisie',
+  'primeira-liga',
+  'belgian-pro-league',
+  'turkish-super-lig',
+  'scottish-premiership',
+  'saudi-pro-league',
+  'austrian-bundesliga',
+  'swiss-super-league',
+  'superliga',
+  'allsvenskan',
+  'eliteserien',
+  'j1-league',
+  'chinese-super-league',
+  'a-league',
+  'czech-first-league',
+  'cyprus-first-division',
+
+  // Domestic cups (big five, then others)
+  'fa-cup',
+  'copa-del-rey',
+  'coppa-italia',
+  'dfb-pokal',
+  'coupe-de-france',
+  'efl-cup',
+  'copa-do-brasil',
+  'copa-mx',
+  'us-open-cup',
+  'copa-argentina',
+  'knvb-beker',
+  'taca-de-portugal',
+  'scottish-cup',
+  'scottish-league-cup',
+  'saudi-kings-cup',
+  'efl-trophy',
+  'scottish-challenge-cup',
+  'coupe-de-la-ligue',
+
+  // Super cups / shields
+  'community-shield',
+  'spanish-supercopa',
+  'italian-supercoppa',
+  'german-supercup',
+  'trophee-des-champions',
+  'brazilian-supercopa',
+  'campeon-de-campeones',
+  'argentine-supercopa',
+  'trofeo-de-campeones',
+  'johan-cruyff-shield',
+
+  // Second tiers
+  'eng-championship',
+  'esp-segunda',
+  'ita-serie-b',
+  'ger-2-bundesliga',
+  'fra-ligue-2',
+
+  // Lowest priority scoreboard noise
+  'club-friendly',
+]
+
+const LEAGUE_IMPORTANCE_RANK = new Map(
+  LEAGUE_IMPORTANCE_ORDER.map((id, index) => [id, index]),
+)
+
+if (import.meta.env.DEV) {
+  const missing = LEAGUES.filter((league) => !LEAGUE_IMPORTANCE_RANK.has(league.id))
+  if (missing.length > 0) {
+    console.warn(
+      'LEAGUE_IMPORTANCE_ORDER missing:',
+      missing.map((league) => league.id).join(', '),
+    )
+  }
+}
 
 /** Lower = more important. Unknown ids sort last. */
 export function leagueImportanceRank(id: LeagueId): number {
@@ -1209,7 +1321,7 @@ export function leagueImportanceRank(id: LeagueId): number {
 
 /**
  * Favorited leagues first (still by importance among themselves),
- * then the preferred league, then the rest in LEAGUES priority order.
+ * then the preferred league (optional), then biggest competitions first.
  */
 export function compareLeaguesForDisplay(
   a: LeagueId,

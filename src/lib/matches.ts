@@ -273,6 +273,7 @@ export function groupMatchesByLeague(
   matches: Match[],
   favoriteLeagueIds?: Set<string> | null,
   preferredLeagueId?: string | null,
+  favoriteTeamIds?: Set<string> | null,
 ): Array<{ leagueId: LeagueId; matches: Match[] }> {
   const map = new Map<LeagueId, Match[]>()
   for (const match of matches) {
@@ -281,8 +282,24 @@ export function groupMatchesByLeague(
     else map.set(match.leagueId, [match])
   }
 
+  // Leagues with a favorited team on this slate count as favorites for ordering.
+  const pinnedLeagueIds = new Set<string>(favoriteLeagueIds ?? [])
+  if (favoriteTeamIds && favoriteTeamIds.size > 0) {
+    for (const [leagueId, leagueMatches] of map) {
+      if (
+        leagueMatches.some(
+          (match) =>
+            (Boolean(match.home.id) && favoriteTeamIds.has(match.home.id)) ||
+            (Boolean(match.away.id) && favoriteTeamIds.has(match.away.id)),
+        )
+      ) {
+        pinnedLeagueIds.add(leagueId)
+      }
+    }
+  }
+
   return [...map.keys()]
-    .sort((a, b) => compareLeaguesForDisplay(a, b, favoriteLeagueIds, preferredLeagueId))
+    .sort((a, b) => compareLeaguesForDisplay(a, b, pinnedLeagueIds, preferredLeagueId))
     .map((leagueId) => ({
       leagueId,
       matches: (map.get(leagueId) ?? []).slice().sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
