@@ -3,7 +3,9 @@ import {
   domesticCupsForCountry,
   domesticPyramidEspnCodes,
   getLeague,
+  inferInternationalSeasonStartYear,
   internationalLeagues,
+  internationalSeasonDateBounds,
   isContinentalLeague,
   isFriendlyLeagueId,
   isInternationalLeague,
@@ -463,6 +465,58 @@ function competitiveEspnCodesForClub(
   return [...codes].filter((code) => {
     const match = LEAGUES.find((item) => item.espnCode === code)
     return !match || !isFriendlyLeagueId(match.id)
+  })
+}
+
+/** All international ESPN slugs for national-team season stats (includes friendlies). */
+function nationalTeamEspnCodes(): string[] {
+  return internationalLeagues().map((item) => item.espnCode)
+}
+
+type NationalLeaderSource = { espnCode: string; year: number }
+
+/**
+ * ESPN competition/year pairs that contributed matches inside the national
+ * Aug 1 – Jul 31 window for this side.
+ */
+async function nationalTeamLeaderSources(
+  teamId: string,
+  seasonStartYear: number,
+): Promise<NationalLeaderSource[]> {
+  const { from, to } = internationalSeasonDateBounds(seasonStartYear)
+  const fromMs = from.getTime()
+  const toMs = to.getTime()
+  const codes = nationalTeamEspnCodes()
+  const years = [seasonStartYear - 1, seasonStartYear, seasonStartYear + 1]
+  const pairs = codes.flatMap((espnCode) => years.map((year) => ({ espnCode, year })))
+
+  return mapPool(pairs, 6, async ({ espnCode, year }) => {
+    try {
+      const url = new URL(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/teams/${encodeURIComponent(teamId)}/schedule`,
+      )
+      url.searchParams.set('season', String(year))
+      const res = await fetch(url)
+      if (!res.ok) return null
+      const data = (await res.json()) as {
+        events?: Array<{
+          date?: string
+          competitions?: Array<{ status?: { type?: { completed?: boolean; name?: string } } }>
+        }>
+      }
+      const inWindow = (data.events ?? []).some((event) => {
+        const competition = event.competitions?.[0]
+        const completed =
+          competition?.status?.type?.completed ||
+          competition?.status?.type?.name === 'STATUS_FULL_TIME'
+        if (!completed || !event.date) return false
+        const ms = new Date(event.date).getTime()
+        return Number.isFinite(ms) && ms >= fromMs && ms <= toMs
+      })
+      return inWindow ? { espnCode, year } : null
+    } catch {
+      return null
+    }
   })
 }
 
@@ -1007,24 +1061,25 @@ export async function fetchTeamSeasonOptions(
   const labelMode = opts?.labelMode ?? 'division'
 
   if (league.kind === 'international') {
-    const options = await fetchLeagueSeasons(leagueId)
-    const mapped =
-      labelMode === 'all-competitions'
-        ? options.map((option) => ({
-            ...option,
-            label: 'All competitions',
-            key: option.key ?? `${league.espnCode}:${option.year}`,
-            espnCode: league.espnCode,
-            teamId,
-          }))
-        : options.map((option) => ({
-            ...option,
-            key: option.key ?? `${league.espnCode}:${option.year}`,
-            espnCode: league.espnCode,
-            teamId,
-          }))
-    teamSeasonOptionsCache.set(cacheKey, mapped)
-    return mapped
+    const current = inferInternationalSeasonStartYear()
+    const years = Array.from({ length: 8 }, (_, index) => current - index)
+    const resolved = await mapPool(years, 2, async (year) => {
+      const sources = await nationalTeamLeaderSources(teamId, year)
+      if (sources.length === 0) return null
+      const shortLabel = formatSeasonShortLabel(year, `${year}-${String(year + 1).slice(2)}`)
+      return {
+        year,
+        shortLabel,
+        label: labelMode === 'all-competitions' ? 'All competitions' : shortLabel,
+        key: `national:${teamId}:${year}`,
+        espnCode: sources[0]!.espnCode,
+        teamId,
+      } satisfies LeagueSeasonOption
+    })
+    const options = resolved.flatMap((option) => (option ? [option] : []))
+    options.sort((a, b) => b.year - a.year)
+    teamSeasonOptionsCache.set(cacheKey, options)
+    return options
   }
 
   const codes = domesticPyramidEspnCodes(leagueId)
@@ -1581,9 +1636,68 @@ async function fetchTeamLeadersPayload(
   }
 }
 
+type AggLeader = {
+  athleteId: string
+  athleteRef?: string
+  value: number
+  label: string
+  categoryId: string
+}
+
+function mergeLeaderPayloads(
+  payloads: Array<{ espnCode: string; payload: EspnCoreLeadersResponse }>,
+  teamId: string,
+): {
+  mergedByCategory: Map<string, Map<string, AggLeader>>
+  categoryLabels: Map<string, string>
+} {
+  const mergedByCategory = new Map<string, Map<string, AggLeader>>()
+  const categoryLabels = new Map<string, string>()
+
+  for (const { payload } of payloads) {
+    for (const category of payload.categories ?? []) {
+      const categoryId = category.name
+      if (!categoryId || !(PLAYER_STAT_CATEGORY_ORDER as readonly string[]).includes(categoryId)) {
+        continue
+      }
+      if (!categoryLabels.has(categoryId)) {
+        categoryLabels.set(
+          categoryId,
+          category.displayName || category.shortDisplayName || categoryId,
+        )
+      }
+      const byAthlete = mergedByCategory.get(categoryId) ?? new Map<string, AggLeader>()
+      for (const leader of category.leaders ?? []) {
+        const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
+        if (!athleteId) continue
+        const leaderTeamId = idFromCoreRef(leader.team?.$ref, 'teams')
+        if (leaderTeamId && leaderTeamId !== teamId) continue
+        const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
+        if (value <= 0) continue
+        const current = byAthlete.get(athleteId)
+        if (current) {
+          current.value += value
+        } else {
+          byAthlete.set(athleteId, {
+            athleteId,
+            athleteRef: leader.athlete?.$ref,
+            value,
+            label: categoryLabels.get(categoryId) || categoryId,
+            categoryId,
+          })
+        }
+      }
+      mergedByCategory.set(categoryId, byAthlete)
+    }
+  }
+
+  return { mergedByCategory, categoryLabels }
+}
+
 /**
- * Club player leaders for a season, summed across domestic + cups + continental
- * (friendlies excluded). Matches the Stats tab “All competitions” label.
+ * Club/national player leaders for a season, summed across competitions.
+ * Clubs: domestic + cups + continental (friendlies excluded).
+ * Nationals: all international comps including friendlies, Aug 1 – Jul 31 window.
  */
 export async function fetchTeamStatLeaders(
   leagueId: LeagueId,
@@ -1594,94 +1708,75 @@ export async function fetchTeamStatLeaders(
 ): Promise<TeamStatLeaders> {
   const league = getLeague(leagueId)
   const perCategoryCap = Math.max(1, Math.min(limit, 8))
+  const isNational = league.kind === 'international'
 
   const yearsToTry =
     seasonYear != null
       ? [seasonYear]
-      : [
-          new Date().getUTCFullYear(),
-          new Date().getUTCFullYear() - 1,
-          new Date().getUTCFullYear() - 2,
-          new Date().getUTCFullYear() - 3,
-        ]
-
-  const codes = competitiveEspnCodesForClub(leagueId, espnCodeOverride || league.espnCode)
+      : isNational
+        ? [
+            inferInternationalSeasonStartYear(),
+            inferInternationalSeasonStartYear() - 1,
+            inferInternationalSeasonStartYear() - 2,
+            inferInternationalSeasonStartYear() - 3,
+          ]
+        : [
+            new Date().getUTCFullYear(),
+            new Date().getUTCFullYear() - 1,
+            new Date().getUTCFullYear() - 2,
+            new Date().getUTCFullYear() - 3,
+          ]
 
   let season = yearsToTry[0]!
   let seasonMeta: { label: string; shortLabel: string } | null = null
   let labelEspnCode = espnCodeOverride || league.espnCode
-  type AggLeader = {
-    athleteId: string
-    athleteRef?: string
-    value: number
-    label: string
-    categoryId: string
-  }
   let mergedByCategory = new Map<string, Map<string, AggLeader>>()
   let categoryLabels = new Map<string, string>()
 
   for (const year of yearsToTry) {
-    const payloads = await mapPool(codes, 4, async (espnCode) => {
-      const payload = await fetchTeamLeadersPayload(espnCode, year, teamId)
-      return payload ? { espnCode, payload } : null
-    })
-    if (payloads.length === 0) continue
+    let payloads: Array<{ espnCode: string; payload: EspnCoreLeadersResponse }> = []
 
-    const nextMerged = new Map<string, Map<string, AggLeader>>()
-    const nextLabels = new Map<string, string>()
-
-    for (const { espnCode, payload } of payloads) {
-      for (const category of payload.categories ?? []) {
-        const categoryId = category.name
-        if (!categoryId || !(PLAYER_STAT_CATEGORY_ORDER as readonly string[]).includes(categoryId)) {
-          continue
-        }
-        if (!nextLabels.has(categoryId)) {
-          nextLabels.set(
-            categoryId,
-            category.displayName || category.shortDisplayName || categoryId,
-          )
-        }
-        const byAthlete = nextMerged.get(categoryId) ?? new Map<string, AggLeader>()
-        for (const leader of category.leaders ?? []) {
-          const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
-          if (!athleteId) continue
-          const leaderTeamId = idFromCoreRef(leader.team?.$ref, 'teams')
-          if (leaderTeamId && leaderTeamId !== teamId) continue
-          const value = typeof leader.value === 'number' ? leader.value : Number(leader.value) || 0
-          if (value <= 0) continue
-          const current = byAthlete.get(athleteId)
-          if (current) {
-            current.value += value
-          } else {
-            byAthlete.set(athleteId, {
-              athleteId,
-              athleteRef: leader.athlete?.$ref,
-              value,
-              label: nextLabels.get(categoryId) || categoryId,
-              categoryId,
-            })
-          }
-        }
-        nextMerged.set(categoryId, byAthlete)
-      }
-      if (!seasonMeta && espnCode === (espnCodeOverride || league.espnCode)) {
-        labelEspnCode = espnCode
-      }
+    if (isNational) {
+      const sources = await nationalTeamLeaderSources(teamId, year)
+      if (sources.length === 0) continue
+      payloads = await mapPool(sources, 4, async ({ espnCode, year: espnYear }) => {
+        const payload = await fetchTeamLeadersPayload(espnCode, espnYear, teamId)
+        return payload ? { espnCode, payload } : null
+      })
+      labelEspnCode = sources[0]?.espnCode || labelEspnCode
+    } else {
+      const codes = competitiveEspnCodesForClub(leagueId, espnCodeOverride || league.espnCode)
+      payloads = await mapPool(codes, 4, async (espnCode) => {
+        const payload = await fetchTeamLeadersPayload(espnCode, year, teamId)
+        return payload ? { espnCode, payload } : null
+      })
     }
 
-    const hasLeaders = [...nextMerged.values()].some((map) => map.size > 0)
+    if (payloads.length === 0) continue
+
+    const merged = mergeLeaderPayloads(payloads, teamId)
+    const hasLeaders = [...merged.mergedByCategory.values()].some((map) => map.size > 0)
     if (!hasLeaders) continue
 
     season = year
-    mergedByCategory = nextMerged
-    categoryLabels = nextLabels
-    seasonMeta = await fetchSeasonLabels(labelEspnCode, year)
+    mergedByCategory = merged.mergedByCategory
+    categoryLabels = merged.categoryLabels
+    seasonMeta = isNational
+      ? {
+          label: 'All competitions',
+          shortLabel: formatSeasonShortLabel(year, `${year}-${String(year + 1).slice(2)}`),
+        }
+      : await fetchSeasonLabels(labelEspnCode, year)
     break
   }
 
   if (!seasonMeta) {
-    seasonMeta = await fetchSeasonLabels(labelEspnCode, season)
+    seasonMeta = isNational
+      ? {
+          label: 'All competitions',
+          shortLabel: formatSeasonShortLabel(season, `${season}-${String(season + 1).slice(2)}`),
+        }
+      : await fetchSeasonLabels(labelEspnCode, season)
   }
 
   const orderedCategoryIds = PLAYER_STAT_CATEGORY_ORDER.filter((id) => {
@@ -1693,7 +1788,9 @@ export async function fetchTeamStatLeaders(
     throw new Error(
       seasonYear != null
         ? `No player stats for that season`
-        : `No player stats available for this club yet`,
+        : isNational
+          ? `No player stats available for this national team yet`
+          : `No player stats available for this club yet`,
     )
   }
 
