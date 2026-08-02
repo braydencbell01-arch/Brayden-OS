@@ -520,23 +520,6 @@ export function TeamProfileScreen({
               )}
             </OverviewCard>
 
-            {!isNational ? (
-              <TeamSeasonXiPitch
-                data={mostUsedXi.data}
-                loading={mostUsedXi.loading || overviewSeasons.seasonsLoading}
-                error={mostUsedXi.error}
-                seasons={overviewSeasons.seasons}
-                seasonsLoading={overviewSeasons.seasonsLoading}
-                selectedSeason={overviewSeasons.selectedSeason}
-                selectedKey={overviewSeasons.selectedKey}
-                onSelectSeason={overviewSeasons.selectSeason}
-                onOpenPlayer={onOpenPlayer}
-                leagueId={team.leagueId}
-                teamId={team.id}
-                teamName={displayName}
-              />
-            ) : null}
-
             <OverviewCard
               title="Next opponent"
               subtitle={
@@ -856,6 +839,23 @@ export function TeamProfileScreen({
                   </div>
                 )}
               </OverviewCard>
+            ) : null}
+
+            {!isNational ? (
+              <TeamSeasonXiPitch
+                data={mostUsedXi.data}
+                loading={mostUsedXi.loading || overviewSeasons.seasonsLoading}
+                error={mostUsedXi.error}
+                seasons={overviewSeasons.seasons}
+                seasonsLoading={overviewSeasons.seasonsLoading}
+                selectedSeason={overviewSeasons.selectedSeason}
+                selectedKey={overviewSeasons.selectedKey}
+                onSelectSeason={overviewSeasons.selectSeason}
+                onOpenPlayer={onOpenPlayer}
+                leagueId={team.leagueId}
+                teamId={team.id}
+                teamName={displayName}
+              />
             ) : null}
           </div>
         ) : null}

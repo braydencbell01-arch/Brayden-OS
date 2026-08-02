@@ -13,10 +13,17 @@ export function parseFormationRows(formation: string): number[] {
   return rows
 }
 
+/** Left→right ordering within a pitch row (LB … CB … RB). */
 function laneScore(abbrev: string): number {
   const a = abbrev.toUpperCase()
-  if (a.includes('L') && !a.includes('R')) return -1
-  if (a.includes('R') && !a.includes('L')) return 1
+  if (/^(LB|LWB)$/.test(a)) return -2
+  if (/^(RB|RWB)$/.test(a)) return 2
+  // Center-backs: keep CD-L left of CD-R, and both inside full-backs.
+  if (/^(CD-L|CB-L|LCB)$/.test(a)) return -1
+  if (/^(CD-R|CB-R|RCB)$/.test(a)) return 1
+  if (/^(CD|CB|SW)$/.test(a)) return 0
+  if (/^(LM|LW|LAM|AML)$/.test(a) || (a.includes('L') && !a.includes('R'))) return -1
+  if (/^(RM|RW|RAM|AMR)$/.test(a) || (a.includes('R') && !a.includes('L'))) return 1
   return 0
 }
 

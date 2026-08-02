@@ -1,17 +1,11 @@
 import { missingShort } from '../lib/display'
+import { pitchSurname } from '../lib/displayNames'
 import type { LeagueId } from '../lib/leagues'
 import type { LeagueSeasonOption, MostUsedStartingXi } from '../lib/stats/types'
 import { ratingColorStyle } from '../lib/stats/ratingColor'
 import { PlayerAvatar } from './PlayerAvatar'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { SeasonPicker } from './SeasonPicker'
-
-function lastName(name: string, shortName: string): string {
-  const fromShort = shortName.trim()
-  if (fromShort && !fromShort.includes(' ')) return fromShort
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  return parts[parts.length - 1] || fromShort || name
-}
 
 export function TeamSeasonXiPitch({
   data,
@@ -41,10 +35,10 @@ export function TeamSeasonXiPitch({
   teamName: string
 }) {
   return (
-    <section className="border border-white/10 bg-pitch/40" aria-label="Season stats">
+    <section className="border border-white/10 bg-pitch/40" aria-label="Lineup">
       <div className="flex items-start justify-between gap-3 border-b border-white/10 px-3 py-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-cream">Season stats</p>
+          <p className="text-sm font-semibold text-cream">Lineup</p>
           <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/60">
             All competitions
           </p>
@@ -139,7 +133,7 @@ export function TeamSeasonXiPitch({
                   ) : null}
                 </span>
                 <span className="mt-0.5 max-w-full truncate text-[0.6rem] font-semibold leading-tight text-cream">
-                  {missingShort(lastName(player.name, player.shortName))}
+                  {missingShort(pitchSurname(player.name, player.shortName))}
                 </span>
                 {player.goals > 0 || player.assists > 0 ? (
                   <span className="mt-0.5 flex items-center gap-1 text-[0.55rem] font-semibold text-mist/80">
@@ -156,7 +150,8 @@ export function TeamSeasonXiPitch({
           <p className="mt-2 text-center text-[0.6rem] text-mist/45">
             Based on {data.matchesSampled} competitive match
             {data.matchesSampled === 1 ? '' : 'es'}
-            {data.formation ? ` · ${data.formation}` : ''}
+            {data.formation ? ` in ${data.formation}` : ''}
+            {' · G/A from season stats'}
           </p>
         ) : null}
       </div>

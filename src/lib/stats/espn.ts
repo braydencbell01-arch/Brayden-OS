@@ -592,8 +592,8 @@ export async function fetchMostUsedStartingXi(
     seasonYear,
     espnCodeOverride,
   )
-  // Prefer newest fixtures first; cap to keep Overview snappy.
-  const sample = events.slice(-18).reverse()
+  // All competitive fixtures for the season (newest first). Soft cap avoids runaway seasons.
+  const sample = events.slice(-80).reverse()
 
   type PlaceStat = {
     id: string
@@ -784,13 +784,46 @@ export async function fetchMostUsedStartingXi(
     }
   }
 
+  // Overlay season G/A from the same all-competitions leaders feed as the Stats tab.
+  try {
+    const leaders = await fetchTeamStatLeaders(
+      leagueId,
+      teamId,
+      40,
+      seasonYear,
+      espnCodeOverride,
+    )
+    const goalsById = new Map<string, number>()
+    const assistsById = new Map<string, number>()
+    for (const category of leaders.categories) {
+      const id = category.id.toLowerCase()
+      const target =
+        id === 'goals' || id === 'goalsleaders'
+          ? goalsById
+          : id === 'assists' || id === 'assistsleaders'
+            ? assistsById
+            : null
+      if (!target) continue
+      for (const leader of category.leaders) {
+        if (!leader.id || !/^\d+$/.test(leader.id)) continue
+        target.set(leader.id, leader.value)
+      }
+    }
+    for (const player of xiCore) {
+      if (goalsById.has(player.id)) player.goals = goalsById.get(player.id)!
+      if (assistsById.has(player.id)) player.assists = assistsById.get(player.id)!
+    }
+  } catch {
+    // Keep per-match aggregates when season leaders are unavailable.
+  }
+
   const players = layoutPlayersOnPitch(formation, xiCore.slice(0, 11))
 
   return {
     teamId,
     seasonYear,
     formation,
-    matchesSampled,
+    matchesSampled: events.length > 0 ? events.length : matchesSampled,
     players,
     fetchedAt: Date.now(),
   }
