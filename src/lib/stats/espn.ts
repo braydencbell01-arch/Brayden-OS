@@ -883,6 +883,128 @@ function leagueNameFromSeasonDisplay(displayName: string | undefined, year: numb
     .trim()
 }
 
+/** Compact division name for outcome labels (Championship, League One, …). */
+function shortDivisionName(divisionName: string): string {
+  let name = divisionName
+    .replace(/^English\s+/i, '')
+    .replace(/^EFL\s+/i, '')
+    .trim()
+  name = name.replace(/^League\s+Championship$/i, 'Championship')
+  return name || divisionName
+}
+
+function playoffWinnersLabel(divisionName: string): string {
+  const short = shortDivisionName(divisionName)
+  if (/play-?off/i.test(short)) return short
+  return `${short} play-off winners`
+}
+
+type EspnStandingNoteEntry = {
+  team?: { id?: string | number }
+  note?: { description?: string; rank?: number }
+}
+
+/** Standing row note for a club in a league season (e.g. "Promotion via playoffs"). */
+async function fetchTeamStandingNote(
+  espnCode: string,
+  year: number,
+  teamId: string,
+): Promise<string | null> {
+  const cacheKey = `${espnCode}:${year}:${teamId}`
+  const cached = standingNoteCache.get(cacheKey)
+  if (cached !== undefined) return cached
+
+  try {
+    const url = new URL(
+      `https://site.api.espn.com/apis/v2/sports/soccer/${espnCode}/standings`,
+    )
+    url.searchParams.set('season', String(year))
+    const res = await fetch(url)
+    if (!res.ok) {
+      standingNoteCache.set(cacheKey, null)
+      return null
+    }
+    const data = (await res.json()) as unknown
+    let note: string | null = null
+    const visit = (value: unknown) => {
+      if (note || value == null) return
+      if (Array.isArray(value)) {
+        for (const item of value) visit(item)
+        return
+      }
+      if (typeof value !== 'object') return
+      const row = value as EspnStandingNoteEntry
+      if (row.team && String(row.team.id) === teamId) {
+        const description = row.note?.description?.trim()
+        if (description) note = description
+        return
+      }
+      for (const child of Object.values(value as Record<string, unknown>)) visit(child)
+    }
+    visit(data)
+    standingNoteCache.set(cacheKey, note)
+    return note
+  } catch {
+    standingNoteCache.set(cacheKey, null)
+    return null
+  }
+}
+
+async function teamHasRosterInLeague(
+  espnCode: string,
+  year: number,
+  teamId: string,
+): Promise<boolean> {
+  try {
+    const url = new URL(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/teams/${encodeURIComponent(teamId)}/roster`,
+    )
+    url.searchParams.set('season', String(year))
+    const res = await fetch(url)
+    if (!res.ok) return false
+    const data = (await res.json()) as EspnTeamRosterResponse
+    return (data.athletes ?? []).length > 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * When a club won promotion through the play-offs, prefer that over the plain
+ * division name (e.g. "Championship play-off winners" instead of "Championship").
+ */
+async function divisionSeasonLabel(input: {
+  divisionName: string
+  espnCode: string
+  year: number
+  teamId: string
+  pyramidCodes: string[]
+}): Promise<string> {
+  const note = await fetchTeamStandingNote(input.espnCode, input.year, input.teamId)
+  if (!note) return input.divisionName
+  const normalized = note.toLowerCase()
+
+  // Modern ESPN wording for the play-off winner.
+  if (normalized.includes('promotion') && normalized.includes('via playoff')) {
+    return playoffWinnersLabel(input.divisionName)
+  }
+
+  // Older tables mark the play-off places with "Promotion play-offs" for every
+  // participant — only keep the label if the club moved up the next season.
+  if (
+    normalized.includes('promotion') &&
+    (normalized.includes('play-off') || normalized.includes('playoff'))
+  ) {
+    const codeIndex = input.pyramidCodes.indexOf(input.espnCode)
+    const higherCode = codeIndex > 0 ? input.pyramidCodes[codeIndex - 1] : null
+    if (higherCode && (await teamHasRosterInLeague(higherCode, input.year + 1, input.teamId))) {
+      return playoffWinnersLabel(input.divisionName)
+    }
+  }
+
+  return input.divisionName
+}
+
 /**
  * Seasons a club actually fielded a squad, labeled with that year's division
  * (Premier League, Championship, League One, …) — not the nav league for every year.
@@ -947,10 +1069,20 @@ export async function fetchTeamSeasonOptions(
           leagueNameFromSeasonDisplay(labels.label, year) ||
           LEAGUES.find((item) => item.espnCode === espnCode)?.name ||
           espnCode
+        const label =
+          labelMode === 'all-competitions'
+            ? 'All competitions'
+            : await divisionSeasonLabel({
+                divisionName,
+                espnCode,
+                year,
+                teamId,
+                pyramidCodes: codes,
+              })
         return {
           year,
           shortLabel: labels.shortLabel,
-          label: labelMode === 'all-competitions' ? 'All competitions' : divisionName,
+          label,
           key: `${espnCode}:${year}`,
           espnCode,
           teamId,
@@ -1005,6 +1137,7 @@ export async function fetchTeamRoster(
   let season = seasonYear ?? nowYear
   let seasonLabel = String(seasonYear ?? nowYear)
   let resolvedLeagueId = leagueId
+  let resolvedEspnCode = espnCodeOverride || league.espnCode
 
   outer: for (const espnCode of codesToTry) {
     for (const year of yearsToTry) {
@@ -1020,6 +1153,7 @@ export async function fetchTeamRoster(
       athletes = list
       season = data.season?.year ?? year ?? nowYear
       seasonLabel = data.season?.displayName || `${season} season`
+      resolvedEspnCode = espnCode
       const matched = LEAGUES.find((item) => item.espnCode === espnCode)
       if (matched) resolvedLeagueId = matched.id
       break outer
@@ -1034,6 +1168,22 @@ export async function fetchTeamRoster(
           ? `No roster available for this national team yet`
           : `No roster available for this club yet`,
     )
+  }
+
+  if (league.kind === 'domestic' && league.format === 'league') {
+    const divisionName =
+      leagueNameFromSeasonDisplay(seasonLabel, season) || seasonLabel
+    const outcomeLabel = await divisionSeasonLabel({
+      divisionName,
+      espnCode: resolvedEspnCode,
+      year: season,
+      teamId,
+      pyramidCodes: domesticPyramidEspnCodes(leagueId),
+    })
+    if (outcomeLabel !== divisionName) {
+      const short = formatSeasonShortLabel(season)
+      seasonLabel = `${short} · ${outcomeLabel}`
+    }
   }
 
   const buckets = new Map<string, TeamRosterPlayer[]>()
@@ -1629,6 +1779,7 @@ type EspnSeasonDetail = {
 const leaderSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 const allSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 const teamSeasonOptionsCache = new Map<string, LeagueSeasonOption[]>()
+const standingNoteCache = new Map<string, string | null>()
 
 /** Compact season chip: "2025-26" → "25/26"; calendar years stay as "2025". */
 export function formatSeasonShortLabel(year: number, abbreviation?: string): string {
