@@ -165,17 +165,53 @@ function cellText(html: string): string {
     .trim()
 }
 
-function seasonSortYear(season: string): number {
-  const range = season.match(/(20\d{2}|19\d{2})\s*[–/-]\s*(\d{2}|\d{4})/)
+/** Club season window is always 1 Aug → 31 Jul. Label as "20/21". */
+export function formatAugJulSeasonLabel(startYear: number): string {
+  const endYear = startYear + 1
+  return `${String(startYear).slice(-2)}/${String(endYear).slice(-2)}`
+}
+
+/**
+ * Normalize any Wikipedia season token to an Aug–Jul season label.
+ * A bare calendar year is treated as the season end year (final typically May/Jun).
+ */
+export function normalizeTrophySeason(season: string): { label: string; sortYear: number } {
+  const cleaned = season.trim()
+
+  // Prefer a 4-digit end year so "1999–2000" does not parse as end "20".
+  const range = cleaned.match(/(20\d{2}|19\d{2})\s*[–/−-]\s*(\d{4}|\d{2})/)
   if (range) {
     const start = Number(range[1])
-    const endRaw = range[2]
+    const endRaw = range[2]!
     const end =
-      endRaw.length === 2 ? Number(String(start).slice(0, 2) + endRaw) : Number(endRaw)
-    return Number.isFinite(end) ? end : start
+      endRaw.length === 2 ? Number(`${String(start).slice(0, 2)}${endRaw}`) : Number(endRaw)
+    if (Number.isFinite(start) && Number.isFinite(end)) {
+      return { label: formatAugJulSeasonLabel(start), sortYear: end }
+    }
   }
-  const single = season.match(/(20\d{2}|19\d{2})/)
-  return single ? Number(single[1]) : 0
+
+  const short = cleaned.match(/\b(\d{2})\s*\/\s*(\d{2})\b/)
+  if (short) {
+    const startTwo = Number(short[1])
+    const endTwo = Number(short[2])
+    // 99/00 → 1999–2000; otherwise prefer 20xx.
+    const start =
+      startTwo > endTwo ? 1900 + startTwo : startTwo >= 70 ? 1900 + startTwo : 2000 + startTwo
+    return { label: formatAugJulSeasonLabel(start), sortYear: start + 1 }
+  }
+
+  const single = cleaned.match(/\b(20\d{2}|19\d{2})\b/)
+  if (single) {
+    const endYear = Number(single[1])
+    const startYear = endYear - 1
+    return { label: formatAugJulSeasonLabel(startYear), sortYear: endYear }
+  }
+
+  return { label: cleaned, sortYear: 0 }
+}
+
+function seasonSortYear(season: string): number {
+  return normalizeTrophySeason(season).sortYear
 }
 
 function extractSeasonTokens(raw: string): string[] {
@@ -189,7 +225,8 @@ function extractSeasonTokens(raw: string): string[] {
         .replace(/\s+/g, ' ')
         .trim(),
     )
-    .filter((part) => /\d{4}/.test(part))
+    .filter((part) => /\d{4}/.test(part) || /\d{2}\s*\/\s*\d{2}/.test(part))
+    .map((part) => normalizeTrophySeason(part).label)
 }
 
 function cleanCompetitionName(raw: string): string {
@@ -238,7 +275,16 @@ function stripYouthHonoursSections(html: string): string {
 }
 
 function finalizeTrophyWins(wins: TeamTrophyWin[]): TeamTrophyWin[] {
-  const senior = wins.filter((win) => !isYouthOrReserveCompetition(win.competition))
+  const senior = wins
+    .filter((win) => !isYouthOrReserveCompetition(win.competition))
+    .map((win) => {
+      const normalized = normalizeTrophySeason(win.season)
+      return {
+        ...win,
+        season: normalized.label,
+        sortYear: normalized.sortYear || win.sortYear,
+      }
+    })
   senior.sort(
     (a, b) =>
       b.sortYear - a.sortYear ||
