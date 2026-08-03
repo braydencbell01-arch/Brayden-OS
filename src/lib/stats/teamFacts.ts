@@ -167,41 +167,53 @@ function cellText(html: string): string {
 
 import { soccerSeasonShortLabel } from '../leagues'
 
-/** Club season window is always 1 Aug → 31 Jul. Label as "20/21". */
+/** Club season window is always 1 Aug → 31 Jul. */
 export function formatAugJulSeasonLabel(startYear: number): string {
   return soccerSeasonShortLabel(startYear)
+}
+
+/** Resolve a 2-digit end year against a known 4-digit start (1999/00 → 2000). */
+function resolveSeasonEndYear(start: number, endRaw: string): number {
+  if (endRaw.length >= 4) return Number(endRaw)
+  const endTwo = Number(endRaw)
+  if (!Number.isFinite(endTwo)) return start + 1
+  let end = Math.floor(start / 100) * 100 + endTwo
+  if (end <= start) end += 100
+  return end
 }
 
 /**
  * Normalize any Wikipedia season token to an Aug–Jul season label.
  * A bare calendar year is treated as the season end year (final typically May/Jun).
+ * Pre-2000 seasons keep a full start year (`1999/00`, `1889/90`).
  */
 export function normalizeTrophySeason(season: string): { label: string; sortYear: number } {
   const cleaned = season.trim()
 
-  // Prefer a 4-digit end year so "1999–2000" does not parse as end "20".
-  const range = cleaned.match(/(20\d{2}|19\d{2})\s*[–/−-]\s*(\d{4}|\d{2})/)
+  // 1889–90, 1999–2000, 1999/00 — prefer 4-digit start so century is never lost.
+  const range = cleaned.match(
+    /\b((?:1[6-9]|20)\d{2})\s*[–/−/-]\s*((?:(?:1[6-9]|20)\d{2})|\d{2})\b/,
+  )
   if (range) {
     const start = Number(range[1])
-    const endRaw = range[2]!
-    const end =
-      endRaw.length === 2 ? Number(`${String(start).slice(0, 2)}${endRaw}`) : Number(endRaw)
-    if (Number.isFinite(start) && Number.isFinite(end)) {
+    const end = resolveSeasonEndYear(start, range[2]!)
+    if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
       return { label: formatAugJulSeasonLabel(start), sortYear: end }
     }
   }
 
-  const short = cleaned.match(/\b(\d{2})\s*\/\s*(\d{2})\b/)
+  // Ambiguous short forms: 99/00, 94–95, 20/21
+  const short = cleaned.match(/\b(\d{2})\s*[–/−/-]\s*(\d{2})\b/)
   if (short) {
     const startTwo = Number(short[1])
     const endTwo = Number(short[2])
-    // 99/00 → 1999–2000; otherwise prefer 20xx.
+    // 99/00 → 1999; 70–99 → 19xx; else 20xx (modern seasons).
     const start =
       startTwo > endTwo ? 1900 + startTwo : startTwo >= 70 ? 1900 + startTwo : 2000 + startTwo
     return { label: formatAugJulSeasonLabel(start), sortYear: start + 1 }
   }
 
-  const single = cleaned.match(/\b(20\d{2}|19\d{2})\b/)
+  const single = cleaned.match(/\b((?:1[6-9]|20)\d{2})\b/)
   if (single) {
     const endYear = Number(single[1])
     const startYear = endYear - 1
@@ -211,23 +223,21 @@ export function normalizeTrophySeason(season: string): { label: string; sortYear
   return { label: cleaned, sortYear: 0 }
 }
 
-function seasonSortYear(season: string): number {
-  return normalizeTrophySeason(season).sortYear
-}
-
-function extractSeasonTokens(raw: string): string[] {
+function extractSeasonTokens(raw: string): { label: string; sortYear: number }[] {
   return raw
     .split(',')
     .map((part) =>
       part
         .replace(/\[\s*[^\]]*\]/g, '')
         .replace(/\(\s*shared\s*\)/gi, '')
+        .replace(/^(?:and\s+)/i, '')
         .replace(/[*†‡#]+/g, '')
         .replace(/\s+/g, ' ')
         .trim(),
     )
-    .filter((part) => /\d{4}/.test(part) || /\d{2}\s*\/\s*\d{2}/.test(part))
-    .map((part) => normalizeTrophySeason(part).label)
+    .filter((part) => /\d{4}/.test(part) || /\d{2}\s*[–/−/]\s*\d{2}/.test(part))
+    .map((part) => normalizeTrophySeason(part))
+    .filter((part) => part.sortYear > 0)
 }
 
 function cleanCompetitionName(raw: string): string {
@@ -289,8 +299,8 @@ function finalizeTrophyWins(wins: TeamTrophyWin[]): TeamTrophyWin[] {
   senior.sort(
     (a, b) =>
       b.sortYear - a.sortYear ||
-      b.season.localeCompare(a.season) ||
-      a.competition.localeCompare(b.competition),
+      a.competition.localeCompare(b.competition) ||
+      b.season.localeCompare(a.season),
   )
   const seen = new Set<string>()
   return senior.filter((win) => {
@@ -356,7 +366,7 @@ export function parseWikipediaHonoursTable(html: string): TeamTrophyWin[] {
       }
 
       for (const season of extractSeasonTokens(seasonsRaw)) {
-        wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
+        wins.push({ competition: name, season: season.label, sortYear: season.sortYear })
       }
     }
   }
@@ -429,7 +439,11 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
         !isYouthOrReserveCompetition(name)
       ) {
         for (const season of extractSeasonTokens(compact[3] || '')) {
-          wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
+          wins.push({
+            competition: name,
+            season: season.label,
+            sortYear: season.sortYear,
+          })
         }
       }
       continue
@@ -445,8 +459,8 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
       for (const season of extractSeasonTokens(won[2] || '')) {
         wins.push({
           competition: title,
-          season,
-          sortYear: seasonSortYear(season),
+          season: season.label,
+          sortYear: season.sortYear,
         })
       }
       continue
@@ -491,7 +505,7 @@ export function parseWikipediaHonoursText(text: string): TeamTrophyWin[] {
         continue
       }
       for (const season of extractSeasonTokens(match[3] || '')) {
-        wins.push({ competition: name, season, sortYear: seasonSortYear(season) })
+        wins.push({ competition: name, season: season.label, sortYear: season.sortYear })
       }
     }
   }

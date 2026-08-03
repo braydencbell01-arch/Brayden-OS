@@ -1986,15 +1986,20 @@ const allSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 const teamSeasonOptionsCache = new Map<string, LeagueSeasonOption[]>()
 const standingNoteCache = new Map<string, string | null>()
 
-/** Compact season chip: always Aug–Jul `YY/YY+1` (never a bare calendar year). */
+/** Compact season chip: Aug–Jul label (never a bare calendar year). */
 export function formatSeasonShortLabel(year: number, abbreviation?: string): string {
   const abbr = (abbreviation || '').trim()
-  const cross = abbr.match(/^(\d{4})[-/](\d{2})$/)
+  const cross = abbr.match(/^(\d{4})[-/](\d{2,4})$/)
   if (cross) {
-    return `${cross[1]!.slice(2)}/${cross[2]}`
+    const start = Number(cross[1])
+    return soccerSeasonShortLabel(Number.isFinite(start) ? start : year)
   }
-  const alreadyShort = abbr.match(/^(\d{2})\/(\d{2})$/)
-  if (alreadyShort) return `${alreadyShort[1]}/${alreadyShort[2]}`
+  // Short `YY/YY` abbreviations lose the century — prefer the known start year.
+  if (/^\d{2}\/\d{2}$/.test(abbr) && Number.isFinite(year) && year > 0) {
+    return soccerSeasonShortLabel(year)
+  }
+  const fullStart = abbr.match(/^(\d{4})\/\d{2}$/)
+  if (fullStart) return soccerSeasonShortLabel(Number(fullStart[1]))
   return soccerSeasonShortLabel(year)
 }
 

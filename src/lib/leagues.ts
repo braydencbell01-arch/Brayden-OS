@@ -1121,7 +1121,8 @@ export function regularSeasonCupsForLeague(leagueId: LeagueId): LeagueId[] {
 }
 
 /**
- * Soccer seasons run 1 Aug → 31 Jul and are labeled by start year (2026 → 26/27).
+ * Soccer seasons run 1 Aug → 31 Jul and are labeled by start year
+ * (2026 → 26/27; 1999 → 1999/00).
  * August = month index 7.
  */
 export function inferSoccerSeasonStartYear(date = new Date()): number {
@@ -1137,9 +1138,14 @@ export function inferInternationalSeasonStartYear(date = new Date()): number {
   return inferSoccerSeasonStartYear(date)
 }
 
-/** Always `YY/YY+1` for an Aug–Jul season-start year — never a bare calendar year. */
+/**
+ * Aug–Jul season label for a start year — never a bare calendar year.
+ * 2000+ → `25/26`; 1900s and earlier → `1999/00`, `1889/90` (full start year).
+ */
 export function soccerSeasonShortLabel(startYear: number): string {
-  return `${String(startYear).slice(-2)}/${String(startYear + 1).slice(-2)}`
+  const endTwo = String(startYear + 1).slice(-2)
+  if (startYear < 2000) return `${startYear}/${endTwo}`
+  return `${String(startYear).slice(-2)}/${endTwo}`
 }
 
 /** Inclusive season window: Aug 1 startYear → Jul 31 startYear+1. */
