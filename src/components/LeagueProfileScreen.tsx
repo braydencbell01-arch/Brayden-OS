@@ -49,7 +49,6 @@ import { StandingsTable } from './StandingsTable'
 
 type LeagueTab = 'overview' | 'matches' | 'table' | 'knockout' | 'stats'
 type OverviewSection = 'form' | 'nextMatch'
-type StatsSection = 'player-stats'
 
 const TABS: Array<{
   id: LeagueTab
@@ -114,9 +113,6 @@ export function LeagueProfileScreen({
     form: true,
     nextMatch: true,
   })
-  const [openStats, setOpenStats] = useState<Record<StatsSection, boolean>>({
-    'player-stats': true,
-  })
 
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
   const isInternational = league.kind === 'international'
@@ -178,15 +174,10 @@ export function LeagueProfileScreen({
   useEffect(() => {
     setTab('overview')
     setOpenOverview({ form: true, nextMatch: true })
-    setOpenStats({ 'player-stats': true })
   }, [league.id])
 
   const toggleOverview = (section: OverviewSection) => {
     setOpenOverview((current) => ({ ...current, [section]: !current[section] }))
-  }
-
-  const toggleStats = (section: StatsSection) => {
-    setOpenStats((current) => ({ ...current, [section]: !current[section] }))
   }
 
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
@@ -622,27 +613,18 @@ export function LeagueProfileScreen({
         ) : null}
 
         {tab === 'stats' ? (
-          <div className="flex flex-col gap-3">
-            <OverviewCard
-              title="Player stats"
-              subtitle="Scorers, assists, shots, cards, and more"
-              open={openStats['player-stats']}
-              onToggle={() => toggleStats('player-stats')}
-            >
-              <LeaguePlayerStatsPanel
-                data={playerStats.data}
-                loading={playerStats.loading}
-                error={playerStats.error}
-                leagueId={league.id}
-                seasons={playerStats.seasons}
-                seasonsLoading={playerStats.seasonsLoading}
-                selectedSeason={playerStats.selectedSeason}
-                onSelectSeason={playerStats.selectSeason}
-                onOpenPlayer={onOpenPlayer}
-                onOpenTeam={onOpenTeam}
-              />
-            </OverviewCard>
-          </div>
+          <LeaguePlayerStatsPanel
+            data={playerStats.data}
+            loading={playerStats.loading}
+            error={playerStats.error}
+            leagueId={league.id}
+            seasons={playerStats.seasons}
+            seasonsLoading={playerStats.seasonsLoading}
+            selectedSeason={playerStats.selectedSeason}
+            onSelectSeason={playerStats.selectSeason}
+            onOpenPlayer={onOpenPlayer}
+            onOpenTeam={onOpenTeam}
+          />
         ) : null}
       </div>
     </ProfileShell>
