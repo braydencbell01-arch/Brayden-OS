@@ -11,10 +11,10 @@ export type MatchMoment = {
   id: string
   clock: string
   text: string
-  kind: 'goal' | 'card' | 'other'
-  /** Goal scorer or booked player. */
+  kind: 'goal' | 'card' | 'sub' | 'other'
+  /** Goal scorer, booked player, or player going off. */
   primaryPlayer?: string
-  /** Assist on goals when ESPN provides a second participant. */
+  /** Assist on goals, or player coming on for subs. */
   secondaryPlayer?: string
   teamName?: string
   /** Narrower card label for UI (yellow vs red). */

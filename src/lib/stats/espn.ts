@@ -164,6 +164,9 @@ function classifyMoment(event: EspnKeyEvent): MatchMoment['kind'] {
   const type = (event.type?.type || event.type?.text || '').toLowerCase()
   if (event.scoringPlay || type.includes('goal')) return 'goal'
   if (type.includes('yellow') || type.includes('red') || type.includes('card')) return 'card'
+  if (type.includes('subst') || type.includes('substitution') || type.includes('replace')) {
+    return 'sub'
+  }
   return 'other'
 }
 
@@ -188,6 +191,7 @@ function momentLabel(event: EspnKeyEvent, kind: MatchMoment['kind']): string {
     if (type.includes('yellow')) return 'Yellow card'
     return typeText || 'Card'
   }
+  if (kind === 'sub') return 'Substitution'
   return typeText || 'Event'
 }
 
@@ -195,15 +199,18 @@ function buildMoments(events: EspnKeyEvent[] | undefined): MatchMoment[] {
   return (events ?? [])
     .filter((event) => {
       const kind = classifyMoment(event)
-      return kind === 'goal' || kind === 'card'
+      return kind === 'goal' || kind === 'card' || kind === 'sub'
     })
     .map((event, index) => {
       const kind = classifyMoment(event)
       const participants = event.participants ?? []
       const primaryPlayer = participants[0]?.athlete?.displayName || undefined
-      // Goals: second participant is typically the assister. Cards/subs use other roles.
+      // Goals: second participant is typically the assister.
+      // Subs: second participant is typically the player coming on.
       const secondaryPlayer =
-        kind === 'goal' ? participants[1]?.athlete?.displayName || undefined : undefined
+        kind === 'goal' || kind === 'sub'
+          ? participants[1]?.athlete?.displayName || undefined
+          : undefined
       return {
         id: event.id || `moment-${index}`,
         clock: event.clock?.displayValue || '',
