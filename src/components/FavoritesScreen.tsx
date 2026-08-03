@@ -350,15 +350,9 @@ export function FavoritesScreen({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-star">
               Suggestions
             </p>
-            <h2 className="mt-2 font-display text-3xl tracking-wide text-cream">
-              Star something next
-            </h2>
-            <p className="mt-2 text-sm text-mist/75">
-              Popular leagues and clubs — tap the star to add them to Favorites.
-            </p>
 
             {leagueSuggestions.length > 0 ? (
-              <div className="mt-5">
+              <div className="mt-4">
                 <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
                   Leagues
                 </p>
