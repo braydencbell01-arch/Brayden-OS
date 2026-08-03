@@ -165,10 +165,11 @@ function cellText(html: string): string {
     .trim()
 }
 
+import { soccerSeasonShortLabel } from '../leagues'
+
 /** Club season window is always 1 Aug → 31 Jul. Label as "20/21". */
 export function formatAugJulSeasonLabel(startYear: number): string {
-  const endYear = startYear + 1
-  return `${String(startYear).slice(-2)}/${String(endYear).slice(-2)}`
+  return soccerSeasonShortLabel(startYear)
 }
 
 /**

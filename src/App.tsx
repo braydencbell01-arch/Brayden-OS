@@ -20,7 +20,8 @@ import { TeamProfileScreen } from './components/TeamProfileScreen'
 import { startOfDay, toDateKey } from './lib/dates'
 import { useFavorites, type FavoriteTeam, type FavoritesApi } from './lib/favorites'
 import { buildHash, parseHash } from './lib/hashRoute'
-import { LEAGUES, type LeagueId } from './lib/leagues'
+import { LEAGUES, isInternationalLeague, type LeagueId } from './lib/leagues'
+import { resolveTeamDomesticLeagueId } from './lib/search'
 import { dateKeysForFavorites, matchesOnDate, type Match } from './lib/matches'
 import { loadSettings, saveSettings } from './lib/settings'
 import { useLiveBigFiveMatches } from './lib/stats/useLiveBigFiveMatches'
@@ -534,6 +535,16 @@ export default function App() {
     setScreen('team')
     writeHash({ kind: 'team', team })
     window.scrollTo({ top: 0, behavior: 'auto' })
+
+    // Clubs always open on their domestic league, not the cup/match they came from.
+    if (team.kind !== 'national' && !isInternationalLeague(team.leagueId)) {
+      void resolveTeamDomesticLeagueId(team.id, undefined, team.leagueId).then((domestic) => {
+        if (!domestic || domestic === team.leagueId) return
+        const next: FavoriteTeam = { ...team, leagueId: domestic, kind: 'club' }
+        setActiveTeam((current) => (current?.id === team.id ? next : current))
+        writeHash({ kind: 'team', team: next })
+      })
+    }
   }
 
   const openPlayer = (player: PlayerNavRef) => {

@@ -2,6 +2,7 @@ import {
   compareLeaguesForDisplay,
   continentalLeagues,
   domesticCupsForCountry,
+  findLeague,
   getLeague,
   inferInternationalSeasonStartYear,
   inferSoccerSeasonStartYear,
@@ -12,6 +13,7 @@ import {
   regularSeasonCupsForLeague,
   type LeagueId,
 } from './leagues'
+import { leagueIdFromEspnCode, resolveTeamDomesticLeagueId } from './search'
 import { addDays, dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
@@ -594,8 +596,8 @@ export async function fetchNationalTeamSchedules(
 }
 
 /**
- * Club (or national) schedule from ESPN to fill Match Day cache gaps.
- * Clubs: preferred league + same-country domestic cups + continental club comps.
+ * Club schedule from ESPN to fill Match Day cache gaps.
+ * Always fans out from the club's domestic league (not a cup they were opened from).
  * Nationals: all international comps.
  */
 export async function fetchTeamSchedule(
@@ -608,12 +610,19 @@ export async function fetchTeamSchedule(
     return fetchNationalTeamSchedules(teamId, leagueId)
   }
 
-  const cupIds = domesticCupsForCountry(league.country).map((cup) => cup.id)
+  let domesticId = leagueId
+  if (league.kind !== 'domestic' || league.format !== 'league') {
+    const resolved = await resolveTeamDomesticLeagueId(teamId, undefined, leagueId)
+    if (resolved) domesticId = resolved
+  }
+  const domestic = getLeague(domesticId)
+
+  const cupIds = domesticCupsForCountry(domestic.country).map((cup) => cup.id)
   const continentalIds = continentalLeagues().map((entry) => entry.id)
   const codes = [
-    leagueId,
-    ...cupIds.filter((id) => id !== leagueId),
-    ...continentalIds.filter((id) => id !== leagueId),
+    domesticId,
+    ...cupIds.filter((id) => id !== domesticId),
+    ...continentalIds.filter((id) => id !== domesticId),
     'club-friendly' as LeagueId,
   ]
   const results = await Promise.allSettled(
@@ -631,57 +640,183 @@ export async function fetchTeamSchedule(
 }
 
 /**
- * Club seasons (e.g. 2026 → 2026/27) generally run June–May.
- * National seasons use Aug 1 – Jul 31 when `international` is set.
+ * Seasons run 1 Aug → 31 Jul for clubs and nationals.
+ * `seasonYear` is the August start year (2026 → 26/27).
  */
 export function matchInSeasonYear(
   match: Match,
   seasonYear: number,
-  opts?: { international?: boolean },
+  _opts?: { international?: boolean },
 ): boolean {
-  if (opts?.international) {
-    const start = `${seasonYear}-08-01`
-    const end = `${seasonYear + 1}-07-31`
-    return match.dateKey >= start && match.dateKey <= end
-  }
-  const start = `${seasonYear}-06-01`
-  const end = `${seasonYear + 1}-05-31`
+  const start = `${seasonYear}-08-01`
+  const end = `${seasonYear + 1}-07-31`
   return match.dateKey >= start && match.dateKey <= end
 }
 
+export type TeamCompetitionEntry = {
+  key: string
+  name: string
+  /** Present when BrayStats has a league profile for this competition. */
+  leagueId?: LeagueId
+}
+
+const espnLeagueNameCache = new Map<string, string>()
+
+async function espnLeagueDisplayName(espnCode: string): Promise<string> {
+  const cached = espnLeagueNameCache.get(espnCode)
+  if (cached) return cached
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnCode}/scoreboard`,
+    )
+    if (res.ok) {
+      const data = (await res.json()) as {
+        leagues?: Array<{ name?: string; shortName?: string }>
+      }
+      const name = data.leagues?.[0]?.name || data.leagues?.[0]?.shortName
+      if (name) {
+        espnLeagueNameCache.set(espnCode, name)
+        return name
+      }
+    }
+  } catch {
+    // fall through
+  }
+  const fallback = espnCode.replace(/\./g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  espnLeagueNameCache.set(espnCode, fallback)
+  return fallback
+}
+
 /**
- * Competitions for a team profile: primary league + regular domestic cups for
- * the current/upcoming season, plus any comps with fixtures in that season
- * (including friendlies when the side played them).
+ * Discover every ESPN competition a team played in an Aug–Jul season
+ * (including comps not yet in the BrayStats catalog).
  */
+export async function discoverTeamSeasonCompetitions(
+  teamId: string,
+  seasonYear: number,
+): Promise<TeamCompetitionEntry[]> {
+  const from = `${seasonYear}0801`
+  const to = `${seasonYear + 1}0731`
+  const url = new URL(
+    `https://sports.core.api.espn.com/v2/sports/soccer/teams/${encodeURIComponent(teamId)}/events`,
+  )
+  url.searchParams.set('dates', `${from}-${to}`)
+  url.searchParams.set('limit', '200')
+
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return []
+    const data = (await res.json()) as { items?: Array<{ $ref?: string }> }
+    const counts = new Map<string, number>()
+    for (const item of data.items ?? []) {
+      const match = item.$ref?.match(/\/leagues\/([^/]+)\/events\//)
+      if (!match?.[1]) continue
+      const code = match[1]
+      counts.set(code, (counts.get(code) ?? 0) + 1)
+    }
+
+    const entries = await Promise.all(
+      [...counts.keys()].map(async (espnCode) => {
+        const leagueId = leagueIdFromEspnCode(espnCode) ?? undefined
+        const name = leagueId
+          ? getLeague(leagueId).name
+          : await espnLeagueDisplayName(espnCode)
+        return {
+          key: leagueId || `espn:${espnCode}`,
+          name,
+          leagueId,
+        } satisfies TeamCompetitionEntry
+      }),
+    )
+    return entries
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Competitions for a team profile Overview.
+ * Clubs: domestic league first, then domestic cups, then any season fixtures
+ * (including unknown ESPN comps passed via `extras`).
+ * Nationals: season comps sorted by importance (biggest first).
+ */
+export function buildTeamSeasonCompetitions(
+  teamId: string,
+  primaryLeagueId: LeagueId,
+  matches: Match[],
+  seasonYear: number | null,
+  extras: TeamCompetitionEntry[] = [],
+): TeamCompetitionEntry[] {
+  const international =
+    isInternationalLeague(primaryLeagueId) ||
+    findLeague(primaryLeagueId)?.kind === 'international'
+  const year =
+    seasonYear ??
+    (international ? inferInternationalSeasonStartYear() : inferSoccerSeasonStartYear())
+
+  const byKey = new Map<string, TeamCompetitionEntry>()
+  const add = (entry: TeamCompetitionEntry) => {
+    if (!byKey.has(entry.key)) byKey.set(entry.key, entry)
+  }
+
+  if (!international && !isFriendlyLeagueId(primaryLeagueId)) {
+    const domestic = getLeague(primaryLeagueId)
+    if (domestic.kind === 'domestic' && domestic.format === 'league') {
+      add({ key: domestic.id, name: domestic.name, leagueId: domestic.id })
+      for (const cupId of regularSeasonCupsForLeague(primaryLeagueId)) {
+        const cup = getLeague(cupId)
+        add({ key: cup.id, name: cup.name, leagueId: cup.id })
+      }
+    }
+  }
+
+  for (const match of matches) {
+    if (match.home.id !== teamId && match.away.id !== teamId) continue
+    if (!matchInSeasonYear(match, year, { international })) continue
+    if (isFriendlyLeagueId(match.leagueId) && !international) {
+      // Still list friendlies when played — after competitive comps.
+      const friendly = getLeague(match.leagueId)
+      add({ key: friendly.id, name: friendly.name, leagueId: friendly.id })
+      continue
+    }
+    const league = getLeague(match.leagueId)
+    add({ key: league.id, name: league.name, leagueId: league.id })
+  }
+
+  for (const extra of extras) add(extra)
+
+  const domesticId =
+    !international &&
+    findLeague(primaryLeagueId)?.kind === 'domestic' &&
+    findLeague(primaryLeagueId)?.format === 'league'
+      ? primaryLeagueId
+      : null
+
+  return [...byKey.values()].sort((a, b) => {
+    if (domesticId) {
+      if (a.leagueId === domesticId) return -1
+      if (b.leagueId === domesticId) return 1
+    }
+    const aKnown = a.leagueId ? 0 : 1
+    const bKnown = b.leagueId ? 0 : 1
+    if (aKnown !== bKnown) return aKnown - bKnown
+    if (a.leagueId && b.leagueId) {
+      return compareLeaguesForDisplay(a.leagueId, b.leagueId)
+    }
+    return a.name.localeCompare(b.name)
+  })
+}
+
+/** @deprecated Prefer `buildTeamSeasonCompetitions`. */
 export function teamSeasonCompetitionIds(
   teamId: string,
   primaryLeagueId: LeagueId,
   matches: Match[],
   seasonYear: number | null,
 ): LeagueId[] {
-  const international =
-    isInternationalLeague(primaryLeagueId) || getLeague(primaryLeagueId).kind === 'international'
-  const year =
-    seasonYear ??
-    (international ? inferInternationalSeasonStartYear() : inferSoccerSeasonStartYear())
-  const ids = new Set<LeagueId>()
-
-  if (!isFriendlyLeagueId(primaryLeagueId)) {
-    ids.add(primaryLeagueId)
-  }
-
-  for (const cupId of regularSeasonCupsForLeague(primaryLeagueId)) {
-    ids.add(cupId)
-  }
-
-  for (const match of matches) {
-    if (match.home.id !== teamId && match.away.id !== teamId) continue
-    if (!matchInSeasonYear(match, year, { international })) continue
-    ids.add(match.leagueId)
-  }
-
-  return [...ids].sort((a, b) => compareLeaguesForDisplay(a, b))
+  return buildTeamSeasonCompetitions(teamId, primaryLeagueId, matches, seasonYear)
+    .map((entry) => entry.leagueId)
+    .filter((id): id is LeagueId => Boolean(id))
 }
 
 /** Merge Match Day cache with schedule extras; cache rows win on id collisions. */

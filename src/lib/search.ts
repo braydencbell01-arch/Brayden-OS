@@ -1,6 +1,7 @@
 import {
   LEAGUES,
   domesticLeagues,
+  findLeague,
   getLeague,
   isContinentalLeague,
   isDomesticCup,
@@ -79,16 +80,40 @@ export function leagueIdFromTeamSlug(slug?: string | null): LeagueId | null {
 export async function resolveTeamDomesticLeagueId(
   teamId: string | undefined,
   teamSlug: string | undefined,
+  hintLeagueId?: LeagueId,
 ): Promise<LeagueId | null> {
   const guess = leagueIdFromTeamSlug(teamSlug)
   if (!teamId) return guess
 
   const prefix = teamSlug?.split('.')[0]?.toLowerCase()
+  const hintCountry =
+    hintLeagueId && findLeague(hintLeagueId)
+      ? getLeague(hintLeagueId).country
+      : null
+  const hintPrefix =
+    hintLeagueId && findLeague(hintLeagueId)
+      ? getLeague(hintLeagueId).espnCode.split('.')[0]?.toLowerCase()
+      : null
+
   const candidates: LeagueId[] = []
   if (guess) candidates.push(guess)
+  if (hintLeagueId) {
+    const hint = findLeague(hintLeagueId)
+    if (hint?.kind === 'domestic' && hint.format === 'league') {
+      candidates.push(hintLeagueId)
+    }
+  }
   for (const league of domesticLeagues()) {
-    if (guess && league.id === guess) continue
+    if (candidates.includes(league.id)) continue
     if (prefix && league.espnCode.toLowerCase().startsWith(`${prefix}.`)) {
+      candidates.push(league.id)
+      continue
+    }
+    if (hintCountry && league.country === hintCountry) {
+      candidates.push(league.id)
+      continue
+    }
+    if (hintPrefix && league.espnCode.toLowerCase().startsWith(`${hintPrefix}.`)) {
       candidates.push(league.id)
     }
   }

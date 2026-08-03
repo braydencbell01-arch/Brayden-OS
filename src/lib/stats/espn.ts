@@ -12,6 +12,7 @@ import {
   isInternationalLeague,
   leagueImportanceRank,
   LEAGUES,
+  soccerSeasonShortLabel,
   type LeagueId,
 } from '../leagues'
 import { playoffWinnersLabel } from './divisionLabels'
@@ -1843,10 +1844,10 @@ export async function fetchTeamStatLeaders(
             inferInternationalSeasonStartYear() - 3,
           ]
         : [
-            new Date().getUTCFullYear(),
-            new Date().getUTCFullYear() - 1,
-            new Date().getUTCFullYear() - 2,
-            new Date().getUTCFullYear() - 3,
+            inferSoccerSeasonStartYear(),
+            inferSoccerSeasonStartYear() - 1,
+            inferSoccerSeasonStartYear() - 2,
+            inferSoccerSeasonStartYear() - 3,
           ]
 
   let season = yearsToTry[0]!
@@ -1985,18 +1986,16 @@ const allSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 const teamSeasonOptionsCache = new Map<string, LeagueSeasonOption[]>()
 const standingNoteCache = new Map<string, string | null>()
 
-/** Compact season chip: "2025-26" → "25/26"; calendar years stay as "2025". */
+/** Compact season chip: always Aug–Jul `YY/YY+1` (never a bare calendar year). */
 export function formatSeasonShortLabel(year: number, abbreviation?: string): string {
   const abbr = (abbreviation || '').trim()
-  const cross = abbr.match(/^(\d{4})-(\d{2})$/)
+  const cross = abbr.match(/^(\d{4})[-/](\d{2})$/)
   if (cross) {
     return `${cross[1]!.slice(2)}/${cross[2]}`
   }
-  const crossSlash = abbr.match(/^(\d{4})\/(\d{2})$/)
-  if (crossSlash) {
-    return `${crossSlash[1]!.slice(2)}/${crossSlash[2]}`
-  }
-  return String(year)
+  const alreadyShort = abbr.match(/^(\d{2})\/(\d{2})$/)
+  if (alreadyShort) return `${alreadyShort[1]}/${alreadyShort[2]}`
+  return soccerSeasonShortLabel(year)
 }
 
 async function fetchSeasonLabels(
@@ -2018,7 +2017,8 @@ async function fetchSeasonLabels(
   } catch {
     // fall through
   }
-  return { label: `${year} season`, shortLabel: String(year) }
+  const shortLabel = soccerSeasonShortLabel(year)
+  return { label: `${shortLabel} season`, shortLabel }
 }
 
 async function listLeagueSeasonYears(espnCode: string): Promise<number[]> {
@@ -2619,7 +2619,7 @@ async function fetchAthleteAllCompetitionsSeasonStats(
   const stats = await buildForYear(seasonYear)
   const labels = primaryEspnCode
     ? await fetchSeasonLabels(primaryEspnCode, seasonYear)
-    : { label: String(seasonYear), shortLabel: formatSeasonShortLabel(seasonYear) }
+    : { label: `${formatSeasonShortLabel(seasonYear)} season`, shortLabel: formatSeasonShortLabel(seasonYear) }
 
   let previousStats: PlayerSeasonStatLine[] = []
   let previousSeasonLabel: string | null = null

@@ -9,15 +9,18 @@ import {
   teamSubtitleLeagueId,
   type LeagueId,
 } from '../lib/leagues'
+import { resolveTeamDomesticLeagueId } from '../lib/search'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import {
   matchesForTeam,
   mergeTeamMatches,
   nextMatchForTeam,
   recentFormMatchesForTeam,
+  buildTeamSeasonCompetitions,
+  discoverTeamSeasonCompetitions,
   teamResult,
-  teamSeasonCompetitionIds,
   type Match,
+  type TeamCompetitionEntry,
   type TeamFormResult,
 } from '../lib/matches'
 import { formatSeasonShortLabel } from '../lib/stats/espn'
@@ -147,11 +150,15 @@ export function TeamProfileScreen({
   onNeedPastRange?: (from: Date, to: Date) => void | Promise<unknown>
   reduce: boolean | null
 }) {
-  const league = getLeague(team.leagueId)
   const isNational =
     team.kind === 'national' ||
     (team.kind == null && isInternationalLeague(team.leagueId))
-  const standings = useLeagueStandings(team.leagueId, !isNational && league.hasStandings)
+  const [profileLeagueId, setProfileLeagueId] = useState<LeagueId>(team.leagueId)
+  const profileLeague = getLeague(profileLeagueId)
+  const standings = useLeagueStandings(
+    profileLeagueId,
+    !isNational && profileLeague.hasStandings,
+  )
   const todayKey = useTodayKey()
   const [tab, setTab] = useState<TeamTab>('overview')
   const [openOverview, setOpenOverview] = useState<Record<OverviewSection, boolean>>({
@@ -165,25 +172,40 @@ export function TeamProfileScreen({
   const [showAllTransfers, setShowAllTransfers] = useState(false)
   const [showAllTrophies, setShowAllTrophies] = useState(false)
   const [pastHorizonDays, setPastHorizonDays] = useState(CALENDAR_INITIAL_PAST_DAYS)
+  const [discoveredComps, setDiscoveredComps] = useState<TeamCompetitionEntry[]>([])
   const matchesScrollRef = useRef<HTMLDivElement>(null)
   const loadingMoreRef = useRef(false)
+
+  useEffect(() => {
+    setProfileLeagueId(team.leagueId)
+    setDiscoveredComps([])
+    if (isNational) return
+    let cancelled = false
+    void resolveTeamDomesticLeagueId(team.id, undefined, team.leagueId).then((domestic) => {
+      if (cancelled || !domestic) return
+      setProfileLeagueId(domestic)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [team.id, team.leagueId, isNational])
 
   const rosterEnabled = tab === 'squad'
   const leadersEnabled = tab === 'stats'
   const overviewEnabled = tab === 'overview' && !isNational
   const overviewXiEnabled = overviewEnabled
-  const roster = useTeamRoster(team.leagueId, team.id, rosterEnabled)
-  const leaders = useTeamStatLeaders(team.leagueId, team.id, leadersEnabled)
-  const schedule = useTeamSchedule(team.id, team.leagueId, true)
-  const transfers = useTeamTransfers(team.leagueId, team.id, overviewEnabled)
+  const roster = useTeamRoster(profileLeagueId, team.id, rosterEnabled)
+  const leaders = useTeamStatLeaders(profileLeagueId, team.id, leadersEnabled)
+  const schedule = useTeamSchedule(team.id, profileLeagueId, true)
+  const transfers = useTeamTransfers(profileLeagueId, team.id, overviewEnabled)
   const overviewSeasons = useTeamSeasons(
-    team.leagueId,
+    profileLeagueId,
     team.id,
     overviewXiEnabled,
     'all-competitions',
   )
   const mostUsedXi = useMostUsedStartingXi(
-    team.leagueId,
+    profileLeagueId,
     team.id,
     overviewSeasons.selectedSeason,
     overviewXiEnabled,
@@ -195,7 +217,7 @@ export function TeamProfileScreen({
     [standings.rows, team.id],
   )
 
-  const facts = useTeamClubFacts(team.leagueId, team.id, standing?.team || team.name)
+  const facts = useTeamClubFacts(profileLeagueId, team.id, standing?.team || team.name)
 
   const teamMatches = useMemo(
     () => mergeTeamMatches(matches, schedule.data),
@@ -241,7 +263,7 @@ export function TeamProfileScreen({
       }) ||
       facts.data?.country ||
       'International'
-    : facts.data?.country || league.country
+    : facts.data?.country || profileLeague.country
 
   const seasonYear = isNational
     ? inferInternationalSeasonStartYear()
@@ -260,18 +282,47 @@ export function TeamProfileScreen({
     return formatSeasonShortLabel(seasonYear)
   }, [isNational, standings.seasons, seasonYear])
 
-  const competitionIds = useMemo(
-    () => teamSeasonCompetitionIds(team.id, team.leagueId, teamMatches, seasonYear),
-    [team.id, team.leagueId, teamMatches, seasonYear],
+  useEffect(() => {
+    if (!team.id || seasonYear == null) {
+      setDiscoveredComps([])
+      return
+    }
+    let cancelled = false
+    void discoverTeamSeasonCompetitions(team.id, seasonYear).then((rows) => {
+      if (!cancelled) setDiscoveredComps(rows)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [team.id, seasonYear])
+
+  const competitions = useMemo(
+    () =>
+      buildTeamSeasonCompetitions(
+        team.id,
+        isNational ? team.leagueId : profileLeagueId,
+        teamMatches,
+        seasonYear,
+        discoveredComps,
+      ),
+    [
+      team.id,
+      team.leagueId,
+      isNational,
+      profileLeagueId,
+      teamMatches,
+      seasonYear,
+      discoveredComps,
+    ],
   )
 
   const visibleTabs = useMemo(
     () =>
       TABS.filter((entry) => {
-        if (entry.id === 'table') return league.hasStandings && !isNational
+        if (entry.id === 'table') return profileLeague.hasStandings && !isNational
         return true
       }),
-    [isNational, league.hasStandings],
+    [isNational, profileLeague.hasStandings],
   )
 
   useEffect(() => {
@@ -451,7 +502,7 @@ export function TeamProfileScreen({
             <button
               type="button"
               onClick={() =>
-                onOpenLeague(isNational ? teamSubtitleLeagueId(team) : team.leagueId)
+                onOpenLeague(isNational ? teamSubtitleLeagueId(team) : profileLeagueId)
               }
               className="profile-link mt-2 text-left text-xs font-semibold uppercase tracking-[0.14em] text-mist/60 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
               style={accent ? { color: withAlpha(accent, 0.95) } : undefined}
@@ -461,9 +512,9 @@ export function TeamProfileScreen({
                     confederationForNationalTeam({
                       name: team.name,
                       shortName: team.shortName,
-                    }) || league.name
+                    }) || profileLeague.name
                   }`
-                : league.name}
+                : profileLeague.name}
               {!isNational && standing
                 ? ` · #${standing.rank}${standing.group ? ` · ${standing.group}` : ''}`
                 : ''}
@@ -514,24 +565,25 @@ export function TeamProfileScreen({
               open={openOverview.competitions}
               onToggle={() => toggleOverview('competitions')}
             >
-              {competitionIds.length === 0 ? (
+              {competitions.length === 0 ? (
                 <p className="text-sm text-mist/70">No competitions in the loaded window.</p>
               ) : (
                 <ul className="flex flex-col gap-2">
-                  {competitionIds.map((id) => {
-                    const item = getLeague(id)
-                    return (
-                      <li key={id}>
+                  {competitions.map((entry) => (
+                    <li key={entry.key}>
+                      {entry.leagueId ? (
                         <button
                           type="button"
-                          onClick={() => onOpenLeague(id)}
+                          onClick={() => onOpenLeague(entry.leagueId!)}
                           className="profile-link text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                         >
-                          {item.name}
+                          {entry.name}
                         </button>
-                      </li>
-                    )
-                  })}
+                      ) : (
+                        <span className="text-sm font-semibold text-cream">{entry.name}</span>
+                      )}
+                    </li>
+                  ))}
                 </ul>
               )}
             </OverviewCard>
@@ -822,7 +874,7 @@ export function TeamProfileScreen({
                         <p className="text-sm font-semibold text-cream">{facts.data.stadium}</p>
                         <p className="mt-0.5 text-xs text-mist/65">
                           {[facts.data.city, facts.data.country].filter(Boolean).join(', ') ||
-                            league.country}
+                            profileLeague.country}
                         </p>
                       </div>
                     </div>
@@ -870,7 +922,7 @@ export function TeamProfileScreen({
                 selectedKey={overviewSeasons.selectedKey}
                 onSelectSeason={overviewSeasons.selectSeason}
                 onOpenPlayer={onOpenPlayer}
-                leagueId={team.leagueId}
+                leagueId={profileLeagueId}
                 teamId={team.id}
                 teamName={displayName}
               />
@@ -906,12 +958,12 @@ export function TeamProfileScreen({
           </div>
         ) : null}
 
-        {tab === 'table' && league.hasStandings && !isNational ? (
+        {tab === 'table' && profileLeague.hasStandings && !isNational ? (
           <StandingsTable
             rows={standings.rows}
             loading={standings.loading}
             error={standings.error}
-            leagueId={team.leagueId}
+            leagueId={profileLeagueId}
             isTeamFavorite={favorites.isTeamFavorite}
             onToggleTeam={favorites.toggleTeam}
             onOpenTeam={onOpenTeam}
@@ -929,7 +981,7 @@ export function TeamProfileScreen({
             data={leaders.data}
             loading={leaders.loading}
             error={leaders.error}
-            leagueId={team.leagueId}
+            leagueId={profileLeagueId}
             seasons={leaders.seasons}
             seasonsLoading={leaders.seasonsLoading}
             selectedSeason={leaders.selectedSeason}
@@ -944,7 +996,7 @@ export function TeamProfileScreen({
             data={roster.data}
             loading={roster.loading}
             error={roster.error}
-            leagueId={team.leagueId}
+            leagueId={profileLeagueId}
             teamId={team.id}
             teamName={displayName}
             favorites={favorites}

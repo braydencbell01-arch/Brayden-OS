@@ -19,6 +19,9 @@ export const LEAGUE_BRAND_COLORS: Record<LeagueId, string> = {
   'community-shield': '#37003c',
   'efl-trophy': '#1d3557',
   'eng-championship': '#1d3557',
+  'eng-league-one': '#1d3557',
+  'eng-league-two': '#1d3557',
+  'eng-national-league': '#243b55',
 
   // Spain
   'la-liga': '#ee8707',
@@ -98,6 +101,7 @@ export const LEAGUE_BRAND_COLORS: Record<LeagueId, string> = {
   'austrian-bundesliga': '#ed2939',
   'swiss-super-league': '#d52b1e',
   'scottish-premiership': '#1a3c6e',
+  'scottish-championship': '#1a3c6e',
   'scottish-cup': '#005eb8',
   'scottish-league-cup': '#1a3c6e',
   'scottish-challenge-cup': '#005eb8',

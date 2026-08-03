@@ -75,10 +75,14 @@ export type LeagueId =
   | 'saudi-kings-cup'
   | 'a-league'
   | 'eng-championship'
+  | 'eng-league-one'
+  | 'eng-league-two'
+  | 'eng-national-league'
   | 'esp-segunda'
   | 'ita-serie-b'
   | 'ger-2-bundesliga'
   | 'fra-ligue-2'
+  | 'scottish-championship'
   | 'czech-first-league'
   | 'cyprus-first-division'
 
@@ -761,6 +765,16 @@ export const LEAGUES: League[] = [
     hasStandings: true,
   },
   {
+    id: 'scottish-championship',
+    name: 'Scottish Championship',
+    short: 'SCD',
+    country: 'Scotland',
+    espnCode: 'sco.2',
+    kind: 'domestic',
+    format: 'league',
+    hasStandings: true,
+  },
+  {
     id: 'scottish-cup',
     name: 'Scottish Cup',
     short: 'SC',
@@ -882,6 +896,36 @@ export const LEAGUES: League[] = [
     hasStandings: true,
   },
   {
+    id: 'eng-league-one',
+    name: 'EFL League One',
+    short: 'L1',
+    country: 'England',
+    espnCode: 'eng.3',
+    kind: 'domestic',
+    format: 'league',
+    hasStandings: true,
+  },
+  {
+    id: 'eng-league-two',
+    name: 'EFL League Two',
+    short: 'L2',
+    country: 'England',
+    espnCode: 'eng.4',
+    kind: 'domestic',
+    format: 'league',
+    hasStandings: true,
+  },
+  {
+    id: 'eng-national-league',
+    name: 'National League',
+    short: 'NL',
+    country: 'England',
+    espnCode: 'eng.5',
+    kind: 'domestic',
+    format: 'league',
+    hasStandings: true,
+  },
+  {
     id: 'esp-segunda',
     name: 'La Liga 2',
     short: 'LL2',
@@ -948,7 +992,7 @@ export const LEAGUES: League[] = [
  * (e.g. Premier League ↔ Championship ↔ League One). Cups are excluded.
  */
 const DOMESTIC_PYRAMID_BY_COUNTRY: Record<string, string[]> = {
-  England: ['eng.1', 'eng.2', 'eng.3', 'eng.4'],
+  England: ['eng.1', 'eng.2', 'eng.3', 'eng.4', 'eng.5'],
   Spain: ['esp.1', 'esp.2'],
   Italy: ['ita.1', 'ita.2'],
   Germany: ['ger.1', 'ger.2'],
@@ -1060,7 +1104,14 @@ export function regularSeasonCupsForLeague(leagueId: LeagueId): LeagueId[] {
 
   if (league.country === 'England') {
     if (leagueId === 'premier-league') return ['fa-cup', 'efl-cup']
-    if (leagueId === 'eng-championship') return ['fa-cup', 'efl-cup', 'efl-trophy']
+    if (
+      leagueId === 'eng-championship' ||
+      leagueId === 'eng-league-one' ||
+      leagueId === 'eng-league-two'
+    ) {
+      return ['fa-cup', 'efl-cup', 'efl-trophy']
+    }
+    if (leagueId === 'eng-national-league') return ['fa-cup']
     return ['fa-cup', 'efl-cup']
   }
 
@@ -1070,26 +1121,28 @@ export function regularSeasonCupsForLeague(leagueId: LeagueId): LeagueId[] {
 }
 
 /**
- * Soccer seasons are labeled by start year (2026 → 26/27).
- * Treat June onward as the new season’s start year.
+ * Soccer seasons run 1 Aug → 31 Jul and are labeled by start year (2026 → 26/27).
+ * August = month index 7.
  */
 export function inferSoccerSeasonStartYear(date = new Date()): number {
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  return month >= 5 ? year : year - 1
-}
-
-/**
- * National-team seasons are Aug 1 – Jul 31, labeled by start year
- * (Aug 2025 → 25/26). August = month index 7.
- */
-export function inferInternationalSeasonStartYear(date = new Date()): number {
   const year = date.getFullYear()
   const month = date.getMonth()
   return month >= 7 ? year : year - 1
 }
 
-/** Inclusive national-team season window: Aug 1 startYear → Jul 31 startYear+1. */
+/**
+ * National-team seasons use the same Aug 1 – Jul 31 window as clubs.
+ */
+export function inferInternationalSeasonStartYear(date = new Date()): number {
+  return inferSoccerSeasonStartYear(date)
+}
+
+/** Always `YY/YY+1` for an Aug–Jul season-start year — never a bare calendar year. */
+export function soccerSeasonShortLabel(startYear: number): string {
+  return `${String(startYear).slice(-2)}/${String(startYear + 1).slice(-2)}`
+}
+
+/** Inclusive season window: Aug 1 startYear → Jul 31 startYear+1. */
 export function internationalSeasonDateBounds(seasonStartYear: number): {
   from: Date
   to: Date
@@ -1098,6 +1151,14 @@ export function internationalSeasonDateBounds(seasonStartYear: number): {
     from: new Date(seasonStartYear, 7, 1),
     to: new Date(seasonStartYear + 1, 6, 31, 23, 59, 59, 999),
   }
+}
+
+/** Same Aug–Jul bounds used for club and national seasons. */
+export function soccerSeasonDateBounds(seasonStartYear: number): {
+  from: Date
+  to: Date
+} {
+  return internationalSeasonDateBounds(seasonStartYear)
 }
 
 /** FIFA confederations shown on national-team cards instead of “FR”. */
@@ -1397,6 +1458,7 @@ export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
   'belgian-pro-league',
   'turkish-super-lig',
   'scottish-premiership',
+  'scottish-championship',
   'saudi-pro-league',
   'austrian-bundesliga',
   'swiss-super-league',
@@ -1443,6 +1505,9 @@ export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
 
   // Second tiers
   'eng-championship',
+  'eng-league-one',
+  'eng-league-two',
+  'eng-national-league',
   'esp-segunda',
   'ita-serie-b',
   'ger-2-bundesliga',
