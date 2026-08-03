@@ -1107,6 +1107,17 @@ export function isCupFormat(id: LeagueId): boolean {
   return getLeague(id).format !== 'league'
 }
 
+/**
+ * Competitions that run a knockout / final phase (cups, supercups, continental
+ * tournaments). Pure league tables (EPL etc.) return false. Friendlies excluded.
+ * Use with `hasStandings` to decide Table vs Knockout vs both.
+ */
+export function leagueHasKnockout(league: League | LeagueId): boolean {
+  const entry = typeof league === 'string' ? getLeague(league) : league
+  if (isFriendlyLeagueId(entry.id)) return false
+  return entry.format !== 'league'
+}
+
 /** Top-flight / table domestic competitions only. */
 export function domesticTableLeagues(): League[] {
   return LEAGUES.filter((league) => league.kind === 'domestic' && league.format === 'league')

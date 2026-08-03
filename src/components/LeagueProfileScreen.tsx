@@ -16,7 +16,7 @@ import {
   startOfDay,
 } from '../lib/dates'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
-import type { League } from '../lib/leagues'
+import { leagueHasKnockout, type League } from '../lib/leagues'
 import {
   leagueFormTable,
   matchesForLeague,
@@ -24,6 +24,7 @@ import {
   type Match,
 } from '../lib/matches'
 import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
+import { useLeagueKnockoutBracket } from '../lib/stats/useLeagueKnockoutBracket'
 import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
 import { useLeagueOverviewFacts } from '../lib/stats/useLeagueOverviewFacts'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
@@ -32,6 +33,7 @@ import { useTodayKey } from '../lib/useToday'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { LeagueFormTable } from './LeagueFormTable'
+import { LeagueKnockoutBracket } from './LeagueKnockoutBracket'
 import { LeaguePlayerStatsPanel } from './LeaguePlayerStatsPanel'
 import { LeagueSeasonTimeline } from './LeagueSeasonTimeline'
 import { MatchList } from './MatchList'
@@ -45,14 +47,20 @@ import {
 } from './ProfileShell'
 import { StandingsTable } from './StandingsTable'
 
-type LeagueTab = 'overview' | 'matches' | 'table' | 'stats'
+type LeagueTab = 'overview' | 'matches' | 'table' | 'knockout' | 'stats'
 type OverviewSection = 'form' | 'nextMatch'
 type StatsSection = 'player-stats'
 
-const TABS: Array<{ id: LeagueTab; label: string; needsStandings?: boolean }> = [
+const TABS: Array<{
+  id: LeagueTab
+  label: string
+  needsStandings?: boolean
+  needsKnockout?: boolean
+}> = [
   { id: 'overview', label: 'Overview' },
   { id: 'matches', label: 'Fixtures' },
   { id: 'table', label: 'Table', needsStandings: true },
+  { id: 'knockout', label: 'Knockout', needsKnockout: true },
   { id: 'stats', label: 'Stats' },
 ]
 
@@ -118,6 +126,9 @@ export function LeagueProfileScreen({
     league.format === 'supercup' ? 'Super cup' : league.format === 'cup' ? 'Cup' : 'League'
 
   const standings = useLeagueStandings(league.id, league.hasStandings)
+  const showKnockout = leagueHasKnockout(league)
+  const knockoutEnabled = tab === 'knockout' && showKnockout
+  const knockout = useLeagueKnockoutBracket(league.id, knockoutEnabled)
   // Warm player boards for the top-scorer metric on Overview.
   const playerStats = useLeaguePlayerStats(league.id, true)
 
@@ -152,9 +163,10 @@ export function LeagueProfileScreen({
     () =>
       TABS.filter((entry) => {
         if (entry.needsStandings) return league.hasStandings
+        if (entry.needsKnockout) return showKnockout
         return true
       }),
-    [league.hasStandings],
+    [league.hasStandings, showKnockout],
   )
 
   useEffect(() => {
@@ -591,6 +603,21 @@ export function LeagueProfileScreen({
             seasonsLoading={standings.seasonsLoading}
             selectedSeason={standings.selectedSeason}
             onSelectSeason={standings.selectSeason}
+          />
+        ) : null}
+
+        {tab === 'knockout' && showKnockout ? (
+          <LeagueKnockoutBracket
+            data={knockout.data}
+            loading={knockout.loading}
+            error={knockout.error}
+            leagueId={league.id}
+            seasons={knockout.seasons}
+            seasonsLoading={knockout.seasonsLoading}
+            selectedSeason={knockout.selectedSeason}
+            onSelectSeason={knockout.selectSeason}
+            onOpenTeam={onOpenTeam}
+            teamKind={isInternational ? 'national' : 'club'}
           />
         ) : null}
 
