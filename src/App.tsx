@@ -110,11 +110,6 @@ function HomeScreen({
     () => dateKeysForFavorites(matches, favorites.leagueIds, favorites.teamIds),
     [matches, favorites.leagueIds, favorites.teamIds],
   )
-  const dayLabel = selectedDate.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  })
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -183,10 +178,6 @@ function HomeScreen({
             <div>
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-lime/80">
                 Match day
-              </p>
-              <p className="mt-0.5 text-sm text-mist/80">{dayLabel}</p>
-              <p className="mt-1 text-[0.65rem] text-mist/55">
-                Star leagues or clubs to yellow fixtures · yellow calendar dots mark favorites
               </p>
             </div>
             <div className="flex items-center gap-2">
