@@ -290,13 +290,18 @@ export function LeagueKnockoutBracket({
     return () => ro?.disconnect()
   }, [rounds])
 
-  const scrollByPage = (dir: 1 | -1) => {
-    const scroller = scrollerRef.current
-    if (!scroller) return
-    scroller.scrollBy({
-      left: dir * (COLUMN_WIDTH + ROUND_GAP),
-      behavior: 'smooth',
-    })
+  const activeRoundIndex = useMemo(() => {
+    if (activeRoundId == null) return -1
+    return rounds.findIndex((round) => round.typeId === activeRoundId)
+  }, [rounds, activeRoundId])
+
+  const canGoPrev = activeRoundIndex > 0
+  const canGoNext = activeRoundIndex >= 0 && activeRoundIndex < rounds.length - 1
+
+  const goToAdjacentRound = (dir: 1 | -1) => {
+    const nextIndex = activeRoundIndex + dir
+    if (nextIndex < 0 || nextIndex >= rounds.length) return
+    setActiveRoundId(rounds[nextIndex].typeId)
   }
 
   return (
@@ -381,25 +386,25 @@ export function LeagueKnockoutBracket({
               </div>
             </div>
 
-            {rounds.length > 1 ? (
-              <>
-                <button
-                  type="button"
-                  aria-label="Previous rounds"
-                  onClick={() => scrollByPage(-1)}
-                  className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-pitch/90 text-cream shadow-lg backdrop-blur-sm"
-                >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next rounds"
-                  onClick={() => scrollByPage(1)}
-                  className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-pitch/90 text-cream shadow-lg backdrop-blur-sm"
-                >
-                  ›
-                </button>
-              </>
+            {canGoPrev ? (
+              <button
+                type="button"
+                aria-label="Previous rounds"
+                onClick={() => goToAdjacentRound(-1)}
+                className="absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-pitch/90 text-cream shadow-lg backdrop-blur-sm"
+              >
+                ‹
+              </button>
+            ) : null}
+            {canGoNext ? (
+              <button
+                type="button"
+                aria-label="Next rounds"
+                onClick={() => goToAdjacentRound(1)}
+                className="absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-pitch/90 text-cream shadow-lg backdrop-blur-sm"
+              >
+                ›
+              </button>
             ) : null}
           </div>
         </>
