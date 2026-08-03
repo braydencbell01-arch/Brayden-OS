@@ -137,11 +137,16 @@ function LeagueDropdown({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={onToggle}
-          className="flex shrink-0 items-center gap-2 rounded px-2 py-1 transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          className="flex min-w-[6.75rem] shrink-0 items-center justify-end gap-2 self-stretch rounded px-3 py-2 text-mist/80 transition hover:bg-white/[0.04] hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:min-w-[7.5rem]"
           aria-label={`${open ? 'Collapse' : 'Expand'} ${league.name} matches`}
         >
-          <span className="font-display text-lg tracking-wide text-cream/85 tabular-nums">
-            {matches.length}
+          <span className="flex flex-col items-end leading-tight">
+            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
+              {open ? 'Collapse' : 'Expand'}
+            </span>
+            <span className="font-display text-base tracking-wide text-cream/85 tabular-nums">
+              {matches.length}
+            </span>
           </span>
           <Chevron open={open} />
         </button>
