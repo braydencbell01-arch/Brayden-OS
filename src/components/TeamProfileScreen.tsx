@@ -288,8 +288,16 @@ export function TeamProfileScreen({
       return
     }
     let cancelled = false
-    void discoverTeamSeasonCompetitions(team.id, seasonYear).then((rows) => {
-      if (!cancelled) setDiscoveredComps(rows)
+    void Promise.all([
+      discoverTeamSeasonCompetitions(team.id, seasonYear),
+      discoverTeamSeasonCompetitions(team.id, seasonYear - 1),
+    ]).then(([current, previous]) => {
+      if (cancelled) return
+      const byKey = new Map<string, TeamCompetitionEntry>()
+      for (const entry of [...current, ...previous]) {
+        if (!byKey.has(entry.key)) byKey.set(entry.key, entry)
+      }
+      setDiscoveredComps([...byKey.values()])
     })
     return () => {
       cancelled = true

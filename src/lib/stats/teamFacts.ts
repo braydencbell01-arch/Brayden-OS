@@ -84,6 +84,7 @@ type EspnCoreTeamPayload = {
 type SportsDbTeam = {
   idTeam?: string
   strTeam?: string
+  strAlternate?: string
   strCountry?: string
   strStadium?: string
   strStadiumLocation?: string
@@ -653,7 +654,41 @@ async function fetchStadiumMeta(stadiumName: string): Promise<{
   }
 }
 
-async function fetchSportsDbFacts(teamName: string): Promise<{
+function normalizeCountryKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+/** Loose country equality: "Saudi Arabia" ≈ "KSA", "United States" ≈ "USA". */
+function countriesMatch(a: string | undefined, b: string | undefined): boolean {
+  if (!a?.trim() || !b?.trim()) return false
+  const left = normalizeCountryKey(a)
+  const right = normalizeCountryKey(b)
+  if (left === right) return true
+  if (left.includes(right) || right.includes(left)) return true
+  const aliases: Array<[string, string[]]> = [
+    ['saudi arabia', ['ksa', 'saudi', 'kingdom of saudi arabia']],
+    ['united states', ['usa', 'us', 'united states of america']],
+    ['united arab emirates', ['uae', 'emirates']],
+    ['south korea', ['korea republic', 'korea']],
+    ['north korea', ['korea dpr']],
+    ['ivory coast', ['cote divoire', 'côte divoire']],
+    ['czech republic', ['czechia']],
+    ['bosnia and herzegovina', ['bosnia']],
+    ['north macedonia', ['macedonia']],
+  ]
+  for (const [canonical, alts] of aliases) {
+    const bucket = new Set([canonical, ...alts])
+    if (bucket.has(left) && bucket.has(right)) return true
+  }
+  return false
+}
+
+type SportsDbFacts = {
   country?: string
   stadium?: string
   city?: string
@@ -661,27 +696,87 @@ async function fetchSportsDbFacts(teamName: string): Promise<{
   nickname?: string
   stadiumCapacity?: number
   stadiumSurface?: string
-}> {
+}
+
+async function searchSportsDbTeams(query: string): Promise<SportsDbTeam[]> {
   try {
     const url = new URL('https://www.thesportsdb.com/api/v1/json/3/searchteams.php')
-    url.searchParams.set('t', teamName)
+    url.searchParams.set('t', query)
     const res = await fetch(url)
-    if (!res.ok) return {}
+    if (!res.ok) return []
     const data = (await res.json()) as { teams?: SportsDbTeam[] | null }
-    const team = data.teams?.[0]
-    if (!team) return {}
-    const nickname = team.strKeywords?.split(',')[0]?.trim() || undefined
-    return {
-      country: team.strCountry || undefined,
-      stadium: team.strStadium || undefined,
-      city: team.strStadiumLocation || undefined,
-      foundedYear: parseFoundedYear(team.intFormedYear),
-      nickname,
-      stadiumCapacity: parseCapacity(team.intStadiumCapacity ?? team.strStadiumCapacity),
-      stadiumSurface: team.strSurface?.trim() || undefined,
-    }
+    return data.teams ?? []
   } catch {
+    return []
+  }
+}
+
+function scoreSportsDbTeam(team: SportsDbTeam, expectedCountry?: string): number {
+  let score = 0
+  const country = team.strCountry || ''
+  if (expectedCountry) {
+    if (countriesMatch(country, expectedCountry)) score += 100
+    else score -= 200
+  }
+  // Prefer senior men's clubs over youth / women when names collide.
+  const name = `${team.strTeam || ''} ${team.strAlternate || ''}`.toLowerCase()
+  if (/\bu\d{2}\b|\byouth\b|\bwomen\b|\bwfc\b|\(w\)/.test(name)) score -= 50
+  if (team.strStadium) score += 5
+  if (team.strLeague) score += 3
+  return score
+}
+
+/**
+ * TheSportsDB name search is ambiguous (e.g. "Al Ahli" → Amman / Jordan).
+ * Prefer a hit that matches the club's domestic league country.
+ */
+async function fetchSportsDbFacts(
+  teamName: string,
+  expectedCountry?: string,
+): Promise<SportsDbFacts> {
+  const queries = [teamName]
+  if (expectedCountry) {
+    queries.push(`${teamName} ${expectedCountry}`)
+    const short = expectedCountry.split(/\s+/)[0]
+    if (short && short.length >= 4) queries.push(`${teamName} ${short}`)
+  }
+
+  const seen = new Set<string>()
+  const candidates: SportsDbTeam[] = []
+  for (const query of queries) {
+    const rows = await searchSportsDbTeams(query)
+    for (const row of rows) {
+      const id = row.idTeam || row.strTeam || ''
+      if (!id || seen.has(id)) continue
+      seen.add(id)
+      candidates.push(row)
+    }
+  }
+
+  if (candidates.length === 0) return {}
+
+  const ranked = candidates
+    .map((team) => ({ team, score: scoreSportsDbTeam(team, expectedCountry) }))
+    .sort((a, b) => b.score - a.score)
+
+  const best = ranked[0]
+  if (!best || best.score < 0) return {}
+
+  const team = best.team
+  // Never attach a mismatched country's stadium/city to the profile.
+  if (expectedCountry && !countriesMatch(team.strCountry, expectedCountry)) {
     return {}
+  }
+
+  const nickname = team.strKeywords?.split(',')[0]?.trim() || undefined
+  return {
+    country: team.strCountry || undefined,
+    stadium: team.strStadium || undefined,
+    city: team.strStadiumLocation || undefined,
+    foundedYear: parseFoundedYear(team.intFormedYear),
+    nickname,
+    stadiumCapacity: parseCapacity(team.intStadiumCapacity ?? team.strStadiumCapacity),
+    stadiumSurface: team.strSurface?.trim() || undefined,
   }
 }
 
@@ -708,8 +803,10 @@ export async function fetchTeamClubFacts(
 
   const name = siteTeam?.displayName || fallbackName
   const isNational = Boolean(coreJson.isNational) || league.kind === 'international'
+  const expectedCountry =
+    !isNational && league.kind === 'domestic' ? league.country : undefined
 
-  const sportsDb = await fetchSportsDbFacts(name)
+  const sportsDb = await fetchSportsDbFacts(name, expectedCountry)
   const wiki = isNational
     ? {
         count: null as number | null,
@@ -717,14 +814,32 @@ export async function fetchTeamClubFacts(
         trophies: [] as TeamTrophyTitle[],
         trophyWins: [] as TeamTrophyWin[],
       }
-    : await fetchWikipediaTrophies(name)
+    : await fetchWikipediaTrophies(
+        expectedCountry ? `${name} ${expectedCountry}` : name,
+      ).then(async (first) => {
+        // Fall back to bare name if country-qualified wiki miss.
+        if ((first.trophyWins?.length ?? 0) > 0 || (first.count ?? 0) > 0) return first
+        if (!expectedCountry) return first
+        return fetchWikipediaTrophies(name)
+      })
 
+  const espnCountry = coreJson.venue?.address?.country
+  const sportsDbCountry =
+    sportsDb.country &&
+    (!expectedCountry || countriesMatch(sportsDb.country, expectedCountry))
+      ? sportsDb.country
+      : undefined
   const country =
-    coreJson.venue?.address?.country ||
-    sportsDb.country ||
+    espnCountry ||
+    sportsDbCountry ||
     (isNational ? siteTeam?.location || league.country : league.country)
 
-  const stadium = coreJson.venue?.fullName || sportsDb.stadium
+  const sportsDbTrusted =
+    !expectedCountry ||
+    !sportsDb.country ||
+    countriesMatch(sportsDb.country, expectedCountry)
+
+  const stadium = coreJson.venue?.fullName || (sportsDbTrusted ? sportsDb.stadium : undefined)
   const stadiumMeta =
     !isNational && stadium ? await fetchStadiumMeta(stadium) : {}
 
@@ -738,15 +853,20 @@ export async function fetchTeamClubFacts(
     leagueId,
     name,
     shortName: siteTeam?.abbreviation || siteTeam?.shortDisplayName,
-    nickname: siteTeam?.nickname || coreJson.nickname || sportsDb.nickname,
+    nickname:
+      siteTeam?.nickname ||
+      coreJson.nickname ||
+      (sportsDbTrusted ? sportsDb.nickname : undefined),
     leagueName: siteTeam?.defaultLeague?.name || league.name,
     country,
-    city: coreJson.venue?.address?.city || sportsDb.city,
+    city: coreJson.venue?.address?.city || (sportsDbTrusted ? sportsDb.city : undefined),
     stadium,
-    stadiumCapacity: sportsDb.stadiumCapacity ?? stadiumMeta.capacity,
-    stadiumSurface: sportsDb.stadiumSurface || stadiumMeta.surface,
+    stadiumCapacity: sportsDbTrusted
+      ? (sportsDb.stadiumCapacity ?? stadiumMeta.capacity)
+      : stadiumMeta.capacity,
+    stadiumSurface: (sportsDbTrusted ? sportsDb.stadiumSurface : undefined) || stadiumMeta.surface,
     stadiumOpenedYear: stadiumMeta.openedYear,
-    foundedYear: sportsDb.foundedYear,
+    foundedYear: sportsDbTrusted ? sportsDb.foundedYear : undefined,
     standingSummary: siteTeam?.standingSummary,
     logoUrl,
     primaryColor: normalizeHexColor(primaryRaw) || undefined,

@@ -60,8 +60,11 @@ export const LEAGUE_BRAND_COLORS: Record<LeagueId, string> = {
   'conmebol-sudamericana': '#e87722',
   'caf-champions': '#e30613',
   'afc-champions': '#c8102e',
+  'afc-champions-two': '#a30d24',
+  'afc-champions-qual': '#8f0c1f',
   'concacaf-champions': '#c8102e',
   'fifa-club-world-cup': '#326295',
+  'fifa-intercontinental': '#326295',
   'club-friendly': '#1a5f4a',
 
   // International / nations

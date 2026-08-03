@@ -27,8 +27,11 @@ export type LeagueId =
   | 'conmebol-sudamericana'
   | 'caf-champions'
   | 'afc-champions'
+  | 'afc-champions-two'
+  | 'afc-champions-qual'
   | 'concacaf-champions'
   | 'fifa-club-world-cup'
+  | 'fifa-intercontinental'
   | 'club-friendly'
   | 'uefa-super-cup'
   | 'fifa-world'
@@ -400,6 +403,26 @@ export const LEAGUES: League[] = [
     hasStandings: true,
   },
   {
+    id: 'afc-champions-two',
+    name: 'AFC Champions League Two',
+    short: 'ACL2',
+    country: 'Asia',
+    espnCode: 'afc.cup',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: true,
+  },
+  {
+    id: 'afc-champions-qual',
+    name: 'AFC Champions League Elite Qualifying',
+    short: 'AFCQ',
+    country: 'Asia',
+    espnCode: 'afc.champions_qual',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
     id: 'concacaf-champions',
     name: 'CONCACAF Champions Cup',
     short: 'CCC',
@@ -419,6 +442,16 @@ export const LEAGUES: League[] = [
     kind: 'continental',
     format: 'cup',
     hasStandings: true,
+  },
+  {
+    id: 'fifa-intercontinental',
+    name: 'FIFA Intercontinental Cup',
+    short: 'FIC',
+    country: 'International',
+    espnCode: 'fifa.intercontinental_cup',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: false,
   },
   {
     id: 'club-friendly',
@@ -1440,7 +1473,10 @@ export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
   'conmebol-sudamericana',
   'caf-champions',
   'afc-champions',
+  'afc-champions-two',
+  'afc-champions-qual',
   'concacaf-champions',
+  'fifa-intercontinental',
 
   // Major national-team tournaments
   'fifa-world',

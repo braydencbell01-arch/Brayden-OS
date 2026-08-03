@@ -772,14 +772,22 @@ export function buildTeamSeasonCompetitions(
 
   for (const match of matches) {
     if (match.home.id !== teamId && match.away.id !== teamId) continue
-    if (!matchInSeasonYear(match, year, { international })) continue
+    const inCurrent = matchInSeasonYear(match, year, { international })
+    const inPrevious = matchInSeasonYear(match, year - 1, { international })
+    if (!inCurrent && !inPrevious) continue
+
+    const league = findLeague(match.leagueId)
+    if (!league) continue
+
+    // Early in a new Aug–Jul season, keep continental comps from the previous
+    // window so AFC CL / UCL etc. don't vanish before new fixtures appear.
+    if (!inCurrent && inPrevious && league.kind !== 'continental') continue
+
     if (isFriendlyLeagueId(match.leagueId) && !international) {
-      // Still list friendlies when played — after competitive comps.
       const friendly = getLeague(match.leagueId)
       add({ key: friendly.id, name: friendly.name, leagueId: friendly.id })
       continue
     }
-    const league = getLeague(match.leagueId)
     add({ key: league.id, name: league.name, leagueId: league.id })
   }
 
