@@ -16,7 +16,7 @@ import {
   type LeagueId,
 } from '../leagues'
 import { playoffWinnersLabel } from './divisionLabels'
-import { layoutPlayersOnPitch } from './formationPitch'
+import { layoutPlayersOnPitch, nextOpenFormationPlaces } from './formationPitch'
 import { leagueIdFromTeamSlug, resolveTeamDomesticLeagueId } from '../search'
 import {
   positionGroupFromAbbrev,
@@ -795,7 +795,15 @@ export async function fetchMostUsedStartingXi(
     const fillers = [...overall.values()]
       .filter((stat) => !xiCore.some((player) => player.id === stat.id))
       .sort((a, b) => b.starts - a.starts)
+    const openPlaces = nextOpenFormationPlaces(
+      formation,
+      xiCore.map((player) => player.formationPlace),
+      11 - xiCore.length,
+    )
+    let placeIndex = 0
     for (const top of fillers) {
+      const place = openPlaces[placeIndex] ?? placeIndex + 12
+      placeIndex += 1
       xiCore.push({
         id: top.id,
         name: top.name,
@@ -803,7 +811,7 @@ export async function fetchMostUsedStartingXi(
         jersey: top.jersey,
         photoUrl: playerHeadshotUrl(top.id),
         positionAbbrev: top.positionAbbrev,
-        formationPlace: top.starts,
+        formationPlace: place,
         starts: top.starts,
         goals: top.goals,
         assists: top.assists,

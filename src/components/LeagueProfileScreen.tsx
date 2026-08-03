@@ -20,7 +20,6 @@ import type { League } from '../lib/leagues'
 import {
   leagueFormTable,
   matchesForLeague,
-  matchesForLeagueFrom,
   nextMatchForLeague,
   type Match,
 } from '../lib/matches'
@@ -28,9 +27,10 @@ import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
 import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
 import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
 import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
+import { useLeagueOverviewFacts } from '../lib/stats/useLeagueOverviewFacts'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
 import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
-import { useToday, useTodayKey } from '../lib/useToday'
+import { useTodayKey } from '../lib/useToday'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
 import { LeagueExpectedGoalsPanel } from './LeagueExpectedGoalsPanel'
@@ -55,7 +55,7 @@ type StatsSection = 'player-stats' | 'team-leaders' | 'xg'
 
 const TABS: Array<{ id: LeagueTab; label: string; needsStandings?: boolean }> = [
   { id: 'overview', label: 'Overview' },
-  { id: 'matches', label: 'Matches' },
+  { id: 'matches', label: 'Fixtures' },
   { id: 'table', label: 'Table', needsStandings: true },
   { id: 'stats', label: 'Stats' },
 ]
@@ -104,7 +104,6 @@ export function LeagueProfileScreen({
   onNeedPastRange?: (from: Date, to: Date) => void | Promise<unknown>
   reduce: boolean | null
 }) {
-  const today = useToday()
   const todayKey = useTodayKey()
   const [tab, setTab] = useState<LeagueTab>('overview')
   const [openOverview, setOpenOverview] = useState<Record<OverviewSection, boolean>>({
@@ -135,10 +134,7 @@ export function LeagueProfileScreen({
     { withSeasonPicker: true },
   )
 
-  const upcomingCount = useMemo(
-    () => matchesForLeagueFrom(matches, league.id, today).length,
-    [matches, league.id, today],
-  )
+  const overviewFacts = useLeagueOverviewFacts(league.id)
 
   const timelineMatches = useMemo(
     () => matchesForLeague(matches, league.id),
@@ -322,7 +318,9 @@ export function LeagueProfileScreen({
           <>
             {league.short}
             {isDomesticCup ? ` · ${formatLabel}` : ''}
-            {!loading && !error ? ` · ${upcomingCount} upcoming` : ''}
+            {!overviewFacts.loading && overviewFacts.data?.seasonMatchCount != null
+              ? ` · ${overviewFacts.data.seasonMatchCount} matches`
+              : ''}
           </>
         }
       />
@@ -362,6 +360,14 @@ export function LeagueProfileScreen({
         {tab === 'overview' ? (
           <div className="flex flex-col gap-3">
             <ProfileMetricsRow>
+              <ProfileMetric
+                label="Founded"
+                value={
+                  overviewFacts.loading
+                    ? '…'
+                    : overviewFacts.data?.foundedYear ?? MISSING_SHORT
+                }
+              />
               {league.hasStandings ? (
                 <ProfileMetric
                   label={isInternational ? 'Teams' : 'Clubs'}
@@ -371,42 +377,67 @@ export function LeagueProfileScreen({
                 <ProfileMetric label="Format" value={formatLabel} />
               )}
               <ProfileMetric
-                label="Upcoming"
-                value={loading ? '…' : upcomingCount}
+                label="Matches"
+                value={
+                  overviewFacts.loading
+                    ? '…'
+                    : overviewFacts.data?.seasonMatchCount ?? MISSING_SHORT
+                }
               />
-              {league.hasStandings ? (
-                <ProfileMetric
-                  label="Leader"
-                  value={
-                    standings.loading ? (
-                      '…'
-                    ) : leader ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenTeam({
-                            id: leader.teamId,
-                            name: leader.team,
-                            shortName: leader.shortName,
-                            leagueId: league.id,
-                            kind: isInternational ? 'national' : 'club',
-                          })
-                        }
-                        className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                      >
-                        {leader.shortName}
-                      </button>
-                    ) : (
-                      MISSING_SHORT
-                    )
-                  }
-                />
-              ) : (
-                <ProfileMetric
-                  label="Matches"
-                  value={loading ? '…' : timelineMatches.length || MISSING_SHORT}
-                />
-              )}
+              <ProfileMetric
+                label="Champion"
+                value={
+                  overviewFacts.loading ? (
+                    '…'
+                  ) : overviewFacts.data?.champion ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenTeam({
+                          id: overviewFacts.data!.champion!.teamId,
+                          name: overviewFacts.data!.champion!.name,
+                          shortName: overviewFacts.data!.champion!.shortName,
+                          leagueId: league.id,
+                          kind: isInternational ? 'national' : 'club',
+                        })
+                      }
+                      className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {overviewFacts.data.champion.shortName}
+                    </button>
+                  ) : (
+                    MISSING_SHORT
+                  )
+                }
+              />
+              <ProfileMetric
+                label="Leader"
+                value={
+                  !league.hasStandings ? (
+                    MISSING_SHORT
+                  ) : standings.loading ? (
+                    '…'
+                  ) : leader ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenTeam({
+                          id: leader.teamId,
+                          name: leader.team,
+                          shortName: leader.shortName,
+                          leagueId: league.id,
+                          kind: isInternational ? 'national' : 'club',
+                        })
+                      }
+                      className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {leader.shortName}
+                    </button>
+                  ) : (
+                    MISSING_SHORT
+                  )
+                }
+              />
               <ProfileMetric
                 label="Top scorer"
                 value={

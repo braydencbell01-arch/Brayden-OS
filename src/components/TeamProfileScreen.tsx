@@ -72,7 +72,7 @@ type OverviewSection =
 
 const TABS: Array<{ id: TeamTab; label: string; clubsOnly?: boolean }> = [
   { id: 'overview', label: 'Overview' },
-  { id: 'matches', label: 'Matches' },
+  { id: 'matches', label: 'Fixtures' },
   { id: 'table', label: 'Table', clubsOnly: true },
   { id: 'stats', label: 'Stats' },
   { id: 'squad', label: 'Squad' },
