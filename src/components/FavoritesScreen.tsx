@@ -120,10 +120,6 @@ export function FavoritesScreen({
           <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
             Favorites
           </h1>
-          <p className="mt-3 text-sm text-mist/80">
-            Star leagues and clubs for calendar dots and Match day yellow. Star players to keep them
-            handy in Favorites and search — players never light up fixtures.
-          </p>
         </motion.header>
 
         {isEmpty ? (
@@ -380,9 +376,6 @@ export function FavoritesScreen({
           <section className="mt-8 border-t border-white/10 pt-6" aria-label="Suggestions">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-star">
               Suggestions
-            </p>
-            <p className="mt-2 text-sm text-mist/70">
-              Star a pick and another suggestion fills in — keep tapping Show more for the next 10.
             </p>
 
             <div className="mt-4">
