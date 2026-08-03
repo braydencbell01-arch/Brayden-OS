@@ -24,8 +24,6 @@ import {
   type Match,
 } from '../lib/matches'
 import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
-import { useLeagueExpectedGoals } from '../lib/stats/useLeagueExpectedGoals'
-import { useLeagueLeaders } from '../lib/stats/useLeagueLeaders'
 import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
 import { useLeagueOverviewFacts } from '../lib/stats/useLeagueOverviewFacts'
 import { useLeaguePlayerStats } from '../lib/stats/useLeaguePlayerStats'
@@ -33,11 +31,9 @@ import { useLeagueStandings } from '../lib/stats/useLeagueStandings'
 import { useTodayKey } from '../lib/useToday'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
-import { LeagueExpectedGoalsPanel } from './LeagueExpectedGoalsPanel'
 import { LeagueFormTable } from './LeagueFormTable'
 import { LeaguePlayerStatsPanel } from './LeaguePlayerStatsPanel'
 import { LeagueSeasonTimeline } from './LeagueSeasonTimeline'
-import { LeagueStatsPanel } from './LeagueStatsPanel'
 import { MatchList } from './MatchList'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { ProfileAccordion } from './ProfileAccordion'
@@ -51,7 +47,7 @@ import { StandingsTable } from './StandingsTable'
 
 type LeagueTab = 'overview' | 'matches' | 'table' | 'stats'
 type OverviewSection = 'form' | 'nextMatch'
-type StatsSection = 'player-stats' | 'team-leaders' | 'xg'
+type StatsSection = 'player-stats'
 
 const TABS: Array<{ id: LeagueTab; label: string; needsStandings?: boolean }> = [
   { id: 'overview', label: 'Overview' },
@@ -112,8 +108,6 @@ export function LeagueProfileScreen({
   })
   const [openStats, setOpenStats] = useState<Record<StatsSection, boolean>>({
     'player-stats': true,
-    'team-leaders': false,
-    xg: false,
   })
 
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
@@ -124,15 +118,8 @@ export function LeagueProfileScreen({
     league.format === 'supercup' ? 'Super cup' : league.format === 'cup' ? 'Cup' : 'League'
 
   const standings = useLeagueStandings(league.id, league.hasStandings)
-  const statsEnabled = tab === 'stats'
-  const leaders = useLeagueLeaders(league.id, statsEnabled && openStats['team-leaders'])
   // Warm player boards for the top-scorer metric on Overview.
   const playerStats = useLeaguePlayerStats(league.id, true)
-  const expectedGoals = useLeagueExpectedGoals(
-    league.id,
-    statsEnabled && openStats.xg,
-    { withSeasonPicker: true },
-  )
 
   const overviewFacts = useLeagueOverviewFacts(league.id)
 
@@ -179,7 +166,7 @@ export function LeagueProfileScreen({
   useEffect(() => {
     setTab('overview')
     setOpenOverview({ form: true, nextMatch: true })
-    setOpenStats({ 'player-stats': true, 'team-leaders': false, xg: false })
+    setOpenStats({ 'player-stats': true })
   }, [league.id])
 
   const toggleOverview = (section: OverviewSection) => {
@@ -628,45 +615,6 @@ export function LeagueProfileScreen({
                 onOpenTeam={onOpenTeam}
               />
             </OverviewCard>
-
-            <OverviewCard
-              title="Team leaders"
-              subtitle="Table-derived and category boards"
-              open={openStats['team-leaders']}
-              onToggle={() => toggleStats('team-leaders')}
-            >
-              <LeagueStatsPanel
-                data={leaders.data}
-                loading={leaders.loading}
-                error={leaders.error}
-                leagueId={league.id}
-                seasons={leaders.seasons}
-                seasonsLoading={leaders.seasonsLoading}
-                selectedSeason={leaders.selectedSeason}
-                onSelectSeason={leaders.selectSeason}
-                onOpenPlayer={onOpenPlayer}
-                onOpenTeam={onOpenTeam}
-              />
-            </OverviewCard>
-
-            {expectedGoals.supported ? (
-              <OverviewCard
-                title="Expected goals"
-                subtitle="xG · xA · club chance quality"
-                open={openStats.xg}
-                onToggle={() => toggleStats('xg')}
-              >
-                <LeagueExpectedGoalsPanel
-                  data={expectedGoals.data}
-                  loading={expectedGoals.loading}
-                  error={expectedGoals.error}
-                  seasons={expectedGoals.seasons}
-                  seasonsLoading={expectedGoals.seasonsLoading}
-                  selectedSeason={expectedGoals.selectedSeason}
-                  onSelectSeason={expectedGoals.selectSeason}
-                />
-              </OverviewCard>
-            ) : null}
           </div>
         ) : null}
       </div>
