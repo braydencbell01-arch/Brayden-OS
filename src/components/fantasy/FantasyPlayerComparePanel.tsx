@@ -147,7 +147,7 @@ export function FantasyPlayerComparePanel({
           {onOpenPlayer ? (
             <button
               type="button"
-              className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-lime"
+              className="profile-link mt-3 text-xs font-bold uppercase tracking-[0.14em] text-lime"
               onClick={() =>
                 onOpenPlayer({
                   id: String(a.code || a.id),
@@ -159,7 +159,7 @@ export function FantasyPlayerComparePanel({
                 })
               }
             >
-              Open {a.webName} in BrayStats →
+              {a.webName}
             </button>
           ) : null}
         </div>
