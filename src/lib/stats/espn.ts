@@ -1629,10 +1629,11 @@ export async function fetchLeaguePlayerStatsOverview(
   if (!payload?.categories?.length) {
     // Explicit season pick with no boards yet — return empty instead of failing the picker.
     if (seasonYear != null) {
+      const labels = await fetchSeasonLabels(league.espnCode, seasonYear)
       return {
         leagueId,
         season: seasonYear,
-        seasonLabel: `${soccerSeasonShortLabel(seasonYear)} season`,
+        seasonLabel: `${labels.shortLabel} season`,
         rows: [],
         boards: [],
         fetchedAt: Date.now(),
@@ -1724,10 +1725,12 @@ export async function fetchLeaguePlayerStatsOverview(
     throw new Error(`No ${league.name} player stats available yet`)
   }
 
+  const labels = await fetchSeasonLabels(league.espnCode, season)
+
   return {
     leagueId,
     season,
-    seasonLabel: `${season} season`,
+    seasonLabel: `${labels.shortLabel} season`,
     rows,
     boards,
     fetchedAt: Date.now(),
@@ -1990,12 +1993,124 @@ type EspnSeasonDetail = {
   year?: number
   displayName?: string
   abbreviation?: string
+  startDate?: string
+  endDate?: string
 }
 
 const leaderSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 const allSeasonsCache = new Map<string, LeagueSeasonOption[]>()
 const teamSeasonOptionsCache = new Map<string, LeagueSeasonOption[]>()
 const standingNoteCache = new Map<string, string | null>()
+const seasonLabelsCache = new Map<string, { label: string; shortLabel: string }>()
+const seasonPlayMidCache = new Map<string, Date | null>()
+
+function isCrossYearSeasonAbbr(abbr: string): boolean {
+  return /^(\d{4})[-/](\d{2,4})$/.test(abbr.trim())
+}
+
+function isBareYearSeasonAbbr(abbr: string): boolean {
+  return /^\d{4}$/.test(abbr.trim())
+}
+
+/** ESPN often pads internationals as Jan 1–Dec 31; those dates are not real play windows. */
+function isCalendarYearPadding(startIso?: string, endIso?: string): boolean {
+  if (!startIso || !endIso) return true
+  const start = new Date(startIso)
+  const end = new Date(endIso)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return true
+  const startJan = start.getUTCMonth() === 0 && start.getUTCDate() <= 2
+  const endDec = end.getUTCMonth() === 11 && end.getUTCDate() >= 29
+  const sameYear = start.getUTCFullYear() === end.getUTCFullYear()
+  return startJan && endDec && sameYear
+}
+
+/**
+ * Midpoint of real matches in an ESPN season edition (for Aug–Jul labeling).
+ * Prefers site scoreboard date windows so we do not hydrate every core event ref.
+ */
+async function sampleSeasonPlayMidDate(
+  espnCode: string,
+  year: number,
+): Promise<Date | null> {
+  const cacheKey = `${espnCode}:${year}`
+  if (seasonPlayMidCache.has(cacheKey)) return seasonPlayMidCache.get(cacheKey) ?? null
+
+  const windows = [
+    `${year}0601-${year}0731`,
+    `${year}1101-${year}1231`,
+    `${year}0101-${year}0531`,
+    `${year}0801-${year}1031`,
+    // Delayed winter tournaments (e.g. AFCON “2023” played Jan 2024).
+    `${year + 1}0101-${year + 1}0531`,
+    `${year + 1}0601-${year + 1}0731`,
+  ]
+
+  const dates: string[] = []
+  for (const range of windows) {
+    try {
+      const res = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/${encodeURIComponent(espnCode)}/scoreboard?dates=${range}&limit=50`,
+      )
+      if (!res.ok) continue
+      const data = (await res.json()) as { events?: Array<{ date?: string }> }
+      for (const event of data.events ?? []) {
+        if (event.date) dates.push(event.date)
+      }
+      if (dates.length >= 2) break
+    } catch {
+      // try next window
+    }
+  }
+
+  if (dates.length === 0) {
+    // Fallback: hydrate a few core event refs from the first/last season types.
+    try {
+      const typeIds = await listSeasonTypeIds(espnCode, year)
+      const sampleTypeIds = [...new Set([typeIds[0], typeIds[typeIds.length - 1]].filter(Boolean))]
+      for (const typeId of sampleTypeIds) {
+        const listRes = await fetch(
+          `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${year}/types/${typeId}/events?limit=3`,
+        )
+        if (!listRes.ok) continue
+        const list = (await listRes.json()) as {
+          items?: Array<{ $ref?: string }>
+          pageCount?: number
+        }
+        const refs = [...(list.items ?? [])]
+        if ((list.pageCount ?? 1) > 1) {
+          const lastPage = await fetch(
+            `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${year}/types/${typeId}/events?limit=3&page=${list.pageCount}`,
+          )
+          if (lastPage.ok) {
+            const last = (await lastPage.json()) as { items?: Array<{ $ref?: string }> }
+            refs.push(...(last.items ?? []))
+          }
+        }
+        for (const item of refs.slice(0, 4)) {
+          if (!item.$ref) continue
+          const evRes = await fetch(item.$ref.replace(/^http:\/\//i, 'https://'))
+          if (!evRes.ok) continue
+          const ev = (await evRes.json()) as { date?: string }
+          if (ev.date) dates.push(ev.date)
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (dates.length === 0) {
+    seasonPlayMidCache.set(cacheKey, null)
+    return null
+  }
+
+  dates.sort()
+  const first = Date.parse(dates[0])
+  const last = Date.parse(dates[dates.length - 1])
+  const mid = new Date((first + last) / 2)
+  seasonPlayMidCache.set(cacheKey, mid)
+  return mid
+}
 
 /** Compact season chip: Aug–Jul label (never a bare calendar year). */
 export function formatSeasonShortLabel(year: number, abbreviation?: string): string {
@@ -2011,30 +2126,90 @@ export function formatSeasonShortLabel(year: number, abbreviation?: string): str
   }
   const fullStart = abbr.match(/^(\d{4})\/\d{2}$/)
   if (fullStart) return soccerSeasonShortLabel(Number(fullStart[1]))
+  // Bare edition year (Copa América “2024”, Euro “2024”) is a calendar year, not an
+  // Aug-start year. Summer midpoint is a sync fallback; prefer fetchSeasonLabels.
+  if (isBareYearSeasonAbbr(abbr)) {
+    const edition = Number(abbr)
+    return soccerSeasonShortLabel(
+      inferSoccerSeasonStartYear(new Date(edition, 5, 15)),
+    )
+  }
   return soccerSeasonShortLabel(year)
 }
 
+/**
+ * Display labels for an ESPN season edition.
+ * Keeps API `year` as-is for fetches; shortLabel follows Aug 1–Jul 31 from real play dates
+ * so summer internationals (Copa América 2024 → 23/24) are labeled correctly.
+ */
 async function fetchSeasonLabels(
   espnCode: string,
   year: number,
 ): Promise<{ label: string; shortLabel: string }> {
+  const cacheKey = `${espnCode}:${year}`
+  const cached = seasonLabelsCache.get(cacheKey)
+  if (cached) return cached
+
   try {
     const res = await fetch(
-      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}`,
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${year}`,
     )
     if (res.ok) {
       const detail = (await res.json()) as EspnSeasonDetail
-      const shortLabel = formatSeasonShortLabel(year, detail.abbreviation)
-      return {
-        label: detail.displayName || detail.abbreviation || `${shortLabel} season`,
-        shortLabel,
+      const abbr = (detail.abbreviation || '').trim()
+      const label =
+        detail.displayName || detail.abbreviation || `${soccerSeasonShortLabel(year)} season`
+
+      // Club-style cross-year abbreviations already encode the Aug start year.
+      if (isCrossYearSeasonAbbr(abbr) || /^\d{2}\/\d{2}$/.test(abbr) || /^\d{4}\/\d{2}$/.test(abbr)) {
+        const result = {
+          label,
+          shortLabel: formatSeasonShortLabel(year, abbr),
+        }
+        seasonLabelsCache.set(cacheKey, result)
+        return result
       }
+
+      let playDate: Date | null = null
+      if (
+        detail.startDate &&
+        detail.endDate &&
+        !isCalendarYearPadding(detail.startDate, detail.endDate)
+      ) {
+        const startMs = Date.parse(detail.startDate)
+        const endMs = Date.parse(detail.endDate)
+        if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
+          playDate = new Date((startMs + endMs) / 2)
+        }
+      }
+      if (!playDate) {
+        playDate = await sampleSeasonPlayMidDate(espnCode, year)
+      }
+
+      if (playDate) {
+        const result = {
+          label,
+          shortLabel: soccerSeasonShortLabel(inferSoccerSeasonStartYear(playDate)),
+        }
+        seasonLabelsCache.set(cacheKey, result)
+        return result
+      }
+
+      const result = {
+        label,
+        shortLabel: formatSeasonShortLabel(year, abbr || undefined),
+      }
+      seasonLabelsCache.set(cacheKey, result)
+      return result
     }
   } catch {
     // fall through
   }
+
   const shortLabel = soccerSeasonShortLabel(year)
-  return { label: `${shortLabel} season`, shortLabel }
+  const fallback = { label: `${shortLabel} season`, shortLabel }
+  seasonLabelsCache.set(cacheKey, fallback)
+  return fallback
 }
 
 async function listLeagueSeasonYears(espnCode: string): Promise<number[]> {
