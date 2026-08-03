@@ -48,6 +48,7 @@ const NATIONAL_LEAGUE_PRIORITY: LeagueId[] = [
   'uefa-nations',
   'uefa-euro',
   'fifa-worldq',
+  'uefa-euro-qual',
   'conmebol-america',
   'fifa-friendly',
 ]

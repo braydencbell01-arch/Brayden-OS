@@ -61,6 +61,22 @@ const TIMELINES: Partial<Record<LeagueId, Phase[]>> = {
     { id: 'groups', label: 'Qualifying groups' },
     { id: 'playoffs', label: 'Play-offs' },
   ],
+  'uefa-euro-qual': [
+    { id: 'groups', label: 'Qualifying groups' },
+    { id: 'playoffs', label: 'Play-offs' },
+  ],
+  'uefa-champions-qual': [
+    { id: 'rounds', label: 'Qualifying rounds' },
+    { id: 'playoffs', label: 'Play-offs' },
+  ],
+  'uefa-europa-qual': [
+    { id: 'rounds', label: 'Qualifying rounds' },
+    { id: 'playoffs', label: 'Play-offs' },
+  ],
+  'uefa-conference-qual': [
+    { id: 'rounds', label: 'Qualifying rounds' },
+    { id: 'playoffs', label: 'Play-offs' },
+  ],
   // Domestic cups
   'fa-cup': KNOCKOUT_DEEP,
   'efl-cup': KNOCKOUT_STANDARD,

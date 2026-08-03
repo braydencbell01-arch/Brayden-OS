@@ -20,6 +20,9 @@ export type LeagueId =
   | 'uefa-champions'
   | 'uefa-europa'
   | 'uefa-conference'
+  | 'uefa-champions-qual'
+  | 'uefa-europa-qual'
+  | 'uefa-conference-qual'
   | 'conmebol-libertadores'
   | 'conmebol-sudamericana'
   | 'caf-champions'
@@ -32,6 +35,7 @@ export type LeagueId =
   | 'fifa-friendly'
   | 'uefa-nations'
   | 'uefa-euro'
+  | 'uefa-euro-qual'
   | 'fifa-worldq'
   | 'conmebol-america'
   | 'caf-nations'
@@ -322,6 +326,36 @@ export const LEAGUES: League[] = [
     hasStandings: true,
   },
   {
+    id: 'uefa-champions-qual',
+    name: 'UEFA Champions League Qualifying',
+    short: 'UCLQ',
+    country: 'Europe',
+    espnCode: 'uefa.champions_qual',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'uefa-europa-qual',
+    name: 'UEFA Europa League Qualifying',
+    short: 'UELQ',
+    country: 'Europe',
+    espnCode: 'uefa.europa_qual',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
+    id: 'uefa-conference-qual',
+    name: 'UEFA Conference League Qualifying',
+    short: 'UECLQ',
+    country: 'Europe',
+    espnCode: 'uefa.europa.conf_qual',
+    kind: 'continental',
+    format: 'cup',
+    hasStandings: false,
+  },
+  {
     id: 'conmebol-libertadores',
     name: 'Copa Libertadores',
     short: 'LIB',
@@ -439,6 +473,16 @@ export const LEAGUES: League[] = [
     short: 'EURO',
     country: 'Europe',
     espnCode: 'uefa.euro',
+    kind: 'international',
+    format: 'cup',
+    hasStandings: true,
+  },
+  {
+    id: 'uefa-euro-qual',
+    name: 'UEFA European Championship Qualifying',
+    short: 'EUROQ',
+    country: 'Europe',
+    espnCode: 'uefa.euroq',
     kind: 'international',
     format: 'cup',
     hasStandings: true,
@@ -1301,17 +1345,28 @@ export function teamSubtitleLeagueId(team: {
  * Biggest / most important competitions first for Match day (and display sorts).
  * Favorites still pin above this via `compareLeaguesForDisplay`.
  * Kept separate from the `LEAGUES` catalog array so country grouping there can stay readable.
+ *
+ * Tip order (non-favorites): UCL → UEL → UECL → Premier League → La Liga →
+ * Serie A → Bundesliga → Ligue 1 → club friendlies. Qualifying for a competition
+ * is a separate entry from the competition itself (e.g. UCLQ ≠ UCL).
  */
 export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
-  // Elite club competitions
+  // Match day tip order
   'uefa-champions',
+  'uefa-europa',
+  'uefa-conference',
   'premier-league',
   'la-liga',
   'serie-a',
   'bundesliga',
   'ligue-1',
-  'uefa-europa',
-  'uefa-conference',
+  'club-friendly',
+
+  // UEFA club qualifying (separate from the main competitions above)
+  'uefa-champions-qual',
+  'uefa-europa-qual',
+  'uefa-conference-qual',
+
   'fifa-club-world-cup',
   'uefa-super-cup',
   'conmebol-libertadores',
@@ -1329,6 +1384,7 @@ export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
   'concacaf-gold',
   'uefa-nations',
   'fifa-worldq',
+  'uefa-euro-qual',
   'fifa-friendly',
 
   // Other strong domestic top flights
@@ -1391,9 +1447,6 @@ export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
   'ita-serie-b',
   'ger-2-bundesliga',
   'fra-ligue-2',
-
-  // Lowest priority scoreboard noise
-  'club-friendly',
 ]
 
 const LEAGUE_IMPORTANCE_RANK = new Map(
