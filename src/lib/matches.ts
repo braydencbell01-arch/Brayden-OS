@@ -641,7 +641,7 @@ export async function fetchTeamSchedule(
 
 /**
  * Seasons run 1 Aug → 31 Jul for clubs and nationals.
- * `seasonYear` is the August start year (2026 → 26/27).
+ * `seasonYear` is the August start year (2026 → 26/27; 1999 → 1999/00).
  */
 export function matchInSeasonYear(
   match: Match,
