@@ -1185,6 +1185,10 @@ export function inferInternationalSeasonStartYear(date = new Date()): number {
 /**
  * Aug–Jul season label for a start year — never a bare calendar year.
  * 2000+ → `25/26`; 1900s and earlier → `1999/00`, `1889/90` (full start year).
+ *
+ * `startYear` must be the August start of the season (e.g. Copa América June 2024
+ * → start year 2023 → `23/24`). Tournament edition years from ESPN are calendar
+ * years — resolve them via play dates in `fetchSeasonLabels`, do not pass them here.
  */
 export function soccerSeasonShortLabel(startYear: number): string {
   const endTwo = String(startYear + 1).slice(-2)
