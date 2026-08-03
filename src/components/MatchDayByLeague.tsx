@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
 import { leagueAccentColor } from '../lib/stats/branding'
@@ -25,6 +25,59 @@ function Chevron({ open }: { open: boolean }) {
         strokeLinejoin="round"
       />
     </svg>
+  )
+}
+
+/**
+ * Single-line at normal size when it fits; otherwise two lines at a smaller size
+ * so long competition names (UEFA Europa League Qualifying, …) stay readable.
+ */
+function CompetitionName({
+  name,
+  className = '',
+}: {
+  name: string
+  className?: string
+}) {
+  const containerRef = useRef<HTMLSpanElement>(null)
+  const measureRef = useRef<HTMLSpanElement>(null)
+  const [needsWrap, setNeedsWrap] = useState(false)
+
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    const measureEl = measureRef.current
+    if (!container || !measureEl) return
+
+    const check = () => {
+      setNeedsWrap(measureEl.scrollWidth > container.clientWidth + 1)
+    }
+    check()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null
+    ro?.observe(container)
+    return () => ro?.disconnect()
+  }, [name])
+
+  return (
+    <span ref={containerRef} className="relative min-w-0 flex-1">
+      <span
+        ref={measureRef}
+        className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap text-sm font-semibold sm:text-base"
+        aria-hidden
+      >
+        {name}
+      </span>
+      <span
+        className={[
+          'font-semibold text-cream',
+          needsWrap
+            ? 'line-clamp-2 break-words text-[0.72rem] leading-snug sm:text-[0.8rem]'
+            : 'block truncate text-sm sm:text-base',
+          className,
+        ].join(' ')}
+      >
+        {name}
+      </span>
+    </span>
   )
 }
 
@@ -98,9 +151,13 @@ function LeagueDropdown({
               ringColor={accent}
             />
             <div className="min-w-0 flex-1">
-              <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-cream sm:text-base">
-                {hasFavorite ? <FavoriteDot /> : null}
-                <span className="profile-link truncate">{league.name}</span>
+              <p className="flex min-w-0 items-start gap-2">
+                {hasFavorite ? (
+                  <span className="mt-1.5 shrink-0">
+                    <FavoriteDot />
+                  </span>
+                ) : null}
+                <CompetitionName name={league.name} className="profile-link" />
               </p>
               <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
                 {league.country}
@@ -119,9 +176,13 @@ function LeagueDropdown({
               ringColor={accent}
             />
             <div className="min-w-0 flex-1">
-              <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-cream sm:text-base">
-                {hasFavorite ? <FavoriteDot /> : null}
-                <span className="truncate">{league.name}</span>
+              <p className="flex min-w-0 items-start gap-2">
+                {hasFavorite ? (
+                  <span className="mt-1.5 shrink-0">
+                    <FavoriteDot />
+                  </span>
+                ) : null}
+                <CompetitionName name={league.name} />
               </p>
               <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
                 {league.country}

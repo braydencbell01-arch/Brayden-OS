@@ -145,10 +145,7 @@ export function CalendarStrip({
   return (
     <section aria-label="Match calendar" className="relative">
       <div className="mb-1 flex items-center justify-between gap-2 px-1">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-lime/80">Calendar</p>
-          <p className="truncate text-[0.6rem] text-mist/55">Yellow = favorites</p>
-        </div>
+        <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-lime/80">Calendar</p>
         <div className="flex items-center gap-1.5">
           <p className="font-display text-base tracking-wide text-cream/90">
             {selected.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
