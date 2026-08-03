@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { missingShort } from '../lib/display'
+import { suggestedLeagues, suggestedTeams } from '../lib/favoriteSuggestions'
 import { LEAGUES, getLeague, isInternationalLeague, teamSubtitleLabel, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
@@ -55,6 +56,16 @@ export function FavoritesScreen({
     teams: favorites.teams.length,
     players: favorites.players.length,
   }
+
+  const leagueSuggestions = useMemo(
+    () => suggestedLeagues(favorites.leagueIds, 6),
+    [favorites.leagueIds],
+  )
+  const teamSuggestions = useMemo(
+    () => suggestedTeams(favorites.teamIds, favorites.leagueIds, 8),
+    [favorites.teamIds, favorites.leagueIds],
+  )
+  const hasSuggestions = leagueSuggestions.length > 0 || teamSuggestions.length > 0
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -333,6 +344,111 @@ export function FavoritesScreen({
             )
           })}
         </div>
+
+        {hasSuggestions ? (
+          <section className="mt-8 border-t border-white/10 pt-6" aria-label="Suggestions">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-star">
+              Suggestions
+            </p>
+            <h2 className="mt-2 font-display text-3xl tracking-wide text-cream">
+              Star something next
+            </h2>
+            <p className="mt-2 text-sm text-mist/75">
+              Popular leagues and clubs — tap the star to add them to Favorites.
+            </p>
+
+            {leagueSuggestions.length > 0 ? (
+              <div className="mt-5">
+                <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+                  Leagues
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {leagueSuggestions.map((league) => {
+                    const accent = leagueAccentColor(league.id)
+                    return (
+                      <li key={league.id}>
+                        <div
+                          className="flex items-center gap-2 border border-white/10 px-3 py-3"
+                          style={{
+                            boxShadow: `inset 3px 0 0 ${accent}`,
+                            background: `linear-gradient(90deg, ${accent}22, rgba(255,255,255,0.04) 42%)`,
+                            borderColor: `${accent}40`,
+                          }}
+                        >
+                          <FavoriteStar
+                            active={false}
+                            label={league.name}
+                            onToggle={() => favorites.toggleLeague(league.id)}
+                          />
+                          <LeagueLogoMark
+                            leagueId={league.id}
+                            name={league.name}
+                            size="sm"
+                            ringColor={accent}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => onOpenLeague(league.id)}
+                            className="min-w-0 flex-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                          >
+                            <span className="profile-link block font-display text-2xl tracking-wide text-cream">
+                              {league.name}
+                            </span>
+                            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
+                              {league.country}
+                            </span>
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ) : null}
+
+            {teamSuggestions.length > 0 ? (
+              <div className="mt-5">
+                <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+                  Clubs
+                </p>
+                <ul className="flex flex-col gap-2">
+                  {teamSuggestions.map((team) => (
+                    <li key={team.id}>
+                      <div className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3">
+                        <FavoriteStar
+                          active={false}
+                          label={team.shortName}
+                          onToggle={() => favorites.toggleTeam(team)}
+                        />
+                        <EntityLogo
+                          name={team.name}
+                          src={teamLogoUrl(team.id)}
+                          size="sm"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={() => onOpenTeam(team)}
+                            className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                          >
+                            {team.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenLeague(team.leagueId)}
+                            className="profile-link mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                          >
+                            {getLeague(team.leagueId).short}
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     </div>
   )
