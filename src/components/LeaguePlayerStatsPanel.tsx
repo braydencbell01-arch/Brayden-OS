@@ -13,6 +13,8 @@ import { SeasonPicker } from './SeasonPicker'
 
 const FEATURED_CATEGORY_IDS = ['goals', 'assists', 'saves'] as const
 const PREVIEW_COUNT = 5
+/** Hard cap for expanded boards — matches the ESPN leaders page size. */
+const MAX_LEADERS = 50
 
 function LeaderRow({
   boardId,
@@ -109,8 +111,9 @@ function StatBoard({
     setExpanded(defaultExpanded)
   }, [board.categoryId, board.leaders.length, defaultExpanded])
 
-  const hasMore = board.leaders.length > previewCount
-  const visible = expanded || !hasMore ? board.leaders : board.leaders.slice(0, previewCount)
+  const leaders = board.leaders.slice(0, MAX_LEADERS)
+  const hasMore = leaders.length > previewCount
+  const visible = expanded || !hasMore ? leaders : leaders.slice(0, previewCount)
 
   return (
     <section aria-label={board.label}>
@@ -135,7 +138,7 @@ function StatBoard({
           onClick={() => setExpanded((value) => !value)}
           className="mt-2 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-lime transition hover:text-cream"
         >
-          {expanded ? 'Show less' : `More · all ${board.leaders.length}`}
+          {expanded ? 'Show less' : 'More'}
         </button>
       ) : null}
     </section>
@@ -220,14 +223,7 @@ export function LeaguePlayerStatsPanel({
         <>
           {loading ? (
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/55">Updating…</p>
-          ) : (
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-mist/60">
-              {data.seasonLabel}
-              {previewCount > 0
-                ? ` · top ${previewCount} shown · expand for full boards`
-                : ` · top ${Math.max(...boards.map((b) => b.leaders.length), 1)} per category`}
-            </p>
-          )}
+          ) : null}
 
           {boards.map((board) => (
             <StatBoard
