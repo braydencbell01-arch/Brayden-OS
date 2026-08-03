@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { missingShort } from '../lib/display'
-import { suggestedLeagues, suggestedTeams } from '../lib/favoriteSuggestions'
+import {
+  SUGGESTION_PAGE_SIZE,
+  suggestedLeagueCount,
+  suggestedLeagues,
+  suggestedPlayerCount,
+  suggestedPlayers,
+  suggestedTeamCount,
+  suggestedTeams,
+} from '../lib/favoriteSuggestions'
 import { LEAGUES, getLeague, isInternationalLeague, teamSubtitleLabel, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
 import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
@@ -57,15 +65,38 @@ export function FavoritesScreen({
     players: favorites.players.length,
   }
 
-  const leagueSuggestions = useMemo(
-    () => suggestedLeagues(favorites.leagueIds, 6),
+  const [leagueVisible, setLeagueVisible] = useState(SUGGESTION_PAGE_SIZE)
+  const [teamVisible, setTeamVisible] = useState(SUGGESTION_PAGE_SIZE)
+  const [playerVisible, setPlayerVisible] = useState(SUGGESTION_PAGE_SIZE)
+
+  const leagueAvailable = useMemo(
+    () => suggestedLeagueCount(favorites.leagueIds),
     [favorites.leagueIds],
   )
-  const teamSuggestions = useMemo(
-    () => suggestedTeams(favorites.teamIds, favorites.leagueIds, 8),
+  const teamAvailable = useMemo(
+    () => suggestedTeamCount(favorites.teamIds, favorites.leagueIds),
     [favorites.teamIds, favorites.leagueIds],
   )
-  const hasSuggestions = leagueSuggestions.length > 0 || teamSuggestions.length > 0
+  const playerAvailable = useMemo(
+    () => suggestedPlayerCount(favorites.playerIds),
+    [favorites.playerIds],
+  )
+
+  const leagueSuggestions = useMemo(
+    () => suggestedLeagues(favorites.leagueIds, leagueVisible),
+    [favorites.leagueIds, leagueVisible],
+  )
+  const teamSuggestions = useMemo(
+    () => suggestedTeams(favorites.teamIds, favorites.leagueIds, teamVisible),
+    [favorites.teamIds, favorites.leagueIds, teamVisible],
+  )
+  const playerSuggestions = useMemo(
+    () => suggestedPlayers(favorites.playerIds, playerVisible),
+    [favorites.playerIds, playerVisible],
+  )
+
+  const hasSuggestions =
+    leagueAvailable > 0 || teamAvailable > 0 || playerAvailable > 0
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden">
@@ -350,12 +381,15 @@ export function FavoritesScreen({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-star">
               Suggestions
             </p>
+            <p className="mt-2 text-sm text-mist/70">
+              Star a pick and another suggestion fills in — keep tapping Show more for the next 10.
+            </p>
 
-            {leagueSuggestions.length > 0 ? (
-              <div className="mt-4">
-                <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
-                  Leagues
-                </p>
+            <div className="mt-4">
+              <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+                Competitions
+              </p>
+              {leagueSuggestions.length > 0 ? (
                 <ul className="flex flex-col gap-2">
                   {leagueSuggestions.map((league) => {
                     const accent = leagueAccentColor(league.id)
@@ -397,14 +431,27 @@ export function FavoritesScreen({
                     )
                   })}
                 </ul>
-              </div>
-            ) : null}
+              ) : null}
+              {leagueAvailable > leagueVisible ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLeagueVisible((count) => count + SUGGESTION_PAGE_SIZE)
+                  }
+                  className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                >
+                  Show more
+                </button>
+              ) : (
+                <p className="mt-3 text-center text-xs text-mist/55">No more competitions</p>
+              )}
+            </div>
 
-            {teamSuggestions.length > 0 ? (
-              <div className="mt-5">
-                <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
-                  Clubs
-                </p>
+            <div className="mt-5">
+              <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+                Teams
+              </p>
+              {teamSuggestions.length > 0 ? (
                 <ul className="flex flex-col gap-2">
                   {teamSuggestions.map((team) => (
                     <li key={team.id}>
@@ -429,18 +476,84 @@ export function FavoritesScreen({
                           </button>
                           <button
                             type="button"
-                            onClick={() => onOpenLeague(team.leagueId)}
+                            onClick={() => onOpenLeague(teamSubtitleLeagueId(team))}
                             className="profile-link mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                           >
-                            {getLeague(team.leagueId).short}
+                            {teamSubtitleLabel(team)}
                           </button>
                         </div>
                       </div>
                     </li>
                   ))}
                 </ul>
-              </div>
-            ) : null}
+              ) : null}
+              {teamAvailable > teamVisible ? (
+                <button
+                  type="button"
+                  onClick={() => setTeamVisible((count) => count + SUGGESTION_PAGE_SIZE)}
+                  className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                >
+                  Show more
+                </button>
+              ) : (
+                <p className="mt-3 text-center text-xs text-mist/55">No more teams</p>
+              )}
+            </div>
+
+            <div className="mt-5">
+              <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/65">
+                Players
+              </p>
+              {playerSuggestions.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {playerSuggestions.map((player) => (
+                    <li key={player.id}>
+                      <div className="flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-3">
+                        <FavoriteStar
+                          active={false}
+                          label={player.name}
+                          onToggle={() => favorites.togglePlayer(player)}
+                        />
+                        <PlayerAvatar
+                          name={player.name}
+                          photoUrl={player.photoUrl}
+                          jerseyUrl={player.jerseyUrl}
+                          jersey={player.jersey}
+                          size="sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onOpenPlayer(toNav(player))}
+                          className="min-w-0 flex-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                        >
+                          <span className="profile-link block truncate text-sm font-semibold text-cream">
+                            {player.name}
+                          </span>
+                          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70">
+                            {[player.teamName, player.citizenship, player.position]
+                              .filter(Boolean)
+                              .join(' · ') || getLeague(player.leagueId).short}
+                          </span>
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {playerAvailable > playerVisible ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPlayerVisible((count) => count + SUGGESTION_PAGE_SIZE)
+                  }
+                  className="mt-3 w-full border border-white/12 bg-white/[0.03] px-3 py-2 text-center text-[0.65rem] font-bold uppercase tracking-[0.12em] text-mist/80 transition hover:border-lime/40 hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                >
+                  Show more
+                </button>
+              ) : (
+                <p className="mt-3 text-center text-xs text-mist/55">No more players</p>
+              )}
+            </div>
           </section>
         ) : null}
       </div>
