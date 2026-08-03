@@ -440,27 +440,22 @@ function LeagueRow({
       <button
         type="button"
         onClick={onOpen}
-        className="group flex min-w-0 flex-1 items-center justify-between gap-3 px-3 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
+        className="group flex min-w-0 flex-1 items-center gap-3 px-3 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-inset"
       >
-        <span className="flex min-w-0 items-center gap-3">
-          <LeagueLogoMark
-            leagueId={league.id}
-            name={league.name}
-            size="md"
-            ringColor={accent}
-          />
-          <span className="min-w-0">
-            <span className="profile-link block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
-              {league.name}
-            </span>
-            <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
-              {league.country}
-              {badge ? ` · ${badge}` : ''}
-            </span>
+        <LeagueLogoMark
+          leagueId={league.id}
+          name={league.name}
+          size="md"
+          ringColor={accent}
+        />
+        <span className="min-w-0">
+          <span className="profile-link block font-display text-3xl tracking-[0.06em] text-cream transition group-hover:text-lime sm:text-4xl">
+            {league.name}
           </span>
-        </span>
-        <span className="shrink-0 font-display text-xl tracking-wide text-lime/90 transition group-hover:translate-x-1">
-          Profile →
+          <span className="mt-0.5 block text-xs font-medium uppercase tracking-[0.16em] text-mist/70">
+            {league.country}
+            {badge ? ` · ${badge}` : ''}
+          </span>
         </span>
       </button>
     </motion.div>

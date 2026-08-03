@@ -328,7 +328,7 @@ export function PlayerComparePanel({
           <div className="mb-2 grid grid-cols-3 gap-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-mist/55">
             <button
               type="button"
-              className="truncate text-lime"
+              className="profile-link truncate text-lime"
               onClick={() => onOpenPlayer(navA!)}
             >
               {missingShort(profileA.shortName || profileA.name)}
@@ -336,7 +336,7 @@ export function PlayerComparePanel({
             <span>vs</span>
             <button
               type="button"
-              className="truncate text-lime"
+              className="profile-link truncate text-lime"
               onClick={() => onOpenPlayer(navB!)}
             >
               {missingShort(profileB.shortName || profileB.name)}

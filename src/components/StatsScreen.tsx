@@ -121,28 +121,25 @@ export function StatsScreen({
                             position: player.position,
                           })
                         }
-                        className="flex w-full items-center justify-between gap-3 text-left"
+                        className="flex w-full items-center gap-2.5 text-left"
                       >
-                        <span className="flex min-w-0 items-center gap-2.5">
-                          <PlayerAvatar
-                            name={player.name}
-                            photoUrl={player.photoUrl}
-                            jerseyUrl={player.jerseyUrl}
-                            jersey={player.jersey}
-                            size="sm"
-                          />
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm font-semibold text-cream">
-                              {player.name}
-                            </span>
-                            <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
-                              {[player.teamName, player.citizenship, player.position]
-                                .filter(Boolean)
-                                .join(' · ') || getLeague(player.leagueId).short}
-                            </span>
+                        <PlayerAvatar
+                          name={player.name}
+                          photoUrl={player.photoUrl}
+                          jerseyUrl={player.jerseyUrl}
+                          jersey={player.jersey}
+                          size="sm"
+                        />
+                        <span className="min-w-0">
+                          <span className="profile-link block truncate text-sm font-semibold text-cream">
+                            {player.name}
+                          </span>
+                          <span className="text-[0.65rem] uppercase tracking-[0.12em] text-mist/55">
+                            {[player.teamName, player.citizenship, player.position]
+                              .filter(Boolean)
+                              .join(' · ') || getLeague(player.leagueId).short}
                           </span>
                         </span>
-                        <span className="shrink-0 text-lime">Profile →</span>
                       </button>
                     </li>
                   ))}

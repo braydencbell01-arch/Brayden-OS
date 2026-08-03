@@ -170,17 +170,14 @@ export function FavoritesScreen({
                                 <button
                                   type="button"
                                   onClick={() => onOpenLeague(league.id)}
-                                  className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                  className="min-w-0 flex-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                 >
-                                  <span>
-                                    <span className="profile-link block font-display text-2xl tracking-wide text-cream">
-                                      {league.name}
-                                    </span>
-                                    <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
-                                      {league.country}
-                                    </span>
+                                  <span className="profile-link block font-display text-2xl tracking-wide text-cream">
+                                    {league.name}
                                   </span>
-                                  <span className="text-lime">Profile →</span>
+                                  <span className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
+                                    {league.country}
+                                  </span>
                                 </button>
                               </div>
                             </li>
@@ -227,29 +224,20 @@ export function FavoritesScreen({
                                     src={teamLogoUrl(team.id)}
                                     size="sm"
                                   />
-                                  <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                                    <span className="min-w-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => onOpenTeam(team)}
-                                        className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                                      >
-                                        {team.name}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => onOpenLeague(subtitleLeagueId)}
-                                        className="profile-link mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                                      >
-                                        {subtitle}
-                                      </button>
-                                    </span>
+                                  <div className="min-w-0 flex-1">
                                     <button
                                       type="button"
                                       onClick={() => onOpenTeam(team)}
-                                      className="shrink-0 text-lime transition hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                      className="profile-link block max-w-full truncate text-left text-sm font-semibold text-cream transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                     >
-                                      Profile →
+                                      {team.name}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenLeague(subtitleLeagueId)}
+                                      className="profile-link mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                    >
+                                      {subtitle}
                                     </button>
                                   </div>
                                 </div>
@@ -287,12 +275,11 @@ export function FavoritesScreen({
                                   <button
                                     type="button"
                                     onClick={() => onOpenPlayer(toNav(player))}
-                                    className="flex min-w-0 flex-1 items-center justify-between text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                                    className="min-w-0 flex-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-lime"
                                   >
                                     <span className="profile-link block truncate text-sm font-semibold text-cream">
                                       {player.name}
                                     </span>
-                                    <span className="shrink-0 text-lime">Profile →</span>
                                   </button>
                                 </div>
                                 <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-white/10 px-3 py-2 pl-[3.25rem]">
