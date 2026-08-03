@@ -132,21 +132,22 @@ function LeagueDropdown({
             </div>
           </div>
         )}
+        <span
+          className="flex shrink-0 items-center self-center px-1 font-display text-lg tracking-wide text-cream/85 tabular-nums"
+          aria-hidden
+        >
+          {matches.length}
+        </span>
         <button
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={onToggle}
-          className="flex min-w-[6.75rem] shrink-0 items-center justify-end gap-2 self-stretch rounded px-3 py-2 text-mist/80 transition hover:bg-white/[0.04] hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime sm:min-w-[7.5rem]"
-          aria-label={`${open ? 'Collapse' : 'Expand'} ${league.name} matches`}
+          className="flex shrink-0 items-center justify-end gap-1.5 self-center rounded px-2.5 py-2 text-mist/80 transition hover:bg-white/[0.04] hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+          aria-label={`${open ? 'Collapse' : 'Expand'} ${league.name}, ${matches.length} matches`}
         >
-          <span className="flex flex-col items-end leading-tight">
-            <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
-              {open ? 'Collapse' : 'Expand'}
-            </span>
-            <span className="font-display text-base tracking-wide text-cream/85 tabular-nums">
-              {matches.length}
-            </span>
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
+            {open ? 'Collapse' : 'Expand'}
           </span>
           <Chevron open={open} />
         </button>
