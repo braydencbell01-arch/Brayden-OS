@@ -128,8 +128,13 @@ function HomeScreen({
       <div className="pointer-events-none absolute inset-0 pitch-grid opacity-40" aria-hidden />
 
       <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col px-5 pb-28 pt-screen md:max-w-xl md:px-6">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <BrandMark />
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <BrandMark />
+            <h1 className="font-display text-[1.75rem] leading-none tracking-[0.04em] text-cream">
+              BrayStats
+            </h1>
+          </div>
           <button
             type="button"
             onClick={onOpenSettings}
@@ -140,44 +145,18 @@ function HomeScreen({
           </button>
         </div>
 
-        <header className="mb-4">
-          <motion.p
-            initial={reduce ? false : { opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45 }}
-            className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-lime/90"
+        <div className="mb-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
+          <span>{formatUpdatedAt(updatedAt)}</span>
+          {hasLive && <span className="text-lime/80">· Live</span>}
+          {refreshing && <span>· Loading…</span>}
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="text-mist/60 underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
           >
-            Football intelligence
-          </motion.p>
-          <motion.h1
-            initial={reduce ? false : { opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: reduce ? 0 : 0.06, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-1.5 font-display text-5xl leading-[0.9] tracking-[0.04em] text-cream sm:text-6xl"
-          >
-            BrayStats
-          </motion.h1>
-          <motion.p
-            initial={reduce ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: reduce ? 0 : 0.14 }}
-            className="mt-2 max-w-md text-sm text-mist/85"
-          >
-            Ratings, match stats, and league, club, and player information.
-          </motion.p>
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.6rem] tracking-wide text-mist/55">
-            <span>{formatUpdatedAt(updatedAt)}</span>
-            {hasLive && <span className="text-lime/80">· Live</span>}
-            {refreshing && <span>· Loading…</span>}
-            <button
-              type="button"
-              onClick={onRefresh}
-              className="text-mist/60 underline-offset-2 transition hover:text-lime hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-            >
-              Refresh
-            </button>
-          </div>
-        </header>
+            Refresh
+          </button>
+        </div>
 
         <div className="sticky top-0 z-30 -mx-5 mb-3 border-b border-white/10 bg-pitch-deep/92 px-5 pb-1.5 pt-1 backdrop-blur-md md:-mx-6 md:px-6">
           <HomeSearch
