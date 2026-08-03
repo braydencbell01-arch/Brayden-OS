@@ -39,7 +39,9 @@ function TieCard({
       </p>
       <ul className="mt-1.5 space-y-1.5">
         {tie.teams.map((team) => {
-          const openable = Boolean(onOpenTeam && team.id && team.id !== 'tbd')
+          const openable = Boolean(
+            onOpenTeam && team.id && !team.id.startsWith('tbd-') && team.shortName !== 'TBD',
+          )
           return (
             <li key={team.id}>
               {openable ? (
@@ -225,6 +227,8 @@ export function LeagueKnockoutBracket({
   teamKind?: FavoriteTeam['kind']
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const pillScrollerRef = useRef<HTMLDivElement>(null)
+  const pillEls = useRef<Map<number, HTMLButtonElement>>(new Map())
   const columnEls = useRef<Map<number, HTMLDivElement>>(new Map())
   const [activeRoundId, setActiveRoundId] = useState<number | null>(null)
   const [columnHeights, setColumnHeights] = useState<number[]>([])
@@ -233,26 +237,45 @@ export function LeagueKnockoutBracket({
 
   const defaultRoundId = useMemo(() => {
     if (rounds.length === 0) return null
-    // Prefer the leftmost round that still has an incomplete tie; else last with data.
+    // Prefer the leftmost round that still has an incomplete real (non-TBD) tie.
     const incomplete = rounds.find((round) =>
-      round.ties.some((tie) => !tie.completed),
+      round.ties.some((tie) => !tie.completed && !tie.pairKey.startsWith('tbd-')),
     )
     if (incomplete) return incomplete.typeId
-    const withTies = [...rounds].reverse().find((round) => round.ties.length > 0)
-    return withTies?.typeId ?? rounds[0].typeId
+    const withReal = rounds.find((round) =>
+      round.ties.some((tie) => !tie.pairKey.startsWith('tbd-')),
+    )
+    return withReal?.typeId ?? rounds[0].typeId
   }, [rounds])
+
+  const centerRoundPill = (roundId: number) => {
+    const scroller = pillScrollerRef.current
+    const pill = pillEls.current.get(roundId)
+    if (!scroller || !pill) return
+    const left = pill.offsetLeft - scroller.clientWidth / 2 + pill.offsetWidth / 2
+    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+  }
+
+  const scrollBracketToRound = (roundId: number) => {
+    const scroller = scrollerRef.current
+    const el = columnEls.current.get(roundId)
+    if (!scroller || !el) return
+    const left = el.offsetLeft - 16
+    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+  }
 
   useEffect(() => {
     setActiveRoundId(defaultRoundId)
   }, [defaultRoundId, selectedSeason, leagueId])
 
   useEffect(() => {
-    if (activeRoundId == null || !scrollerRef.current) return
-    const el = columnEls.current.get(activeRoundId)
-    if (!el) return
-    const scroller = scrollerRef.current
-    const left = el.offsetLeft - 16
-    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+    if (activeRoundId == null) return
+    // Wait a frame so pill/column refs are mounted after round changes.
+    const id = window.requestAnimationFrame(() => {
+      centerRoundPill(activeRoundId)
+      scrollBracketToRound(activeRoundId)
+    })
+    return () => window.cancelAnimationFrame(id)
   }, [activeRoundId, rounds.length])
 
   useEffect(() => {
@@ -305,13 +328,20 @@ export function LeagueKnockoutBracket({
         </p>
       ) : (
         <>
-          <div className="flex gap-2 overflow-x-auto px-3 py-3 scrollbar-none">
+          <div
+            ref={pillScrollerRef}
+            className="flex gap-2 overflow-x-auto px-3 py-3 scrollbar-none"
+          >
             {rounds.map((round) => {
               const active = round.typeId === activeRoundId
               return (
                 <button
                   key={round.typeId}
                   type="button"
+                  ref={(el) => {
+                    if (el) pillEls.current.set(round.typeId, el)
+                    else pillEls.current.delete(round.typeId)
+                  }}
                   onClick={() => setActiveRoundId(round.typeId)}
                   className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                     active

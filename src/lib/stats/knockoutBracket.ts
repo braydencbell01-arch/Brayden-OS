@@ -454,9 +454,78 @@ function alignRoundsForBracket(rounds: KnockoutRound[]): KnockoutRound[] {
   return aligned
 }
 
+function placeholderTeam(suffix: string): KnockoutTeam {
+  return {
+    id: `tbd-${suffix}`,
+    name: 'TBD',
+    shortName: 'TBD',
+    score: null,
+  }
+}
+
+function makePlaceholderTie(
+  roundName: string,
+  index: number,
+  hasLegs: boolean,
+): KnockoutTie {
+  return {
+    id: `${roundName}:tbd:${index}`,
+    pairKey: `tbd-${index}`,
+    teams: [placeholderTeam(`${index}-a`), placeholderTeam(`${index}-b`)],
+    legs: [],
+    completed: false,
+    isAggregate: hasLegs,
+  }
+}
+
+/** Expected number of ties when ESPN has not created events yet. */
+function expectedTiesFromName(name: string, shortName: string): number | null {
+  const n = `${name} ${shortName}`
+  if (/^final$/i.test(shortName) || /\bfinal\b/i.test(n)) return 1
+  if (/semi/i.test(n)) return 2
+  if (/quarter/i.test(n)) return 4
+  if (/round of 16|last 16|1\/8/i.test(n)) return 8
+  if (/round of 32|last 32|1\/16/i.test(n)) return 16
+  if (/round of 64|last 64/i.test(n)) return 32
+  if (/knockout\s*round\s*playoff|play-?offs?/i.test(n)) return 8
+  return null
+}
+
+async function fetchSeasonTypeEventCount(
+  espnCode: string,
+  seasonYear: number,
+  typeId: number,
+): Promise<number> {
+  try {
+    const res = await fetch(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${seasonYear}/types/${typeId}/events?limit=1`,
+    )
+    if (!res.ok) return 0
+    const data = (await res.json()) as { count?: number }
+    return typeof data.count === 'number' && Number.isFinite(data.count) ? data.count : 0
+  } catch {
+    return 0
+  }
+}
+
+function padTiesWithPlaceholders(
+  ties: KnockoutTie[],
+  expected: number,
+  roundName: string,
+  hasLegs: boolean,
+): KnockoutTie[] {
+  if (expected <= ties.length) return ties
+  const padded = ties.slice()
+  while (padded.length < expected) {
+    padded.push(makePlaceholderTie(roundName, padded.length, hasLegs))
+  }
+  return padded
+}
+
 /**
  * Knockout rounds + ties for a competition season (Aug–Jul ESPN year).
  * Skips group/league-phase types that have standings.
+ * Undrawn / future rounds are filled with TBD placeholder ties.
  */
 export async function fetchLeagueKnockoutBracket(
   leagueId: LeagueId,
@@ -474,52 +543,88 @@ export async function fetchLeagueKnockoutBracket(
       const endDate = type.endDate || ''
       const from = ymdFromIso(startDate)
       const to = ymdFromIso(endDate)
-      let events: EspnScoreboardEvent[] = []
-      if (from && to) {
-        events = await fetchScoreboardEvents(league.espnCode, from, to)
-      }
+      const hasLegs = Boolean(type.hasLegs)
+      const [events, eventCount] = await Promise.all([
+        from && to
+          ? fetchScoreboardEvents(league.espnCode, from, to)
+          : Promise.resolve([] as EspnScoreboardEvent[]),
+        Number.isFinite(typeId)
+          ? fetchSeasonTypeEventCount(league.espnCode, seasonYear, typeId)
+          : Promise.resolve(0),
+      ])
 
       // Filter to events that belong to this round when series title is present.
       const filtered = events.filter((event) => {
         const title = event.competitions?.[0]?.series?.title
         if (!title) return true
-        return title.toLowerCase() === name.toLowerCase() ||
+        return (
+          title.toLowerCase() === name.toLowerCase() ||
           formatRoundShortName(title) === formatRoundShortName(name)
+        )
       })
 
       const ties = groupEventsIntoTies(filtered.length > 0 ? filtered : events, name)
+      const shortName = formatRoundShortName(name)
       const fallbackLabel = formatDateLabel(startDate, endDate)
+
+      let expected =
+        eventCount > 0
+          ? hasLegs
+            ? Math.max(1, Math.ceil(eventCount / 2))
+            : eventCount
+          : expectedTiesFromName(name, shortName) ?? 0
+      // Prefer real ties when ESPN under-reports count mid-update.
+      expected = Math.max(expected, ties.length)
 
       return {
         typeId: Number.isFinite(typeId) ? typeId : 0,
         name,
-        shortName: formatRoundShortName(name),
-        hasLegs: Boolean(type.hasLegs),
+        shortName,
+        hasLegs,
         startDate,
         endDate,
         dateLabel: roundDateLabelFromTies(ties, fallbackLabel),
-        ties,
-      } satisfies KnockoutRound
+        ties: padTiesWithPlaceholders(ties, expected, name, hasLegs),
+        _eventCount: eventCount,
+      } as KnockoutRound & { _eventCount: number }
     }),
   )
 
-  // Drop empty early rounds only when later rounds have data (incomplete season calendar).
-  // Keep empty future rounds after the first that has ties so TBD slots can show later.
-  const withDataIndex = rounds.findIndex((round) => round.ties.length > 0)
-  const trimmed =
-    withDataIndex < 0
-      ? rounds
-      : rounds.filter((round, index) => {
-          if (round.ties.length > 0) return true
-          // Keep upcoming rounds after the last played one for structure.
-          const laterHasData = rounds.slice(index + 1).some((r) => r.ties.length > 0)
-          return !laterHasData
-        })
+  // Fill remaining empty rounds by walking backwards from the final
+  // (Semi = 2× Final, Quarter = 2× Semi, …) when ESPN has no event shells yet.
+  for (let i = rounds.length - 1; i >= 0; i -= 1) {
+    const round = rounds[i] as KnockoutRound & { _eventCount?: number }
+    const realTies = round.ties.filter((tie) => !tie.pairKey.startsWith('tbd-')).length
+    const placeholderOnly = realTies === 0
+    if (!placeholderOnly && round.ties.length > 0) continue
+
+    const next = rounds[i + 1]
+    let expected = round.ties.length
+    if (expected === 0 && next) {
+      expected = Math.max(1, next.ties.length * 2)
+    }
+    if (expected === 0) {
+      expected = expectedTiesFromName(round.name, round.shortName) ?? 0
+    }
+    if (expected > round.ties.length) {
+      round.ties = padTiesWithPlaceholders(
+        round.ties.filter((tie) => !tie.pairKey.startsWith('tbd-')),
+        expected,
+        round.name,
+        round.hasLegs,
+      )
+    }
+  }
+
+  const cleaned: KnockoutRound[] = rounds.map((round) => {
+    const { _eventCount: _, ...rest } = round as KnockoutRound & { _eventCount?: number }
+    return rest
+  })
 
   return {
     leagueId,
     seasonYear,
-    rounds: alignRoundsForBracket(trimmed),
+    rounds: alignRoundsForBracket(cleaned),
     fetchedAt: Date.now(),
   }
 }

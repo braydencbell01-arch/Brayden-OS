@@ -1615,25 +1615,30 @@ export async function fetchLeaguePlayerStatsOverview(
   let season = seasonYear ?? nowYear
 
   for (const year of yearsToTry) {
-    const url = new URL(
-      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${league.espnCode}/seasons/${year}/types/1/leaders`,
+    const data = await fetchCoreLeadersForSeason(
+      league.espnCode,
+      year,
+      Math.max(50, limit),
     )
-    url.searchParams.set('limit', String(Math.max(50, limit)))
-    const res = await fetch(url)
-    if (!res.ok) continue
-    const data = (await res.json()) as EspnCoreLeadersResponse
-    if (!data.categories?.length) continue
+    if (!data?.categories?.length) continue
     payload = data
     season = year
     break
   }
 
   if (!payload?.categories?.length) {
-    throw new Error(
-      seasonYear != null
-        ? `No ${league.name} player stats for that season`
-        : `No ${league.name} player stats available yet`,
-    )
+    // Explicit season pick with no boards yet — return empty instead of failing the picker.
+    if (seasonYear != null) {
+      return {
+        leagueId,
+        season: seasonYear,
+        seasonLabel: `${soccerSeasonShortLabel(seasonYear)} season`,
+        rows: [],
+        boards: [],
+        fetchedAt: Date.now(),
+      }
+    }
+    throw new Error(`No ${league.name} player stats available yet`)
   }
 
   const byName = new Map(
@@ -1739,32 +1744,30 @@ async function fetchTeamLeadersPayload(
   year: number,
   teamId: string,
 ): Promise<EspnCoreLeadersResponse | null> {
-  const teamUrl = new URL(
-    `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/teams/${encodeURIComponent(teamId)}/leaders`,
-  )
-  teamUrl.searchParams.set('limit', '50')
-  try {
-    const teamRes = await fetch(teamUrl)
-    if (teamRes.ok) {
-      const teamData = (await teamRes.json()) as EspnCoreLeadersResponse
-      if (teamData.categories?.length) return teamData
+  const typeIds = await listSeasonTypeIds(espnCode, year)
+  const ordered = [...typeIds].sort((a, b) => {
+    if (a === 1) return -1
+    if (b === 1) return 1
+    return a - b
+  })
+
+  for (const typeId of ordered) {
+    const teamUrl = new URL(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${year}/types/${typeId}/teams/${encodeURIComponent(teamId)}/leaders`,
+    )
+    teamUrl.searchParams.set('limit', '50')
+    try {
+      const teamRes = await fetch(teamUrl)
+      if (teamRes.ok) {
+        const teamData = (await teamRes.json()) as EspnCoreLeadersResponse
+        if (teamData.categories?.length) return teamData
+      }
+    } catch {
+      // try league-wide leaders for this type
     }
-  } catch {
-    // fall through
   }
 
-  const url = new URL(
-    `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/leaders`,
-  )
-  url.searchParams.set('limit', '1000')
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    const data = (await res.json()) as EspnCoreLeadersResponse
-    return data.categories?.length ? data : null
-  } catch {
-    return null
-  }
+  return fetchCoreLeadersForSeason(espnCode, year, 1000)
 }
 
 type AggLeader = {
@@ -2057,19 +2060,80 @@ async function listLeagueSeasonYears(espnCode: string): Promise<number[]> {
   return [...new Set(years)].sort((a, b) => b - a)
 }
 
-async function seasonHasLeaders(espnCode: string, year: number): Promise<boolean> {
+const seasonTypeIdsCache = new Map<string, number[]>()
+
+/** ESPN season type ids (cups often put leaders on type 2+, not only type 1). */
+async function listSeasonTypeIds(espnCode: string, year: number): Promise<number[]> {
+  const key = `${espnCode}:${year}`
+  const cached = seasonTypeIdsCache.get(key)
+  if (cached) return cached
+
   try {
-    const url = new URL(
-      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${espnCode}/seasons/${year}/types/1/leaders`,
+    const res = await fetch(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${year}/types`,
     )
-    url.searchParams.set('limit', '1')
-    const res = await fetch(url)
-    if (!res.ok) return false
-    const data = (await res.json()) as EspnCoreLeadersResponse
-    return Boolean(data.categories?.length)
+    if (!res.ok) {
+      seasonTypeIdsCache.set(key, [1])
+      return [1]
+    }
+    const data = (await res.json()) as {
+      items?: Array<{ $ref?: string }>
+      count?: number
+    }
+    const ids: number[] = []
+    for (const item of data.items ?? []) {
+      const match = item.$ref?.match(/\/types\/(\d+)/)
+      if (match) ids.push(Number(match[1]))
+    }
+    if (ids.length === 0 && typeof data.count === 'number' && data.count > 0) {
+      for (let i = 1; i <= data.count; i += 1) ids.push(i)
+    }
+    const ordered = (ids.length > 0 ? ids : [1]).sort((a, b) => a - b)
+    seasonTypeIdsCache.set(key, ordered)
+    return ordered
   } catch {
-    return false
+    seasonTypeIdsCache.set(key, [1])
+    return [1]
   }
+}
+
+/**
+ * Load core leaders for a season, trying every season type.
+ * Domestic cups (e.g. Carabao) often publish leaders on type 2+ while type 1 404s.
+ */
+async function fetchCoreLeadersForSeason(
+  espnCode: string,
+  year: number,
+  limit: number,
+): Promise<EspnCoreLeadersResponse | null> {
+  const typeIds = await listSeasonTypeIds(espnCode, year)
+  // Prefer type 1 when present, then the rest in order.
+  const ordered = [...typeIds].sort((a, b) => {
+    if (a === 1) return -1
+    if (b === 1) return 1
+    return a - b
+  })
+
+  for (const typeId of ordered) {
+    try {
+      const url = new URL(
+        `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${year}/types/${typeId}/leaders`,
+      )
+      url.searchParams.set('limit', String(limit))
+      const res = await fetch(url)
+      if (!res.ok) continue
+      const data = (await res.json()) as EspnCoreLeadersResponse
+      if (data.categories?.length) return data
+    } catch {
+      // try next type
+    }
+  }
+  return null
+}
+
+async function seasonHasLeaders(espnCode: string, year: number): Promise<boolean> {
+  const data = await fetchCoreLeadersForSeason(espnCode, year, 1)
+  return Boolean(data?.categories?.length)
 }
 
 /** All ESPN seasons for a league (newest first), with display labels. */
@@ -2115,6 +2179,8 @@ export async function fetchLeagueStandingSeasons(
 /**
  * Seasons for a league that have ESPN leaderboard data (newest first).
  * Used by Stat Leaders / Player stats season pickers.
+ * Always includes the current and previous two seasons so cups whose leaders
+ * live on a non-1 type (or are not published yet) still appear in the picker.
  */
 export async function fetchLeagueLeaderSeasons(
   leagueId: LeagueId,
@@ -2138,10 +2204,17 @@ export async function fetchLeagueLeaderSeasons(
     }
   }
 
-  withData.sort((a, b) => b - a)
+  const current = inferSoccerSeasonStartYear()
+  const ensured = new Set<number>(withData)
+  for (const year of years) {
+    // Keep recent seasons selectable even when ESPN has not published leaders yet.
+    if (year >= current - 2) ensured.add(year)
+  }
+
+  const optionYears = [...ensured].sort((a, b) => b - a)
 
   const options = await Promise.all(
-    withData.map(async (year) => {
+    optionYears.map(async (year) => {
       const labels = await fetchSeasonLabels(league.espnCode, year)
       return {
         year,
