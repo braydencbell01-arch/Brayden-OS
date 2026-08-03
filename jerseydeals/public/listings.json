@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-03T19:02:03Z",
+  "syncedAt": "2026-08-03T22:41:32Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -1057,11 +1057,11 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
+      "condition": "Used",
+      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yaAWVC5W",
       "checkoutUrlDiscounted": "https://square.link/u/MVqgUz25",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "conditionId": "3000"
     },
     {
@@ -1226,5 +1226,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-03T19:02:03Z"
+  "ebayDetailsSyncedAt": "2026-08-03T22:41:32Z"
 }
