@@ -177,8 +177,72 @@ function fromFotmob(row: FotmobClubTransfer): TeamTransfer {
   }
 }
 
-function dedupeKey(transfer: TeamTransfer): string {
-  return `${transfer.direction}|${transfer.dateKey}|${transfer.playerName.trim().toLowerCase()}`
+function playerDedupeKey(transfer: TeamTransfer): string {
+  if (transfer.playerId) return `id:${transfer.playerId}`
+  return `name:${transfer.playerName.trim().toLowerCase()}`
+}
+
+function counterpartyKey(transfer: TeamTransfer): string {
+  const id = transfer.direction === 'in' ? transfer.fromTeamId : transfer.toTeamId
+  const name = transfer.direction === 'in' ? transfer.fromTeamName : transfer.toTeamName
+  if (id) return `id:${id}`
+  if (name) return `name:${name.trim().toLowerCase()}`
+  return ''
+}
+
+function daysBetween(a: string, b: string): number {
+  const left = Date.parse(`${a}T12:00:00Z`)
+  const right = Date.parse(`${b}T12:00:00Z`)
+  if (!Number.isFinite(left) || !Number.isFinite(right)) return Number.POSITIVE_INFINITY
+  return Math.abs(left - right) / 86_400_000
+}
+
+function transferQuality(transfer: TeamTransfer): number {
+  let score = 0
+  if (transfer.amount && transfer.amount > 0) score += 100
+  if (transfer.feeLabel && /[€£$]/.test(transfer.feeLabel)) score += 80
+  if (transfer.isLoan || /loan/i.test(transfer.feeType)) score += 25
+  if (/free/i.test(transfer.feeType) || /free/i.test(transfer.feeLabel || '')) score += 20
+  if (/undisclosed/i.test(transfer.feeType) || /undisclosed/i.test(transfer.feeLabel || '')) {
+    score += 8
+  }
+  // ESPN sometimes emits a weak "Contract" twin of the same deal.
+  if (/contract/i.test(transfer.feeType)) score -= 15
+  if (transfer.playerId) score += 10
+  if (transfer.id.startsWith('fotmob')) score += 6
+  // Prefer the later announcement date when quality ties.
+  score += Math.min(5, Number(transfer.dateKey.replace(/-/g, '').slice(-4)) % 5)
+  return score
+}
+
+function isSameTransferMove(a: TeamTransfer, b: TeamTransfer): boolean {
+  if (a.direction !== b.direction) return false
+  if (playerDedupeKey(a) !== playerDedupeKey(b)) return false
+  if (Boolean(a.isLoan) !== Boolean(b.isLoan)) return false
+  const leftClub = counterpartyKey(a)
+  const rightClub = counterpartyKey(b)
+  if (leftClub && rightClub && leftClub !== rightClub) return false
+  // ESPN/FotMob often publish the same deal one calendar day apart.
+  return daysBetween(a.dateKey, b.dateKey) <= 3
+}
+
+/** Collapse near-duplicate ESPN/FotMob rows for the same player move. */
+export function collapseDuplicateTransfers(rows: TeamTransfer[]): TeamTransfer[] {
+  const sorted = [...rows].sort((a, b) => b.date.localeCompare(a.date))
+  const kept: TeamTransfer[] = []
+
+  for (const row of sorted) {
+    const matchIndex = kept.findIndex((existing) => isSameTransferMove(existing, row))
+    if (matchIndex < 0) {
+      kept.push(row)
+      continue
+    }
+    const existing = kept[matchIndex]!
+    kept[matchIndex] =
+      transferQuality(row) > transferQuality(existing) ? row : existing
+  }
+
+  return kept.sort((a, b) => b.date.localeCompare(a.date))
 }
 
 async function fetchLeagueSeasonTransactions(
@@ -293,14 +357,13 @@ export async function fetchTeamTransfers(
   ])
 
   const byKey = new Map<string, TeamTransfer>()
-  // FotMob first so newest / fee-rich rows win on collisions.
+  // FotMob first so newest / fee-rich rows win on exact key collisions.
   for (const row of fotmobRows) {
-    byKey.set(dedupeKey(row), row)
+    byKey.set(row.id, row)
   }
   for (const row of espnRows) {
-    const key = dedupeKey(row)
-    if (!byKey.has(key)) byKey.set(key, row)
+    if (!byKey.has(row.id)) byKey.set(row.id, row)
   }
 
-  return [...byKey.values()].sort((a, b) => b.date.localeCompare(a.date))
+  return collapseDuplicateTransfers([...byKey.values()])
 }
