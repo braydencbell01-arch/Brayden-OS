@@ -2362,6 +2362,60 @@ async function listLeagueSeasonYears(espnCode: string): Promise<number[]> {
   return [...new Set(years)].sort((a, b) => b - a)
 }
 
+/** ESPN season edition years for a competition (newest first). */
+export async function fetchLeagueEditionYears(leagueId: LeagueId): Promise<number[]> {
+  return listLeagueSeasonYears(getLeague(leagueId).espnCode)
+}
+
+/**
+ * Scoreboard date window for an ESPN season edition (from season types when
+ * available). Falls back to Aug–Jul for that year.
+ */
+export async function fetchEspnSeasonScoreboardWindow(
+  espnCode: string,
+  seasonYear: number,
+): Promise<{ from: string; to: string }> {
+  try {
+    const res = await fetch(
+      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${seasonYear}/types`,
+    )
+    if (res.ok) {
+      const list = (await res.json()) as { items?: Array<{ $ref?: string }> }
+      const dates: string[] = []
+      await Promise.all(
+        (list.items ?? []).map(async (item) => {
+          if (!item.$ref) return
+          try {
+            const typeRes = await fetch(item.$ref.replace(/^http:\/\//i, 'https://'))
+            if (!typeRes.ok) return
+            const type = (await typeRes.json()) as { startDate?: string; endDate?: string }
+            if (type.startDate) dates.push(type.startDate)
+            if (type.endDate) dates.push(type.endDate)
+          } catch {
+            // skip
+          }
+        }),
+      )
+      if (dates.length > 0) {
+        dates.sort()
+        const ymd = (iso: string) => {
+          const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/)
+          return m ? `${m[1]}${m[2]}${m[3]}` : null
+        }
+        const from = ymd(dates[0]!)
+        const to = ymd(dates[dates.length - 1]!)
+        if (from && to) return { from, to }
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return {
+    from: `${seasonYear}0801`,
+    to: `${seasonYear + 1}0731`,
+  }
+}
+
 const seasonTypeIdsCache = new Map<string, number[]>()
 
 /** ESPN season type ids (cups often put leaders on type 2+, not only type 1). */
@@ -2445,10 +2499,9 @@ export async function fetchLeagueSeasons(leagueId: LeagueId): Promise<LeagueSeas
 
   const league = getLeague(leagueId)
   const years = await listLeagueSeasonYears(league.espnCode)
-  const current = inferSoccerSeasonStartYear()
-  const ensuredYears = [...new Set([current, ...years])].sort((a, b) => b - a)
+  // Only real ESPN editions — do not invent empty future years.
   const options = await Promise.all(
-    ensuredYears.map(async (year) => {
+    years.map(async (year) => {
       const labels = await fetchSeasonLabels(league.espnCode, year)
       return {
         year,
@@ -2457,8 +2510,9 @@ export async function fetchLeagueSeasons(leagueId: LeagueId): Promise<LeagueSeas
       } satisfies LeagueSeasonOption
     }),
   )
-  allSeasonsCache.set(leagueId, options)
-  return options
+  const sorted = options.sort((a, b) => b.year - a.year)
+  allSeasonsCache.set(leagueId, sorted)
+  return sorted
 }
 
 /**
@@ -2510,8 +2564,8 @@ export async function fetchLeagueLeaderSeasons(
 
   const current = inferSoccerSeasonStartYear()
   const ensured = new Set<number>(withData)
-  // Always keep the open season selectable, even with no leaders yet.
-  ensured.add(current)
+  // Keep recent real ESPN years; only add current when ESPN already lists it.
+  if (years.includes(current)) ensured.add(current)
   for (const year of years) {
     if (year >= current - 2) ensured.add(year)
   }

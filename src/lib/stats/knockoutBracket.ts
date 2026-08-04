@@ -491,23 +491,6 @@ function expectedTiesFromName(name: string, shortName: string): number | null {
   return null
 }
 
-async function fetchSeasonTypeEventCount(
-  espnCode: string,
-  seasonYear: number,
-  typeId: number,
-): Promise<number> {
-  try {
-    const res = await fetch(
-      `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${seasonYear}/types/${typeId}/events?limit=1`,
-    )
-    if (!res.ok) return 0
-    const data = (await res.json()) as { count?: number }
-    return typeof data.count === 'number' && Number.isFinite(data.count) ? data.count : 0
-  } catch {
-    return 0
-  }
-}
-
 function padTiesWithPlaceholders(
   ties: KnockoutTie[],
   expected: number,
@@ -522,9 +505,42 @@ function padTiesWithPlaceholders(
   return padded
 }
 
+async function fetchSeasonTypeEventIds(
+  espnCode: string,
+  seasonYear: number,
+  typeId: number,
+): Promise<Set<string>> {
+  const ids = new Set<string>()
+  let page = 1
+  let pageCount = 1
+  while (page <= pageCount && page <= 20) {
+    try {
+      const res = await fetch(
+        `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(espnCode)}/seasons/${seasonYear}/types/${typeId}/events?limit=50&page=${page}`,
+      )
+      if (!res.ok) break
+      const data = (await res.json()) as {
+        items?: Array<{ $ref?: string }>
+        pageCount?: number
+      }
+      pageCount = Math.max(1, data.pageCount ?? 1)
+      for (const item of data.items ?? []) {
+        const match = item.$ref?.match(/\/events\/(\d+)/)
+        if (match?.[1]) ids.add(match[1])
+      }
+    } catch {
+      break
+    }
+    page += 1
+  }
+  return ids
+}
+
 /**
- * Knockout rounds + ties for a competition season (Aug–Jul ESPN year).
+ * Knockout rounds + ties for a competition season (ESPN edition year).
  * Skips group/league-phase types that have standings.
+ * Events are taken from each season-type's event list so games are not
+ * duplicated across overlapping date windows.
  * Undrawn / future rounds are filled with TBD placeholder ties.
  */
 export async function fetchLeagueKnockoutBracket(
@@ -535,37 +551,63 @@ export async function fetchLeagueKnockoutBracket(
   const types = await fetchSeasonTypes(league.espnCode, seasonYear)
   const knockoutTypes = types.filter(isKnockoutSeasonType)
 
-  const rounds: KnockoutRound[] = await Promise.all(
+  const typeEventIds = await Promise.all(
     knockoutTypes.map(async (type) => {
       const typeId = Number(type.id)
-      const name = type.name || type.abbreviation || `Round ${typeId}`
+      if (!Number.isFinite(typeId)) return new Set<string>()
+      return fetchSeasonTypeEventIds(league.espnCode, seasonYear, typeId)
+    }),
+  )
+
+  // Claim each event for exactly one round (first type that lists it, in type order).
+  const claimed = new Set<string>()
+  const exclusiveIds = typeEventIds.map((ids) => {
+    const own = new Set<string>()
+    for (const id of ids) {
+      if (claimed.has(id)) continue
+      claimed.add(id)
+      own.add(id)
+    }
+    return own
+  })
+
+  const rounds: KnockoutRound[] = await Promise.all(
+    knockoutTypes.map(async (type, index) => {
+      const typeId = Number(type.id)
+      const name = (type.name || type.abbreviation || `Round ${typeId}`).trim()
       const startDate = type.startDate || ''
       const endDate = type.endDate || ''
       const from = ymdFromIso(startDate)
       const to = ymdFromIso(endDate)
       const hasLegs = Boolean(type.hasLegs)
-      const [events, eventCount] = await Promise.all([
-        from && to
-          ? fetchScoreboardEvents(league.espnCode, from, to)
-          : Promise.resolve([] as EspnScoreboardEvent[]),
-        Number.isFinite(typeId)
-          ? fetchSeasonTypeEventCount(league.espnCode, seasonYear, typeId)
-          : Promise.resolve(0),
-      ])
+      const allowedIds = exclusiveIds[index] ?? new Set<string>()
 
-      // Filter to events that belong to this round when series title is present.
-      const filtered = events.filter((event) => {
-        const title = event.competitions?.[0]?.series?.title
-        if (!title) return true
-        return (
-          title.toLowerCase() === name.toLowerCase() ||
-          formatRoundShortName(title) === formatRoundShortName(name)
+      const events =
+        from && to && allowedIds.size > 0
+          ? (await fetchScoreboardEvents(league.espnCode, from, to)).filter((event) =>
+              event.id ? allowedIds.has(event.id) : false,
+            )
+          : []
+
+      // If scoreboard date filter missed some (timezone edges), widen once.
+      let resolved = events
+      if (resolved.length < allowedIds.size && from && to) {
+        const padFrom = from
+        const padTo = to
+        const wider = await fetchScoreboardEvents(league.espnCode, padFrom, padTo)
+        const byId = new Map(
+          wider.filter((event) => event.id && allowedIds.has(event.id)).map((e) => [e.id!, e]),
         )
-      })
+        for (const event of events) {
+          if (event.id) byId.set(event.id, event)
+        }
+        resolved = [...byId.values()]
+      }
 
-      const ties = groupEventsIntoTies(filtered.length > 0 ? filtered : events, name)
+      const ties = groupEventsIntoTies(resolved, name)
       const shortName = formatRoundShortName(name)
       const fallbackLabel = formatDateLabel(startDate, endDate)
+      const eventCount = allowedIds.size
 
       let expected =
         eventCount > 0
@@ -573,7 +615,6 @@ export async function fetchLeagueKnockoutBracket(
             ? Math.max(1, Math.ceil(eventCount / 2))
             : eventCount
           : expectedTiesFromName(name, shortName) ?? 0
-      // Prefer real ties when ESPN under-reports count mid-update.
       expected = Math.max(expected, ties.length)
 
       return {
