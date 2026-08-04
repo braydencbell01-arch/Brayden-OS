@@ -13,10 +13,10 @@ import { PreMatchBriefingPanel } from './PreMatchBriefingPanel'
 import type { PlayerNavRef } from './PlayerProfileScreen'
 import { loadSettings } from '../lib/settings'
 
-function FavoriteDot({ label }: { label: string }) {
+function FavoriteMark({ label }: { label: string }) {
   return (
     <span
-      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]"
+      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-star shadow-[0_0_10px_rgba(255,216,74,1)]"
       title={label}
       aria-label={label}
     />
@@ -158,18 +158,22 @@ function ExpandableMatchRow({
         flat
           ? [
               'border-b border-white/10 transition last:border-b-0 hover:bg-white/[0.03]',
-              isFavorite ? 'bg-star/[0.04]' : '',
+              isFavorite ? 'bg-star/[0.08]' : '',
             ].join(' ')
           : [
               'border bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]',
-              isFavorite ? 'border-star/35' : 'border-white/10',
+              isFavorite ? 'border-star/50 bg-star/[0.07]' : 'border-white/10',
             ].join(' ')
+      }
+      style={
+        isFavorite
+          ? { boxShadow: 'inset 4px 0 0 #ffd84a' }
+          : undefined
       }
     >
       <div className={flat ? 'px-3 py-2.5' : 'px-4 py-3'}>
         <div className="mb-1.5 flex w-full items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
-            {isFavorite ? <FavoriteDot label="Favorite match" /> : null}
             {showLeague && onOpenLeague ? (
               <button
                 type="button"
@@ -187,12 +191,13 @@ function ExpandableMatchRow({
             aria-expanded={open}
             onClick={() => setOpen((value) => !value)}
             className={[
-              'shrink-0 text-[0.65rem] font-bold uppercase tracking-[0.14em] outline-none transition hover:text-lime focus-visible:ring-2 focus-visible:ring-lime',
+              'inline-flex shrink-0 items-center gap-1.5 text-[0.65rem] font-bold uppercase tracking-[0.14em] outline-none transition hover:text-lime focus-visible:ring-2 focus-visible:ring-lime',
               match.status === 'live' ? 'text-lime' : 'text-mist/80',
             ].join(' ')}
           >
+            {isFavorite ? <FavoriteMark label="Favorite match" /> : null}
             {status}
-            <span className="ml-2 text-mist/50">
+            <span className="ml-0.5 text-mist/50">
               {open ? '▴' : '▾'} {expandLabel}
             </span>
           </button>
