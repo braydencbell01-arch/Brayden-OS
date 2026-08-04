@@ -501,7 +501,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.nations',
     kind: 'international',
-    format: 'league',
+    format: 'cup',
     hasStandings: true,
   },
   {
@@ -1109,12 +1109,14 @@ export function isCupFormat(id: LeagueId): boolean {
 
 /**
  * Competitions that run a knockout / final phase (cups, supercups, continental
- * tournaments). Pure league tables (EPL etc.) return false. Friendlies excluded.
- * Use with `hasStandings` to decide Table vs Knockout vs both.
+ * tournaments, Nations League). Pure league tables (EPL etc.) return false.
+ * Friendlies excluded. Use with `hasStandings` to decide Table vs Knockout vs both.
  */
 export function leagueHasKnockout(league: League | LeagueId): boolean {
   const entry = typeof league === 'string' ? getLeague(league) : league
   if (isFriendlyLeagueId(entry.id)) return false
+  // Group stage + finals (kept as cup format; belt-and-suspenders for id checks).
+  if (entry.id === 'uefa-nations') return true
   return entry.format !== 'league'
 }
 

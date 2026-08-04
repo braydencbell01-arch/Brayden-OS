@@ -962,10 +962,78 @@ async function fetchStandingsForSeason(
     })
   })
 
-  return rows.sort((a, b) => {
+  const normalized =
+    leagueId === 'uefa-nations' ? applyNationsLeagueStandingNotes(rows) : rows
+
+  return normalized.sort((a, b) => {
     const groupCmp = (a.group || '').localeCompare(b.group || '')
     if (groupCmp !== 0) return groupCmp
     return a.rank - b.rank || b.points - a.points
+  })
+}
+
+/** League letter from labels like "Group A1" / "League B Group 3". */
+function nationsLeagueLetter(group?: string): string | null {
+  if (!group) return null
+  const league = group.match(/\bLeague\s+([A-D])\b/i)
+  if (league) return league[1]!.toUpperCase()
+  const grouped = group.match(/\b([A-D])\s*\d+\b/i)
+  if (grouped) return grouped[1]!.toUpperCase()
+  const lone = group.match(/\b([A-D])\b/i)
+  return lone ? lone[1]!.toUpperCase() : null
+}
+
+/** Whether an ESPN key list/range ("A", "A, B", "B-D") includes this league letter. */
+function nationsLeagueKeysInclude(keys: string, letter: string): boolean {
+  const code = letter.toUpperCase().charCodeAt(0)
+  for (const token of keys.split(',').map((part) => part.trim()).filter(Boolean)) {
+    const range = token.match(/^([A-D])\s*[-–—]\s*([A-D])$/i)
+    if (range) {
+      const a = range[1]!.toUpperCase().charCodeAt(0)
+      const b = range[2]!.toUpperCase().charCodeAt(0)
+      if (code >= Math.min(a, b) && code <= Math.max(a, b)) return true
+      continue
+    }
+    if (token.toUpperCase() === letter.toUpperCase()) return true
+  }
+  return false
+}
+
+/**
+ * ESPN packs every league's outcome into one note on Group A1 only, e.g.
+ * "A: Qualifies for QFs; B-D: Promotion". Keep only this group's league letter
+ * and copy the filtered note onto every group at the same rank.
+ */
+function applyNationsLeagueStandingNotes(rows: StandingRow[]): StandingRow[] {
+  const notesByRank = new Map<number, string>()
+  for (const row of rows) {
+    const raw = row.note?.trim()
+    if (!raw || notesByRank.has(row.rank)) continue
+    notesByRank.set(row.rank, raw)
+  }
+  if (notesByRank.size === 0) return rows
+
+  return rows.map((row) => {
+    const letter = nationsLeagueLetter(row.group)
+    const raw = notesByRank.get(row.rank)
+    if (!letter || !raw) return { ...row, note: undefined }
+
+    if (!/^[A-D]\b|[A-D]\s*[-–,]/i.test(raw) || !raw.includes(':')) {
+      // Plain note — apply as-is to matching ranks across groups.
+      return { ...row, note: raw }
+    }
+
+    const parts = raw
+      .split(';')
+      .map((part) => part.trim())
+      .filter(Boolean)
+    const matched: string[] = []
+    for (const part of parts) {
+      const split = part.match(/^([^:]+):\s*(.+)$/)
+      if (!split) continue
+      if (nationsLeagueKeysInclude(split[1]!, letter)) matched.push(split[2]!.trim())
+    }
+    return { ...row, note: matched.length > 0 ? matched.join('; ') : undefined }
   })
 }
 

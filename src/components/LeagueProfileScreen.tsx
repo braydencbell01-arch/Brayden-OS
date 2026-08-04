@@ -372,7 +372,7 @@ export function LeagueProfileScreen({
                 }
               />
               <ProfileMetric
-                label="Reigning champion"
+                label="Champion"
                 value={
                   overviewFacts.loading ? (
                     '…'
