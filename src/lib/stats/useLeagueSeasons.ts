@@ -6,18 +6,21 @@ import {
   fetchLeagueStandingSeasons,
 } from './espn'
 import { fetchFotmobSeasonOptions } from './fotmob'
+import {
+  ensureCurrentSeasonOption,
+  pickDefaultSeasonYear,
+} from './seasonDefaults'
 import type { LeagueSeasonOption } from './types'
 
 export type LeagueSeasonMode = 'all' | 'standings' | 'leaders' | 'fotmob'
 
 /**
  * Shared season list + selection for league-scoped profile sections.
- * All modes return seasons newest-first (current / upcoming at the top);
- * the default selection is always `options[0]`.
+ * Always defaults to the current Aug–Jul season (even with no published data yet).
  * - `all`: every ESPN season for the league
- * - `standings`: ESPN seasons for the league table (same chronological order)
- * - `leaders`: ESPN seasons that have leaderboard data
- * - `fotmob`: FotMob seasons with xG boards
+ * - `standings`: ESPN seasons for the league table
+ * - `leaders`: ESPN seasons that have leaderboard data (plus current)
+ * - `fotmob`: FotMob seasons with xG boards (plus current)
  */
 export function useLeagueSeasons(
   leagueId: LeagueId,
@@ -46,13 +49,15 @@ export function useLeagueSeasons(
     load(leagueId)
       .then((options) => {
         if (cancelled) return
-        setSeasons(options)
-        setSelectedSeason(options[0]?.year ?? null)
+        const withCurrent = ensureCurrentSeasonOption(leagueId, options)
+        setSeasons(withCurrent)
+        setSelectedSeason(pickDefaultSeasonYear(leagueId, withCurrent))
       })
       .catch(() => {
         if (cancelled) return
-        setSeasons([])
-        setSelectedSeason(null)
+        const withCurrent = ensureCurrentSeasonOption(leagueId, [])
+        setSeasons(withCurrent)
+        setSelectedSeason(pickDefaultSeasonYear(leagueId, withCurrent))
       })
       .finally(() => {
         if (!cancelled) setSeasonsLoading(false)

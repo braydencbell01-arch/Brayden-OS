@@ -457,8 +457,8 @@ function alignRoundsForBracket(rounds: KnockoutRound[]): KnockoutRound[] {
 function placeholderTeam(suffix: string): KnockoutTeam {
   return {
     id: `tbd-${suffix}`,
-    name: 'TBD',
-    shortName: 'TBD',
+    name: 'Unknown',
+    shortName: 'Unknown',
     score: null,
   }
 }

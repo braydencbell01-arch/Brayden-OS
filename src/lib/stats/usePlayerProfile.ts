@@ -9,6 +9,10 @@ import {
   fetchPlayerSeasonStatsForYear,
   formatSeasonShortLabel,
 } from './espn'
+import {
+  ensureCurrentSeasonOption,
+  pickDefaultSeasonYear,
+} from './seasonDefaults'
 import type { LeagueSeasonOption, PlayerProfile, PlayerRatingsCursor } from './types'
 
 export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | null) {
@@ -49,8 +53,19 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
       const data = await fetchPlayerProfile(league, id)
       if (requestId.current !== req) return
       setProfile(data.profile)
+      const seasonLeagueId = data.profile.leagueId
+      const preferredYear = pickDefaultSeasonYear(seasonLeagueId, [
+        ...(data.profile.availableSeasonYears ?? []).map((year) => ({
+          year,
+          label: String(year),
+          shortLabel: formatSeasonShortLabel(year),
+        })),
+      ])
       const newestYear =
-        data.profile.availableSeasonYears?.[0] ?? data.profile.seasonYear ?? null
+        preferredYear ??
+        data.profile.availableSeasonYears?.[0] ??
+        data.profile.seasonYear ??
+        null
       setSelectedSeason(newestYear)
       ratingsCursor.current = data.ratingsCursor
       setHasMoreRatings(!data.ratingsCursor.done)
@@ -61,7 +76,7 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
         .then((options) => {
           if (requestId.current !== req) return
           const years = data.profile.availableSeasonYears ?? []
-          const ordered =
+          const orderedRaw =
             options.length > 0
               ? [...options].sort((a, b) => b.year - a.year)
               : [...years]
@@ -72,8 +87,11 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
                     shortLabel: formatSeasonShortLabel(year),
                     key: String(year),
                   }))
+          const ordered = ensureCurrentSeasonOption(seasonLeagueId, orderedRaw)
           setSeasons(ordered)
-          const top = ordered[0] ?? null
+          const defaultYear = pickDefaultSeasonYear(seasonLeagueId, ordered)
+          const top =
+            ordered.find((option) => option.year === defaultYear) ?? ordered[0] ?? null
           // Don't override a season the user picked while options were loading.
           if (top != null && !userPickedSeason.current) {
             setSelectedSeason(top.year)
@@ -83,7 +101,8 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
         .catch(() => {
           if (requestId.current !== req) return
           const years = data.profile.availableSeasonYears ?? []
-          setSeasons(
+          const ordered = ensureCurrentSeasonOption(
+            seasonLeagueId,
             [...years]
               .sort((a, b) => b - a)
               .map((year) => ({
@@ -93,12 +112,13 @@ export function usePlayerProfile(leagueId: LeagueId | null, playerId: string | n
                 key: String(year),
               })),
           )
+          setSeasons(ordered)
         })
         .finally(() => {
           if (requestId.current === req) setSeasonsLoading(false)
         })
 
-      // Keep season stats aligned with the newest year when profile loaded another.
+      // Keep season stats aligned with the preferred/current year when profile loaded another.
       if (
         newestYear != null &&
         data.profile.seasonYear != null &&

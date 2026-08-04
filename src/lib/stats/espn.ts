@@ -2409,8 +2409,10 @@ export async function fetchLeagueSeasons(leagueId: LeagueId): Promise<LeagueSeas
 
   const league = getLeague(leagueId)
   const years = await listLeagueSeasonYears(league.espnCode)
+  const current = inferSoccerSeasonStartYear()
+  const ensuredYears = [...new Set([current, ...years])].sort((a, b) => b - a)
   const options = await Promise.all(
-    years.map(async (year) => {
+    ensuredYears.map(async (year) => {
       const labels = await fetchSeasonLabels(league.espnCode, year)
       return {
         year,
@@ -2472,8 +2474,9 @@ export async function fetchLeagueLeaderSeasons(
 
   const current = inferSoccerSeasonStartYear()
   const ensured = new Set<number>(withData)
+  // Always keep the open season selectable, even with no leaders yet.
+  ensured.add(current)
   for (const year of years) {
-    // Keep recent seasons selectable even when ESPN has not published leaders yet.
     if (year >= current - 2) ensured.add(year)
   }
 

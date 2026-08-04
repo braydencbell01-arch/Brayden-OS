@@ -1,4 +1,5 @@
 import type { LeagueId } from '../leagues'
+import { inferSoccerSeasonStartYear, soccerSeasonShortLabel } from '../leagues'
 import type { LeagueSeasonOption } from './types'
 
 /** FotMob tournament ids (xG boards + team/transfer resolution). */
@@ -277,6 +278,15 @@ export async function fetchFotmobSeasonOptions(
     }
   }
   withXg.sort((a, b) => b.year - a.year)
+  const current = inferSoccerSeasonStartYear()
+  if (!withXg.some((option) => option.year === current)) {
+    const shortLabel = soccerSeasonShortLabel(current)
+    withXg.unshift({
+      year: current,
+      label: `${shortLabel} season`,
+      shortLabel,
+    })
+  }
   fotmobSeasonOptionsCache.set(leagueId, withXg)
   return withXg
 }
