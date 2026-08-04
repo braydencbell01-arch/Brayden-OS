@@ -12,9 +12,11 @@ import {
 } from '../lib/favoriteSuggestions'
 import { LEAGUES, getLeague, isInternationalLeague, teamSubtitleLabel, teamSubtitleLeagueId, type LeagueId } from '../lib/leagues'
 import type { FavoritePlayer, FavoriteTeam, FavoritesApi } from '../lib/favorites'
+import type { Match } from '../lib/matches'
 import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
 import { EntityLogo } from './EntityLogo'
 import { FavoriteStar } from './FavoriteStar'
+import { HomeSearch } from './HomeSearch'
 import { LeagueLogoMark } from './LeagueLogoMark'
 import { PlayerAvatar } from './PlayerAvatar'
 import type { PlayerNavRef } from './PlayerProfileScreen'
@@ -23,6 +25,7 @@ type FavoritesSection = 'leagues' | 'teams' | 'players'
 
 export function FavoritesScreen({
   favorites,
+  matches,
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
@@ -30,6 +33,7 @@ export function FavoritesScreen({
   reduce,
 }: {
   favorites: FavoritesApi
+  matches: Match[]
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
@@ -120,6 +124,18 @@ export function FavoritesScreen({
           <h1 className="mt-2 font-display text-6xl tracking-[0.04em] text-cream sm:text-7xl">
             Favorites
           </h1>
+          <div className="mt-5">
+            <HomeSearch
+              matches={matches}
+              favoriteTeams={favorites.teams}
+              favoritePlayers={favorites.players}
+              onOpenLeague={onOpenLeague}
+              onOpenTeam={onOpenTeam}
+              onOpenPlayer={onOpenPlayer}
+              inputId="favorites-search"
+              placeholder="Search leagues, clubs, or players…"
+            />
+          </div>
         </motion.header>
 
         {isEmpty ? (

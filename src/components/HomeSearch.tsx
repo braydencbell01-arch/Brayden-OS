@@ -76,6 +76,8 @@ export function HomeSearch({
   onOpenLeague,
   onOpenTeam,
   onOpenPlayer,
+  inputId = 'home-search',
+  placeholder = 'Try Arsenal, Premier League, Messi…',
 }: {
   matches: Match[]
   favoriteTeams: FavoriteTeam[]
@@ -83,6 +85,8 @@ export function HomeSearch({
   onOpenLeague: (id: LeagueId) => void
   onOpenTeam: (team: FavoriteTeam) => void
   onOpenPlayer: (player: PlayerNavRef) => void
+  inputId?: string
+  placeholder?: string
 }) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
@@ -235,7 +239,7 @@ export function HomeSearch({
 
   return (
     <div ref={rootRef} className="relative z-20 mb-2">
-      <label className="sr-only" htmlFor="home-search">
+      <label className="sr-only" htmlFor={inputId}>
         Search any league, club, or player
       </label>
       <form
@@ -256,12 +260,12 @@ export function HomeSearch({
           <path d="M16.5 16.5L21 21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
         <input
-          id="home-search"
+          id={inputId}
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={() => setFocused(true)}
-          placeholder="Try Arsenal, Premier League, Messi…"
+          placeholder={placeholder}
           autoComplete="off"
           enterKeyHint="search"
           className="min-w-0 flex-1 bg-transparent text-base text-cream outline-none placeholder:text-mist/40"

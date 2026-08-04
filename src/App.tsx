@@ -858,6 +858,7 @@ export default function App() {
           >
             <FavoritesScreen
               favorites={favorites}
+              matches={matches}
               onOpenLeague={openLeague}
               onOpenTeam={openTeam}
               onOpenPlayer={openPlayer}
