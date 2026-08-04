@@ -376,7 +376,7 @@ export function LeagueProfileScreen({
                 }
               />
               <ProfileMetric
-                label="Teams"
+                label={isInternational ? 'Teams' : 'Clubs'}
                 value={
                   league.hasStandings
                     ? standings.loading
@@ -385,7 +385,6 @@ export function LeagueProfileScreen({
                     : MISSING_SHORT
                 }
               />
-              <ProfileMetric label="Format" value={formatLabel} />
               <ProfileMetric
                 label="Matches"
                 value={
@@ -451,36 +450,35 @@ export function LeagueProfileScreen({
                   )
                 }
               />
-              {showCurrentLeader ? (
-                <ProfileMetric
-                  label="Current leader"
-                  value={
-                    !league.hasStandings ? (
-                      MISSING_SHORT
-                    ) : standings.loading ? (
-                      '…'
-                    ) : leaderForDisplay ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenTeam({
-                            id: leaderForDisplay.teamId,
-                            name: leaderForDisplay.team,
-                            shortName: leaderForDisplay.shortName,
-                            leagueId: league.id,
-                            kind: isInternational ? 'national' : 'club',
-                          })
-                        }
-                        className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                      >
-                        {leaderForDisplay.shortName}
-                      </button>
-                    ) : (
-                      MISSING_SHORT
-                    )
-                  }
-                />
-              ) : null}
+              <ProfileMetric
+                label="Current leader"
+                value={
+                  !showCurrentLeader || !league.hasStandings ? (
+                    MISSING_SHORT
+                  ) : standings.loading ? (
+                    '…'
+                  ) : leaderForDisplay ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenTeam({
+                          id: leaderForDisplay.teamId,
+                          name: leaderForDisplay.team,
+                          shortName: leaderForDisplay.shortName,
+                          leagueId: league.id,
+                          kind: isInternational ? 'national' : 'club',
+                        })
+                      }
+                      className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
+                      {leaderForDisplay.shortName}
+                    </button>
+                  ) : (
+                    MISSING_SHORT
+                  )
+                }
+              />
+              <ProfileMetric label="Format" value={formatLabel || MISSING_SHORT} />
             </ProfileMetricsRow>
 
             {showTimeline ? (
