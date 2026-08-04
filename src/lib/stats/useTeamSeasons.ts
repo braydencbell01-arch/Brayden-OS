@@ -6,6 +6,7 @@ import {
   type LeagueId,
 } from '../leagues'
 import { formatSeasonShortLabel, fetchTeamSeasonOptions } from './espn'
+import { pickDefaultSeasonYear } from './seasonDefaults'
 import type { LeagueSeasonOption } from './types'
 
 function defaultSeasonOption(
@@ -22,11 +23,13 @@ function defaultSeasonOption(
     currentYear,
     `${currentYear}-${String(currentYear + 1).slice(2)}`,
   )
+  const preferredYear = pickDefaultSeasonYear(leagueId, options)
   return (
     options.find((option) => {
       const fromKey = option.key?.split(':')[2]
       return fromKey === String(currentYear) || option.shortLabel === currentShort
     }) ||
+    options.find((option) => option.year === preferredYear) ||
     options.find((option) => option.year === currentYear) ||
     options[0]
   )

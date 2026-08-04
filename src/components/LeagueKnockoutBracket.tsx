@@ -40,7 +40,7 @@ function TieCard({
       <ul className="mt-1.5 space-y-1.5">
         {tie.teams.map((team) => {
           const openable = Boolean(
-            onOpenTeam && team.id && !team.id.startsWith('tbd-') && team.shortName !== 'TBD',
+            onOpenTeam && team.id && !team.id.startsWith('tbd-') && team.shortName !== 'TBD' && team.shortName !== 'Unknown',
           )
           return (
             <li key={team.id}>

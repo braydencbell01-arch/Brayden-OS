@@ -16,7 +16,7 @@ import {
   startOfDay,
 } from '../lib/dates'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
-import { leagueHasKnockout, type League } from '../lib/leagues'
+import { leagueHasKnockout, soccerSeasonDateBounds, type League } from '../lib/leagues'
 import {
   leagueFormTable,
   matchesForLeague,
@@ -24,6 +24,7 @@ import {
   type Match,
 } from '../lib/matches'
 import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
+import { currentSeasonStartYear } from '../lib/stats/seasonDefaults'
 import { useLeagueKnockoutBracket } from '../lib/stats/useLeagueKnockoutBracket'
 import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
 import { useLeagueOverviewFacts } from '../lib/stats/useLeagueOverviewFacts'
@@ -193,6 +194,20 @@ export function LeagueProfileScreen({
     pendingPastCountRef.current = null
     setPastHorizonDays(CALENDAR_INITIAL_PAST_DAYS)
   }, [league.id])
+
+  /** Prefetch the full current season window so Fixtures is not stuck on the Match Day ±window. */
+  useEffect(() => {
+    if (!onNeedPastRange) return
+    const year = currentSeasonStartYear(league.id)
+    const { from, to } = soccerSeasonDateBounds(year)
+    const today = startOfDay(new Date())
+    const pastDays = Math.max(
+      CALENDAR_INITIAL_PAST_DAYS,
+      Math.ceil((today.getTime() - from.getTime()) / 86_400_000),
+    )
+    setPastHorizonDays(pastDays)
+    void onNeedPastRange(from, to > today ? to : today)
+  }, [league.id, onNeedPastRange])
 
   useEffect(() => {
     const pending = pendingPastCountRef.current
@@ -418,6 +433,11 @@ export function LeagueProfileScreen({
                       className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
                       {mostTitles.shortName}
+                      {mostTitles.titles > 0 ? (
+                        <span className="ml-1.5 text-sm font-semibold text-mist/70">
+                          · {mostTitles.titles}
+                        </span>
+                      ) : null}
                     </button>
                   ) : (
                     MISSING_SHORT
@@ -563,28 +583,44 @@ export function LeagueProfileScreen({
         ) : null}
 
         {tab === 'matches' ? (
-          <div
-            ref={matchesScrollRef}
-            onScroll={onMatchesScroll}
-            className="max-h-[min(70dvh,40rem)] overflow-y-auto overscroll-contain pr-1"
-            aria-label="League match timeline"
-          >
-            {loading && timelineMatches.length === 0 ? (
-              <p className="text-sm text-mist/70">Loading matches…</p>
-            ) : error && timelineMatches.length === 0 ? (
-              <p className="text-sm text-mist/80">{error}</p>
-            ) : (
-              <MatchList
-                matches={timelineMatches}
-                allMatches={timelineMatches}
-                nextMatchId={nextMatch?.id}
-                onOpenTeam={onOpenTeam}
-                onOpenPlayer={onOpenPlayer}
-                favoriteLeagueIds={favorites.leagueIds}
-                favoriteTeamIds={favorites.teamIds}
-                emptyLabel="No matches yet."
-              />
-            )}
+          <div className="flex flex-col gap-2">
+            {nextMatch ? (
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime">
+                Next match
+                <span className="ml-2 font-semibold normal-case tracking-normal text-mist/70">
+                  {nextMatch.status === 'live'
+                    ? nextMatch.statusText || 'Live'
+                    : nextMatch.kickoffTimeKnown
+                      ? `${formatMatchDayHeading(nextMatch.dateKey)} · ${formatKickoffTime(nextMatch.kickoff)}`
+                      : formatMatchDayHeading(nextMatch.dateKey)}
+                  {' · '}
+                  {nextMatch.home.shortName} vs {nextMatch.away.shortName}
+                </span>
+              </p>
+            ) : null}
+            <div
+              ref={matchesScrollRef}
+              onScroll={onMatchesScroll}
+              className="max-h-[min(70dvh,40rem)] overflow-y-auto overscroll-contain pr-1"
+              aria-label="League match timeline"
+            >
+              {loading && timelineMatches.length === 0 ? (
+                <p className="text-sm text-mist/70">Loading matches…</p>
+              ) : error && timelineMatches.length === 0 ? (
+                <p className="text-sm text-mist/80">{error}</p>
+              ) : (
+                <MatchList
+                  matches={timelineMatches}
+                  allMatches={timelineMatches}
+                  nextMatchId={nextMatch?.id}
+                  onOpenTeam={onOpenTeam}
+                  onOpenPlayer={onOpenPlayer}
+                  favoriteLeagueIds={favorites.leagueIds}
+                  favoriteTeamIds={favorites.teamIds}
+                  emptyLabel="No matches yet."
+                />
+              )}
+            </div>
           </div>
         ) : null}
 

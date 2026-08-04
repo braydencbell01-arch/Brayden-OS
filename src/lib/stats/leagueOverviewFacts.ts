@@ -320,7 +320,11 @@ async function championFromSeasonFinal(
     const data = (await res.json()) as {
       events?: Array<{
         date?: string
+        name?: string
+        shortName?: string
         competitions?: Array<{
+          notes?: Array<{ text?: string; type?: string; headline?: string }>
+          type?: { text?: string; abbreviation?: string }
           status?: { type?: { completed?: boolean } }
           competitors?: Array<{
             winner?: boolean
@@ -340,16 +344,53 @@ async function championFromSeasonFinal(
       .slice()
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 
-    for (const event of completed) {
+    const isCupLike = league.format === 'cup' || league.format === 'supercup'
+
+    const looksLikeFinal = (event: (typeof completed)[number]): boolean => {
+      const comp = event.competitions?.[0]
+      const blob = [
+        event.name,
+        event.shortName,
+        comp?.type?.text,
+        comp?.type?.abbreviation,
+        ...(comp?.notes ?? []).flatMap((note) => [note.text, note.type, note.headline]),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      if (!blob) return false
+      if (/\b(semi|quarter|round of|1\/8|1\/4|1\/2|play-?off|group)\b/.test(blob)) {
+        return false
+      }
+      return /\bfinal\b/.test(blob)
+    }
+
+    const pickWinner = (
+      event: (typeof completed)[number],
+    ): LeagueChampion | null => {
       const competitors = event.competitions?.[0]?.competitors ?? []
       const winner = competitors.find((c) => c.winner)
-      if (!winner?.team?.id) continue
+      if (!winner?.team?.id) return null
       return {
         teamId: winner.team.id,
         name: winner.team.displayName || winner.team.shortDisplayName || '',
         shortName:
           winner.team.shortDisplayName || winner.team.displayName || '',
       }
+    }
+
+    // Cups: prefer an explicit Final, then the chronologically last completed match.
+    if (isCupLike) {
+      const finalEvent = completed.find(looksLikeFinal)
+      if (finalEvent) {
+        const fromFinal = pickWinner(finalEvent)
+        if (fromFinal) return fromFinal
+      }
+    }
+
+    for (const event of completed) {
+      const winner = pickWinner(event)
+      if (winner) return winner
     }
   } catch {
     return null
@@ -358,8 +399,8 @@ async function championFromSeasonFinal(
 }
 
 /**
- * Last season's winner: table top for league formats, otherwise the final
- * completed match of the previous Aug–Jul season.
+ * Last season's winner: table top for league formats, otherwise the cup final
+ * (or last completed match) of the previous Aug–Jul season.
  */
 export async function fetchLeagueChampion(
   leagueId: LeagueId,
@@ -389,6 +430,142 @@ async function championForSeason(
 }
 
 /**
+ * Curated all-time title leaders (ESPN team ids) when reconstructed
+ * ESPN season tallies are incomplete. Ties already broken by most recent win
+ * in the live tallier; these rows are authoritative counts.
+ */
+const CURATED_MOST_TITLES: Partial<
+  Record<LeagueId, LeagueMostTitles>
+> = {
+  'premier-league': {
+    teamId: '360',
+    name: 'Manchester United',
+    shortName: 'Man United',
+    titles: 13,
+    lastWonSeason: 2012,
+  },
+  'la-liga': {
+    teamId: '86',
+    name: 'Real Madrid',
+    shortName: 'Real Madrid',
+    titles: 36,
+    lastWonSeason: 2023,
+  },
+  'serie-a': {
+    teamId: '111',
+    name: 'Juventus',
+    shortName: 'Juventus',
+    titles: 36,
+    lastWonSeason: 2019,
+  },
+  bundesliga: {
+    teamId: '132',
+    name: 'Bayern Munich',
+    shortName: 'Bayern',
+    titles: 33,
+    lastWonSeason: 2024,
+  },
+  'ligue-1': {
+    teamId: '160',
+    name: 'Paris Saint-Germain',
+    shortName: 'PSG',
+    titles: 12,
+    lastWonSeason: 2024,
+  },
+  'uefa-champions': {
+    teamId: '86',
+    name: 'Real Madrid',
+    shortName: 'Real Madrid',
+    titles: 15,
+    lastWonSeason: 2023,
+  },
+  'uefa-europa': {
+    teamId: '243',
+    name: 'Sevilla',
+    shortName: 'Sevilla',
+    titles: 7,
+    lastWonSeason: 2022,
+  },
+  'fa-cup': {
+    teamId: '359',
+    name: 'Arsenal',
+    shortName: 'Arsenal',
+    titles: 14,
+    lastWonSeason: 2019,
+  },
+  'efl-cup': {
+    teamId: '364',
+    name: 'Liverpool',
+    shortName: 'Liverpool',
+    titles: 10,
+    lastWonSeason: 2023,
+  },
+  'copa-del-rey': {
+    teamId: '83',
+    name: 'Barcelona',
+    shortName: 'Barcelona',
+    titles: 31,
+    lastWonSeason: 2024,
+  },
+  'dfb-pokal': {
+    teamId: '132',
+    name: 'Bayern Munich',
+    shortName: 'Bayern',
+    titles: 20,
+    lastWonSeason: 2019,
+  },
+  'coppa-italia': {
+    teamId: '111',
+    name: 'Juventus',
+    shortName: 'Juventus',
+    titles: 15,
+    lastWonSeason: 2023,
+  },
+  'coupe-de-france': {
+    teamId: '160',
+    name: 'Paris Saint-Germain',
+    shortName: 'PSG',
+    titles: 16,
+    lastWonSeason: 2024,
+  },
+  eredivisie: {
+    teamId: '139',
+    name: 'Ajax',
+    shortName: 'Ajax',
+    titles: 36,
+    lastWonSeason: 2021,
+  },
+  'scottish-premiership': {
+    teamId: '256',
+    name: 'Celtic',
+    shortName: 'Celtic',
+    titles: 10,
+    lastWonSeason: 2024,
+  },
+  'primeira-liga': {
+    teamId: '1929',
+    name: 'Benfica',
+    shortName: 'Benfica',
+    titles: 38,
+    lastWonSeason: 2022,
+  },
+  'fifa-world': {
+    teamId: '205',
+    name: 'Brazil',
+    shortName: 'Brazil',
+    titles: 5,
+    lastWonSeason: 2002,
+  },
+  'uefa-euro': {
+    teamId: '164',
+    name: 'Spain',
+    shortName: 'Spain',
+    titles: 4,
+    lastWonSeason: 2024,
+  },
+}
+
+/**
  * Team with the most titles in this competition. Ties go to the most recent winner.
  */
 export async function fetchLeagueMostTitles(
@@ -397,6 +574,12 @@ export async function fetchLeagueMostTitles(
 ): Promise<LeagueMostTitles | null> {
   const cacheKey = `${leagueId}:${currentSeasonYear}`
   if (mostTitlesCache.has(cacheKey)) return mostTitlesCache.get(cacheKey) ?? null
+
+  const curated = CURATED_MOST_TITLES[leagueId]
+  if (curated) {
+    mostTitlesCache.set(cacheKey, curated)
+    return curated
+  }
 
   const founded = leagueFoundedYear(leagueId) ?? currentSeasonYear - 30
   const earliest = Math.max(founded, currentSeasonYear - 55)
