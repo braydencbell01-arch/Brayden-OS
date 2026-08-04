@@ -394,6 +394,8 @@ function SectionHeading({
 function formatBadge(league: League): string | null {
   if (league.format === 'supercup') return 'Super cup'
   if (league.format === 'cup' && league.kind === 'domestic') return 'Cup'
+  if (league.format === 'friendlies') return 'Friendlies'
+  if (league.format === 'tournament') return 'Tournament'
   return null
 }
 

@@ -79,13 +79,24 @@ const TIMELINE_FALLBACKS: Partial<Record<LeagueId, SeasonTimelinePhase[]>> = {
     { id: 'sf', label: 'Semi-finals' },
     { id: 'final', label: 'Final' },
   ],
-  'uefa-nations': [
+  'uefa-nations-a': [
     { id: 'league', label: 'League phase' },
     { id: 'qf', label: 'Quarter-finals' },
-    { id: 'relegation', label: 'Relegation play-offs' },
     { id: 'sf', label: 'Semi-finals' },
     { id: 'third', label: 'Third-place match' },
     { id: 'final', label: 'Final' },
+  ],
+  'uefa-nations-b': [
+    { id: 'league', label: 'League phase' },
+    { id: 'relegation', label: 'Promotion / relegation play-offs' },
+  ],
+  'uefa-nations-c': [
+    { id: 'league', label: 'League phase' },
+    { id: 'relegation', label: 'Promotion / relegation play-offs' },
+  ],
+  'uefa-nations-d': [
+    { id: 'league', label: 'League phase' },
+    { id: 'relegation', label: 'Promotion / relegation play-offs' },
   ],
   'fifa-worldq': [
     { id: 'groups', label: 'Qualifying groups' },

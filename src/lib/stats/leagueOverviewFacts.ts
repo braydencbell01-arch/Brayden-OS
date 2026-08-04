@@ -58,7 +58,10 @@ const LEAGUE_FOUNDED_YEAR: Partial<Record<LeagueId, number>> = {
   'fifa-intercontinental': 2024,
   'uefa-super-cup': 1972,
   'fifa-world': 1930,
-  'uefa-nations': 2018,
+  'uefa-nations-a': 2018,
+  'uefa-nations-b': 2018,
+  'uefa-nations-c': 2018,
+  'uefa-nations-d': 2018,
   'uefa-euro': 1960,
   'uefa-euro-qual': 1960,
   'fifa-worldq': 1930,
@@ -176,7 +179,10 @@ const NON_DOUBLE_ROUND_ROBIN = new Set<LeagueId>([
   'swiss-super-league',
   'superliga',
   'a-league',
-  'uefa-nations',
+  'uefa-nations-a',
+  'uefa-nations-b',
+  'uefa-nations-c',
+  'uefa-nations-d',
   'uefa-champions',
   'uefa-europa',
   'uefa-conference',
@@ -344,7 +350,10 @@ async function championFromSeasonFinal(
       .slice()
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
 
-    const isCupLike = league.format === 'cup' || league.format === 'supercup'
+    const isCupLike =
+      league.format === 'cup' ||
+      league.format === 'supercup' ||
+      league.format === 'tournament'
 
     const looksLikeFinal = (event: (typeof completed)[number]): boolean => {
       const comp = event.competitions?.[0]

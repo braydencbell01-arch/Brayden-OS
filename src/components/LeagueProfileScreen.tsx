@@ -16,7 +16,7 @@ import {
   startOfDay,
 } from '../lib/dates'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
-import { leagueHasKnockout, soccerSeasonDateBounds, type League } from '../lib/leagues'
+import { leagueFormatLabel, leagueHasKnockout, leagueShowsCurrentLeader, soccerSeasonDateBounds, type League } from '../lib/leagues'
 import {
   leagueFormTable,
   matchesForLeague,
@@ -120,8 +120,8 @@ export function LeagueProfileScreen({
   const isContinental = league.kind === 'continental'
   const isDomesticCup = league.kind === 'domestic' && league.format !== 'league'
   const showTimeline = isInternational || isContinental || isDomesticCup
-  const formatLabel =
-    league.format === 'supercup' ? 'Super cup' : league.format === 'cup' ? 'Cup' : 'League'
+  const formatLabel = leagueFormatLabel(league.format)
+  const showCurrentLeader = leagueShowsCurrentLeader(league)
 
   const standings = useLeagueStandings(league.id, league.hasStandings)
   const showKnockout = leagueHasKnockout(league)
@@ -148,7 +148,11 @@ export function LeagueProfileScreen({
   )
 
   const currentLeader = standings.rows[0] ?? null
-  const clubCount = standings.rows.length
+  const teamCount = standings.rows.length
+  const standingsGroupCount = new Set(standings.rows.map((row) => row.group || '')).size
+  // Multi-group tables have no single table leader.
+  const leaderForDisplay =
+    showCurrentLeader && standingsGroupCount <= 1 ? currentLeader : null
   const mostTitles = overviewFacts.data?.mostTitles ?? null
 
   const { logoUrl } = useLeagueLogo(league.id)
@@ -371,14 +375,17 @@ export function LeagueProfileScreen({
                     : overviewFacts.data?.foundedYear ?? MISSING_SHORT
                 }
               />
-              {league.hasStandings ? (
-                <ProfileMetric
-                  label={isInternational ? 'Teams' : 'Clubs'}
-                  value={standings.loading ? '…' : clubCount || MISSING_SHORT}
-                />
-              ) : (
-                <ProfileMetric label="Format" value={formatLabel} />
-              )}
+              <ProfileMetric
+                label="Teams"
+                value={
+                  league.hasStandings
+                    ? standings.loading
+                      ? '…'
+                      : teamCount || MISSING_SHORT
+                    : MISSING_SHORT
+                }
+              />
+              <ProfileMetric label="Format" value={formatLabel} />
               <ProfileMetric
                 label="Matches"
                 value={
@@ -444,34 +451,36 @@ export function LeagueProfileScreen({
                   )
                 }
               />
-              <ProfileMetric
-                label="Current leader"
-                value={
-                  !league.hasStandings ? (
-                    MISSING_SHORT
-                  ) : standings.loading ? (
-                    '…'
-                  ) : currentLeader ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onOpenTeam({
-                          id: currentLeader.teamId,
-                          name: currentLeader.team,
-                          shortName: currentLeader.shortName,
-                          leagueId: league.id,
-                          kind: isInternational ? 'national' : 'club',
-                        })
-                      }
-                      className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    >
-                      {currentLeader.shortName}
-                    </button>
-                  ) : (
-                    MISSING_SHORT
-                  )
-                }
-              />
+              {showCurrentLeader ? (
+                <ProfileMetric
+                  label="Current leader"
+                  value={
+                    !league.hasStandings ? (
+                      MISSING_SHORT
+                    ) : standings.loading ? (
+                      '…'
+                    ) : leaderForDisplay ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenTeam({
+                            id: leaderForDisplay.teamId,
+                            name: leaderForDisplay.team,
+                            shortName: leaderForDisplay.shortName,
+                            leagueId: league.id,
+                            kind: isInternational ? 'national' : 'club',
+                          })
+                        }
+                        className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {leaderForDisplay.shortName}
+                      </button>
+                    ) : (
+                      MISSING_SHORT
+                    )
+                  }
+                />
+              ) : null}
             </ProfileMetricsRow>
 
             {showTimeline ? (

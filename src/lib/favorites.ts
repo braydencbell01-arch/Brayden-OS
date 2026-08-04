@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { LEAGUES, type LeagueId } from './leagues'
+import { LEAGUES, migrateLeagueId, type LeagueId } from './leagues'
 
 const STORAGE_KEY = 'brayden-stats-favorites-v1'
 const KNOWN_LEAGUE_IDS = new Set<string>(LEAGUES.map((league) => league.id))
@@ -44,33 +44,39 @@ function isLeagueId(value: unknown): value is LeagueId {
   return typeof value === 'string' && KNOWN_LEAGUE_IDS.has(value)
 }
 
+function coerceLeagueId(value: unknown): LeagueId | null {
+  if (typeof value !== 'string') return null
+  const migrated = migrateLeagueId(value)
+  return isLeagueId(migrated) ? migrated : null
+}
+
 function readStorage(): FavoritesState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return EMPTY
     const parsed = JSON.parse(raw) as Partial<FavoritesState>
     const leagues = Array.isArray(parsed.leagues)
-      ? parsed.leagues.filter(isLeagueId)
+      ? [...new Set(parsed.leagues.map(coerceLeagueId).filter((id): id is LeagueId => Boolean(id)))]
       : []
     const teams = Array.isArray(parsed.teams)
-      ? parsed.teams.filter(
-          (team): team is FavoriteTeam =>
-            Boolean(team) &&
-            typeof team.id === 'string' &&
-            typeof team.name === 'string' &&
-            typeof team.shortName === 'string' &&
-            isLeagueId(team.leagueId),
-        )
+      ? parsed.teams.flatMap((team): FavoriteTeam[] => {
+          if (!team || typeof team.id !== 'string' || typeof team.name !== 'string') return []
+          if (typeof team.shortName !== 'string') return []
+          const leagueId = coerceLeagueId(team.leagueId)
+          if (!leagueId) return []
+          return [{ ...team, leagueId }]
+        })
       : []
     const players = Array.isArray(parsed.players)
-      ? parsed.players.filter(
-          (player): player is FavoritePlayer =>
-            Boolean(player) &&
-            typeof player.id === 'string' &&
-            typeof player.name === 'string' &&
-            typeof player.shortName === 'string' &&
-            isLeagueId(player.leagueId),
-        )
+      ? parsed.players.flatMap((player): FavoritePlayer[] => {
+          if (!player || typeof player.id !== 'string' || typeof player.name !== 'string') {
+            return []
+          }
+          if (typeof player.shortName !== 'string') return []
+          const leagueId = coerceLeagueId(player.leagueId)
+          if (!leagueId) return []
+          return [{ ...player, leagueId }]
+        })
       : []
     return { leagues, teams, players }
   } catch {

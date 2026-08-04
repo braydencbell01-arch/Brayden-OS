@@ -36,7 +36,10 @@ export type LeagueId =
   | 'uefa-super-cup'
   | 'fifa-world'
   | 'fifa-friendly'
-  | 'uefa-nations'
+  | 'uefa-nations-a'
+  | 'uefa-nations-b'
+  | 'uefa-nations-c'
+  | 'uefa-nations-d'
   | 'uefa-euro'
   | 'uefa-euro-qual'
   | 'fifa-worldq'
@@ -91,8 +94,65 @@ export type LeagueId =
 
 export type LeagueKind = 'domestic' | 'international' | 'continental'
 
-/** How the competition is structured — cups stay `kind: 'domestic'`. */
-export type LeagueFormat = 'league' | 'cup' | 'supercup'
+/**
+ * How the competition is structured — cups stay `kind: 'domestic'`.
+ * - league: single table (or multi-group league phase only)
+ * - cup: knockout / super-cup style
+ * - supercup: one-off / short super cup
+ * - friendlies: club or international friendlies
+ * - tournament: group/league phase plus knockout (or 3+ distinct stages)
+ */
+export type LeagueFormat = 'league' | 'cup' | 'supercup' | 'friendlies' | 'tournament'
+
+export function leagueFormatLabel(format: LeagueFormat): string {
+  switch (format) {
+    case 'league':
+      return 'League'
+    case 'cup':
+      return 'Cup'
+    case 'supercup':
+      return 'Super cup'
+    case 'friendlies':
+      return 'Friendlies'
+    case 'tournament':
+      return 'Tournament'
+  }
+}
+
+/** UEFA Nations League is split into four league-tier profiles sharing ESPN `uefa.nations`. */
+export const UEFA_NATIONS_LEAGUE_IDS = [
+  'uefa-nations-a',
+  'uefa-nations-b',
+  'uefa-nations-c',
+  'uefa-nations-d',
+] as const satisfies readonly LeagueId[]
+
+export type UefaNationsLeagueId = (typeof UEFA_NATIONS_LEAGUE_IDS)[number]
+
+export function uefaNationsLeagueLetter(
+  id: LeagueId | string | null | undefined,
+): 'A' | 'B' | 'C' | 'D' | null {
+  if (!id) return null
+  const match = /^uefa-nations-([abcd])$/i.exec(id)
+  if (!match) return null
+  return match[1]!.toUpperCase() as 'A' | 'B' | 'C' | 'D'
+}
+
+export function isUefaNationsLeagueId(id: LeagueId | string | null | undefined): boolean {
+  return uefaNationsLeagueLetter(id) != null
+}
+
+export function uefaNationsLeagueIdForLetter(
+  letter: 'A' | 'B' | 'C' | 'D',
+): UefaNationsLeagueId {
+  return `uefa-nations-${letter.toLowerCase()}` as UefaNationsLeagueId
+}
+
+/** Map legacy single Nations League id (and aliases) onto League A. */
+export function migrateLeagueId(id: string): string {
+  if (id === 'uefa-nations') return 'uefa-nations-a'
+  return id
+}
 
 export type League = {
   id: LeagueId
@@ -316,7 +376,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.champions',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -326,7 +386,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.europa',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -336,7 +396,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.europa.conf',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -376,7 +436,7 @@ export const LEAGUES: League[] = [
     country: 'South America',
     espnCode: 'conmebol.libertadores',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -386,7 +446,7 @@ export const LEAGUES: League[] = [
     country: 'South America',
     espnCode: 'conmebol.sudamericana',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -396,7 +456,7 @@ export const LEAGUES: League[] = [
     country: 'Africa',
     espnCode: 'caf.champions',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -406,7 +466,7 @@ export const LEAGUES: League[] = [
     country: 'Asia',
     espnCode: 'afc.champions',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -416,7 +476,7 @@ export const LEAGUES: League[] = [
     country: 'Asia',
     espnCode: 'afc.cup',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -447,7 +507,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.cwc',
     kind: 'continental',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -467,7 +527,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'club.friendly',
     kind: 'continental',
-    format: 'cup',
+    format: 'friendlies',
     hasStandings: false,
   },
   {
@@ -488,7 +548,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.world',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -498,18 +558,51 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.friendly',
     kind: 'international',
-    format: 'cup',
+    format: 'friendlies',
     hasStandings: false,
   },
   {
-    id: 'uefa-nations',
-    name: 'UEFA Nations League',
-    short: 'UNL',
+    id: 'uefa-nations-a',
+    name: 'UEFA Nations League A',
+    short: 'UNL A',
     country: 'Europe',
     espnCode: 'uefa.nations',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
+  },
+  {
+    id: 'uefa-nations-b',
+    name: 'UEFA Nations League B',
+    short: 'UNL B',
+    country: 'Europe',
+    espnCode: 'uefa.nations',
+    kind: 'international',
+    format: 'tournament',
+    hasStandings: true,
+    matchDayPoll: false,
+  },
+  {
+    id: 'uefa-nations-c',
+    name: 'UEFA Nations League C',
+    short: 'UNL C',
+    country: 'Europe',
+    espnCode: 'uefa.nations',
+    kind: 'international',
+    format: 'tournament',
+    hasStandings: true,
+    matchDayPoll: false,
+  },
+  {
+    id: 'uefa-nations-d',
+    name: 'UEFA Nations League D',
+    short: 'UNL D',
+    country: 'Europe',
+    espnCode: 'uefa.nations',
+    kind: 'international',
+    format: 'tournament',
+    hasStandings: true,
+    matchDayPoll: false,
   },
   {
     id: 'uefa-euro',
@@ -518,7 +611,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.euro',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -528,7 +621,7 @@ export const LEAGUES: League[] = [
     country: 'Europe',
     espnCode: 'uefa.euroq',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -538,7 +631,7 @@ export const LEAGUES: League[] = [
     country: 'International',
     espnCode: 'fifa.worldq',
     kind: 'international',
-    format: 'league',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -548,7 +641,7 @@ export const LEAGUES: League[] = [
     country: 'South America',
     espnCode: 'conmebol.america',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -558,7 +651,7 @@ export const LEAGUES: League[] = [
     country: 'Africa',
     espnCode: 'caf.nations',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -568,7 +661,7 @@ export const LEAGUES: League[] = [
     country: 'Asia',
     espnCode: 'afc.asian.cup',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -578,7 +671,7 @@ export const LEAGUES: League[] = [
     country: 'North America',
     espnCode: 'concacaf.gold',
     kind: 'international',
-    format: 'cup',
+    format: 'tournament',
     hasStandings: true,
   },
   {
@@ -1110,24 +1203,34 @@ export function domesticLeagues(): League[] {
 /** Domestic knockout / super cups (still `kind: 'domestic'`). */
 export function isDomesticCup(id: LeagueId): boolean {
   const league = getLeague(id)
-  return league.kind === 'domestic' && league.format !== 'league'
+  return (
+    league.kind === 'domestic' &&
+    (league.format === 'cup' || league.format === 'supercup')
+  )
 }
 
 export function isCupFormat(id: LeagueId): boolean {
   return getLeague(id).format !== 'league'
 }
 
+/** Whether overview should show a Current leader metric. */
+export function leagueShowsCurrentLeader(league: League | LeagueId): boolean {
+  const entry = typeof league === 'string' ? getLeague(league) : league
+  return entry.format === 'league' || entry.format === 'tournament'
+}
+
 /**
- * Competitions that run a knockout / final phase (cups, supercups, continental
- * tournaments, Nations League). Pure league tables (EPL etc.) return false.
+ * Competitions that run a knockout / final phase (cups, supercups, multi-stage
+ * tournaments, Nations League A finals). Pure league tables return false.
  * Friendlies excluded. Use with `hasStandings` to decide Table vs Knockout vs both.
  */
 export function leagueHasKnockout(league: League | LeagueId): boolean {
   const entry = typeof league === 'string' ? getLeague(league) : league
   if (isFriendlyLeagueId(entry.id)) return false
-  // Group stage + finals (kept as cup format; belt-and-suspenders for id checks).
-  if (entry.id === 'uefa-nations') return true
-  return entry.format !== 'league'
+  // Finals tournament lives on League A; B–D are league phase (+ promotion/relegation).
+  if (isUefaNationsLeagueId(entry.id)) return entry.id === 'uefa-nations-a'
+  if (entry.format === 'league' || entry.format === 'friendlies') return false
+  return entry.format === 'cup' || entry.format === 'supercup' || entry.format === 'tournament'
 }
 
 /** Top-flight / table domestic competitions only. */
@@ -1139,7 +1242,9 @@ export function domesticTableLeagues(): League[] {
 export function domesticCupCompetitions(): League[] {
   return LEAGUES.filter(
     (league) =>
-      league.kind === 'domestic' && league.format !== 'league' && isActiveCompetition(league),
+      league.kind === 'domestic' &&
+      (league.format === 'cup' || league.format === 'supercup') &&
+      isActiveCompetition(league),
   )
 }
 
@@ -1241,7 +1346,7 @@ export function soccerSeasonDateBounds(seasonStartYear: number): {
 export type ConfederationId = 'UEFA' | 'CONCACAF' | 'CONMEBOL' | 'CAF' | 'AFC' | 'OFC'
 
 const CONFEDERATION_LEAGUE_ID: Record<ConfederationId, LeagueId> = {
-  UEFA: 'uefa-nations',
+  UEFA: 'uefa-nations-a',
   CONCACAF: 'concacaf-gold',
   CONMEBOL: 'conmebol-america',
   CAF: 'caf-nations',
@@ -1522,7 +1627,10 @@ export const LEAGUE_IMPORTANCE_ORDER: readonly LeagueId[] = [
   'caf-nations',
   'afc-asian-cup',
   'concacaf-gold',
-  'uefa-nations',
+  'uefa-nations-a',
+  'uefa-nations-b',
+  'uefa-nations-c',
+  'uefa-nations-d',
   'fifa-worldq',
   'uefa-euro-qual',
   'fifa-friendly',

@@ -40,14 +40,17 @@ export type GroupedSearchHits = {
   players: SearchPlayerHit[]
 }
 
-const ESPN_CODE_TO_LEAGUE_ID: Record<string, LeagueId> = Object.fromEntries(
-  LEAGUES.map((league) => [league.espnCode, league.id]),
-) as Record<string, LeagueId>
+const ESPN_CODE_TO_LEAGUE_ID: Record<string, LeagueId> = {}
+for (const league of LEAGUES) {
+  if (!(league.espnCode in ESPN_CODE_TO_LEAGUE_ID)) {
+    ESPN_CODE_TO_LEAGUE_ID[league.espnCode] = league.id
+  }
+}
 
 /** Prefer men's senior national comps when ESPN returns several league tags. */
 const NATIONAL_LEAGUE_PRIORITY: LeagueId[] = [
   'fifa-world',
-  'uefa-nations',
+  'uefa-nations-a',
   'uefa-euro',
   'fifa-worldq',
   'uefa-euro-qual',
@@ -57,6 +60,7 @@ const NATIONAL_LEAGUE_PRIORITY: LeagueId[] = [
 
 export function leagueIdFromEspnCode(code?: string | null): LeagueId | null {
   if (!code) return null
+  if (code === 'uefa.nations') return 'uefa-nations-a'
   return ESPN_CODE_TO_LEAGUE_ID[code] ?? null
 }
 
@@ -172,6 +176,8 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
       league.kind === 'continental' ? 'continental champions europa libertadores sudamericana' : '',
       league.format === 'cup' ? 'cup' : '',
       league.format === 'supercup' ? 'super supercup shield' : '',
+      league.format === 'friendlies' ? 'friendly friendlies' : '',
+      league.format === 'tournament' ? 'tournament' : '',
       isDomesticCup(league.id) ? 'domestic cup' : '',
       league.id === 'eng-championship' ? 'championship' : '',
     ]

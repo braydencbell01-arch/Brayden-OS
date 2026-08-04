@@ -12,9 +12,11 @@ import {
   internationalLeagues,
   LEAGUES,
   regularSeasonCupsForLeague,
+  uefaNationsLeagueIdForLetter,
   type LeagueId,
 } from './leagues'
 import { leagueIdFromEspnCode, resolveTeamDomesticLeagueId } from './search'
+import { fetchUefaNationsTeamLetters } from './stats/espn'
 import { addDays, dateKeyFromIso, formatEspnDate, startOfDay, toDateKey } from './dates'
 
 export type MatchStatus = 'scheduled' | 'live' | 'finished' | 'postponed' | 'other'
@@ -214,9 +216,14 @@ export async function fetchBigFiveWindow(
   from: Date,
   to: Date,
 ): Promise<BigFiveWindowResult> {
-  const pollLeagues = LEAGUES.filter(
-    (league) => league.matchDayPoll !== false && isActiveCompetition(league),
-  )
+  // One poll per ESPN code so shared slugs (Nations League A–D) are not fetched 4×.
+  const seenCodes = new Set<string>()
+  const pollLeagues = LEAGUES.filter((league) => {
+    if (league.matchDayPoll === false || !isActiveCompetition(league)) return false
+    if (seenCodes.has(league.espnCode)) return false
+    seenCodes.add(league.espnCode)
+    return true
+  })
   const results = await Promise.allSettled(
     pollLeagues.map((league) => fetchLeagueScoreboard(league.id, league.espnCode, from, to)),
   )
@@ -238,10 +245,39 @@ export async function fetchBigFiveWindow(
     throw new Error(`Could not load fixtures for ${failedLeagues.join(', ')}`)
   }
 
+  const expanded = await expandUefaNationsMatches(matches)
+
   return {
-    matches: matches.sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
+    matches: expanded.sort((a, b) => a.kickoff.localeCompare(b.kickoff)),
     failedLeagues,
   }
+}
+
+async function expandUefaNationsMatches(matches: Match[]): Promise<Match[]> {
+  const nations = matches.filter((match) => match.leagueId === 'uefa-nations-a')
+  if (nations.length === 0) return matches
+
+  const letters = await fetchUefaNationsTeamLetters()
+  const others = matches.filter((match) => match.leagueId !== 'uefa-nations-a')
+  const remapped: Match[] = []
+
+  for (const match of nations) {
+    const home = letters.get(match.home.id)
+    const away = letters.get(match.away.id)
+    const set = new Set<'A' | 'B' | 'C' | 'D'>()
+    if (home) set.add(home)
+    if (away) set.add(away)
+    const targets = set.size > 0 ? [...set] : (['A'] as const)
+    for (const letter of targets) {
+      remapped.push({
+        ...match,
+        id: `${match.espnEventId}:${letter}`,
+        leagueId: uefaNationsLeagueIdForLetter(letter),
+      })
+    }
+  }
+
+  return [...others, ...remapped]
 }
 
 export function matchesOnDate(matches: Match[], date: Date): Match[] {

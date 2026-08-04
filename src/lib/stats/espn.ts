@@ -13,6 +13,7 @@ import {
   leagueImportanceRank,
   LEAGUES,
   soccerSeasonShortLabel,
+  uefaNationsLeagueLetter,
   type LeagueId,
 } from '../leagues'
 import { playoffWinnersLabel } from './divisionLabels'
@@ -964,15 +965,20 @@ async function fetchStandingsForSeason(
 
   const normalized = expandMultiGroupStandingNotes(rows)
 
-  return normalized.sort((a, b) => {
+  const sorted = normalized.sort((a, b) => {
     const groupCmp = (a.group || '').localeCompare(b.group || '')
     if (groupCmp !== 0) return groupCmp
     return a.rank - b.rank || b.points - a.points
   })
+
+  const nationsLetter = uefaNationsLeagueLetter(leagueId)
+  if (!nationsLetter) return sorted
+  return sorted.filter((row) => multiGroupLetter(row.group) === nationsLetter)
 }
 
 /** League / group letter from labels like "Group A1" / "League B Group 3". */
-function multiGroupLetter(group?: string): string | null {
+/** League / group letter from labels like "Group A1" / "League B Group 3". */
+export function multiGroupLetter(group?: string): string | null {
   if (!group) return null
   const league = group.match(/\bLeague\s+([A-D])\b/i)
   if (league) return league[1]!.toUpperCase()
@@ -1058,6 +1064,36 @@ export async function fetchLeagueStandings(
   seasonYear?: number,
 ): Promise<StandingRow[]> {
   return fetchStandingsForSeason(leagueId, seasonYear)
+}
+
+/** Team id → Nations League letter (A–D) from the shared ESPN standings. */
+export async function fetchUefaNationsTeamLetters(
+  seasonYear?: number,
+): Promise<Map<string, 'A' | 'B' | 'C' | 'D'>> {
+  // Fetch via League A id then read unfiltered by hitting the same ESPN payload
+  // through a throwaway path: standings for A already filtered. Re-fetch raw.
+  const league = getLeague('uefa-nations-a')
+  const url = new URL(
+    `https://site.api.espn.com/apis/v2/sports/soccer/${league.espnCode}/standings`,
+  )
+  if (seasonYear != null) url.searchParams.set('season', String(seasonYear))
+  const map = new Map<string, 'A' | 'B' | 'C' | 'D'>()
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return map
+    const data = (await res.json()) as EspnStandingsResponse
+    for (const child of data.children ?? []) {
+      const letter = multiGroupLetter(child.name || child.abbreviation)
+      if (letter !== 'A' && letter !== 'B' && letter !== 'C' && letter !== 'D') continue
+      for (const entry of child.standings?.entries ?? []) {
+        const id = entry.team?.id
+        if (id) map.set(id, letter)
+      }
+    }
+  } catch {
+    // leave empty — callers fall back to League A
+  }
+  return map
 }
 
 type EspnTeamRosterAthlete = {
