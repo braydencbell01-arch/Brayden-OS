@@ -161,14 +161,9 @@ function ExpandableMatchRow({
               isFavorite ? 'bg-star/[0.08]' : '',
             ].join(' ')
           : [
-              'border bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]',
-              isFavorite ? 'border-star/50 bg-star/[0.07]' : 'border-white/10',
+              'border border-white/10 bg-white/[0.04] transition hover:border-lime/35 hover:bg-white/[0.07]',
+              isFavorite ? 'bg-star/[0.07]' : '',
             ].join(' ')
-      }
-      style={
-        isFavorite
-          ? { boxShadow: 'inset 4px 0 0 #ffd84a' }
-          : undefined
       }
     >
       <div className={flat ? 'px-3 py-2.5' : 'px-4 py-3'}>

@@ -130,20 +130,12 @@ function LeagueDropdown({
     <div
       className={[
         'overflow-hidden border',
-        hasFavorite
-          ? 'border-star/55 bg-star/[0.09]'
-          : 'border-white/10 bg-pitch/40',
+        hasFavorite ? 'bg-star/[0.09]' : 'bg-pitch/40',
       ].join(' ')}
-      style={
-        hasFavorite
-          ? {
-              boxShadow: 'inset 5px 0 0 #ffd84a',
-            }
-          : {
-              borderColor: `${accent}55`,
-              boxShadow: `inset 3px 0 0 ${accent}`,
-            }
-      }
+      style={{
+        borderColor: `${accent}55`,
+        boxShadow: `inset 3px 0 0 ${accent}`,
+      }}
     >
       <div className="flex w-full items-stretch gap-1 px-2 py-2 sm:px-3 sm:py-2.5">
         {onOpenLeague ? (
