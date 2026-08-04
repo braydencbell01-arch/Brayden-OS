@@ -1,122 +1,28 @@
+import { useEffect, useState } from 'react'
 import type { LeagueId } from '../lib/leagues'
+import {
+  fetchLeagueSeasonTimeline,
+  staticLeagueSeasonTimeline,
+  type SeasonTimelinePhase,
+} from '../lib/stats/leagueSeasonTimeline'
 
-type Phase = {
-  id: string
-  label: string
-}
-
-const KNOCKOUT_DEEP: Phase[] = [
-  { id: 'early', label: 'Early rounds' },
-  { id: 'r32', label: 'Round of 32' },
-  { id: 'r16', label: 'Round of 16' },
-  { id: 'qf', label: 'Quarter-finals' },
-  { id: 'sf', label: 'Semi-finals' },
-  { id: 'final', label: 'Final' },
-]
-
-const KNOCKOUT_STANDARD: Phase[] = [
-  { id: 'r32', label: 'Round of 32' },
-  { id: 'r16', label: 'Round of 16' },
-  { id: 'qf', label: 'Quarter-finals' },
-  { id: 'sf', label: 'Semi-finals' },
-  { id: 'final', label: 'Final' },
-]
-
-const KNOCKOUT_COMPACT: Phase[] = [
-  { id: 'r16', label: 'Round of 16' },
-  { id: 'qf', label: 'Quarter-finals' },
-  { id: 'sf', label: 'Semi-finals' },
-  { id: 'final', label: 'Final' },
-]
-
-const SUPERCUP: Phase[] = [{ id: 'final', label: 'Final' }]
-
-const TIMELINES: Partial<Record<LeagueId, Phase[]>> = {
-  'fifa-world': [
-    { id: 'group', label: 'Group stage' },
-    { id: 'r16', label: 'Round of 16' },
-    { id: 'qf', label: 'Quarter-finals' },
-    { id: 'sf', label: 'Semi-finals' },
-    { id: 'final', label: 'Final' },
-  ],
-  'uefa-euro': [
-    { id: 'group', label: 'Group stage' },
-    { id: 'r16', label: 'Round of 16' },
-    { id: 'qf', label: 'Quarter-finals' },
-    { id: 'sf', label: 'Semi-finals' },
-    { id: 'final', label: 'Final' },
-  ],
-  'conmebol-america': [
-    { id: 'group', label: 'Group stage' },
-    { id: 'qf', label: 'Quarter-finals' },
-    { id: 'sf', label: 'Semi-finals' },
-    { id: 'final', label: 'Final' },
-  ],
-  'uefa-nations': [
-    { id: 'league', label: 'League phase' },
-    { id: 'qf', label: 'Quarter-finals' },
-    { id: 'finals', label: 'Finals' },
-  ],
-  'fifa-worldq': [
-    { id: 'groups', label: 'Qualifying groups' },
-    { id: 'playoffs', label: 'Play-offs' },
-  ],
-  'uefa-euro-qual': [
-    { id: 'groups', label: 'Qualifying groups' },
-    { id: 'playoffs', label: 'Play-offs' },
-  ],
-  'uefa-champions-qual': [
-    { id: 'rounds', label: 'Qualifying rounds' },
-    { id: 'playoffs', label: 'Play-offs' },
-  ],
-  'uefa-europa-qual': [
-    { id: 'rounds', label: 'Qualifying rounds' },
-    { id: 'playoffs', label: 'Play-offs' },
-  ],
-  'uefa-conference-qual': [
-    { id: 'rounds', label: 'Qualifying rounds' },
-    { id: 'playoffs', label: 'Play-offs' },
-  ],
-  // Domestic cups
-  'fa-cup': KNOCKOUT_DEEP,
-  'efl-cup': KNOCKOUT_STANDARD,
-  'community-shield': SUPERCUP,
-  'efl-trophy': KNOCKOUT_COMPACT,
-  'copa-del-rey': KNOCKOUT_DEEP,
-  'spanish-supercopa': [
-    { id: 'sf', label: 'Semi-finals' },
-    { id: 'final', label: 'Final' },
-  ],
-  'coppa-italia': KNOCKOUT_STANDARD,
-  'italian-supercoppa': [
-    { id: 'sf', label: 'Semi-finals' },
-    { id: 'final', label: 'Final' },
-  ],
-  'dfb-pokal': KNOCKOUT_DEEP,
-  'german-supercup': SUPERCUP,
-  'coupe-de-france': KNOCKOUT_DEEP,
-  'trophee-des-champions': SUPERCUP,
-  'coupe-de-la-ligue': KNOCKOUT_COMPACT,
-  'copa-do-brasil': KNOCKOUT_DEEP,
-  'brazilian-supercopa': SUPERCUP,
-  'copa-mx': KNOCKOUT_COMPACT,
-  'campeon-de-campeones': SUPERCUP,
-  'us-open-cup': KNOCKOUT_DEEP,
-  'copa-argentina': KNOCKOUT_DEEP,
-  'argentine-supercopa': SUPERCUP,
-  'trofeo-de-campeones': SUPERCUP,
-  'knvb-beker': KNOCKOUT_STANDARD,
-  'johan-cruyff-shield': SUPERCUP,
-  'taca-de-portugal': KNOCKOUT_DEEP,
-  'scottish-cup': KNOCKOUT_DEEP,
-  'scottish-league-cup': KNOCKOUT_STANDARD,
-  'scottish-challenge-cup': KNOCKOUT_COMPACT,
-  'saudi-kings-cup': KNOCKOUT_STANDARD,
-}
-
-/** Tournament-phase strip for internationals and domestic cups. */
+/** Tournament-phase strip for internationals, continentals, and cups. */
 export function LeagueSeasonTimeline({ leagueId }: { leagueId: LeagueId }) {
-  const phases = TIMELINES[leagueId]
+  const [phases, setPhases] = useState<SeasonTimelinePhase[] | null>(
+    () => staticLeagueSeasonTimeline(leagueId),
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    setPhases(staticLeagueSeasonTimeline(leagueId))
+    void fetchLeagueSeasonTimeline(leagueId).then((next) => {
+      if (!cancelled) setPhases(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [leagueId])
+
   if (!phases || phases.length === 0) return null
 
   return (
@@ -126,7 +32,7 @@ export function LeagueSeasonTimeline({ leagueId }: { leagueId: LeagueId }) {
       </p>
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-2">
         {phases.map((phase, index) => (
-          <li key={phase.id} className="flex items-center gap-2">
+          <li key={`${phase.id}-${index}`} className="flex items-center gap-2">
             <span className="border border-white/15 bg-pitch/50 px-2.5 py-1 text-[0.7rem] font-semibold text-cream">
               {phase.label}
             </span>

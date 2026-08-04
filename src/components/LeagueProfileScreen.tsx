@@ -116,8 +116,9 @@ export function LeagueProfileScreen({
 
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
   const isInternational = league.kind === 'international'
+  const isContinental = league.kind === 'continental'
   const isDomesticCup = league.kind === 'domestic' && league.format !== 'league'
-  const showTimeline = isInternational || isDomesticCup
+  const showTimeline = isInternational || isContinental || isDomesticCup
   const formatLabel =
     league.format === 'supercup' ? 'Super cup' : league.format === 'cup' ? 'Cup' : 'League'
 
