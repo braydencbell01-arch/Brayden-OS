@@ -133,7 +133,7 @@ export function LeaguesScreen({
       : 'More below'
 
   return (
-    <div className="relative min-h-dvh overflow-x-hidden">
+    <div className="relative min-h-dvh overflow-x-clip">
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -175,9 +175,9 @@ export function LeaguesScreen({
         {sections.length > 1 ? (
           <nav
             aria-label="Jump to competition section"
-            className="sticky top-[max(0.5rem,env(safe-area-inset-top,0px))] z-20 -mx-5 mb-3 border-b border-white/10 bg-pitch-deep/92 px-5 py-1.5 backdrop-blur-md md:-mx-6 md:px-6"
+            className="sticky top-0 z-30 -mx-5 mb-3 w-full self-start border-b border-white/10 bg-pitch-deep/92 px-5 py-1.5 backdrop-blur-md md:-mx-6 md:px-6"
           >
-            <div className="scrollbar-hide flex gap-1 overflow-x-auto">
+            <div className="scrollbar-hide flex gap-1 overflow-x-auto overscroll-x-contain">
               {sections.map((section) => {
                 const active = activeSection === section.id
                 return (
