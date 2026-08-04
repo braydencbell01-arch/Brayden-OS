@@ -81,11 +81,16 @@ function CompetitionName({
   )
 }
 
-function FavoriteDot() {
+function FavoriteMark({ label, className = '' }: { label?: string; className?: string }) {
   return (
     <span
-      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-star shadow-[0_0_8px_rgba(255,216,74,0.95)]"
-      aria-hidden
+      className={[
+        'inline-block h-2.5 w-2.5 shrink-0 rounded-full bg-star shadow-[0_0_10px_rgba(255,216,74,1)]',
+        className,
+      ].join(' ')}
+      title={label}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
     />
   )
 }
@@ -124,12 +129,16 @@ function LeagueDropdown({
   return (
     <div
       className={[
-        'overflow-hidden border bg-pitch/40',
-        hasFavorite ? 'border-star/30' : 'border-white/10',
+        'overflow-hidden border',
+        hasFavorite
+          ? 'border-star/55 bg-star/[0.09]'
+          : 'border-white/10 bg-pitch/40',
       ].join(' ')}
       style={
         hasFavorite
-          ? undefined
+          ? {
+              boxShadow: 'inset 5px 0 0 #ffd84a',
+            }
           : {
               borderColor: `${accent}55`,
               boxShadow: `inset 3px 0 0 ${accent}`,
@@ -151,12 +160,7 @@ function LeagueDropdown({
               ringColor={accent}
             />
             <div className="min-w-0 flex-1">
-              <p className="flex min-w-0 items-start gap-2">
-                {hasFavorite ? (
-                  <span className="mt-1.5 shrink-0">
-                    <FavoriteDot />
-                  </span>
-                ) : null}
+              <p className="flex min-w-0 items-start">
                 <CompetitionName name={league.name} className="profile-link" />
               </p>
               <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
@@ -176,12 +180,7 @@ function LeagueDropdown({
               ringColor={accent}
             />
             <div className="min-w-0 flex-1">
-              <p className="flex min-w-0 items-start gap-2">
-                {hasFavorite ? (
-                  <span className="mt-1.5 shrink-0">
-                    <FavoriteDot />
-                  </span>
-                ) : null}
+              <p className="flex min-w-0 items-start">
                 <CompetitionName name={league.name} />
               </p>
               <p className="mt-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-mist/65">
@@ -194,9 +193,10 @@ function LeagueDropdown({
           </div>
         )}
         <span
-          className="flex shrink-0 items-center self-center px-1 font-display text-lg tracking-wide text-cream/85 tabular-nums"
-          aria-hidden
+          className="flex shrink-0 items-center self-center gap-1.5 px-1 font-display text-lg tracking-wide text-cream/85 tabular-nums"
+          aria-hidden={!hasFavorite}
         >
+          {hasFavorite ? <FavoriteMark label="Contains a favorite match" /> : null}
           {matches.length}
         </span>
         <button
