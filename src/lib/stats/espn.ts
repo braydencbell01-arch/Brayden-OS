@@ -1067,11 +1067,16 @@ export async function fetchLeagueStandings(
 }
 
 /** Team id → Nations League letter (A–D) from the shared ESPN standings. */
+const uefaNationsTeamLettersCache = new Map<string, Map<string, 'A' | 'B' | 'C' | 'D'>>()
+
 export async function fetchUefaNationsTeamLetters(
   seasonYear?: number,
 ): Promise<Map<string, 'A' | 'B' | 'C' | 'D'>> {
-  // Fetch via League A id then read unfiltered by hitting the same ESPN payload
-  // through a throwaway path: standings for A already filtered. Re-fetch raw.
+  const cacheKey = seasonYear != null ? String(seasonYear) : 'current'
+  const cached = uefaNationsTeamLettersCache.get(cacheKey)
+  if (cached) return cached
+
+  // Fetch via League A id — all four leagues share ESPN `uefa.nations`.
   const league = getLeague('uefa-nations-a')
   const url = new URL(
     `https://site.api.espn.com/apis/v2/sports/soccer/${league.espnCode}/standings`,
@@ -1080,7 +1085,10 @@ export async function fetchUefaNationsTeamLetters(
   const map = new Map<string, 'A' | 'B' | 'C' | 'D'>()
   try {
     const res = await fetch(url)
-    if (!res.ok) return map
+    if (!res.ok) {
+      uefaNationsTeamLettersCache.set(cacheKey, map)
+      return map
+    }
     const data = (await res.json()) as EspnStandingsResponse
     for (const child of data.children ?? []) {
       const letter = multiGroupLetter(child.name || child.abbreviation)
@@ -1091,9 +1099,26 @@ export async function fetchUefaNationsTeamLetters(
       }
     }
   } catch {
-    // leave empty — callers fall back to League A
+    // leave empty — callers fall back to unfiltered
   }
+  uefaNationsTeamLettersCache.set(cacheKey, map)
   return map
+}
+
+/** Team ids that belong to this Nations League division for the season. */
+async function uefaNationsDivisionTeamIds(
+  leagueId: LeagueId,
+  seasonYear?: number,
+): Promise<Set<string> | null> {
+  const letter = uefaNationsLeagueLetter(leagueId)
+  if (!letter) return null
+  const map = await fetchUefaNationsTeamLetters(seasonYear)
+  if (map.size === 0) return null
+  const ids = new Set<string>()
+  for (const [teamId, teamLetter] of map) {
+    if (teamLetter === letter) ids.add(teamId)
+  }
+  return ids.size > 0 ? ids : null
 }
 
 type EspnTeamRosterAthlete = {
@@ -1574,6 +1599,7 @@ function teamLeadersFromStandings(rows: StandingRow[], limit: number): LeaderCat
 function playerLeadersFromSiteStats(
   stats: EspnSiteStatisticsResponse['stats'],
   limit: number,
+  allowedTeamIds?: Set<string> | null,
 ): LeaderCategory[] {
   const wanted = [
     { name: 'goalsLeaders', label: 'Top scorers' },
@@ -1583,7 +1609,13 @@ function playerLeadersFromSiteStats(
   return wanted
     .map(({ name, label }) => {
       const block = stats?.find((item) => item.name === name)
-      const leaders = (block?.leaders ?? []).slice(0, limit).map((leader, index) => {
+      const filtered = (block?.leaders ?? []).filter((leader) => {
+        if (!allowedTeamIds) return true
+        const teamId =
+          leader.athlete?.team?.id || leader.team?.id || undefined
+        return Boolean(teamId && allowedTeamIds.has(teamId))
+      })
+      const leaders = filtered.slice(0, limit).map((leader, index) => {
         const athlete = leader.athlete
         const nameText = athlete?.displayName || ''
         const team =
@@ -1635,12 +1667,21 @@ export async function fetchLeagueLeaders(
     const res = await fetch(url)
     if (!res.ok) continue
     const data = (await res.json()) as EspnSiteStatisticsResponse
-    const players = playerLeadersFromSiteStats(data.stats, limit)
-    if (players.length === 0) continue
-
-    season = data.season?.year ?? year
-    seasonLabel = data.season?.displayName || `${year} season`
-    playerCategories = players
+    const allowedTeams = await uefaNationsDivisionTeamIds(leagueId, year)
+    const players = playerLeadersFromSiteStats(data.stats, limit, allowedTeams)
+    if (players.length === 0 && !allowedTeams) continue
+    if (players.length === 0 && allowedTeams) {
+      // Division filter emptied the board — still try team leaders from standings.
+      season = data.season?.year ?? year
+      seasonLabel = data.season?.displayName || `${year} season`
+      playerCategories = []
+    } else if (players.length === 0) {
+      continue
+    } else {
+      season = data.season?.year ?? year
+      seasonLabel = data.season?.displayName || `${year} season`
+      playerCategories = players
+    }
 
     try {
       const standings = await fetchStandingsForSeason(leagueId, year)
@@ -1648,7 +1689,7 @@ export async function fetchLeagueLeaders(
     } catch {
       teamCategories = []
     }
-    break
+    if (playerCategories.length > 0 || teamCategories.length > 0) break
   }
 
   if (playerCategories.length === 0 && teamCategories.length === 0) {
@@ -1737,17 +1778,18 @@ export async function fetchLeaguePlayerStatsOverview(
   const yearsToTry =
     seasonYear != null ? [seasonYear] : [nowYear, nowYear - 1, nowYear - 2]
   const perCategoryCap = Math.max(1, Math.min(limit, 50))
+  // Nations League shares one ESPN leaders feed — pull a deep pool then filter by division.
+  const needsDivisionFilter = uefaNationsLeagueLetter(leagueId) != null
+  const fetchLimit = needsDivisionFilter ? Math.max(200, limit) : Math.max(50, limit)
 
   let payload: EspnCoreLeadersResponse | null = null
   let season = seasonYear ?? nowYear
+  let allowedTeams: Set<string> | null = null
 
   for (const year of yearsToTry) {
-    const data = await fetchCoreLeadersForSeason(
-      league.espnCode,
-      year,
-      Math.max(50, limit),
-    )
+    const data = await fetchCoreLeadersForSeason(league.espnCode, year, fetchLimit)
     if (!data?.categories?.length) continue
+    allowedTeams = await uefaNationsDivisionTeamIds(leagueId, year)
     payload = data
     season = year
     break
@@ -1779,10 +1821,21 @@ export async function fetchLeaguePlayerStatsOverview(
     (category): category is NonNullable<typeof category> => Boolean(category?.leaders?.[0]),
   )
 
+  const divisionLeaders = (
+    category: NonNullable<(typeof selected)[number]>,
+  ) => {
+    const raw = category.leaders ?? []
+    if (!allowedTeams) return raw
+    return raw.filter((leader) => {
+      const teamId = idFromCoreRef(leader.team?.$ref, 'teams')
+      return Boolean(teamId && allowedTeams.has(teamId))
+    })
+  }
+
   const athleteRefs = new Map<string, string>()
   const teamRefs = new Map<string, string>()
   for (const category of selected) {
-    for (const leader of (category.leaders ?? []).slice(0, perCategoryCap)) {
+    for (const leader of divisionLeaders(category).slice(0, perCategoryCap)) {
       const athleteId = idFromCoreRef(leader.athlete?.$ref, 'athletes')
       const teamId = idFromCoreRef(leader.team?.$ref, 'teams')
       if (athleteId && leader.athlete?.$ref) athleteRefs.set(athleteId, leader.athlete.$ref)
@@ -1829,16 +1882,18 @@ export async function fetchLeaguePlayerStatsOverview(
     }
   }
 
-  const boards: LeaguePlayerStatBoard[] = selected.map((category) => {
-    const leaders = (category.leaders ?? [])
-      .slice(0, perCategoryCap)
-      .map((leader, index) => toEntry(category.name, leader, index + 1))
-    return {
-      categoryId: category.name || 'stat',
-      label: category.displayName || category.shortDisplayName || category.name || 'Stat',
-      leaders,
-    }
-  })
+  const boards: LeaguePlayerStatBoard[] = selected
+    .map((category) => {
+      const leaders = divisionLeaders(category)
+        .slice(0, perCategoryCap)
+        .map((leader, index) => toEntry(category.name, leader, index + 1))
+      return {
+        categoryId: category.name || 'stat',
+        label: category.displayName || category.shortDisplayName || category.name || 'Stat',
+        leaders,
+      }
+    })
+    .filter((board) => board.leaders.length > 0)
 
   const rows: LeaguePlayerStatTop[] = boards
     .filter((board) => board.leaders[0])
@@ -1849,6 +1904,17 @@ export async function fetchLeaguePlayerStatsOverview(
     }))
 
   if (rows.length === 0) {
+    if (seasonYear != null) {
+      const labels = await fetchSeasonLabels(league.espnCode, seasonYear)
+      return {
+        leagueId,
+        season: seasonYear,
+        seasonLabel: `${labels.shortLabel} season`,
+        rows: [],
+        boards: [],
+        fetchedAt: Date.now(),
+      }
+    }
     throw new Error(`No ${league.name} player stats available yet`)
   }
 
