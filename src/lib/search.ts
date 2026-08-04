@@ -3,6 +3,7 @@ import {
   domesticLeagues,
   findLeague,
   getLeague,
+  isActiveCompetition,
   isContinentalLeague,
   isDomesticCup,
   isInternationalLeague,
@@ -165,6 +166,7 @@ export function searchLeaguesLocal(query: string): SearchLeagueHit[] {
   const q = query.trim()
   if (!q) return []
   return LEAGUES.filter((league) => {
+    if (!isActiveCompetition(league)) return false
     const kindHints = [
       league.kind === 'international' ? 'international national' : '',
       league.kind === 'continental' ? 'continental champions europa libertadores sudamericana' : '',

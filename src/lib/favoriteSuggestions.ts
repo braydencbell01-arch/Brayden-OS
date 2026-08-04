@@ -1,5 +1,12 @@
 import type { FavoritePlayer, FavoriteTeam } from './favorites'
-import { findLeague, getLeague, LEAGUES, type League, type LeagueId } from './leagues'
+import {
+  findLeague,
+  getLeague,
+  isActiveCompetition,
+  LEAGUES,
+  type League,
+  type LeagueId,
+} from './leagues'
 
 /** Page size for Favorites suggestion lists. */
 export const SUGGESTION_PAGE_SIZE = 10
@@ -436,11 +443,13 @@ function competitionPool(favoritedLeagueIds: Set<string>): League[] {
   const ordered: League[] = []
   for (const id of PRIORITY_LEAGUE_IDS) {
     if (favoritedLeagueIds.has(id) || seen.has(id) || !findLeague(id)) continue
+    if (!isActiveCompetition(id)) continue
     seen.add(id)
     ordered.push(getLeague(id))
   }
   for (const league of LEAGUES) {
     if (favoritedLeagueIds.has(league.id) || seen.has(league.id)) continue
+    if (!isActiveCompetition(league)) continue
     seen.add(league.id)
     ordered.push(league)
   }

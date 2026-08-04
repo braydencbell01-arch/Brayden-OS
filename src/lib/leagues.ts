@@ -106,6 +106,11 @@ export type League = {
   hasStandings: boolean
   /** When false, skipped in bulk Match day scoreboard polls (still searchable/favoritable). Default true. */
   matchDayPoll?: boolean
+  /**
+   * False when the competition is abolished / no longer contested.
+   * Kept in the catalog for history, but hidden from current-season lists. Default true.
+   */
+  active?: boolean
 }
 
 /**
@@ -301,6 +306,8 @@ export const LEAGUES: League[] = [
     format: 'cup',
     hasStandings: false,
     matchDayPoll: false,
+    /** Abolished after 2019–20. */
+    active: false,
   },
   {
     id: 'uefa-champions',
@@ -623,6 +630,9 @@ export const LEAGUES: League[] = [
     kind: 'domestic',
     format: 'cup',
     hasStandings: false,
+    matchDayPoll: false,
+    /** Abolished / indefinite hiatus after 2019–20. */
+    active: false,
   },
   {
     id: 'campeon-de-campeones',
@@ -1125,9 +1135,12 @@ export function domesticTableLeagues(): League[] {
   return LEAGUES.filter((league) => league.kind === 'domestic' && league.format === 'league')
 }
 
-/** Domestic cups + super cups. */
+/** Domestic cups + super cups that are still contested. */
 export function domesticCupCompetitions(): League[] {
-  return LEAGUES.filter((league) => league.kind === 'domestic' && league.format !== 'league')
+  return LEAGUES.filter(
+    (league) =>
+      league.kind === 'domestic' && league.format !== 'league' && isActiveCompetition(league),
+  )
 }
 
 /** Cups tied to the same country as a club's domestic league. */
@@ -1138,6 +1151,13 @@ export function domesticCupsForCountry(country: string): League[] {
 /** Club / international friendlies — never listed as profile “competitions”. */
 export function isFriendlyLeagueId(id: LeagueId): boolean {
   return id === 'club-friendly' || id === 'fifa-friendly'
+}
+
+/** False for abolished / indefinitely suspended competitions. */
+export function isActiveCompetition(league: League | LeagueId): boolean {
+  const entry = typeof league === 'string' ? findLeague(league) : league
+  if (!entry) return true
+  return entry.active !== false
 }
 
 /**
@@ -1617,7 +1637,7 @@ export function leaguesInDisplayOrder(
   favoriteLeagueIds?: Set<string> | null,
   preferredLeagueId?: string | null,
 ): League[] {
-  return [...LEAGUES].sort((a, b) =>
+  return LEAGUES.filter((league) => isActiveCompetition(league)).sort((a, b) =>
     compareLeaguesForDisplay(a.id, b.id, favoriteLeagueIds, preferredLeagueId),
   )
 }

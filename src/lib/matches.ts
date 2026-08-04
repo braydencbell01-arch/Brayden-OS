@@ -6,6 +6,7 @@ import {
   getLeague,
   inferInternationalSeasonStartYear,
   inferSoccerSeasonStartYear,
+  isActiveCompetition,
   isFriendlyLeagueId,
   isInternationalLeague,
   internationalLeagues,
@@ -213,7 +214,9 @@ export async function fetchBigFiveWindow(
   from: Date,
   to: Date,
 ): Promise<BigFiveWindowResult> {
-  const pollLeagues = LEAGUES.filter((league) => league.matchDayPoll !== false)
+  const pollLeagues = LEAGUES.filter(
+    (league) => league.matchDayPoll !== false && isActiveCompetition(league),
+  )
   const results = await Promise.allSettled(
     pollLeagues.map((league) => fetchLeagueScoreboard(league.id, league.espnCode, from, to)),
   )
@@ -779,6 +782,10 @@ export function buildTeamSeasonCompetitions(
     const league = findLeague(match.leagueId)
     if (!league) continue
 
+    // Don't surface abolished cups on current profiles unless they somehow
+    // still have fixtures in the selected season window.
+    if (!isActiveCompetition(league) && !inCurrent) continue
+
     // Early in a new Aug–Jul season, keep continental comps from the previous
     // window so AFC CL / UCL etc. don't vanish before new fixtures appear.
     if (!inCurrent && inPrevious && league.kind !== 'continental') continue
@@ -791,7 +798,10 @@ export function buildTeamSeasonCompetitions(
     add({ key: league.id, name: league.name, leagueId: league.id })
   }
 
-  for (const extra of extras) add(extra)
+  for (const extra of extras) {
+    if (extra.leagueId && !isActiveCompetition(extra.leagueId)) continue
+    add(extra)
+  }
 
   const domesticId =
     !international &&
