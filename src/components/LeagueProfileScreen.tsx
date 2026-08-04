@@ -11,8 +11,6 @@ import {
   addDays,
   CALENDAR_INITIAL_PAST_DAYS,
   CALENDAR_PAST_CHUNK_DAYS,
-  formatKickoffTime,
-  formatMatchDayHeading,
   startOfDay,
 } from '../lib/dates'
 import type { FavoriteTeam, FavoritesApi } from '../lib/favorites'
@@ -23,8 +21,8 @@ import {
   nextMatchForLeague,
   type Match,
 } from '../lib/matches'
-import { leagueAccentColor, teamLogoUrl } from '../lib/stats/branding'
-import { currentSeasonStartYear } from '../lib/stats/seasonDefaults'
+import { leagueAccentColor } from '../lib/stats/branding'
+import { currentSeasonStartYear, isBetweenCompetitionEditions } from '../lib/stats/seasonDefaults'
 import { useLeagueKnockoutBracket } from '../lib/stats/useLeagueKnockoutBracket'
 import { useLeagueLogo } from '../lib/stats/useLeagueLogo'
 import { useLeagueOverviewFacts } from '../lib/stats/useLeagueOverviewFacts'
@@ -49,7 +47,7 @@ import {
 import { StandingsTable } from './StandingsTable'
 
 type LeagueTab = 'overview' | 'matches' | 'table' | 'knockout' | 'stats'
-type OverviewSection = 'form' | 'nextMatch'
+type OverviewSection = 'form'
 
 const TABS: Array<{
   id: LeagueTab
@@ -112,7 +110,6 @@ export function LeagueProfileScreen({
   const [tab, setTab] = useState<LeagueTab>('overview')
   const [openOverview, setOpenOverview] = useState<Record<OverviewSection, boolean>>({
     form: true,
-    nextMatch: true,
   })
 
   const leagueFavorited = favorites.isLeagueFavorite(league.id)
@@ -131,6 +128,11 @@ export function LeagueProfileScreen({
   const playerStats = useLeaguePlayerStats(league.id, true)
 
   const overviewFacts = useLeagueOverviewFacts(league.id)
+
+  const betweenEditions = isBetweenCompetitionEditions(
+    league.id,
+    standings.selectedSeason ?? overviewFacts.data?.seasonYear ?? null,
+  )
 
   const timelineMatches = useMemo(
     () => matchesForLeague(matches, league.id),
@@ -176,7 +178,7 @@ export function LeagueProfileScreen({
 
   useEffect(() => {
     setTab('overview')
-    setOpenOverview({ form: true, nextMatch: true })
+    setOpenOverview({ form: true })
   }, [league.id])
 
   const toggleOverview = (section: OverviewSection) => {
@@ -439,11 +441,6 @@ export function LeagueProfileScreen({
                       className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
                       {mostTitles.shortName}
-                      {mostTitles.titles > 0 ? (
-                        <span className="ml-1.5 text-sm font-semibold text-mist/70">
-                          · {mostTitles.titles}
-                        </span>
-                      ) : null}
                     </button>
                   ) : (
                     MISSING_SHORT
@@ -453,7 +450,9 @@ export function LeagueProfileScreen({
               <ProfileMetric
                 label="Current leader"
                 value={
-                  !showCurrentLeader || !league.hasStandings ? (
+                  !showCurrentLeader ||
+                  betweenEditions ||
+                  !league.hasStandings ? (
                     MISSING_SHORT
                   ) : standings.loading ? (
                     '…'
@@ -487,85 +486,6 @@ export function LeagueProfileScreen({
               </div>
             ) : null}
 
-            {nextMatch ? (
-              <OverviewCard
-                title="Next match"
-                subtitle={formatMatchDayHeading(nextMatch.dateKey)}
-                open={openOverview.nextMatch}
-                onToggle={() => toggleOverview('nextMatch')}
-              >
-                <div className="flex w-full items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setTab('matches')}
-                    className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    aria-label={`${nextMatch.home.name} logo — open fixtures`}
-                  >
-                    <EntityLogo
-                      name={nextMatch.home.name}
-                      src={teamLogoUrl(nextMatch.home.id)}
-                      size="md"
-                    />
-                  </button>
-                  <div className="min-w-0 flex-1 text-center">
-                    <p className="truncate text-sm font-semibold text-cream">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenTeam({
-                            id: nextMatch.home.id,
-                            name: nextMatch.home.name,
-                            shortName: nextMatch.home.shortName,
-                            leagueId: league.id,
-                            kind: isInternational ? 'national' : 'club',
-                          })
-                        }
-                        className="profile-link transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                      >
-                        {nextMatch.home.shortName}
-                      </button>
-                      <span className="text-mist/55"> vs </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onOpenTeam({
-                            id: nextMatch.away.id,
-                            name: nextMatch.away.name,
-                            shortName: nextMatch.away.shortName,
-                            leagueId: league.id,
-                            kind: isInternational ? 'national' : 'club',
-                          })
-                        }
-                        className="profile-link transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                      >
-                        {nextMatch.away.shortName}
-                      </button>
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setTab('matches')}
-                      className="mt-0.5 text-xs text-mist/65 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    >
-                      {formatKickoffTime(nextMatch.kickoff)}
-                      {nextMatch.venue ? ` · ${nextMatch.venue}` : ''}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setTab('matches')}
-                    className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                    aria-label={`${nextMatch.away.name} logo — open fixtures`}
-                  >
-                    <EntityLogo
-                      name={nextMatch.away.name}
-                      src={teamLogoUrl(nextMatch.away.id)}
-                      size="md"
-                    />
-                  </button>
-                </div>
-              </OverviewCard>
-            ) : null}
-
             {league.hasStandings ? (
               <OverviewCard
                 title="Form"
@@ -591,20 +511,6 @@ export function LeagueProfileScreen({
 
         {tab === 'matches' ? (
           <div className="flex flex-col gap-2">
-            {nextMatch ? (
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime">
-                Next match
-                <span className="ml-2 font-semibold normal-case tracking-normal text-mist/70">
-                  {nextMatch.status === 'live'
-                    ? nextMatch.statusText || 'Live'
-                    : nextMatch.kickoffTimeKnown
-                      ? `${formatMatchDayHeading(nextMatch.dateKey)} · ${formatKickoffTime(nextMatch.kickoff)}`
-                      : formatMatchDayHeading(nextMatch.dateKey)}
-                  {' · '}
-                  {nextMatch.home.shortName} vs {nextMatch.away.shortName}
-                </span>
-              </p>
-            ) : null}
             <div
               ref={matchesScrollRef}
               onScroll={onMatchesScroll}
@@ -619,6 +525,7 @@ export function LeagueProfileScreen({
                 <MatchList
                   matches={timelineMatches}
                   allMatches={timelineMatches}
+                  showDate
                   nextMatchId={nextMatch?.id}
                   onOpenTeam={onOpenTeam}
                   onOpenPlayer={onOpenPlayer}

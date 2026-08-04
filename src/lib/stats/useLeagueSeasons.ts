@@ -16,11 +16,12 @@ export type LeagueSeasonMode = 'all' | 'standings' | 'leaders' | 'fotmob'
 
 /**
  * Shared season list + selection for league-scoped profile sections.
- * Always defaults to the current Aug–Jul season (even with no published data yet).
+ * Defaults to the current Aug–Jul season when ESPN has it; otherwise the
+ * newest real edition (so idle cups like Club World Cup open on last played).
  * - `all`: every ESPN season for the league
  * - `standings`: ESPN seasons for the league table
- * - `leaders`: ESPN seasons that have leaderboard data (plus current)
- * - `fotmob`: FotMob seasons with xG boards (plus current)
+ * - `leaders`: ESPN seasons that have leaderboard data
+ * - `fotmob`: FotMob seasons with xG boards
  */
 export function useLeagueSeasons(
   leagueId: LeagueId,

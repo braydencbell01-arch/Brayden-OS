@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getLeague, isInternationalLeague, type LeagueId } from '../lib/leagues'
 import type { FavoriteTeam } from '../lib/favorites'
-import { formatKickoffTime } from '../lib/dates'
+import { formatKickoffTime, formatMatchDayHeading } from '../lib/dates'
 import { MISSING_LONG, MISSING_SHORT, missingLong, missingShort } from '../lib/display'
 import { isFavoriteMatch, type Match } from '../lib/matches'
 import type { MatchLineupPlayer } from '../lib/stats/types'
@@ -127,6 +127,7 @@ function ExpandableMatchRow({
   match,
   allMatches,
   showLeague = false,
+  showDate = false,
   isFavorite = false,
   flat = false,
   onOpenTeam,
@@ -136,6 +137,7 @@ function ExpandableMatchRow({
   match: Match
   allMatches: Match[]
   showLeague?: boolean
+  showDate?: boolean
   isFavorite?: boolean
   flat?: boolean
   onOpenTeam?: (team: FavoriteTeam) => void
@@ -148,9 +150,11 @@ function ExpandableMatchRow({
   const { stats, loading, error } = useMatchDetailStats(open ? match : null)
   const expandLabel =
     match.status === 'scheduled' ? 'Details' : match.status === 'live' ? 'Live' : 'Lineups'
-  const leagueLabel = showLeague
-    ? league.short
-    : missingLong(match.venue)
+  const metaLabel = showDate
+    ? formatMatchDayHeading(match.dateKey)
+    : showLeague
+      ? league.short
+      : missingLong(match.venue)
 
   return (
     <article
@@ -169,16 +173,16 @@ function ExpandableMatchRow({
       <div className={flat ? 'px-3 py-2.5' : 'px-4 py-3'}>
         <div className="mb-1.5 flex w-full items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-mist/70">
-            {showLeague && onOpenLeague ? (
+            {showLeague && onOpenLeague && !showDate ? (
               <button
                 type="button"
                 onClick={() => onOpenLeague(match.leagueId)}
                 className="profile-link truncate text-left transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
               >
-                {leagueLabel}
+                {metaLabel}
               </button>
             ) : (
-              <span className="truncate">{leagueLabel}</span>
+              <span className="truncate">{metaLabel}</span>
             )}
           </p>
           <button
@@ -244,6 +248,7 @@ export function MatchList({
   matches,
   allMatches,
   showLeague = false,
+  showDate = false,
   flat = false,
   emptyLabel,
   nextMatchId,
@@ -256,10 +261,12 @@ export function MatchList({
   matches: Match[]
   allMatches?: Match[]
   showLeague?: boolean
+  /** Show calendar date on each row (league fixtures). */
+  showDate?: boolean
   /** Divider rows instead of nested bordered cards (for league shells). */
   flat?: boolean
   emptyLabel: string
-  /** When set, renders a "Next Match" label above that row (team timeline). */
+  /** Marks the next match row for scroll anchoring (no separate "Next Match" label). */
   nextMatchId?: string | null
   onOpenTeam?: (team: FavoriteTeam) => void
   onOpenPlayer?: (player: PlayerNavRef) => void
@@ -285,15 +292,11 @@ export function MatchList({
             data-match-id={match.id}
             data-next-match={isNext ? 'true' : undefined}
           >
-            {isNext ? (
-              <p className="mb-1.5 px-0.5 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-lime">
-                Next Match
-              </p>
-            ) : null}
             <ExpandableMatchRow
               match={match}
               allMatches={briefingPool}
               showLeague={showLeague}
+              showDate={showDate}
               flat={flat}
               isFavorite={isFavoriteMatch(match, leagueIds, teamIds)}
               onOpenTeam={onOpenTeam}

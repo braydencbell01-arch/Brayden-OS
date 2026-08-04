@@ -1,5 +1,5 @@
 import { getLeague, inferSoccerSeasonStartYear, type LeagueId } from '../leagues'
-import { fetchLeagueStandings } from './espn'
+import { fetchEspnSeasonScoreboardWindow, fetchLeagueEditionYears, fetchLeagueStandings } from './espn'
 
 export type LeagueChampion = {
   teamId: string
@@ -316,8 +316,7 @@ async function championFromSeasonFinal(
   seasonYear: number,
 ): Promise<LeagueChampion | null> {
   const league = getLeague(leagueId)
-  const from = `${seasonYear}0801`
-  const to = `${seasonYear + 1}0731`
+  const { from, to } = await fetchEspnSeasonScoreboardWindow(league.espnCode, seasonYear)
   try {
     const res = await fetch(
       `https://site.api.espn.com/apis/site/v2/sports/soccer/${league.espnCode}/scoreboard?dates=${from}-${to}&limit=400`,
@@ -408,22 +407,31 @@ async function championFromSeasonFinal(
 }
 
 /**
- * Last season's winner: table top for league formats, otherwise the cup final
- * (or last completed match) of the previous Aug–Jul season.
+ * Reigning champion: last completed table season for leagues, otherwise the
+ * most recent ESPN edition final (summer tournaments included).
  */
 export async function fetchLeagueChampion(
   leagueId: LeagueId,
   currentSeasonYear = inferSoccerSeasonStartYear(),
 ): Promise<LeagueChampion | null> {
   const league = getLeague(leagueId)
-  const previous = currentSeasonYear - 1
+  const editions = await fetchLeagueEditionYears(leagueId)
 
   if (league.hasStandings && league.format === 'league') {
+    const previous =
+      editions.find((year) => year < currentSeasonYear) ?? currentSeasonYear - 1
     const fromTable = await championFromStandings(leagueId, previous)
     if (fromTable) return fromTable
+    return championFromSeasonFinal(leagueId, previous)
   }
 
-  return championFromSeasonFinal(leagueId, previous)
+  // Cups / tournaments: walk newest ESPN editions until a final winner appears.
+  const years = editions.length > 0 ? editions : [currentSeasonYear, currentSeasonYear - 1]
+  for (const year of years) {
+    const fromFinal = await championFromSeasonFinal(leagueId, year)
+    if (fromFinal) return fromFinal
+  }
+  return null
 }
 
 async function championForSeason(
@@ -654,17 +662,24 @@ export async function fetchLeagueMostTitles(
 
 export async function fetchLeagueOverviewFacts(
   leagueId: LeagueId,
-  seasonYear = inferSoccerSeasonStartYear(),
+  seasonYear?: number,
 ): Promise<LeagueOverviewFacts> {
-  const cacheKey = `${leagueId}:${seasonYear}`
+  const editions = await fetchLeagueEditionYears(leagueId)
+  const resolvedYear =
+    seasonYear ??
+    editions.find((year) => year === inferSoccerSeasonStartYear()) ??
+    editions[0] ??
+    inferSoccerSeasonStartYear()
+  const cacheKey = `${leagueId}:${resolvedYear}`
   const cached = overviewFactsCache.get(cacheKey)
   if (cached) return cached
 
-  const previousSeasonYear = seasonYear - 1
+  const previousSeasonYear =
+    editions.find((year) => year < resolvedYear) ?? resolvedYear - 1
   const [seasonMatchCount, champion, mostTitles] = await Promise.all([
-    fetchLeagueSeasonMatchCount(leagueId, seasonYear),
-    fetchLeagueChampion(leagueId, seasonYear),
-    fetchLeagueMostTitles(leagueId, seasonYear),
+    fetchLeagueSeasonMatchCount(leagueId, resolvedYear),
+    fetchLeagueChampion(leagueId, resolvedYear),
+    fetchLeagueMostTitles(leagueId, resolvedYear),
   ])
 
   const facts: LeagueOverviewFacts = {
@@ -672,7 +687,7 @@ export async function fetchLeagueOverviewFacts(
     seasonMatchCount,
     champion,
     mostTitles,
-    seasonYear,
+    seasonYear: resolvedYear,
     previousSeasonYear,
   }
   overviewFactsCache.set(cacheKey, facts)
