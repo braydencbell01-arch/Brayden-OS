@@ -7,10 +7,16 @@ export type LeagueChampion = {
   shortName: string
 }
 
+export type LeagueMostTitles = LeagueChampion & {
+  titles: number
+  lastWonSeason: number
+}
+
 export type LeagueOverviewFacts = {
   foundedYear: number | null
   seasonMatchCount: number | null
   champion: LeagueChampion | null
+  mostTitles: LeagueMostTitles | null
   seasonYear: number
   previousSeasonYear: number
 }
@@ -110,6 +116,83 @@ export function leagueFoundedYear(leagueId: LeagueId): number | null {
   return LEAGUE_FOUNDED_YEAR[leagueId] ?? null
 }
 
+/**
+ * Full-season match totals that are not a plain double round-robin
+ * (or that we want pinned so mid-season ESPN calendars cannot shrink them).
+ */
+const SEASON_MATCH_TOTAL: Partial<Record<LeagueId, number>> = {
+  'premier-league': 380,
+  'la-liga': 380,
+  'serie-a': 380,
+  bundesliga: 306,
+  'ligue-1': 306,
+  eredivisie: 306,
+  'primeira-liga': 306,
+  'eng-championship': 552,
+  'eng-league-one': 552,
+  'eng-league-two': 552,
+  'esp-segunda': 462,
+  'ita-serie-b': 380,
+  'ger-2-bundesliga': 306,
+  'fra-ligue-2': 306,
+  'scottish-premiership': 228,
+  'scottish-championship': 180,
+  mls: 510,
+  brasileirao: 380,
+  'liga-mx': 153,
+  'liga-profesional': 240,
+  'belgian-pro-league': 240,
+  'turkish-super-lig': 306,
+  'austrian-bundesliga': 132,
+  'swiss-super-league': 180,
+  superliga: 192,
+  allsvenskan: 240,
+  eliteserien: 240,
+  'j1-league': 380,
+  'saudi-pro-league': 306,
+  'a-league': 182,
+  'community-shield': 1,
+  'spanish-supercopa': 3,
+  'italian-supercoppa': 1,
+  'german-supercup': 1,
+  'trophee-des-champions': 1,
+  'uefa-super-cup': 1,
+  'johan-cruyff-shield': 1,
+  'brazilian-supercopa': 1,
+  'argentine-supercopa': 1,
+  'campeon-de-campeones': 1,
+  'fifa-intercontinental': 1,
+}
+
+/** Leagues that should not use n×(n−1) even if standings length is known. */
+const NON_DOUBLE_ROUND_ROBIN = new Set<LeagueId>([
+  'scottish-premiership',
+  'scottish-championship',
+  'mls',
+  'liga-mx',
+  'liga-profesional',
+  'belgian-pro-league',
+  'austrian-bundesliga',
+  'swiss-super-league',
+  'superliga',
+  'a-league',
+  'uefa-nations',
+  'uefa-champions',
+  'uefa-europa',
+  'uefa-conference',
+  'fifa-world',
+  'uefa-euro',
+  'conmebol-america',
+  'caf-nations',
+  'afc-asian-cup',
+  'concacaf-gold',
+  'fifa-worldq',
+  'uefa-euro-qual',
+])
+
+const mostTitlesCache = new Map<string, LeagueMostTitles | null>()
+const overviewFactsCache = new Map<string, LeagueOverviewFacts>()
+
 async function listSeasonTypeIds(
   espnCode: string,
   seasonYear: number,
@@ -140,13 +223,40 @@ async function listSeasonTypeIds(
 }
 
 /**
- * Full-season fixture count for Aug 1 – Jul 31 (ESPN season year = August start).
- * Sums every season type so cups/knockouts are included even when later rounds
- * are not yet played.
+ * How many matches a full season of this competition contains — not how many
+ * are currently scheduled, played, or remaining on ESPN's live calendar.
  */
 export async function fetchLeagueSeasonMatchCount(
   leagueId: LeagueId,
   seasonYear = inferSoccerSeasonStartYear(),
+): Promise<number | null> {
+  const pinned = SEASON_MATCH_TOTAL[leagueId]
+  if (pinned != null) return pinned
+
+  const league = getLeague(leagueId)
+  if (
+    league.format === 'league' &&
+    league.hasStandings &&
+    !NON_DOUBLE_ROUND_ROBIN.has(leagueId)
+  ) {
+    try {
+      const rows = await fetchLeagueStandings(leagueId, seasonYear)
+      const n = rows.length
+      if (n >= 2) return n * (n - 1)
+    } catch {
+      // fall through to ESPN calendar
+    }
+  }
+
+  // Prefer the previous completed season calendar (usually fully published).
+  const previous = await fetchEspnSeasonEventCount(leagueId, seasonYear - 1)
+  if (previous != null && previous > 0) return previous
+  return fetchEspnSeasonEventCount(leagueId, seasonYear)
+}
+
+async function fetchEspnSeasonEventCount(
+  leagueId: LeagueId,
+  seasonYear: number,
 ): Promise<number | null> {
   const league = getLeague(leagueId)
   const typeIds = await listSeasonTypeIds(league.espnCode, seasonYear)
@@ -266,21 +376,113 @@ export async function fetchLeagueChampion(
   return championFromSeasonFinal(leagueId, previous)
 }
 
+async function championForSeason(
+  leagueId: LeagueId,
+  seasonYear: number,
+): Promise<LeagueChampion | null> {
+  const league = getLeague(leagueId)
+  if (league.hasStandings && league.format === 'league') {
+    const fromTable = await championFromStandings(leagueId, seasonYear)
+    if (fromTable) return fromTable
+  }
+  return championFromSeasonFinal(leagueId, seasonYear)
+}
+
+/**
+ * Team with the most titles in this competition. Ties go to the most recent winner.
+ */
+export async function fetchLeagueMostTitles(
+  leagueId: LeagueId,
+  currentSeasonYear = inferSoccerSeasonStartYear(),
+): Promise<LeagueMostTitles | null> {
+  const cacheKey = `${leagueId}:${currentSeasonYear}`
+  if (mostTitlesCache.has(cacheKey)) return mostTitlesCache.get(cacheKey) ?? null
+
+  const founded = leagueFoundedYear(leagueId) ?? currentSeasonYear - 30
+  const earliest = Math.max(founded, currentSeasonYear - 55)
+  const latest = currentSeasonYear - 1
+  if (latest < earliest) {
+    mostTitlesCache.set(cacheKey, null)
+    return null
+  }
+
+  const years: number[] = []
+  for (let year = latest; year >= earliest; year -= 1) years.push(year)
+
+  const tallies = new Map<
+    string,
+    { champ: LeagueChampion; titles: number; lastWonSeason: number }
+  >()
+
+  const batchSize = 8
+  for (let i = 0; i < years.length; i += batchSize) {
+    const batch = years.slice(i, i + batchSize)
+    const results = await Promise.all(
+      batch.map(async (year) => ({ year, champ: await championForSeason(leagueId, year) })),
+    )
+    for (const { year, champ } of results) {
+      if (!champ?.teamId) continue
+      const existing = tallies.get(champ.teamId)
+      if (existing) {
+        existing.titles += 1
+        if (year > existing.lastWonSeason) {
+          existing.lastWonSeason = year
+          existing.champ = champ
+        }
+      } else {
+        tallies.set(champ.teamId, {
+          champ,
+          titles: 1,
+          lastWonSeason: year,
+        })
+      }
+    }
+  }
+
+  let best: LeagueMostTitles | null = null
+  for (const row of tallies.values()) {
+    const candidate: LeagueMostTitles = {
+      ...row.champ,
+      titles: row.titles,
+      lastWonSeason: row.lastWonSeason,
+    }
+    if (
+      !best ||
+      candidate.titles > best.titles ||
+      (candidate.titles === best.titles &&
+        candidate.lastWonSeason > best.lastWonSeason)
+    ) {
+      best = candidate
+    }
+  }
+
+  mostTitlesCache.set(cacheKey, best)
+  return best
+}
+
 export async function fetchLeagueOverviewFacts(
   leagueId: LeagueId,
   seasonYear = inferSoccerSeasonStartYear(),
 ): Promise<LeagueOverviewFacts> {
+  const cacheKey = `${leagueId}:${seasonYear}`
+  const cached = overviewFactsCache.get(cacheKey)
+  if (cached) return cached
+
   const previousSeasonYear = seasonYear - 1
-  const [seasonMatchCount, champion] = await Promise.all([
+  const [seasonMatchCount, champion, mostTitles] = await Promise.all([
     fetchLeagueSeasonMatchCount(leagueId, seasonYear),
     fetchLeagueChampion(leagueId, seasonYear),
+    fetchLeagueMostTitles(leagueId, seasonYear),
   ])
 
-  return {
+  const facts: LeagueOverviewFacts = {
     foundedYear: leagueFoundedYear(leagueId),
     seasonMatchCount,
     champion,
+    mostTitles,
     seasonYear,
     previousSeasonYear,
   }
+  overviewFactsCache.set(cacheKey, facts)
+  return facts
 }

@@ -145,12 +145,9 @@ export function LeagueProfileScreen({
     [matches, standings.rows],
   )
 
-  const leader = standings.rows[0] ?? null
+  const currentLeader = standings.rows[0] ?? null
   const clubCount = standings.rows.length
-  const topScorer =
-    playerStats.data?.rows.find((row) => /goal/i.test(row.label))?.player ||
-    playerStats.data?.rows[0]?.player ||
-    null
+  const mostTitles = overviewFacts.data?.mostTitles ?? null
 
   const { logoUrl } = useLeagueLogo(league.id)
   const accent = leagueAccentColor(league.id)
@@ -375,7 +372,7 @@ export function LeagueProfileScreen({
                 }
               />
               <ProfileMetric
-                label="Champion"
+                label="Reigning champion"
                 value={
                   overviewFacts.loading ? (
                     '…'
@@ -401,27 +398,25 @@ export function LeagueProfileScreen({
                 }
               />
               <ProfileMetric
-                label="Leader"
+                label="Most titles"
                 value={
-                  !league.hasStandings ? (
-                    MISSING_SHORT
-                  ) : standings.loading ? (
+                  overviewFacts.loading ? (
                     '…'
-                  ) : leader ? (
+                  ) : mostTitles ? (
                     <button
                       type="button"
                       onClick={() =>
                         onOpenTeam({
-                          id: leader.teamId,
-                          name: leader.team,
-                          shortName: leader.shortName,
+                          id: mostTitles.teamId,
+                          name: mostTitles.name,
+                          shortName: mostTitles.shortName,
                           leagueId: league.id,
                           kind: isInternational ? 'national' : 'club',
                         })
                       }
                       className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
-                      {leader.shortName}
+                      {mostTitles.shortName}
                     </button>
                   ) : (
                     MISSING_SHORT
@@ -429,27 +424,27 @@ export function LeagueProfileScreen({
                 }
               />
               <ProfileMetric
-                label="Top scorer"
+                label="Current leader"
                 value={
-                  playerStats.loading && !topScorer ? (
+                  !league.hasStandings ? (
+                    MISSING_SHORT
+                  ) : standings.loading ? (
                     '…'
-                  ) : topScorer ? (
+                  ) : currentLeader ? (
                     <button
                       type="button"
                       onClick={() =>
-                        onOpenPlayer({
-                          id: topScorer.id,
+                        onOpenTeam({
+                          id: currentLeader.teamId,
+                          name: currentLeader.team,
+                          shortName: currentLeader.shortName,
                           leagueId: league.id,
-                          name: topScorer.name,
-                          shortName: topScorer.shortName,
-                          jersey: topScorer.jersey,
-                          teamId: topScorer.teamId,
-                          teamName: topScorer.teamName,
+                          kind: isInternational ? 'national' : 'club',
                         })
                       }
-                      className="profile-link block truncate text-lg font-semibold leading-8 text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      className="profile-link text-lg font-semibold text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
                     >
-                      {topScorer.shortName || topScorer.name}
+                      {currentLeader.shortName}
                     </button>
                   ) : (
                     MISSING_SHORT
@@ -471,61 +466,73 @@ export function LeagueProfileScreen({
                 open={openOverview.nextMatch}
                 onToggle={() => toggleOverview('nextMatch')}
               >
-                <button
-                  type="button"
-                  onClick={() => setTab('matches')}
-                  className="flex w-full items-center gap-3 text-left transition hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                >
-                  <EntityLogo
-                    name={nextMatch.home.name}
-                    src={teamLogoUrl(nextMatch.home.id)}
-                    size="md"
-                  />
-                  <div className="min-w-0 flex-1">
+                <div className="flex w-full items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTab('matches')}
+                    className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    aria-label={`${nextMatch.home.name} logo — open fixtures`}
+                  >
+                    <EntityLogo
+                      name={nextMatch.home.name}
+                      src={teamLogoUrl(nextMatch.home.id)}
+                      size="md"
+                    />
+                  </button>
+                  <div className="min-w-0 flex-1 text-center">
                     <p className="truncate text-sm font-semibold text-cream">
-                      {nextMatch.home.shortName} vs {nextMatch.away.shortName}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenTeam({
+                            id: nextMatch.home.id,
+                            name: nextMatch.home.name,
+                            shortName: nextMatch.home.shortName,
+                            leagueId: league.id,
+                            kind: isInternational ? 'national' : 'club',
+                          })
+                        }
+                        className="profile-link transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {nextMatch.home.shortName}
+                      </button>
+                      <span className="text-mist/55"> vs </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenTeam({
+                            id: nextMatch.away.id,
+                            name: nextMatch.away.name,
+                            shortName: nextMatch.away.shortName,
+                            leagueId: league.id,
+                            kind: isInternational ? 'national' : 'club',
+                          })
+                        }
+                        className="profile-link transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                      >
+                        {nextMatch.away.shortName}
+                      </button>
                     </p>
-                    <p className="mt-0.5 text-xs text-mist/65">
+                    <button
+                      type="button"
+                      onClick={() => setTab('matches')}
+                      className="mt-0.5 text-xs text-mist/65 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    >
                       {formatKickoffTime(nextMatch.kickoff)}
                       {nextMatch.venue ? ` · ${nextMatch.venue}` : ''}
-                    </p>
+                    </button>
                   </div>
-                  <EntityLogo
-                    name={nextMatch.away.name}
-                    src={teamLogoUrl(nextMatch.away.id)}
-                    size="md"
-                  />
-                </button>
-                <div className="mt-3 flex justify-center gap-6">
                   <button
                     type="button"
-                    onClick={() =>
-                      onOpenTeam({
-                        id: nextMatch.home.id,
-                        name: nextMatch.home.name,
-                        shortName: nextMatch.home.shortName,
-                        leagueId: league.id,
-                        kind: isInternational ? 'national' : 'club',
-                      })
-                    }
-                    className="profile-link text-xs font-semibold text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    onClick={() => setTab('matches')}
+                    className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
+                    aria-label={`${nextMatch.away.name} logo — open fixtures`}
                   >
-                    {nextMatch.home.shortName}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onOpenTeam({
-                        id: nextMatch.away.id,
-                        name: nextMatch.away.name,
-                        shortName: nextMatch.away.shortName,
-                        leagueId: league.id,
-                        kind: isInternational ? 'national' : 'club',
-                      })
-                    }
-                    className="profile-link text-xs font-semibold text-mist/70 transition hover:text-lime focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lime"
-                  >
-                    {nextMatch.away.shortName}
+                    <EntityLogo
+                      name={nextMatch.away.name}
+                      src={teamLogoUrl(nextMatch.away.id)}
+                      size="md"
+                    />
                   </button>
                 </div>
               </OverviewCard>
