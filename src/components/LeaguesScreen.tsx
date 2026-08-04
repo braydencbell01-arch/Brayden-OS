@@ -175,9 +175,9 @@ export function LeaguesScreen({
         {sections.length > 1 ? (
           <nav
             aria-label="Jump to competition section"
-            className="sticky top-0 z-30 -mx-5 mb-3 w-full self-start border-b border-white/10 bg-pitch-deep/92 px-5 py-1.5 backdrop-blur-md md:-mx-6 md:px-6"
+            className="sticky top-[max(0.65rem,env(safe-area-inset-top,0px))] z-30 -mx-5 mb-3 w-[calc(100%+2.5rem)] max-w-none self-start border-b border-white/10 bg-pitch-deep/92 py-2 backdrop-blur-md md:-mx-6 md:w-[calc(100%+3rem)]"
           >
-            <div className="scrollbar-hide flex gap-1 overflow-x-auto overscroll-x-contain">
+            <div className="scrollbar-hide flex gap-1.5 overflow-x-auto overscroll-x-contain px-5 md:px-6">
               {sections.map((section) => {
                 const active = activeSection === section.id
                 return (
@@ -199,6 +199,8 @@ export function LeaguesScreen({
                   </button>
                 )
               })}
+              {/* Trailing spacer so the last pill isn’t clipped at the right edge. */}
+              <span className="w-3 shrink-0" aria-hidden />
             </div>
           </nav>
         ) : null}
@@ -209,7 +211,7 @@ export function LeaguesScreen({
               sectionRefs.current.favorites = node
             }}
             data-section-id="favorites"
-            className="mb-6 scroll-mt-28"
+            className="mb-6 scroll-mt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
             aria-label="Favorite leagues"
           >
             <SectionHeading
@@ -239,7 +241,7 @@ export function LeaguesScreen({
               sectionRefs.current.international = node
             }}
             data-section-id="international"
-            className="mb-6 scroll-mt-28"
+            className="mb-6 scroll-mt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
             aria-label="International competitions"
           >
             <SectionHeading
@@ -269,7 +271,7 @@ export function LeaguesScreen({
               sectionRefs.current.continental = node
             }}
             data-section-id="continental"
-            className="mb-6 scroll-mt-28"
+            className="mb-6 scroll-mt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
             aria-label="Continental club competitions"
           >
             <SectionHeading
@@ -299,7 +301,7 @@ export function LeaguesScreen({
               sectionRefs.current['domestic-leagues'] = node
             }}
             data-section-id="domestic-leagues"
-            className="mb-6 scroll-mt-28"
+            className="mb-6 scroll-mt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
             aria-label="Domestic leagues"
           >
             <SectionHeading
@@ -329,7 +331,7 @@ export function LeaguesScreen({
               sectionRefs.current['domestic-cups'] = node
             }}
             data-section-id="domestic-cups"
-            className="scroll-mt-28"
+            className="scroll-mt-[calc(env(safe-area-inset-top,0px)+4.5rem)]"
             aria-label="Domestic cups"
           >
             <SectionHeading title="Domestic cups" count={domesticCups.length} />
