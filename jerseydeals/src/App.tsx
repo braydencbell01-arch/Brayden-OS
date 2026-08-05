@@ -333,6 +333,151 @@ function clubHomeKitSrc(clubId: string) {
   return path ? asset(path) : null
 }
 
+/** Short club flavor for EPL / UCL stock rows. */
+const CLUB_STOCK_BLURB: Record<string, string> = {
+  chelsea: 'West London · Stamford Bridge',
+  arsenal: 'North London · Emirates Stadium',
+  liverpool: 'Merseyside · Anfield',
+  'manchester-city': 'Manchester · Etihad Stadium',
+  'manchester-united': 'Manchester · Old Trafford',
+  tottenham: 'North London · Tottenham Hotspur Stadium',
+  newcastle: 'Tyneside · St James’ Park',
+  'aston-villa': 'Birmingham · Villa Park',
+  brighton: 'South Coast · American Express Stadium',
+  'crystal-palace': 'South London · Selhurst Park',
+  'nottingham-forest': 'East Midlands · City Ground',
+  bournemouth: 'South Coast · Vitality Stadium',
+  brentford: 'West London · Gtech Community Stadium',
+  fulham: 'West London · Craven Cottage',
+  'west-ham': 'East London · London Stadium',
+  everton: 'Merseyside · Goodison Park',
+  wolves: 'Midlands · Molineux',
+  'real-madrid': 'Madrid · Santiago Bernabéu',
+  barcelona: 'Catalonia · Spotify Camp Nou',
+  bayern: 'Munich · Allianz Arena',
+  'paris-saint-germain': 'Paris · Parc des Princes',
+  'inter-milan': 'Milan · San Siro',
+  'ac-milan': 'Milan · San Siro',
+  juventus: 'Turin · Allianz Stadium',
+  'borussia-dortmund': 'Dortmund · Signal Iduna Park',
+  'atletico-madrid': 'Madrid · Metropolitano',
+  napoli: 'Naples · Diego Armando Maradona',
+  'bayer-leverkusen': 'Leverkusen · BayArena',
+  ajax: 'Amsterdam · Johan Cruijff Arena',
+  monaco: 'Principality · Stade Louis II',
+  atalanta: 'Bergamo · Gewiss Stadium',
+  lille: 'Northern France · Decathlon Arena',
+}
+
+function ClubInStockRow({
+  club,
+  leagueId,
+  place,
+  nameColor,
+  imageFallbackClass,
+  reduce,
+  delay,
+  favorited,
+  onShop,
+}: {
+  club: ClubInfo
+  leagueId: string
+  place: string
+  nameColor: string
+  imageFallbackClass: string
+  reduce: boolean | null
+  delay: number
+  favorited: boolean
+  onShop: () => void
+}) {
+  const kitSrc = clubHomeKitSrc(club.id)
+  const catalogClub = getClubById(club.id)
+  const leagueName = catalogClub?.leagueName || 'Club'
+  const blurb = CLUB_STOCK_BLURB[club.id] || `${leagueName} side`
+  const kitsLabel = `${club.count} kit${club.count === 1 ? '' : 's'} in stock`
+
+  return (
+    <motion.li {...fadeUp(reduce, delay)} className="relative">
+      <article
+        className={`flex w-full overflow-hidden border-2 bg-white text-left ${
+          favorited ? FAVORITE_OUTER_RING_CLASS : ''
+        }`}
+        style={{ borderColor: nameColor }}
+      >
+        <button
+          type="button"
+          onClick={onShop}
+          className={`relative w-[40%] shrink-0 overflow-hidden sm:w-48 md:w-56 ${imageFallbackClass} outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson`}
+          aria-label={`Shop ${club.name}`}
+        >
+          <div className="aspect-[4/5] w-full sm:aspect-square">
+            {kitSrc ? (
+              <img
+                src={kitSrc}
+                alt=""
+                className="h-full w-full object-cover object-center transition duration-500 hover:scale-[1.03]"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                {catalogClub ? (
+                  <ClubLogoMark club={catalogClub} size="lg" className="!h-16 !w-16" />
+                ) : (
+                  <span className="font-display text-2xl font-bold uppercase text-white/80">
+                    {club.name.slice(0, 3)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </button>
+
+        <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 bg-cream px-4 py-4 sm:px-5 sm:py-5">
+          <div className="pr-10">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
+              {leagueName}
+              {leagueId === 'champions-league' && catalogClub?.leagueId !== 'champions-league'
+                ? ' · Champions League'
+                : ''}
+            </p>
+            <h3
+              className="mt-1 font-display text-xl font-bold uppercase leading-tight tracking-wide sm:text-2xl"
+              style={{ color: nameColor }}
+            >
+              {club.name}
+            </h3>
+            <p className="mt-2 font-brand text-sm leading-relaxed text-navy/75">{blurb}</p>
+            <p className="mt-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
+              {kitsLabel}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onShop}
+              className="inline-flex bg-navy px-4 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy-deep"
+            >
+              Shop {club.name}
+            </button>
+          </div>
+        </div>
+      </article>
+      <ClubFavoriteButton
+        clubId={club.id}
+        clubName={club.name}
+        favorited={favorited}
+        place={place}
+        className={`absolute right-3 top-3 z-10 h-9 w-9 border border-crimson/30 sm:right-4 sm:top-4 ${
+          favorited
+            ? 'bg-crimson text-cream'
+            : 'bg-white text-crimson hover:bg-crimson hover:text-cream'
+        }`}
+      />
+    </motion.li>
+  )
+}
+
 /** Company logos used in Shop by company (reuse collection art). */
 const COMPANY_LOGO: Record<string, string> = {
   nike: 'collections/nike.jpg',
@@ -2120,79 +2265,29 @@ export default function App() {
             <div id="epl-clubs" className="mt-14 scroll-mt-48">
               <p className="eyebrow text-white/85">Clubs in stock</p>
               {eplClubs.length > 0 ? (
-                <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
-                  {eplClubs.map((club, i) => {
-                    const kitSrc = clubHomeKitSrc(club.id)
-                    const catalogClub = getClubById(club.id)
-                    const nameColor = EPL_TEAM_COLOR[club.id] || '#0b223f'
-                    const favorited = favoriteSet.has(club.id)
-                    return (
-                      <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            track('category_click', { category: 'epl_club', club: club.id })
-                            goInventory({
-                              reset: true,
-                              clubId: club.id,
-                              leagueId: 'premier-league',
-                              query: club.name,
-                            })
-                          }}
-                          className={`group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                            favorited ? FAVORITE_OUTER_RING_CLASS : ''
-                          }`}
-                          style={{ borderColor: nameColor }}
-                        >
-                          <div className="aspect-square overflow-hidden bg-[#120018]">
-                            {kitSrc ? (
-                              <img
-                                src={kitSrc}
-                                alt=""
-                                className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-[#2a0830] to-[#120018]">
-                                {catalogClub ? (
-                                  <ClubLogoMark club={catalogClub} size="lg" className="!h-16 !w-16" />
-                                ) : (
-                                  <span className="font-display text-2xl font-bold uppercase text-white/80">
-                                    {club.name.slice(0, 3)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="bg-cream px-3 py-3 pr-11">
-                            <FitOneLine
-                              className="font-display font-bold uppercase tracking-wide"
-                              style={{ color: nameColor }}
-                              maxFontPx={14}
-                              minFontPx={8}
-                            >
-                              {club.name}
-                            </FitOneLine>
-                            <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted">
-                              {club.count} kit{club.count === 1 ? '' : 's'} · shop
-                            </p>
-                          </div>
-                        </button>
-                        <ClubFavoriteButton
-                          clubId={club.id}
-                          clubName={club.name}
-                          favorited={favorited}
-                          place="epl_club"
-                          className={`absolute bottom-2 right-2 z-10 h-8 w-8 border border-crimson/30 ${
-                            favorited
-                              ? 'bg-crimson text-cream'
-                              : 'bg-white text-crimson hover:bg-crimson hover:text-cream'
-                          }`}
-                        />
-                      </motion.li>
-                    )
-                  })}
+                <ul className="mt-5 flex flex-col gap-4">
+                  {eplClubs.map((club, i) => (
+                    <ClubInStockRow
+                      key={club.id}
+                      club={club}
+                      leagueId="premier-league"
+                      place="epl_club"
+                      nameColor={EPL_TEAM_COLOR[club.id] || '#0b223f'}
+                      imageFallbackClass="bg-[#120018] bg-gradient-to-b from-[#2a0830] to-[#120018]"
+                      reduce={reduce}
+                      delay={0.04 * i}
+                      favorited={favoriteSet.has(club.id)}
+                      onShop={() => {
+                        track('category_click', { category: 'epl_club', club: club.id })
+                        goInventory({
+                          reset: true,
+                          clubId: club.id,
+                          leagueId: 'premier-league',
+                          query: club.name,
+                        })
+                      }}
+                    />
+                  ))}
                 </ul>
               ) : (
                 <p className="mt-4 font-brand text-white/90">Premier League kits will appear here when in stock.</p>
@@ -2477,79 +2572,29 @@ export default function App() {
             <div id="ucl-clubs" className="mt-14 scroll-mt-48">
               <p className="eyebrow text-white/85">Clubs in stock</p>
               {uclClubs.length > 0 ? (
-                <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
-                  {uclClubs.map((club, i) => {
-                    const kitSrc = clubHomeKitSrc(club.id)
-                    const catalogClub = getClubById(club.id)
-                    const nameColor = UCL_TEAM_COLOR[club.id] || '#0b223f'
-                    const favorited = favoriteSet.has(club.id)
-                    return (
-                      <motion.li key={club.id} {...fadeUp(reduce, 0.04 * i)} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            track('category_click', { category: 'ucl_club', club: club.id })
-                            goInventory({
-                              reset: true,
-                              clubId: club.id,
-                              leagueId: 'champions-league',
-                              query: club.name,
-                            })
-                          }}
-                          className={`group flex w-full flex-col overflow-hidden border-2 bg-white text-left outline-none transition focus-visible:ring-2 focus-visible:ring-offset-1 ${
-                            favorited ? FAVORITE_OUTER_RING_CLASS : ''
-                          }`}
-                          style={{ borderColor: nameColor }}
-                        >
-                          <div className="aspect-square overflow-hidden bg-[#020b24]">
-                            {kitSrc ? (
-                              <img
-                                src={kitSrc}
-                                alt=""
-                                className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
-                                loading="lazy"
-                                decoding="async"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-b from-[#0a2f7a] to-[#020b24]">
-                                {catalogClub ? (
-                                  <ClubLogoMark club={catalogClub} size="lg" className="!h-16 !w-16" />
-                                ) : (
-                                  <span className="font-display text-2xl font-bold uppercase text-white/80">
-                                    {club.name.slice(0, 3)}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="bg-cream px-3 py-3 pr-11">
-                            <FitOneLine
-                              className="font-display font-bold uppercase tracking-wide"
-                              style={{ color: nameColor }}
-                              maxFontPx={14}
-                              minFontPx={8}
-                            >
-                              {club.name}
-                            </FitOneLine>
-                            <p className="mt-0.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted">
-                              {club.count} kit{club.count === 1 ? '' : 's'} · shop
-                            </p>
-                          </div>
-                        </button>
-                        <ClubFavoriteButton
-                          clubId={club.id}
-                          clubName={club.name}
-                          favorited={favorited}
-                          place="ucl_club"
-                          className={`absolute bottom-2 right-2 z-10 h-8 w-8 border border-crimson/30 ${
-                            favorited
-                              ? 'bg-crimson text-cream'
-                              : 'bg-white text-crimson hover:bg-crimson hover:text-cream'
-                          }`}
-                        />
-                      </motion.li>
-                    )
-                  })}
+                <ul className="mt-5 flex flex-col gap-4">
+                  {uclClubs.map((club, i) => (
+                    <ClubInStockRow
+                      key={club.id}
+                      club={club}
+                      leagueId="champions-league"
+                      place="ucl_club"
+                      nameColor={UCL_TEAM_COLOR[club.id] || '#0b223f'}
+                      imageFallbackClass="bg-[#020b24] bg-gradient-to-b from-[#0a2f7a] to-[#020b24]"
+                      reduce={reduce}
+                      delay={0.04 * i}
+                      favorited={favoriteSet.has(club.id)}
+                      onShop={() => {
+                        track('category_click', { category: 'ucl_club', club: club.id })
+                        goInventory({
+                          reset: true,
+                          clubId: club.id,
+                          leagueId: 'champions-league',
+                          query: club.name,
+                        })
+                      }}
+                    />
+                  ))}
                 </ul>
               ) : (
                 <p className="mt-4 font-brand text-white/90">
