@@ -2034,16 +2034,8 @@ export default function App() {
 
         <section
           aria-label="Why shop with us"
-          className="relative overflow-hidden bg-[#5c1620] text-cream"
+          className="relative overflow-hidden bg-[#8f1218] text-cream"
         >
-          <div
-            className="pointer-events-none absolute inset-0 opacity-30"
-            style={{
-              backgroundImage:
-                'radial-gradient(ellipse 80% 120% at 10% 50%, rgba(0,0,0,0.35), transparent 55%), radial-gradient(ellipse 70% 100% at 90% 40%, rgba(0,0,0,0.25), transparent 50%)',
-            }}
-            aria-hidden
-          />
           <ul className="relative mx-auto flex max-w-6xl flex-col items-start gap-3 px-5 py-3.5 font-brand text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-10 sm:gap-y-2 sm:px-8 sm:py-3.5 sm:text-[0.72rem] md:gap-x-14">
             {[
               `Free shipping over $${FREE_SHIPPING_THRESHOLD}`,
