@@ -1,11 +1,12 @@
 {
-  "syncedAt": "2026-07-30T16:02:05Z",
+  "syncedAt": "2026-08-05T18:09:25Z",
   "kind": "rewards_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 5,
+  "count": 6,
   "emails": [
     "braydencbell01@gmail.com",
+    "braydencbelll01@gmail.com",
     "calebrschrader@gmail.com",
     "candkbell@gmail.com",
     "lynne8002@aol.com",
@@ -21,7 +22,16 @@
         "first_buyer_offer"
       ],
       "firstSeen": "2026-07-27T15:39:21.000Z",
-      "lastSeen": "2026-07-30T13:10:23.000Z",
+      "lastSeen": "2026-08-05T17:41:59.000Z",
+      "phone": "5855053244"
+    },
+    {
+      "email": "braydencbelll01@gmail.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-08-05T17:42:26.000Z",
+      "lastSeen": "2026-08-05T17:42:26.000Z",
       "phone": "5855053244"
     },
     {
@@ -36,10 +46,11 @@
     {
       "email": "candkbell@gmail.com",
       "sources": [
-        "rewards_club"
+        "rewards_club",
+        "cart_checkout_gate"
       ],
       "firstSeen": "2026-07-28T19:19:46.000Z",
-      "lastSeen": "2026-07-28T19:19:46.000Z",
+      "lastSeen": "2026-08-05T12:38:47.000Z",
       "phone": "6158786872"
     },
     {
