@@ -2134,11 +2134,9 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease }}
               >
-                <BrandMark size="hero" className="drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]" />
-                <h1 className="mt-6 max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
+                <h1 className="max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
                   Jersey Deals
                 </h1>
-                <div className="brand-rule mt-4" aria-hidden />
                 <p className="mt-4 max-w-lg font-brand text-base leading-relaxed text-cream/85 md:text-lg">
                   Hi, welcome to JerseyDeals. We sell top quality jerseys from top quality brands, for the lowest
                   prices you’ll find! EVERYTHING we sell is NEW and AUTHENTIC!
