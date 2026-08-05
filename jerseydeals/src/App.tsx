@@ -2141,19 +2141,29 @@ export default function App() {
                   Hi, welcome to JerseyDeals. We sell top quality jerseys from top quality brands, for the lowest
                   prices you’ll find! EVERYTHING we sell is NEW and AUTHENTIC!
                 </p>
-                <div className="mt-8 flex flex-wrap items-center gap-3">
+                <div className="mt-8 flex w-full max-w-md flex-col items-center gap-3 sm:max-w-lg">
                   <motion.button
                     type="button"
                     onClick={() => {
-                      track('cta_click', { place: 'hero_primary' })
-                      goInventory({ reset: true })
+                      track('cta_click', { place: 'hero_primary', filter: 'jerseys' })
+                      goInventory({ reset: true, tag: 'Jerseys' })
                     }}
                     whileHover={reduce ? undefined : { scale: 1.02 }}
                     whileTap={reduce ? undefined : { scale: 0.98 }}
-                    className="inline-flex bg-navy px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:bg-navy-deep"
+                    className="inline-flex w-full items-center justify-center bg-navy px-8 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:bg-navy-deep"
                   >
-                    Shop now
+                    Shop Jersey Deals
                   </motion.button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      track('cta_click', { place: 'hero_shop_all' })
+                      goInventory({ reset: true })
+                    }}
+                    className="font-brand text-sm font-semibold uppercase tracking-[0.14em] text-cream underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
+                  >
+                    Shop all gear
+                  </button>
                 </div>
               </motion.div>
             </div>
