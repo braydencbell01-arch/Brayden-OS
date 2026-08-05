@@ -347,13 +347,39 @@ function FilterChip({
   )
 }
 
-function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+/** Accordion section for the inventory Shop & Filter drawer. */
+function FilterAccordion({
+  id,
+  label,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string
+  label: string
+  open: boolean
+  onToggle: (id: string) => void
+  children: ReactNode
+}) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
-      <p className="shrink-0 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted sm:w-[4.5rem]">
-        {label}
-      </p>
-      <div className="flex min-w-0 flex-wrap gap-1.5">{children}</div>
+    <div className="border-b border-navy/10">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onToggle(id)}
+        className="flex w-full items-center justify-between gap-3 py-4 text-left"
+      >
+        <span className="font-brand text-xs font-bold uppercase tracking-[0.16em] text-navy">
+          {label}
+        </span>
+        <span
+          aria-hidden
+          className={`text-muted transition ${open ? 'rotate-180' : ''}`}
+        >
+          ▾
+        </span>
+      </button>
+      {open ? <div className="flex flex-wrap gap-1.5 pb-4">{children}</div> : null}
     </div>
   )
 }
@@ -562,8 +588,8 @@ function ProductLink({
   reduce?: boolean | null
   delay?: number
   tone?: 'dark' | 'light'
-  /** Compact cards for dense rails; row = image left + text right (catalog). */
-  size?: 'default' | 'compact' | 'row'
+  /** Compact cards for dense rails; catalog = inventory grid (photo top, price right). */
+  size?: 'default' | 'compact' | 'catalog'
   /** Club ids the shopper has favorited — drives red vs navy card outline. */
   favoriteSet?: Set<string>
   onAddToCart: (item: Listing) => void
@@ -584,83 +610,72 @@ function ProductLink({
   const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
   const used = /used|pre-?owned|worn/i.test(condition)
   const compact = cardSize === 'compact'
-  const row = cardSize === 'row'
+  const catalog = cardSize === 'catalog'
   const borderColor =
     (club && CLUB_OUTLINE_COLOR[club.id]) || (tone === 'dark' ? '#fcf5e9' : '#0b223f')
+  const infoBits = [
+    kit !== 'Other' ? kit : null,
+    size && size !== 'Other' ? size : null,
+    item.brand || null,
+    used ? condition : null,
+  ].filter(Boolean) as string[]
+  const infoLine = infoBits.slice(0, 2).join(' · ') || item.tag
 
-  if (row) {
+  if (catalog) {
     return (
-      <li className="w-full border-b border-navy/10 last:border-b-0">
-        <div className="group flex w-full items-stretch gap-3 py-3 outline-none sm:gap-4">
+      <li className="min-w-0">
+        <div className="group outline-none">
           <button
             type="button"
             onClick={() => onQuickView(item)}
-            className={`relative h-20 w-20 shrink-0 overflow-hidden border-2 outline-none focus-visible:ring-2 focus-visible:ring-crimson sm:h-24 sm:w-24 ${
+            className={`relative aspect-[4/5] w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-crimson ${
               favorited ? FAVORITE_OUTER_RING_CLASS : ''
             } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
-            style={{ borderColor }}
+            style={{ border: `2px solid ${borderColor}` }}
             aria-label={`Quick view ${shortTitle(item.title)}`}
           >
             <ProductCardCover item={item} tone={tone} />
             {onSale && (
-              <span className="pointer-events-none absolute left-0.5 top-0.5 z-10 bg-crimson px-1 py-px text-[0.45rem] font-bold uppercase tracking-[0.1em] text-white">
+              <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 bg-crimson px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-white">
                 Sale
               </span>
             )}
           </button>
-          <div className="min-w-0 flex-1 self-center">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              {kit !== 'Other' ? (
-                <p className={`text-[0.6rem] font-semibold uppercase tracking-[0.16em] ${accent}`}>{kit}</p>
-              ) : null}
-              {size && size !== 'Other' ? (
-                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{size}</span>
-              ) : null}
-              {used ? (
-                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{condition}</span>
-              ) : null}
-              {item.quantity === 1 ? (
-                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>Only 1 left</span>
-              ) : null}
-            </div>
+          <button
+            type="button"
+            onClick={() => onQuickView(item)}
+            className={`mt-2.5 block w-full text-left font-brand text-[0.7rem] font-bold uppercase leading-snug tracking-[0.04em] outline-none focus-visible:ring-2 focus-visible:ring-crimson sm:text-[0.78rem] ${titleTone} line-clamp-2`}
+          >
+            {shortTitle(item.title)}
+          </button>
+          <div className="mt-1.5 flex items-start justify-between gap-2">
+            <p className={`min-w-0 flex-1 text-[0.6rem] uppercase leading-snug tracking-[0.08em] ${muted} line-clamp-2`}>
+              {infoLine}
+            </p>
+            <span className="shrink-0 font-brand text-[0.75rem] font-bold tracking-wide text-[#e85d04] sm:text-sm">
+              {formatPrice(item.price, item.currency)}
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
             <button
               type="button"
-              onClick={() => onQuickView(item)}
-              className={`mt-0.5 block w-full text-left font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson ${titleTone} line-clamp-2 text-[0.85rem] sm:text-[0.95rem]`}
+              onClick={() => onAddToCart(item)}
+              className={`text-[0.55rem] font-bold uppercase tracking-[0.14em] ${accent}`}
             >
-              {shortTitle(item.title)}
+              Add to cart
             </button>
-            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
-              <span className={`font-display text-lg font-bold tracking-wide sm:text-xl ${priceTone}`}>
-                {formatPrice(item.price, item.currency)}
-              </span>
+            {buyUrl ? (
               <button
                 type="button"
-                onClick={() => onAddToCart(item)}
-                className={`text-[0.6rem] font-bold uppercase tracking-[0.14em] ${accent}`}
+                onClick={() => {
+                  track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
+                  onBuyNow(item)
+                }}
+                className={`text-[0.55rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
               >
-                Add to cart
+                Buy now
               </button>
-              <button
-                type="button"
-                onClick={() => onQuickView(item)}
-                className={`text-[0.6rem] font-semibold uppercase tracking-[0.14em] ${muted}`}
-              >
-                Details
-              </button>
-              {buyUrl ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
-                    onBuyNow(item)
-                  }}
-                  className={`text-[0.6rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
-                >
-                  Buy now
-                </button>
-              ) : null}
-            </div>
+            ) : null}
           </div>
         </div>
       </li>
@@ -985,6 +1000,7 @@ export default function App() {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [sortBy, setSortBy] = useState<SortId>('featured')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filterSection, setFilterSection] = useState<string | null>('type')
   const [quickView, setQuickView] = useState<Listing | null>(null)
   const [recentIds, setRecentIds] = useState<string[]>(() => readRecentlyViewed())
   const [offerOpen, setOfferOpen] = useState(false)
@@ -1032,6 +1048,19 @@ export default function App() {
   useEffect(() => {
     track('page_view', { page: inventoryOpen ? 'inventory' : 'landing' })
   }, [inventoryOpen])
+
+  useEffect(() => {
+    if (!inventoryOpen) setFiltersOpen(false)
+  }, [inventoryOpen])
+
+  useEffect(() => {
+    if (!filtersOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFiltersOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [filtersOpen])
 
   useEffect(() => {
     if (loadState !== 'ready') return
@@ -2961,42 +2990,46 @@ export default function App() {
 
               {loadState === 'ready' && listings.length > 0 && (
                 <motion.div {...fadeUp(reduce, 0.08)} className="mt-6 space-y-3">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted">
-                      Showing {filtered.length} of {listings.length}
-                      {deferredHint.includes('result') ? ` · ${deferredHint}` : ''}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="flex items-center gap-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-muted">
-                        Sort
-                        <select
-                          value={sortBy}
-                          onChange={(e) => {
-                            setSortBy(e.target.value as SortId)
-                            track('sort_change', { sort: e.target.value })
-                          }}
-                          className="border border-navy/15 bg-white px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30"
-                        >
-                          {SORT_OPTIONS.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <button
-                        type="button"
-                        className="border border-navy/15 px-2.5 py-1 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-navy md:hidden"
-                        aria-expanded={filtersOpen}
-                        onClick={() => setFiltersOpen((open) => !open)}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 border-2 border-navy bg-white px-3.5 py-2.5 font-brand text-[0.7rem] font-bold uppercase tracking-[0.14em] text-navy transition hover:bg-mist"
+                      aria-expanded={filtersOpen}
+                      aria-controls="inventory-filter-drawer"
+                      onClick={() => setFiltersOpen(true)}
+                    >
+                      <span aria-hidden className="flex flex-col gap-[3px]">
+                        <span className="block h-px w-3.5 bg-navy" />
+                        <span className="block h-px w-2.5 bg-navy" />
+                        <span className="block h-px w-3.5 bg-navy" />
+                      </span>
+                      Filter
+                      {filterChipCount > 0 ? ` · ${filterChipCount}` : ''}
+                    </button>
+                    <label className="flex min-w-0 flex-1 items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted sm:flex-none">
+                      <span className="hidden sm:inline">Sort by</span>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => {
+                          setSortBy(e.target.value as SortId)
+                          track('sort_change', { sort: e.target.value })
+                        }}
+                        className="min-w-0 flex-1 border border-navy/20 bg-white px-2.5 py-2.5 text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-navy outline-none focus:ring-2 focus:ring-crimson/30 sm:flex-none"
                       >
-                        {filtersOpen ? 'Hide filters' : 'Filters'}
-                        {filterChipCount > 0 ? ` · ${filterChipCount}` : ''}
-                      </button>
-                    </div>
+                        {SORT_OPTIONS.map((option) => (
+                          <option key={option.id} value={option.id}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <p className="ml-auto text-[0.7rem] font-semibold uppercase tracking-[0.1em] text-muted">
+                      Showing {filtered.length}
+                      {listings.length !== filtered.length ? ` of ${listings.length}` : ''}
+                    </p>
                   </div>
 
-                  {activeFilterChips.length > 0 ? (
+                  {activeFilterChips.length > 0 || searchFilterChip ? (
                     <div className="flex flex-wrap items-center gap-1.5">
                       {activeFilterChips.map((chip) => (
                         <button
@@ -3008,169 +3041,7 @@ export default function App() {
                           {chip.label} ✕
                         </button>
                       ))}
-                      {!searchFilterChip ? (
-                        <button
-                          type="button"
-                          onClick={clearAllFilters}
-                          className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
-                        >
-                          Clear all
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  <div
-                    className={`space-y-2 ${
-                      filtersOpen || deferredQuery.trim() ? 'block' : 'hidden md:block'
-                    }`}
-                  >
-                    <FilterRow label="Gender">
-                      {(
-                        [
-                          { id: 'All', label: 'All' },
-                          { id: 'Men', label: "Men's" },
-                          { id: 'Youth', label: 'Youth' },
-                        ] as const
-                      ).map((option) => (
-                        <FilterChip
-                          key={option.id}
-                          label={option.label}
-                          active={genderFilter === option.id}
-                          onClick={() => setGenderFilter(option.id)}
-                        />
-                      ))}
-                    </FilterRow>
-
-                    <FilterRow label="Favorites">
-                      <FilterChip
-                        label="All stock"
-                        active={!favoritesOnly}
-                        onClick={() => setFavoritesOnly(false)}
-                      />
-                      <FilterChip
-                        label={
-                          favoriteCount > 0
-                            ? `My clubs (${favoriteCount})`
-                            : 'My clubs'
-                        }
-                        active={favoritesOnly}
-                        onClick={() => {
-                          if (!favoriteCount) {
-                            goToFavoritesScreen()
-                            return
-                          }
-                          setFavoritesOnly(true)
-                          setClubFilter('All')
-                          track('favorites_filter', { on: true, count: favoriteCount })
-                        }}
-                      />
-                      {favoriteClubs.slice(0, 6).map((club) => (
-                        <FilterChip
-                          key={club.id}
-                          label={club.name}
-                          active={clubFilter === club.id}
-                          onClick={() => {
-                            setFavoritesOnly(false)
-                            setClubFilter(club.id)
-                            track('club_filter', { club: club.id, place: 'favorites_row' })
-                          }}
-                        />
-                      ))}
-                    </FilterRow>
-
-                    <FilterRow label="Type">
-                      {TYPE_FILTERS.map((option) => (
-                        <FilterChip
-                          key={option.id}
-                          label={option.label}
-                          active={tagFilter === option.id}
-                          onClick={() => setTagFilter(option.id)}
-                        />
-                      ))}
-                    </FilterRow>
-
-                    {leaguesData.length > 0 ? (
-                      <FilterRow label="League">
-                        <FilterChip
-                          label="All"
-                          active={leagueFilter === 'All'}
-                          onClick={() => setLeagueFilter('All')}
-                        />
-                        <FilterChip
-                          label="Champions League"
-                          active={leagueFilter === 'champions-league'}
-                          onClick={() => {
-                            setLeagueFilter('champions-league')
-                            track('league_filter', { league: 'champions-league' })
-                          }}
-                        />
-                        {leaguesData.map((league) => (
-                          <FilterChip
-                            key={league.id}
-                            label={league.name}
-                            active={leagueFilter === league.id}
-                            onClick={() => {
-                              setLeagueFilter(league.id)
-                              track('league_filter', { league: league.id })
-                            }}
-                          />
-                        ))}
-                      </FilterRow>
-                    ) : null}
-
-                    <FilterRow label="Price">
-                      {PRICE_FILTERS.map((range) => (
-                        <FilterChip
-                          key={range.id}
-                          label={range.label}
-                          active={priceFilter === range.id}
-                          onClick={() => {
-                            setPriceFilter(range.id)
-                            track('price_filter', { range: range.id })
-                          }}
-                        />
-                      ))}
-                    </FilterRow>
-
-                    {availableSizes.length > 1 ? (
-                      <FilterRow label="Size">
-                        <FilterChip
-                          label="All"
-                          active={sizeFilter === 'All'}
-                          onClick={() => setSizeFilter('All')}
-                        />
-                        {availableSizes.map((size) => (
-                          <FilterChip
-                            key={size}
-                            label={size}
-                            active={sizeFilter === size}
-                            onClick={() => setSizeFilter(size)}
-                          />
-                        ))}
-                      </FilterRow>
-                    ) : null}
-
-                    {availableBrands.length > 0 ? (
-                      <FilterRow label="Brand">
-                        <FilterChip
-                          label="All"
-                          active={brandFilter === 'All'}
-                          onClick={() => setBrandFilter('All')}
-                        />
-                        {availableBrands.map((brand) => (
-                          <FilterChip
-                            key={brand}
-                            label={brand}
-                            active={brandFilter === brand}
-                            onClick={() => setBrandFilter(brand)}
-                          />
-                        ))}
-                      </FilterRow>
-                    ) : null}
-
-                    {searchFilterChip ? (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      {searchFilterChip ? (
                         <button
                           key={searchFilterChip.key}
                           type="button"
@@ -3179,16 +3050,240 @@ export default function App() {
                         >
                           {searchFilterChip.label} ✕
                         </button>
-                        <button
-                          type="button"
-                          onClick={clearAllFilters}
-                          className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
-                        >
-                          Clear all
-                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {filtersOpen ? (
+                    <div className="fixed inset-0 z-[95]" role="dialog" aria-modal="true" aria-label="Shop and filter">
+                      <button
+                        type="button"
+                        className="absolute inset-0 bg-navy-deep/45"
+                        aria-label="Close filters"
+                        onClick={() => setFiltersOpen(false)}
+                      />
+                      <div
+                        id="inventory-filter-drawer"
+                        className="absolute inset-y-0 right-0 flex w-[min(100%,22rem)] flex-col bg-white shadow-2xl"
+                      >
+                        <div className="flex items-center justify-between border-b border-navy/10 px-5 py-4">
+                          <p className="font-brand text-base font-bold tracking-wide text-navy">
+                            Shop &amp; Filter
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setFiltersOpen(false)}
+                            className="px-2 py-1 text-lg leading-none text-navy/70 transition hover:text-navy"
+                            aria-label="Close"
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto px-5">
+                          <FilterAccordion
+                            id="gender"
+                            label="Gender"
+                            open={filterSection === 'gender'}
+                            onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                          >
+                            {(
+                              [
+                                { id: 'All', label: 'All' },
+                                { id: 'Men', label: "Men's" },
+                                { id: 'Youth', label: 'Youth' },
+                              ] as const
+                            ).map((option) => (
+                              <FilterChip
+                                key={option.id}
+                                label={option.label}
+                                active={genderFilter === option.id}
+                                onClick={() => setGenderFilter(option.id)}
+                              />
+                            ))}
+                          </FilterAccordion>
+
+                          <FilterAccordion
+                            id="size"
+                            label="Available size"
+                            open={filterSection === 'size'}
+                            onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                          >
+                            <FilterChip
+                              label="All"
+                              active={sizeFilter === 'All'}
+                              onClick={() => setSizeFilter('All')}
+                            />
+                            {availableSizes.map((size) => (
+                              <FilterChip
+                                key={size}
+                                label={size}
+                                active={sizeFilter === size}
+                                onClick={() => setSizeFilter(size)}
+                              />
+                            ))}
+                          </FilterAccordion>
+
+                          <FilterAccordion
+                            id="brand"
+                            label="Brand"
+                            open={filterSection === 'brand'}
+                            onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                          >
+                            <FilterChip
+                              label="All"
+                              active={brandFilter === 'All'}
+                              onClick={() => setBrandFilter('All')}
+                            />
+                            {availableBrands.map((brand) => (
+                              <FilterChip
+                                key={brand}
+                                label={brand}
+                                active={brandFilter === brand}
+                                onClick={() => setBrandFilter(brand)}
+                              />
+                            ))}
+                          </FilterAccordion>
+
+                          <FilterAccordion
+                            id="price"
+                            label="Price"
+                            open={filterSection === 'price'}
+                            onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                          >
+                            {PRICE_FILTERS.map((range) => (
+                              <FilterChip
+                                key={range.id}
+                                label={range.label}
+                                active={priceFilter === range.id}
+                                onClick={() => {
+                                  setPriceFilter(range.id)
+                                  track('price_filter', { range: range.id })
+                                }}
+                              />
+                            ))}
+                          </FilterAccordion>
+
+                          <FilterAccordion
+                            id="type"
+                            label="Type"
+                            open={filterSection === 'type'}
+                            onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                          >
+                            {TYPE_FILTERS.map((option) => (
+                              <FilterChip
+                                key={option.id}
+                                label={option.label}
+                                active={tagFilter === option.id}
+                                onClick={() => setTagFilter(option.id)}
+                              />
+                            ))}
+                          </FilterAccordion>
+
+                          {leaguesData.length > 0 ? (
+                            <FilterAccordion
+                              id="league"
+                              label="League"
+                              open={filterSection === 'league'}
+                              onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                            >
+                              <FilterChip
+                                label="All"
+                                active={leagueFilter === 'All'}
+                                onClick={() => setLeagueFilter('All')}
+                              />
+                              <FilterChip
+                                label="Champions League"
+                                active={leagueFilter === 'champions-league'}
+                                onClick={() => {
+                                  setLeagueFilter('champions-league')
+                                  track('league_filter', { league: 'champions-league' })
+                                }}
+                              />
+                              {leaguesData.map((league) => (
+                                <FilterChip
+                                  key={league.id}
+                                  label={league.name}
+                                  active={leagueFilter === league.id}
+                                  onClick={() => {
+                                    setLeagueFilter(league.id)
+                                    track('league_filter', { league: league.id })
+                                  }}
+                                />
+                              ))}
+                            </FilterAccordion>
+                          ) : null}
+
+                          <FilterAccordion
+                            id="favorites"
+                            label="Favorites"
+                            open={filterSection === 'favorites'}
+                            onToggle={(id) => setFilterSection((cur) => (cur === id ? null : id))}
+                          >
+                            <FilterChip
+                              label="All stock"
+                              active={!favoritesOnly}
+                              onClick={() => setFavoritesOnly(false)}
+                            />
+                            <FilterChip
+                              label={
+                                favoriteCount > 0
+                                  ? `My clubs (${favoriteCount})`
+                                  : 'My clubs'
+                              }
+                              active={favoritesOnly}
+                              onClick={() => {
+                                if (!favoriteCount) {
+                                  setFiltersOpen(false)
+                                  goToFavoritesScreen()
+                                  return
+                                }
+                                setFavoritesOnly(true)
+                                setClubFilter('All')
+                                track('favorites_filter', { on: true, count: favoriteCount })
+                              }}
+                            />
+                            {favoriteClubs.slice(0, 8).map((club) => (
+                              <FilterChip
+                                key={club.id}
+                                label={club.name}
+                                active={clubFilter === club.id}
+                                onClick={() => {
+                                  setFavoritesOnly(false)
+                                  setClubFilter(club.id)
+                                  track('club_filter', { club: club.id, place: 'favorites_row' })
+                                }}
+                              />
+                            ))}
+                          </FilterAccordion>
+                        </div>
+                        <div className="flex gap-2 border-t border-navy/10 px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              clearAllFilters()
+                            }}
+                            className="flex-1 border border-navy/20 py-3 font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-navy"
+                          >
+                            Clear
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFiltersOpen(false)}
+                            className="flex-[1.4] bg-navy py-3 font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cream"
+                          >
+                            Show {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+                          </button>
+                        </div>
                       </div>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
                 </motion.div>
               )}
 
@@ -3229,14 +3324,14 @@ export default function App() {
 
               {filtered.length > 0 && (
                 <>
-                  <ul className="mt-8 flex w-full flex-col border-t border-navy/10">
+                  <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10 lg:grid-cols-3">
                     {visibleInventory.map((item) => (
                       <ProductLink
                         key={item.id}
                         item={item}
                         favoriteSet={favoriteSet}
                         tone="light"
-                        size="row"
+                        size="catalog"
                         onAddToCart={handleAddToCart}
                         onQuickView={handleQuickView}
                         onBuyNow={handleBuyNow}
@@ -3296,7 +3391,7 @@ export default function App() {
                     </h3>
                   </div>
                 </div>
-                <ul className="mt-6 flex w-full flex-col border-t border-navy/10">
+                <ul className="mt-6 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 lg:grid-cols-4">
                   {recentlyViewed.map((item, i) => (
                     <ProductLink
                       key={`recent-${item.id}`}
@@ -3305,7 +3400,7 @@ export default function App() {
                       reduce={reduce}
                       delay={i * 0.04}
                       tone="light"
-                      size="row"
+                      size="catalog"
                       onAddToCart={handleAddToCart}
                       onQuickView={handleQuickView}
                       onBuyNow={handleBuyNow}
