@@ -1742,65 +1742,80 @@ export default function App() {
                 eBay
               </a>
             </div>
-            <button
-              type="button"
-              aria-label={
-                favoriteCount > 0
-                  ? `Open favorites, ${favoriteCount} teams`
-                  : 'Open favorites'
-              }
-              onClick={() => {
-                track('nav_favorites', { place: 'header', count: favoriteCount })
-                goToFavoritesScreen()
-              }}
-              className={`relative inline-flex items-center gap-1.5 px-2 py-2 text-xs font-bold uppercase tracking-[0.16em] transition sm:px-3 ${
-                navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
-              }`}
-            >
-              <HeartIcon
-                filled={favoriteCount > 0}
-                className={`h-4 w-4 shrink-0 ${favoriteCount > 0 ? 'text-crimson' : ''}`}
-              />
-              <span className="sr-only">Favorites</span>
-              {favoriteCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
-                  {favoriteCount}
-                </span>
-              ) : null}
-            </button>
-            <button
-              type="button"
-              aria-label={`Open cart, ${itemCount} items`}
-              onClick={() => {
-                setCartOpen(true)
-                track('cart_open', { place: 'header', items: itemCount })
-              }}
-              className={`relative inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] transition ${
-                navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
-              }`}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-4 w-4 shrink-0"
-                aria-hidden
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                aria-label={
+                  favoriteCount > 0
+                    ? `Open favorites, ${favoriteCount} teams`
+                    : 'Open favorites'
+                }
+                onClick={() => {
+                  track('nav_favorites', { place: 'header', count: favoriteCount })
+                  goToFavoritesScreen()
+                }}
+                className={`relative grid h-9 w-9 place-items-center transition ${
+                  navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
+                }`}
               >
-                <path d="M6 6h15l-1.5 9h-12z" />
-                <path d="M6 6 5 3H2" />
-                <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none" />
-                <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none" />
-              </svg>
-              Cart
-              {itemCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
-                  {itemCount}
+                <HeartIcon
+                  filled={favoriteCount > 0}
+                  className={`h-5 w-5 shrink-0 ${favoriteCount > 0 ? 'text-crimson' : ''}`}
+                />
+                <span className="sr-only">Favorites</span>
+                {favoriteCount > 0 ? (
+                  <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+                    {favoriteCount}
+                  </span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                aria-label={`Open cart, ${itemCount} items`}
+                onClick={() => {
+                  setCartOpen(true)
+                  track('cart_open', { place: 'header', items: itemCount })
+                }}
+                className={`relative grid h-9 w-9 place-items-center transition ${
+                  navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
+                }`}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5 shrink-0"
+                  aria-hidden
+                >
+                  <path d="M6 6h15l-1.5 9h-12z" />
+                  <path d="M6 6 5 3H2" />
+                  <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none" />
+                  <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none" />
+                </svg>
+                <span className="sr-only">Cart</span>
+                {itemCount > 0 ? (
+                  <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+                    {itemCount}
+                  </span>
+                ) : null}
+              </button>
+              <button
+                type="button"
+                aria-label="Open navigation menu"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen(true)}
+                className="grid h-9 w-9 place-items-center xl:hidden"
+              >
+                <span className="flex flex-col gap-[5px]">
+                  <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
+                  <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
+                  <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
                 </span>
-              ) : null}
-            </button>
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -1814,19 +1829,6 @@ export default function App() {
               }`}
             >
               Browse kits
-            </button>
-            <button
-              type="button"
-              aria-label="Open navigation menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen(true)}
-              className="grid h-9 w-9 place-items-center xl:hidden"
-            >
-              <span className="flex flex-col gap-[5px]">
-                <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
-                <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
-                <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
-              </span>
             </button>
           </div>
         </div>
