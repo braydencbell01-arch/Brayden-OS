@@ -26,6 +26,15 @@ export const EBAY_RATINGS = [
   { label: 'Communication', score: 4.6 },
 ] as const
 
+/** Overall star rating for the header reviews bar (average of eBay DSRs). */
+export const EBAY_OVERALL_RATING =
+  Math.round(
+    (EBAY_RATINGS.reduce((sum, row) => sum + row.score, 0) / EBAY_RATINGS.length) * 10,
+  ) / 10
+
+/** eBay feedback / review count shown next to the overall rating. */
+export const EBAY_FEEDBACK_COUNT = 65
+
 /** eBay positive feedback percent for trust strip (update when seller score changes). */
 export const EBAY_POSITIVE_FEEDBACK = '100%'
 
@@ -40,7 +49,7 @@ export const SALE_HEADLINE = 'Shop the sale'
 export const SALE_URGENCY = 'Hand-picked kits on sale · while stock lasts'
 
 /** Top promo bar — keep short so it stays one line under the fixed header offset. */
-export const PROMO_BAR = 'Live stock · Youth & adult sizes'
+export const PROMO_BAR = 'Premier League is underway — shop jerseys and fan gear'
 
 /** Shipping copy — 10% under $100, free at $100+. */
 export const SHIPPING_RATE_LABEL = '10% shipping · free on $100+'

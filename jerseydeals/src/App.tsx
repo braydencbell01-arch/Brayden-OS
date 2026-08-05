@@ -10,6 +10,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
   CONTACT_EMAIL,
+  EBAY_FEEDBACK_COUNT,
+  EBAY_OVERALL_RATING,
   EBAY_POSITIVE_FEEDBACK,
   EBAY_RATINGS,
   EBAY_SALE_URL,
@@ -66,6 +68,8 @@ import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
 import { RewardsOffersScreen } from './RewardsOffersScreen'
 import { useRewardsOffersOpen, goToRewardsOffers, isRewardsMember } from './rewardsMember'
+import { ProfileScreen } from './ProfileScreen'
+import { goToProfileScreen, useProfileScreenOpen } from './profile'
 import {
   capturePurchaseReturnFromUrl,
   hasPurchased,
@@ -144,11 +148,13 @@ function BrandMark({
   size = 'md',
   withWordmark = false,
   wordmarkTone = 'navy',
+  stackedWordmark = false,
   className = '',
 }: {
   size?: 'sm' | 'md' | 'lg' | 'hero'
   withWordmark?: boolean
   wordmarkTone?: 'navy' | 'white' | 'cream'
+  stackedWordmark?: boolean
   className?: string
 }) {
   const frame =
@@ -175,10 +181,12 @@ function BrandMark({
         ? 'text-2xl md:text-3xl'
         : size === 'md'
           ? 'text-lg md:text-xl'
-          : 'text-base'
+          : stackedWordmark
+            ? 'text-[0.7rem] sm:text-xs'
+            : 'text-base'
 
   return (
-    <span className={`inline-flex items-center gap-3 ${className}`}>
+    <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <img
         src={src}
         alt={withWordmark ? '' : 'Jersey Deals'}
@@ -191,9 +199,23 @@ function BrandMark({
         draggable={false}
       />
       {withWordmark ? (
-        <span className={`font-brand font-bold uppercase leading-none tracking-[0.08em] ${word} ${wordSize}`}>
-          Jersey Deals
-        </span>
+        stackedWordmark ? (
+          <span
+            className={`font-brand font-bold uppercase leading-[1.05] tracking-[0.12em] ${word} ${wordSize}`}
+            aria-label="Jersey Deals"
+          >
+            <span className="block" aria-hidden>
+              Jersey
+            </span>
+            <span className="block" aria-hidden>
+              Deals
+            </span>
+          </span>
+        ) : (
+          <span className={`font-brand font-bold uppercase leading-none tracking-[0.08em] ${word} ${wordSize}`}>
+            Jersey Deals
+          </span>
+        )
       ) : null}
     </span>
   )
@@ -969,7 +991,6 @@ export default function App() {
   const [catalog, setCatalog] = useState<ListingsPayload | null>(null)
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-  const [navScrolled, setNavScrolled] = useState(false)
   const [tagFilter, setTagFilter] = useState<TypeFilterId | string>('All')
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('All')
   const [sizeFilter, setSizeFilter] = useState('All')
@@ -991,6 +1012,7 @@ export default function App() {
     setAppliedQuery(query)
   }, [query])
   const [menuOpen, setMenuOpen] = useState(false)
+  const [headerSearchOpen, setHeaderSearchOpen] = useState(false)
   const [cart, setCart] = useState<CartState>(() => readCart())
   const [cartOpen, setCartOpen] = useState(false)
   const [cartToast, setCartToast] = useState<string | null>(null)
@@ -1009,8 +1031,8 @@ export default function App() {
   const [offerMode, setOfferMode] = useState<'offer' | 'email-gate'>('offer')
   const offersOpen = useRewardsOffersOpen()
   const favoritesOpen = useFavoritesScreenOpen()
+  const profileOpen = useProfileScreenOpen()
   const inventoryOpen = useInventoryPageOpen()
-  const navSolid = inventoryOpen || navScrolled
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const [inventoryPage, setInventoryPage] = useState(1)
@@ -1177,15 +1199,6 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [])
-
-  useEffect(() => {
-    const onScroll = () => {
-      setNavScrolled(window.scrollY > 48)
-    }
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   const itemCount = cartCount(cart)
@@ -1423,16 +1436,6 @@ export default function App() {
     setSortBy('featured')
   }
 
-  const deferredHint = useMemo(() => {
-    const q = deferredQuery.trim()
-    if (!q && genderFilter === 'All') return `${listings.length} items`
-    if (!q) {
-      const genderLabel = genderFilter === 'Men' ? "men's" : genderFilter.toLowerCase()
-      return `${filtered.length} ${genderLabel} item${filtered.length === 1 ? '' : 's'}`
-    }
-    return `${filtered.length} result${filtered.length === 1 ? '' : 's'} for “${q}”`
-  }, [deferredQuery, filtered.length, listings.length, genderFilter])
-
   function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
     goToInventoryPage()
     setFiltersOpen(true)
@@ -1603,6 +1606,7 @@ export default function App() {
   const navLinks = [
     { href: '#collections', label: 'Collections' },
     { href: '#favorites', label: 'Favorites' },
+    { href: '#profile', label: 'Profile' },
     { href: '#epl', label: 'EPL' },
     { href: '#ucl', label: 'UCL' },
     { href: '#shop', label: 'Shop' },
@@ -1630,49 +1634,28 @@ export default function App() {
           onQuickView={handleQuickView}
         />
       ) : null}
-      {/* Promo bar — always on top */}
-      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-center gap-x-2 overflow-x-auto bg-crimson px-3 py-2 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.14em] text-cream sm:gap-x-3 sm:px-4 sm:text-xs sm:tracking-[0.18em]">
-        <span>{PROMO_BAR}</span>
-        <span className="text-cream/70" aria-hidden>
-          ·
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1">
-            Buy from
-            <svg
-              viewBox="0 0 12 12"
-              className="h-2.5 w-2.5 shrink-0 text-cream/90"
-              fill="currentColor"
-              aria-hidden
-            >
-              <path d="M6 9.5 1.5 4h9L6 9.5Z" />
-            </svg>
-          </span>
-          <span className="inline-flex items-center gap-2 normal-case tracking-normal">
-            <a
-              href={SQUARE_STORE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'square' })}
-              className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
-            >
-              Square
-            </a>
-            <span className="text-cream/70" aria-hidden>
-              ·
-            </span>
-            <a
-              href={ebayShop}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track('outbound_click', { place: 'promo_bar', channel: 'ebay' })}
-              className="underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
-            >
-              eBay
-            </a>
-          </span>
-        </span>
-      </div>
+      {profileOpen ? (
+        <ProfileScreen
+          cartCount={itemCount}
+          onGoToCart={() => {
+            setCartOpen(true)
+            track('cart_open', { place: 'profile' })
+          }}
+          onShopInventory={() => goInventory({ reset: true })}
+        />
+      ) : null}
+
+      {/* Promo bar — Premier League shop CTA */}
+      <button
+        type="button"
+        onClick={() => {
+          track('promo_bar_click', { destination: 'premier-league' })
+          goInventory({ reset: true, leagueId: 'premier-league' })
+        }}
+        className="fixed inset-x-0 top-0 z-50 flex items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2.5 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:brightness-110 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
+      >
+        {PROMO_BAR}
+      </button>
 
       <a
         href={inventoryHref()}
@@ -1685,288 +1668,279 @@ export default function App() {
         Skip to inventory
       </a>
 
-      <header
-        className={`fixed inset-x-0 top-9 z-40 transition duration-300 ${
-          navSolid
-            ? 'border-b border-navy/10 bg-cream/95 text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] backdrop-blur-md'
-            : 'bg-transparent text-white'
-        }`}
-      >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 md:px-8">
+      <header className="fixed inset-x-0 top-9 z-40 border-b border-navy/10 bg-cream text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)]">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 sm:px-5 md:px-8">
+          {/* Left: cart + favorites */}
+          <div className="flex items-center justify-start gap-0.5">
+            <button
+              type="button"
+              aria-label={`Open cart, ${itemCount} items`}
+              onClick={() => {
+                setCartOpen(true)
+                track('cart_open', { place: 'header', items: itemCount })
+              }}
+              className="relative grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 shrink-0"
+                aria-hidden
+              >
+                <path d="M6 6h15l-1.5 9h-12z" />
+                <path d="M6 6 5 3H2" />
+                <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none" />
+                <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none" />
+              </svg>
+              <span className="sr-only">Cart</span>
+              <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+                {itemCount}
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label={
+                favoriteCount > 0
+                  ? `Open favorites, ${favoriteCount} teams`
+                  : 'Open favorites'
+              }
+              onClick={() => {
+                track('nav_favorites', { place: 'header', count: favoriteCount })
+                goToFavoritesScreen()
+              }}
+              className="relative grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+            >
+              <HeartIcon
+                filled={favoriteCount > 0}
+                className={`h-5 w-5 shrink-0 ${favoriteCount > 0 ? 'text-crimson' : ''}`}
+              />
+              <span className="sr-only">Favorites</span>
+              {favoriteCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+                  {favoriteCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+
+          {/* Center: logo + stacked wordmark */}
           <a
             href="#top"
             onClick={(e) => {
               if (!inventoryOpen) return
               e.preventDefault()
-              // Logo = top of landing.
               suppressLandingScrollRestore()
               leaveInventoryPage()
               window.setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'auto' })
               }, 40)
             }}
-            className="inline-flex items-center outline-none focus-visible:ring-2 focus-visible:ring-crimson"
+            className="inline-flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-crimson"
           >
-            <BrandMark
-              size="sm"
-              withWordmark
-              wordmarkTone={navSolid ? 'navy' : 'white'}
-            />
+            <BrandMark size="sm" withWordmark stackedWordmark wordmarkTone="navy" />
           </a>
-          <nav className="hidden items-center gap-6 xl:flex" aria-label="Primary">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={(e) => {
-                  if ('inventory' in link && link.inventory) {
-                    e.preventDefault()
-                    goInventory()
-                    return
-                  }
-                  if (inventoryOpen && link.href.startsWith('#')) {
-                    e.preventDefault()
-                    suppressLandingScrollRestore()
-                    leaveInventoryPage()
-                    window.setTimeout(() => {
-                      document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
-                    }, 40)
-                  }
-                }}
-                className={`text-xs font-semibold uppercase tracking-[0.18em] transition ${
-                  navSolid ? 'text-navy/70 hover:text-navy' : 'text-white/70 hover:text-white'
-                }`}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-3">
-            <div
-              className={`hidden items-center gap-2 text-xs font-semibold tracking-wide sm:inline-flex ${
-                navSolid ? 'text-navy/70' : 'text-white/75'
-              }`}
-            >
-              <a
-                href={SQUARE_STORE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('outbound_click', { place: 'header', channel: 'square' })}
-                className={`underline underline-offset-4 transition ${
-                  navSolid
-                    ? 'decoration-navy/35 hover:text-navy hover:decoration-crimson'
-                    : 'decoration-white/45 hover:text-white hover:decoration-white'
-                }`}
-              >
-                Square
-              </a>
-              <span aria-hidden>·</span>
-              <a
-                href={ebayShop}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => track('outbound_click', { place: 'header', channel: 'ebay' })}
-                className={`underline underline-offset-4 transition ${
-                  navSolid
-                    ? 'decoration-navy/35 hover:text-navy hover:decoration-crimson'
-                    : 'decoration-white/45 hover:text-white hover:decoration-white'
-                }`}
-              >
-                eBay
-              </a>
-            </div>
-            <div className="flex items-center gap-0.5">
-              <button
-                type="button"
-                aria-label={
-                  favoriteCount > 0
-                    ? `Open favorites, ${favoriteCount} teams`
-                    : 'Open favorites'
-                }
-                onClick={() => {
-                  track('nav_favorites', { place: 'header', count: favoriteCount })
-                  goToFavoritesScreen()
-                }}
-                className={`relative grid h-9 w-9 place-items-center transition ${
-                  navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
-                }`}
-              >
-                <HeartIcon
-                  filled={favoriteCount > 0}
-                  className={`h-5 w-5 shrink-0 ${favoriteCount > 0 ? 'text-crimson' : ''}`}
-                />
-                <span className="sr-only">Favorites</span>
-                {favoriteCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
-                    {favoriteCount}
-                  </span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                aria-label={`Open cart, ${itemCount} items`}
-                onClick={() => {
-                  setCartOpen(true)
-                  track('cart_open', { place: 'header', items: itemCount })
-                }}
-                className={`relative grid h-9 w-9 place-items-center transition ${
-                  navSolid ? 'text-navy hover:text-crimson' : 'text-white hover:text-cream'
-                }`}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5 shrink-0"
-                  aria-hidden
-                >
-                  <path d="M6 6h15l-1.5 9h-12z" />
-                  <path d="M6 6 5 3H2" />
-                  <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none" />
-                  <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none" />
-                </svg>
-                <span className="sr-only">Cart</span>
-                {itemCount > 0 ? (
-                  <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
-                    {itemCount}
-                  </span>
-                ) : null}
-              </button>
-              <button
-                type="button"
-                aria-label="Open navigation menu"
-                aria-expanded={menuOpen}
-                onClick={() => setMenuOpen(true)}
-                className="grid h-9 w-9 place-items-center xl:hidden"
-              >
-                <span className="flex flex-col gap-[5px]">
-                  <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
-                  <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
-                  <span className={`block h-0.5 w-5 transition ${navSolid ? 'bg-navy' : 'bg-white'}`} />
-                </span>
-              </button>
-            </div>
+
+          {/* Right: menu + search + profile */}
+          <div className="flex items-center justify-end gap-0.5">
             <button
               type="button"
-              onClick={() => {
-                track('cta_click', { place: 'header' })
-                goInventory({ reset: true })
-              }}
-              className={`hidden px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition md:inline-flex ${
-                navSolid
-                  ? 'bg-crimson text-white hover:bg-crimson-hot'
-                  : 'border border-white/40 text-white hover:border-white hover:bg-white/10'
-              }`}
+              aria-label="Open navigation menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(true)}
+              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
             >
-              Browse kits
+              <span className="flex flex-col gap-[5px]" aria-hidden>
+                <span className="block h-0.5 w-5 bg-navy" />
+                <span className="block h-0.5 w-5 bg-navy" />
+                <span className="block h-0.5 w-5 bg-navy" />
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-label={headerSearchOpen ? 'Close search' : 'Open search'}
+              aria-expanded={headerSearchOpen}
+              onClick={() => {
+                setHeaderSearchOpen((open) => {
+                  const next = !open
+                  if (next) {
+                    window.setTimeout(() => {
+                      document.getElementById('sticky-search')?.focus({ preventScroll: true })
+                    }, 40)
+                  }
+                  return next
+                })
+                track('nav_search_toggle', { open: !headerSearchOpen })
+              }}
+              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+                aria-hidden
+              >
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16.5 16.5 4 4" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Open profile"
+              onClick={() => {
+                track('nav_profile', { place: 'header' })
+                goToProfileScreen()
+              }}
+              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+                aria-hidden
+              >
+                <circle cx="12" cy="8" r="3.25" />
+                <path d="M5.5 19.5c1.4-3.2 3.7-4.8 6.5-4.8s5.1 1.6 6.5 4.8" />
+              </svg>
             </button>
           </div>
         </div>
 
-        <div
-          className={`border-t transition ${
-            navSolid ? 'border-navy/10 bg-cream/95' : 'border-white/10 bg-navy-deep/55 backdrop-blur-md'
-          }`}
+        {/* eBay reviews strip */}
+        <a
+          href={ebaySeller}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track('outbound_click', { place: 'header_reviews', channel: 'ebay' })}
+          className="flex items-center justify-center gap-2 border-t border-navy/10 bg-cream px-3 py-2 text-crimson transition hover:bg-mist sm:gap-2.5"
+          aria-label={`eBay rating ${EBAY_OVERALL_RATING} from ${EBAY_FEEDBACK_COUNT.toLocaleString()} reviews`}
         >
-          <div className="mx-auto flex max-w-6xl items-center gap-2 px-5 py-2.5 md:gap-3 md:px-8">
-            <form
-              className="relative min-w-0 flex-1 md:max-w-xl lg:max-w-2xl"
-              autoComplete="off"
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!query.trim()) return
-                activateSearch()
-              }}
-            >
-              <label className="block">
-                <span className="sr-only">Search kits</span>
-                <input
-                  id="sticky-search"
-                  name="q"
-                  type="search"
-                  value={query}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  onChange={(e) => {
-                    setQuery(e.target.value)
-                  }}
-                  placeholder="Search club, player, league…"
-                  enterKeyHint="search"
-                  className={`w-full border py-2.5 pl-3 pr-[5.5rem] text-base outline-none transition placeholder:opacity-60 focus:ring-2 focus:ring-crimson/30 sm:pl-4 ${
-                    navSolid
-                      ? 'border-navy/15 bg-white text-navy placeholder:text-muted'
-                      : 'border-white/35 bg-white/15 text-white placeholder:text-white/75'
-                  }`}
-                />
-              </label>
-              <button
-                type="submit"
-                aria-label="Search"
-                title="Enter"
-                disabled={!query.trim()}
-                className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-2.5 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:cursor-not-allowed disabled:bg-[#2563eb]/60 disabled:hover:bg-[#2563eb]/60 sm:px-3"
-              >
-                Enter
-                <span aria-hidden className="text-sm font-semibold leading-none">
-                  ↵
+          <span className="font-display text-base font-bold tabular-nums leading-none">
+            {EBAY_OVERALL_RATING.toFixed(1)}
+          </span>
+          <span className="inline-flex items-center gap-0.5" aria-hidden>
+            {[1, 2, 3, 4, 5].map((star) => {
+              const fill = Math.min(1, Math.max(0, EBAY_OVERALL_RATING - (star - 1)))
+              return (
+                <span key={star} className="relative inline-block h-3.5 w-3.5">
+                  <svg viewBox="0 0 24 24" className="absolute inset-0 h-full w-full text-crimson/25" aria-hidden>
+                    <path
+                      fill="currentColor"
+                      d="M12 2.5 14.9 9l7.1.6-5.4 4.6 1.7 6.8L12 17.8 5.7 21l1.7-6.8L2 9.6 9.1 9 12 2.5Z"
+                    />
+                  </svg>
+                  <span
+                    className="absolute inset-0 overflow-hidden"
+                    style={{ width: `${fill * 100}%` }}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-crimson" aria-hidden>
+                      <path
+                        fill="currentColor"
+                        d="M12 2.5 14.9 9l7.1.6-5.4 4.6 1.7 6.8L12 17.8 5.7 21l1.7-6.8L2 9.6 9.1 9 12 2.5Z"
+                      />
+                    </svg>
+                  </span>
                 </span>
-              </button>
-            </form>
-            {query || appliedQuery ? (
+              )
+            })}
+          </span>
+          <span className="font-brand text-[0.7rem] font-semibold tabular-nums tracking-wide">
+            ({EBAY_FEEDBACK_COUNT.toLocaleString()} reviews)
+          </span>
+        </a>
+
+        {headerSearchOpen ? (
+          <div className="border-t border-navy/10 bg-cream">
+            <div className="mx-auto flex max-w-6xl items-center gap-2 px-3 py-2.5 sm:px-5 md:gap-3 md:px-8">
+              <form
+                className="relative min-w-0 flex-1 md:max-w-xl lg:max-w-2xl"
+                autoComplete="off"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (!query.trim()) return
+                  activateSearch()
+                }}
+              >
+                <label className="block">
+                  <span className="sr-only">Search kits</span>
+                  <input
+                    id="sticky-search"
+                    name="q"
+                    type="search"
+                    value={query}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    onChange={(e) => {
+                      setQuery(e.target.value)
+                    }}
+                    placeholder="Search club, player, league…"
+                    enterKeyHint="search"
+                    className="w-full border border-navy/15 bg-white py-2.5 pl-3 pr-[5.5rem] text-base text-navy outline-none placeholder:text-muted focus:ring-2 focus:ring-crimson/30 sm:pl-4"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  aria-label="Search"
+                  title="Enter"
+                  disabled={!query.trim()}
+                  className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1 rounded-md bg-[#2563eb] px-2.5 py-1.5 text-[0.7rem] font-bold uppercase tracking-[0.12em] text-white shadow-[0_1px_0_rgba(255,255,255,0.2)_inset] transition hover:bg-[#1d4ed8] active:bg-[#1e40af] disabled:cursor-not-allowed disabled:bg-[#2563eb]/60 disabled:hover:bg-[#2563eb]/60 sm:px-3"
+                >
+                  Enter
+                  <span aria-hidden className="text-sm font-semibold leading-none">
+                    ↵
+                  </span>
+                </button>
+              </form>
+              {query || appliedQuery ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('')
+                    setAppliedQuery('')
+                  }}
+                  className="shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-crimson"
+                >
+                  Clear
+                </button>
+              ) : null}
               <button
                 type="button"
+                aria-label={inventoryOpen ? 'Back to home' : 'Go to top of page'}
                 onClick={() => {
-                  setQuery('')
-                  setAppliedQuery('')
+                  track('nav_home', { place: 'sticky_search' })
+                  if (inventoryOpen) {
+                    suppressLandingScrollRestore()
+                    leaveInventoryPage()
+                    window.setTimeout(() => {
+                      window.scrollTo({ top: 0, behavior: 'auto' })
+                    }, 40)
+                    return
+                  }
+                  const preferSmooth =
+                    !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+                    !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
+                  window.scrollTo({ top: 0, behavior: preferSmooth ? 'smooth' : 'auto' })
                 }}
-                className={`shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${
-                  navSolid ? 'text-crimson' : 'text-crimson-hot'
-                }`}
+                className="shrink-0 border border-navy/15 bg-navy px-3 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy-deep"
               >
-                Clear
+                Home
               </button>
-            ) : null}
-            <button
-              type="button"
-              aria-label={inventoryOpen ? 'Back to home' : 'Go to top of page'}
-              onClick={() => {
-                track('nav_home', { place: 'sticky_search' })
-                if (inventoryOpen) {
-                  // Home = top of landing; Back (inventory header) restores scroll.
-                  suppressLandingScrollRestore()
-                  leaveInventoryPage()
-                  window.setTimeout(() => {
-                    window.scrollTo({ top: 0, behavior: 'auto' })
-                  }, 40)
-                  return
-                }
-                const preferSmooth =
-                  !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
-                  !/iP(hone|ad|od)|Macintosh.*Mobile/.test(navigator.userAgent)
-                window.scrollTo({ top: 0, behavior: preferSmooth ? 'smooth' : 'auto' })
-              }}
-              className={`shrink-0 px-3 py-2.5 text-xs font-bold uppercase tracking-[0.14em] transition ${
-                navSolid
-                  ? 'border border-navy/15 bg-navy text-cream hover:bg-navy-deep'
-                  : 'border border-white/40 bg-white/15 text-white hover:border-white hover:bg-white/25'
-              }`}
-            >
-              Home
-            </button>
-            <p
-              className={`hidden shrink-0 text-[0.65rem] font-semibold uppercase tracking-[0.14em] lg:block ${
-                navSolid ? 'text-muted' : 'text-white/80'
-              }`}
-            >
-              {deferredHint}
-            </p>
+            </div>
           </div>
-        </div>
+        ) : null}
       </header>
 
       <main id="top" className="pb-36 md:pb-28">
@@ -1991,7 +1965,7 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 via-transparent to-navy-deep/25" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-44 md:justify-center md:px-8 md:pb-28 md:pt-48">
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-48 md:justify-center md:px-8 md:pb-28 md:pt-52">
             <motion.div
               className="max-w-2xl"
               initial={reduce ? false : { opacity: 0.001, y: 26 }}
@@ -3984,16 +3958,16 @@ export default function App() {
         </div>
       ) : null}
 
-      {/* Mobile nav drawer */}
+      {/* Nav drawer */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[45] flex flex-col bg-cream xl:hidden"
+          className="fixed inset-0 z-[45] flex flex-col bg-cream"
           role="dialog"
           aria-modal
           aria-label="Navigation menu"
         >
-          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4 pt-[calc(1rem+36px)]">
-            <BrandMark size="sm" withWordmark wordmarkTone="navy" />
+          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4 pt-[calc(1rem+40px)]">
+            <BrandMark size="sm" withWordmark stackedWordmark wordmarkTone="navy" />
             <button
               type="button"
               aria-label="Close menu"
@@ -4010,6 +3984,16 @@ export default function App() {
                 href={link.href}
                 onClick={(e) => {
                   setMenuOpen(false)
+                  if (link.href === '#profile') {
+                    e.preventDefault()
+                    goToProfileScreen()
+                    return
+                  }
+                  if (link.href === '#favorites') {
+                    e.preventDefault()
+                    goToFavoritesScreen()
+                    return
+                  }
                   if ('inventory' in link && link.inventory) {
                     e.preventDefault()
                     goInventory()
