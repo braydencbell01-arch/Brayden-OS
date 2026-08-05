@@ -1658,9 +1658,9 @@ export default function App() {
           track('promo_bar_click', { destination: 'premier-league' })
           goInventory({ reset: true, leagueId: 'premier-league' })
         }}
-        className="fixed inset-x-0 top-0 z-50 flex items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2.5 text-center font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-cream transition hover:brightness-110 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
+        className="fixed inset-x-0 top-0 z-50 flex min-h-10 items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2 text-center font-brand text-[0.62rem] font-bold uppercase leading-tight tracking-[0.1em] text-cream transition hover:brightness-110 sm:min-h-9 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
       >
-        {PROMO_BAR}
+        <span className="line-clamp-2 sm:line-clamp-1">{PROMO_BAR}</span>
       </button>
 
       <a
@@ -1674,8 +1674,8 @@ export default function App() {
         Skip to inventory
       </a>
 
-      <header className="fixed inset-x-0 top-9 z-40 border-b border-navy/10 bg-cream text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)]">
-        <div className="relative mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 sm:px-5 md:px-8">
+      <header className="fixed inset-x-0 top-12 z-40 border-b border-navy/10 bg-cream text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] sm:top-9">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3.5 sm:px-5 md:px-8">
           {/* Left: cart + favorites */}
           <div className="flex items-center justify-start gap-0.5">
             <button
@@ -1685,7 +1685,7 @@ export default function App() {
                 setCartOpen(true)
                 track('cart_open', { place: 'header', items: itemCount })
               }}
-              className="relative grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+              className="relative grid h-10 w-10 place-items-center text-navy transition hover:text-crimson"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1703,7 +1703,7 @@ export default function App() {
                 <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none" />
               </svg>
               <span className="sr-only">Cart</span>
-              <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+              <span className="absolute right-0 top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
                 {itemCount}
               </span>
             </button>
@@ -1718,7 +1718,7 @@ export default function App() {
                 track('nav_favorites', { place: 'header', count: favoriteCount })
                 goToFavoritesScreen()
               }}
-              className="relative grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+              className="relative grid h-10 w-10 place-items-center text-navy transition hover:text-crimson"
             >
               <HeartIcon
                 filled={favoriteCount > 0}
@@ -1726,7 +1726,7 @@ export default function App() {
               />
               <span className="sr-only">Favorites</span>
               {favoriteCount > 0 ? (
-                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
+                <span className="absolute right-0 top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-crimson px-1 text-[0.65rem] font-bold text-cream">
                   {favoriteCount}
                 </span>
               ) : null}
@@ -1750,21 +1750,8 @@ export default function App() {
             <BrandMark size="sm" withWordmark stackedWordmark wordmarkTone="navy" />
           </a>
 
-          {/* Right: menu + search + profile */}
+          {/* Right: search + profile + menu (far right) */}
           <div className="flex items-center justify-end gap-0.5">
-            <button
-              type="button"
-              aria-label="Open navigation menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen(true)}
-              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
-            >
-              <span className="flex flex-col gap-[5px]" aria-hidden>
-                <span className="block h-0.5 w-5 bg-navy" />
-                <span className="block h-0.5 w-5 bg-navy" />
-                <span className="block h-0.5 w-5 bg-navy" />
-              </span>
-            </button>
             <button
               type="button"
               aria-label={headerSearchOpen ? 'Close search' : 'Open search'}
@@ -1781,7 +1768,7 @@ export default function App() {
                 })
                 track('nav_search_toggle', { open: !headerSearchOpen })
               }}
-              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+              className="grid h-10 w-10 place-items-center text-navy transition hover:text-crimson"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1804,7 +1791,7 @@ export default function App() {
                 track('nav_profile', { place: 'header' })
                 goToProfileScreen()
               }}
-              className="grid h-9 w-9 place-items-center text-navy transition hover:text-crimson"
+              className="grid h-10 w-10 place-items-center text-navy transition hover:text-crimson"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -1819,6 +1806,19 @@ export default function App() {
                 <circle cx="12" cy="8" r="3.25" />
                 <path d="M5.5 19.5c1.4-3.2 3.7-4.8 6.5-4.8s5.1 1.6 6.5 4.8" />
               </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Open navigation menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(true)}
+              className="grid h-10 w-10 place-items-center text-navy transition hover:text-crimson"
+            >
+              <span className="flex flex-col gap-[5px]" aria-hidden>
+                <span className="block h-0.5 w-5 bg-navy" />
+                <span className="block h-0.5 w-5 bg-navy" />
+                <span className="block h-0.5 w-5 bg-navy" />
+              </span>
             </button>
           </div>
         </div>
@@ -3973,7 +3973,7 @@ export default function App() {
           aria-modal
           aria-label="Navigation menu"
         >
-          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4 pt-[calc(1rem+40px)]">
+          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4 pt-[calc(1rem+3rem)] sm:pt-[calc(1rem+2.25rem)]">
             <BrandMark size="sm" withWordmark stackedWordmark wordmarkTone="navy" />
             <button
               type="button"
