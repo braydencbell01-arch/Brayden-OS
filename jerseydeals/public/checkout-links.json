@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-08-05T17:39:49Z",
+  "syncedAt": "2026-08-05T18:03:49Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 45,
+  "count": 51,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -466,7 +466,7 @@
     {
       "itemId": "HCDARA2BPIJ57MRWACHALL3H",
       "variationId": "CCMYBBETJ6AIUOEWPTA74G6H",
-      "title": "White adidas Originals T-Shirt L Large",
+      "title": "White adidas Originals Logo Graphic T-Shirt L Large",
       "sku": "ebay:800462375521",
       "paymentLinkId": "VFGLTSXL6HL6L2DN",
       "url": "https://square.link/u/B9JQaSHv",
@@ -479,7 +479,7 @@
     {
       "itemId": "S42HWCM5SFBZLAEB65LJV4UF",
       "variationId": "OIA4I5P56QLWOI2QXTE34NOV",
-      "title": "Black adidas Originals T-Shirt L Large",
+      "title": "Black adidas Originals Logo Graphic T-Shirt L Large",
       "sku": "ebay:800462377603",
       "paymentLinkId": "CY3YLTPUPSZN27JP",
       "url": "https://square.link/u/6KP4cc3z",
@@ -492,7 +492,7 @@
     {
       "itemId": "4I5XKVJADKB2PVFJUQC6SWDM",
       "variationId": "PFDGWERV4SLJPIHLMYDGJHOQ",
-      "title": "Grey adidas Originals T-Shirt L Large",
+      "title": "Grey adidas Originals Logo Graphic T-Shirt L Large",
       "sku": "ebay:800462381790",
       "paymentLinkId": "HKOHJX6E7WPRI4SN",
       "url": "https://square.link/u/xTtvbfoh",
@@ -505,7 +505,7 @@
     {
       "itemId": "XZALDSNOXXKZNQPY4ML5WI5M",
       "variationId": "HQTRPUGYSAZHSTPFYC4LJHWO",
-      "title": "Blue adidas T-Shirt S Small",
+      "title": "Blue adidas Logo Graphic T-Shirt S Small",
       "sku": "ebay:800462390203",
       "paymentLinkId": "KB2L7BXKYLVHIIWH",
       "url": "https://square.link/u/a6TBZxVQ",
@@ -591,6 +591,84 @@
       "discountPaymentLinkId": "LHQDXTK7QY76TSLA",
       "discountUrl": "https://square.link/u/fmJkkC7B",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/oxSQI0FCUuYHguYoIq0iqr0tAkNZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "FW74IW4WQWNJREQUGPN4MIZG",
+      "variationId": "MBIUG2X725JY6IIS7RERAWLH",
+      "title": "Navy Columbia Mountain Graphic T-Shirt M Medium",
+      "sku": "ebay:800465940813",
+      "paymentLinkId": "UFT67EEJMVWCETYS",
+      "url": "https://square.link/u/yFlLaI1L",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CgvO6HHrUVRbFNWmuhPFxDPUZLaZY",
+      "discountPaymentLinkId": "LXYPB5BERAIMKRII",
+      "discountUrl": "https://square.link/u/OiVF0WCs",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2YwtzQOuM3t234P2cV41EcF3GYBZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "BYDEPKAKMGLLL4YUUJTRKIBB",
+      "variationId": "KTKQNRLKNTODXGSMZKP5U575",
+      "title": "Beige Columbia Colorful Logo T-Shirt L Large",
+      "sku": "ebay:800465963114",
+      "paymentLinkId": "RZGRXNEQMHCYAXRT",
+      "url": "https://square.link/u/BJljXUIa",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WGDn9dU5l44d2HQXuC8KMEgzYGDZY",
+      "discountPaymentLinkId": "O2WHSAKGQQAM7MIY",
+      "discountUrl": "https://square.link/u/rlVj8ZWw",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WMoW6aVLRJcq5YFWYQi3cZQpZNQZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "QNT36BNMBU56Z2GUPSVAC2BR",
+      "variationId": "DMGN4WRW6ZIQXZVAE3DKDVVM",
+      "title": "Green Under Armour Red One Graphic T-Shirt S Small",
+      "sku": "ebay:800465986815",
+      "paymentLinkId": "YSRKFCKZP3E2SBQP",
+      "url": "https://square.link/u/NqhYNInb",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Qd8v4K9SW3rT76xbprCGiosUIvKZY",
+      "discountPaymentLinkId": "IGMNCEUIEYMJ4P2P",
+      "discountUrl": "https://square.link/u/IVl31SFW",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4LD8WlXVAfdSD9XL5kGzEc8URVcZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "DH3ECCJONSTXEWEEZOUZZM6I",
+      "variationId": "XNHNL2WTQEIFBDPIAMDP4AVH",
+      "title": "Red Under Armour Red One Graphic T-Shirt S Small",
+      "sku": "ebay:800466004978",
+      "paymentLinkId": "V6QZQS6DKR54UMGX",
+      "url": "https://square.link/u/mJLNYG0b",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GEUoaf9INTrjZw4HezwtpgCAYy7YY",
+      "discountPaymentLinkId": "WIUA4PQZWOD7J3I3",
+      "discountUrl": "https://square.link/u/XAkrQjhn",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/85JYWGsKnjIfJYobMwY33A8EB38YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "DVKHCBD4VVWMDM7SPTNMLMVS",
+      "variationId": "THX7VFJO2ALZ7ZGRFAEPER2G",
+      "title": "USA Crest T-Shirt (Under Armour) · Youth L",
+      "sku": "ebay:800466048195",
+      "paymentLinkId": "VBSALQSTRYLAUPFV",
+      "url": "https://square.link/u/yUq10pnT",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KQDlgkXYmcGLsmjXW6ZCrceuEMeZY",
+      "discountPaymentLinkId": "J4GLK7FAW6N4AK7M",
+      "discountUrl": "https://square.link/u/6xBT8XUv",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/COIBRi7Eqbo7lzLAUT92r8eDimMZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "UZSRPC5LNCZISTUHGJMV65CC",
+      "variationId": "H4MRADR5XPZCLS5JNIBEEIVH",
+      "title": "USA Crest T-Shirt (Under Armour) · Youth XL",
+      "sku": "ebay:800466571858",
+      "paymentLinkId": "WM5Z5RC6X3RSAOFX",
+      "url": "https://square.link/u/0cNZDx9U",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GedkX8SKbvkge9dCyXT903lVCGVZY",
+      "discountPaymentLinkId": "RMGK25QFWBIDDT6I",
+      "discountUrl": "https://square.link/u/UqPLcmJA",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/akj24vdHCjhMUqOlqRFtD9TkQh6YY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]

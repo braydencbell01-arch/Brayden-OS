@@ -1644,14 +1644,51 @@ async function main() {
   const contactEmail = (process.env.JERSEYDEALS_CONTACT_EMAIL || 'shop@jerseydeals.online').trim()
   let content = buildSnippet(map, purchaserEmails, collectUrl, contactEmail)
   function shrink(src) {
-    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\n[ \t]*\/\/[^\n]*/g, '')
+    return src
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\n[ \t]*\/\/[^\n]*/g, '')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\n{2,}/g, '\n')
+      .replace(/>\s+</g, '><')
+      .replace(/\s*([{}();,:])\s*/g, '$1')
   }
   // Square Online hard-caps snippet size; drop comments / optional payload if over budget.
   if (content.length > 65535) content = shrink(content)
   if (content.length > 65535) content = shrink(buildSnippet(map, purchaserEmails, '', contactEmail))
   if (content.length > 65535) content = shrink(buildSnippet(map, [], '', contactEmail))
+  // Last resort: keep buy-bridge maps only (drop bulky polish CSS/JS) so checkout still works.
   if (content.length > 65535) {
-    content = content.replace(/[ \t]{2,}/g, ' ').replace(/\n{2,}/g, '\n')
+    const mapJson = JSON.stringify({
+      byItemId: map.byItemId || {},
+      byVariationId: map.byVariationId || {},
+      byItemIdDiscount: map.byItemIdDiscount || {},
+      byVariationIdDiscount: map.byVariationIdDiscount || {},
+    })
+    content = shrink(`<!-- jerseydeals-buy-bridge -->
+<script id="jd-buy-bridge">
+(function(){
+  var MAP=${mapJson};
+  function findLink(){
+    try{
+      var path=location.pathname||"";
+      var m=path.match(/\\/product\\/[^/]+\\/([A-Z0-9]+)/i);
+      if(m&&MAP.byItemId[m[1]]) return MAP.byItemId[m[1]];
+      var keys=Object.keys(MAP.byItemId||{});
+      for(var i=0;i<keys.length;i++){ if(path.indexOf(keys[i])!==-1) return MAP.byItemId[keys[i]]; }
+    }catch(e){}
+    return null;
+  }
+  function ensure(){
+    var url=findLink(); if(!url||document.getElementById("jd-buy-now-btn")) return;
+    var a=document.createElement("a"); a.id="jd-buy-now-btn"; a.href=url; a.target="_blank";
+    a.rel="noopener"; a.textContent="Buy now — secure checkout";
+    a.style.cssText="display:inline-flex;margin:.75rem 0;padding:.75rem 1.1rem;background:#111;color:#fff;text-decoration:none;font:600 14px system-ui";
+    (document.querySelector("main,#content,body")||document.body).prepend(a);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",ensure); else ensure();
+  setInterval(ensure,2000);
+})();
+</script>`)
   }
   console.log(
     `New snippet length: ${content.length} (prior emails: ${purchaserEmails.length}, collectUrl: ${collectUrl || 'formsubmit-only'})`,
