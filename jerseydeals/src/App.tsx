@@ -98,6 +98,7 @@ import {
   isAdultListing,
   isSaleListing,
   isSquareCatalog,
+  isWomenListing,
   isYouthListing,
   kitType,
   leaguesInStock,
@@ -142,7 +143,7 @@ const LOGO_SRC = {
   lg: asset('logo.png'),
 } as const
 
-type GenderFilter = 'All' | 'Men' | 'Youth'
+type GenderFilter = 'All' | 'Men' | 'Women' | 'Youth'
 
 function BrandMark({
   size = 'md',
@@ -1275,6 +1276,7 @@ export default function App() {
     const rows = listings.filter((item) => {
       if (!matchesTypeFilter(item, tagFilter)) return false
       if (genderFilter === 'Men' && !isAdultListing(item)) return false
+      if (genderFilter === 'Women' && !isWomenListing(item)) return false
       if (genderFilter === 'Youth' && !isYouthListing(item)) return false
       if (sizeFilter !== 'All' && listingSize(item) !== sizeFilter) return false
       if (brandFilter !== 'All' && item.brand !== brandFilter) return false
@@ -1346,7 +1348,8 @@ export default function App() {
     if (genderFilter !== 'All') {
       chips.push({
         key: 'gender',
-        label: genderFilter === 'Men' ? "Men's" : 'Youth',
+        label:
+          genderFilter === 'Men' ? "Men's" : genderFilter === 'Women' ? "Women's" : 'Youth',
         clear: () => setGenderFilter('All'),
       })
     }
@@ -1527,8 +1530,10 @@ export default function App() {
       setQuery(q)
       setAppliedQuery(q)
     }
-    if (gender === 'Men' || gender === 'Youth' || gender === 'All') setGenderFilter(gender)
+    if (gender === 'Men' || gender === 'Women' || gender === 'Youth' || gender === 'All')
+      setGenderFilter(gender)
     else if (gender === 'Adult') setGenderFilter('Men')
+    else if (gender === 'Womens' || gender === "Women's") setGenderFilter('Women')
     if (tag) setTagFilter(tag)
     if (size) setSizeFilter(size)
     if (brand) setBrandFilter(brand)
@@ -3105,6 +3110,7 @@ export default function App() {
                               [
                                 { id: 'All', label: 'All' },
                                 { id: 'Men', label: "Men's" },
+                                { id: 'Women', label: "Women's" },
                                 { id: 'Youth', label: 'Youth' },
                               ] as const
                             ).map((option) => (

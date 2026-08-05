@@ -145,6 +145,12 @@ export function isYouthListing(item: Listing) {
   return /youth|yth|boys|girls|9-12|yrs/i.test(`${item.title} ${item.tag} ${item.note}`)
 }
 
+/** Women's / ladies kits — rare in current stock; filter still available. */
+export function isWomenListing(item: Listing) {
+  if (isYouthListing(item)) return false
+  return /\bwomen'?s?\b|\bladies\b|\bwmn\b/i.test(`${item.title} ${item.tag} ${item.note}`)
+}
+
 /** Title matchers for the current sale rack (hand-picked). */
 export const SALE_TITLE_PATTERNS: RegExp[] = [
   /newcastle\s*united/i,
@@ -450,7 +456,7 @@ export function matchesLeagueFilter(item: Listing, leagueId: string) {
 
 export function isAdultListing(item: Listing) {
   if (isYouthListing(item)) return false
-  // Everything non-youth counts as men's / adult until women's inventory is added.
+  if (isWomenListing(item)) return false
   return true
 }
 
