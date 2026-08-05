@@ -21,7 +21,7 @@ function memberContact(member: RewardsMember | null) {
   return member.email || member.phone || ''
 }
 
-async function submitRewardsJoin(input: {
+export async function submitRewardsJoin(input: {
   email: string
   phone: string
   source: string

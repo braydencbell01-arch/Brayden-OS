@@ -3,7 +3,7 @@
  * inventory / favorites / offers can restore that spot instead of top.
  */
 
-const SUBPAGE_HASHES = new Set(['#inventory', '#favorites', '#offers'])
+const SUBPAGE_HASHES = new Set(['#inventory', '#favorites', '#offers', '#profile'])
 
 let savedScrollY = 0
 let hasSaved = false
