@@ -200,7 +200,6 @@ export function CollectionsRail({
         <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-navy md:text-4xl">
           Collections
         </h2>
-        <p className="mt-1.5 font-brand text-sm text-muted">Tap a collection to shop.</p>
       </div>
 
       <div
