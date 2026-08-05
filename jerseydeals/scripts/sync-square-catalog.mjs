@@ -132,6 +132,7 @@ function inferBrand(title) {
   if (/\badidas\b/.test(t)) return 'Adidas'
   if (/\bpuma\b/.test(t)) return 'Puma'
   if (/\bunder\s*armour\b|\bua\b/.test(t)) return 'Under Armour'
+  if (/\bcolumbia\b/.test(t)) return 'Columbia'
   return ''
 }
 

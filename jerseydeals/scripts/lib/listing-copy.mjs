@@ -5,7 +5,7 @@
 const SIZE_TOKEN =
   /\b(XXL|XL|XS|S|M|L|YthXL|YthL|YthM|YthS|Youth\s*XL|Youth\s*L|Youth\s*M|Youth\s*S|\d+\s*[-–]\s*\d+\s*YRS?)\b/i
 
-const BRANDS = /\b(Adidas|Nike|Puma|Under\s*Armour|Pro\s*Edge)\b/i
+const BRANDS = /\b(Adidas|Nike|Puma|Under\s*Armour|Columbia|Pro\s*Edge)\b/i
 
 // Keep in sync with jerseydeals/src/listings.ts CLUB_CATALOG (longer / more specific first).
 const TEAMS = [
@@ -108,7 +108,7 @@ export function extractPlayer(title) {
   // Strip season tokens so "Inter Miami 22/23" does not become Miami #22
   const noSeason = text.replace(/\b\d{2}\/\d{2}\b/g, ' ')
   const block =
-    /Adidas|Nike|Puma|Under|Pro|Edge|Men|Youth|Boys|Towel|Pack|Rally|Crest|Shirt|Jersey|Home|Away|Third|Miami|City|United|Madrid|Chelsea|Liverpool|Barcelona|Dortmund|Tottenham|Paris|Saint|Germain|Orange|Germany|Syracuse|Milan|Manchester|Inter|Real|Borussia|Hotspur|Newcastle|Arsenal|Bayern|Juventus|Ajax|Napoli|Roma|Everton|Brighton|Wolves|Villa|Leicester|Portugal|France|England|Spain|Argentina|Mexico/i
+    /Adidas|Nike|Puma|Under|Columbia|Pro|Edge|Men|Youth|Boys|Towel|Pack|Rally|Crest|Shirt|Jersey|Home|Away|Third|Miami|City|United|Madrid|Chelsea|Liverpool|Barcelona|Dortmund|Tottenham|Paris|Saint|Germain|Orange|Germany|Syracuse|Milan|Manchester|Inter|Real|Borussia|Hotspur|Newcastle|Arsenal|Bayern|Juventus|Ajax|Napoli|Roma|Everton|Brighton|Wolves|Villa|Leicester|Portugal|France|England|Spain|Argentina|Mexico/i
 
   // "Messi 10" or "Messi #10" / "Torres #9"
   const named = noSeason.match(/\b([A-Z][a-z]{2,})\s+#?\s*(\d{1,2})\b/)

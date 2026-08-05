@@ -309,6 +309,8 @@ const COMPANY_LOGO: Record<string, string> = {
   nike: 'collections/nike.jpg',
   adidas: 'collections/adidas.jpg',
   puma: 'collections/puma.jpg',
+  'under armour': 'collections/under-armour.jpg',
+  columbia: 'collections/columbia.jpg',
 }
 
 function fadeUp(reduce: boolean | null, delay = 0) {

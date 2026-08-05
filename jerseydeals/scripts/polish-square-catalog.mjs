@@ -96,7 +96,7 @@ function metaFromItem(data, listing) {
     note: listing?.note || data.variations?.[0]?.item_variation_data?.name || '',
   }
   if (meta.brand) {
-    const m = meta.brand.match(/\b(Adidas|Nike|Puma|Under\s*Armour|Pro\s*Edge)\b/i)
+    const m = meta.brand.match(/\b(Adidas|Nike|Puma|Under\s*Armour|Columbia|Pro\s*Edge)\b/i)
     meta.brand = m ? m[1] : meta.brand.split(/\s+/)[0]
   }
   return meta
