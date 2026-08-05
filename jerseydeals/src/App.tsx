@@ -2305,7 +2305,7 @@ export default function App() {
                 Shop the floor
               </h2>
               <p className="mt-2 font-brand text-base text-muted">
-                Youth sizes, sale picks, or the full catalog — start where you want.
+                Youth, sale, catalog, or apparel — start where you want.
               </p>
             </motion.div>
 
