@@ -1171,7 +1171,7 @@ export default function App() {
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [sortBy, setSortBy] = useState<SortId>('featured')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [filterSection, setFilterSection] = useState<string | null>('type')
+  const [filterSection, setFilterSection] = useState<string | null>(null)
   const [quickView, setQuickView] = useState<Listing | null>(null)
   const [recentIds, setRecentIds] = useState<string[]>(() => readRecentlyViewed())
   const [offerOpen, setOfferOpen] = useState(false)
@@ -1587,7 +1587,6 @@ export default function App() {
 
   function scrollToInventoryBrowse(opts?: { focusSearch?: boolean }) {
     goToInventoryPage()
-    setFiltersOpen(true)
     const run = () => {
       const target =
         document.getElementById('inventory-results') || document.getElementById('inventory-browse')
