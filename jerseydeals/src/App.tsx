@@ -1800,8 +1800,17 @@ export default function App() {
       <button
         type="button"
         onClick={() => {
-          track('promo_bar_click', { destination: 'premier-league' })
-          goInventory({ reset: true, leagueId: 'premier-league' })
+          track('promo_bar_click', { destination: 'epl_section' })
+          const goEpl = () => {
+            document.getElementById('epl')?.scrollIntoView({ behavior: 'smooth' })
+          }
+          if (inventoryOpen) {
+            suppressLandingScrollRestore()
+            leaveInventoryPage()
+            window.setTimeout(goEpl, 40)
+            return
+          }
+          goEpl()
         }}
         className="flex w-full min-h-10 items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2 text-center font-brand text-[0.62rem] font-bold uppercase leading-tight tracking-[0.1em] text-cream transition hover:brightness-110 sm:min-h-9 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
       >
