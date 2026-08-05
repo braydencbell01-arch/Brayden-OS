@@ -2304,118 +2304,80 @@ export default function App() {
                 Shop the floor
               </h2>
               <p className="mt-2 font-brand text-base text-muted">
-                Youth sizes, sale picks, or the full catalog — start where you want.
+                Youth, sale, catalog, or apparel — start where you want.
               </p>
             </motion.div>
 
-            <div className="mt-7 flex flex-col">
-              <motion.button
-                type="button"
-                onClick={() => {
-                  track('category_click', { category: 'category_youth' })
-                  goInventory({ audience: 'Youth', reset: true })
-                }}
-                {...fadeUp(reduce, 0.05)}
-                className="group relative aspect-[16/9] w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
-              >
-                <img
-                  src={asset('category-youth.jpg')}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
-                  <p className="eyebrow text-white/70">Youth</p>
-                  <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
-                    Youth apparel
-                  </p>
-                  <span className="mt-2 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
-                    Shop youth →
-                  </span>
-                </div>
-              </motion.button>
-
-              {onSquare ? (
+            <div className="mt-7 grid grid-cols-2 gap-2.5 sm:gap-3 md:gap-4">
+              {(
+                [
+                  {
+                    key: 'youth',
+                    label: 'Youth',
+                    image: 'category-youth.jpg',
+                    onClick: () => {
+                      track('category_click', { category: 'category_youth' })
+                      goInventory({ audience: 'Youth', reset: true })
+                    },
+                  },
+                  {
+                    key: 'sale',
+                    label: 'Sale',
+                    image: 'category-sale.jpg',
+                    onClick: () => {
+                      track('category_click', { category: 'category_sale' })
+                      if (onSquare) {
+                        goInventory({ saleOnly: true, reset: true })
+                      } else {
+                        window.open(EBAY_SALE_URL, '_blank', 'noopener,noreferrer')
+                      }
+                    },
+                  },
+                  {
+                    key: 'catalog',
+                    label: 'Catalog',
+                    image: 'category-catalog.jpg',
+                    onClick: () => {
+                      track('category_click', { category: 'category_all' })
+                      goInventory({ tag: 'All', reset: true })
+                    },
+                  },
+                  {
+                    key: 'apparel',
+                    label: 'Apparel',
+                    image: 'product-hoodie.jpg',
+                    onClick: () => {
+                      track('category_click', { category: 'category_apparel' })
+                      goInventory({ tag: 'Apparel', reset: true })
+                    },
+                  },
+                ] as const
+              ).map((tile, i) => (
                 <motion.button
+                  key={tile.key}
                   type="button"
-                  onClick={() => {
-                    track('category_click', { category: 'category_sale' })
-                    goInventory({ saleOnly: true, reset: true })
-                  }}
-                  {...fadeUp(reduce, 0.1)}
-                  className="group relative aspect-[16/9] w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
+                  onClick={tile.onClick}
+                  {...fadeUp(reduce, 0.04 * i)}
+                  className="group relative aspect-square w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson"
                 >
                   <img
-                    src={asset('category-sale.jpg')}
+                    src={asset(tile.image)}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
+                    className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
                     loading="lazy"
                     decoding="async"
+                    onError={(e) => {
+                      e.currentTarget.src = FALLBACK_IMAGE
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
-                    <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
-                      {SALE_HEADLINE}
+                  <div className="relative flex h-full flex-col justify-end p-3 sm:p-4">
+                    <p className="font-display text-lg font-bold uppercase tracking-wide text-white sm:text-xl md:text-2xl">
+                      {tile.label}
                     </p>
-                    <span className="mt-2 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-white">
-                      Shop sale kits →
-                    </span>
                   </div>
                 </motion.button>
-              ) : (
-                <motion.a
-                  href={EBAY_SALE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('category_click', { category: 'category_sale' })}
-                  {...fadeUp(reduce, 0.1)}
-                  className="group relative aspect-[16/9] w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
-                >
-                  <img
-                    src={asset('category-sale.jpg')}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
-                    <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
-                      {SALE_HEADLINE}
-                    </p>
-                  </div>
-                </motion.a>
-              )}
-
-              <motion.button
-                type="button"
-                onClick={() => {
-                  track('category_click', { category: 'category_all' })
-                  goInventory({ tag: 'All', reset: true })
-                }}
-                {...fadeUp(reduce, 0.14)}
-                className="group relative aspect-[16/9] w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:aspect-[21/9]"
-              >
-                <img
-                  src={asset('category-catalog.jpg')}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.03]"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    e.currentTarget.src = FALLBACK_IMAGE
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
-                <div className="relative flex h-full flex-col justify-end p-4 md:p-6">
-                  <p className="eyebrow text-white/70">Inventory</p>
-                  <p className="mt-1.5 font-display text-xl font-bold uppercase tracking-wide text-white md:text-2xl">
-                    Full catalog
-                  </p>
-                </div>
-              </motion.button>
+              ))}
             </div>
           </div>
         </section>
