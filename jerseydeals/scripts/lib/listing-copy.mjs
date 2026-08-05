@@ -5,7 +5,7 @@
 const SIZE_TOKEN =
   /\b(XXL|XL|XS|S|M|L|YthXL|YthL|YthM|YthS|Youth\s*XL|Youth\s*L|Youth\s*M|Youth\s*S|\d+\s*[-–]\s*\d+\s*YRS?)\b/i
 
-const BRANDS = /\b(Adidas|Nike|Puma|Under\s*Armour|Pro\s*Edge)\b/i
+const BRANDS = /\b(Adidas|Nike|Puma|Under\s*Armour|Columbia|Pro\s*Edge)\b/i
 
 // Keep in sync with jerseydeals/src/listings.ts CLUB_CATALOG (longer / more specific first).
 const TEAMS = [

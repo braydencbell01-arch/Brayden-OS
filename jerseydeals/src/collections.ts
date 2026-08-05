@@ -43,6 +43,18 @@ export const LANDING_COLLECTIONS: CollectionItem[] = [
     action: { brand: 'Puma', reset: true },
   },
   {
+    id: 'under-armour',
+    label: 'Under Armour',
+    image: 'collections/under-armour.jpg',
+    action: { brand: 'Under Armour', reset: true },
+  },
+  {
+    id: 'columbia',
+    label: 'Columbia',
+    image: 'collections/columbia.jpg',
+    action: { brand: 'Columbia', reset: true },
+  },
+  {
     id: 'club-kits',
     label: 'Club kits',
     image: 'collections/club.jpg',
