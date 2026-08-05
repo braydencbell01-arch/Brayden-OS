@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-05T22:18:47Z",
+  "syncedAt": "2026-08-05T22:22:28Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -1056,11 +1056,11 @@
       "source": "square",
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/BJljXUIa",
+      "checkoutUrlDiscounted": "https://square.link/u/rlVj8ZWw",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000",
-      "checkoutUrl": "https://square.link/u/BJljXUIa",
-      "checkoutUrlDiscounted": "https://square.link/u/rlVj8ZWw"
+      "conditionId": "1000"
     },
     {
       "id": "MBIUG2X725JY6IIS7RERAWLH",
@@ -1088,11 +1088,11 @@
       "source": "square",
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/yFlLaI1L",
+      "checkoutUrlDiscounted": "https://square.link/u/OiVF0WCs",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000",
-      "checkoutUrl": "https://square.link/u/yFlLaI1L",
-      "checkoutUrlDiscounted": "https://square.link/u/OiVF0WCs"
+      "conditionId": "1000"
     },
     {
       "id": "5WUKS2WBNN6QAABUKJFFXZLD",
@@ -1532,11 +1532,11 @@
       "source": "square",
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/yUq10pnT",
+      "checkoutUrlDiscounted": "https://square.link/u/6xBT8XUv",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000",
-      "checkoutUrl": "https://square.link/u/yUq10pnT",
-      "checkoutUrlDiscounted": "https://square.link/u/6xBT8XUv"
+      "conditionId": "1000"
     },
     {
       "id": "H4MRADR5XPZCLS5JNIBEEIVH",
@@ -1565,11 +1565,11 @@
       "source": "square",
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/0cNZDx9U",
+      "checkoutUrlDiscounted": "https://square.link/u/UqPLcmJA",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000",
-      "checkoutUrl": "https://square.link/u/0cNZDx9U",
-      "checkoutUrlDiscounted": "https://square.link/u/UqPLcmJA"
+      "conditionId": "1000"
     },
     {
       "id": "TNLLMZ7CSS72HGOHXAYNALLP",
@@ -1661,11 +1661,11 @@
       "source": "square",
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/NqhYNInb",
+      "checkoutUrlDiscounted": "https://square.link/u/IVl31SFW",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000",
-      "checkoutUrl": "https://square.link/u/NqhYNInb",
-      "checkoutUrlDiscounted": "https://square.link/u/IVl31SFW"
+      "conditionId": "1000"
     },
     {
       "id": "XNHNL2WTQEIFBDPIAMDP4AVH",
@@ -1694,11 +1694,11 @@
       "source": "square",
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/mJLNYG0b",
+      "checkoutUrlDiscounted": "https://square.link/u/XAkrQjhn",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000",
-      "checkoutUrl": "https://square.link/u/mJLNYG0b",
-      "checkoutUrlDiscounted": "https://square.link/u/XAkrQjhn"
+      "conditionId": "1000"
     },
     {
       "id": "PPVWVZKJYRLSFX33RN4XQDOV",
@@ -1730,5 +1730,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-05T18:03:43Z"
+  "ebayDetailsSyncedAt": "2026-08-05T22:22:28Z"
 }

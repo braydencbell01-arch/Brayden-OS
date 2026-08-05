@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-05T12:32:53Z",
+  "updatedAt": "2026-08-05T22:22:33Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -49,9 +49,58 @@
     "ebay:800462519354",
     "ebay:800462523810",
     "ebay:800462563793",
-    "ebay:800462574868"
+    "ebay:800462574868",
+    "ebay:800465940813",
+    "ebay:800465963114",
+    "ebay:800465986815",
+    "ebay:800466004978",
+    "ebay:800466048195",
+    "ebay:800466571858"
   ],
-  "pending": [],
+  "pending": [
+    {
+      "id": "ebay:800465963114",
+      "title": "Beige Columbia Colorful Logo T-Shirt L Large",
+      "url": "https://jerseydealsofficial.square.site/product/beige-columbia-colorful-logo-t-shirt-l-large/BYDEPKAKMGLLL4YUUJTRKIBB",
+      "price": 22.99,
+      "seenAt": "2026-08-05T22:22:33Z"
+    },
+    {
+      "id": "ebay:800465986815",
+      "title": "Green Under Armour Red One Graphic T-Shirt S Small",
+      "url": "https://jerseydealsofficial.square.site/product/green-under-armour-red-one-graphic-t-shirt-s-small/QNT36BNMBU56Z2GUPSVAC2BR",
+      "price": 14.99,
+      "seenAt": "2026-08-05T22:22:33Z"
+    },
+    {
+      "id": "ebay:800465940813",
+      "title": "Navy Columbia Mountain Graphic T-Shirt M Medium",
+      "url": "https://jerseydealsofficial.square.site/product/navy-columbia-mountain-graphic-t-shirt-m-medium/FW74IW4WQWNJREQUGPN4MIZG",
+      "price": 22.99,
+      "seenAt": "2026-08-05T22:22:33Z"
+    },
+    {
+      "id": "ebay:800466004978",
+      "title": "Red Under Armour Red One Graphic T-Shirt S Small",
+      "url": "https://jerseydealsofficial.square.site/product/red-under-armour-red-one-graphic-t-shirt-s-small/DH3ECCJONSTXEWEEZOUZZM6I",
+      "price": 14.99,
+      "seenAt": "2026-08-05T22:22:33Z"
+    },
+    {
+      "id": "ebay:800466048195",
+      "title": "USA Crest T-Shirt (Under Armour) · Youth L",
+      "url": "https://jerseydealsofficial.square.site/product/usa-crest-t-shirt-under-armour-youth-l/DVKHCBD4VVWMDM7SPTNMLMVS",
+      "price": 17.99,
+      "seenAt": "2026-08-05T22:22:33Z"
+    },
+    {
+      "id": "ebay:800466571858",
+      "title": "USA Crest T-Shirt (Under Armour) · Youth XL",
+      "url": "https://jerseydealsofficial.square.site/product/usa-crest-t-shirt-under-armour-youth-xl/UZSRPC5LNCZISTUHGJMV65CC",
+      "price": 17.99,
+      "seenAt": "2026-08-05T22:22:33Z"
+    }
+  ],
   "lastEmailedAt": "2026-08-05T06:28:36Z",
   "lastEmailedDay": "2026-08-05",
   "lastEmailedIds": [
