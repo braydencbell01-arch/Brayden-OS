@@ -2107,8 +2107,8 @@ export default function App() {
       <main id="top" className="pb-28 md:pb-24">
         {!inventoryOpen ? (
           <>
-        {/* Hero — Jersey Deals red wash; jersey photo barely shows through */}
-        <section className="relative min-h-[100svh] overflow-hidden bg-[#8f1218] text-white">
+        {/* Hero — exactly one screen; Collections starts on the next scroll */}
+        <section className="relative h-[100svh] max-h-[100svh] overflow-hidden bg-[#8f1218] text-white">
           <div className="absolute inset-0" aria-hidden>
             <motion.img
               key={heroImage}
@@ -2135,8 +2135,8 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/45 via-transparent to-[#d7282f]/22" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col px-5 pt-36 md:px-8 md:pt-40">
-            <div className="flex flex-1 flex-col justify-start pb-8 pt-2 md:justify-center md:pb-10 md:pt-0">
+          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 pb-[5.75rem] pt-44 md:px-8 md:pb-24 md:pt-48">
+            <div className="flex min-h-0 flex-1 flex-col justify-end pb-8 md:justify-center md:pb-10">
               <motion.div
                 className="max-w-2xl"
                 initial={reduce ? false : { opacity: 0.001, y: 26 }}
@@ -2177,7 +2177,7 @@ export default function App() {
               </motion.div>
             </div>
 
-            <div className="pb-6 md:pb-8">
+            <div className="shrink-0 pb-6 md:pb-8">
               <ul
                 aria-label="Why shop with us"
                 className="flex flex-col items-start gap-2.5 font-brand text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-cream sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2 sm:text-[0.72rem] md:gap-x-12"
