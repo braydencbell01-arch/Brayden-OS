@@ -45,13 +45,13 @@ export const LANDING_COLLECTIONS: CollectionItem[] = [
   {
     id: 'under-armour',
     label: 'Under Armour',
-    image: 'collections/under-armour.jpg',
+    image: 'collections/under-armour.jpg?v=brand1',
     action: { brand: 'Under Armour', reset: true },
   },
   {
     id: 'columbia',
     label: 'Columbia',
-    image: 'collections/columbia.jpg',
+    image: 'collections/columbia.jpg?v=brand1',
     action: { brand: 'Columbia', reset: true },
   },
   {

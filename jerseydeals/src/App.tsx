@@ -1995,8 +1995,9 @@ export default function App() {
                   Jersey Deals
                 </h1>
                 <div className="brand-rule mt-4" aria-hidden />
-                <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/85 md:text-lg">
-                  Club, country, and training jerseys — photographed from our inventory and sold direct.
+                <p className="mt-4 max-w-lg font-brand text-base leading-relaxed text-cream/85 md:text-lg">
+                  Hi, welcome to JerseyDeals. We sell top quality jerseys from top quality brands, for the lowest
+                  prices you’ll find! EVERYTHING we sell is NEW and AUTHENTIC!
                 </p>
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <motion.button
@@ -2036,19 +2037,6 @@ export default function App() {
                   </li>
                 ))}
               </ul>
-              <a
-                href="#collections"
-                className="mt-5 inline-flex flex-col items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white"
-                aria-label="Scroll to collections"
-              >
-                Scroll
-                <motion.span
-                  aria-hidden
-                  animate={reduce ? undefined : { y: [0, 6, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-                  className="block h-7 w-px bg-white/45"
-                />
-              </a>
             </div>
           </div>
         </section>
@@ -2114,7 +2102,7 @@ export default function App() {
                 Shop Premier League
               </h2>
               <p className="mt-3 max-w-md font-brand text-base text-white/80">
-                Real kits from the clubs we stock — shop the league or pick your side.
+                {PROMO_BAR}
               </p>
               <button
                 type="button"

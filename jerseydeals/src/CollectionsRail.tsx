@@ -6,8 +6,8 @@ function asset(path: string) {
   return `${base}${path.replace(/^\//, '')}`
 }
 
-const AUTO_SPEED = 0.75
-const RESUME_AFTER_MS = 2200
+const AUTO_SPEED = 0.45
+const RESUME_AFTER_MS = 2400
 
 export function CollectionsRail({
   onSelect,
@@ -37,11 +37,12 @@ export function CollectionsRail({
       const setW = setWidthRef.current
       if (setW <= 0 || wrappingRef.current) return
       const x = scroller.scrollLeft
-      if (x < setW * 0.5) {
+      // Wider buffer before wrapping reduces visible jumps / glitches.
+      if (x < setW * 0.35) {
         wrappingRef.current = true
         scroller.scrollLeft = x + setW
         wrappingRef.current = false
-      } else if (x >= setW * 1.5) {
+      } else if (x >= setW * 1.65) {
         wrappingRef.current = true
         scroller.scrollLeft = x - setW
         wrappingRef.current = false
@@ -50,8 +51,7 @@ export function CollectionsRail({
 
     const measure = () => {
       // Three identical copies → one set is 1/3 of the track.
-      // Keep fractional width so wrap jumps stay visually seamless.
-      setWidthRef.current = Math.max(0, scroller.scrollWidth / 3)
+      setWidthRef.current = Math.max(0, Math.round(scroller.scrollWidth / 3))
       if (setWidthRef.current <= 0) return
       if (!seededRef.current) {
         wrappingRef.current = true
@@ -65,9 +65,13 @@ export function CollectionsRail({
     measure()
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
     ro?.observe(scroller)
-    const t1 = window.setTimeout(measure, 100)
-    const t2 = window.setTimeout(measure, 600)
-    const t3 = window.setTimeout(measure, 1500)
+    const imgs = scroller.querySelectorAll('img')
+    const onImg = () => measure()
+    imgs.forEach((img) => {
+      if (!img.complete) img.addEventListener('load', onImg, { once: true })
+    })
+    const t1 = window.setTimeout(measure, 80)
+    const t2 = window.setTimeout(measure, 400)
 
     const clearResume = () => {
       if (resumeTimer.current) {
@@ -150,9 +154,9 @@ export function CollectionsRail({
       window.cancelAnimationFrame(raf)
       window.clearTimeout(t1)
       window.clearTimeout(t2)
-      window.clearTimeout(t3)
       clearResume()
       ro?.disconnect()
+      imgs.forEach((img) => img.removeEventListener('load', onImg))
       scroller.removeEventListener('scroll', onScroll)
       scroller.removeEventListener('touchstart', onTouchStart)
       scroller.removeEventListener('touchend', onTouchEnd)
@@ -193,19 +197,20 @@ export function CollectionsRail({
   return (
     <section
       id="collections"
-      className="scroll-mt-44 border-y border-navy/10 bg-cream py-7 md:py-9"
+      className="scroll-mt-44 border-y border-navy/10 bg-cream py-4 md:py-5"
       aria-label="Collections"
     >
       <div className="mx-auto max-w-6xl px-5 md:px-8">
-        <h2 className="font-display text-3xl font-bold uppercase tracking-wide text-navy md:text-4xl">
+        <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-navy md:text-3xl">
           Collections
         </h2>
       </div>
 
       <div
         ref={scrollerRef}
-        className="collections-rail mt-5 flex gap-3 overflow-x-auto overflow-y-hidden px-5 pb-0 md:gap-4 md:px-8"
+        className="collections-rail mt-3 flex gap-2 overflow-x-auto overflow-y-hidden px-5 pb-0 md:gap-2.5 md:px-8"
         aria-label="Collections carousel"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {loop.map((item, i) => (
           <button
@@ -219,19 +224,19 @@ export function CollectionsRail({
               }
               onSelect(item.action, item.id, item.label)
             }}
-            className="group relative h-[10.5rem] w-[8.75rem] shrink-0 overflow-hidden border-2 border-navy/15 bg-navy text-left outline-none transition hover:border-crimson focus-visible:ring-2 focus-visible:ring-crimson sm:h-[12rem] sm:w-[10rem] md:h-[13.5rem] md:w-[11rem]"
+            className="group relative h-[7.25rem] w-[6rem] shrink-0 overflow-hidden border border-navy/15 bg-navy text-left outline-none transition hover:border-crimson focus-visible:ring-2 focus-visible:ring-crimson sm:h-[8rem] sm:w-[6.75rem] md:h-[9rem] md:w-[7.5rem]"
           >
             <img
               src={asset(item.image)}
               alt=""
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-              loading="lazy"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+              loading="eager"
               decoding="async"
               draggable={false}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/95 via-navy-deep/35 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/95 via-navy-deep/30 to-transparent" />
             <span
-              className={`relative z-10 flex h-full items-end p-3 font-display text-base font-bold uppercase tracking-wide text-cream sm:p-3.5 sm:text-lg ${
+              className={`relative z-10 flex h-full items-end p-2 font-display text-[0.7rem] font-bold uppercase leading-tight tracking-wide text-cream sm:p-2.5 sm:text-xs md:text-sm ${
                 item.id === 'jersey-deals' ? 'text-crimson-hot' : ''
               }`}
             >
