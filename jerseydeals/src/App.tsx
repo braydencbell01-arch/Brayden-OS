@@ -278,7 +278,7 @@ function ProductCardCover({
   fit?: 'contain' | 'cover'
 }) {
   const src = listingPrimaryImage(item) || FALLBACK_IMAGE
-  const bg = tone === 'dark' ? 'bg-navy-deep' : fit === 'cover' ? 'bg-white' : 'bg-mist'
+  const bg = tone === 'dark' ? 'bg-navy-deep' : 'bg-white'
   return (
     <div className={`absolute inset-0 ${bg}`}>
       <SafeImage
@@ -659,7 +659,7 @@ function ProductLink({
             className="relative aspect-[4/5] w-full overflow-hidden bg-white outline-none focus-visible:ring-2 focus-visible:ring-crimson"
             aria-label={`Quick view ${shortTitle(item.title)}`}
           >
-            <ProductCardCover item={item} tone={tone} fit="cover" />
+            <ProductCardCover item={item} tone={tone} fit="contain" />
             {onSale && (
               <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 bg-crimson px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-white">
                 Sale
