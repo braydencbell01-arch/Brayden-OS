@@ -66,7 +66,13 @@ export async function submitRewardsJoin(input: {
   return { ok: true }
 }
 
-function SeeOffersButton({ className }: { className?: string }) {
+function SeeOffersButton({
+  className,
+  children = 'See my offers',
+}: {
+  className?: string
+  children?: string
+}) {
   return (
     <button
       type="button"
@@ -76,7 +82,7 @@ function SeeOffersButton({ className }: { className?: string }) {
       }}
       className={className}
     >
-      See my offers
+      {children}
     </button>
   )
 }
@@ -226,26 +232,26 @@ export function RewardsDock({ className = '' }: { className?: string }) {
   }
 
   const dockBtn =
-    'inline-flex shrink-0 items-center justify-center bg-crimson px-5 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot disabled:opacity-60'
+    'inline-flex h-8 shrink-0 items-center justify-center bg-crimson px-3 font-brand text-[0.6rem] font-bold uppercase tracking-[0.12em] text-white transition hover:bg-crimson-hot disabled:opacity-60'
   const dockInput =
-    'w-full border border-navy/15 bg-white px-3 py-2.5 text-base text-navy outline-none placeholder:text-muted focus:border-crimson'
+    'h-8 w-full border border-navy/15 bg-white px-2.5 text-sm text-navy outline-none placeholder:text-muted focus:border-crimson'
 
   return (
     <div
-      className={`border-t border-navy/10 bg-cream/95 px-4 py-3 shadow-[0_-8px_24px_rgba(6,16,28,0.12)] backdrop-blur ${className}`}
+      className={`border-t border-navy/10 bg-cream/95 px-3 py-1.5 shadow-[0_-6px_18px_rgba(6,16,28,0.1)] backdrop-blur ${className}`}
     >
-      <div className="mx-auto w-full max-w-6xl">
+      <div className="mx-auto flex min-h-8 w-full max-w-6xl flex-col justify-center">
         {member ? (
-          <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between sm:gap-4">
-            <p className="text-center font-brand text-sm font-semibold text-navy sm:text-left">
+          <div className="flex h-8 items-center justify-between gap-2">
+            <p className="min-w-0 truncate font-brand text-[0.7rem] font-semibold text-navy">
               You’re already a Rewards member
             </p>
-            <SeeOffersButton className={`${dockBtn} w-full sm:w-auto`} />
+            <SeeOffersButton className={dockBtn}>Offers</SeeOffersButton>
           </div>
         ) : (
           <form onSubmit={onSubmit} noValidate>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 sm:flex sm:items-center">
+            <div className="flex h-8 items-center gap-1.5">
+              <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5">
                 <label htmlFor={emailId} className="sr-only">
                   Email
                 </label>
@@ -273,17 +279,21 @@ export function RewardsDock({ className = '' }: { className?: string }) {
                   className={dockInput}
                 />
               </div>
-              <div className={`grid gap-2 sm:flex sm:shrink-0 sm:items-center ${hasOffers ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              <div className="flex shrink-0 items-center gap-1.5">
                 <button type="submit" disabled={busy} className={dockBtn}>
-                  {busy ? 'Joining…' : 'Join Rewards'}
+                  {busy ? '…' : 'Join'}
                 </button>
                 {hasOffers ? (
-                  <SeeOffersButton className="inline-flex items-center justify-center border border-navy/20 px-5 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:border-crimson hover:text-crimson" />
+                  <SeeOffersButton className="inline-flex h-8 items-center justify-center border border-navy/20 px-3 font-brand text-[0.6rem] font-bold uppercase tracking-[0.12em] text-navy transition hover:border-crimson hover:text-crimson">
+                    Offers
+                  </SeeOffersButton>
                 ) : null}
               </div>
             </div>
             {message ? (
-              <p className="mt-2 text-center text-xs font-semibold text-crimson sm:text-left">{message}</p>
+              <p className="mt-1 text-center text-[0.65rem] font-semibold text-crimson sm:text-left">
+                {message}
+              </p>
             ) : null}
           </form>
         )}

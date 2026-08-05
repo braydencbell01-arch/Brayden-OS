@@ -2095,7 +2095,7 @@ export default function App() {
       </header>
       </div>
 
-      <main id="top" className="pb-36 md:pb-28">
+      <main id="top" className="pb-28 md:pb-24">
         {!inventoryOpen ? (
           <>
         {/* Hero — Jersey Deals red wash; jersey photo barely shows through */}
@@ -3787,7 +3787,7 @@ export default function App() {
         ) : null}
       </main>
 
-      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-52 text-white/80 md:pb-28">
+      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-36 text-white/80 md:pb-24">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
           <div>
             <div className="flex items-center gap-3">
@@ -3956,7 +3956,7 @@ export default function App() {
       />
 
       {cartToast ? (
-        <div className="fixed bottom-24 left-1/2 z-[56] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg md:bottom-6">
+        <div className="fixed bottom-16 left-1/2 z-[56] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg md:bottom-6">
           {cartToast}
         </div>
       ) : null}
