@@ -271,18 +271,22 @@ function SafeImage({
 function ProductCardCover({
   item,
   tone = 'light',
+  fit = 'contain',
 }: {
   item: Listing
   tone?: 'dark' | 'light'
+  fit?: 'contain' | 'cover'
 }) {
   const src = listingPrimaryImage(item) || FALLBACK_IMAGE
-  const bg = tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'
+  const bg = tone === 'dark' ? 'bg-navy-deep' : fit === 'cover' ? 'bg-white' : 'bg-mist'
   return (
     <div className={`absolute inset-0 ${bg}`}>
       <SafeImage
         src={src}
         alt={shortTitle(item.title)}
-        className="h-full w-full object-contain object-center select-none"
+        className={`h-full w-full object-center select-none ${
+          fit === 'cover' ? 'object-cover' : 'object-contain'
+        }`}
         loading="lazy"
         decoding="async"
         fetchPriority="low"
@@ -652,13 +656,10 @@ function ProductLink({
           <button
             type="button"
             onClick={() => onQuickView(item)}
-            className={`relative aspect-[4/5] w-full overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-crimson ${
-              favorited ? FAVORITE_OUTER_RING_CLASS : ''
-            } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
-            style={{ border: `2px solid ${borderColor}` }}
+            className="relative aspect-[4/5] w-full overflow-hidden bg-white outline-none focus-visible:ring-2 focus-visible:ring-crimson"
             aria-label={`Quick view ${shortTitle(item.title)}`}
           >
-            <ProductCardCover item={item} tone={tone} />
+            <ProductCardCover item={item} tone={tone} fit="cover" />
             {onSale && (
               <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 bg-crimson px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-white">
                 Sale
