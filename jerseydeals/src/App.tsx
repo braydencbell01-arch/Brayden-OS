@@ -2137,7 +2137,7 @@ export default function App() {
                 <h1 className="max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
                   Jersey Deals
                 </h1>
-                <p className="mt-4 max-w-lg font-brand text-base leading-relaxed text-cream/85 md:text-lg">
+                <p className="mt-4 max-w-md font-brand text-sm font-semibold leading-snug text-cream/90 sm:max-w-lg md:text-[0.95rem]">
                   Hi, welcome to JerseyDeals. We sell top quality jerseys from top quality brands, for the lowest
                   prices you’ll find! EVERYTHING we sell is NEW and AUTHENTIC!
                 </p>
