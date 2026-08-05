@@ -26,6 +26,9 @@ export const EBAY_RATINGS = [
   { label: 'Communication', score: 4.6 },
 ] as const
 
+/** eBay positive feedback percent for trust strip (update when seller score changes). */
+export const EBAY_POSITIVE_FEEDBACK = '100%'
+
 /** Official shop inbox + FormSubmit / restock mailto target. */
 export const CONTACT_EMAIL = 'shop@jerseydeals.online'
 
