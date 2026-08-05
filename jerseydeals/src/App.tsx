@@ -2126,8 +2126,8 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/45 via-transparent to-[#d7282f]/22" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col px-5 pt-48 md:px-8 md:pt-52">
-            <div className="flex flex-1 flex-col justify-end pb-8 md:justify-center md:pb-10">
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col px-5 pt-36 md:px-8 md:pt-40">
+            <div className="flex flex-1 flex-col justify-start pb-8 pt-2 md:justify-center md:pb-10 md:pt-0">
               <motion.div
                 className="max-w-2xl"
                 initial={reduce ? false : { opacity: 0.001, y: 26 }}
