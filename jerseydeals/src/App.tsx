@@ -1954,23 +1954,33 @@ export default function App() {
       <main id="top" className="pb-36 md:pb-28">
         {!inventoryOpen ? (
           <>
-        {/* Hero */}
-        <section className="relative min-h-[100svh] overflow-hidden bg-navy-deep text-white">
+        {/* Hero — Jersey Deals red wash; jersey photo barely shows through */}
+        <section className="relative min-h-[100svh] overflow-hidden bg-[#8f1218] text-white">
           <div className="absolute inset-0" aria-hidden>
             <motion.img
               key={heroImage}
               src={heroImage}
               alt=""
-              initial={reduce ? false : { scale: 1.06, opacity: 0.7 }}
-              animate={{ scale: 1, opacity: 1 }}
+              initial={reduce ? false : { scale: 1.06, opacity: 0.18 }}
+              animate={{ scale: 1, opacity: 0.22 }}
               transition={{ duration: reduce ? 0 : 1.1, ease }}
-              className="h-full w-full object-cover object-center"
+              className="h-full w-full object-cover object-center opacity-[0.22]"
               decoding="async"
               fetchPriority="high"
               loading="eager"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep/90 via-navy-deep/45 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/85 via-transparent to-navy-deep/25" />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: [
+                  'radial-gradient(ellipse 90% 70% at 20% 30%, rgba(232,58,64,0.55), transparent 58%)',
+                  'radial-gradient(ellipse 70% 60% at 85% 75%, rgba(110,12,18,0.7), transparent 55%)',
+                  'linear-gradient(160deg, rgba(215,40,47,0.88) 0%, rgba(143,18,24,0.82) 42%, rgba(90,10,14,0.9) 100%)',
+                  'linear-gradient(to top, rgba(70,8,12,0.55) 0%, transparent 42%)',
+                ].join(', '),
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/50 via-transparent to-[#d7282f]/25" />
           </div>
 
           <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-48 md:justify-center md:px-8 md:pb-28 md:pt-52">
@@ -1985,7 +1995,7 @@ export default function App() {
                 Jersey Deals
               </h1>
               <div className="brand-rule mt-4" aria-hidden />
-              <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/80 md:text-lg">
+              <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/85 md:text-lg">
                 Club, country, and training jerseys — photographed from our inventory and sold direct.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -1997,7 +2007,7 @@ export default function App() {
                   }}
                   whileHover={reduce ? undefined : { scale: 1.02 }}
                   whileTap={reduce ? undefined : { scale: 0.98 }}
-                  className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+                  className="inline-flex bg-navy px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:bg-navy-deep"
                 >
                   Shop now
                 </motion.button>
