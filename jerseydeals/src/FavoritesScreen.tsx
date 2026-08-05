@@ -203,7 +203,7 @@ export function FavoritesScreen({
                   No favorites yet
                 </p>
                 <p className="mt-1 text-sm text-muted">
-                  Heart suggested clubs above — Big 5 leagues plus every side we stock.
+                  Heart suggested clubs above.
                 </p>
               </div>
             )}
