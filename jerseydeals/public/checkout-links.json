@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-08-05T12:31:47Z",
+  "syncedAt": "2026-08-05T17:39:49Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 46,
+  "count": 45,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -552,19 +552,6 @@
       "discountPaymentLinkId": "IKBMZMXI2TSDT7CJ",
       "discountUrl": "https://square.link/u/lyZPk8FD",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aWEimiuks5rL2Uyh0cjzMGwDwLcZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "5E5TTM6DX34ITIGQME5MUKEQ",
-      "variationId": "5E47JH42BMEZCGDI6BM344VV",
-      "title": "Grey adidas T-Shirt With Outdoors Graphic On Back L Large",
-      "sku": "ebay:800462519354",
-      "paymentLinkId": "NIJK6QXWLFH44AUG",
-      "url": "https://square.link/u/a74bKYTi",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/sdvAA5LjPBOXLKaPmkraq7GMOL9YY",
-      "discountPaymentLinkId": "D5GRWGSH234IIUAF",
-      "discountUrl": "https://square.link/u/Te2UPRvL",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GgG8xIMOSE6bUOaXBSP4q0wtEoNZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

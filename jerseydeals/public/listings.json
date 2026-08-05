@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-08-05T12:32:48Z",
+  "syncedAt": "2026-08-05T17:39:49Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 46,
+  "count": 45,
   "listings": [
     {
       "id": "NK4QWAQHIVIST5HLZRY7DWRH",
@@ -1339,39 +1339,6 @@
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/xTtvbfoh",
       "checkoutUrlDiscounted": "https://square.link/u/TtHzkUYw",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
-      "id": "5E47JH42BMEZCGDI6BM344VV",
-      "itemId": "5E5TTM6DX34ITIGQME5MUKEQ",
-      "sku": "ebay:800462519354",
-      "title": "Grey adidas T-Shirt With Outdoors Graphic On Back L Large",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/grey-adidas-t-shirt-with-outdoors-graphic-on-back-l-large/5E5TTM6DX34ITIGQME5MUKEQ",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/c7YAAeSwTy5qcne7/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/c7YAAeSwTy5qcne7/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cNgAAeSwYttqcnfD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UoAAAeSwIoZqcnfD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/61wAAeSwgvZqcne~/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DaYAAeSwdJpqcnfD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WU0AAeSw2AdqcnfA/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9E8AAeSwT55qcnfD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TTkAAeSwogFqcnfF/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size L",
-      "size": "L",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/a74bKYTi",
-      "checkoutUrlDiscounted": "https://square.link/u/Te2UPRvL",
       "condition": "New",
       "conditionEbay": "New with tags",
       "conditionId": "1000"
