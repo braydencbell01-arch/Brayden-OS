@@ -45,6 +45,7 @@ jobs:
 
       - name: Deploy Worker
         if: steps.check.outputs.has_cf == 'true'
+        id: deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -55,8 +56,26 @@ jobs:
             SQUARE_ACCESS_TOKEN
             COLLECT_SECRET
             GITHUB_LISTS_TOKEN
+            SQUARE_WEBHOOK_SIGNATURE_KEY
         env:
           SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
           COLLECT_SECRET: ${{ secrets.JD_EMAIL_COLLECT_SECRET }}
           GITHUB_LISTS_TOKEN: ${{ secrets.JD_GITHUB_LISTS_TOKEN }}
+          SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
           GITHUB_REPO: braydencbell01-arch/Brayden-OS
+
+      - name: Register Square payment webhook → sold reconcile
+        if: steps.check.outputs.has_cf == 'true'
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          API_BASE: ${{ secrets.JERSEYDEALS_EMAIL_API_URL }}
+        run: |
+          if [ -z "${API_BASE}" ]; then
+            echo "JERSEYDEALS_EMAIL_API_URL secret not set — skip webhook registration."
+            echo "Set it to the Worker URL (no trailing slash) and re-run this workflow."
+            exit 0
+          fi
+          export SQUARE_WEBHOOK_NOTIFICATION_URL="${API_BASE%/}/square-webhook"
+          node scripts/ensure-square-sold-webhook.mjs

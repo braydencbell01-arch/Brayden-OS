@@ -10,8 +10,9 @@ name: Sync Jersey Deals inventory
 
 on:
   schedule:
-    # Every 10 minutes — sold kits should leave all channels quickly.
-    - cron: '*/10 * * * *'
+    # Full catalog sync. Sold delist also has a dedicated lean workflow
+    # (reconcile-jerseydeals-sold.yml) because GitHub often delays this cron by hours.
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +20,8 @@ permissions:
   actions: write
 
 concurrency:
-  group: jerseydeals-inventory-sync
+  # Shared with reconcile-jerseydeals-sold so sold + catalog commits do not race.
+  group: jerseydeals-catalog-write
   cancel-in-progress: false
 
 jobs:

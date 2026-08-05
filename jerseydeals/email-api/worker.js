@@ -1,15 +1,19 @@
 /**
  * Cloudflare Worker: collect Jersey Deals leads into Square Customers,
  * tag Rewards members vs non-members, email shop@jerseydeals.online,
- * and create multi-item Square Payment Links for cart "Checkout all".
+ * create multi-item Square Payment Links for cart "Checkout all",
+ * and receive Square payment webhooks to kick sold reconcile on GitHub.
  *
  * Secrets:
  *   SQUARE_ACCESS_TOKEN
- *   (optional) COLLECT_SECRET — if set, require header X-JD-Collect-Secret
+ *   (optional) COLLECT_SECRET — if set, require header X-JD-Collect-Secret (lead/cart only)
  *   (optional) NOTIFY_EMAIL — defaults to shop@jerseydeals.online
+ *   (optional) GITHUB_LISTS_TOKEN — PAT for repository_dispatch (sold reconcile)
+ *   (optional) SQUARE_WEBHOOK_SIGNATURE_KEY — verify Square-Signature on /square-webhook
  *
  * POST /  → { email, phone?, name?, message?, source?, membership?, product?, site?, ... }
  * POST /cart-checkout → { variationIds: string[], first10?, freeShipping? }
+ * POST /square-webhook → Square payment.created / payment.updated
  * OPTIONS for CORS
  */
 
@@ -405,6 +409,105 @@ async function handleLeadCollect(env, payload, origin) {
   }
 }
 
+async function hmacSha256Base64(secret, message) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message))
+  const bytes = new Uint8Array(sig)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
+}
+
+/** Square sends Square-Signature = base64(HMAC_SHA256(signature_key, notification_url + body)). */
+async function verifySquareWebhookSignature(request, rawBody, env, notificationUrl) {
+  const key = String(env.SQUARE_WEBHOOK_SIGNATURE_KEY || '').trim()
+  if (!key) return true // allow until secret is configured; still gated by URL obscurity + GitHub token
+  const header = request.headers.get('x-square-hmacsha256-signature') || request.headers.get('Square-Signature') || ''
+  if (!header) return false
+  const expected = await hmacSha256Base64(key, `${notificationUrl}${rawBody}`)
+  return header === expected
+}
+
+async function dispatchSoldReconcile(env, reason) {
+  const token = String(env.GITHUB_LISTS_TOKEN || '').trim()
+  const repo = String(env.GITHUB_REPO || 'braydencbell01-arch/Brayden-OS').trim()
+  if (!token) {
+    return { ok: false, skipped: true, error: 'GITHUB_LISTS_TOKEN not set' }
+  }
+  const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+      'User-Agent': 'jerseydeals-email-api',
+    },
+    body: JSON.stringify({
+      event_type: 'jerseydeals-sold-reconcile',
+      client_payload: {
+        reason: String(reason || 'square-payment').slice(0, 120),
+        at: new Date().toISOString(),
+      },
+    }),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    return { ok: false, error: `GitHub dispatch ${res.status}: ${text.slice(0, 200)}` }
+  }
+  return { ok: true }
+}
+
+function paymentEventIsCaptured(payload) {
+  const type = String(payload?.type || '')
+  if (type !== 'payment.created' && type !== 'payment.updated') return false
+  const status = String(payload?.data?.object?.payment?.status || '').toUpperCase()
+  return status === 'COMPLETED' || status === 'APPROVED'
+}
+
+async function handleSquareWebhook(request, env, origin) {
+  const rawBody = await request.text()
+  const notificationUrl = new URL(request.url).origin + '/square-webhook'
+  const valid = await verifySquareWebhookSignature(request, rawBody, env, notificationUrl)
+  if (!valid) {
+    return json({ ok: false, error: 'Invalid signature' }, 401, origin)
+  }
+  let payload = {}
+  try {
+    payload = rawBody ? JSON.parse(rawBody) : {}
+  } catch {
+    return json({ ok: false, error: 'Invalid JSON' }, 400, origin)
+  }
+  if (!paymentEventIsCaptured(payload)) {
+    return json({ ok: true, ignored: true, type: payload?.type || null }, 200, origin)
+  }
+  const payment = payload?.data?.object?.payment || {}
+  const dispatched = await dispatchSoldReconcile(
+    env,
+    `payment:${payment.id || ''}:${payment.status || ''}`,
+  )
+  if (!dispatched.ok && !dispatched.skipped) {
+    return json({ ok: false, error: dispatched.error }, 502, origin)
+  }
+  return json(
+    {
+      ok: true,
+      dispatched: Boolean(dispatched.ok),
+      skipped: Boolean(dispatched.skipped),
+      paymentId: payment.id || null,
+      status: payment.status || null,
+    },
+    200,
+    origin,
+  )
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get('Origin') || '*'
@@ -417,6 +520,11 @@ export default {
 
     if (request.method !== 'POST') {
       return json({ ok: false, error: 'POST only' }, 405, origin)
+    }
+
+    // Square webhooks must not require the lead-collect secret header.
+    if (path.endsWith('/square-webhook')) {
+      return handleSquareWebhook(request, env, origin)
     }
 
     if (!env.SQUARE_ACCESS_TOKEN) {

@@ -1,0 +1,95 @@
+name: Reconcile Jersey Deals sold
+
+# Fast sold-only job. GitHub's schedule for the full inventory sync is often
+# delayed by hours on free/public repos — that left today's paid OPEN order
+# live on eBay + the site until a manual run. This workflow is short so it is
+# more likely to actually fire, and can also be kicked by repository_dispatch
+# (Square webhook / Cloudflare Worker when configured).
+
+on:
+  schedule:
+    # Staggered expressions — GH may skip some; overlapping raises hit rate.
+    - cron: '0,15,30,45 * * * *'
+    - cron: '5,20,35,50 * * * *'
+    - cron: '10,25,40,55 * * * *'
+  workflow_dispatch:
+  repository_dispatch:
+    types: [jerseydeals-sold-reconcile]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: jerseydeals-catalog-write
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: Brayden-OS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: jerseydeals/package-lock.json
+
+      - name: Install + sold-inventory regression tests
+        working-directory: jerseydeals
+        run: |
+          npm ci
+          npm run test:sold-rules
+
+      - name: Reconcile sold inventory (Square + eBay + site)
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+          EBAY_APP_ID: ${{ secrets.EBAY_APP_ID }}
+          EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
+          EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
+          EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+        run: npm run reconcile:sold
+
+      - name: Refresh Square Online buy-bridge
+        working-directory: jerseydeals
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_STORE_URL: ${{ secrets.SQUARE_STORE_URL }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+        run: npm run square:polish-storefront
+
+      - name: Commit if sold catalog changed
+        id: commit
+        run: |
+          git add \
+            jerseydeals/public/listings.json \
+            jerseydeals/public/sold-out.json \
+            jerseydeals/public/checkout-links.json \
+            jerseydeals/public/reconcile-exceptions.json \
+            jerseydeals/public/reconcile-applied-sales.json
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No sold-catalog changes."
+            git reset HEAD
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(jerseydeals): delist sold inventory"
+          git push origin HEAD:Brayden-OS
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger Pages deploy
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run "Deploy GitHub Pages" --ref Brayden-OS

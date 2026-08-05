@@ -229,6 +229,11 @@ When a kit sells on **Square or eBay**, `npm run reconcile:sold` removes it from
 - eBay (`EndItem` when SKU is `ebay:{itemId}`; also reads eBay SoldList so eBay-first sales clear Square/site)
 - Jersey Deals (`listings.json` + `sold-out.json` for instant client hide)
 
+**Automation (why a sale can linger):** GitHub often delays the full inventory cron by hours. A dedicated lean workflow fixes that:
+
+- `.github/workflows/reconcile-jerseydeals-sold.yml` — sold-only, staggered ~every 5–15 minutes, commits + Pages deploy
+- Optional instant path: Square `payment.*` webhook → Cloudflare Worker `/square-webhook` → `repository_dispatch` `jerseydeals-sold-reconcile` (needs CF + `JERSEYDEALS_EMAIL_API_URL` + `JD_GITHUB_LISTS_TOKEN`)
+
 Test purchases that should stay in stock can be restored with `npm run restore:listing` and recorded in `public/reconcile-exceptions.json`.
 
 ### eBay details sync
@@ -239,8 +244,8 @@ Test purchases that should stay in stock can be restored with `npm run restore:l
 
 Workflow: `.github/workflows/sync-jerseydeals-inventory.yml`
 
-- Runs every ~10 minutes and on manual `workflow_dispatch`
-- Reconciles sold kits, then refreshes inventory
+- Full catalog sync ~every 30 minutes (+ manual `workflow_dispatch`)
+- Sold delist also runs on the lean **Reconcile Jersey Deals sold** workflow (do not rely on this job alone for speed)
 - Updates `listings.json` / `sold-out.json` / `checkout-links.json` on `Brayden-OS`
 - Triggers the Pages deploy when inventory changed
 
