@@ -560,8 +560,8 @@ function ProductLink({
   reduce?: boolean | null
   delay?: number
   tone?: 'dark' | 'light'
-  /** Compact cards for dense rails (Trending, Training). */
-  size?: 'default' | 'compact'
+  /** Compact cards for dense rails; row = image left + text right (catalog). */
+  size?: 'default' | 'compact' | 'row'
   /** Club ids the shopper has favorited — drives red vs navy card outline. */
   favoriteSet?: Set<string>
   onAddToCart: (item: Listing) => void
@@ -582,6 +582,89 @@ function ProductLink({
   const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
   const used = /used|pre-?owned|worn/i.test(condition)
   const compact = cardSize === 'compact'
+  const row = cardSize === 'row'
+  const borderColor =
+    (club && CLUB_OUTLINE_COLOR[club.id]) || (tone === 'dark' ? '#fcf5e9' : '#0b223f')
+
+  if (row) {
+    return (
+      <li className="w-full border-b border-navy/10 last:border-b-0">
+        <div className="group flex w-full items-stretch gap-3 py-3 outline-none sm:gap-4">
+          <button
+            type="button"
+            onClick={() => onQuickView(item)}
+            className={`relative h-20 w-20 shrink-0 overflow-hidden border-2 outline-none focus-visible:ring-2 focus-visible:ring-crimson sm:h-24 sm:w-24 ${
+              favorited ? FAVORITE_OUTER_RING_CLASS : ''
+            } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
+            style={{ borderColor }}
+            aria-label={`Quick view ${shortTitle(item.title)}`}
+          >
+            <ProductCardCover item={item} tone={tone} />
+            {onSale && (
+              <span className="pointer-events-none absolute left-0.5 top-0.5 z-10 bg-crimson px-1 py-px text-[0.45rem] font-bold uppercase tracking-[0.1em] text-white">
+                Sale
+              </span>
+            )}
+          </button>
+          <div className="min-w-0 flex-1 self-center">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <p className={`text-[0.6rem] font-semibold uppercase tracking-[0.16em] ${accent}`}>{item.tag}</p>
+              {size && size !== 'Other' ? (
+                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{size}</span>
+              ) : null}
+              {kit !== 'Other' ? (
+                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{kit}</span>
+              ) : null}
+              {used ? (
+                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{condition}</span>
+              ) : null}
+              {item.quantity === 1 ? (
+                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>Only 1 left</span>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => onQuickView(item)}
+              className={`mt-0.5 block w-full text-left font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson ${titleTone} line-clamp-2 text-[0.85rem] sm:text-[0.95rem]`}
+            >
+              {shortTitle(item.title)}
+            </button>
+            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <span className={`font-display text-lg font-bold tracking-wide sm:text-xl ${priceTone}`}>
+                {formatPrice(item.price, item.currency)}
+              </span>
+              <button
+                type="button"
+                onClick={() => onAddToCart(item)}
+                className={`text-[0.6rem] font-bold uppercase tracking-[0.14em] ${accent}`}
+              >
+                Add to cart
+              </button>
+              <button
+                type="button"
+                onClick={() => onQuickView(item)}
+                className={`text-[0.6rem] font-semibold uppercase tracking-[0.14em] ${muted}`}
+              >
+                Details
+              </button>
+              {buyUrl ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
+                    onBuyNow(item)
+                  }}
+                  className={`text-[0.6rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
+                >
+                  Buy now
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </li>
+    )
+  }
 
   return (
     <li>
@@ -591,10 +674,7 @@ function ProductLink({
           className={`relative aspect-square w-full overflow-hidden border-2 ${
             favorited ? FAVORITE_OUTER_RING_CLASS : ''
           } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
-          style={{
-            borderColor:
-              (club && CLUB_OUTLINE_COLOR[club.id]) || (tone === 'dark' ? '#fcf5e9' : '#0b223f'),
-          }}
+          style={{ borderColor }}
         >
           <button
             type="button"
@@ -3152,12 +3232,14 @@ export default function App() {
 
               {filtered.length > 0 && (
                 <>
-                  <ul className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                  <ul className="mt-8 flex w-full flex-col border-t border-navy/10">
                     {visibleInventory.map((item) => (
                       <ProductLink
                         key={item.id}
-                        item={item} favoriteSet={favoriteSet}
+                        item={item}
+                        favoriteSet={favoriteSet}
                         tone="light"
+                        size="row"
                         onAddToCart={handleAddToCart}
                         onQuickView={handleQuickView}
                         onBuyNow={handleBuyNow}
@@ -3217,14 +3299,16 @@ export default function App() {
                     </h3>
                   </div>
                 </div>
-                <ul className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+                <ul className="mt-6 flex w-full flex-col border-t border-navy/10">
                   {recentlyViewed.map((item, i) => (
                     <ProductLink
                       key={`recent-${item.id}`}
-                      item={item} favoriteSet={favoriteSet}
+                      item={item}
+                      favoriteSet={favoriteSet}
                       reduce={reduce}
                       delay={i * 0.04}
                       tone="light"
+                      size="row"
                       onAddToCart={handleAddToCart}
                       onQuickView={handleQuickView}
                       onBuyNow={handleBuyNow}
