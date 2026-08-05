@@ -1,7 +1,6 @@
 import { CLUB_CATALOG, LEAGUE_BY_CLUB_ID } from './clubCatalog'
 import { matchesInclusive } from './inclusiveSearch'
 import { viewsForListing } from './listingViews'
-import listingPhotoOverrides from './listingPhotoOverrides.json'
 
 export { CLUB_CATALOG, LEAGUE_BY_CLUB_ID } from './clubCatalog'
 
@@ -241,28 +240,6 @@ function resolveListingImageUrl(url: string): string {
   if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) return trimmed
   const base = import.meta.env.BASE_URL || '/'
   return `${base}${trimmed.replace(/^\//, '')}`
-}
-
-/** Local studio covers keyed by Square listing id (survives catalog sync). */
-const PHOTO_OVERRIDES = listingPhotoOverrides as Record<string, string | string[]>
-
-/** Prefer hand-edited studio photos first; keep sync galleries after. */
-export function applyListingPhotoOverrides(catalog: ListingsPayload): ListingsPayload {
-  if (!catalog?.listings?.length) return catalog
-  let changed = false
-  const listings = catalog.listings.map((item) => {
-    const raw = PHOTO_OVERRIDES[item.id]
-    if (!raw) return item
-    const studio = (Array.isArray(raw) ? raw : [raw])
-      .map((path) => resolveListingImageUrl(path))
-      .filter(Boolean)
-    if (!studio.length) return item
-    const studioSet = new Set(studio)
-    const rest = listingImages(item).filter((url) => !studioSet.has(url))
-    changed = true
-    return { ...item, image: studio[0], images: [...studio, ...rest] }
-  })
-  return changed ? { ...catalog, listings } : catalog
 }
 
 /** Single primary photo per listing (cover / first image only). */
