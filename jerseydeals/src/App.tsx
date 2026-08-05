@@ -1974,85 +1974,83 @@ export default function App() {
               style={{
                 background: [
                   'radial-gradient(ellipse 90% 70% at 20% 30%, rgba(232,58,64,0.55), transparent 58%)',
-                  'radial-gradient(ellipse 70% 60% at 85% 75%, rgba(110,12,18,0.7), transparent 55%)',
-                  'linear-gradient(160deg, rgba(215,40,47,0.88) 0%, rgba(143,18,24,0.82) 42%, rgba(90,10,14,0.9) 100%)',
-                  'linear-gradient(to top, rgba(70,8,12,0.55) 0%, transparent 42%)',
+                  'radial-gradient(ellipse 70% 60% at 85% 75%, rgba(110,12,18,0.65), transparent 55%)',
+                  'linear-gradient(160deg, rgba(215,40,47,0.88) 0%, rgba(143,18,24,0.82) 45%, rgba(110,14,20,0.9) 100%)',
                 ].join(', '),
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/50 via-transparent to-[#d7282f]/25" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/45 via-transparent to-[#d7282f]/22" />
           </div>
 
-          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-24 pt-48 md:justify-center md:px-8 md:pb-28 md:pt-52">
-            <motion.div
-              className="max-w-2xl"
-              initial={reduce ? false : { opacity: 0.001, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease }}
-            >
-              <BrandMark size="hero" className="drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]" />
-              <h1 className="mt-6 max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
-                Jersey Deals
-              </h1>
-              <div className="brand-rule mt-4" aria-hidden />
-              <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/85 md:text-lg">
-                Club, country, and training jerseys — photographed from our inventory and sold direct.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <motion.button
-                  type="button"
-                  onClick={() => {
-                    track('cta_click', { place: 'hero_primary' })
-                    goInventory({ reset: true })
-                  }}
-                  whileHover={reduce ? undefined : { scale: 1.02 }}
-                  whileTap={reduce ? undefined : { scale: 0.98 }}
-                  className="inline-flex bg-navy px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:bg-navy-deep"
-                >
-                  Shop now
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
+          <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-6xl flex-col px-5 pt-48 md:px-8 md:pt-52">
+            <div className="flex flex-1 flex-col justify-end pb-8 md:justify-center md:pb-10">
+              <motion.div
+                className="max-w-2xl"
+                initial={reduce ? false : { opacity: 0.001, y: 26 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, ease }}
+              >
+                <BrandMark size="hero" className="drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]" />
+                <h1 className="mt-6 max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
+                  Jersey Deals
+                </h1>
+                <div className="brand-rule mt-4" aria-hidden />
+                <p className="mt-4 max-w-md font-brand text-base leading-relaxed text-cream/85 md:text-lg">
+                  Club, country, and training jerseys — photographed from our inventory and sold direct.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center gap-3">
+                  <motion.button
+                    type="button"
+                    onClick={() => {
+                      track('cta_click', { place: 'hero_primary' })
+                      goInventory({ reset: true })
+                    }}
+                    whileHover={reduce ? undefined : { scale: 1.02 }}
+                    whileTap={reduce ? undefined : { scale: 0.98 }}
+                    className="inline-flex bg-navy px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:bg-navy-deep"
+                  >
+                    Shop now
+                  </motion.button>
+                </div>
+              </motion.div>
+            </div>
 
-          <a
-            href="#collections"
-            className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white md:bottom-6"
-            aria-label="Scroll to collections"
-          >
-            <span className="flex flex-col items-center gap-2">
-              Scroll
-              <motion.span
-                aria-hidden
-                animate={reduce ? undefined : { y: [0, 6, 0] }}
-                transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-                className="block h-7 w-px bg-white/45"
-              />
-            </span>
-          </a>
-        </section>
-
-        <section
-          aria-label="Why shop with us"
-          className="relative overflow-hidden bg-[#8f1218] text-cream"
-        >
-          <ul className="relative mx-auto flex max-w-6xl flex-col items-start gap-3 px-5 py-3.5 font-brand text-[0.7rem] font-semibold uppercase tracking-[0.12em] sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-10 sm:gap-y-2 sm:px-8 sm:py-3.5 sm:text-[0.72rem] md:gap-x-14">
-            {[
-              `Free shipping over $${FREE_SHIPPING_THRESHOLD}`,
-              'Trusted Square checkout',
-              `${EBAY_POSITIVE_FEEDBACK} eBay rating`,
-            ].map((label) => (
-              <li key={label} className="flex items-center gap-2.5">
-                <span
-                  className="text-[0.85rem] font-bold leading-none text-[#3d8f4a]"
+            <div className="pb-6 md:pb-8">
+              <ul
+                aria-label="Why shop with us"
+                className="flex flex-col items-start gap-2.5 font-brand text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-cream sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2 sm:text-[0.72rem] md:gap-x-12"
+              >
+                {[
+                  `Free shipping over $${FREE_SHIPPING_THRESHOLD}`,
+                  'Trusted Square checkout',
+                  `${EBAY_POSITIVE_FEEDBACK} eBay rating`,
+                ].map((label) => (
+                  <li key={label} className="flex items-center gap-2.5">
+                    <span
+                      className="text-[0.85rem] font-bold leading-none text-[#7dce88]"
+                      aria-hidden
+                    >
+                      ✓
+                    </span>
+                    <span className="text-cream/95">{label}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="#collections"
+                className="mt-5 inline-flex flex-col items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-white/80 transition hover:text-white"
+                aria-label="Scroll to collections"
+              >
+                Scroll
+                <motion.span
                   aria-hidden
-                >
-                  ✓
-                </span>
-                <span className="text-cream/95">{label}</span>
-              </li>
-            ))}
-          </ul>
+                  animate={reduce ? undefined : { y: [0, 6, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+                  className="block h-7 w-px bg-white/45"
+                />
+              </a>
+            </div>
+          </div>
         </section>
 
         <CollectionsRail
