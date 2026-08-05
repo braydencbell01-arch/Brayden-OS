@@ -1651,6 +1651,7 @@ export default function App() {
         />
       ) : null}
 
+      <div className="fixed inset-x-0 top-0 z-50">
       {/* Promo bar — Premier League shop CTA */}
       <button
         type="button"
@@ -1658,7 +1659,7 @@ export default function App() {
           track('promo_bar_click', { destination: 'premier-league' })
           goInventory({ reset: true, leagueId: 'premier-league' })
         }}
-        className="fixed inset-x-0 top-0 z-50 flex min-h-10 items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2 text-center font-brand text-[0.62rem] font-bold uppercase leading-tight tracking-[0.1em] text-cream transition hover:brightness-110 sm:min-h-9 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
+        className="flex w-full min-h-10 items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2 text-center font-brand text-[0.62rem] font-bold uppercase leading-tight tracking-[0.1em] text-cream transition hover:brightness-110 sm:min-h-9 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
       >
         <span className="line-clamp-2 sm:line-clamp-1">{PROMO_BAR}</span>
       </button>
@@ -1674,7 +1675,7 @@ export default function App() {
         Skip to inventory
       </a>
 
-      <header className="fixed inset-x-0 top-12 z-40 border-b border-navy/10 bg-cream text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)] sm:top-9">
+      <header className="border-b border-navy/10 bg-cream text-navy shadow-[0_1px_0_rgba(11,34,63,0.06)]">
         <div className="relative mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3.5 sm:px-5 md:px-8">
           {/* Left: cart + favorites */}
           <div className="flex items-center justify-start gap-0.5">
@@ -1948,6 +1949,7 @@ export default function App() {
           </div>
         ) : null}
       </header>
+      </div>
 
       <main id="top" className="pb-36 md:pb-28">
         {!inventoryOpen ? (
