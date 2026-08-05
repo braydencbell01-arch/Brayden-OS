@@ -92,6 +92,7 @@ import { captureSoldReturnFromUrl,
 import {
   clubsInStock,
   conditionLabel,
+  applyListingPhotoOverrides,
   dedupeListingsByTitle,
   formatPrice,
   inferClub,
@@ -1337,7 +1338,7 @@ export default function App() {
       })
       .then((data) => {
         if (cancelled) return
-        setCatalog(data)
+        setCatalog(applyListingPhotoOverrides(data))
         setLoadState('ready')
       })
       .catch(() => {
