@@ -511,7 +511,9 @@ export function matchesTypeFilter(item: Listing, filter: TypeFilterId | string) 
   return item.tag === filter
 }
 
-export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' | 'Training' | 'Other' {
+export function kitType(
+  item: Listing,
+): 'Home' | 'Away' | 'Third' | 'Pre-match' | 'Training' | 'Apparel' | 'Other' {
   const t = item.title
   if (/pre-?match/i.test(t)) return 'Pre-match'
   if (/\btraining\b|\bstrike\b/i.test(t)) return 'Training'
@@ -519,6 +521,7 @@ export function kitType(item: Listing): 'Home' | 'Away' | 'Third' | 'Pre-match' 
   if (/\baway\b/i.test(t)) return 'Away'
   if (/\bhome\b/i.test(t)) return 'Home'
   if (item.tag === 'Training') return 'Training'
+  if (isApparelTypeListing(item)) return 'Apparel'
   return 'Other'
 }
 

@@ -608,12 +608,11 @@ function ProductLink({
           </button>
           <div className="min-w-0 flex-1 self-center">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              <p className={`text-[0.6rem] font-semibold uppercase tracking-[0.16em] ${accent}`}>{item.tag}</p>
+              {kit !== 'Other' ? (
+                <p className={`text-[0.6rem] font-semibold uppercase tracking-[0.16em] ${accent}`}>{kit}</p>
+              ) : null}
               {size && size !== 'Other' ? (
                 <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{size}</span>
-              ) : null}
-              {kit !== 'Other' ? (
-                <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{kit}</span>
               ) : null}
               {used ? (
                 <span className={`text-[0.6rem] uppercase tracking-[0.12em] ${muted}`}>{condition}</span>
@@ -714,12 +713,11 @@ function ProductLink({
         <div className={compact ? 'mt-2 block' : 'mt-4 block'}>
           {!compact ? (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{item.tag}</p>
+              {kit !== 'Other' ? (
+                <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{kit}</p>
+              ) : null}
               {size && size !== 'Other' ? (
                 <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{size}</span>
-              ) : null}
-              {kit !== 'Other' ? (
-                <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{kit}</span>
               ) : null}
               {used ? (
                 <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{condition}</span>
@@ -849,7 +847,9 @@ function QuickViewModal({
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 sm:p-7">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-crimson">{item.tag}</p>
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-crimson">
+                {kit !== 'Other' ? kit : item.tag}
+              </p>
               <h2 className="mt-2 font-display text-3xl font-bold uppercase leading-tight tracking-wide text-navy">
                 {shortTitle(item.title)}
               </h2>
