@@ -1982,15 +1982,8 @@ export default function App() {
                   whileTap={reduce ? undefined : { scale: 0.98 }}
                   className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
                 >
-                  Browse kits
+                  Shop now
                 </motion.button>
-                <a
-                  href="#collections"
-                  onClick={() => track('cta_click', { place: 'hero_secondary' })}
-                  className="inline-flex border border-cream/40 px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream transition hover:border-cream hover:bg-cream/10"
-                >
-                  Explore
-                </a>
               </div>
             </motion.div>
           </div>
