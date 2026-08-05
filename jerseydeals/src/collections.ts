@@ -57,7 +57,7 @@ export const LANDING_COLLECTIONS: CollectionItem[] = [
   {
     id: 'training',
     label: 'Training',
-    image: 'collections/training.jpg',
+    image: 'collections/training.jpg?v=turf1',
     action: { tag: 'Training', reset: true },
   },
   {
