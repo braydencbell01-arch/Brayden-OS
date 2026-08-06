@@ -1,29 +1,68 @@
 #!/usr/bin/env node
 /**
- * Fetch US state plate photos + notes from worldlicenseplates.com
- * into platequest/public/plates/ and platequest/src/wlpCatalog.json
- *
- * Attribution: images © World License Plates (worldlicenseplates.com)
+ * Fetch plate photos + notes from worldlicenseplates.com for all PlateQuest
+ * jurisdictions (US, Canada, Mexico, territories, Native American, military, federal).
  */
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.join(__dirname, '..')
 const OUT_DIR = path.join(ROOT, 'public', 'plates')
 const CATALOG = path.join(ROOT, 'src', 'wlpCatalog.json')
+const REQ_MAP = path.join(ROOT, 'public', 'plates', 'US_front_rear_requirements.gif')
 const UA = 'Mozilla/5.0 (compatible; PlateQuestBot/1.0; +https://braydencbell01-arch.github.io/Brayden-OS/platequest/)'
 const BASE = 'http://www.worldlicenseplates.com'
 
-const STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
-  'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
-  'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','DC',
-]
-
-function pageSlug(code) {
-  return `US_${code}XX`
+// Parse jurisdictions from the TS source (avoid TS import in node script).
+async function loadJurisdictions() {
+  const src = await readFile(path.join(ROOT, 'src', 'jurisdictions.ts'), 'utf8')
+  const entries = []
+  const re =
+    /\{\s*code:\s*'([^']+)'[\s\S]*?name:\s*(?:'([^']*)'|"([^"]*)"|`([^`]*)`)[\s\S]*?region:\s*'([^']+)'[\s\S]*?wlpPath:\s*'([^']+)'[\s\S]*?wlpStem:\s*'([^']+)'/g
+  // Simpler: match objects with wlpPath
+  const objRe = /\{[^{}]*code:\s*'([^']+)'[^{}]*name:\s*(?:'((?:\\'|[^'])*)'|"((?:\\"|[^"])*)")[^{}]*region:\s*'([^']+)'[^{}]*wlpPath:\s*'([^']+)'[^{}]*wlpStem:\s*'([^']+)'[^{}]*\}/g
+  // Fallback line-oriented parse
+  const blocks = src.split(/\n\s*\{/).slice(1)
+  for (const block of blocks) {
+    const code = block.match(/code:\s*'([^']+)'/)?.[1]
+    const nameMatch =
+      block.match(/name:\s*'((?:\\'|[^'])*)'/) ||
+      block.match(/name:\s*"((?:\\"|[^"])*)"/)
+    const region = block.match(/region:\s*'([^']+)'/)?.[1]
+    const wlpPath =
+      block.match(/wlpPath:\s*'([^']+)'/)?.[1] ||
+      block.match(/wlpPath:\s*"([^"]+)"/)?.[1]
+    const wlpStem =
+      block.match(/wlpStem:\s*'([^']+)'/)?.[1] ||
+      block.match(/wlpStem:\s*"([^"]+)"/)?.[1]
+    if (code && nameMatch && region && wlpPath && wlpStem) {
+      entries.push({
+        code,
+        name: nameMatch[1].replace(/\\'/g, "'").replace(/\\"/g, '"'),
+        region,
+        wlpPath,
+        wlpStem,
+      })
+    }
+  }
+  // us() helper entries don't have region literal in object - parse us() calls
+  const usRe = /us\('([A-Z]{2})',\s*'((?:\\'|[^'])*)'/g
+  let m
+  while ((m = usRe.exec(src))) {
+    const code = m[1]
+    if (entries.some((e) => e.code === code)) continue
+    entries.push({
+      code,
+      name: m[2].replace(/\\'/g, "'"),
+      region: 'us-state',
+      wlpPath: `usa/US_${code}XX.html`,
+      wlpStem: `US_${code}XX`,
+    })
+  }
+  return entries
 }
 
 async function fetchText(url) {
@@ -52,39 +91,32 @@ function stripTags(s) {
   return decodeEntities(s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
 }
 
-function parseImages(html, slug) {
+function parseImages(html, stem) {
   const imgs = []
   const re = /<(?:IMG|img)\s+[^>]*SRC=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?/gi
   const re2 = /<(?:IMG|img)\s+[^>]*alt=["']([^"']*)["'][^>]*SRC=["']([^"']+)["']/gi
   let m
-  while ((m = re.exec(html))) {
-    imgs.push({ src: m[1], alt: m[2] || '' })
-  }
-  while ((m = re2.exec(html))) {
-    imgs.push({ src: m[2], alt: m[1] || '' })
-  }
-  // Dedupe by basename
+  while ((m = re.exec(html))) imgs.push({ src: m[1], alt: m[2] || '' })
+  while ((m = re2.exec(html))) imgs.push({ src: m[2], alt: m[1] || '' })
   const seen = new Set()
   const out = []
   for (const img of imgs) {
     if (!img.src.includes('/jpglps/')) continue
-    if (!img.src.includes(slug)) continue
     const base = path.basename(img.src.split('?')[0])
+    if (!base.toUpperCase().includes(stem.toUpperCase())) continue
     if (seen.has(base)) continue
     seen.add(base)
-    const fixed = img.src.includes('../jpglps/')
-      ? `${BASE}/jpglps/${base}`
-      : img.src.startsWith('http')
-        ? img.src
-        : `${BASE}/jpglps/${base}`
-    out.push({ file: base, url: fixed, alt: decodeEntities(img.alt || base) })
+    out.push({
+      file: base,
+      url: `${BASE}/jpglps/${base}`,
+      alt: decodeEntities(img.alt || base),
+    })
   }
   return out
 }
 
 function parsePassengerRows(html) {
   const rows = []
-  // Find Private/Passenger table body-ish rows with 4 cells
   const trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi
   let tr
   while ((tr = trRe.exec(html))) {
@@ -92,16 +124,8 @@ function parsePassengerRows(html) {
     if (cells.length < 4) continue
     const [example, introduced, colors, notes] = cells
     if (!example || /Example Shown/i.test(example) || /Base Introduced/i.test(introduced)) continue
-    if (!/\d{4}/.test(introduced) && !/still valid/i.test(introduced)) {
-      // many rows have year in col2
-      if (!/\d{4}/.test(cells.join(' '))) continue
-    }
-    rows.push({
-      example,
-      introduced,
-      colors,
-      notes,
-    })
+    if (!/\d{4}/.test(cells.join(' '))) continue
+    rows.push({ example, introduced, colors, notes })
   }
   return rows
 }
@@ -109,41 +133,37 @@ function parsePassengerRows(html) {
 function categorize(file, alt) {
   const f = file.toUpperCase()
   const a = alt.toLowerCase()
-  if (f.includes('_GI3') || a.includes('private/passenger')) return { kind: 'passenger', name: 'Private / passenger plates' }
-  if (f.includes('_GI1') || f.includes('_GI2') || a.includes('190') || a.includes('history') || a.includes('porcelain') || a.includes('metal'))
-    return { kind: 'history', name: alt || 'Plate history' }
-  if (f.includes('_OTM') || a.includes('military')) return { kind: 'military', name: alt || 'Military-related plates' }
-  if (f.includes('_OT') || a.includes('non-passenger')) return { kind: 'other', name: alt || 'Non-passenger / other plates' }
-  if (f.includes('_SIH') || a.includes('heritage')) return { kind: 'specialty', name: alt || 'Heritage & state plates' }
-  if (f.includes('_SIM') || a.includes('miscellaneous') || a.includes('support'))
-    return { kind: 'specialty', name: alt || 'Miscellaneous & support plates' }
-  if (f.includes('_SIS') || a.includes('sports')) return { kind: 'specialty', name: alt || 'Sports-related plates' }
-  if (f.includes('_SIV') || a.includes('vanity') || a.includes('optional'))
-    return { kind: 'optional', name: alt || 'Vanity / optional bases' }
-  if (f.includes('_SI')) return { kind: 'specialty', name: alt || 'Special interest plates' }
-  return { kind: 'gallery', name: alt || file }
+  if (f.includes('_GI3') || a.includes('private/passenger') || a.includes('passenger'))
+    return { kind: 'passenger', name: alt && !alt.endsWith('.jpg') ? alt : 'Private / passenger plates' }
+  if (f.includes('_GI') || a.includes('history') || a.includes('porcelain'))
+    return { kind: 'history', name: alt && !alt.endsWith('.jpg') ? alt : 'Plate history' }
+  if (a.includes('military') || f.includes('XAF') || f.includes('XARM') || f.includes('XNAV') || f.includes('XMAR') || f.includes('XNG') || f.includes('XCG') || f.includes('XBAS') || f.includes('XOTH'))
+    return { kind: 'military', name: alt && !alt.endsWith('.jpg') ? alt : 'Military plates' }
+  if (f.includes('_OT') || a.includes('non-passenger'))
+    return { kind: 'other', name: alt && !alt.endsWith('.jpg') ? alt : 'Non-passenger / other plates' }
+  if (f.includes('_SI') || a.includes('special') || a.includes('heritage') || a.includes('sports'))
+    return { kind: 'specialty', name: alt && !alt.endsWith('.jpg') ? alt : 'Special interest plates' }
+  return { kind: 'gallery', name: alt && !alt.endsWith('.jpg') ? alt : file }
 }
 
-async function processState(code) {
-  const slug = pageSlug(code)
-  const pageUrl = `${BASE}/usa/${slug}.html`
+async function processEntry(entry) {
+  const pageUrl = `${BASE}/${entry.wlpPath}`
   const html = await fetchText(pageUrl)
-  const images = parseImages(html, slug)
+  const images = parseImages(html, entry.wlpStem)
   const passengerRows = parsePassengerRows(html)
-  const dir = path.join(OUT_DIR, code)
+  const dir = path.join(OUT_DIR, entry.code.replace(/[^A-Za-z0-9_-]/g, '_'))
   await mkdir(dir, { recursive: true })
 
   const localImages = []
   for (const img of images) {
     try {
       const buf = await fetchBinary(img.url)
-      if (buf.length < 1000) continue
-      const dest = path.join(dir, img.file)
-      await writeFile(dest, buf)
+      if (buf.length < 800) continue
+      await writeFile(path.join(dir, img.file), buf)
       const cat = categorize(img.file, img.alt)
       localImages.push({
-        id: `${code}-${img.file.replace(/\W+/g, '-').toLowerCase()}`,
-        file: `plates/${code}/${img.file}`,
+        id: `${entry.code}-${img.file.replace(/\W+/g, '-').toLowerCase()}`,
+        file: `plates/${entry.code.replace(/[^A-Za-z0-9_-]/g, '_')}/${img.file}`,
         sourceUrl: img.url,
         pageUrl,
         alt: img.alt,
@@ -152,18 +172,20 @@ async function processState(code) {
       })
       process.stdout.write('.')
     } catch (err) {
-      console.warn(`\n  skip ${img.url}: ${err.message}`)
+      process.stdout.write('x')
     }
   }
 
-  // Prefer passenger collage as main
   localImages.sort((a, b) => {
-    const rank = (k) => (k === 'passenger' ? 0 : k === 'history' ? 1 : k === 'specialty' ? 2 : 3)
+    const rank = (k) =>
+      k === 'passenger' ? 0 : k === 'military' ? 1 : k === 'history' ? 2 : k === 'specialty' ? 3 : 4
     return rank(a.kind) - rank(b.kind)
   })
 
   return {
-    code,
+    code: entry.code,
+    name: entry.name,
+    region: entry.region,
     pageUrl,
     credit: 'Photos from World License Plates (worldlicenseplates.com)',
     passengerBases: passengerRows.slice(0, 12),
@@ -173,27 +195,48 @@ async function processState(code) {
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
+  const list = await loadJurisdictions()
+  console.log(`Loaded ${list.length} jurisdictions`)
+
+  // Front/rear requirements map from WLP
+  try {
+    const buf = await fetchBinary(`${BASE}/gifmisc/US_XNTL.gif`)
+    await writeFile(REQ_MAP, buf)
+    console.log('Saved front/rear requirements map')
+  } catch (err) {
+    console.warn('Could not save requirements map:', err.message)
+  }
+
   const catalog = {
     source: BASE,
     fetchedAt: new Date().toISOString().slice(0, 10),
     credit: 'License plate photographs courtesy of World License Plates — https://www.worldlicenseplates.com/',
+    requirementsMap: 'plates/US_front_rear_requirements.gif',
     states: {},
   }
 
-  for (const code of STATES) {
-    process.stdout.write(`\n${code} `)
+  for (const entry of list) {
+    process.stdout.write(`\n${entry.code} `)
     try {
-      catalog.states[code] = await processState(code)
+      catalog.states[entry.code] = await processEntry(entry)
     } catch (err) {
-      console.warn(`\nFAILED ${code}: ${err.message}`)
-      catalog.states[code] = { code, pageUrl: `${BASE}/usa/${pageSlug(code)}.html`, images: [], passengerBases: [], error: err.message }
+      console.warn(`\nFAILED ${entry.code}: ${err.message}`)
+      catalog.states[entry.code] = {
+        code: entry.code,
+        name: entry.name,
+        region: entry.region,
+        pageUrl: `${BASE}/${entry.wlpPath}`,
+        images: [],
+        passengerBases: [],
+        error: err.message,
+      }
     }
   }
 
   await writeFile(CATALOG, JSON.stringify(catalog, null, 2) + '\n')
-  console.log(`\n\nWrote ${CATALOG}`)
   const ok = Object.values(catalog.states).filter((s) => s.images?.length).length
-  console.log(`States with images: ${ok}/${STATES.length}`)
+  console.log(`\n\nWrote ${CATALOG}`)
+  console.log(`With images: ${ok}/${list.length}`)
 }
 
 main().catch((err) => {

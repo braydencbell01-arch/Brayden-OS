@@ -15,7 +15,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'camera', label: 'Camera' },
   { id: 'home', label: 'Home' },
-  { id: 'states', label: 'States' },
+  { id: 'states', label: 'Browse' },
   { id: 'games', label: 'Games' },
 ]
 

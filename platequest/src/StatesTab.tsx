@@ -1,6 +1,13 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { JURISDICTIONS, rarityLabel, type Jurisdiction } from './jurisdictions'
+import {
+  JURISDICTIONS,
+  REGION_LABEL,
+  rarityLabel,
+  plateMountLabel,
+  type Jurisdiction,
+  type Region,
+} from './jurisdictions'
 import {
   getMainPlate,
   getPassengerBases,
@@ -10,11 +17,15 @@ import {
 } from './plateDesigns'
 import { PlateVisual } from './PlateVisual'
 
+const REGIONS: Region[] = ['us-state', 'canada', 'mexico', 'territory', 'native', 'military', 'federal']
+
 export function StatesTab() {
+  const [region, setRegion] = useState<Region>('us-state')
   const [selected, setSelected] = useState<Jurisdiction | null>(null)
-  const sorted = useMemo(
-    () => [...JURISDICTIONS].sort((a, b) => a.name.localeCompare(b.name)),
-    [],
+  const list = useMemo(
+    () =>
+      JURISDICTIONS.filter((j) => j.region === region).sort((a, b) => a.name.localeCompare(b.name)),
+    [region],
   )
 
   return (
@@ -34,13 +45,18 @@ export function StatesTab() {
               onClick={() => setSelected(null)}
               className="mb-3 self-start text-sm font-medium text-fog underline-offset-2 hover:text-ink hover:underline"
             >
-              ← All states
+              ← Back
             </button>
             <header className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">{selected.code}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">
+                {REGION_LABEL[selected.region]} · {selected.code}
+              </p>
               <h1 className="font-display mt-1 text-3xl text-ink">{selected.name}</h1>
-              {selected.slogan && (
-                <p className="mt-1 text-sm text-fog">“{selected.slogan}”</p>
+              {selected.slogan && <p className="mt-1 text-sm text-fog">“{selected.slogan}”</p>}
+              {selected.plateMount && (
+                <p className="mt-2 text-sm font-medium text-plate-hot">
+                  {plateMountLabel(selected.plateMount)}
+                </p>
               )}
               <p className="mt-2 text-sm text-fog">{rarityLabel(selected.rarity)}</p>
               <p className="mt-1 text-sm text-ink/80">{selected.notes}</p>
@@ -75,6 +91,9 @@ export function StatesTab() {
                   </div>
                 </motion.li>
               ))}
+              {getPlatesForCode(selected.code).length === 0 && (
+                <li className="text-sm text-fog">Photos still loading for this jurisdiction — check the source page.</li>
+              )}
             </ul>
 
             {getPassengerBases(selected.code).length > 0 && (
@@ -114,24 +133,40 @@ export function StatesTab() {
         ) : (
           <motion.div
             key="list"
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4 pt-3"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-3"
             initial={{ opacity: 0, x: -16 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -12 }}
             transition={{ duration: 0.2 }}
           >
-            <header className="mb-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">States</p>
-              <h1 className="font-display mt-1 text-3xl text-ink">Browse plates</h1>
+            <header className="mb-3 shrink-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">Browse</p>
+              <h1 className="font-display mt-1 text-3xl text-ink">Plates</h1>
               <p className="mt-1 max-w-md text-sm text-fog">
-                Each state shows its main plate. Tap the photo or name to see every plate for that state.
+                US, Canada, Mexico, territories, Native American, military, and federal — photos from World License Plates.
               </p>
             </header>
 
-            <ul className="flex flex-col gap-3">
-              {sorted.map((j, i) => {
+            <div className="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1">
+              {REGIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRegion(r)}
+                  className={`shrink-0 rounded-sm px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] transition ${
+                    region === r
+                      ? 'bg-plate text-asphalt'
+                      : 'border border-line text-fog hover:border-plate/50 hover:text-plate-hot'
+                  }`}
+                >
+                  {REGION_LABEL[r]}
+                </button>
+              ))}
+            </div>
+
+            <ul className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              {list.map((j, i) => {
                 const main = getMainPlate(j.code)
-                if (!main) return null
                 return (
                   <motion.li
                     key={j.code}
@@ -144,12 +179,13 @@ export function StatesTab() {
                       onClick={() => setSelected(j)}
                       className="flex w-full items-center gap-3 rounded-sm border border-line bg-paper px-3 py-2.5 text-left transition hover:border-plate/50 hover:bg-asphalt-lift"
                     >
-                      <PlateVisual
-                        design={main}
-                        stateCode={j.code}
-                        stateName={j.name}
-                        compact
-                      />
+                      {main ? (
+                        <PlateVisual design={main} stateCode={j.code} stateName={j.name} compact />
+                      ) : (
+                        <div className="flex h-14 w-28 shrink-0 items-center justify-center rounded-[3px] bg-lane text-xs font-semibold text-fog ring-1 ring-line">
+                          {j.code}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <span className="font-semibold text-ink underline decoration-plate decoration-2 underline-offset-4">
                           {j.name}
@@ -161,7 +197,7 @@ export function StatesTab() {
                 )
               })}
             </ul>
-            <p className="mt-6 text-xs text-fog">{WLP_CREDIT}</p>
+            <p className="mt-3 shrink-0 text-xs text-fog">{WLP_CREDIT}</p>
           </motion.div>
         )}
       </AnimatePresence>
