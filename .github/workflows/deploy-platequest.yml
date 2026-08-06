@@ -51,22 +51,18 @@ jobs:
           cache: npm
           cache-dependency-path: platequest/package-lock.json
 
-      - name: Ensure BraydenBell/PlateQuest repo exists
+      - name: Require BraydenBell/PlateQuest repo
         env:
           GH_TOKEN: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
         run: |
           set -euo pipefail
           if gh api "repos/BraydenBell/PlateQuest" --silent 2>/dev/null; then
-            echo "BraydenBell/PlateQuest already exists."
+            echo "BraydenBell/PlateQuest found."
             exit 0
           fi
-          echo "Creating BraydenBell/PlateQuest…"
-          gh repo create BraydenBell/PlateQuest \
-            --public \
-            --description "PlateQuest — license plate spotting, identification, and games" \
-            --disable-issues \
-            --disable-wiki
-          # Project Pages need the repo to exist; first push to gh-pages enables the site.
+          echo "::error::Create an empty public repo BraydenBell/PlateQuest (no README), then re-run this workflow."
+          echo "https://github.com/new?owner=BraydenBell&name=PlateQuest&visibility=public"
+          exit 1
 
       - name: Build PlateQuest (project Pages base /PlateQuest/)
         working-directory: platequest
