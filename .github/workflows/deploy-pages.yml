@@ -101,9 +101,10 @@ jobs:
           cname: jerseydeals.online
 
       # Let jerseydeals.online Pages leave deployment_queued before starting Brayden-OS Pages.
+      # Org-level Pages queue often needs >8 min; 10 min build timeout cancels if we start too soon.
       - name: Wait for jerseydeals.online Pages queue
         if: steps.jd_token.outputs.enabled == 'true'
-        run: sleep 480
+        run: sleep 900
 
       - name: Rebuild Jersey Deals for GitHub Pages path
         if: steps.jd_token.outputs.enabled == 'true'
