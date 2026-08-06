@@ -2114,10 +2114,10 @@ export default function App() {
               key={heroImage}
               src={heroImage}
               alt=""
-              initial={reduce ? false : { scale: 1.06, opacity: 0.18 }}
-              animate={{ scale: 1, opacity: 0.22 }}
+              initial={reduce ? false : { scale: 1.06, opacity: 0.28 }}
+              animate={{ scale: 1, opacity: 0.4 }}
               transition={{ duration: reduce ? 0 : 1.1, ease }}
-              className="h-full w-full object-cover object-center opacity-[0.22]"
+              className="h-full w-full object-cover object-center opacity-40"
               decoding="async"
               fetchPriority="high"
               loading="eager"
@@ -2126,13 +2126,13 @@ export default function App() {
               className="absolute inset-0"
               style={{
                 background: [
-                  'radial-gradient(ellipse 90% 70% at 20% 30%, rgba(232,58,64,0.55), transparent 58%)',
-                  'radial-gradient(ellipse 70% 60% at 85% 75%, rgba(110,12,18,0.65), transparent 55%)',
-                  'linear-gradient(160deg, rgba(215,40,47,0.88) 0%, rgba(143,18,24,0.82) 45%, rgba(110,14,20,0.9) 100%)',
+                  'radial-gradient(ellipse 90% 70% at 20% 30%, rgba(232,58,64,0.42), transparent 58%)',
+                  'radial-gradient(ellipse 70% 60% at 85% 75%, rgba(110,12,18,0.5), transparent 55%)',
+                  'linear-gradient(160deg, rgba(215,40,47,0.72) 0%, rgba(143,18,24,0.68) 45%, rgba(110,14,20,0.78) 100%)',
                 ].join(', '),
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/45 via-transparent to-[#d7282f]/22" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/35 via-transparent to-[#d7282f]/16" />
           </div>
 
           <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 pb-[5.75rem] pt-44 md:px-8 md:pb-24 md:pt-48">
