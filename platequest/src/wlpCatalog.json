@@ -1,7 +1,7 @@
 {
   "source": "http://www.worldlicenseplates.com",
   "fetchedAt": "2026-08-06",
-  "credit": "License plate photographs courtesy of World License Plates — https://www.worldlicenseplates.com/",
+  "credit": "License plate photographs courtesy of World License Plates \u2014 https://www.worldlicenseplates.com/",
   "states": {
     "AL": {
       "code": "AL",
@@ -90,7 +90,8 @@
           "name": "US_ALXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "AL-us_alxx_siw-jpg"
     },
     "AK": {
       "code": "AK",
@@ -161,7 +162,8 @@
           "name": "US_AKXX_SIV.jpg",
           "kind": "optional"
         }
-      ]
+      ],
+      "mainImageId": "AK-us_akxx_siu-jpg"
     },
     "AZ": {
       "code": "AZ",
@@ -268,7 +270,8 @@
           "name": "US_AZXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "AZ-us_azxx_sii-jpg"
     },
     "AR": {
       "code": "AR",
@@ -348,7 +351,8 @@
           "name": "US_ARXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "AR-us_arxx_sif-jpg"
     },
     "CA": {
       "code": "CA",
@@ -462,7 +466,8 @@
           "name": "US_CAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "CA-us_caxx_sis-jpg"
     },
     "CO": {
       "code": "CO",
@@ -569,7 +574,8 @@
           "name": "US_COXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "CO-us_coxx_sis-jpg"
     },
     "CT": {
       "code": "CT",
@@ -667,7 +673,8 @@
           "name": "US_CTXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "CT-us_ctxx_sih-jpg"
     },
     "DE": {
       "code": "DE",
@@ -747,7 +754,8 @@
           "name": "US_DEXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "DE-us_dexx_siw-jpg"
     },
     "FL": {
       "code": "FL",
@@ -863,7 +871,8 @@
           "name": "US_FLXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "FL-us_flxx_sig-jpg"
     },
     "GA": {
       "code": "GA",
@@ -952,7 +961,8 @@
           "name": "US_GAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "GA-us_gaxx_sif-jpg"
     },
     "HI": {
       "code": "HI",
@@ -996,7 +1006,8 @@
           "name": "US_HIXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "HI-us_hixx_si-jpg"
     },
     "ID": {
       "code": "ID",
@@ -1076,7 +1087,8 @@
           "name": "US_IDXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "ID-us_idxx_siw-jpg"
     },
     "IL": {
       "code": "IL",
@@ -1201,7 +1213,8 @@
           "name": "US_ILXX_SIV.jpg",
           "kind": "optional"
         }
-      ]
+      ],
+      "mainImageId": "IL-us_ilxx_sif-jpg"
     },
     "IN": {
       "code": "IN",
@@ -1299,7 +1312,8 @@
           "name": "US_INXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "IN-us_inxx_siu-jpg"
     },
     "IA": {
       "code": "IA",
@@ -1370,7 +1384,8 @@
           "name": "US_IAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "IA-us_iaxx_siw-jpg"
     },
     "KS": {
       "code": "KS",
@@ -1441,7 +1456,8 @@
           "name": "US_KSXX_SIV.jpg",
           "kind": "optional"
         }
-      ]
+      ],
+      "mainImageId": "KS-us_ksxx_sif-jpg"
     },
     "KY": {
       "code": "KY",
@@ -1530,7 +1546,8 @@
           "name": "US_KYXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "KY-us_kyxx_sif-jpg"
     },
     "LA": {
       "code": "LA",
@@ -1619,7 +1636,8 @@
           "name": "US_LAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "LA-us_laxx_sio-jpg"
     },
     "ME": {
       "code": "ME",
@@ -1699,7 +1717,8 @@
           "name": "US_MEXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "ME-us_mexx_ot-p-jpg"
     },
     "MD": {
       "code": "MD",
@@ -1797,7 +1816,8 @@
           "name": "US_MDXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MD-us_mdxx_sis-jpg"
     },
     "MA": {
       "code": "MA",
@@ -1904,7 +1924,8 @@
           "name": "US_MAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MA-us_maxx_sif-jpg"
     },
     "MI": {
       "code": "MI",
@@ -2002,7 +2023,8 @@
           "name": "US_MIXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MI-us_mixx_sio-jpg"
     },
     "MN": {
       "code": "MN",
@@ -2082,7 +2104,8 @@
           "name": "US_MNXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MN-us_mnxx_sis-jpg"
     },
     "MS": {
       "code": "MS",
@@ -2189,7 +2212,8 @@
           "name": "US_MSXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MS-us_msxx_sih-jpg"
     },
     "MO": {
       "code": "MO",
@@ -2296,7 +2320,8 @@
           "name": "US_MOXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MO-us_moxx_sis-jpg"
     },
     "MT": {
       "code": "MT",
@@ -2421,7 +2446,8 @@
           "name": "US_MTXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "MT-us_mtxx_sif-jpg"
     },
     "NE": {
       "code": "NE",
@@ -2510,7 +2536,8 @@
           "name": "US_NEXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NE-us_nexx_sis-jpg"
     },
     "NV": {
       "code": "NV",
@@ -2608,7 +2635,8 @@
           "name": "US_NVXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NV-us_nvxx_siw-jpg"
     },
     "NH": {
       "code": "NH",
@@ -2661,7 +2689,8 @@
           "name": "US_NHXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NH-us_nhxx_si-jpg"
     },
     "NJ": {
       "code": "NJ",
@@ -2759,7 +2788,8 @@
           "name": "US_NJXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NJ-us_njxx_siw-jpg"
     },
     "NM": {
       "code": "NM",
@@ -2893,7 +2923,8 @@
           "name": "US_NMXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NM-us_nmxx_sih-jpg"
     },
     "NY": {
       "code": "NY",
@@ -2982,7 +3013,8 @@
           "name": "US_NYXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NY-us_nyxx_sie-jpg"
     },
     "NC": {
       "code": "NC",
@@ -3080,7 +3112,8 @@
           "name": "US_NCXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "NC-us_ncxx_sim-jpg"
     },
     "ND": {
       "code": "ND",
@@ -3124,7 +3157,8 @@
           "name": "US_NDXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "ND-us_ndxx_si-jpg"
     },
     "OH": {
       "code": "OH",
@@ -3222,7 +3256,8 @@
           "name": "US_OHXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "OH-us_ohxx_sio-jpg"
     },
     "OK": {
       "code": "OK",
@@ -3320,7 +3355,8 @@
           "name": "US_OKXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "OK-us_okxx_sis-jpg"
     },
     "OR": {
       "code": "OR",
@@ -3409,7 +3445,8 @@
           "name": "US_ORXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "OR-us_orxx_sih-jpg"
     },
     "PA": {
       "code": "PA",
@@ -3507,7 +3544,8 @@
           "name": "US_PAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "PA-us_paxx_sif-jpg"
     },
     "RI": {
       "code": "RI",
@@ -3587,7 +3625,8 @@
           "name": "US_RIXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "RI-us_rixx_sis-jpg"
     },
     "SC": {
       "code": "SC",
@@ -3685,7 +3724,8 @@
           "name": "US_SCXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "SC-us_scxx_sis-jpg"
     },
     "SD": {
       "code": "SD",
@@ -3756,7 +3796,8 @@
           "name": "US_SDXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "SD-us_sdxx_siu-jpg"
     },
     "TN": {
       "code": "TN",
@@ -3854,7 +3895,8 @@
           "name": "US_TNXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "TN-us_tnxx_sio-jpg"
     },
     "TX": {
       "code": "TX",
@@ -3979,7 +4021,8 @@
           "name": "US_TXXX_SIV.jpg",
           "kind": "optional"
         }
-      ]
+      ],
+      "mainImageId": "TX-us_txxx_sif-jpg"
     },
     "UT": {
       "code": "UT",
@@ -4068,7 +4111,8 @@
           "name": "US_UTXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "UT-us_utxx_sis-jpg"
     },
     "VT": {
       "code": "VT",
@@ -4130,7 +4174,8 @@
           "name": "US_VTXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "VT-us_vtxx_sim-jpg"
     },
     "VA": {
       "code": "VA",
@@ -4228,7 +4273,8 @@
           "name": "US_VAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "VA-us_vaxx_sio-jpg"
     },
     "WA": {
       "code": "WA",
@@ -4317,7 +4363,8 @@
           "name": "US_WAXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "WA-us_waxx_sih-jpg"
     },
     "WV": {
       "code": "WV",
@@ -4406,7 +4453,8 @@
           "name": "US_WVXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "WV-us_wvxx_sih-jpg"
     },
     "WI": {
       "code": "WI",
@@ -4495,7 +4543,8 @@
           "name": "US_WIXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "WI-us_wixx_sio-jpg"
     },
     "WY": {
       "code": "WY",
@@ -4539,7 +4588,8 @@
           "name": "US_WYXX_OTM.jpg",
           "kind": "military"
         }
-      ]
+      ],
+      "mainImageId": "WY-us_wyxx_si-jpg"
     },
     "DC": {
       "code": "DC",
@@ -4677,7 +4727,8 @@
           "name": "US_DCXX_VIP.jpg",
           "kind": "gallery"
         }
-      ]
+      ],
+      "mainImageId": "DC-us_dcxx_si-jpg"
     }
   }
 }

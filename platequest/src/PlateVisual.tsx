@@ -23,7 +23,7 @@ export function PlateVisual({ design, stateCode, stateName, className = '', comp
         title={label}
         loading="lazy"
         decoding="async"
-        className={`shrink-0 object-cover object-top ring-1 ring-black/15 ${
+        className={`shrink-0 bg-lane object-contain ring-1 ring-black/15 ${
           compact ? 'h-14 w-28 rounded-[3px]' : 'h-auto w-full max-w-md rounded-sm'
         } ${className}`}
       />

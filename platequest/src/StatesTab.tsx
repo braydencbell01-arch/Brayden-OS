@@ -124,7 +124,7 @@ export function StatesTab() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">States</p>
               <h1 className="font-display mt-1 text-3xl text-ink">Browse plates</h1>
               <p className="mt-1 max-w-md text-sm text-fog">
-                Real photographs from World License Plates. Tap a state to see passenger, history, and specialty galleries.
+                Each state shows its main plate. Tap the photo or name to see every plate for that state.
               </p>
             </header>
 

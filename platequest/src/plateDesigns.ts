@@ -38,6 +38,8 @@ type StateEntry = {
   code: string
   pageUrl: string
   credit?: string
+  /** Preferred single main plate image id for list thumbnails (not gallery collages). */
+  mainImageId?: string
   passengerBases?: PassengerBase[]
   images?: Array<{
     id: string
@@ -79,8 +81,23 @@ export function getPlatesForCode(code: string): PlateDesign[] {
 }
 
 export function getMainPlate(code: string): PlateDesign | undefined {
-  const plates = getPlatesForCode(code)
-  return plates.find((p) => p.kind === 'passenger') ?? plates[0]
+  const key = code.toUpperCase()
+  const plates = getPlatesForCode(key)
+  if (!plates.length) return undefined
+  const mainId = states[key]?.mainImageId
+  if (mainId) {
+    const hit = plates.find((p) => p.id === mainId)
+    if (hit) return hit
+  }
+  // Avoid WLP gallery collage sheets (GI*) when picking a fallback thumbnail.
+  const singles = plates.filter((p) => !/_GI\d/i.test(p.image ?? p.id))
+  const pool = singles.length ? singles : plates
+  return (
+    pool.find((p) => p.kind === 'passenger') ??
+    pool.find((p) => p.kind === 'specialty') ??
+    pool.find((p) => p.kind === 'history') ??
+    pool[0]
+  )
 }
 
 export function getPassengerBases(code: string): PassengerBase[] {
