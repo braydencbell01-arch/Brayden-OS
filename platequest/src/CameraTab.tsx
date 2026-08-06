@@ -21,11 +21,17 @@ function getZoomCaps(track: MediaStreamTrack): ZoomCaps | null {
   }
 }
 
+function clamp(n: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, n))
+}
+
 export function CameraTab({ onIdentified }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const trackRef = useRef<MediaStreamTrack | null>(null)
+  const resultRef = useRef<HTMLDivElement>(null)
+  const pinchRef = useRef<{ startDist: number; startZoom: number } | null>(null)
   const [streamError, setStreamError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
@@ -46,7 +52,6 @@ export function CameraTab({ onIdentified }: Props) {
         return
       }
       try {
-        // Prefer sharp rear camera at high resolution; fall back if device rejects.
         const attempts: MediaStreamConstraints[] = [
           {
             video: {
@@ -95,7 +100,6 @@ export function CameraTab({ onIdentified }: Props) {
         const track = stream.getVideoTracks()[0] ?? null
         trackRef.current = track
         if (track) {
-          // Ask for continuous autofocus / max sharpness when the driver allows it.
           try {
             await track.applyConstraints({
               // @ts-expect-error non-standard but widely used on mobile
@@ -114,7 +118,6 @@ export function CameraTab({ onIdentified }: Props) {
             setNativeZoom(true)
             setZoom(caps.min)
           } else {
-            // Digital camera zoom (crops the sensor view — not page zoom).
             setZoomCaps({ min: 1, max: 4, step: 0.1 })
             setNativeZoom(false)
             setZoom(1)
@@ -152,9 +155,18 @@ export function CameraTab({ onIdentified }: Props) {
         advanced: [{ zoom }],
       })
       .catch(() => {
-        /* fall back to digital preview zoom */
+        /* digital preview zoom still applies */
       })
   }, [zoom, nativeZoom, zoomCaps])
+
+  useEffect(() => {
+    if (!result) return
+    // Let the result paint, then scroll it into view under the fixed camera frame.
+    const id = window.requestAnimationFrame(() => {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [result])
 
   async function analyzeFrame(source: HTMLCanvasElement | HTMLImageElement, previewUrl: string) {
     setBusy(true)
@@ -182,7 +194,7 @@ export function CameraTab({ onIdentified }: Props) {
     const vw = video.videoWidth || 1920
     const vh = video.videoHeight || 1080
 
-    // When native zoom isn't available, crop the center to match the digital zoom.
+    // Digital zoom crops the center to match what the user sees in the viewfinder.
     const digital = !nativeZoom && zoom > 1 ? zoom : 1
     const cropW = Math.round(vw / digital)
     const cropH = Math.round(vh / digital)
@@ -217,44 +229,86 @@ export function CameraTab({ onIdentified }: Props) {
     img.src = url
   }
 
-  const previewZoom = !nativeZoom && !preview ? zoom : 1
+  function onPinchStart(e: React.TouchEvent) {
+    if (e.touches.length !== 2 || !zoomCaps || preview) return
+    const [a, b] = [e.touches[0], e.touches[1]]
+    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    pinchRef.current = { startDist: dist, startZoom: zoom }
+  }
+
+  function onPinchMove(e: React.TouchEvent) {
+    if (e.touches.length !== 2 || !zoomCaps || !pinchRef.current || preview) return
+    e.preventDefault()
+    const [a, b] = [e.touches[0], e.touches[1]]
+    const dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
+    const ratio = dist / Math.max(1, pinchRef.current.startDist)
+    const next = clamp(
+      pinchRef.current.startZoom * ratio,
+      zoomCaps.min,
+      zoomCaps.max,
+    )
+    setZoom(Number(next.toFixed(2)))
+  }
+
+  function onPinchEnd() {
+    pinchRef.current = null
+  }
+
+  // Digital zoom scales only the video layer inside the clipped viewfinder.
+  // Native optical zoom uses the track; keep CSS scale at 1 so the outline never moves.
+  const videoScale = !nativeZoom && !preview ? zoom : 1
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 pt-3">
-      <header>
+    <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-6 pt-3">
+      <header className="shrink-0">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Camera</p>
         <h1 className="font-display mt-1 text-3xl text-ink">Scan a plate</h1>
         <p className="mt-1 max-w-md text-sm text-fog">
-          Use the live camera (pinch/slider to zoom) or pick a photo you already took from your gallery.
+          Zoom the camera with the slider or pinch on the viewfinder — the plate outline stays put. After
+          capture, scroll down for the result.
         </p>
       </header>
 
-      <div className="relative min-h-[260px] flex-1 overflow-hidden rounded-sm bg-lane ring-1 ring-line">
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          autoPlay
-          className={`absolute inset-0 h-full w-full object-cover ${preview ? 'opacity-0' : 'opacity-100'}`}
-          style={{
-            transform: previewZoom > 1 ? `scale(${previewZoom})` : undefined,
-            transformOrigin: 'center center',
-          }}
-        />
-        {preview && (
-          <img src={preview} alt="Plate photo" className="absolute inset-0 h-full w-full object-cover" />
-        )}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      {/* Fixed-size viewfinder so results below stay reachable via scroll */}
+      <div
+        className="relative h-[min(42vh,320px)] w-full shrink-0 touch-none overflow-hidden rounded-sm bg-lane ring-1 ring-line"
+        onTouchStart={onPinchStart}
+        onTouchMove={onPinchMove}
+        onTouchEnd={onPinchEnd}
+        onTouchCancel={onPinchEnd}
+      >
+        {/* Clipped video layer — only this scales for digital zoom */}
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            autoPlay
+            className={`h-full w-full object-cover ${preview ? 'opacity-0' : 'opacity-100'}`}
+            style={{
+              transform: videoScale > 1 ? `scale(${videoScale})` : undefined,
+              transformOrigin: 'center center',
+              willChange: videoScale > 1 ? 'transform' : undefined,
+            }}
+          />
+          {preview && (
+            <img src={preview} alt="Plate photo" className="absolute inset-0 h-full w-full object-cover" />
+          )}
+        </div>
+
+        {/* Outline sits above the video and is never scaled */}
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div className="h-[28%] w-[72%] max-w-md rounded-sm border-2 border-plate/90 shadow-[0_0_0_9999px_rgba(255,255,255,0.35)]" />
         </div>
+
         {resolutionLabel && !preview && (
-          <p className="absolute left-2 top-2 rounded-sm bg-paper/90 px-2 py-0.5 text-[10px] font-medium text-ink ring-1 ring-plate/40">
+          <p className="absolute left-2 top-2 z-20 rounded-sm bg-paper/90 px-2 py-0.5 text-[10px] font-medium text-ink ring-1 ring-plate/40">
             {resolutionLabel}
             {nativeZoom ? ' · optical zoom' : zoom > 1 ? ` · ${zoom.toFixed(1)}×` : ''}
           </p>
         )}
         {busy && (
-          <div className="absolute inset-0 flex items-center justify-center bg-paper/80 backdrop-blur-[2px]">
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-paper/80 backdrop-blur-[2px]">
             <motion.p
               className="font-display text-xl text-plate-hot"
               animate={{ opacity: [0.5, 1, 0.5] }}
@@ -269,7 +323,7 @@ export function CameraTab({ onIdentified }: Props) {
       <canvas ref={canvasRef} className="hidden" />
 
       {cameraOn && zoomCaps && !preview && (
-        <label className="flex items-center gap-3 text-sm text-ink">
+        <label className="flex shrink-0 items-center gap-3 text-sm text-ink">
           <span className="shrink-0 font-medium">Zoom</span>
           <input
             type="range"
@@ -286,12 +340,12 @@ export function CameraTab({ onIdentified }: Props) {
       )}
 
       {streamError && (
-        <p className="text-sm text-signal" role="status">
+        <p className="shrink-0 text-sm text-signal" role="status">
           {streamError}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => void capture()}
@@ -320,7 +374,6 @@ export function CameraTab({ onIdentified }: Props) {
             Back to live
           </button>
         )}
-        {/* No capture= attribute — opens photo library / previous pictures, not a new camera shot. */}
         <input
           ref={fileRef}
           type="file"
@@ -336,11 +389,12 @@ export function CameraTab({ onIdentified }: Props) {
       <AnimatePresence mode="wait">
         {result && (
           <motion.div
+            ref={resultRef}
             key={result.text + result.confidence}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="plate-face rounded-sm px-4 py-4"
+            className="plate-face mb-2 shrink-0 rounded-sm px-4 py-4"
           >
             <p className="text-[10px] font-bold uppercase tracking-[0.25em]">Identified plate</p>
             <p className="font-display mt-1 text-4xl tracking-widest">{result.text}</p>
@@ -361,7 +415,8 @@ export function CameraTab({ onIdentified }: Props) {
               </div>
             ) : (
               <p className="mt-3 text-sm opacity-80">
-                State not detected from the image — characters only for now. Tip: include the state name on the plate in frame.
+                State not detected from the image — characters only for now. Tip: include the state name on
+                the plate in frame.
               </p>
             )}
           </motion.div>
