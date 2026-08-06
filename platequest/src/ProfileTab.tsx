@@ -1,8 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { getJurisdiction, REGION_LABEL, type Region } from './jurisdictions'
+import { getJurisdiction, JURISDICTIONS, REGION_LABEL, type Region } from './jurisdictions'
 import { collectionStats, listAchievements } from './achievements'
 import { loadDailyHunt } from './dailyHunt'
+import { TownPicker } from './TownPicker'
+import type { Place } from './geo'
 
 const NAME_KEY = 'platequest.profileName'
 
@@ -10,6 +12,9 @@ type Props = {
   points: number
   foundCodes: string[]
   lastPlate: string | null
+  homeLocation: Place | null
+  onHomeLocationChange: (p: Place | null) => void
+  onOpenState?: (code: string) => void
 }
 
 function loadName(): string {
@@ -30,7 +35,14 @@ const REGION_ORDER: Region[] = [
   'federal',
 ]
 
-export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
+export function ProfileTab({
+  points,
+  foundCodes,
+  lastPlate,
+  homeLocation,
+  onHomeLocationChange,
+  onOpenState,
+}: Props) {
   const [name, setName] = useState(loadName)
   const [draft, setDraft] = useState(name)
   const stats = collectionStats(foundCodes)
@@ -78,7 +90,7 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
       >
-        Your spotting score, collection progress, and badges on this device.
+        Your spotting score, home base, collection progress, and badges on this device.
       </motion.p>
 
       <motion.form
@@ -108,6 +120,27 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
           Save
         </button>
       </motion.form>
+
+      <motion.div
+        className="mt-8 border-t border-line pt-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Your location</p>
+        <h2 className="font-display mt-1 text-2xl text-ink">Home base</h2>
+        <p className="mt-2 max-w-md text-sm text-fog">
+          Used for distance on state profiles and to rank Browse by how common plates are near you.
+        </p>
+        <div className="mt-4">
+          <TownPicker
+            label="Home town"
+            value={homeLocation}
+            onPick={onHomeLocationChange}
+            placeholder="Search your city or town…"
+          />
+        </div>
+      </motion.div>
 
       <motion.div
         className="mt-8 grid grid-cols-2 gap-4"
@@ -140,106 +173,99 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
         className="mt-6 border-t border-line pt-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.26 }}
+        transition={{ delay: 0.28 }}
       >
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">US progress</p>
-          <p className="text-sm font-semibold text-plate-hot">{usPct}%</p>
+        <div className="mb-2 flex items-end justify-between gap-2">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">
+            Collection map
+          </p>
+          <p className="text-xs text-fog">{usPct}% of US states</p>
         </div>
-        <div
-          className="mt-2 h-2 overflow-hidden rounded-full bg-lane"
-          role="progressbar"
-          aria-valuenow={stats.usFound}
-          aria-valuemin={0}
-          aria-valuemax={stats.usTotal}
-          aria-label="US states collected"
-        >
-          <motion.div
-            className="h-full rounded-full bg-plate"
-            initial={{ width: 0 }}
-            animate={{ width: `${usPct}%` }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          />
+        <div className="h-2 overflow-hidden rounded-full bg-lane">
+          <div className="h-full bg-plate transition-all" style={{ width: `${usPct}%` }} />
         </div>
-        <ul className="mt-4 grid grid-cols-2 gap-2 text-xs text-fog">
-          {REGION_ORDER.map((region) => (
-            <li key={region} className="flex justify-between gap-2 border-b border-line/80 py-1.5">
-              <span>{REGION_LABEL[region]}</span>
-              <span className="font-semibold text-ink">{stats.byRegion[region]}</span>
+        <ul className="mt-4 flex flex-col gap-2">
+          {REGION_ORDER.map((region) => {
+            const found = stats.byRegion[region] ?? 0
+            const total = JURISDICTIONS.filter((j) => j.region === region).length
+            if (!total) return null
+            return (
+              <li key={region} className="flex items-center justify-between text-sm">
+                <span className="text-fog">{REGION_LABEL[region]}</span>
+                <span className="font-semibold tabular-nums text-ink">
+                  {found}/{total}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      </motion.div>
+
+      <motion.div
+        className="mt-8"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.32 }}
+      >
+        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">
+          Achievements ({unlockedCount}/{achievements.length})
+        </p>
+        <ul className="mt-3 flex flex-col gap-2">
+          {achievements.map((a) => (
+            <li
+              key={a.id}
+              className={`rounded-sm border px-3 py-2.5 ${
+                a.unlocked ? 'border-plate/40 bg-plate/5' : 'border-line opacity-55'
+              }`}
+            >
+              <p className="text-sm font-semibold text-ink">{a.title}</p>
+              <p className="text-xs text-fog">{a.detail}</p>
             </li>
           ))}
         </ul>
       </motion.div>
 
       {lastPlate && (
-        <motion.div
-          className="mt-6 border-t border-line pt-3"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.28 }}
-        >
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">
-            Last plate read
-          </p>
-          <p className="mt-1 font-semibold text-plate-hot">{lastPlate}</p>
-        </motion.div>
+        <p className="mt-8 text-sm text-fog">
+          Last spotted: <span className="font-semibold text-ink">{lastPlate}</span>
+        </p>
       )}
 
-      <motion.div
-        className="mt-8 border-t border-line pt-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">Badges</h2>
-          <p className="text-xs text-fog">
-            {unlockedCount}/{achievements.length}
+      {foundSorted.length > 0 && (
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.36 }}
+        >
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">
+            Found jurisdictions
           </p>
-        </div>
-        <ul className="mt-3 flex flex-col gap-2">
-          {achievements.map((a) => (
-            <li
-              key={a.id}
-              className={`rounded-sm border px-3 py-2.5 ${
-                a.unlocked ? 'border-plate/45 bg-plate/10' : 'border-line bg-paper opacity-70'
-              }`}
-            >
-              <p className={`text-sm font-semibold ${a.unlocked ? 'text-ink' : 'text-fog'}`}>
-                {a.title}
-              </p>
-              <p className="mt-0.5 text-xs text-fog">{a.detail}</p>
-            </li>
-          ))}
-        </ul>
-      </motion.div>
-
-      <motion.div
-        className="mt-8 border-t border-line pt-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.32 }}
-      >
-        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">Found list</h2>
-        {foundSorted.length === 0 ? (
-          <p className="mt-3 text-sm text-fog">No plates logged yet — open Camera on the road.</p>
-        ) : (
-          <ul className="mt-3 flex flex-wrap gap-2">
+          <ul className="mt-2 flex flex-wrap gap-2">
             {foundSorted.map((code) => {
               const j = getJurisdiction(code)
+              const label = j?.name ?? code
               return (
-                <li
-                  key={code}
-                  className="rounded-sm border border-line px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink"
-                  title={j?.name ?? code}
-                >
-                  {code}
+                <li key={code}>
+                  {onOpenState ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenState(code)}
+                      className="rounded-sm border border-line bg-paper px-2.5 py-1 text-xs font-semibold text-ink underline decoration-plate decoration-2 underline-offset-2 hover:border-plate/50"
+                    >
+                      {label}
+                    </button>
+                  ) : (
+                    <span className="rounded-sm border border-line px-2.5 py-1 text-xs font-semibold text-ink">
+                      {label}
+                    </span>
+                  )}
                 </li>
               )
             })}
           </ul>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
     </section>
   )
 }

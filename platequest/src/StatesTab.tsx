@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   JURISDICTIONS,
@@ -10,10 +10,9 @@ import {
 } from './jurisdictions'
 import {
   getCommonPlates,
-  getHistoryPlates,
+  getHistoryTimeline,
   getMainPlate,
   getNonPassengerPlates,
-  getPassengerBases,
   getPlatesForCode,
   getSpecialtyPlates,
   getStatePlatePage,
@@ -28,29 +27,48 @@ import {
   formatAreaSqMi,
   formatMilesAway,
   formatPopulation,
+  type Place,
 } from './geo'
 
 const REGIONS: Region[] = ['us-state', 'canada', 'mexico', 'territory', 'native', 'military', 'federal']
 
-function PlateGrid({ plates, state }: { plates: PlateDesign[]; state: Jurisdiction }) {
+function PlateGrid({
+  plates,
+  state,
+  periodBeside,
+}: {
+  plates: PlateDesign[]
+  state: Jurisdiction
+  /** Optional label shown beside each plate (e.g. specialty subtype). */
+  periodBeside?: (d: PlateDesign, i: number) => string | null
+}) {
   if (!plates.length) {
     return <p className="text-sm text-fog">None in the catalog yet.</p>
   }
   return (
-    <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {plates.map((design, i) => (
-        <motion.li
-          key={design.id}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: Math.min(i, 12) * 0.03 }}
-          className="min-w-0"
-        >
-          <PlateVisual design={design} stateCode={state.code} stateName={state.name} />
-          <p className="mt-1.5 text-sm font-semibold text-ink">{design.name}</p>
-          <p className="text-[10px] uppercase tracking-[0.14em] text-fog">{design.kind}</p>
-        </motion.li>
-      ))}
+    <ul className="flex flex-col gap-4">
+      {plates.map((design, i) => {
+        const beside = periodBeside?.(design, i)
+        return (
+          <motion.li
+            key={design.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i, 12) * 0.03 }}
+            className="flex items-start gap-3"
+          >
+            <div className="min-w-0 flex-1">
+              <PlateVisual design={design} stateCode={state.code} stateName={state.name} />
+              <p className="mt-1.5 text-sm font-semibold text-ink">{design.name}</p>
+            </div>
+            {beside && (
+              <p className="w-24 shrink-0 pt-2 text-right text-xs font-semibold uppercase tracking-[0.1em] text-plate-hot sm:w-28">
+                {beside}
+              </p>
+            )}
+          </motion.li>
+        )
+      })}
     </ul>
   )
 }
@@ -59,66 +77,45 @@ function StateProfile({
   selected,
   onBack,
   platePoints,
-  homeLabel,
+  homeLocation,
 }: {
   selected: Jurisdiction
   onBack: () => void
   platePoints?: Record<string, number> | null
-  homeLabel?: string | null
+  homeLocation?: Place | null
 }) {
-  const [here, setHere] = useState<{ lat: number; lon: number } | null>(null)
-  const [geoStatus, setGeoStatus] = useState<'pending' | 'ok' | 'denied'>('pending')
-
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setGeoStatus('denied')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setHere({ lat: pos.coords.latitude, lon: pos.coords.longitude })
-        setGeoStatus('ok')
-      },
-      () => setGeoStatus('denied'),
-      { enableHighAccuracy: false, maximumAge: 300_000, timeout: 12_000 },
-    )
-  }, [selected.code])
-
   const plates = useMemo(() => getPlatesForCode(selected.code), [selected.code])
   const common = useMemo(() => getCommonPlates(selected.code, 10), [selected.code])
-  const historyPlates = useMemo(() => getHistoryPlates(selected.code), [selected.code])
+  const history = useMemo(() => getHistoryTimeline(selected.code), [selected.code])
   const specialty = useMemo(() => getSpecialtyPlates(selected.code), [selected.code])
   const other = useMemo(() => getNonPassengerPlates(selected.code), [selected.code])
-  const bases = useMemo(() => getPassengerBases(selected.code), [selected.code])
 
   const pop = STATE_POPULATION[selected.code]
   const area = STATE_LAND_AREA_SQ_MI[selected.code]
-  const miles =
-    here && geoStatus === 'ok' ? distanceToJurisdictionMiles(selected.code, here) : null
+  const miles = homeLocation
+    ? distanceToJurisdictionMiles(selected.code, homeLocation)
+    : null
+  const homeShort = homeLocation?.label?.split(',')[0] ?? null
 
   const stats: { label: string; value: string }[] = [
+    { label: 'Different plates', value: String(plates.length) },
     pop != null ? { label: 'Population', value: formatPopulation(pop) } : null,
     area != null ? { label: 'Land area', value: formatAreaSqMi(area) } : null,
     {
-      label: 'Distance',
-      value:
-        miles != null
-          ? formatMilesAway(miles)
-          : geoStatus === 'pending'
-            ? 'Locating…'
-            : 'Location off',
+      label: homeShort ? `Distance from ${homeShort}` : 'Distance from you',
+      value: miles != null ? formatMilesAway(miles) : 'Set location on Home or Profile',
     },
-    { label: 'Plates in catalog', value: String(plates.length) },
     platePoints?.[selected.code] != null
       ? {
-          label: homeLabel ? `Points near ${homeLabel}` : 'Rarity points',
-          value: String(platePoints[selected.code]),
+          label: homeShort ? `Rarity near ${homeShort}` : 'Rarity points',
+          value: `${platePoints[selected.code]} pts`,
         }
       : null,
     selected.plateMount
-      ? { label: 'Mount', value: plateMountLabel(selected.plateMount) }
+      ? { label: 'Plate mount', value: plateMountLabel(selected.plateMount) }
       : null,
-    { label: 'Rarity', value: rarityLabel(selected.rarity) },
+    { label: 'Rarity class', value: rarityLabel(selected.rarity) },
+    { label: 'Region', value: REGION_LABEL[selected.region] },
   ].filter((s): s is { label: string; value: string } => s != null)
 
   return (
@@ -135,21 +132,22 @@ function StateProfile({
         onClick={onBack}
         className="mb-3 self-start text-sm font-medium text-fog underline-offset-2 hover:text-ink hover:underline"
       >
-        ← Back
+        ← Back to Browse
       </button>
 
       <header className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">
-          {REGION_LABEL[selected.region]} · {selected.code}
+          State profile · {selected.code}
         </p>
         <h1 className="font-display mt-1 text-3xl text-ink">{selected.name}</h1>
         {selected.slogan && <p className="mt-1 text-sm text-fog">“{selected.slogan}”</p>}
         <p className="mt-2 text-sm text-ink/80">{selected.notes}</p>
       </header>
 
-      {/* 1. Stats */}
       <section className="mb-8">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">Stats</h2>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
+          State facts
+        </h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-3">
           {stats.map((s) => (
             <div key={s.label} className="min-w-0">
@@ -162,13 +160,12 @@ function StateProfile({
         </dl>
       </section>
 
-      {/* 2. Top 10 most common */}
       <section className="mb-8">
         <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
-          Most common plates
+          Top 10 most popular plates
         </h2>
         <p className="mb-3 text-xs text-fog">
-          Estimated share of plates you’d spot from this place (top {common.length}).
+          Estimated share of all plates in {selected.name} (sums to ~100%).
         </p>
         {common.length === 0 ? (
           <p className="text-sm text-fog">No plate designs in the catalog yet.</p>
@@ -200,8 +197,13 @@ function StateProfile({
                     <p className="mt-0.5 line-clamp-2 text-xs text-fog">{row.detail}</p>
                   )}
                 </div>
-                <span className="shrink-0 font-display text-xl tabular-nums text-plate-hot">
-                  {row.percent}%
+                <span className="shrink-0 text-right">
+                  <span className="font-display text-xl tabular-nums text-plate-hot">
+                    {row.percent}%
+                  </span>
+                  <span className="mt-0.5 block text-[9px] uppercase tracking-[0.1em] text-fog">
+                    of state
+                  </span>
                 </span>
               </li>
             ))}
@@ -209,30 +211,44 @@ function StateProfile({
         )}
       </section>
 
-      {/* 3. History */}
       <section className="mb-8">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">History</h2>
-        {bases.length > 0 && (
-          <ul className="mb-4 flex flex-col gap-3">
-            {bases.map((row) => (
-              <li key={`${row.example}-${row.introduced}`} className="text-sm text-ink/90">
-                <p className="font-semibold tracking-wide">
-                  {row.introduced}
-                  {row.example ? ` · ${row.example}` : ''}
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
+          License plate history
+        </h2>
+        {history.length === 0 ? (
+          <p className="text-sm text-fog">No history entries yet for this jurisdiction.</p>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {history.map((row, i) => (
+              <motion.li
+                key={row.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i, 10) * 0.03 }}
+                className="flex items-start gap-3 border-b border-line pb-4 last:border-0"
+              >
+                <div className="min-w-0 flex-1">
+                  {row.design ? (
+                    <PlateVisual
+                      design={row.design}
+                      stateCode={selected.code}
+                      stateName={selected.name}
+                    />
+                  ) : (
+                    <div className="flex h-24 w-full max-w-md items-center justify-center rounded-sm bg-lane text-sm text-fog ring-1 ring-line">
+                      {selected.code}
+                    </div>
+                  )}
+                  <p className="mt-1.5 text-sm font-semibold text-ink">{row.label}</p>
+                  {row.detail && <p className="text-xs text-fog">{row.detail}</p>}
+                </div>
+                <p className="w-24 shrink-0 pt-1 text-right font-display text-lg leading-tight text-plate-hot sm:w-28">
+                  {row.period}
                 </p>
-                <p className="text-fog">
-                  {row.colors}
-                  {row.notes ? ` · ${row.notes}` : ''}
-                </p>
-              </li>
+              </motion.li>
             ))}
           </ul>
         )}
-        {historyPlates.length > 0 ? (
-          <PlateGrid plates={historyPlates} state={selected} />
-        ) : !bases.length ? (
-          <p className="text-sm text-fog">No history entries yet for this jurisdiction.</p>
-        ) : null}
         {getStatePlatePage(selected.code) && (
           <a
             href={getStatePlatePage(selected.code)}
@@ -245,20 +261,28 @@ function StateProfile({
         )}
       </section>
 
-      {/* 4. Specialty */}
       <section className="mb-8">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
           Specialty plates
         </h2>
-        <PlateGrid plates={specialty} state={selected} />
+        <PlateGrid
+          plates={specialty}
+          state={selected}
+          periodBeside={(_d, i) => `Specialty ${i + 1}`}
+        />
       </section>
 
-      {/* 5. Non-passenger / other */}
       <section className="mb-6">
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
           Non-passenger / other
         </h2>
-        <PlateGrid plates={other} state={selected} />
+        <PlateGrid
+          plates={other}
+          state={selected}
+          periodBeside={(d) =>
+            d.kind === 'military' ? 'Military' : d.kind === 'gallery' ? 'Gallery' : 'Other'
+          }
+        />
       </section>
 
       <p className="text-xs text-fog">
@@ -280,13 +304,19 @@ function StateProfile({
 
 export function StatesTab({
   platePoints = null,
-  homeLabel = null,
+  homeLocation = null,
+  initialCode = null,
 }: {
   platePoints?: Record<string, number> | null
-  homeLabel?: string | null
+  homeLocation?: Place | null
+  /** Open this jurisdiction’s profile immediately (e.g. deep link from Home). */
+  initialCode?: string | null
 }) {
   const [region, setRegion] = useState<Region>('us-state')
-  const [selected, setSelected] = useState<Jurisdiction | null>(null)
+  const [selected, setSelected] = useState<Jurisdiction | null>(() =>
+    initialCode ? (JURISDICTIONS.find((j) => j.code === initialCode.toUpperCase()) ?? null) : null,
+  )
+  const homeLabel = homeLocation?.label ?? null
   const rankByRarity = region === 'us-state' && !!platePoints
   const list = useMemo(() => {
     const rows = JURISDICTIONS.filter((j) => j.region === region)
@@ -309,7 +339,7 @@ export function StatesTab({
             selected={selected}
             onBack={() => setSelected(null)}
             platePoints={platePoints}
-            homeLabel={homeLabel}
+            homeLocation={homeLocation}
           />
         ) : (
           <motion.div
@@ -324,13 +354,15 @@ export function StatesTab({
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">Browse</p>
               <h1 className="font-display mt-1 text-3xl text-ink">Plates</h1>
               <p className="mt-1 max-w-md text-sm text-fog">
+                Tap any place for its full profile — facts, top plates, history, specialty, and other
+                types.
                 {rankByRarity
-                  ? `US states ranked by how common they are near you${homeLabel ? ` (${homeLabel})` : ''} — most common first.`
-                  : 'US, Canada, Mexico, territories, Native American, military, and federal — photos from World License Plates.'}
+                  ? ` US states ranked by how common they are near you${homeLabel ? ` (${homeLabel})` : ''}.`
+                  : ''}
               </p>
               {region === 'us-state' && !platePoints && (
                 <p className="mt-2 text-sm text-plate-hot">
-                  Set your location on Home to rank states by rarity and see points.
+                  Set your location on Home or Profile to rank states by rarity.
                 </p>
               )}
             </header>
@@ -379,7 +411,9 @@ export function StatesTab({
                         <span className="font-semibold text-ink underline decoration-plate decoration-2 underline-offset-4">
                           {j.name}
                         </span>
-                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-fog">{j.code}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-fog">
+                          {j.code} · Open profile
+                        </p>
                       </div>
                       {pts != null && region === 'us-state' && (
                         <span className="shrink-0 text-right">

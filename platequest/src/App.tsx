@@ -110,6 +110,7 @@ export default function App() {
   })
   const [lastPlate, setLastPlate] = useState<string | null>(() => loadLastPlateName())
   const [homeLocation, setHomeLocation] = useState<Place | null>(() => loadHomeLocation())
+  const [browseCode, setBrowseCode] = useState<string | null>(null)
 
   const locationPlatePoints = useMemo(() => {
     if (!homeLocation) return null
@@ -192,7 +193,17 @@ export default function App() {
             transition={{ duration: 0.22 }}
           >
             {tab === 'profile' && (
-              <ProfileTab points={totalPoints} foundCodes={foundCodes} lastPlate={lastPlate} />
+              <ProfileTab
+                points={totalPoints}
+                foundCodes={foundCodes}
+                lastPlate={lastPlate}
+                homeLocation={homeLocation}
+                onHomeLocationChange={setHomeLocation}
+                onOpenState={(code) => {
+                  setBrowseCode(code)
+                  setTab('states')
+                }}
+              />
             )}
             {tab === 'camera' && <CameraTab onIdentified={onIdentified} />}
             {tab === 'home' && (
@@ -204,13 +215,18 @@ export default function App() {
                 onHomeLocationChange={setHomeLocation}
                 onOpenCamera={() => setTab('camera')}
                 onOpenGames={() => setTab('games')}
-                onOpenStates={() => setTab('states')}
+                onOpenStates={() => {
+                  setBrowseCode(null)
+                  setTab('states')
+                }}
               />
             )}
             {tab === 'states' && (
               <StatesTab
+                key={browseCode ?? 'browse'}
                 platePoints={locationPlatePoints}
-                homeLabel={homeLocation?.label ?? null}
+                homeLocation={homeLocation}
+                initialCode={browseCode}
               />
             )}
             {tab === 'games' && (
@@ -243,7 +259,10 @@ export default function App() {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => {
+                  if (t.id === 'states') setBrowseCode(null)
+                  setTab(t.id)
+                }}
                 className={`relative flex flex-col items-center gap-1 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] transition sm:text-xs ${
                   active ? 'text-plate-hot' : 'text-fog hover:text-ink'
                 }`}

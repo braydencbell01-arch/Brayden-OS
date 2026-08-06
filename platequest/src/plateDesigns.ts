@@ -122,6 +122,75 @@ export function getNonPassengerPlates(code: string): PlateDesign[] {
   )
 }
 
+/** Pull a year or year-range out of WLP alt/name text when present. */
+export function extractPlatePeriod(...texts: (string | undefined)[]): string | null {
+  const blob = texts.filter(Boolean).join(' ')
+  if (!blob) return null
+  const range = blob.match(/\b((?:19|20)\d{2})\s*[–—\-]\s*((?:19|20)\d{2}|present|now)\b/i)
+  if (range) {
+    const end = /present|now/i.test(range[2]) ? 'present' : range[2]
+    return `${range[1]}–${end}`
+  }
+  const years = [...blob.matchAll(/\b((?:19|20)\d{2})\b/g)].map((m) => m[1])
+  if (years.length >= 2) return `${years[0]}–${years[years.length - 1]}`
+  if (years.length === 1) return years[0]
+  return null
+}
+
+export type HistoryRow = {
+  id: string
+  period: string
+  label: string
+  detail?: string
+  design?: PlateDesign
+}
+
+/** History timeline: passenger-base eras when known, else catalog history photos. */
+export function getHistoryTimeline(code: string): HistoryRow[] {
+  const key = code.toUpperCase()
+  const bases = getPassengerBases(key)
+  const historyPhotos = getHistoryPlates(key)
+  const main = getMainPlate(key)
+
+  if (bases.length) {
+    return bases.map((b, i) => {
+      const next = bases[i + 1]
+      const period = next ? `${b.introduced}–${next.introduced}` : `${b.introduced}–present`
+      const fromNotes = extractPlatePeriod(b.notes, b.colors)
+      return {
+        id: `era-${b.introduced}-${i}`,
+        period: fromNotes && fromNotes.includes(b.introduced) ? fromNotes : period,
+        label: b.example ? `${b.example}` : `${b.introduced} series`,
+        detail: [b.colors, b.notes].filter(Boolean).join(' · ') || undefined,
+        design: i === bases.length - 1 ? main : historyPhotos[0] ?? main,
+      }
+    })
+  }
+
+  if (historyPhotos.length) {
+    return historyPhotos.map((design, i) => ({
+      id: design.id,
+      period: extractPlatePeriod(design.name, design.alt, design.id) ?? `Historic sheet ${i + 1}`,
+      label: design.name === 'Plate history' ? 'Passenger plate history' : design.name,
+      detail: design.alt && design.alt !== design.name ? design.alt : undefined,
+      design,
+    }))
+  }
+
+  if (main) {
+    return [
+      {
+        id: `current-${main.id}`,
+        period: 'Current',
+        label: main.name,
+        detail: 'Current standard issue in the catalog',
+        design: main,
+      },
+    ]
+  }
+  return []
+}
+
 export type CommonPlateRow = {
   id: string
   label: string
@@ -154,47 +223,91 @@ function assignPercents(n: number): number[] {
 
 /**
  * Estimated top designs you’d see on the road for this jurisdiction.
- * Uses passenger-base history when present (newest = most common); otherwise
- * ranks catalog photos with passenger / standard preferred.
+ * Percents are share of plates in that state (sum ≈ 100).
  */
 export function getCommonPlates(code: string, limit = 10): CommonPlateRow[] {
   const key = code.toUpperCase()
   const bases = getPassengerBases(key)
+  const plates = getPlatesForCode(key)
+  const main = getMainPlate(key)
+  const specialty = getSpecialtyPlates(key)
+  const historyPhotos = getHistoryPlates(key)
+
   if (bases.length) {
     const recent = [...bases].reverse().slice(0, limit)
     const percents = assignPercents(recent.length)
-    const plates = getPlatesForCode(key)
     const passenger = plates.find((p) => p.kind === 'passenger')
     return recent.map((b, i) => ({
       id: `base-${b.introduced}-${b.example}`,
-      label: `${b.introduced} series`,
+      label: i === 0 ? 'Current standard' : `${b.introduced} series`,
       detail: [b.example, b.colors, b.notes].filter(Boolean).join(' · '),
       percent: percents[i] ?? 0,
-      design: i === 0 ? passenger ?? getMainPlate(key) : undefined,
+      design:
+        i === 0
+          ? passenger ?? main
+          : historyPhotos[0] ?? passenger ?? main,
     }))
   }
 
-  const plates = getPlatesForCode(key)
-  const ranked = [...plates].sort((a, b) => {
-    const rank = (k: PlateKind) =>
-      k === 'passenger' || k === 'standard' || k === 'classic'
-        ? 0
-        : k === 'specialty' || k === 'optional'
-          ? 1
-          : k === 'history'
-            ? 3
-            : 2
-    const d = rank(a.kind) - rank(b.kind)
-    if (d !== 0) return d
-    return a.name.localeCompare(b.name)
-  })
-  const top = ranked.slice(0, limit)
+  // No series table — build a realistic mix from catalog kinds.
+  const rows: Omit<CommonPlateRow, 'percent'>[] = []
+  const passenger = plates.find((p) => p.kind === 'passenger' || p.kind === 'standard')
+  if (passenger || main) {
+    rows.push({
+      id: 'std-passenger',
+      label: 'Standard passenger',
+      detail: 'Most common on-road plate',
+      design: passenger ?? main,
+    })
+  }
+  for (const s of specialty.slice(0, Math.max(0, limit - rows.length - 1))) {
+    rows.push({
+      id: s.id,
+      label: s.name.replace(/^Special interest plates$/i, 'Specialty / optional'),
+      detail: 'Optional / special-interest issue',
+      design: s,
+    })
+  }
+  const other = getNonPassengerPlates(key)[0]
+  if (other && rows.length < limit) {
+    rows.push({
+      id: other.id,
+      label: 'Commercial / other',
+      detail: 'Non-passenger types combined',
+      design: other,
+    })
+  }
+  if (!rows.length && historyPhotos[0]) {
+    rows.push({
+      id: historyPhotos[0].id,
+      label: 'Passenger plates',
+      detail: 'From World License Plates catalog',
+      design: historyPhotos[0],
+    })
+  }
+
+  const top = rows.slice(0, limit)
   const percents = assignPercents(top.length)
-  return top.map((design, i) => ({
-    id: design.id,
-    label: design.name,
-    detail: design.kind,
-    percent: percents[i] ?? 0,
-    design,
-  }))
+  // Standard passenger should dominate when present.
+  if (top.length >= 2 && top[0].id === 'std-passenger') {
+    const rest = 100 - 58
+    const tail = assignPercents(top.length - 1).map((p) =>
+      Math.max(1, Math.round((p / 100) * rest)),
+    )
+    let drift = rest - tail.reduce((a, b) => a + b, 0)
+    for (let i = 0; drift !== 0 && i < tail.length; i++) {
+      if (drift > 0) {
+        tail[i]++
+        drift--
+      } else if (tail[i] > 1) {
+        tail[i]--
+        drift++
+      }
+    }
+    return top.map((row, i) => ({
+      ...row,
+      percent: i === 0 ? 58 : (tail[i - 1] ?? 1),
+    }))
+  }
+  return top.map((row, i) => ({ ...row, percent: percents[i] ?? 0 }))
 }
