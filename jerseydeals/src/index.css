@@ -5,16 +5,17 @@
   --font-brand: "Libre Baskerville", Georgia, "Times New Roman", serif;
   --font-sans: "Outfit", sans-serif;
 
-  /* Logo palette: navy, jersey red, cream field */
+  /* Logo palette: navy, jersey red, white field */
   --color-navy: #0b223f;
   --color-navy-deep: #06101c;
   --color-crimson: #d7282f;
   --color-crimson-hot: #e83a40;
-  --color-cream: #fcf5e9;
-  --color-cream-deep: #f3e8d4;
-  --color-chalk: #fcf5e9;
-  --color-mist: #f3e8d4;
-  /* Keep muted ≥ ~4.5:1-ish on cream; never use on dark panels without text-cream */
+  /* cream/chalk/mist tokens kept for class names; all map to pure white */
+  --color-cream: #ffffff;
+  --color-cream-deep: #ffffff;
+  --color-chalk: #ffffff;
+  --color-mist: #ffffff;
+  /* Keep muted ≥ ~4.5:1-ish on white; never use on dark panels without text-cream */
   --color-muted: #4a5560;
   --color-white: #ffffff;
 }
