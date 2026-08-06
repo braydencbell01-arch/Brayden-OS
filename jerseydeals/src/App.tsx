@@ -2136,7 +2136,7 @@ export default function App() {
           </div>
 
           <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 pb-[5.75rem] pt-40 md:px-8 md:pb-24 md:pt-44">
-            <div className="flex min-h-0 flex-1 flex-col justify-start pb-8 pt-3 md:justify-center md:pb-10 md:pt-2">
+            <div className="flex min-h-0 flex-1 flex-col justify-start pt-3 md:justify-center md:pt-2">
               <motion.div
                 className="w-full max-w-2xl md:max-w-3xl"
                 initial={reduce ? false : { opacity: 0.001, y: 26 }}
@@ -2185,12 +2185,10 @@ export default function App() {
                   </button>
                 </div>
               </motion.div>
-            </div>
 
-            <div className="shrink-0 pb-6 md:pb-8">
               <ul
                 aria-label="Why shop with us"
-                className="flex flex-col items-start gap-2.5 font-brand text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-cream sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2 sm:text-[0.72rem] md:gap-x-12"
+                className="mt-auto flex shrink-0 flex-col items-start gap-2.5 pb-6 pt-10 font-brand text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-cream sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2 sm:text-[0.72rem] md:gap-x-12 md:pb-8"
               >
                 {[
                   `Free shipping over $${FREE_SHIPPING_THRESHOLD}`,
