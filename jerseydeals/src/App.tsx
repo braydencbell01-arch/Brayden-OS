@@ -2135,14 +2135,24 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/35 via-transparent to-[#d7282f]/16" />
           </div>
 
-          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 pb-[5.75rem] pt-44 md:px-8 md:pb-24 md:pt-48">
-            <div className="flex min-h-0 flex-1 flex-col justify-end pb-8 md:justify-center md:pb-10">
+          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 pb-[5.75rem] pt-40 md:px-8 md:pb-24 md:pt-44">
+            <div className="flex min-h-0 flex-1 flex-col justify-start pb-8 pt-3 md:justify-center md:pb-10 md:pt-2">
               <motion.div
-                className="max-w-2xl"
+                className="w-full max-w-2xl md:max-w-3xl"
                 initial={reduce ? false : { opacity: 0.001, y: 26 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease }}
               >
+                <div className="mb-5 flex flex-col gap-2.5 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+                  <p className="inline-flex items-center gap-2.5 font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/90 sm:text-[0.7rem]">
+                    <span className="h-px w-5 shrink-0 bg-[#f0d45a]" aria-hidden />
+                    Premier League kicks off 8/21
+                  </p>
+                  <p className="inline-flex items-center gap-2.5 font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/90 sm:text-[0.7rem]">
+                    <span className="h-px w-5 shrink-0 bg-[#f0d45a]" aria-hidden />
+                    Arsenal vs Coventry
+                  </p>
+                </div>
                 <h1 className="max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
                   Jersey Deals
                 </h1>
