@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { getJurisdiction, REGION_LABEL, type Region } from './jurisdictions'
 import { collectionStats, listAchievements } from './achievements'
 import { loadDailyHunt } from './dailyHunt'
+import { saveWanted } from './wanted'
 
 const NAME_KEY = 'platequest.profileName'
 
@@ -10,6 +11,8 @@ type Props = {
   points: number
   foundCodes: string[]
   lastPlate: string | null
+  wanted?: string[]
+  onWantedChange?: (codes: string[]) => void
 }
 
 function loadName(): string {
@@ -30,7 +33,13 @@ const REGION_ORDER: Region[] = [
   'federal',
 ]
 
-export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
+export function ProfileTab({
+  points,
+  foundCodes,
+  lastPlate,
+  wanted = [],
+  onWantedChange,
+}: Props) {
   const [name, setName] = useState(loadName)
   const [draft, setDraft] = useState(name)
   const stats = collectionStats(foundCodes)
@@ -51,6 +60,12 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
   function saveName(e: FormEvent) {
     e.preventDefault()
     setName(draft.trim())
+  }
+
+  function removeWanted(code: string) {
+    const next = wanted.filter((c) => c !== code)
+    saveWanted(next)
+    onWantedChange?.(next)
   }
 
   const foundSorted = [...foundCodes].sort((a, b) => a.localeCompare(b))
@@ -219,6 +234,38 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.32 }}
+      >
+        <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">Wanted list</h2>
+        {wanted.length === 0 ? (
+          <p className="mt-3 text-sm text-fog">
+            Mark plates to hunt from Browse — they clear when you spot them.
+          </p>
+        ) : (
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {wanted.map((code) => {
+              const j = getJurisdiction(code)
+              return (
+                <li key={code}>
+                  <button
+                    type="button"
+                    onClick={() => removeWanted(code)}
+                    className="rounded-sm border border-line px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink hover:border-signal/40"
+                    title={`Remove ${j?.name ?? code}`}
+                  >
+                    {code}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </motion.div>
+
+      <motion.div
+        className="mt-8 border-t border-line pt-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.34 }}
       >
         <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">Found list</h2>
         {foundSorted.length === 0 ? (

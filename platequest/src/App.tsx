@@ -10,6 +10,13 @@ import { scorePlatesFromLocation, type Place } from './geo'
 import { getJurisdiction, JURISDICTIONS } from './jurisdictions'
 import { loadGame, logPlate, saveGame } from './roadTripGame'
 import { tryCompleteDailyHunt } from './dailyHunt'
+import {
+  appendSpotHistory,
+  clearWantedCode,
+  loadWanted,
+  recordWantedHit,
+  saveWanted,
+} from './wanted'
 
 type TabId = 'profile' | 'camera' | 'home' | 'states' | 'games'
 
@@ -110,6 +117,7 @@ export default function App() {
   })
   const [lastPlate, setLastPlate] = useState<string | null>(() => loadLastPlateName())
   const [homeLocation, setHomeLocation] = useState<Place | null>(() => loadHomeLocation())
+  const [wanted, setWanted] = useState<string[]>(() => loadWanted())
 
   const locationPlatePoints = useMemo(() => {
     if (!homeLocation) return null
@@ -132,6 +140,17 @@ export default function App() {
 
   const totalPoints = points + huntBonus
 
+  function noteCollectionSpot(code: string, source: 'camera' | 'manual') {
+    const upper = code.toUpperCase()
+    appendSpotHistory(upper, source)
+    setFoundCodes((prev) => (prev.includes(upper) ? prev : [...prev, upper]))
+    if (wanted.includes(upper)) {
+      recordWantedHit(upper)
+      const next = clearWantedCode(upper, wanted)
+      setWanted(next)
+    }
+  }
+
   // Apply camera IDs to collection + active road-trip game even when Games tab is not open.
   useEffect(() => {
     if (!pendingPlateCode) return
@@ -139,7 +158,7 @@ export default function App() {
     const hunt = tryCompleteDailyHunt(code)
     const game = loadGame()
     if (!game || game.status !== 'active') {
-      setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
+      noteCollectionSpot(code, 'camera')
       if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
       setPendingPlateCode(null)
       return
@@ -150,7 +169,7 @@ export default function App() {
       const ok = window.confirm(`Log ${j?.name ?? code} for ${pts} points?`)
       if (!ok) {
         if (hunt.newlyCompleted) {
-          setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
+          noteCollectionSpot(code, 'camera')
           setHuntBonus((b) => b + hunt.bonusPoints)
         }
         setPendingPlateCode(null)
@@ -160,15 +179,17 @@ export default function App() {
     const next = logPlate(game, code)
     setPendingPlateCode(null)
     if (!next) {
-      setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
+      noteCollectionSpot(code, 'camera')
       if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
       return
     }
     saveGame(next)
     setPoints(next.score)
     if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
+    noteCollectionSpot(code, 'camera')
     setFoundCodes(next.foundCodes)
     setGameTick((t) => t + 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to pending plate
   }, [pendingPlateCode])
 
   function onIdentified(read: PlateRead) {
@@ -177,6 +198,31 @@ export default function App() {
     if (j) setLastPlate(j.name)
     if (!code || !getJurisdiction(code)) return
     setPendingPlateCode(code.toUpperCase())
+  }
+
+  function markFoundManual(code: string) {
+    const upper = code.toUpperCase()
+    const j = getJurisdiction(upper)
+    if (!j) return
+    noteCollectionSpot(upper, 'manual')
+    setLastPlate(j.name)
+    const hunt = tryCompleteDailyHunt(upper)
+    if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
+    const game = loadGame()
+    if (game && game.status === 'active' && upper in game.platePoints) {
+      const next = logPlate(game, upper)
+      if (next) {
+        saveGame(next)
+        setPoints(next.score)
+        setFoundCodes(next.foundCodes)
+        setGameTick((t) => t + 1)
+      }
+    }
+  }
+
+  function onWantedChange(codes: string[]) {
+    saveWanted(codes)
+    setWanted(codes)
   }
 
   return (
@@ -192,7 +238,13 @@ export default function App() {
             transition={{ duration: 0.22 }}
           >
             {tab === 'profile' && (
-              <ProfileTab points={totalPoints} foundCodes={foundCodes} lastPlate={lastPlate} />
+              <ProfileTab
+                points={totalPoints}
+                foundCodes={foundCodes}
+                lastPlate={lastPlate}
+                wanted={wanted}
+                onWantedChange={onWantedChange}
+              />
             )}
             {tab === 'camera' && <CameraTab onIdentified={onIdentified} />}
             {tab === 'home' && (
@@ -211,6 +263,10 @@ export default function App() {
               <StatesTab
                 platePoints={locationPlatePoints}
                 homeLabel={homeLocation?.label ?? null}
+                foundCodes={foundCodes}
+                wanted={wanted}
+                onWantedChange={onWantedChange}
+                onMarkFound={markFoundManual}
               />
             )}
             {tab === 'games' && (
