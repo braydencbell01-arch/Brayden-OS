@@ -39,11 +39,8 @@ import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
 import { ClubFavoriteButton, ClubLogoMark, HeartIcon } from './FavoriteControls'
 import {
-  CLUB_OUTLINE_COLOR,
   EPL_TEAM_COLOR,
-  FAVORITE_OUTER_RING_CLASS,
   UCL_TEAM_COLOR,
-  clubOutlineColor,
 } from './clubColors'
 import { getClubById } from './clubCatalog'
 import {
@@ -400,10 +397,7 @@ function ClubInStockRow({
   return (
     <motion.li {...fadeUp(reduce, delay)} className="relative">
       <article
-        className={`flex w-full overflow-hidden border-2 bg-white text-left ${
-          favorited ? FAVORITE_OUTER_RING_CLASS : ''
-        }`}
-        style={{ borderColor: nameColor }}
+        className="flex w-full overflow-hidden bg-white text-left"
       >
         <button
           type="button"
@@ -751,9 +745,7 @@ function ProductGallery({
 
 function ProductLink({
   item,
-  tone = 'dark',
-  size: cardSize = 'default',
-  favoriteSet,
+  tone = 'light',
   onAddToCart,
   onQuickView,
   onBuyNow,
@@ -763,9 +755,8 @@ function ProductLink({
   reduce?: boolean | null
   delay?: number
   tone?: 'dark' | 'light'
-  /** Compact cards for dense rails; catalog = inventory grid (photo top, price right). */
+  /** Kept for call-site compatibility — all listing tiles match inventory. */
   size?: 'default' | 'compact' | 'catalog'
-  /** Club ids the shopper has favorited — drives red vs navy card outline. */
   favoriteSet?: Set<string>
   onAddToCart: (item: Listing) => void
   onQuickView: (item: Listing) => void
@@ -776,18 +767,10 @@ function ProductLink({
   const kit = kitType(item)
   const onSale = isSaleListing(item)
   const size = listingSize(item)
-  const photoCount = item.images?.length ? item.images.length : item.image ? 1 : 0
-  const club = inferClub(item.title)
-  const favorited = Boolean(club && favoriteSet?.has(club.id))
   const muted = tone === 'dark' ? 'text-white/75' : 'text-muted'
   const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
-  const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
   const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
   const used = /used|pre-?owned|worn/i.test(condition)
-  const compact = cardSize === 'compact'
-  const catalog = cardSize === 'catalog'
-  const borderColor =
-    (club && CLUB_OUTLINE_COLOR[club.id]) || (tone === 'dark' ? '#fcf5e9' : '#0b223f')
   const infoBits = [
     kit !== 'Other' ? kit : null,
     size && size !== 'Other' ? size : null,
@@ -795,200 +778,76 @@ function ProductLink({
     used ? condition : null,
   ].filter(Boolean) as string[]
   const infoLine = infoBits.slice(0, 2).join(' · ') || item.tag
-  /** Home / away / third: crossed-off was-price is $40–$60 above live price. */
-  const compareAt = catalog || onSale ? saleCompareAtPrice(item) : null
-
-  if (catalog) {
-    return (
-      <li className="min-w-0">
-        <div className="group outline-none">
-          <button
-            type="button"
-            onClick={() => onQuickView(item)}
-            className="relative aspect-[4/5] w-full overflow-hidden bg-white outline-none focus-visible:ring-2 focus-visible:ring-crimson"
-            aria-label={`Quick view ${shortTitle(item.title)}`}
-          >
-            <ProductCardCover item={item} tone={tone} fit="contain" />
-            {onSale && (
-              <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 bg-crimson px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-white">
-                Sale
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => onQuickView(item)}
-            className={`mt-2.5 block w-full text-left font-brand text-[0.7rem] font-bold uppercase leading-snug tracking-[0.04em] outline-none focus-visible:ring-2 focus-visible:ring-crimson sm:text-[0.78rem] ${titleTone} line-clamp-2`}
-          >
-            {shortTitle(item.title)}
-          </button>
-          <div className="mt-1.5 flex items-start justify-between gap-2">
-            <p className={`min-w-0 flex-1 text-[0.6rem] uppercase leading-snug tracking-[0.08em] ${muted} line-clamp-2`}>
-              {infoLine}
-            </p>
-            <span className="flex shrink-0 flex-col items-end gap-0.5 text-right sm:flex-row sm:items-baseline sm:gap-1.5">
-              {compareAt != null ? (
-                <span className="font-brand text-[0.65rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.7rem]">
-                  {formatPrice(compareAt, item.currency)}
-                </span>
-              ) : null}
-              <span
-                className={`font-brand text-[0.75rem] font-bold tracking-wide sm:text-sm ${
-                  compareAt != null ? 'text-navy' : 'text-[#e85d04]'
-                }`}
-              >
-                {formatPrice(item.price, item.currency)}
-              </span>
-            </span>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-            <button
-              type="button"
-              onClick={() => onAddToCart(item)}
-              className={`text-[0.55rem] font-bold uppercase tracking-[0.14em] ${accent}`}
-            >
-              Add to cart
-            </button>
-            {buyUrl ? (
-              <button
-                type="button"
-                onClick={() => {
-                  track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
-                  onBuyNow(item)
-                }}
-                className={`text-[0.55rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
-              >
-                Buy now
-              </button>
-            ) : null}
-          </div>
-        </div>
-      </li>
-    )
-  }
+  const compareAt = saleCompareAtPrice(item)
 
   return (
-    <li>
+    <li className="min-w-0">
       <div className="group outline-none">
-        {/* Cover only on cards — full swipe gallery lives in quick view. */}
-        <div
-          className={`relative aspect-square w-full overflow-hidden border-2 ${
-            favorited ? FAVORITE_OUTER_RING_CLASS : ''
-          } ${tone === 'dark' ? 'bg-navy-deep' : 'bg-mist'}`}
-          style={{ borderColor }}
+        <button
+          type="button"
+          onClick={() => onQuickView(item)}
+          className="relative aspect-[4/5] w-full overflow-hidden bg-white outline-none focus-visible:ring-2 focus-visible:ring-crimson"
+          aria-label={`Quick view ${shortTitle(item.title)}`}
         >
-          <button
-            type="button"
-            onClick={() => onQuickView(item)}
-            className="absolute inset-0 z-10 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson"
-            aria-label={`Quick view ${shortTitle(item.title)}`}
-          >
-            <ProductCardCover item={item} tone={tone} />
-          </button>
-          {onSale && (
-            <span className="pointer-events-none absolute left-1.5 top-1.5 z-20 bg-crimson px-1.5 py-0.5 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-white">
+          <ProductCardCover item={item} tone={tone} fit="contain" />
+          {onSale ? (
+            <span className="pointer-events-none absolute left-1.5 top-1.5 z-10 bg-crimson px-1.5 py-0.5 text-[0.5rem] font-bold uppercase tracking-[0.12em] text-white">
               Sale
             </span>
-          )}
-          {!compact && item.quantity === 1 && (
-            <span className="pointer-events-none absolute right-2 top-2 z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white">
-              Only 1 left
-            </span>
-          )}
-          {!compact && photoCount > 1 ? (
-            <span
-              className={`pointer-events-none absolute z-20 bg-navy-deep/90 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-white ${
-                item.quantity === 1 ? 'right-2 top-10' : 'right-2 top-2'
-              }`}
-            >
-              {photoCount} photos
-            </span>
           ) : null}
-          {!compact ? (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden bg-gradient-to-t from-navy-deep/95 via-navy-deep/50 to-transparent p-4 pt-6 opacity-0 transition duration-300 md:block md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-              <span className="flex w-full items-center justify-center bg-crimson px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.16em] text-cream">
-                Quick view
-              </span>
-            </div>
-          ) : null}
-        </div>
-        <div className={compact ? 'mt-2 block' : 'mt-4 block'}>
-          {!compact ? (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              {kit !== 'Other' ? (
-                <p className={`text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${accent}`}>{kit}</p>
-              ) : null}
-              {size && size !== 'Other' ? (
-                <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{size}</span>
-              ) : null}
-              {used ? (
-                <span className={`text-[0.65rem] uppercase tracking-[0.14em] ${muted}`}>{condition}</span>
-              ) : null}
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onQuickView(item)}
-            className={`block text-left font-medium leading-snug outline-none focus-visible:ring-2 focus-visible:ring-crimson ${titleTone} ${
-              compact
-                ? 'mt-0 line-clamp-2 text-[0.7rem]'
-                : 'mt-1.5 text-[0.95rem] md:text-base'
-            }`}
-          >
-            {shortTitle(item.title)}
-          </button>
-          <p className={compact ? 'mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5' : 'mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5'}>
+        </button>
+        <button
+          type="button"
+          onClick={() => onQuickView(item)}
+          className={`mt-2.5 block w-full text-left font-brand text-[0.7rem] font-bold uppercase leading-snug tracking-[0.04em] outline-none focus-visible:ring-2 focus-visible:ring-crimson sm:text-[0.78rem] ${titleTone} line-clamp-2`}
+        >
+          {shortTitle(item.title)}
+        </button>
+        <div className="mt-1.5 flex items-start justify-between gap-2">
+          <p className={`min-w-0 flex-1 text-[0.6rem] uppercase leading-snug tracking-[0.08em] ${muted} line-clamp-2`}>
+            {infoLine}
+          </p>
+          <span className="flex shrink-0 flex-col items-end gap-0.5 text-right sm:flex-row sm:items-baseline sm:gap-1.5">
             {compareAt != null ? (
-              <span
-                className={`font-display font-semibold tracking-wide text-[#e85d04] line-through ${
-                  compact ? 'text-sm' : 'text-lg md:text-xl'
-                }`}
-              >
+              <span className="font-brand text-[0.65rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.7rem]">
                 {formatPrice(compareAt, item.currency)}
               </span>
             ) : null}
             <span
-              className={`font-display font-bold tracking-wide ${priceTone} ${
-                compact ? 'text-base' : 'text-2xl md:text-[1.65rem]'
+              className={`font-brand text-[0.75rem] font-bold tracking-wide sm:text-sm ${
+                tone === 'dark'
+                  ? compareAt != null
+                    ? 'text-white'
+                    : 'text-[#e85d04]'
+                  : compareAt != null
+                    ? 'text-navy'
+                    : 'text-[#e85d04]'
               }`}
             >
               {formatPrice(item.price, item.currency)}
             </span>
-          </p>
-          <div className={`flex flex-wrap gap-x-3 gap-y-1 ${compact ? 'mt-1.5' : 'mt-3 gap-x-4 gap-y-2'}`}>
+          </span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          <button
+            type="button"
+            onClick={() => onAddToCart(item)}
+            className={`text-[0.55rem] font-bold uppercase tracking-[0.14em] ${accent}`}
+          >
+            Add to cart
+          </button>
+          {buyUrl ? (
             <button
               type="button"
-              onClick={() => onAddToCart(item)}
-              className={`font-bold uppercase tracking-[0.14em] ${accent} ${
-                compact ? 'text-[0.55rem]' : 'text-[0.65rem]'
-              }`}
+              onClick={() => {
+                track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
+                onBuyNow(item)
+              }}
+              className={`text-[0.55rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
             >
-              Add to cart
+              Buy now
             </button>
-            {!compact ? (
-              <button
-                type="button"
-                onClick={() => onQuickView(item)}
-                className={`text-[0.65rem] font-semibold uppercase tracking-[0.14em] ${muted}`}
-              >
-                Details
-              </button>
-            ) : null}
-            {buyUrl ? (
-              <button
-                type="button"
-                onClick={() => {
-                  track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
-                  onBuyNow(item)
-                }}
-                className={`font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted} ${
-                  compact ? 'text-[0.55rem]' : 'text-[0.65rem]'
-                }`}
-              >
-                Buy now
-              </button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       </div>
     </li>
@@ -2783,7 +2642,6 @@ export default function App() {
                 {clubsData.slice(0, clubsShown).map((club, i) => {
                   const favorited = favoriteSet.has(club.id)
                   const catalogClub = getClubById(club.id)
-                  const outline = clubOutlineColor(club.id)
                   return (
                     <motion.li key={club.id} {...fadeUp(reduce, i * 0.02)} className="relative">
                       <button
@@ -2792,10 +2650,7 @@ export default function App() {
                           track('club_click', { club: club.id })
                           goInventory({ clubId: club.id, reset: true })
                         }}
-                        className={`group flex w-full flex-col items-center gap-1.5 border-2 bg-white px-1.5 pb-2 pt-3 text-center outline-none transition focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2 ${
-                          favorited ? FAVORITE_OUTER_RING_CLASS : ''
-                        }`}
-                        style={{ borderColor: outline }}
+                        className="group flex w-full flex-col items-center gap-1.5 bg-white px-1.5 pb-2 pt-3 text-center outline-none transition focus-visible:ring-2 focus-visible:ring-crimson focus-visible:ring-offset-2"
                       >
                         {catalogClub ? (
                           <ClubLogoMark club={catalogClub} size="md" className="!h-10 !w-10" />
