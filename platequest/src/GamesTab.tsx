@@ -223,8 +223,9 @@ function SettingsPanel({
         </ul>
 
         <p className="mt-4 text-xs text-fog">
-          Scoring is always 1–100 for the standard state plate based on how far that state is from your
-          road-trip route — specialty plate designs do not change points.
+          Scoring is 1–100 per state from your route distance and that state’s population
+          (low-pop states like Kansas score higher; high-pop like California score lower).
+          Any plate from a state counts once — designs are not separate targets.
         </p>
 
         <button
@@ -443,6 +444,9 @@ export function GamesTab({ onGameScoreChange, reloadToken = 0 }: Props) {
         <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-fog">
           Points by rarity on your route (1–100)
         </h2>
+        <p className="text-xs text-fog">
+          Distance from your trip + state population. Any plate from the state counts.
+        </p>
         <ul className="flex flex-col gap-2">
           {visible.map((row) => {
             const j = getJurisdiction(row.code)
@@ -458,7 +462,7 @@ export function GamesTab({ onGameScoreChange, reloadToken = 0 }: Props) {
                     {row.code}
                     {j ? ` · ${j.name}` : ''}
                   </p>
-                  <p className="text-xs text-fog">Standard plate only</p>
+                  <p className="text-xs text-fog">Any plate from this state</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="font-semibold text-plate-hot">{row.points}</span>
@@ -513,8 +517,8 @@ export function GamesTab({ onGameScoreChange, reloadToken = 0 }: Props) {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">New game</p>
           <h1 className="font-display mt-1 text-3xl text-ink">Where will your roadtrip take you?</h1>
           <p className="mt-2 max-w-md text-sm text-fog">
-            Search a starting town and an ending town. PlateQuest scores each standard state plate 1–100
-            by how rare it is along that corridor.
+            Search a starting town and an ending town. PlateQuest scores each state 1–100 by how far
+            it is from your route and how large its population is — any plate from that state counts.
           </p>
         </header>
 

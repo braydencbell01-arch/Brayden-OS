@@ -26,8 +26,10 @@ export type RoadTripGame = {
   createdAt: string
   start: Place
   end: Place
-  /** Jurisdiction code → points 1–100 for this route (standard plates only). */
+  /** Jurisdiction code → points 1–100 for this route (one entry per state). */
   platePoints: Record<string, number>
+  /** Scoring formula version — bump to resync points on load. */
+  scoringVersion?: number
   settings: GameSettings
   /** Players who joined (local + invite roster). */
   players: { id: string; name: string; joinedAt: string }[]
@@ -53,14 +55,10 @@ export function getOrCreatePlayerId(): string {
   }
 }
 
-export function loadGame(): RoadTripGame | null {
-  try {
-    const raw = localStorage.getItem(GAME_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as RoadTripGame
-  } catch {
-    return null
-  }
+export const SCORING_VERSION = 2
+
+function jurisdictionCodes(includeDc: boolean): string[] {
+  return JURISDICTIONS.filter((j) => includeDc || j.code !== 'DC').map((j) => j.code)
 }
 
 export function saveGame(game: RoadTripGame | null) {
@@ -72,8 +70,27 @@ export function saveGame(game: RoadTripGame | null) {
   }
 }
 
-function jurisdictionCodes(includeDc: boolean): string[] {
-  return JURISDICTIONS.filter((j) => includeDc || j.code !== 'DC').map((j) => j.code)
+export function rebuildPlatePoints(game: RoadTripGame): RoadTripGame {
+  const codes = jurisdictionCodes(game.settings.includeDc)
+  const platePoints = scorePlatesForRoute(game.start, game.end, codes)
+  const score = game.foundCodes.reduce((sum, code) => sum + (platePoints[code] ?? 0), 0)
+  return { ...game, platePoints, score, scoringVersion: SCORING_VERSION }
+}
+
+export function loadGame(): RoadTripGame | null {
+  try {
+    const raw = localStorage.getItem(GAME_KEY)
+    if (!raw) return null
+    const game = JSON.parse(raw) as RoadTripGame
+    if ((game.scoringVersion ?? 1) < SCORING_VERSION) {
+      const updated = rebuildPlatePoints(game)
+      saveGame(updated)
+      return updated
+    }
+    return game
+  } catch {
+    return null
+  }
 }
 
 export function createGame(start: Place, end: Place, settings: GameSettings): RoadTripGame {
@@ -87,18 +104,13 @@ export function createGame(start: Place, end: Place, settings: GameSettings): Ro
     start,
     end,
     platePoints,
+    scoringVersion: SCORING_VERSION,
     settings: { ...settings },
     players: [{ id: playerId, name: settings.playerName.trim() || 'Driver', joinedAt: now }],
     foundCodes: [],
     score: 0,
     status: 'active',
   }
-}
-
-export function rebuildPlatePoints(game: RoadTripGame): RoadTripGame {
-  const codes = jurisdictionCodes(game.settings.includeDc)
-  const platePoints = scorePlatesForRoute(game.start, game.end, codes)
-  return { ...game, platePoints }
 }
 
 /** Compact invite payload for share links (route + settings, not scores). */
