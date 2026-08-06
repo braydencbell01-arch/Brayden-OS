@@ -9,9 +9,11 @@ on:
 permissions:
   contents: write
 
+# Do not cancel in-flight deploys — GitHub Pages stays in deployment_queued for
+# several minutes; cancel-in-progress left jerseydeals.online stuck on an old build.
 concurrency:
   group: pages-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -44,6 +46,75 @@ jobs:
           npm ci
           npm run build
 
+      # Dedicated shop site first: https://jerseydeals.online/ (BraydenBell/jerseydeals)
+      # Requires repo secret JERSEYDEALS_DEPLOY_TOKEN (PAT with contents:write on that repo).
+      # Deploy this BEFORE Brayden-OS gh-pages so the two Pages queues are not competing.
+      - name: Check Jersey Deals deploy token
+        id: jd_token
+        env:
+          TOKEN: ${{ secrets.JERSEYDEALS_DEPLOY_TOKEN }}
+        run: |
+          if [ -n "$TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping jerseydeals.online deploy (no JERSEYDEALS_DEPLOY_TOKEN secret)."
+          fi
+
+      - name: Build Jersey Deals for custom domain (base /)
+        if: steps.jd_token.outputs.enabled == 'true'
+        working-directory: jerseydeals
+        env:
+          JERSEYDEALS_BASE: /
+          VITE_SQUARE_STORE_URL: ${{ secrets.VITE_SQUARE_STORE_URL }}
+          VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
+          VITE_JERSEYDEALS_EMAIL_API_URL: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_URL }}
+          VITE_JERSEYDEALS_EMAIL_API_SECRET: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_SECRET }}
+          VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT: ${{ secrets.VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT }}
+        run: |
+          export VITE_SQUARE_STORE_URL="${VITE_SQUARE_STORE_URL:-https://jerseydealsofficial.square.site}"
+          rm -rf dist
+          npm run build
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+          if ! grep -q 'Shop our Premier League sale' dist/assets/*.js; then
+            echo "ERROR: custom-domain build missing Premier League sale eyebrow" >&2
+            exit 1
+          fi
+
+      - name: Deploy Jersey Deals to BraydenBell/jerseydeals
+        if: steps.jd_token.outputs.enabled == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.JERSEYDEALS_DEPLOY_TOKEN }}
+          external_repository: BraydenBell/jerseydeals
+          publish_dir: ./jerseydeals/dist
+          publish_branch: gh-pages
+          force_orphan: true
+          enable_jekyll: false
+          cname: jerseydeals.online
+
+      # Let jerseydeals.online Pages leave deployment_queued before starting Brayden-OS Pages.
+      - name: Wait for jerseydeals.online Pages queue
+        if: steps.jd_token.outputs.enabled == 'true'
+        run: sleep 480
+
+      - name: Rebuild Jersey Deals for GitHub Pages path
+        if: steps.jd_token.outputs.enabled == 'true'
+        working-directory: jerseydeals
+        env:
+          VITE_SQUARE_STORE_URL: ${{ secrets.VITE_SQUARE_STORE_URL }}
+          VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
+          VITE_JERSEYDEALS_EMAIL_API_URL: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_URL }}
+          VITE_JERSEYDEALS_EMAIL_API_SECRET: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_SECRET }}
+          VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT: ${{ secrets.VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT }}
+        run: |
+          # Custom-domain build used base /; Pages path needs /Brayden-OS/jerseydeals/.
+          export VITE_SQUARE_STORE_URL="${VITE_SQUARE_STORE_URL:-https://jerseydealsofficial.square.site}"
+          unset JERSEYDEALS_BASE
+          rm -rf dist
+          npm run build
+
       - name: Assemble Pages site
         run: |
           # Dual permanent URLs (never swap):
@@ -73,46 +144,3 @@ jobs:
           publish_branch: gh-pages
           force_orphan: true
           enable_jekyll: false
-
-      # Dedicated shop site: https://jerseydeals.online/ (BraydenBell/jerseydeals)
-      # Requires repo secret JERSEYDEALS_DEPLOY_TOKEN (PAT with contents:write on that repo).
-      - name: Check Jersey Deals deploy token
-        id: jd_token
-        env:
-          TOKEN: ${{ secrets.JERSEYDEALS_DEPLOY_TOKEN }}
-        run: |
-          if [ -n "$TOKEN" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "Skipping jerseydeals.online deploy (no JERSEYDEALS_DEPLOY_TOKEN secret)."
-          fi
-
-      - name: Build Jersey Deals for custom domain (base /)
-        if: steps.jd_token.outputs.enabled == 'true'
-        working-directory: jerseydeals
-        env:
-          JERSEYDEALS_BASE: /
-          VITE_SQUARE_STORE_URL: ${{ secrets.VITE_SQUARE_STORE_URL }}
-          VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
-          VITE_JERSEYDEALS_EMAIL_API_URL: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_URL }}
-          VITE_JERSEYDEALS_EMAIL_API_SECRET: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_SECRET }}
-          VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT: ${{ secrets.VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT }}
-        run: |
-          export VITE_SQUARE_STORE_URL="${VITE_SQUARE_STORE_URL:-https://jerseydealsofficial.square.site}"
-          rm -rf dist
-          npm run build
-          cp dist/index.html dist/404.html
-          touch dist/.nojekyll
-
-      - name: Deploy Jersey Deals to BraydenBell/jerseydeals
-        if: steps.jd_token.outputs.enabled == 'true'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          personal_token: ${{ secrets.JERSEYDEALS_DEPLOY_TOKEN }}
-          external_repository: BraydenBell/jerseydeals
-          publish_dir: ./jerseydeals/dist
-          publish_branch: gh-pages
-          force_orphan: true
-          enable_jekyll: false
-          cname: jerseydeals.online
