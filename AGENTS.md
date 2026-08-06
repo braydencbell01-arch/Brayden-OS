@@ -6,21 +6,23 @@ Read this before changing code or deploying. Multiple agents work in this repo; 
 
 Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-usage.mdc`: small reads, capped tool output, short replies, no full-file dumps.
 
-## Two separate products (never mix them)
+## Separate products (never mix them)
 
 | Product | Source | Permanent live URL (give to user) |
 |---------|--------|-----------------------------------|
 | **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
 | **Jersey Deals** | `jerseydeals/` | https://jerseydeals.online/ |
+| **PlateQuest** | `platequest/` | https://braydencbell01-arch.github.io/Brayden-OS/platequest/ |
 | **Square store** | Square Online (polished via `jerseydeals/scripts`) | https://jerseydealsofficial.square.site/ |
 
-- Do **not** publish BrayStats into `/jerseydeals/`.
-- Do **not** publish Jersey Deals into the Pages root.
-- Keep **signup storage / env vars separate** (BrayStats ≠ Jersey Deals localStorage keys and collector secrets).
+- Do **not** publish BrayStats into `/jerseydeals/` or `/platequest/`.
+- Do **not** publish Jersey Deals or PlateQuest into the Pages root.
+- Keep **signup storage / env vars separate** (BrayStats ≠ Jersey Deals ≠ PlateQuest localStorage keys and collector secrets).
 - **Notify inbox (all sites):** email every collected lead (email, phone, or other fields) to **shop@jerseydeals.online** via FormSubmit (or `NOTIFY_EMAIL` / `JERSEYDEALS_CONTACT_EMAIL`).
-- When a BrayStats / Jersey Deals task finishes, report these URLs, labeled:
+- When a BrayStats / Jersey Deals / PlateQuest task finishes, report these URLs, labeled:
   - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
   - Jersey Deals: https://jerseydeals.online/ (not the `github.io/.../jerseydeals/` path)
+  - PlateQuest: https://braydencbell01-arch.github.io/Brayden-OS/platequest/
   - Square store: https://jerseydealsofficial.square.site/
 
 ## BrayStats agent roles
@@ -93,8 +95,8 @@ Telling the user “PR opened” for an offer without merging is a miss.
 
 1. Prefer deploying **only after merge to `Brayden-OS`** (CI on that branch, or a deploy from that tip).
 2. If you must publish Pages manually:
-   - Update **only** the path for your product (Stats = site root, Jersey Deals = `jerseydeals/`).
-   - **Preserve** the other product’s folder.
+   - Update **only** the path for your product (Stats = site root, Jersey Deals = `jerseydeals/`, PlateQuest = `platequest/`).
+   - **Preserve** the other products’ folders.
    - Never `force_orphan` / wipe the whole `gh-pages` branch unless you rebuild **both** apps in the same deploy.
 3. Do not force-push `gh-pages` over a teammate’s newer commit without rebuilding both products from current `Brayden-OS`.
 
@@ -118,13 +120,13 @@ Prefer the smallest useful response and the fewest tool calls. Short answers by 
 
 ## Cursor Cloud specific instructions
 
-Two independent Vite + React + TS apps, each its own npm project (separate `package-lock.json` + `node_modules`): **BrayStats** (repo root) and **Jersey Deals** (`jerseydeals/`). There are no npm workspaces, so install and run each directory separately. Node 22 matches CI. Dependency install is handled by the startup update script (`npm ci` in root and in `jerseydeals/`).
+Three independent Vite + React + TS apps, each its own npm project (separate `package-lock.json` + `node_modules`): **BrayStats** (repo root), **Jersey Deals** (`jerseydeals/`), and **PlateQuest** (`platequest/`). There are no npm workspaces, so install and run each directory separately. Node 22 matches CI. Dependency install is handled by the startup update script (`npm ci` in root and in `jerseydeals/`; also run `npm ci` in `platequest/` when working on it).
 
-Standard commands live in `package.json` (`dev`, `build`, `lint`, `preview`) — run them at the repo root for BrayStats and inside `jerseydeals/` for Jersey Deals.
+Standard commands live in `package.json` (`dev`, `build`, `lint`, `preview`) — run them at the repo root for BrayStats, inside `jerseydeals/` for Jersey Deals, and inside `platequest/` for PlateQuest.
 
 Non-obvious caveats:
-- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). Hitting `/` returns 404 — always use the base path.
-- Run the two dev servers on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`) since both default to 5173.
+- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). PlateQuest uses relative `./` base (Pages path `/Brayden-OS/platequest/`). Hitting `/` returns 404 — always use the base path.
+- Run the apps on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`, `--port 5175` in `platequest/`) since both default to 5173.
 - BrayStats fetches live data client-side from public ESPN/FotMob APIs (no keys/secrets). Data panels need outbound internet; the shell still renders offline but stays empty.
 - No automated test suite exists; `npm run lint` (oxlint) is the only check. `npm run build` runs `tsc -b` first, so it also type-checks.
 
