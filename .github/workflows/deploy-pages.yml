@@ -5,6 +5,11 @@ on:
     branches:
       - Brayden-OS
   workflow_dispatch:
+    inputs:
+      skip_jerseydeals_domain:
+        description: Skip jerseydeals.online deploy (Brayden-OS Pages only)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -52,15 +57,100 @@ jobs:
           npm ci
           npm run build
 
-      # Dedicated shop site first: https://jerseydeals.online/ (BraydenBell/jerseydeals)
-      # Requires repo secret JERSEYDEALS_DEPLOY_TOKEN (PAT with contents:write on that repo).
-      # Deploy this BEFORE Brayden-OS gh-pages so the two Pages queues are not competing.
+      - name: Assemble Pages site
+        run: |
+          # Permanent URLs (never swap products):
+          #   BrayStats      → https://braydencbell01-arch.github.io/Brayden-OS/
+          #   Jersey Deals   → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
+          #   PlateQuest     → https://braydencbell01-arch.github.io/Brayden-OS/platequest/
+          mkdir -p site
+          cp -a dist/. site/
+          mkdir -p site/jerseydeals
+          cp -a jerseydeals/dist/. site/jerseydeals/
+          mkdir -p site/platequest
+          cp -a platequest/dist/. site/platequest/
+          if ! grep -q 'BrayStats' site/index.html; then
+            echo "ERROR: site/index.html is not BrayStats" >&2
+            exit 1
+          fi
+          if ! grep -q 'Jersey Deals' site/jerseydeals/index.html; then
+            echo "ERROR: site/jerseydeals/index.html is not Jersey Deals" >&2
+            exit 1
+          fi
+          if ! grep -q 'PlateQuest' site/platequest/index.html; then
+            echo "ERROR: site/platequest/index.html is not PlateQuest" >&2
+            exit 1
+          fi
+          cp site/index.html site/404.html
+          cp site/jerseydeals/index.html site/jerseydeals/404.html
+          cp site/platequest/index.html site/platequest/404.html
+          touch site/.nojekyll
+
+      # Deploy Brayden-OS Pages FIRST. Dual-queue with jerseydeals.online left this
+      # repo stuck in deployment_queued until the auto pages workflow timed out and
+      # canceled — PlateQuest never went live.
+      - name: Remember prior Pages deployment
+        id: prior_pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          id=$(gh api "repos/${{ github.repository }}/deployments?environment=github-pages&per_page=1" --jq '.[0].id // 0')
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "Prior github-pages deployment id: $id"
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
+          enable_jekyll: false
+
+      - name: Wait for Brayden-OS Pages to publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRIOR_ID: ${{ steps.prior_pages.outputs.id }}
+        run: |
+          set -euo pipefail
+          echo "Waiting for a new github-pages deployment after id=$PRIOR_ID…"
+          deadline=$((SECONDS + 900))
+          last=""
+          while (( SECONDS < deadline )); do
+            id=$(gh api "repos/${{ github.repository }}/deployments?environment=github-pages&per_page=1" --jq '.[0].id // 0')
+            status=$(gh api "repos/${{ github.repository }}/pages" --jq .status)
+            dep_state="pending-new"
+            if [[ "$id" != "$PRIOR_ID" && "$id" != "0" ]]; then
+              dep_state=$(gh api "repos/${{ github.repository }}/deployments/${id}/statuses" --jq '.[0].state // "unknown"')
+            fi
+            msg="pages=$status deployment_id=$id state=$dep_state"
+            if [[ "$msg" != "$last" ]]; then
+              echo "$msg"
+              last=$msg
+            fi
+            if [[ "$dep_state" == "success" ]]; then
+              echo "Brayden-OS Pages published."
+              exit 0
+            fi
+            if [[ "$dep_state" == "failure" || "$dep_state" == "error" ]]; then
+              echo "ERROR: Brayden-OS Pages deployment ended as $dep_state" >&2
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "ERROR: timed out waiting for Brayden-OS Pages" >&2
+          exit 1
+
       - name: Check Jersey Deals deploy token
         id: jd_token
         env:
           TOKEN: ${{ secrets.JERSEYDEALS_DEPLOY_TOKEN }}
+          SKIP: ${{ github.event.inputs.skip_jerseydeals_domain }}
         run: |
-          if [ -n "$TOKEN" ]; then
+          if [[ "${SKIP:-false}" == "true" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping jerseydeals.online deploy (workflow input)."
+          elif [ -n "$TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
@@ -99,62 +189,3 @@ jobs:
           force_orphan: true
           enable_jekyll: false
           cname: jerseydeals.online
-
-      # Let jerseydeals.online Pages leave deployment_queued before starting Brayden-OS Pages.
-      - name: Wait for jerseydeals.online Pages queue
-        if: steps.jd_token.outputs.enabled == 'true'
-        run: sleep 480
-
-      - name: Rebuild Jersey Deals for GitHub Pages path
-        if: steps.jd_token.outputs.enabled == 'true'
-        working-directory: jerseydeals
-        env:
-          VITE_SQUARE_STORE_URL: ${{ secrets.VITE_SQUARE_STORE_URL }}
-          VITE_GA_ID: ${{ secrets.VITE_GA_ID }}
-          VITE_JERSEYDEALS_EMAIL_API_URL: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_URL }}
-          VITE_JERSEYDEALS_EMAIL_API_SECRET: ${{ secrets.VITE_JERSEYDEALS_EMAIL_API_SECRET }}
-          VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT: ${{ secrets.VITE_JERSEYDEALS_EMAIL_FORM_ENDPOINT }}
-        run: |
-          # Custom-domain build used base /; Pages path needs /Brayden-OS/jerseydeals/.
-          export VITE_SQUARE_STORE_URL="${VITE_SQUARE_STORE_URL:-https://jerseydealsofficial.square.site}"
-          unset JERSEYDEALS_BASE
-          rm -rf dist
-          npm run build
-
-      - name: Assemble Pages site
-        run: |
-          # Permanent URLs (never swap products):
-          #   BrayStats      → https://braydencbell01-arch.github.io/Brayden-OS/
-          #   Jersey Deals   → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
-          #   PlateQuest     → https://braydencbell01-arch.github.io/Brayden-OS/platequest/
-          mkdir -p site
-          cp -a dist/. site/
-          mkdir -p site/jerseydeals
-          cp -a jerseydeals/dist/. site/jerseydeals/
-          mkdir -p site/platequest
-          cp -a platequest/dist/. site/platequest/
-          if ! grep -q 'BrayStats' site/index.html; then
-            echo "ERROR: site/index.html is not BrayStats" >&2
-            exit 1
-          fi
-          if ! grep -q 'Jersey Deals' site/jerseydeals/index.html; then
-            echo "ERROR: site/jerseydeals/index.html is not Jersey Deals" >&2
-            exit 1
-          fi
-          if ! grep -q 'PlateQuest' site/platequest/index.html; then
-            echo "ERROR: site/platequest/index.html is not PlateQuest" >&2
-            exit 1
-          fi
-          cp site/index.html site/404.html
-          cp site/jerseydeals/index.html site/jerseydeals/404.html
-          cp site/platequest/index.html site/platequest/404.html
-          touch site/.nojekyll
-
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-          publish_branch: gh-pages
-          force_orphan: true
-          enable_jekyll: false
