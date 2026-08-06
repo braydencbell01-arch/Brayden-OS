@@ -556,12 +556,25 @@ function fleetMass(code: string): number {
 function decayHalfLifeMiles(code: string): number {
   const mass = fleetMass(code)
   let half = 95 + mass * 55 // ~120 … ~230
-  if (code === 'CA' || code === 'TX' || code === 'FL') half *= 1.18
-  if (code === 'IL' || code === 'OH' || code === 'PA' || code === 'GA' || code === 'NY') half *= 1.06
+  // Mega fleets are seen nationwide — California especially.
+  if (code === 'CA') half = 1250
+  else if (code === 'TX' || code === 'FL') half = 820
+  else if (code === 'NY' || code === 'PA' || code === 'IL' || code === 'OH' || code === 'GA') half *= 1.22
   if (code === 'HI' || code === 'AK') half *= 0.4
   if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') half *= 0.35
   if (code.startsWith('NA-') || code.startsWith('US-')) half *= 0.45
   return half
+}
+
+/** Extra likelihood for giant registration pools that show up far from home. */
+function nationalFleetBoost(code: string): number {
+  const pop = STATE_POPULATION[code]
+  if (pop == null) return 1
+  if (code === 'CA') return 4.2 // ~39M drivers — common on any CONUS highway
+  if (pop >= 20_000_000) return 2.6 // TX, FL, NY
+  if (pop >= 12_000_000) return 1.7 // PA, IL, OH, GA, NC…
+  if (pop >= 8_000_000) return 1.3
+  return 1
 }
 
 /** How much of the sampled drive sits inside a soft “traffic shed” of the state. */
@@ -592,20 +605,19 @@ function corridorTourismBoost(
 ): number {
   const midLat = (start.lat + end.lat) / 2
   const midLon = (start.lon + end.lon) / 2
-  const tripMiles = haversineMiles(start, end)
   const eastCoast = midLon > -85 && midLat > 30 && midLat < 45
   const floridaLane =
     Math.min(start.lat, end.lat) < 31 && Math.max(start.lat, end.lat) > 36 && midLon > -88
   const southwest = midLon < -100 && midLat < 40
   const midwest = midLon > -100 && midLon < -82 && midLat > 38 && midLat < 49
-  const pacific = midLon < -115
 
   let boost = 1
   // Snowbirds matter more on long north–south runs than on VA→NY.
   if (code === 'FL' && floridaLane) boost *= 1.45
-  else if (code === 'FL' && eastCoast && tripMiles > 600) boost *= 1.2
-  if (code === 'CA' && (southwest || pacific)) boost *= 1.2
-  if (code === 'TX' && (southwest || (midwest && midLat < 40))) boost *= 1.22
+  else if (code === 'FL' && eastCoast) boost *= 1.35
+  // California plates hitchhike everywhere (movers, rentals, transplants).
+  if (code === 'CA') boost *= 1.55
+  if (code === 'TX' && (southwest || midwest || eastCoast)) boost *= 1.25
   if (code === 'AZ' && southwest) boost *= 1.15
   if ((code === 'CA-ON' || code === 'CA-QC') && midLat > 40 && midLon > -90) boost *= 1.3
   if (code.startsWith('MX-') && (southwest || midLat < 34)) boost *= 1.35
@@ -629,16 +641,24 @@ function regionHardCeiling(miles: number): number | null {
   return null
 }
 
-/** Prevent likelihood quirks from underpricing clearly off-route plates. */
-function softFloorFromMiles(miles: number): number {
-  if (miles <= 50) return 1
-  if (miles <= 120) return 4
-  if (miles <= 220) return 10
-  if (miles <= 400) return 18
-  if (miles <= 650) return 28
-  if (miles <= 1000) return 38
-  if (miles <= 1500) return 48
-  return 58
+/** Prevent likelihood quirks from underpricing clearly off-route plates.
+ *  Soft floors shrink for mega fleets — CA is not “rare” just because it’s far. */
+function softFloorFromMiles(miles: number, code: string): number {
+  let floor = 1
+  if (miles <= 50) floor = 1
+  else if (miles <= 120) floor = 4
+  else if (miles <= 220) floor = 10
+  else if (miles <= 400) floor = 18
+  else if (miles <= 650) floor = 28
+  else if (miles <= 1000) floor = 38
+  else if (miles <= 1500) floor = 48
+  else floor = 58
+
+  const mass = fleetMass(code)
+  let relief = 1 + mass * mass * 0.5
+  if (code === 'CA') relief *= 1.75
+  else if (code === 'TX' || code === 'FL' || code === 'NY') relief *= 1.35
+  return Math.max(1, Math.round(floor / relief))
 }
 
 /**
@@ -696,10 +716,16 @@ function scoreCodeComplex(code: string, ctx: ScoreContext): number {
         ? 0.7
         : 1
 
-  // 7) Cross-country friction — even big fleets get expensive far away.
-  const friction = miles > 900 ? Math.pow(0.5, (miles - 900) / 900) : 1
+  // 7) Cross-country friction — small/medium fleets only (CA/TX/FL shrug this off).
+  const friction =
+    miles > 900 && fleetMass(code) < 1.85
+      ? Math.pow(0.5, (miles - 900) / 900)
+      : 1
 
-  // 8) Overseas / special plates.
+  // 8) National mega-fleet presence (population-driven, independent of route).
+  const nationalTerm = nationalFleetBoost(code)
+
+  // 9) Overseas / special plates.
   let specialTerm = 1
   if (code === 'HI' || code === 'AK') specialTerm = 0.045
   else if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') specialTerm = 0.06
@@ -715,12 +741,16 @@ function scoreCodeComplex(code: string, ctx: ScoreContext): number {
     tourismTerm *
     isolation *
     friction *
+    nationalTerm *
     specialTerm
 
   let pts = pointsFromLikelihood(likelihood)
-  pts = Math.max(pts, regionHardFloor(code), softFloorFromMiles(miles))
+  pts = Math.max(pts, regionHardFloor(code), softFloorFromMiles(miles, code))
   const cap = regionHardCeiling(miles)
   if (cap != null) pts = Math.min(pts, cap)
+  // Hard ceiling for California anywhere in the lower 48 — never a “jackpot” plate.
+  if (code === 'CA') pts = Math.min(pts, 18)
+  else if (code === 'TX' || code === 'FL') pts = Math.min(pts, 28)
 
   return clampScore(pts)
 }
