@@ -97,7 +97,7 @@ export async function preprocessForOcr(source: HTMLCanvasElement | HTMLImageElem
   return canvas
 }
 
-/** Top band where the state name usually sits. */
+/** Top band where the state name usually sits (supplement to full-frame OCR). */
 function cropTopBand(source: HTMLCanvasElement): HTMLCanvasElement {
   const band = document.createElement('canvas')
   const h = Math.max(40, Math.round(source.height * 0.32))
@@ -106,6 +106,23 @@ function cropTopBand(source: HTMLCanvasElement): HTMLCanvasElement {
   const ctx = band.getContext('2d')!
   ctx.drawImage(source, 0, 0, source.width, h, 0, 0, source.width, h)
   return band
+}
+
+/**
+ * Optional center region matching the on-screen aim tip (~72% × 28%).
+ * Used only as an extra OCR pass — never the sole source.
+ */
+function cropAimSuggestion(source: HTMLCanvasElement): HTMLCanvasElement {
+  const out = document.createElement('canvas')
+  const w = Math.max(80, Math.round(source.width * 0.72))
+  const h = Math.max(40, Math.round(source.height * 0.28))
+  const sx = Math.round((source.width - w) / 2)
+  const sy = Math.round((source.height - h) / 2)
+  out.width = w
+  out.height = h
+  const ctx = out.getContext('2d')!
+  ctx.drawImage(source, sx, sy, w, h, 0, 0, w, h)
+  return out
 }
 
 function cleanPlateText(raw: string): string {
@@ -188,16 +205,26 @@ export function extractPlateSerial(cleaned: string): string {
 export async function readLicensePlate(
   source: HTMLCanvasElement | HTMLImageElement,
 ): Promise<PlateRead> {
+  // Always OCR the whole picture first; aim-tip / top-band crops are extras only.
   const prepared = await preprocessForOcr(source)
   const worker = await getWorker()
-  const full = await worker.recognize(prepared)
-  const top = await worker.recognize(cropTopBand(prepared))
-  const rawText = [full.data.text ?? '', top.data.text ?? ''].filter(Boolean).join(' ')
+  const [full, top, aim] = await Promise.all([
+    worker.recognize(prepared),
+    worker.recognize(cropTopBand(prepared)),
+    worker.recognize(cropAimSuggestion(prepared)),
+  ])
+  const rawText = [full.data.text ?? '', top.data.text ?? '', aim.data.text ?? '']
+    .filter(Boolean)
+    .join(' ')
   const cleaned = cleanPlateText(rawText)
   const text = extractPlateSerial(cleaned)
   const guessedState = guessJurisdictionCode(cleaned, rawText)
   const jurisdiction = guessedState ? getJurisdiction(guessedState) : undefined
-  const confidence = Math.max(full.data.confidence ?? 0, top.data.confidence ?? 0)
+  const confidence = Math.max(
+    full.data.confidence ?? 0,
+    top.data.confidence ?? 0,
+    aim.data.confidence ?? 0,
+  )
 
   return {
     text: text || '—',

@@ -264,8 +264,8 @@ export function CameraTab({ onIdentified }: Props) {
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Camera</p>
         <h1 className="font-display mt-1 text-3xl text-ink">Scan a plate</h1>
         <p className="mt-1 max-w-md text-sm text-fog">
-          Zoom the camera with the slider or pinch on the viewfinder — the plate outline stays put. After
-          capture, scroll down for the result.
+          The whole photo is scanned — the dashed outline is only a tip for where to aim the plate. Zoom
+          with the slider or pinch; after capture, scroll down for the result.
         </p>
       </header>
 
@@ -292,14 +292,19 @@ export function CameraTab({ onIdentified }: Props) {
             }}
           />
           {preview && (
-            <img src={preview} alt="Plate photo" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={preview} alt="Captured photo" className="absolute inset-0 h-full w-full object-cover" />
           )}
         </div>
 
-        {/* Outline sits above the video and is never scaled */}
-        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-          <div className="h-[28%] w-[72%] max-w-md rounded-sm border-2 border-plate/90 shadow-[0_0_0_9999px_rgba(255,255,255,0.35)]" />
-        </div>
+        {/* Aim hint only — OCR uses the full frame, not this box */}
+        {!preview && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-2">
+            <div className="h-[28%] w-[72%] max-w-md rounded-sm border-2 border-dashed border-plate/80" />
+            <p className="rounded-sm bg-paper/85 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-fog">
+              Aim tip · whole photo is read
+            </p>
+          </div>
+        )}
 
         {resolutionLabel && !preview && (
           <p className="absolute left-2 top-2 z-20 rounded-sm bg-paper/90 px-2 py-0.5 text-[10px] font-medium text-ink ring-1 ring-plate/40">
@@ -415,8 +420,8 @@ export function CameraTab({ onIdentified }: Props) {
               </div>
             ) : (
               <p className="mt-3 text-sm opacity-80">
-                State not detected from the image — characters only for now. Tip: include the state name on
-                the plate in frame.
+                State not detected from the photo — characters only for now. Include the state name
+                anywhere in the picture (it does not need to sit inside the aim tip).
               </p>
             )}
           </motion.div>
