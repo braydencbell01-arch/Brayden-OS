@@ -51,24 +51,14 @@ jobs:
           npm ci
           npm run build
 
-      - name: Build PlateQuest (/platequest/)
-        working-directory: platequest
-        run: |
-          npm ci
-          npm run build
-
       - name: Assemble Pages site
         run: |
-          # Permanent URLs (never swap products):
-          #   BrayStats      → https://braydencbell01-arch.github.io/Brayden-OS/
-          #   Jersey Deals   → https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/
-          #   PlateQuest     → https://braydencbell01-arch.github.io/Brayden-OS/platequest/
+          # BrayStats + Jersey Deals path mirror only.
+          # PlateQuest deploys separately → https://braydenbell.github.io/PlateQuest/
           mkdir -p site
           cp -a dist/. site/
           mkdir -p site/jerseydeals
           cp -a jerseydeals/dist/. site/jerseydeals/
-          mkdir -p site/platequest
-          cp -a platequest/dist/. site/platequest/
           if ! grep -q 'BrayStats' site/index.html; then
             echo "ERROR: site/index.html is not BrayStats" >&2
             exit 1
@@ -77,13 +67,10 @@ jobs:
             echo "ERROR: site/jerseydeals/index.html is not Jersey Deals" >&2
             exit 1
           fi
-          if ! grep -q 'PlateQuest' site/platequest/index.html; then
-            echo "ERROR: site/platequest/index.html is not PlateQuest" >&2
-            exit 1
-          fi
+          # Drop any prior PlateQuest path on this Pages site (separate product URL now).
+          rm -rf site/platequest
           cp site/index.html site/404.html
           cp site/jerseydeals/index.html site/jerseydeals/404.html
-          cp site/platequest/index.html site/platequest/404.html
           touch site/.nojekyll
 
       # Deploy Brayden-OS Pages FIRST. Dual-queue with jerseydeals.online left this

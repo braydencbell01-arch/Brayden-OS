@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Publish BrayStats to the gh-pages site ROOT only.
-# Preserves /jerseydeals/ (Jersey Deals) and /platequest/ (PlateQuest).
+# Preserves /jerseydeals/ (Jersey Deals). PlateQuest is a separate Pages site.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 STATS_URL="https://braydencbell01-arch.github.io/Brayden-OS/"
 JERSEY_URL="https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/"
-PLATE_URL="https://braydencbell01-arch.github.io/Brayden-OS/platequest/"
+PLATE_URL="https://braydenbell.github.io/PlateQuest/"
 
 npm run build
 cp dist/index.html dist/404.html
@@ -38,22 +38,20 @@ else
 fi
 
 KEEP_TMP="$(mktemp -d)"
-for folder in jerseydeals platequest; do
-  if [ -d "$BRANCH_DIR/$folder" ]; then
-    cp -a "$BRANCH_DIR/$folder" "$KEEP_TMP/$folder"
-  fi
-done
+if [ -d "$BRANCH_DIR/jerseydeals" ]; then
+  cp -a "$BRANCH_DIR/jerseydeals" "$KEEP_TMP/jerseydeals"
+fi
 
-find "$BRANCH_DIR" -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'jerseydeals' ! -name 'platequest' -exec rm -rf {} +
+find "$BRANCH_DIR" -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'jerseydeals' -exec rm -rf {} +
 cp -a dist/. "$BRANCH_DIR/"
 
-for folder in jerseydeals platequest; do
-  if [ -d "$KEEP_TMP/$folder" ]; then
-    rm -rf "$BRANCH_DIR/$folder"
-    cp -a "$KEEP_TMP/$folder" "$BRANCH_DIR/$folder"
-  fi
-done
+if [ -d "$KEEP_TMP/jerseydeals" ]; then
+  rm -rf "$BRANCH_DIR/jerseydeals"
+  cp -a "$KEEP_TMP/jerseydeals" "$BRANCH_DIR/jerseydeals"
+fi
 rm -rf "$KEEP_TMP"
+# PlateQuest must not live under BrayStats Pages.
+rm -rf "$BRANCH_DIR/platequest"
 
 touch "$BRANCH_DIR/.nojekyll"
 
@@ -65,10 +63,6 @@ if [ -f "$BRANCH_DIR/jerseydeals/index.html" ] && ! grep -q 'Jersey Deals' "$BRA
   echo "ERROR: jerseydeals/index.html is not Jersey Deals" >&2
   exit 1
 fi
-if [ -f "$BRANCH_DIR/platequest/index.html" ] && ! grep -q 'PlateQuest' "$BRANCH_DIR/platequest/index.html"; then
-  echo "ERROR: platequest/index.html is not PlateQuest" >&2
-  exit 1
-fi
 
 cd "$BRANCH_DIR"
 git add -A
@@ -76,7 +70,7 @@ if git diff --cached --quiet; then
   echo "No changes to deploy."
 else
   git -c user.name='BrayStats Deploy' -c user.email='deploy@brayden-stats.local' \
-    commit -m "Deploy BrayStats to Pages root (keep jerseydeals/ + platequest/)"
+    commit -m "Deploy BrayStats to Pages root (keep jerseydeals/; PlateQuest separate)"
   git push -u origin gh-pages
 fi
 
