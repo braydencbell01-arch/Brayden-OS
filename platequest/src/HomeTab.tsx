@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
+import type { Place } from './geo'
 import type { Region } from './jurisdictions'
 import { JURISDICTIONS, REGION_LABEL } from './jurisdictions'
+import { TownPicker } from './TownPicker'
 
 type Props = {
   onOpenCamera: () => void
@@ -8,6 +10,8 @@ type Props = {
   onOpenStates: () => void
   lastPlate?: string | null
   points: number
+  homeLocation: Place | null
+  onHomeLocationChange: (p: Place | null) => void
 }
 
 const REAR_ONLY = JURISDICTIONS.filter((j) => j.plateMount === 'rear').length
@@ -20,7 +24,15 @@ const REGION_COUNTS: { region: Region; count: number }[] = (
   count: JURISDICTIONS.filter((j) => j.region === region).length,
 }))
 
-export function HomeTab({ onOpenCamera, onOpenGames, onOpenStates, lastPlate, points }: Props) {
+export function HomeTab({
+  onOpenCamera,
+  onOpenGames,
+  onOpenStates,
+  lastPlate,
+  points,
+  homeLocation,
+  onHomeLocationChange,
+}: Props) {
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="relative flex flex-col px-5 pb-8 pt-10">
@@ -97,6 +109,27 @@ export function HomeTab({ onOpenCamera, onOpenGames, onOpenStates, lastPlate, po
               Last read <span className="font-semibold text-plate-hot">{lastPlate}</span>
             </p>
           )}
+        </motion.div>
+
+        <motion.div
+          className="relative z-10 mt-8 border-t border-line pt-6"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Your location</p>
+          <h2 className="font-display mt-1 text-2xl text-ink">Where are you?</h2>
+          <p className="mt-2 max-w-md text-sm text-fog">
+            Browse ranks US states by how common their plates are near you — most common first, with points shown.
+          </p>
+          <div className="mt-4">
+            <TownPicker
+              label="Home town"
+              value={homeLocation}
+              onPick={onHomeLocationChange}
+              placeholder="Search your city or town…"
+            />
+          </div>
         </motion.div>
 
         <motion.div

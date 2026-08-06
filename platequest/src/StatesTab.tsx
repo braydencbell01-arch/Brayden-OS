@@ -19,14 +19,29 @@ import { PlateVisual } from './PlateVisual'
 
 const REGIONS: Region[] = ['us-state', 'canada', 'mexico', 'territory', 'native', 'military', 'federal']
 
-export function StatesTab() {
+type Props = {
+  /** Points by state code from home location (US states). Lower = more common. */
+  platePoints?: Record<string, number> | null
+  homeLabel?: string | null
+}
+
+export function StatesTab({ platePoints = null, homeLabel = null }: Props) {
   const [region, setRegion] = useState<Region>('us-state')
   const [selected, setSelected] = useState<Jurisdiction | null>(null)
-  const list = useMemo(
-    () =>
-      JURISDICTIONS.filter((j) => j.region === region).sort((a, b) => a.name.localeCompare(b.name)),
-    [region],
-  )
+  const rankByRarity = region === 'us-state' && !!platePoints
+
+  const list = useMemo(() => {
+    const rows = JURISDICTIONS.filter((j) => j.region === region)
+    if (rankByRarity && platePoints) {
+      return [...rows].sort((a, b) => {
+        const pa = platePoints[a.code] ?? 999
+        const pb = platePoints[b.code] ?? 999
+        if (pa !== pb) return pa - pb
+        return a.name.localeCompare(b.name)
+      })
+    }
+    return [...rows].sort((a, b) => a.name.localeCompare(b.name))
+  }, [region, rankByRarity, platePoints])
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -53,6 +68,12 @@ export function StatesTab() {
               </p>
               <h1 className="font-display mt-1 text-3xl text-ink">{selected.name}</h1>
               {selected.slogan && <p className="mt-1 text-sm text-fog">“{selected.slogan}”</p>}
+              {platePoints?.[selected.code] != null && (
+                <p className="mt-2 text-sm font-semibold text-plate-hot">
+                  {platePoints[selected.code]} points
+                  {homeLabel ? ` · near ${homeLabel}` : ''}
+                </p>
+              )}
               {selected.plateMount && (
                 <p className="mt-2 text-sm font-medium text-plate-hot">
                   {plateMountLabel(selected.plateMount)}
@@ -143,8 +164,15 @@ export function StatesTab() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">Browse</p>
               <h1 className="font-display mt-1 text-3xl text-ink">Plates</h1>
               <p className="mt-1 max-w-md text-sm text-fog">
-                US, Canada, Mexico, territories, Native American, military, and federal — photos from World License Plates.
+                {rankByRarity
+                  ? `US states ranked by how common they are near you${homeLabel ? ` (${homeLabel})` : ''} — most common first.`
+                  : 'US, Canada, Mexico, territories, Native American, military, and federal — photos from World License Plates.'}
               </p>
+              {region === 'us-state' && !platePoints && (
+                <p className="mt-2 text-sm text-plate-hot">
+                  Set your location on Home to rank states by rarity and see points.
+                </p>
+              )}
             </header>
 
             <div className="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1">
@@ -167,6 +195,7 @@ export function StatesTab() {
             <ul className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
               {list.map((j, i) => {
                 const main = getMainPlate(j.code)
+                const pts = platePoints?.[j.code]
                 return (
                   <motion.li
                     key={j.code}
@@ -192,6 +221,12 @@ export function StatesTab() {
                         </span>
                         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-fog">{j.code}</p>
                       </div>
+                      {pts != null && region === 'us-state' && (
+                        <span className="shrink-0 text-right">
+                          <span className="block font-display text-xl text-plate-hot">{pts}</span>
+                          <span className="text-[10px] uppercase tracking-[0.12em] text-fog">pts</span>
+                        </span>
+                      )}
                     </button>
                   </motion.li>
                 )

@@ -393,3 +393,48 @@ export function scorePlatesForRoute(
   }
   return out
 }
+
+/**
+ * Score each jurisdiction 1–100 by how rare its plates are near `here`.
+ * Low = common (nearby / populous); high = rare. Sort ascending for “most common first.”
+ */
+export function scorePlatesFromLocation(
+  here: { lat: number; lon: number },
+  codes: string[],
+): Record<string, number> {
+  const rows = codes.map((code) => {
+    const box = STATE_BBOX[code]
+    const centroid = STATE_CENTROIDS[code]
+    let miles = 3000
+    if (box) miles = distanceToBBoxMiles(here, box)
+    else if (centroid) miles = haversineMiles(here, centroid)
+    const pop = STATE_POPULATION[code] ?? 1_000_000
+    return { code, miles, logPop: Math.log10(Math.max(pop, 1)) }
+  })
+
+  const minMiles = Math.min(...rows.map((r) => r.miles))
+  const maxMiles = Math.max(...rows.map((r) => r.miles))
+  const mileSpan = Math.max(1, maxMiles - minMiles)
+
+  const minLog = Math.min(...rows.map((r) => r.logPop))
+  const maxLog = Math.max(...rows.map((r) => r.logPop))
+  const popSpan = Math.max(0.01, maxLog - minLog)
+
+  const raw = rows.map((r) => {
+    const distRarity = (r.miles - minMiles) / mileSpan
+    const popRarity = 1 - (r.logPop - minLog) / popSpan
+    const rarity = distRarity * (0.55 + 0.45 * popRarity)
+    return { code: r.code, rarity }
+  })
+
+  const minR = Math.min(...raw.map((r) => r.rarity))
+  const maxR = Math.max(...raw.map((r) => r.rarity))
+  const span = Math.max(1e-6, maxR - minR)
+
+  const out: Record<string, number> = {}
+  for (const r of raw) {
+    const t = (r.rarity - minR) / span
+    out[r.code] = Math.max(1, Math.min(100, Math.round(1 + t * 99)))
+  }
+  return out
+}

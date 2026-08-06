@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CameraTab } from './CameraTab'
 import { HomeTab } from './HomeTab'
@@ -6,6 +6,7 @@ import { GamesTab } from './GamesTab'
 import { ProfileTab } from './ProfileTab'
 import { StatesTab } from './StatesTab'
 import type { PlateRead } from './plateOcr'
+import { scorePlatesFromLocation, type Place } from './geo'
 import { getJurisdiction, JURISDICTIONS } from './jurisdictions'
 import { loadGame, logPlate, saveGame } from './roadTripGame'
 
@@ -22,6 +23,26 @@ const TABS: { id: TabId; label: string }[] = [
 const POINTS_KEY = 'platequest.points'
 const FOUND_KEY = 'platequest.found'
 const LAST_KEY = 'platequest.lastPlate'
+const HOME_LOC_KEY = 'platequest.homeLocation'
+
+function loadHomeLocation(): Place | null {
+  try {
+    const raw = localStorage.getItem(HOME_LOC_KEY)
+    if (!raw) return null
+    const p = JSON.parse(raw) as Place
+    if (
+      typeof p?.id === 'string' &&
+      typeof p?.label === 'string' &&
+      typeof p?.lat === 'number' &&
+      typeof p?.lon === 'number'
+    ) {
+      return p
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 function plateDisplayName(codeOrName: string): string | null {
   const j = getJurisdiction(codeOrName)
@@ -85,16 +106,25 @@ export default function App() {
     }
   })
   const [lastPlate, setLastPlate] = useState<string | null>(() => loadLastPlateName())
+  const [homeLocation, setHomeLocation] = useState<Place | null>(() => loadHomeLocation())
+
+  const locationPlatePoints = useMemo(() => {
+    if (!homeLocation) return null
+    const codes = JURISDICTIONS.filter((j) => j.region === 'us-state').map((j) => j.code)
+    return scorePlatesFromLocation(homeLocation, codes)
+  }, [homeLocation])
 
   useEffect(() => {
     try {
       localStorage.setItem(POINTS_KEY, String(points))
       localStorage.setItem(FOUND_KEY, JSON.stringify(foundCodes))
       if (lastPlate) localStorage.setItem(LAST_KEY, lastPlate)
+      if (homeLocation) localStorage.setItem(HOME_LOC_KEY, JSON.stringify(homeLocation))
+      else localStorage.removeItem(HOME_LOC_KEY)
     } catch {
       /* ignore quota */
     }
-  }, [points, foundCodes, lastPlate])
+  }, [points, foundCodes, lastPlate, homeLocation])
 
   // Apply camera IDs to the active road-trip game even when Games tab is not open.
   useEffect(() => {
@@ -150,12 +180,19 @@ export default function App() {
               <HomeTab
                 points={points}
                 lastPlate={lastPlate}
+                homeLocation={homeLocation}
+                onHomeLocationChange={setHomeLocation}
                 onOpenCamera={() => setTab('camera')}
                 onOpenGames={() => setTab('games')}
                 onOpenStates={() => setTab('states')}
               />
             )}
-            {tab === 'states' && <StatesTab />}
+            {tab === 'states' && (
+              <StatesTab
+                platePoints={locationPlatePoints}
+                homeLabel={homeLocation?.label ?? null}
+              />
+            )}
             {tab === 'games' && (
               <GamesTab
                 reloadToken={gameTick}
