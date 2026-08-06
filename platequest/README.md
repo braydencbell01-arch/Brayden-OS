@@ -3,9 +3,9 @@
 Separate product from BrayStats and Jersey Deals.
 
 - **Source:** `platequest/` in the Brayden-OS monorepo (own `package.json` / lockfile)
-- **Live URL:** https://braydencbell01-arch.github.io/PlateQuest/
-- **Pages repo:** [braydencbell01-arch/PlateQuest](https://github.com/braydencbell01-arch/PlateQuest) (`gh-pages`) — must exist as an empty public repo before the first deploy
-- **Deploy:** `.github/workflows/deploy-platequest.yml` (does not publish into BrayStats or Jersey Deals paths)
+- **Live URL:** https://platequest.pages.dev/
+- **Host:** Cloudflare Pages project `platequest`
+- **Deploy:** `.github/workflows/deploy-platequest.yml`
 
 ```bash
 cd platequest

@@ -7,7 +7,7 @@ cd "$ROOT"
 
 STATS_URL="https://braydencbell01-arch.github.io/Brayden-OS/"
 JERSEY_URL="https://braydencbell01-arch.github.io/Brayden-OS/jerseydeals/"
-PLATE_URL="https://braydencbell01-arch.github.io/PlateQuest/"
+PLATE_URL="https://platequest.pages.dev/"
 
 npm run build
 cp dist/index.html dist/404.html

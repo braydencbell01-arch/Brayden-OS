@@ -54,7 +54,7 @@ jobs:
       - name: Assemble Pages site
         run: |
           # BrayStats + Jersey Deals path mirror only.
-          # PlateQuest deploys separately → https://braydencbell01-arch.github.io/PlateQuest/
+          # PlateQuest deploys separately → https://platequest.pages.dev/
           mkdir -p site
           cp -a dist/. site/
           mkdir -p site/jerseydeals

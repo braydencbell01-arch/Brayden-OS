@@ -1,8 +1,7 @@
 name: Deploy PlateQuest
 
-# PlateQuest is its own product and GitHub Pages site — never publish into
-# BrayStats (Brayden-OS root) or Jersey Deals (/jerseydeals/ or jerseydeals.online).
-# Live: https://braydencbell01-arch.github.io/PlateQuest/
+# PlateQuest is its own Cloudflare Pages site — not BrayStats, not Jersey Deals.
+# Live: https://platequest.pages.dev/
 
 on:
   push:
@@ -27,22 +26,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve deploy token
-        id: token
+      - name: Check Cloudflare credentials
+        id: cf
         env:
-          PQ: ${{ secrets.PLATEQUEST_DEPLOY_TOKEN }}
-          JD: ${{ secrets.JERSEYDEALS_DEPLOY_TOKEN }}
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -n "$PQ" ]; then
-            echo "which=pq" >> "$GITHUB_OUTPUT"
-            echo "Using PLATEQUEST_DEPLOY_TOKEN."
-          elif [ -n "$JD" ]; then
-            echo "which=jd" >> "$GITHUB_OUTPUT"
-            echo "Using JERSEYDEALS_DEPLOY_TOKEN (PAT fallback for braydencbell01-arch/PlateQuest)."
-          else
-            echo "ERROR: Set PLATEQUEST_DEPLOY_TOKEN or JERSEYDEALS_DEPLOY_TOKEN." >&2
+          if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
+            echo "ERROR: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID required to publish PlateQuest." >&2
             exit 1
           fi
+          echo "ok=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -51,71 +45,47 @@ jobs:
           cache: npm
           cache-dependency-path: platequest/package-lock.json
 
-      - name: Require braydencbell01-arch/PlateQuest repo
-        env:
-          GH_TOKEN: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
-        run: |
-          set -euo pipefail
-          if gh api "repos/braydencbell01-arch/PlateQuest" --silent 2>/dev/null; then
-            echo "braydencbell01-arch/PlateQuest found."
-            exit 0
-          fi
-          echo "::error::Create an empty public repo braydencbell01-arch/PlateQuest (no README), then re-run this workflow."
-          echo "https://github.com/new?owner=braydencbell01-arch&name=PlateQuest&visibility=public"
-          exit 1
-
-      - name: Build PlateQuest (project Pages base /PlateQuest/)
+      - name: Build PlateQuest
         working-directory: platequest
         env:
-          PLATEQUEST_BASE: /PlateQuest/
+          PLATEQUEST_BASE: /
         run: |
           npm ci
           npm run build
           cp dist/index.html dist/404.html
-          touch dist/.nojekyll
           if ! grep -q 'PlateQuest' dist/index.html; then
             echo "ERROR: dist/index.html is not PlateQuest" >&2
             exit 1
           fi
 
-      - name: Deploy to braydencbell01-arch/PlateQuest Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Create Cloudflare Pages project if needed
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
         with:
-          personal_token: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
-          external_repository: braydencbell01-arch/PlateQuest
-          publish_dir: ./platequest/dist
-          publish_branch: gh-pages
-          force_orphan: true
-          enable_jekyll: false
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create platequest --production-branch=main
 
-      - name: Enable GitHub Pages on braydencbell01-arch/PlateQuest
-        env:
-          GH_TOKEN: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
-        run: |
-          set -euo pipefail
-          if gh api "repos/braydencbell01-arch/PlateQuest/pages" --silent 2>/dev/null; then
-            echo "Pages already configured."
-            exit 0
-          fi
-          gh api -X POST "repos/braydencbell01-arch/PlateQuest/pages" \
-            -f build_type=legacy \
-            -f 'source[branch]=gh-pages' \
-            -f 'source[path]=/' \
-            || true
+      - name: Deploy PlateQuest to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy platequest/dist --project-name=platequest --commit-dirty=true
 
       - name: Verify live PlateQuest URL
         run: |
           set -euo pipefail
-          url="https://braydencbell01-arch.github.io/PlateQuest/"
+          url="https://platequest.pages.dev/"
           echo "Waiting for $url …"
-          deadline=$((SECONDS + 300))
+          deadline=$((SECONDS + 180))
           while (( SECONDS < deadline )); do
             code=$(curl -sL -o /tmp/pq-live.html -w "%{http_code}" "$url" || true)
             if [[ "$code" == "200" ]] && grep -q 'PlateQuest' /tmp/pq-live.html; then
               echo "Live: $url"
               exit 0
             fi
-            sleep 15
+            sleep 10
           done
-          echo "Deploy pushed; Pages may still be propagating: $url"
+          echo "Deploy finished; CDN may still be propagating: $url"
           exit 0
