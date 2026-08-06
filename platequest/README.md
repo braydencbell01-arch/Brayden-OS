@@ -1,11 +1,11 @@
 # PlateQuest
 
-Separate product from BrayStats and Jersey Deals.
+Separate app from BrayStats and Jersey Deals (own package, UI, and URL path).
 
-- **Source:** `platequest/` in the Brayden-OS monorepo (own `package.json` / lockfile)
-- **Live URL:** https://platequest.pages.dev/
-- **Host:** Cloudflare Pages project `platequest`
-- **Deploy:** `.github/workflows/deploy-platequest.yml`
+- **Live:** https://braydencbell01-arch.github.io/Brayden-OS/platequest/
+- **Optional dedicated host:** https://platequest.pages.dev/ (when Cloudflare secrets are set)
+- **Source:** `platequest/`
+- **Deploy:** included in `Deploy GitHub Pages`; optional Cloudflare via `deploy-platequest.yml`
 
 ```bash
 cd platequest

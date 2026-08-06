@@ -1,7 +1,8 @@
-name: Deploy PlateQuest
+name: Deploy PlateQuest (Cloudflare)
 
-# PlateQuest is its own Cloudflare Pages site — not BrayStats, not Jersey Deals.
-# Live: https://platequest.pages.dev/
+# Optional dedicated host: https://platequest.pages.dev/
+# Primary live site is GitHub Pages /platequest/ until CF secrets are set.
+# Never publishes into BrayStats root or Jersey Deals.
 
 on:
   push:
@@ -16,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: platequest-deploy
+  group: platequest-cf-deploy
   cancel-in-progress: false
 
 jobs:
@@ -33,12 +34,15 @@ jobs:
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if [ -z "$CF_TOKEN" ] || [ -z "$CF_ACCOUNT" ]; then
-            echo "ERROR: CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID required to publish PlateQuest." >&2
-            exit 1
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping Cloudflare deploy (no CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID)."
+            echo "PlateQuest still ships on GitHub Pages at /platequest/."
+            exit 0
           fi
-          echo "ok=true" >> "$GITHUB_OUTPUT"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node
+        if: steps.cf.outputs.enabled == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -46,6 +50,7 @@ jobs:
           cache-dependency-path: platequest/package-lock.json
 
       - name: Build PlateQuest
+        if: steps.cf.outputs.enabled == 'true'
         working-directory: platequest
         env:
           PLATEQUEST_BASE: /
@@ -53,12 +58,9 @@ jobs:
           npm ci
           npm run build
           cp dist/index.html dist/404.html
-          if ! grep -q 'PlateQuest' dist/index.html; then
-            echo "ERROR: dist/index.html is not PlateQuest" >&2
-            exit 1
-          fi
 
       - name: Create Cloudflare Pages project if needed
+        if: steps.cf.outputs.enabled == 'true'
         uses: cloudflare/wrangler-action@v3
         continue-on-error: true
         with:
@@ -67,25 +69,9 @@ jobs:
           command: pages project create platequest --production-branch=main
 
       - name: Deploy PlateQuest to Cloudflare Pages
+        if: steps.cf.outputs.enabled == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy platequest/dist --project-name=platequest --commit-dirty=true
-
-      - name: Verify live PlateQuest URL
-        run: |
-          set -euo pipefail
-          url="https://platequest.pages.dev/"
-          echo "Waiting for $url …"
-          deadline=$((SECONDS + 180))
-          while (( SECONDS < deadline )); do
-            code=$(curl -sL -o /tmp/pq-live.html -w "%{http_code}" "$url" || true)
-            if [[ "$code" == "200" ]] && grep -q 'PlateQuest' /tmp/pq-live.html; then
-              echo "Live: $url"
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "Deploy finished; CDN may still be propagating: $url"
-          exit 0

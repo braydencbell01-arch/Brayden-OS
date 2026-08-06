@@ -2,9 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// Cloudflare Pages site root: https://platequest.pages.dev/
-// Override with PLATEQUEST_BASE for alternate hosts.
-const base = process.env.PLATEQUEST_BASE || '/'
+// Default `./` for GitHub Pages path (/Brayden-OS/platequest/).
+// Cloudflare dedicated host sets PLATEQUEST_BASE=/
+const base = process.env.PLATEQUEST_BASE || './'
 
 export default defineConfig({
   base,
