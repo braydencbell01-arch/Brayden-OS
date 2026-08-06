@@ -29,6 +29,7 @@ import {
   formatPopulation,
   type Place,
 } from './geo'
+import { toggleWanted } from './wanted'
 
 const REGIONS: Region[] = ['us-state', 'canada', 'mexico', 'territory', 'native', 'military', 'federal']
 
@@ -78,11 +79,19 @@ function StateProfile({
   onBack,
   platePoints,
   homeLocation,
+  found,
+  wanted,
+  onWantedChange,
+  onMarkFound,
 }: {
   selected: Jurisdiction
   onBack: () => void
   platePoints?: Record<string, number> | null
   homeLocation?: Place | null
+  found: boolean
+  wanted: string[]
+  onWantedChange: (codes: string[]) => void
+  onMarkFound: (code: string) => void
 }) {
   const plates = useMemo(() => getPlatesForCode(selected.code), [selected.code])
   const common = useMemo(() => getCommonPlates(selected.code, 10), [selected.code])
@@ -138,10 +147,33 @@ function StateProfile({
       <header className="mb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">
           State profile · {selected.code}
+          {found ? ' · found' : ''}
         </p>
         <h1 className="font-display mt-1 text-3xl text-ink">{selected.name}</h1>
         {selected.slogan && <p className="mt-1 text-sm text-fog">“{selected.slogan}”</p>}
         <p className="mt-2 text-sm text-ink/80">{selected.notes}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => onWantedChange(toggleWanted(selected.code, wanted))}
+            className={`rounded-sm border px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${
+              wanted.includes(selected.code)
+                ? 'border-plate bg-asphalt-lift text-plate-hot'
+                : 'border-line text-ink hover:border-plate/50'
+            }`}
+          >
+            {wanted.includes(selected.code) ? 'On wanted list' : 'Add to wanted'}
+          </button>
+          {!found && (
+            <button
+              type="button"
+              onClick={() => onMarkFound(selected.code)}
+              className="rounded-sm bg-plate px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-asphalt hover:bg-plate-hot"
+            >
+              Mark spotted
+            </button>
+          )}
+        </div>
       </header>
 
       <section className="mb-8">
@@ -306,20 +338,36 @@ export function StatesTab({
   platePoints = null,
   homeLocation = null,
   initialCode = null,
+  foundCodes = [],
+  wanted = [],
+  onWantedChange,
+  onMarkFound,
 }: {
   platePoints?: Record<string, number> | null
   homeLocation?: Place | null
   /** Open this jurisdiction’s profile immediately (e.g. deep link from Home). */
   initialCode?: string | null
+  foundCodes?: string[]
+  wanted?: string[]
+  onWantedChange?: (codes: string[]) => void
+  onMarkFound?: (code: string) => void
 }) {
   const [region, setRegion] = useState<Region>('us-state')
   const [selected, setSelected] = useState<Jurisdiction | null>(() =>
     initialCode ? (JURISDICTIONS.find((j) => j.code === initialCode.toUpperCase()) ?? null) : null,
   )
+  const [filter, setFilter] = useState<'all' | 'missing' | 'wanted' | 'found'>('all')
+  const setWanted = onWantedChange ?? (() => {})
+  const markFound = onMarkFound ?? (() => {})
+  const foundSet = useMemo(() => new Set(foundCodes.map((c) => c.toUpperCase())), [foundCodes])
+  const wantedSet = useMemo(() => new Set(wanted.map((c) => c.toUpperCase())), [wanted])
   const homeLabel = homeLocation?.label ?? null
   const rankByRarity = region === 'us-state' && !!platePoints
   const list = useMemo(() => {
-    const rows = JURISDICTIONS.filter((j) => j.region === region)
+    let rows = JURISDICTIONS.filter((j) => j.region === region)
+    if (filter === 'missing') rows = rows.filter((j) => !foundSet.has(j.code))
+    else if (filter === 'wanted') rows = rows.filter((j) => wantedSet.has(j.code))
+    else if (filter === 'found') rows = rows.filter((j) => foundSet.has(j.code))
     if (rankByRarity && platePoints) {
       return [...rows].sort((a, b) => {
         const pa = platePoints[a.code] ?? 999
@@ -329,7 +377,7 @@ export function StatesTab({
       })
     }
     return [...rows].sort((a, b) => a.name.localeCompare(b.name))
-  }, [region, rankByRarity, platePoints])
+  }, [region, rankByRarity, platePoints, filter, foundSet, wantedSet])
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -340,6 +388,10 @@ export function StatesTab({
             onBack={() => setSelected(null)}
             platePoints={platePoints}
             homeLocation={homeLocation}
+            found={foundSet.has(selected.code)}
+            wanted={wanted}
+            onWantedChange={setWanted}
+            onMarkFound={markFound}
           />
         ) : (
           <motion.div
@@ -384,10 +436,36 @@ export function StatesTab({
               ))}
             </div>
 
+            <div className="mb-3 flex shrink-0 gap-2 overflow-x-auto pb-1">
+              {(
+                [
+                  ['all', 'All'],
+                  ['missing', 'Missing'],
+                  ['wanted', 'Wanted'],
+                  ['found', 'Found'],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFilter(id)}
+                  className={`shrink-0 rounded-sm px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] transition ${
+                    filter === id
+                      ? 'bg-asphalt text-paper'
+                      : 'border border-line text-fog hover:border-plate/50 hover:text-plate-hot'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
             <ul className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
               {list.map((j, i) => {
                 const main = getMainPlate(j.code)
                 const pts = platePoints?.[j.code]
+                const isFound = foundSet.has(j.code)
+                const isWanted = wantedSet.has(j.code)
                 return (
                   <motion.li
                     key={j.code}
@@ -398,7 +476,9 @@ export function StatesTab({
                     <button
                       type="button"
                       onClick={() => setSelected(j)}
-                      className="flex w-full items-center gap-3 rounded-sm border border-line bg-paper px-3 py-2.5 text-left transition hover:border-plate/50 hover:bg-asphalt-lift"
+                      className={`flex w-full items-center gap-3 rounded-sm border bg-paper px-3 py-2.5 text-left transition hover:border-plate/50 hover:bg-asphalt-lift ${
+                        isFound ? 'border-plate/40' : 'border-line'
+                      }`}
                     >
                       {main ? (
                         <PlateVisual design={main} stateCode={j.code} stateName={j.name} compact />
@@ -413,6 +493,8 @@ export function StatesTab({
                         </span>
                         <p className="mt-1 text-xs uppercase tracking-[0.14em] text-fog">
                           {j.code} · Open profile
+                          {isFound ? ' · found' : ''}
+                          {isWanted && !isFound ? ' · wanted' : ''}
                         </p>
                       </div>
                       {pts != null && region === 'us-state' && (

@@ -1,5 +1,6 @@
 import { JURISDICTIONS, getJurisdiction, type Region } from './jurisdictions'
 import { loadDailyHunt } from './dailyHunt'
+import { loadWantedHitCount } from './wanted'
 
 export type AchievementId =
   | 'first-spot'
@@ -15,6 +16,7 @@ export type AchievementId =
   | 'quiz-5'
   | 'canada-spot'
   | 'multi-region'
+  | 'wanted-hunter'
 
 export type Achievement = {
   id: AchievementId
@@ -99,6 +101,11 @@ export function listAchievements(foundCodes: string[]): Achievement[] {
     { id: 'quiz-5', title: 'Sharp eyes', detail: 'Get a 5+ streak in Plate ID quiz' },
     { id: 'canada-spot', title: 'North of the border', detail: 'Log a Canadian plate' },
     { id: 'multi-region', title: 'Wide travels', detail: 'Log plates from 3+ regions' },
+    {
+      id: 'wanted-hunter',
+      title: 'Hit list',
+      detail: 'Spot 3 plates you marked as wanted',
+    },
   ]
 
   const unlocked: Record<AchievementId, boolean> = {
@@ -115,6 +122,7 @@ export function listAchievements(foundCodes: string[]): Achievement[] {
     'quiz-5': quizBest >= 5,
     'canada-spot': stats.byRegion.canada >= 1,
     'multi-region': stats.regionsHit >= 3,
+    'wanted-hunter': loadWantedHitCount() >= 3,
   }
 
   return defs.map((d) => ({ ...d, unlocked: unlocked[d.id] }))

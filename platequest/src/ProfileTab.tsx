@@ -5,6 +5,7 @@ import { collectionStats, listAchievements } from './achievements'
 import { loadDailyHunt } from './dailyHunt'
 import { TownPicker } from './TownPicker'
 import type { Place } from './geo'
+import { saveWanted } from './wanted'
 
 const NAME_KEY = 'platequest.profileName'
 
@@ -15,6 +16,8 @@ type Props = {
   homeLocation: Place | null
   onHomeLocationChange: (p: Place | null) => void
   onOpenState?: (code: string) => void
+  wanted?: string[]
+  onWantedChange?: (codes: string[]) => void
 }
 
 function loadName(): string {
@@ -42,6 +45,8 @@ export function ProfileTab({
   homeLocation,
   onHomeLocationChange,
   onOpenState,
+  wanted = [],
+  onWantedChange,
 }: Props) {
   const [name, setName] = useState(loadName)
   const [draft, setDraft] = useState(name)
@@ -63,6 +68,12 @@ export function ProfileTab({
   function saveName(e: FormEvent) {
     e.preventDefault()
     setName(draft.trim())
+  }
+
+  function removeWanted(code: string) {
+    const next = wanted.filter((c) => c !== code)
+    saveWanted(next)
+    onWantedChange?.(next)
   }
 
   const foundSorted = [...foundCodes].sort((a, b) => a.localeCompare(b))
@@ -230,6 +241,40 @@ export function ProfileTab({
           Last spotted: <span className="font-semibold text-ink">{lastPlate}</span>
         </p>
       )}
+
+      <motion.div
+        className="mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.34 }}
+      >
+        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">
+          Wanted list
+        </p>
+        {wanted.length === 0 ? (
+          <p className="mt-2 text-sm text-fog">
+            Mark plates to hunt from Browse — they clear when you spot them.
+          </p>
+        ) : (
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {wanted.map((code) => {
+              const j = getJurisdiction(code)
+              return (
+                <li key={code}>
+                  <button
+                    type="button"
+                    onClick={() => removeWanted(code)}
+                    className="rounded-sm border border-line px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-ink hover:border-signal/40"
+                    title={`Remove ${j?.name ?? code}`}
+                  >
+                    {code}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </motion.div>
 
       {foundSorted.length > 0 && (
         <motion.div
