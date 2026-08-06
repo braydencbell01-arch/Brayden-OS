@@ -248,7 +248,7 @@ export function CameraTab({ onIdentified }: Props) {
           <div className="h-[28%] w-[72%] max-w-md rounded-sm border-2 border-plate/90 shadow-[0_0_0_9999px_rgba(255,255,255,0.35)]" />
         </div>
         {resolutionLabel && !preview && (
-          <p className="absolute left-2 top-2 rounded-sm bg-asphalt/70 px-2 py-0.5 text-[10px] font-medium text-chrome">
+          <p className="absolute left-2 top-2 rounded-sm bg-paper/90 px-2 py-0.5 text-[10px] font-medium text-ink ring-1 ring-plate/40">
             {resolutionLabel}
             {nativeZoom ? ' · optical zoom' : zoom > 1 ? ` · ${zoom.toFixed(1)}×` : ''}
           </p>
@@ -278,7 +278,7 @@ export function CameraTab({ onIdentified }: Props) {
             step={zoomCaps.step}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="h-2 w-full accent-[var(--color-plate-hot,#e85d04)]"
+            className="h-2 w-full accent-[var(--color-plate,#d4af37)]"
             aria-label="Camera zoom"
           />
           <span className="w-10 shrink-0 text-right tabular-nums text-fog">{zoom.toFixed(1)}×</span>
