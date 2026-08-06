@@ -12,18 +12,18 @@ Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-u
 |---------|--------|-----------------------------------|
 | **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
 | **Jersey Deals** | `jerseydeals/` | https://jerseydeals.online/ |
-| **PlateQuest** | `platequest/` | https://braydenbell.github.io/PlateQuest/ |
+| **PlateQuest** | `platequest/` | https://braydencbell01-arch.github.io/PlateQuest/ |
 | **Square store** | Square Online (polished via `jerseydeals/scripts`) | https://jerseydealsofficial.square.site/ |
 
 - Do **not** publish BrayStats into `/jerseydeals/` or into PlateQuest’s Pages site.
 - Do **not** publish Jersey Deals or PlateQuest into the BrayStats Pages root.
-- Do **not** publish PlateQuest under `/Brayden-OS/platequest/` — it has its own repo/URL (`BraydenBell/PlateQuest`).
+- Do **not** publish PlateQuest under `/Brayden-OS/platequest/` — it has its own repo/URL (`braydencbell01-arch/PlateQuest`).
 - Keep **signup storage / env vars separate** (BrayStats ≠ Jersey Deals ≠ PlateQuest localStorage keys and collector secrets).
 - **Notify inbox (all sites):** email every collected lead (email, phone, or other fields) to **shop@jerseydeals.online** via FormSubmit (or `NOTIFY_EMAIL` / `JERSEYDEALS_CONTACT_EMAIL`).
 - When a BrayStats / Jersey Deals / PlateQuest task finishes, report these URLs, labeled:
   - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
   - Jersey Deals: https://jerseydeals.online/ (not the `github.io/.../jerseydeals/` path)
-  - PlateQuest: https://braydenbell.github.io/PlateQuest/
+  - PlateQuest: https://braydencbell01-arch.github.io/PlateQuest/
   - Square store: https://jerseydealsofficial.square.site/
 
 ## BrayStats agent roles
@@ -96,7 +96,7 @@ Telling the user “PR opened” for an offer without merging is a miss.
 
 1. Prefer deploying **only after merge to `Brayden-OS`** (CI on that branch, or a deploy from that tip).
 2. If you must publish Pages manually:
-   - Update **only** the path for your product (Stats = site root, Jersey Deals = `jerseydeals/` on Brayden-OS Pages; PlateQuest = separate `BraydenBell/PlateQuest` deploy).
+   - Update **only** the path for your product (Stats = site root, Jersey Deals = `jerseydeals/` on Brayden-OS Pages; PlateQuest = separate `braydencbell01-arch/PlateQuest` deploy).
    - **Preserve** the other products’ folders / sites.
    - Never `force_orphan` / wipe the whole `gh-pages` branch unless you rebuild **both** apps in the same deploy.
 3. Do not force-push `gh-pages` over a teammate’s newer commit without rebuilding both products from current `Brayden-OS`.
@@ -126,9 +126,9 @@ Three independent Vite + React + TS apps, each its own npm project (separate `pa
 Standard commands live in `package.json` (`dev`, `build`, `lint`, `preview`) — run them at the repo root for BrayStats, inside `jerseydeals/` for Jersey Deals, and inside `platequest/` for PlateQuest.
 
 Non-obvious caveats:
-- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). PlateQuest production base is `/PlateQuest/` (live https://braydenbell.github.io/PlateQuest/); local can use `./`. Hitting `/` returns 404 — always use the base path.
+- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). PlateQuest production base is `/PlateQuest/` (live https://braydencbell01-arch.github.io/PlateQuest/); local can use `./`. Hitting `/` returns 404 — always use the base path.
 - Run the apps on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`, `--port 5175` in `platequest/`) since both default to 5173.
-- PlateQuest deploys via `.github/workflows/deploy-platequest.yml` to **BraydenBell/PlateQuest** — never into BrayStats Pages or Jersey Deals.
+- PlateQuest deploys via `.github/workflows/deploy-platequest.yml` to **braydencbell01-arch/PlateQuest** — never into BrayStats Pages or Jersey Deals.
 - BrayStats fetches live data client-side from public ESPN/FotMob APIs (no keys/secrets). Data panels need outbound internet; the shell still renders offline but stays empty.
 - No automated test suite exists; `npm run lint` (oxlint) is the only check. `npm run build` runs `tsc -b` first, so it also type-checks.
 

@@ -2,7 +2,7 @@ name: Deploy PlateQuest
 
 # PlateQuest is its own product and GitHub Pages site — never publish into
 # BrayStats (Brayden-OS root) or Jersey Deals (/jerseydeals/ or jerseydeals.online).
-# Live: https://braydenbell.github.io/PlateQuest/
+# Live: https://braydencbell01-arch.github.io/PlateQuest/
 
 on:
   push:
@@ -51,17 +51,17 @@ jobs:
           cache: npm
           cache-dependency-path: platequest/package-lock.json
 
-      - name: Require BraydenBell/PlateQuest repo
+      - name: Require braydencbell01-arch/PlateQuest repo
         env:
           GH_TOKEN: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
         run: |
           set -euo pipefail
-          if gh api "repos/BraydenBell/PlateQuest" --silent 2>/dev/null; then
-            echo "BraydenBell/PlateQuest found."
+          if gh api "repos/braydencbell01-arch/PlateQuest" --silent 2>/dev/null; then
+            echo "braydencbell01-arch/PlateQuest found."
             exit 0
           fi
-          echo "::error::Create an empty public repo BraydenBell/PlateQuest (no README), then re-run this workflow."
-          echo "https://github.com/new?owner=BraydenBell&name=PlateQuest&visibility=public"
+          echo "::error::Create an empty public repo braydencbell01-arch/PlateQuest (no README), then re-run this workflow."
+          echo "https://github.com/new?owner=braydencbell01-arch&name=PlateQuest&visibility=public"
           exit 1
 
       - name: Build PlateQuest (project Pages base /PlateQuest/)
@@ -78,26 +78,26 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy to BraydenBell/PlateQuest Pages
+      - name: Deploy to braydencbell01-arch/PlateQuest Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
-          external_repository: BraydenBell/PlateQuest
+          external_repository: braydencbell01-arch/PlateQuest
           publish_dir: ./platequest/dist
           publish_branch: gh-pages
           force_orphan: true
           enable_jekyll: false
 
-      - name: Enable GitHub Pages on BraydenBell/PlateQuest
+      - name: Enable GitHub Pages on braydencbell01-arch/PlateQuest
         env:
           GH_TOKEN: ${{ steps.token.outputs.which == 'pq' && secrets.PLATEQUEST_DEPLOY_TOKEN || secrets.JERSEYDEALS_DEPLOY_TOKEN }}
         run: |
           set -euo pipefail
-          if gh api "repos/BraydenBell/PlateQuest/pages" --silent 2>/dev/null; then
+          if gh api "repos/braydencbell01-arch/PlateQuest/pages" --silent 2>/dev/null; then
             echo "Pages already configured."
             exit 0
           fi
-          gh api -X POST "repos/BraydenBell/PlateQuest/pages" \
+          gh api -X POST "repos/braydencbell01-arch/PlateQuest/pages" \
             -f build_type=legacy \
             -f 'source[branch]=gh-pages' \
             -f 'source[path]=/' \
@@ -106,7 +106,7 @@ jobs:
       - name: Verify live PlateQuest URL
         run: |
           set -euo pipefail
-          url="https://braydenbell.github.io/PlateQuest/"
+          url="https://braydencbell01-arch.github.io/PlateQuest/"
           echo "Waiting for $url …"
           deadline=$((SECONDS + 300))
           while (( SECONDS < deadline )); do
