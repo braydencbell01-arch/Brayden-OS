@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { JURISDICTIONS, rarityLabel, type Jurisdiction } from './jurisdictions'
-import { getMainPlate, getPlatesForCode } from './plateDesigns'
+import {
+  getMainPlate,
+  getPassengerBases,
+  getPlatesForCode,
+  getStatePlatePage,
+  WLP_CREDIT,
+} from './plateDesigns'
 import { PlateVisual } from './PlateVisual'
 
 export function StatesTab() {
@@ -41,28 +47,69 @@ export function StatesTab() {
             </header>
 
             <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
-              License plates
+              Real plate photos
             </h2>
-            <ul className="flex flex-col gap-4">
+            <ul className="flex flex-col gap-5">
               {getPlatesForCode(selected.code).map((design, i) => (
                 <motion.li
                   key={design.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="flex items-center gap-4 border-b border-line pb-4"
+                  className="border-b border-line pb-5"
                 >
                   <PlateVisual design={design} stateCode={selected.code} stateName={selected.name} />
-                  <div className="min-w-0">
+                  <div className="mt-2 min-w-0">
                     <p className="font-semibold text-ink">{design.name}</p>
                     <p className="mt-0.5 text-xs uppercase tracking-[0.14em] text-fog">{design.kind}</p>
-                    {design.slogan && (
-                      <p className="mt-1 text-sm text-fog">“{design.slogan}”</p>
+                    {design.pageUrl && (
+                      <a
+                        href={design.pageUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 inline-block text-xs text-plate-hot underline-offset-2 hover:underline"
+                      >
+                        View on World License Plates
+                      </a>
                     )}
                   </div>
                 </motion.li>
               ))}
             </ul>
+
+            {getPassengerBases(selected.code).length > 0 && (
+              <div className="mt-6">
+                <h2 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-fog">
+                  Passenger base history
+                </h2>
+                <ul className="flex flex-col gap-3">
+                  {getPassengerBases(selected.code).map((row) => (
+                    <li key={`${row.example}-${row.introduced}`} className="text-sm text-ink/90">
+                      <p className="font-semibold tracking-wide">{row.example}</p>
+                      <p className="text-fog">
+                        {row.introduced}
+                        {row.colors ? ` · ${row.colors}` : ''}
+                      </p>
+                      {row.notes && <p className="mt-0.5 text-ink/80">{row.notes}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <p className="mt-6 text-xs text-fog">
+              {WLP_CREDIT}{' '}
+              {getStatePlatePage(selected.code) && (
+                <a
+                  href={getStatePlatePage(selected.code)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-plate-hot underline-offset-2 hover:underline"
+                >
+                  Source page
+                </a>
+              )}
+            </p>
           </motion.div>
         ) : (
           <motion.div
@@ -77,7 +124,7 @@ export function StatesTab() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">States</p>
               <h1 className="font-display mt-1 text-3xl text-ink">Browse plates</h1>
               <p className="mt-1 max-w-md text-sm text-fog">
-                Scroll A–Z. Tap an underlined state name to see every plate style we track for it.
+                Real photographs from World License Plates. Tap a state to see passenger, history, and specialty galleries.
               </p>
             </header>
 
@@ -114,6 +161,7 @@ export function StatesTab() {
                 )
               })}
             </ul>
+            <p className="mt-6 text-xs text-fog">{WLP_CREDIT}</p>
           </motion.div>
         )}
       </AnimatePresence>
