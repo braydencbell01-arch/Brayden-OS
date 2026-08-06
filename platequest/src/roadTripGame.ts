@@ -55,7 +55,7 @@ export function getOrCreatePlayerId(): string {
   }
 }
 
-export const SCORING_VERSION = 3
+export const SCORING_VERSION = 4
 
 function jurisdictionCodes(includeDc: boolean): string[] {
   return JURISDICTIONS.filter((j) => includeDc || j.code !== 'DC').map((j) => j.code)

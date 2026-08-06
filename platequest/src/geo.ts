@@ -309,47 +309,173 @@ export function distanceStateToRouteMiles(
   return Number.isFinite(best) ? best : 3000
 }
 
+/** US land neighbors — plates from adjacent states spill onto a corridor more. */
+const US_NEIGHBORS: Record<string, string[]> = {
+  AL: ['FL', 'GA', 'MS', 'TN'],
+  AZ: ['CA', 'CO', 'NM', 'NV', 'UT'],
+  AR: ['LA', 'MO', 'MS', 'OK', 'TN', 'TX'],
+  CA: ['AZ', 'NV', 'OR'],
+  CO: ['AZ', 'KS', 'NE', 'NM', 'OK', 'UT', 'WY'],
+  CT: ['MA', 'NY', 'RI'],
+  DE: ['MD', 'NJ', 'PA'],
+  DC: ['MD', 'VA'],
+  FL: ['AL', 'GA'],
+  GA: ['AL', 'FL', 'NC', 'SC', 'TN'],
+  ID: ['MT', 'NV', 'OR', 'UT', 'WA', 'WY'],
+  IL: ['IA', 'IN', 'KY', 'MO', 'WI'],
+  IN: ['IL', 'KY', 'MI', 'OH'],
+  IA: ['IL', 'MN', 'MO', 'NE', 'SD', 'WI'],
+  KS: ['CO', 'MO', 'NE', 'OK'],
+  KY: ['IL', 'IN', 'MO', 'OH', 'TN', 'VA', 'WV'],
+  LA: ['AR', 'MS', 'TX'],
+  ME: ['NH'],
+  MD: ['DE', 'DC', 'PA', 'VA', 'WV'],
+  MA: ['CT', 'NH', 'NY', 'RI', 'VT'],
+  MI: ['IN', 'OH', 'WI'],
+  MN: ['IA', 'ND', 'SD', 'WI'],
+  MS: ['AL', 'AR', 'LA', 'TN'],
+  MO: ['AR', 'IA', 'IL', 'KS', 'KY', 'NE', 'OK', 'TN'],
+  MT: ['ID', 'ND', 'SD', 'WY'],
+  NE: ['CO', 'IA', 'KS', 'MO', 'SD', 'WY'],
+  NV: ['AZ', 'CA', 'ID', 'OR', 'UT'],
+  NH: ['MA', 'ME', 'VT'],
+  NJ: ['DE', 'NY', 'PA'],
+  NM: ['AZ', 'CO', 'OK', 'TX', 'UT'],
+  NY: ['CT', 'MA', 'NJ', 'PA', 'VT'],
+  NC: ['GA', 'SC', 'TN', 'VA'],
+  ND: ['MN', 'MT', 'SD'],
+  OH: ['IN', 'KY', 'MI', 'PA', 'WV'],
+  OK: ['AR', 'CO', 'KS', 'MO', 'NM', 'TX'],
+  OR: ['CA', 'ID', 'NV', 'WA'],
+  PA: ['DE', 'MD', 'NJ', 'NY', 'OH', 'WV'],
+  RI: ['CT', 'MA'],
+  SC: ['GA', 'NC'],
+  SD: ['IA', 'MN', 'MT', 'ND', 'NE', 'WY'],
+  TN: ['AL', 'AR', 'GA', 'KY', 'MO', 'MS', 'NC', 'VA'],
+  TX: ['AR', 'LA', 'NM', 'OK'],
+  UT: ['AZ', 'CO', 'ID', 'NV', 'NM', 'WY'],
+  VT: ['MA', 'NH', 'NY'],
+  VA: ['DC', 'KY', 'MD', 'NC', 'TN', 'WV'],
+  WA: ['ID', 'OR'],
+  WV: ['KY', 'MD', 'OH', 'PA', 'VA'],
+  WI: ['IL', 'IA', 'MI', 'MN'],
+  WY: ['CO', 'ID', 'MT', 'NE', 'SD', 'UT'],
+}
+
 function endpointMentionsState(code: string, startLabel: string, endLabel: string): boolean {
-  const blob = `${startLabel} | ${endLabel}`.toUpperCase()
+  const parts = `${startLabel} | ${endLabel}`.toUpperCase()
   const aliases: Record<string, string[]> = {
-    DC: [', DC', 'D.C.', 'DISTRICT OF COLUMBIA', 'WASHINGTON, DC'],
-    WV: [', WV', 'WEST VIRGINIA'],
-    VA: [', VA', 'VIRGINIA'],
-    NY: [', NY', 'NEW YORK'],
-    NH: [', NH', 'NEW HAMPSHIRE'],
-    NJ: [', NJ', 'NEW JERSEY'],
-    NM: [', NM', 'NEW MEXICO'],
-    NC: [', NC', 'NORTH CAROLINA'],
-    ND: [', ND', 'NORTH DAKOTA'],
-    SC: [', SC', 'SOUTH CAROLINA'],
-    SD: [', SD', 'SOUTH DAKOTA'],
-    RI: [', RI', 'RHODE ISLAND'],
-    MA: [', MA', 'MASSACHUSETTS'],
-    MD: [', MD', 'MARYLAND'],
-    ME: [', ME', 'MAINE'],
-    MI: [', MI', 'MICHIGAN'],
-    MN: [', MN', 'MINNESOTA'],
-    MS: [', MS', 'MISSISSIPPI'],
-    MO: [', MO', 'MISSOURI'],
-    MT: [', MT', 'MONTANA'],
-    PA: [', PA', 'PENNSYLVANIA'],
-    DE: [', DE', 'DELAWARE'],
-    CT: [', CT', 'CONNECTICUT'],
-    VT: [', VT', 'VERMONT'],
+    DC: ['D.C.', 'DISTRICT OF COLUMBIA', 'WASHINGTON, DC', ', DC'],
+    WV: ['WEST VIRGINIA', ', WV'],
+    VA: [', VA'],
+    NY: ['NEW YORK', ', NY'],
+    NH: ['NEW HAMPSHIRE', ', NH'],
+    NJ: ['NEW JERSEY', ', NJ'],
+    NM: ['NEW MEXICO', ', NM'],
+    NC: ['NORTH CAROLINA', ', NC'],
+    ND: ['NORTH DAKOTA', ', ND'],
+    SC: ['SOUTH CAROLINA', ', SC'],
+    SD: ['SOUTH DAKOTA', ', SD'],
+    RI: ['RHODE ISLAND', ', RI'],
+    MA: ['MASSACHUSETTS', ', MA'],
+    MD: ['MARYLAND', ', MD'],
+    ME: ['MAINE', ', ME'],
+    MI: ['MICHIGAN', ', MI'],
+    MN: ['MINNESOTA', ', MN'],
+    MS: ['MISSISSIPPI', ', MS'],
+    MO: ['MISSOURI', ', MO'],
+    MT: ['MONTANA', ', MT'],
+    PA: ['PENNSYLVANIA', ', PA'],
+    DE: ['DELAWARE', ', DE'],
+    CT: ['CONNECTICUT', ', CT'],
+    VT: ['VERMONT', ', VT'],
+    AL: ['ALABAMA', ', AL'],
+    AK: ['ALASKA', ', AK'],
+    AZ: ['ARIZONA', ', AZ'],
+    AR: ['ARKANSAS', ', AR'],
+    CA: ['CALIFORNIA', ', CA'],
+    CO: ['COLORADO', ', CO'],
+    FL: ['FLORIDA', ', FL'],
+    GA: ['GEORGIA', ', GA'],
+    HI: ['HAWAII', ', HI'],
+    ID: ['IDAHO', ', ID'],
+    IL: ['ILLINOIS', ', IL'],
+    IN: ['INDIANA', ', IN'],
+    IA: ['IOWA', ', IA'],
+    KS: ['KANSAS', ', KS'],
+    KY: ['KENTUCKY', ', KY'],
+    LA: ['LOUISIANA', ', LA'],
+    NE: ['NEBRASKA', ', NE'],
+    NV: ['NEVADA', ', NV'],
+    OH: ['OHIO', ', OH'],
+    OK: ['OKLAHOMA', ', OK'],
+    OR: ['OREGON', ', OR'],
+    TN: ['TENNESSEE', ', TN'],
+    TX: ['TEXAS', ', TX'],
+    UT: ['UTAH', ', UT'],
+    WA: ['WASHINGTON STATE', ', WA'],
+    WI: ['WISCONSIN', ', WI'],
+    WY: ['WYOMING', ', WY'],
+    PR: ['PUERTO RICO', ', PR'],
+    VI: ['VIRGIN ISLANDS', ', VI'],
+    GU: ['GUAM', ', GU'],
   }
-  const list = aliases[code] ?? []
-  const extras = [`, ${code}`, ` ${code} `]
-  return [...list, ...extras].some((a) => a && blob.includes(a.toUpperCase()))
+  const list = aliases[code] ?? [`, ${code}`]
+  if (list.some((a) => a && parts.includes(a.toUpperCase()))) return true
+  // Bare state name — but not "WEST VIRGINIA" for VA, or "WASHINGTON, DC" for WA.
+  if (code === 'VA') {
+    return /\bVIRGINIA\b/.test(parts) && !parts.includes('WEST VIRGINIA')
+  }
+  if (code === 'WA') {
+    return /\bWASHINGTON\b/.test(parts) && !parts.includes('WASHINGTON, DC') && !parts.includes('DISTRICT OF COLUMBIA')
+  }
+  return false
+}
+
+/**
+ * Absolute rarity from miles-to-corridor (not min-max across HI/Guam).
+ * Corridor plates stay cheap; Midwest on an East-Coast trip lands mid/high.
+ */
+function basePointsFromMiles(miles: number): number {
+  if (miles <= 20) return 1
+  if (miles <= 60) return 1 + ((miles - 20) / 40) * 5 // 1–6
+  if (miles <= 150) return 6 + ((miles - 60) / 90) * 10 // 6–16
+  if (miles <= 350) return 16 + ((miles - 150) / 200) * 16 // 16–32
+  if (miles <= 700) return 32 + ((miles - 350) / 350) * 18 // 32–50
+  if (miles <= 1200) return 50 + ((miles - 700) / 500) * 18 // 50–68
+  if (miles <= 2000) return 68 + ((miles - 1200) / 800) * 16 // 68–84
+  return 84 + Math.min(16, ((miles - 2000) / 1500) * 16) // 84–100
+}
+
+function popFactor(code: string): number {
+  const pop = STATE_POPULATION[code]
+  if (pop == null) return 1.08 // unknown / territory / foreign → slightly rarer
+  const logPop = Math.log10(Math.max(pop, 1))
+  // CA ~7.59, WY ~5.77 → map to ~0.88 … 1.18
+  const t = (7.6 - logPop) / (7.6 - 5.7)
+  return 0.88 + Math.max(0, Math.min(1, t)) * 0.3
+}
+
+function regionFloor(code: string): number {
+  if (code === 'HI' || code === 'AK') return 72
+  if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') return 70
+  if (code.startsWith('CA-') || code.startsWith('MX-')) return 40
+  if (code.startsWith('NA-') || code.startsWith('US-')) return 55
+  return 1
+}
+
+function clampScore(n: number): number {
+  return Math.max(1, Math.min(100, Math.round(n)))
 }
 
 /**
  * Score each jurisdiction 1–100 by how rare its plates are on this road trip.
  *
- * Distance = closest approach of the drive to the state (bbox), so places you
- * drive through/by (e.g. DC on a VA→upstate NY trip) score very low.
- *
- * Population only raises rarity for states already away from the route — it
- * cannot make an on-route low-pop place (DC) look rare.
+ * Factors:
+ * 1. Absolute miles from the drive corridor to the state (primary — not relative to HI)
+ * 2. Population (small states score a bit higher once off-corridor)
+ * 3. Neighbor spill — shares a border with an on-route state → slightly cheaper
+ * 4. Region floors — AK/HI/territories/foreign never look “common” on a CONUS trip
  */
 export function scorePlatesForRoute(
   start: { lat: number; lon: number; label?: string },
@@ -359,37 +485,36 @@ export function scorePlatesForRoute(
   const startLabel = start.label ?? ''
   const endLabel = end.label ?? ''
 
-  const rows = codes.map((code) => {
+  const milesByCode = new Map<string, number>()
+  for (const code of codes) {
     let miles = distanceStateToRouteMiles(code, start, end)
     if (endpointMentionsState(code, startLabel, endLabel)) miles = 0
-    const pop = STATE_POPULATION[code] ?? 1_000_000
-    return { code, miles, logPop: Math.log10(Math.max(pop, 1)) }
-  })
+    milesByCode.set(code, miles)
+  }
 
-  const minMiles = Math.min(...rows.map((r) => r.miles))
-  const maxMiles = Math.max(...rows.map((r) => r.miles))
-  const mileSpan = Math.max(1, maxMiles - minMiles)
-
-  const minLog = Math.min(...rows.map((r) => r.logPop))
-  const maxLog = Math.max(...rows.map((r) => r.logPop))
-  const popSpan = Math.max(0.01, maxLog - minLog)
-
-  const raw = rows.map((r) => {
-    const distRarity = (r.miles - minMiles) / mileSpan
-    const popRarity = 1 - (r.logPop - minLog) / popSpan
-    // Population only applies away from the corridor.
-    const rarity = distRarity * (0.55 + 0.45 * popRarity)
-    return { code: r.code, rarity }
-  })
-
-  const minR = Math.min(...raw.map((r) => r.rarity))
-  const maxR = Math.max(...raw.map((r) => r.rarity))
-  const span = Math.max(1e-6, maxR - minR)
+  const onRoute = new Set(
+    [...milesByCode.entries()].filter(([, m]) => m <= 40).map(([c]) => c),
+  )
 
   const out: Record<string, number> = {}
-  for (const r of raw) {
-    const t = (r.rarity - minR) / span
-    out[r.code] = Math.max(1, Math.min(100, Math.round(1 + t * 99)))
+  for (const code of codes) {
+    const miles = milesByCode.get(code) ?? 3000
+    let pts = basePointsFromMiles(miles)
+
+    // Population only nudges plates already away from the corridor.
+    if (miles > 50) pts *= popFactor(code)
+
+    // Neighbor of an on-route state → more likely on the highway, cheaper.
+    const neighbors = US_NEIGHBORS[code] ?? []
+    if (miles > 40 && neighbors.some((n) => onRoute.has(n))) {
+      pts *= 0.72
+    }
+
+    pts = Math.max(pts, regionFloor(code))
+    // Endpoint / on-corridor hard floor stays low.
+    if (miles <= 20) pts = Math.min(pts, 3)
+
+    out[code] = clampScore(pts)
   }
   return out
 }
@@ -402,39 +527,30 @@ export function scorePlatesFromLocation(
   here: { lat: number; lon: number },
   codes: string[],
 ): Record<string, number> {
-  const rows = codes.map((code) => {
+  const milesByCode = new Map<string, number>()
+  for (const code of codes) {
     const box = STATE_BBOX[code]
     const centroid = STATE_CENTROIDS[code]
     let miles = 3000
     if (box) miles = distanceToBBoxMiles(here, box)
     else if (centroid) miles = haversineMiles(here, centroid)
-    const pop = STATE_POPULATION[code] ?? 1_000_000
-    return { code, miles, logPop: Math.log10(Math.max(pop, 1)) }
-  })
+    milesByCode.set(code, miles)
+  }
 
-  const minMiles = Math.min(...rows.map((r) => r.miles))
-  const maxMiles = Math.max(...rows.map((r) => r.miles))
-  const mileSpan = Math.max(1, maxMiles - minMiles)
-
-  const minLog = Math.min(...rows.map((r) => r.logPop))
-  const maxLog = Math.max(...rows.map((r) => r.logPop))
-  const popSpan = Math.max(0.01, maxLog - minLog)
-
-  const raw = rows.map((r) => {
-    const distRarity = (r.miles - minMiles) / mileSpan
-    const popRarity = 1 - (r.logPop - minLog) / popSpan
-    const rarity = distRarity * (0.55 + 0.45 * popRarity)
-    return { code: r.code, rarity }
-  })
-
-  const minR = Math.min(...raw.map((r) => r.rarity))
-  const maxR = Math.max(...raw.map((r) => r.rarity))
-  const span = Math.max(1e-6, maxR - minR)
+  const nearby = new Set(
+    [...milesByCode.entries()].filter(([, m]) => m <= 40).map(([c]) => c),
+  )
 
   const out: Record<string, number> = {}
-  for (const r of raw) {
-    const t = (r.rarity - minR) / span
-    out[r.code] = Math.max(1, Math.min(100, Math.round(1 + t * 99)))
+  for (const code of codes) {
+    const miles = milesByCode.get(code) ?? 3000
+    let pts = basePointsFromMiles(miles)
+    if (miles > 50) pts *= popFactor(code)
+    const neighbors = US_NEIGHBORS[code] ?? []
+    if (miles > 40 && neighbors.some((n) => nearby.has(n))) pts *= 0.72
+    pts = Math.max(pts, regionFloor(code))
+    if (miles <= 20) pts = Math.min(pts, 3)
+    out[code] = clampScore(pts)
   }
   return out
 }
