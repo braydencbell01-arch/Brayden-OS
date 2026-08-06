@@ -110,13 +110,15 @@ jobs:
           enable_jekyll: false
 
       - name: Wait for Brayden-OS Pages to publish
+        # Soft-fail: Pages can sit in "errored"/"building" while gh-pages is already updated.
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PRIOR_ID: ${{ steps.prior_pages.outputs.id }}
         run: |
           set -euo pipefail
           echo "Waiting for a new github-pages deployment after id=$PRIOR_ID…"
-          deadline=$((SECONDS + 900))
+          deadline=$((SECONDS + 240))
           last=""
           while (( SECONDS < deadline )); do
             id=$(gh api "repos/${{ github.repository }}/deployments?environment=github-pages&per_page=1" --jq '.[0].id // 0')
