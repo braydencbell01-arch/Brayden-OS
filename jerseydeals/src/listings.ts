@@ -167,20 +167,22 @@ export function isSaleListing(item: Listing, _maxPrice = 25) {
   return SALE_TITLE_PATTERNS.some((pattern) => pattern.test(item.title))
 }
 
-/** Stable $10–$15 markdown for compare-at (same listing always same amount). */
-export function saleMarkdownAmount(item: Listing): 10 | 11 | 12 | 13 | 14 | 15 {
+/** Stable whole-dollar markdown $0–$50 for compare-at (same listing always same amount). */
+export function saleMarkdownAmount(item: Listing): number {
   const key = String(item.id || item.sku || item.title || '')
   let hash = 0
   for (let i = 0; i < key.length; i += 1) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0
   }
-  return (10 + (hash % 6)) as 10 | 11 | 12 | 13 | 14 | 15
+  return hash % 51
 }
 
-/** Crossed-off “was” price (current price + $10–$15). */
+/** Crossed-off “was” price (current price + $0–$50). Null when markdown is $0. */
 export function saleCompareAtPrice(item: Listing): number | null {
   if (item.price == null || Number.isNaN(item.price)) return null
-  return Math.round((item.price + saleMarkdownAmount(item)) * 100) / 100
+  const off = saleMarkdownAmount(item)
+  if (off <= 0) return null
+  return Math.round((item.price + off) * 100) / 100
 }
 
 /** Inventory price toggles — keep ranges aligned with typical kit pricing. */
