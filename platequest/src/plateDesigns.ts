@@ -80,6 +80,17 @@ export function getPlatesForCode(code: string): PlateDesign[] {
   return PLATES_BY_CODE[code.toUpperCase()] ?? []
 }
 
+/** WLP “sheet” photos that tile several plates — not a single plate close-up. */
+export function isWlpPlateSheet(design: PlateDesign): boolean {
+  const ref = `${design.image ?? ''} ${design.id}`
+  return /_GI\d|_SI[A-Z0-9]|_OTM?\b|_OT-/i.test(ref)
+}
+
+/**
+ * Best single “main” plate image for list thumbnails.
+ * Prefers current passenger (GI3) sheets; specialty sheets are last resorts
+ * (PlateVisual crops sheets to one plate in compact mode).
+ */
 export function getMainPlate(code: string): PlateDesign | undefined {
   const key = code.toUpperCase()
   const plates = getPlatesForCode(key)
@@ -89,15 +100,22 @@ export function getMainPlate(code: string): PlateDesign | undefined {
     const hit = plates.find((p) => p.id === mainId)
     if (hit) return hit
   }
-  // Avoid WLP gallery collage sheets (GI*) when picking a fallback thumbnail.
-  const singles = plates.filter((p) => !/_GI\d/i.test(p.image ?? p.id))
-  const pool = singles.length ? singles : plates
-  return (
-    pool.find((p) => p.kind === 'passenger') ??
-    pool.find((p) => p.kind === 'specialty') ??
-    pool.find((p) => p.kind === 'history') ??
-    pool[0]
-  )
+
+  const score = (p: PlateDesign): number => {
+    const file = (p.image ?? p.id).toUpperCase()
+    let s = 0
+    if (p.kind === 'passenger') s += 100
+    if (/_GI3/i.test(file)) s += 80 // WLP “current private/passenger” sheet
+    if (/_GI2/i.test(file)) s += 50
+    if (p.kind === 'history' && /_GI/i.test(file)) s += 40
+    if (p.kind === 'standard' || p.kind === 'classic') s += 70
+    if (p.kind === 'specialty' || p.kind === 'optional') s -= 20
+    if (p.kind === 'other' || p.kind === 'military' || p.kind === 'gallery') s -= 40
+    if (/_OT/i.test(file)) s -= 50
+    return s
+  }
+
+  return [...plates].sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name))[0]
 }
 
 export function getPassengerBases(code: string): PassengerBase[] {

@@ -1,4 +1,4 @@
-import type { PlateDesign } from './plateDesigns'
+import { isWlpPlateSheet, type PlateDesign } from './plateDesigns'
 
 type Props = {
   design: PlateDesign
@@ -6,16 +6,47 @@ type Props = {
   stateName?: string
   className?: string
   compact?: boolean
+  /** Force cropping a multi-plate WLP sheet to one plate (default: on when compact). */
+  cropToSingle?: boolean
 }
 
 /** Real license-plate photograph (from World License Plates). */
-export function PlateVisual({ design, stateCode, stateName, className = '', compact }: Props) {
+export function PlateVisual({
+  design,
+  stateCode,
+  stateName,
+  className = '',
+  compact,
+  cropToSingle,
+}: Props) {
   const label = `${stateName ?? stateCode} — ${design.name}`
+  const shouldCrop = (cropToSingle ?? !!compact) && isWlpPlateSheet(design)
 
   if (design.image) {
     const src = design.image.startsWith('/') || design.image.startsWith('http')
       ? design.image
       : `./${design.image}`
+
+    // WLP US pages mostly ship collage sheets — crop to the top-left plate for list thumbs.
+    if (shouldCrop) {
+      return (
+        <div
+          className={`relative shrink-0 overflow-hidden bg-lane ring-1 ring-black/15 ${
+            compact ? 'h-14 w-28 rounded-[3px]' : 'aspect-[2/1] w-full max-w-md rounded-sm'
+          } ${className}`}
+          title={label}
+        >
+          <img
+            src={src}
+            alt={design.alt || label}
+            loading="lazy"
+            decoding="async"
+            className="absolute left-0 top-0 h-[195%] w-[195%] max-w-none object-cover object-left-top"
+          />
+        </div>
+      )
+    }
+
     return (
       <img
         src={src}
