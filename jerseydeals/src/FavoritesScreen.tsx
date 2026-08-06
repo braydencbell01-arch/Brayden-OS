@@ -237,11 +237,11 @@ export function FavoritesScreen({
                         }}
                         className="block w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-crimson"
                       >
-                        <div className="aspect-square overflow-hidden border-2 border-crimson bg-mist">
+                        <div className="aspect-[4/5] overflow-hidden bg-white">
                           <img
                             src={img}
                             alt=""
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain object-center"
                             loading="lazy"
                             decoding="async"
                             onError={(e) => {
@@ -249,10 +249,10 @@ export function FavoritesScreen({
                             }}
                           />
                         </div>
-                        <p className="mt-1.5 line-clamp-2 text-[0.7rem] font-medium leading-snug text-navy">
+                        <p className="mt-1.5 line-clamp-2 font-brand text-[0.7rem] font-bold uppercase leading-snug tracking-[0.04em] text-navy">
                           {shortTitle(item.title)}
                         </p>
-                        <p className="mt-0.5 font-display text-sm font-bold text-navy">
+                        <p className="mt-0.5 font-brand text-[0.75rem] font-bold text-[#e85d04]">
                           {formatPrice(item.price, item.currency)}
                         </p>
                       </button>
