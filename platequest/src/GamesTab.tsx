@@ -22,6 +22,9 @@ type Props = {
   onGameScoreChange?: (score: number, foundCodes: string[]) => void
   /** Bumps when App applies a camera plate so GamesTab reloads from storage. */
   reloadToken?: number
+  /** Invite code from ?join= — opens join flow immediately. */
+  initialJoinCode?: string | null
+  onJoinHandled?: () => void
 }
 
 function useTownSearch(query: string) {
@@ -240,13 +243,20 @@ function SettingsPanel({
   )
 }
 
-export function GamesTab({ onGameScoreChange, reloadToken = 0 }: Props) {
+export function GamesTab({
+  onGameScoreChange,
+  reloadToken = 0,
+  initialJoinCode = null,
+  onJoinHandled,
+}: Props) {
   const [game, setGame] = useState<RoadTripGame | null>(() => loadGame())
-  const [mode, setMode] = useState<'lobby' | 'create' | 'join'>('lobby')
+  const [mode, setMode] = useState<'lobby' | 'create' | 'join'>(() =>
+    initialJoinCode ? 'join' : 'lobby',
+  )
   const [start, setStart] = useState<Place | null>(null)
   const [end, setEnd] = useState<Place | null>(null)
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
-  const [joinCode, setJoinCode] = useState('')
+  const [joinCode, setJoinCode] = useState(() => initialJoinCode ?? '')
   const [joinName, setJoinName] = useState('')
   const [joinError, setJoinError] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -265,20 +275,21 @@ export function GamesTab({ onGameScoreChange, reloadToken = 0 }: Props) {
     setGame(loadGame())
   }, [reloadToken])
 
-  // Deep-link join: ?join=CODE
+  // Deep-link join: ?join=CODE (from App or direct)
   useEffect(() => {
     if (hydratedJoin.current) return
     hydratedJoin.current = true
     try {
-      const params = new URLSearchParams(window.location.search)
-      const code = params.get('join')
+      const fromUrl = new URLSearchParams(window.location.search).get('join')
+      const code = initialJoinCode || fromUrl
       if (!code) return
       setJoinCode(code)
       setMode('join')
+      onJoinHandled?.()
     } catch {
       /* ignore */
     }
-  }, [])
+  }, [initialJoinCode, onJoinHandled])
 
   const tally = useMemo(() => (game ? sortedTally(game) : []), [game])
 

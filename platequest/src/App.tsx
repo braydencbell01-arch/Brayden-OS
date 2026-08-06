@@ -46,11 +46,24 @@ function loadList(key: string): string[] {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>('home')
+  const [tab, setTab] = useState<TabId>(() => {
+    try {
+      return new URLSearchParams(window.location.search).has('join') ? 'games' : 'home'
+    } catch {
+      return 'home'
+    }
+  })
   const [points, setPoints] = useState(() => loadNumber(POINTS_KEY))
   const [foundCodes, setFoundCodes] = useState(() => loadList(FOUND_KEY))
   const [pendingPlateCode, setPendingPlateCode] = useState<string | null>(null)
   const [gameTick, setGameTick] = useState(0)
+  const [inviteCodeFromUrl, setInviteCodeFromUrl] = useState<string | null>(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('join')
+    } catch {
+      return null
+    }
+  })
   const [lastPlate, setLastPlate] = useState<string | null>(() => {
     try {
       return localStorage.getItem(LAST_KEY)
@@ -131,6 +144,8 @@ export default function App() {
             {tab === 'games' && (
               <GamesTab
                 reloadToken={gameTick}
+                initialJoinCode={inviteCodeFromUrl}
+                onJoinHandled={() => setInviteCodeFromUrl(null)}
                 onGameScoreChange={(score, codes) => {
                   setPoints(score)
                   setFoundCodes(codes)

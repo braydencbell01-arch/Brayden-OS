@@ -174,10 +174,35 @@ export function logPlate(game: RoadTripGame, code: string): RoadTripGame | null 
   }
 }
 
+/** Always point invites at the PlateQuest app — never BrayStats root. */
+export function platequestBaseUrl(): string {
+  const { origin, pathname, href } = window.location
+  const host = window.location.hostname
+
+  // Production GitHub Pages
+  if (host === 'braydencbell01-arch.github.io') {
+    return `${origin}/Brayden-OS/platequest/`
+  }
+
+  // Already under …/platequest/ (or /platequest)
+  const match = pathname.match(/^(.*\/platequest)(?:\/|$)/i)
+  if (match) {
+    return `${origin}${match[1]}/`
+  }
+
+  // Vite relative base / Cloudflare: directory of the current page
+  try {
+    return new URL('./', href).href
+  } catch {
+    return `${origin}/`
+  }
+}
+
 export function inviteUrl(game: RoadTripGame): string {
   const code = encodeInvite(game)
-  const base = `${window.location.origin}${window.location.pathname}`
-  return `${base}?join=${code}`
+  const url = new URL(platequestBaseUrl())
+  url.searchParams.set('join', code)
+  return url.toString()
 }
 
 export function sortedTally(game: RoadTripGame): { code: string; points: number; found: boolean }[] {
