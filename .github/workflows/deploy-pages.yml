@@ -72,6 +72,7 @@ jobs:
           publish_dir: ./site
           publish_branch: gh-pages
           force_orphan: true
+          enable_jekyll: false
 
       # Dedicated shop site: https://jerseydeals.online/ (BraydenBell/jerseydeals)
       # Requires repo secret JERSEYDEALS_DEPLOY_TOKEN (PAT with contents:write on that repo).
@@ -113,4 +114,5 @@ jobs:
           publish_dir: ./jerseydeals/dist
           publish_branch: gh-pages
           force_orphan: true
+          enable_jekyll: false
           cname: jerseydeals.online
