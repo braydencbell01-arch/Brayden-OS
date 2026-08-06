@@ -195,6 +195,89 @@ export const STATE_POPULATION: Record<string, number> = {
   DC: 678_972,
 }
 
+/** Land area in square miles (approx. Census / USGS). */
+export const STATE_LAND_AREA_SQ_MI: Record<string, number> = {
+  AL: 50_645,
+  AK: 570_641,
+  AZ: 113_594,
+  AR: 52_035,
+  CA: 155_779,
+  CO: 103_642,
+  CT: 4_842,
+  DE: 1_949,
+  FL: 53_625,
+  GA: 57_513,
+  HI: 6_423,
+  ID: 82_643,
+  IL: 55_519,
+  IN: 35_826,
+  IA: 55_857,
+  KS: 81_759,
+  KY: 39_486,
+  LA: 43_204,
+  ME: 30_843,
+  MD: 9_707,
+  MA: 7_800,
+  MI: 56_539,
+  MN: 79_627,
+  MS: 46_923,
+  MO: 68_742,
+  MT: 145_546,
+  NE: 76_824,
+  NV: 109_781,
+  NH: 8_953,
+  NJ: 7_354,
+  NM: 121_298,
+  NY: 47_126,
+  NC: 48_618,
+  ND: 69_001,
+  OH: 40_861,
+  OK: 68_595,
+  OR: 95_988,
+  PA: 44_743,
+  RI: 1_034,
+  SC: 30_061,
+  SD: 75_811,
+  TN: 41_235,
+  TX: 261_232,
+  UT: 82_170,
+  VT: 9_217,
+  VA: 39_490,
+  WA: 66_456,
+  WV: 24_038,
+  WI: 54_158,
+  WY: 97_093,
+  DC: 61,
+}
+
+export function formatPopulation(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 1 : 2)}M`
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`
+  return String(n)
+}
+
+export function formatAreaSqMi(n: number): string {
+  return `${n.toLocaleString('en-US')} sq mi`
+}
+
+export function formatMilesAway(n: number): string {
+  if (n < 1) return 'Here'
+  if (n < 10) return `${n.toFixed(1)} mi`
+  return `${Math.round(n).toLocaleString('en-US')} mi`
+}
+
+/** Miles from a point to a jurisdiction (bbox when known, else centroid). */
+export function distanceToJurisdictionMiles(
+  code: string,
+  here: { lat: number; lon: number },
+): number | null {
+  const box = STATE_BBOX[code]
+  if (box) return distanceToBBoxMiles(here, box)
+  const centroid = STATE_CENTROIDS[code]
+  if (centroid) return haversineMiles(here, centroid)
+  return null
+}
+
 /**
  * Rough state bounding boxes (lat/lon). Used so “drive through / drive by”
  * measures distance to the state itself, not only its geographic centroid.
