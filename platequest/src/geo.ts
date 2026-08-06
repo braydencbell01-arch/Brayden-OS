@@ -60,6 +60,25 @@ export const STATE_CENTROIDS: Record<string, { lat: number; lon: number }> = {
   WI: { lat: 44.5, lon: -89.7 },
   WY: { lat: 43.0, lon: -107.6 },
   DC: { lat: 38.9, lon: -77.0 },
+  // Canada / territories (for route distance — not only US centroids)
+  'CA-ON': { lat: 50.0, lon: -85.0 },
+  'CA-QC': { lat: 52.0, lon: -72.0 },
+  'CA-NB': { lat: 46.5, lon: -66.1 },
+  'CA-NS': { lat: 45.1, lon: -63.0 },
+  'CA-PE': { lat: 46.3, lon: -63.3 },
+  'CA-NL': { lat: 53.1, lon: -57.7 },
+  'CA-MB': { lat: 53.8, lon: -98.0 },
+  'CA-SK': { lat: 54.4, lon: -106.0 },
+  'CA-AB': { lat: 55.0, lon: -115.0 },
+  'CA-BC': { lat: 53.7, lon: -125.0 },
+  'CA-YT': { lat: 64.0, lon: -135.0 },
+  'CA-NT': { lat: 64.3, lon: -119.0 },
+  'CA-NU': { lat: 70.3, lon: -90.0 },
+  PR: { lat: 18.2, lon: -66.5 },
+  VI: { lat: 18.3, lon: -64.8 },
+  GU: { lat: 13.4, lon: 144.8 },
+  AS: { lat: -14.3, lon: -170.7 },
+  MP: { lat: 15.2, lon: 145.8 },
 }
 
 function toRad(d: number) {
@@ -515,50 +534,203 @@ function endpointMentionsState(code: string, startLabel: string, endLabel: strin
   return false
 }
 
-/**
- * Absolute rarity from miles-to-corridor (not min-max across HI/Guam).
- * Corridor plates stay cheap; Midwest on an East-Coast trip lands mid/high.
- */
-function basePointsFromMiles(miles: number): number {
-  if (miles <= 20) return 1
-  if (miles <= 60) return 1 + ((miles - 20) / 40) * 5 // 1–6
-  if (miles <= 150) return 6 + ((miles - 60) / 90) * 10 // 6–16
-  if (miles <= 350) return 16 + ((miles - 150) / 200) * 16 // 16–32
-  if (miles <= 700) return 32 + ((miles - 350) / 350) * 18 // 32–50
-  if (miles <= 1200) return 50 + ((miles - 700) / 500) * 18 // 50–68
-  if (miles <= 2000) return 68 + ((miles - 1200) / 800) * 16 // 68–84
-  return 84 + Math.min(16, ((miles - 2000) / 1500) * 16) // 84–100
-}
-
-function popFactor(code: string): number {
-  const pop = STATE_POPULATION[code]
-  if (pop == null) return 1.08 // unknown / territory / foreign → slightly rarer
-  const logPop = Math.log10(Math.max(pop, 1))
-  // CA ~7.59, WY ~5.77 → map to ~0.88 … 1.18
-  const t = (7.6 - logPop) / (7.6 - 5.7)
-  return 0.88 + Math.max(0, Math.min(1, t)) * 0.3
-}
-
-function regionFloor(code: string): number {
-  if (code === 'HI' || code === 'AK') return 72
-  if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') return 70
-  if (code.startsWith('CA-') || code.startsWith('MX-')) return 40
-  if (code.startsWith('NA-') || code.startsWith('US-')) return 55
-  return 1
-}
-
 function clampScore(n: number): number {
   return Math.max(1, Math.min(100, Math.round(n)))
 }
 
+/** Fleet size proxy — more registered drivers ⇒ plates travel farther. */
+function fleetMass(code: string): number {
+  const pop = STATE_POPULATION[code]
+  if (pop != null) return Math.max(0.2, Math.log10(pop) - 5.15) // WY≈0.6 … CA≈2.4
+  if (code.startsWith('CA-')) return 0.85
+  if (code.startsWith('MX-')) return 0.7
+  if (code === 'PR') return 0.65
+  if (code === 'DC') return 0.5
+  if (code.startsWith('NA-') || code.startsWith('US-')) return 0.22
+  if (code === 'HI' || code === 'AK') return 0.4
+  if (code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') return 0.18
+  return 0.3
+}
+
+/** Decay half-life (miles): how far a plate type typically remains “common.” */
+function decayHalfLifeMiles(code: string): number {
+  const mass = fleetMass(code)
+  let half = 95 + mass * 55 // ~120 … ~230
+  if (code === 'CA' || code === 'TX' || code === 'FL') half *= 1.18
+  if (code === 'IL' || code === 'OH' || code === 'PA' || code === 'GA' || code === 'NY') half *= 1.06
+  if (code === 'HI' || code === 'AK') half *= 0.4
+  if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') half *= 0.35
+  if (code.startsWith('NA-') || code.startsWith('US-')) half *= 0.45
+  return half
+}
+
+/** How much of the sampled drive sits inside a soft “traffic shed” of the state. */
+function routeExposureFraction(
+  code: string,
+  samples: { lat: number; lon: number }[],
+  shedMiles: number,
+): number {
+  const box = STATE_BBOX[code]
+  const centroid = STATE_CENTROIDS[code]
+  if (!box && !centroid) return 0
+  let hits = 0
+  for (const s of samples) {
+    const d = box ? distanceToBBoxMiles(s, box) : haversineMiles(s, centroid!)
+    if (d <= shedMiles) hits++
+  }
+  return hits / samples.length
+}
+
 /**
- * Score each jurisdiction 1–100 by how rare its plates are on this road trip.
+ * Tourism / migration corridors: mild likelihood boosts (never enough alone to make
+ * Florida worth 1 on a short mid-Atlantic hop).
+ */
+function corridorTourismBoost(
+  code: string,
+  start: { lat: number; lon: number },
+  end: { lat: number; lon: number },
+): number {
+  const midLat = (start.lat + end.lat) / 2
+  const midLon = (start.lon + end.lon) / 2
+  const tripMiles = haversineMiles(start, end)
+  const eastCoast = midLon > -85 && midLat > 30 && midLat < 45
+  const floridaLane =
+    Math.min(start.lat, end.lat) < 31 && Math.max(start.lat, end.lat) > 36 && midLon > -88
+  const southwest = midLon < -100 && midLat < 40
+  const midwest = midLon > -100 && midLon < -82 && midLat > 38 && midLat < 49
+  const pacific = midLon < -115
+
+  let boost = 1
+  // Snowbirds matter more on long north–south runs than on VA→NY.
+  if (code === 'FL' && floridaLane) boost *= 1.45
+  else if (code === 'FL' && eastCoast && tripMiles > 600) boost *= 1.2
+  if (code === 'CA' && (southwest || pacific)) boost *= 1.2
+  if (code === 'TX' && (southwest || (midwest && midLat < 40))) boost *= 1.22
+  if (code === 'AZ' && southwest) boost *= 1.15
+  if ((code === 'CA-ON' || code === 'CA-QC') && midLat > 40 && midLon > -90) boost *= 1.3
+  if (code.startsWith('MX-') && (southwest || midLat < 34)) boost *= 1.35
+  return boost
+}
+
+function regionHardFloor(code: string): number {
+  if (code === 'HI' || code === 'AK') return 82
+  if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') return 78
+  if (code.startsWith('US-')) return 65
+  if (code.startsWith('NA-')) return 60
+  if (code.startsWith('MX-')) return 44
+  if (code.startsWith('CA-')) return 40
+  return 1
+}
+
+function regionHardCeiling(miles: number): number | null {
+  if (miles <= 20) return 3
+  if (miles <= 45) return 8
+  if (miles <= 75) return 14
+  return null
+}
+
+/** Prevent likelihood quirks from underpricing clearly off-route plates. */
+function softFloorFromMiles(miles: number): number {
+  if (miles <= 50) return 1
+  if (miles <= 120) return 4
+  if (miles <= 220) return 10
+  if (miles <= 400) return 18
+  if (miles <= 650) return 28
+  if (miles <= 1000) return 38
+  if (miles <= 1500) return 48
+  return 58
+}
+
+/**
+ * Likelihood → points. Calibrated so on-corridor populous ≈ 1–5,
+ * Midwest on an East-Coast trip ≈ 35–55, remote/special ≈ 80–100.
+ */
+function pointsFromLikelihood(L: number): number {
+  const rarity = -Math.log10(Math.max(L, 1e-7))
+  // L=1 → rarity 0 → ~1pt; L=0.01 → 2 → ~40; L=0.001 → 3 → ~60; L=1e-5 → 5 → ~95
+  const t = (rarity - 0.05) / 4.6
+  return 1 + Math.max(0, Math.min(1, t)) * 99
+}
+
+type ScoreContext = {
+  milesByCode: Map<string, number>
+  onRoute: Set<string>
+  samples: { lat: number; lon: number }[]
+  tripMiles: number
+  start: { lat: number; lon: number }
+  end: { lat: number; lon: number }
+}
+
+function scoreCodeComplex(code: string, ctx: ScoreContext): number {
+  const miles = ctx.milesByCode.get(code) ?? 3000
+  const halfLife = decayHalfLifeMiles(code)
+  // Longer trips stretch decay slightly (more through-traffic mix).
+  const tripStretch = 1 + Math.min(0.35, ctx.tripMiles / 2800)
+  const hl = halfLife * tripStretch
+
+  // 1) Distance decay (half-life) — primary geographic signal.
+  const distanceTerm = Math.pow(0.5, miles / hl)
+
+  // 2) Fleet mass.
+  const fleetTerm = 0.25 + fleetMass(code) * 0.55
+
+  // 3) Route exposure — share of drive inside the state's traffic shed.
+  const shed = Math.max(70, hl * 0.85)
+  const exposure = routeExposureFraction(code, ctx.samples, shed)
+  const exposureTerm = 0.5 + 2.2 * exposure
+
+  // 4) Neighbor spill onto the corridor.
+  const neighbors = US_NEIGHBORS[code] ?? []
+  let neighborTerm = 1
+  if (neighbors.some((n) => ctx.onRoute.has(n))) neighborTerm *= 1.35
+  else if (neighbors.some((n) => (ctx.milesByCode.get(n) ?? 9999) <= 110)) neighborTerm *= 1.18
+
+  // 5) Tourism / snowbird / border corridors.
+  const tourismTerm = corridorTourismBoost(code, ctx.start, ctx.end)
+
+  // 6) Isolation — small fleets far from the drive are especially rare.
+  const isolation =
+    miles > 400 && fleetMass(code) < 1.2 && !code.startsWith('CA-') && !code.startsWith('MX-')
+      ? 0.55
+      : miles > 700 && fleetMass(code) < 1.7
+        ? 0.7
+        : 1
+
+  // 7) Cross-country friction — even big fleets get expensive far away.
+  const friction = miles > 900 ? Math.pow(0.5, (miles - 900) / 900) : 1
+
+  // 8) Overseas / special plates.
+  let specialTerm = 1
+  if (code === 'HI' || code === 'AK') specialTerm = 0.045
+  else if (code === 'PR' || code === 'VI' || code === 'GU' || code === 'AS' || code === 'MP') specialTerm = 0.06
+  else if (code.startsWith('US-') || code.startsWith('NA-')) specialTerm = 0.12
+  else if (code.startsWith('MX-')) specialTerm = miles < 450 ? 0.7 : 0.22
+  else if (code.startsWith('CA-')) specialTerm = miles < 350 ? 0.85 : 0.28
+
+  const likelihood =
+    fleetTerm *
+    distanceTerm *
+    exposureTerm *
+    neighborTerm *
+    tourismTerm *
+    isolation *
+    friction *
+    specialTerm
+
+  let pts = pointsFromLikelihood(likelihood)
+  pts = Math.max(pts, regionHardFloor(code), softFloorFromMiles(miles))
+  const cap = regionHardCeiling(miles)
+  if (cap != null) pts = Math.min(pts, cap)
+
+  return clampScore(pts)
+}
+
+/**
+ * Score each jurisdiction 1–100 by expected plate rarity on this road trip.
  *
- * Factors:
- * 1. Absolute miles from the drive corridor to the state (primary — not relative to HI)
- * 2. Population (small states score a bit higher once off-corridor)
- * 3. Neighbor spill — shares a border with an on-route state → slightly cheaper
- * 4. Region floors — AK/HI/territories/foreign never look “common” on a CONUS trip
+ * Encounter likelihood from: fleet size × half-life distance decay × route exposure ×
+ * neighbor spill × tourism corridors × isolation × cross-country friction × special-plate
+ * terms, then a log map to points. Absolute miles (not min-max vs Hawaii).
  */
 export function scorePlatesForRoute(
   start: { lat: number; lon: number; label?: string },
@@ -567,6 +739,8 @@ export function scorePlatesForRoute(
 ): Record<string, number> {
   const startLabel = start.label ?? ''
   const endLabel = end.label ?? ''
+  const samples = sampleRoute(start, end, 56)
+  const tripMiles = Math.max(40, haversineMiles(start, end))
 
   const milesByCode = new Map<string, number>()
   for (const code of codes) {
@@ -576,40 +750,24 @@ export function scorePlatesForRoute(
   }
 
   const onRoute = new Set(
-    [...milesByCode.entries()].filter(([, m]) => m <= 40).map(([c]) => c),
+    [...milesByCode.entries()].filter(([, m]) => m <= 45).map(([c]) => c),
   )
 
+  const ctx: ScoreContext = { milesByCode, onRoute, samples, tripMiles, start, end }
   const out: Record<string, number> = {}
-  for (const code of codes) {
-    const miles = milesByCode.get(code) ?? 3000
-    let pts = basePointsFromMiles(miles)
-
-    // Population only nudges plates already away from the corridor.
-    if (miles > 50) pts *= popFactor(code)
-
-    // Neighbor of an on-route state → more likely on the highway, cheaper.
-    const neighbors = US_NEIGHBORS[code] ?? []
-    if (miles > 40 && neighbors.some((n) => onRoute.has(n))) {
-      pts *= 0.72
-    }
-
-    pts = Math.max(pts, regionFloor(code))
-    // Endpoint / on-corridor hard floor stays low.
-    if (miles <= 20) pts = Math.min(pts, 3)
-
-    out[code] = clampScore(pts)
-  }
+  for (const code of codes) out[code] = scoreCodeComplex(code, ctx)
   return out
 }
 
 /**
  * Score each jurisdiction 1–100 by how rare its plates are near `here`.
- * Low = common (nearby / populous); high = rare. Sort ascending for “most common first.”
+ * Same encounter model, treating “route” as a zero-length trip at this point.
  */
 export function scorePlatesFromLocation(
   here: { lat: number; lon: number },
   codes: string[],
 ): Record<string, number> {
+  const samples = [here]
   const milesByCode = new Map<string, number>()
   for (const code of codes) {
     const box = STATE_BBOX[code]
@@ -620,20 +778,19 @@ export function scorePlatesFromLocation(
     milesByCode.set(code, miles)
   }
 
-  const nearby = new Set(
-    [...milesByCode.entries()].filter(([, m]) => m <= 40).map(([c]) => c),
+  const onRoute = new Set(
+    [...milesByCode.entries()].filter(([, m]) => m <= 45).map(([c]) => c),
   )
 
-  const out: Record<string, number> = {}
-  for (const code of codes) {
-    const miles = milesByCode.get(code) ?? 3000
-    let pts = basePointsFromMiles(miles)
-    if (miles > 50) pts *= popFactor(code)
-    const neighbors = US_NEIGHBORS[code] ?? []
-    if (miles > 40 && neighbors.some((n) => nearby.has(n))) pts *= 0.72
-    pts = Math.max(pts, regionFloor(code))
-    if (miles <= 20) pts = Math.min(pts, 3)
-    out[code] = clampScore(pts)
+  const ctx: ScoreContext = {
+    milesByCode,
+    onRoute,
+    samples,
+    tripMiles: 80,
+    start: here,
+    end: here,
   }
+  const out: Record<string, number> = {}
+  for (const code of codes) out[code] = scoreCodeComplex(code, ctx)
   return out
 }
