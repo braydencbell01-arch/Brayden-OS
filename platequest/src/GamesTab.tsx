@@ -226,8 +226,8 @@ function SettingsPanel({
         </ul>
 
         <p className="mt-4 text-xs text-fog">
-          Scoring is 1–100 per state from your route distance and that state’s population
-          (low-pop states like Kansas score higher; high-pop like California score lower).
+          Scoring is 1–100 from how close your drive comes to each state, then population
+          for states farther away. Driving past DC cannot score high just because DC is small.
           Any plate from a state counts once — designs are not separate targets.
         </p>
 
@@ -456,7 +456,8 @@ export function GamesTab({
           Points by rarity on your route (1–100)
         </h2>
         <p className="text-xs text-fog">
-          Distance from your trip + state population. Any plate from the state counts.
+          Closest approach on your drive, then population if you’re far away. Any plate from the state
+          counts.
         </p>
         <ul className="flex flex-col gap-2">
           {visible.map((row) => {
