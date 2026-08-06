@@ -795,7 +795,8 @@ function ProductLink({
     used ? condition : null,
   ].filter(Boolean) as string[]
   const infoLine = infoBits.slice(0, 2).join(' · ') || item.tag
-  const compareAt = onSale ? saleCompareAtPrice(item) : null
+  /** Inventory / sale cards: crossed-off was-price is $10–$15 above live price. */
+  const compareAt = catalog || onSale ? saleCompareAtPrice(item) : null
 
   if (catalog) {
     return (
@@ -1074,7 +1075,7 @@ function QuickViewModal({
             </button>
           </div>
           <p className="mt-4 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 font-display text-3xl font-bold text-navy">
-            {onSale && saleCompareAtPrice(item) != null ? (
+            {saleCompareAtPrice(item) != null ? (
               <span className="text-xl font-semibold text-[#e85d04] line-through">
                 {formatPrice(saleCompareAtPrice(item), item.currency)}
               </span>
