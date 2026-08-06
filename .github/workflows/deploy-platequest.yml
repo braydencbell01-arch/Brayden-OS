@@ -27,7 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Resolve BraydenBell deploy token
+      - name: Resolve deploy token
         id: token
         env:
           PQ: ${{ secrets.PLATEQUEST_DEPLOY_TOKEN }}
@@ -38,7 +38,7 @@ jobs:
             echo "Using PLATEQUEST_DEPLOY_TOKEN."
           elif [ -n "$JD" ]; then
             echo "which=jd" >> "$GITHUB_OUTPUT"
-            echo "Using JERSEYDEALS_DEPLOY_TOKEN (BraydenBell PAT fallback)."
+            echo "Using JERSEYDEALS_DEPLOY_TOKEN (PAT fallback for braydencbell01-arch/PlateQuest)."
           else
             echo "ERROR: Set PLATEQUEST_DEPLOY_TOKEN or JERSEYDEALS_DEPLOY_TOKEN." >&2
             exit 1
