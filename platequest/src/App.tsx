@@ -3,14 +3,16 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { CameraTab } from './CameraTab'
 import { HomeTab } from './HomeTab'
 import { GamesTab } from './GamesTab'
+import { StatesTab } from './StatesTab'
 import type { PlateRead } from './plateOcr'
 import { getJurisdiction } from './jurisdictions'
 
-type TabId = 'camera' | 'home' | 'games'
+type TabId = 'camera' | 'home' | 'states' | 'games'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'camera', label: 'Camera' },
   { id: 'home', label: 'Home' },
+  { id: 'states', label: 'States' },
   { id: 'games', label: 'Games' },
 ]
 
@@ -78,7 +80,7 @@ export default function App() {
   }
 
   return (
-    <div className="road-bg flex h-full min-h-[100dvh] flex-col text-chrome">
+    <div className="road-bg flex h-full min-h-[100dvh] flex-col text-ink">
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
         <AnimatePresence mode="wait">
           <motion.div
@@ -96,8 +98,10 @@ export default function App() {
                 lastPlate={lastPlate}
                 onOpenCamera={() => setTab('camera')}
                 onOpenGames={() => setTab('games')}
+                onOpenStates={() => setTab('states')}
               />
             )}
+            {tab === 'states' && <StatesTab />}
             {tab === 'games' && (
               <GamesTab
                 points={points}
@@ -110,11 +114,11 @@ export default function App() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-white/10 bg-asphalt/95 backdrop-blur-md"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper/95 backdrop-blur-md"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Primary"
       >
-        <div className="mx-auto grid max-w-lg grid-cols-3">
+        <div className="mx-auto grid max-w-lg grid-cols-4">
           {TABS.map((t) => {
             const active = tab === t.id
             return (
@@ -122,8 +126,8 @@ export default function App() {
                 key={t.id}
                 type="button"
                 onClick={() => setTab(t.id)}
-                className={`relative flex flex-col items-center gap-1 py-3 text-xs font-semibold uppercase tracking-[0.14em] transition ${
-                  active ? 'text-plate' : 'text-fog hover:text-chrome'
+                className={`relative flex flex-col items-center gap-1 py-3 text-[0.65rem] font-semibold uppercase tracking-[0.12em] transition sm:text-xs ${
+                  active ? 'text-plate-hot' : 'text-fog hover:text-ink'
                 }`}
                 aria-current={active ? 'page' : undefined}
               >

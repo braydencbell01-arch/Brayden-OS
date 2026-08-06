@@ -23,7 +23,7 @@ export function CameraTab({ onIdentified }: Props) {
 
     async function start() {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setStreamError('Camera not available in this browser. Upload a photo instead.')
+        setStreamError('Camera not available in this browser. Send a picture instead.')
         return
       }
       try {
@@ -47,7 +47,7 @@ export function CameraTab({ onIdentified }: Props) {
           setStreamError(null)
         }
       } catch {
-        setStreamError('Could not open the camera. Allow permission or upload a photo.')
+        setStreamError('Could not open the camera. Allow permission or send a picture from your gallery.')
         setCameraOn(false)
       }
     }
@@ -92,7 +92,10 @@ export function CameraTab({ onIdentified }: Props) {
   }
 
   async function onFile(file: File | undefined) {
-    if (!file) return
+    if (!file || !file.type.startsWith('image/')) {
+      setStreamError('Please choose a photo (JPG, PNG, etc.).')
+      return
+    }
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
@@ -108,14 +111,14 @@ export function CameraTab({ onIdentified }: Props) {
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-4 px-4 pb-4 pt-3">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">Camera</p>
-        <h1 className="font-display mt-1 text-3xl text-chrome">Scan a plate</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Camera</p>
+        <h1 className="font-display mt-1 text-3xl text-ink">Scan a plate</h1>
         <p className="mt-1 max-w-md text-sm text-fog">
-          Frame the plate clearly, then capture. PlateQuest reads the characters and matches state clues when it can.
+          Capture with the camera or send a picture from your phone — PlateQuest reads the characters and matches state clues when it can.
         </p>
       </header>
 
-      <div className="relative min-h-[220px] flex-1 overflow-hidden rounded-sm bg-lane ring-1 ring-white/10">
+      <div className="relative min-h-[220px] flex-1 overflow-hidden rounded-sm bg-lane ring-1 ring-line">
         <video
           ref={videoRef}
           playsInline
@@ -123,15 +126,15 @@ export function CameraTab({ onIdentified }: Props) {
           className={`absolute inset-0 h-full w-full object-cover ${preview ? 'opacity-0' : 'opacity-100'}`}
         />
         {preview && (
-          <img src={preview} alt="Captured plate" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={preview} alt="Plate photo" className="absolute inset-0 h-full w-full object-cover" />
         )}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-[28%] w-[72%] max-w-md rounded-sm border-2 border-plate/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+          <div className="h-[28%] w-[72%] max-w-md rounded-sm border-2 border-plate/90 shadow-[0_0_0_9999px_rgba(255,255,255,0.35)]" />
         </div>
         {busy && (
-          <div className="absolute inset-0 flex items-center justify-center bg-asphalt/70 backdrop-blur-[2px]">
+          <div className="absolute inset-0 flex items-center justify-center bg-paper/80 backdrop-blur-[2px]">
             <motion.p
-              className="font-display text-xl text-plate"
+              className="font-display text-xl text-plate-hot"
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 1.2, repeat: Infinity }}
             >
@@ -152,19 +155,19 @@ export function CameraTab({ onIdentified }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={() => void capture()}
-          disabled={!cameraOn || busy}
+          onClick={() => fileRef.current?.click()}
+          disabled={busy}
           className="rounded-sm bg-plate px-5 py-3 font-semibold text-asphalt transition enabled:hover:bg-plate-hot disabled:opacity-40"
         >
-          Capture plate
+          Send a picture
         </button>
         <button
           type="button"
-          onClick={() => fileRef.current?.click()}
-          disabled={busy}
-          className="rounded-sm border border-chrome/30 px-4 py-3 text-sm font-medium text-chrome transition hover:border-plate/60 hover:text-plate disabled:opacity-40"
+          onClick={() => void capture()}
+          disabled={!cameraOn || busy}
+          className="rounded-sm border border-line px-4 py-3 text-sm font-medium text-ink transition hover:border-plate/60 hover:text-plate-hot disabled:opacity-40"
         >
-          Upload photo
+          Capture live
         </button>
         {preview && (
           <button
@@ -173,7 +176,7 @@ export function CameraTab({ onIdentified }: Props) {
               setPreview(null)
               setResult(null)
             }}
-            className="text-sm text-fog underline-offset-2 hover:text-chrome hover:underline"
+            className="text-sm text-fog underline-offset-2 hover:text-ink hover:underline"
           >
             Back to live
           </button>
@@ -182,9 +185,11 @@ export function CameraTab({ onIdentified }: Props) {
           ref={fileRef}
           type="file"
           accept="image/*"
-          capture="environment"
           className="hidden"
-          onChange={(e) => void onFile(e.target.files?.[0])}
+          onChange={(e) => {
+            void onFile(e.target.files?.[0])
+            e.target.value = ''
+          }}
         />
       </div>
 

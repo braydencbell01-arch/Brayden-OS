@@ -27,8 +27,8 @@ export function GamesTab({ points, onScore, foundCodes }: Props) {
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 pt-3">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate">Games</p>
-        <h1 className="font-display mt-1 text-3xl text-chrome">Plate hunt</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Games</p>
+        <h1 className="font-display mt-1 text-3xl text-ink">Plate hunt</h1>
         <p className="mt-1 max-w-md text-sm text-fog">
           Spot these plates in the wild (or scan them in Camera). Rarer plates are worth more points.
         </p>
@@ -55,28 +55,26 @@ export function GamesTab({ points, onScore, foundCodes }: Props) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
               className={`rounded-sm border px-4 py-3 ${
-                found
-                  ? 'border-plate/50 bg-plate/10'
-                  : 'border-white/10 bg-asphalt-lift'
+                found ? 'border-plate/50 bg-plate/10' : 'border-line bg-asphalt-lift'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-display text-xl text-chrome">
+                  <p className="font-display text-xl text-ink">
                     {j.code} · {j.name}
                   </p>
                   <p className="mt-1 text-sm text-fog">{rarityLabel(j.rarity)}</p>
-                  <p className="mt-1 text-sm text-chrome/80">{j.notes}</p>
+                  <p className="mt-1 text-sm text-ink/80">{j.notes}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="font-semibold text-plate">+{pts}</p>
+                  <p className="font-semibold text-plate-hot">+{pts}</p>
                   {found ? (
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-plate">Found</p>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-plate-hot">Found</p>
                   ) : (
                     <button
                       type="button"
                       onClick={() => onScore(pts, j.code)}
-                      className="mt-2 rounded-sm border border-chrome/25 px-2 py-1 text-xs text-chrome hover:border-plate/60 hover:text-plate"
+                      className="mt-2 rounded-sm border border-line px-2 py-1 text-xs text-ink hover:border-plate/60 hover:text-plate-hot"
                     >
                       Log spot
                     </button>

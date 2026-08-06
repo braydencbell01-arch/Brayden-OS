@@ -3,11 +3,12 @@ import { motion } from 'framer-motion'
 type Props = {
   onOpenCamera: () => void
   onOpenGames: () => void
+  onOpenStates: () => void
   lastPlate?: string | null
   points: number
 }
 
-export function HomeTab({ onOpenCamera, onOpenGames, lastPlate, points }: Props) {
+export function HomeTab({ onOpenCamera, onOpenGames, onOpenStates, lastPlate, points }: Props) {
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="relative flex flex-1 flex-col justify-end px-5 pb-8 pt-10">
@@ -18,7 +19,7 @@ export function HomeTab({ onOpenCamera, onOpenGames, lastPlate, points }: Props)
           transition={{ duration: 0.8 }}
           aria-hidden
         >
-          <div className="absolute left-[-10%] top-[18%] h-40 w-[120%] rotate-[-2deg] bg-gradient-to-r from-transparent via-lane/80 to-transparent" />
+          <div className="absolute left-[-10%] top-[18%] h-40 w-[120%] rotate-[-2deg] bg-gradient-to-r from-transparent via-lane/90 to-transparent" />
           <div className="absolute left-[8%] top-[42%] h-1.5 w-16 bg-plate/90" />
           <div className="absolute left-[32%] top-[42%] h-1.5 w-16 bg-plate/90" />
           <div className="absolute left-[56%] top-[42%] h-1.5 w-16 bg-plate/90" />
@@ -26,7 +27,7 @@ export function HomeTab({ onOpenCamera, onOpenGames, lastPlate, points }: Props)
         </motion.div>
 
         <motion.p
-          className="font-display text-[clamp(3.2rem,14vw,5.5rem)] leading-[0.9] text-plate"
+          className="font-display text-[clamp(3.2rem,14vw,5.5rem)] leading-[0.9] text-plate-hot"
           initial={{ opacity: 0, y: 28 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
@@ -34,7 +35,7 @@ export function HomeTab({ onOpenCamera, onOpenGames, lastPlate, points }: Props)
           PlateQuest
         </motion.p>
         <motion.p
-          className="mt-4 max-w-sm text-base text-chrome/90"
+          className="mt-4 max-w-sm text-base text-ink/85"
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15, duration: 0.5 }}
@@ -56,8 +57,15 @@ export function HomeTab({ onOpenCamera, onOpenGames, lastPlate, points }: Props)
           </button>
           <button
             type="button"
+            onClick={onOpenStates}
+            className="rounded-sm border border-line px-5 py-3 font-medium text-ink hover:border-plate/50 hover:text-plate-hot"
+          >
+            Browse states
+          </button>
+          <button
+            type="button"
             onClick={onOpenGames}
-            className="rounded-sm border border-chrome/30 px-5 py-3 font-medium text-chrome hover:border-plate/50 hover:text-plate"
+            className="rounded-sm border border-line px-5 py-3 font-medium text-ink hover:border-plate/50 hover:text-plate-hot"
           >
             Play games
           </button>
@@ -70,11 +78,11 @@ export function HomeTab({ onOpenCamera, onOpenGames, lastPlate, points }: Props)
           transition={{ delay: 0.45 }}
         >
           <p>
-            Score <span className="font-semibold text-chrome">{points}</span>
+            Score <span className="font-semibold text-ink">{points}</span>
           </p>
           {lastPlate && (
             <p>
-              Last read <span className="font-semibold tracking-wider text-plate">{lastPlate}</span>
+              Last read <span className="font-semibold tracking-wider text-plate-hot">{lastPlate}</span>
             </p>
           )}
         </motion.div>
