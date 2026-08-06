@@ -120,6 +120,7 @@ import {
   PRICE_FILTERS,
   pushRecentlyViewed,
   readRecentlyViewed,
+  saleCompareAtPrice,
   shortTitle,
   SORT_OPTIONS,
   sortListings,
@@ -794,6 +795,7 @@ function ProductLink({
     used ? condition : null,
   ].filter(Boolean) as string[]
   const infoLine = infoBits.slice(0, 2).join(' · ') || item.tag
+  const compareAt = onSale ? saleCompareAtPrice(item) : null
 
   if (catalog) {
     return (
@@ -823,8 +825,19 @@ function ProductLink({
             <p className={`min-w-0 flex-1 text-[0.6rem] uppercase leading-snug tracking-[0.08em] ${muted} line-clamp-2`}>
               {infoLine}
             </p>
-            <span className="shrink-0 font-brand text-[0.75rem] font-bold tracking-wide text-[#e85d04] sm:text-sm">
-              {formatPrice(item.price, item.currency)}
+            <span className="flex shrink-0 flex-col items-end gap-0.5 text-right sm:flex-row sm:items-baseline sm:gap-1.5">
+              {compareAt != null ? (
+                <span className="font-brand text-[0.65rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.7rem]">
+                  {formatPrice(compareAt, item.currency)}
+                </span>
+              ) : null}
+              <span
+                className={`font-brand text-[0.75rem] font-bold tracking-wide sm:text-sm ${
+                  compareAt != null ? 'text-navy' : 'text-[#e85d04]'
+                }`}
+              >
+                {formatPrice(item.price, item.currency)}
+              </span>
             </span>
           </div>
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -923,7 +936,16 @@ function ProductLink({
           >
             {shortTitle(item.title)}
           </button>
-          <p className={compact ? 'mt-1 flex items-baseline gap-2' : 'mt-2 flex items-baseline gap-2'}>
+          <p className={compact ? 'mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5' : 'mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5'}>
+            {compareAt != null ? (
+              <span
+                className={`font-display font-semibold tracking-wide text-[#e85d04] line-through ${
+                  compact ? 'text-sm' : 'text-lg md:text-xl'
+                }`}
+              >
+                {formatPrice(compareAt, item.currency)}
+              </span>
+            ) : null}
             <span
               className={`font-display font-bold tracking-wide ${priceTone} ${
                 compact ? 'text-base' : 'text-2xl md:text-[1.65rem]'
@@ -1051,7 +1073,14 @@ function QuickViewModal({
               ✕
             </button>
           </div>
-          <p className="mt-4 font-display text-3xl font-bold text-navy">{formatPrice(item.price, item.currency)}</p>
+          <p className="mt-4 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 font-display text-3xl font-bold text-navy">
+            {onSale && saleCompareAtPrice(item) != null ? (
+              <span className="text-xl font-semibold text-[#e85d04] line-through">
+                {formatPrice(saleCompareAtPrice(item), item.currency)}
+              </span>
+            ) : null}
+            <span>{formatPrice(item.price, item.currency)}</span>
+          </p>
           <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
             {size && size !== 'Other' ? (
               <div>
@@ -2942,8 +2971,8 @@ export default function App() {
         ) : null}
 
         {inventoryOpen ? (
-          <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-chalk text-navy">
-            <header className="border-b border-navy/10 bg-cream px-5 py-4">
+          <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-white text-navy">
+            <header className="border-b border-navy/10 bg-white px-5 py-4">
               <div className="flex items-center justify-between gap-4">
                 <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">
                   Full inventory
@@ -2980,7 +3009,7 @@ export default function App() {
             </header>
             <div className="flex-1 overflow-y-auto pb-28">
         {/* Full inventory — filters first, results directly below (search scrolls here). */}
-        <section id="inventory" className="cv-auto scroll-mt-4 bg-chalk pb-16 pt-6 md:pb-20 md:pt-8">
+        <section id="inventory" className="cv-auto scroll-mt-4 bg-white pb-16 pt-6 md:pb-20 md:pt-8">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <div id="inventory-browse" className="scroll-mt-48">
               <motion.div {...fadeUp(reduce)} className="max-w-2xl">
