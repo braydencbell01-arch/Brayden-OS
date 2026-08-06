@@ -2180,7 +2180,7 @@ export default function App() {
                   </p>
                   <p className="inline-flex items-center gap-2.5 font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/90 sm:text-[0.7rem]">
                     <span className="h-px w-5 shrink-0 bg-[#f0d45a]" aria-hidden />
-                    Arsenal vs Coventry
+                    Shop our Premier League sale
                   </p>
                 </div>
                 <h1 className="max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
