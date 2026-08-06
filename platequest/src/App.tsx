@@ -6,6 +6,7 @@ import { GamesTab } from './GamesTab'
 import { StatesTab } from './StatesTab'
 import type { PlateRead } from './plateOcr'
 import { getJurisdiction } from './jurisdictions'
+import { loadGame, logPlate, saveGame } from './roadTripGame'
 
 type TabId = 'camera' | 'home' | 'states' | 'games'
 
@@ -46,6 +47,8 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('home')
   const [points, setPoints] = useState(() => loadNumber(POINTS_KEY))
   const [foundCodes, setFoundCodes] = useState(() => loadList(FOUND_KEY))
+  const [pendingPlateCode, setPendingPlateCode] = useState<string | null>(null)
+  const [gameTick, setGameTick] = useState(0)
   const [lastPlate, setLastPlate] = useState<string | null>(() => {
     try {
       return localStorage.getItem(LAST_KEY)
@@ -64,19 +67,37 @@ export default function App() {
     }
   }, [points, foundCodes, lastPlate])
 
-  function award(code: string, delta: number) {
-    setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
-    setPoints((p) => p + delta)
-  }
+  // Apply camera IDs to the active road-trip game even when Games tab is not open.
+  useEffect(() => {
+    if (!pendingPlateCode) return
+    const game = loadGame()
+    if (!game || game.status !== 'active') {
+      setPendingPlateCode(null)
+      return
+    }
+    if (game.settings.confirmBeforeLog) {
+      const j = getJurisdiction(pendingPlateCode)
+      const pts = game.platePoints[pendingPlateCode]
+      const ok = window.confirm(`Log ${j?.name ?? pendingPlateCode} for ${pts} points?`)
+      if (!ok) {
+        setPendingPlateCode(null)
+        return
+      }
+    }
+    const next = logPlate(game, pendingPlateCode)
+    setPendingPlateCode(null)
+    if (!next) return
+    saveGame(next)
+    setPoints(next.score)
+    setFoundCodes(next.foundCodes)
+    setGameTick((t) => t + 1)
+  }, [pendingPlateCode])
 
   function onIdentified(read: PlateRead) {
     if (read.text && read.text !== '—') setLastPlate(read.text)
     const code = read.guessedState ?? read.jurisdiction?.code
-    if (!code) return
-    if (foundCodes.includes(code)) return
-    const j = getJurisdiction(code)
-    const delta = j?.rarity === 'very-rare' ? 100 : j?.rarity === 'rare' ? 50 : j?.rarity === 'uncommon' ? 25 : 10
-    award(code, delta)
+    if (!code || !getJurisdiction(code)) return
+    setPendingPlateCode(code.toUpperCase())
   }
 
   return (
@@ -104,9 +125,11 @@ export default function App() {
             {tab === 'states' && <StatesTab />}
             {tab === 'games' && (
               <GamesTab
-                points={points}
-                foundCodes={foundCodes}
-                onScore={(delta, code) => award(code, delta)}
+                reloadToken={gameTick}
+                onGameScoreChange={(score, codes) => {
+                  setPoints(score)
+                  setFoundCodes(codes)
+                }}
               />
             )}
           </motion.div>
