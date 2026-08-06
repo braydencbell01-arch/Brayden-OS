@@ -24,7 +24,8 @@ export const CLUB_CATALOG: ClubCatalogEntry[] = [
   { id: 'ac-milan', name: "AC Milan", pattern: /\bac\s*milan\b|(?<!inter\s)\bmilan\b/i, leagueId: 'serie-a', leagueName: "Serie A", popularity: 11, espnId: '103', logoKind: 'soccer' },
   { id: 'borussia-dortmund', name: "Borussia Dortmund", pattern: /borussia\s*dortmund|\bdortmund\b|\bbvb\b/i, leagueId: 'bundesliga', leagueName: "Bundesliga", popularity: 13, espnId: '124', logoKind: 'soccer' },
   { id: 'atletico-madrid', name: "Atlético Madrid", pattern: /atl[eé]tico(?:\s*madrid)?|\batleti\b/i, leagueId: 'la-liga', leagueName: "La Liga", popularity: 15, espnId: '1068', logoKind: 'soccer' },
-  { id: 'athletic-bilbao', name: "Athletic Club", pattern: /athletic(?:\s*(?:club|bilbao))?/i, leagueId: 'la-liga', leagueName: "La Liga", popularity: 62, espnId: '93', logoKind: 'soccer' },
+  // Require Club/Bilbao — bare "athletic(s)" matches Puma Athletics apparel, not Bilbao.
+  { id: 'athletic-bilbao', name: "Athletic Club", pattern: /\bathletic(?:\s+club|\s+bilbao)\b/i, leagueId: 'la-liga', leagueName: "La Liga", popularity: 62, espnId: '93', logoKind: 'soccer' },
   { id: 'real-madrid', name: "Real Madrid", pattern: /real\s*madrid|\brma\b/i, leagueId: 'la-liga', leagueName: "La Liga", popularity: 1, espnId: '86', logoKind: 'soccer' },
   { id: 'real-betis', name: "Real Betis", pattern: /real\s*betis|\bbetis\b/i, leagueId: 'la-liga', leagueName: "La Liga", popularity: 64, espnId: '244', logoKind: 'soccer' },
   { id: 'real-sociedad', name: "Real Sociedad", pattern: /real\s*sociedad/i, leagueId: 'la-liga', leagueName: "La Liga", popularity: 63, espnId: '89', logoKind: 'soccer' },
