@@ -6,7 +6,7 @@ import { GamesTab } from './GamesTab'
 import { ProfileTab } from './ProfileTab'
 import { StatesTab } from './StatesTab'
 import type { PlateRead } from './plateOcr'
-import { getJurisdiction } from './jurisdictions'
+import { getJurisdiction, JURISDICTIONS } from './jurisdictions'
 import { loadGame, logPlate, saveGame } from './roadTripGame'
 
 type TabId = 'profile' | 'camera' | 'home' | 'states' | 'games'
@@ -22,6 +22,26 @@ const TABS: { id: TabId; label: string }[] = [
 const POINTS_KEY = 'platequest.points'
 const FOUND_KEY = 'platequest.found'
 const LAST_KEY = 'platequest.lastPlate'
+
+function plateDisplayName(codeOrName: string): string | null {
+  const j = getJurisdiction(codeOrName)
+  if (j) return j.name
+  const byName = JURISDICTIONS.find(
+    (x) => x.name.toLowerCase() === codeOrName.trim().toLowerCase(),
+  )
+  return byName?.name ?? null
+}
+
+/** Drop old OCR serial junk saved as “last plate”. */
+function loadLastPlateName(): string | null {
+  try {
+    const raw = localStorage.getItem(LAST_KEY)
+    if (!raw) return null
+    return plateDisplayName(raw)
+  } catch {
+    return null
+  }
+}
 
 function loadNumber(key: string, fallback = 0): number {
   try {
@@ -64,13 +84,7 @@ export default function App() {
       return null
     }
   })
-  const [lastPlate, setLastPlate] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(LAST_KEY)
-    } catch {
-      return null
-    }
-  })
+  const [lastPlate, setLastPlate] = useState<string | null>(() => loadLastPlateName())
 
   useEffect(() => {
     try {
@@ -109,8 +123,9 @@ export default function App() {
   }, [pendingPlateCode])
 
   function onIdentified(read: PlateRead) {
-    if (read.text && read.text !== '—') setLastPlate(read.text)
     const code = read.guessedState ?? read.jurisdiction?.code
+    const j = (code && getJurisdiction(code)) || read.jurisdiction
+    if (j) setLastPlate(j.name)
     if (!code || !getJurisdiction(code)) return
     setPendingPlateCode(code.toUpperCase())
   }

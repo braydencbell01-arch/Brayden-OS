@@ -94,7 +94,7 @@ export function HomeTab({ onOpenCamera, onOpenGames, onOpenStates, lastPlate, po
           </p>
           {lastPlate && (
             <p>
-              Last read <span className="font-semibold tracking-wider text-plate-hot">{lastPlate}</span>
+              Last read <span className="font-semibold text-plate-hot">{lastPlate}</span>
             </p>
           )}
         </motion.div>

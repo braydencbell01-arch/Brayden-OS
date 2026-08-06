@@ -118,7 +118,7 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">
             Last plate read
           </p>
-          <p className="mt-1 font-semibold tracking-wider text-plate-hot">{lastPlate}</p>
+          <p className="mt-1 font-semibold text-plate-hot">{lastPlate}</p>
         </motion.div>
       )}
 
