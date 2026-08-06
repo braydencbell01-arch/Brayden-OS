@@ -9,6 +9,7 @@ import type { PlateRead } from './plateOcr'
 import { scorePlatesFromLocation, type Place } from './geo'
 import { getJurisdiction, JURISDICTIONS } from './jurisdictions'
 import { loadGame, logPlate, saveGame } from './roadTripGame'
+import { tryCompleteDailyHunt } from './dailyHunt'
 
 type TabId = 'profile' | 'camera' | 'home' | 'states' | 'games'
 
@@ -24,6 +25,7 @@ const POINTS_KEY = 'platequest.points'
 const FOUND_KEY = 'platequest.found'
 const LAST_KEY = 'platequest.lastPlate'
 const HOME_LOC_KEY = 'platequest.homeLocation'
+const HUNT_BONUS_KEY = 'platequest.huntBonus'
 
 function loadHomeLocation(): Place | null {
   try {
@@ -95,6 +97,7 @@ export default function App() {
     }
   })
   const [points, setPoints] = useState(() => loadNumber(POINTS_KEY))
+  const [huntBonus, setHuntBonus] = useState(() => loadNumber(HUNT_BONUS_KEY))
   const [foundCodes, setFoundCodes] = useState(() => loadList(FOUND_KEY))
   const [pendingPlateCode, setPendingPlateCode] = useState<string | null>(null)
   const [gameTick, setGameTick] = useState(0)
@@ -117,6 +120,7 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem(POINTS_KEY, String(points))
+      localStorage.setItem(HUNT_BONUS_KEY, String(huntBonus))
       localStorage.setItem(FOUND_KEY, JSON.stringify(foundCodes))
       if (lastPlate) localStorage.setItem(LAST_KEY, lastPlate)
       if (homeLocation) localStorage.setItem(HOME_LOC_KEY, JSON.stringify(homeLocation))
@@ -124,30 +128,45 @@ export default function App() {
     } catch {
       /* ignore quota */
     }
-  }, [points, foundCodes, lastPlate, homeLocation])
+  }, [points, huntBonus, foundCodes, lastPlate, homeLocation])
 
-  // Apply camera IDs to the active road-trip game even when Games tab is not open.
+  const totalPoints = points + huntBonus
+
+  // Apply camera IDs to collection + active road-trip game even when Games tab is not open.
   useEffect(() => {
     if (!pendingPlateCode) return
+    const code = pendingPlateCode
+    const hunt = tryCompleteDailyHunt(code)
     const game = loadGame()
     if (!game || game.status !== 'active') {
+      setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
+      if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
       setPendingPlateCode(null)
       return
     }
     if (game.settings.confirmBeforeLog) {
-      const j = getJurisdiction(pendingPlateCode)
-      const pts = game.platePoints[pendingPlateCode]
-      const ok = window.confirm(`Log ${j?.name ?? pendingPlateCode} for ${pts} points?`)
+      const j = getJurisdiction(code)
+      const pts = game.platePoints[code]
+      const ok = window.confirm(`Log ${j?.name ?? code} for ${pts} points?`)
       if (!ok) {
+        if (hunt.newlyCompleted) {
+          setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
+          setHuntBonus((b) => b + hunt.bonusPoints)
+        }
         setPendingPlateCode(null)
         return
       }
     }
-    const next = logPlate(game, pendingPlateCode)
+    const next = logPlate(game, code)
     setPendingPlateCode(null)
-    if (!next) return
+    if (!next) {
+      setFoundCodes((prev) => (prev.includes(code) ? prev : [...prev, code]))
+      if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
+      return
+    }
     saveGame(next)
     setPoints(next.score)
+    if (hunt.newlyCompleted) setHuntBonus((b) => b + hunt.bonusPoints)
     setFoundCodes(next.foundCodes)
     setGameTick((t) => t + 1)
   }, [pendingPlateCode])
@@ -173,12 +192,13 @@ export default function App() {
             transition={{ duration: 0.22 }}
           >
             {tab === 'profile' && (
-              <ProfileTab points={points} foundCodes={foundCodes} lastPlate={lastPlate} />
+              <ProfileTab points={totalPoints} foundCodes={foundCodes} lastPlate={lastPlate} />
             )}
             {tab === 'camera' && <CameraTab onIdentified={onIdentified} />}
             {tab === 'home' && (
               <HomeTab
-                points={points}
+                points={totalPoints}
+                foundCodes={foundCodes}
                 lastPlate={lastPlate}
                 homeLocation={homeLocation}
                 onHomeLocationChange={setHomeLocation}
@@ -200,7 +220,10 @@ export default function App() {
                 onJoinHandled={() => setInviteCodeFromUrl(null)}
                 onGameScoreChange={(score, codes) => {
                   setPoints(score)
-                  setFoundCodes(codes)
+                  setFoundCodes((prev) => {
+                    const merged = new Set([...prev, ...codes])
+                    return [...merged]
+                  })
                 }}
               />
             )}

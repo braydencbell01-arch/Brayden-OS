@@ -1,8 +1,18 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { Place } from './geo'
 import type { Region } from './jurisdictions'
-import { JURISDICTIONS, REGION_LABEL } from './jurisdictions'
+import { JURISDICTIONS, REGION_LABEL, rarityLabel } from './jurisdictions'
 import { TownPicker } from './TownPicker'
+import {
+  dailyHuntJurisdiction,
+  loadDailyHunt,
+  saveDailyHunt,
+  type DailyHuntState,
+} from './dailyHunt'
+import { getMainPlate } from './plateDesigns'
+import { PlateVisual } from './PlateVisual'
+import { collectionStats } from './achievements'
 
 type Props = {
   onOpenCamera: () => void
@@ -10,6 +20,7 @@ type Props = {
   onOpenStates: () => void
   lastPlate?: string | null
   points: number
+  foundCodes: string[]
   homeLocation: Place | null
   onHomeLocationChange: (p: Place | null) => void
 }
@@ -30,9 +41,21 @@ export function HomeTab({
   onOpenStates,
   lastPlate,
   points,
+  foundCodes,
   homeLocation,
   onHomeLocationChange,
 }: Props) {
+  const [hunt, setHunt] = useState<DailyHuntState>(() => loadDailyHunt())
+  const stats = collectionStats(foundCodes)
+  const huntJ = dailyHuntJurisdiction(hunt)
+  const huntDesign = huntJ ? getMainPlate(huntJ.code) : undefined
+
+  useEffect(() => {
+    const next = loadDailyHunt()
+    setHunt(next)
+    saveDailyHunt(next)
+  }, [foundCodes, lastPlate])
+
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
       <div className="relative flex flex-col px-5 pb-8 pt-10">
@@ -96,7 +119,7 @@ export function HomeTab({
         </motion.div>
 
         <motion.div
-          className="mt-8 flex gap-6 text-sm text-fog"
+          className="mt-8 flex flex-wrap gap-6 text-sm text-fog"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
@@ -104,12 +127,65 @@ export function HomeTab({
           <p>
             Score <span className="font-semibold text-ink">{points}</span>
           </p>
+          <p>
+            US states{' '}
+            <span className="font-semibold text-ink">
+              {stats.usFound}/{stats.usTotal}
+            </span>
+          </p>
           {lastPlate && (
             <p>
               Last read <span className="font-semibold text-plate-hot">{lastPlate}</span>
             </p>
           )}
         </motion.div>
+
+        {huntJ && (
+          <motion.div
+            className="relative z-10 mt-8 border-t border-line pt-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.42 }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Daily hunt</p>
+            <h2 className="font-display mt-1 text-2xl text-ink">
+              {hunt.completed ? 'Hunt complete' : 'Today’s target'}
+            </h2>
+            <p className="mt-2 max-w-md text-sm text-fog">
+              {hunt.completed
+                ? `Nice find — streak ${hunt.streak} day${hunt.streak === 1 ? '' : 's'}. Come back tomorrow.`
+                : `Spot a ${huntJ.name} plate with the camera for bonus points. Streak: ${hunt.streak}.`}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              {huntDesign && (
+                <PlateVisual
+                  design={huntDesign}
+                  stateCode={huntJ.code}
+                  stateName={huntJ.name}
+                  compact
+                />
+              )}
+              <div className="min-w-0">
+                <p className="font-semibold text-ink">
+                  {huntJ.name}{' '}
+                  <span className="text-fog">({huntJ.code})</span>
+                </p>
+                <p className="mt-0.5 text-xs uppercase tracking-[0.14em] text-fog">
+                  {rarityLabel(huntJ.rarity)}
+                </p>
+                {!hunt.completed && (
+                  <button
+                    type="button"
+                    onClick={onOpenCamera}
+                    className="mt-3 rounded-sm bg-plate px-4 py-2 text-sm font-semibold text-asphalt hover:bg-plate-hot"
+                  >
+                    Hunt with camera
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <motion.div
           className="relative z-10 mt-8 border-t border-line pt-6"

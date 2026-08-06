@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { motion } from 'framer-motion'
-import { getJurisdiction } from './jurisdictions'
+import { getJurisdiction, REGION_LABEL, type Region } from './jurisdictions'
+import { collectionStats, listAchievements } from './achievements'
+import { loadDailyHunt } from './dailyHunt'
 
 const NAME_KEY = 'platequest.profileName'
 
@@ -18,9 +20,24 @@ function loadName(): string {
   }
 }
 
+const REGION_ORDER: Region[] = [
+  'us-state',
+  'canada',
+  'mexico',
+  'territory',
+  'native',
+  'military',
+  'federal',
+]
+
 export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
   const [name, setName] = useState(loadName)
   const [draft, setDraft] = useState(name)
+  const stats = collectionStats(foundCodes)
+  const achievements = listAchievements(foundCodes)
+  const unlockedCount = achievements.filter((a) => a.unlocked).length
+  const hunt = loadDailyHunt()
+  const usPct = Math.round((stats.usFound / Math.max(1, stats.usTotal)) * 100)
 
   useEffect(() => {
     try {
@@ -61,7 +78,7 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.1 }}
       >
-        Your spotting score and plates logged on this device.
+        Your spotting score, collection progress, and badges on this device.
       </motion.p>
 
       <motion.form
@@ -106,6 +123,52 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">Plates found</p>
           <p className="mt-1 font-display text-3xl text-ink">{foundCodes.length}</p>
         </div>
+        <div className="border-t border-line pt-3">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">US collection</p>
+          <p className="mt-1 font-display text-3xl text-ink">
+            {stats.usFound}
+            <span className="text-lg text-fog">/{stats.usTotal}</span>
+          </p>
+        </div>
+        <div className="border-t border-line pt-3">
+          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-fog">Hunt streak</p>
+          <p className="mt-1 font-display text-3xl text-plate-hot">{hunt.streak}</p>
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="mt-6 border-t border-line pt-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.26 }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">US progress</p>
+          <p className="text-sm font-semibold text-plate-hot">{usPct}%</p>
+        </div>
+        <div
+          className="mt-2 h-2 overflow-hidden rounded-full bg-lane"
+          role="progressbar"
+          aria-valuenow={stats.usFound}
+          aria-valuemin={0}
+          aria-valuemax={stats.usTotal}
+          aria-label="US states collected"
+        >
+          <motion.div
+            className="h-full rounded-full bg-plate"
+            initial={{ width: 0 }}
+            animate={{ width: `${usPct}%` }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </div>
+        <ul className="mt-4 grid grid-cols-2 gap-2 text-xs text-fog">
+          {REGION_ORDER.map((region) => (
+            <li key={region} className="flex justify-between gap-2 border-b border-line/80 py-1.5">
+              <span>{REGION_LABEL[region]}</span>
+              <span className="font-semibold text-ink">{stats.byRegion[region]}</span>
+            </li>
+          ))}
+        </ul>
       </motion.div>
 
       {lastPlate && (
@@ -121,6 +184,35 @@ export function ProfileTab({ points, foundCodes, lastPlate }: Props) {
           <p className="mt-1 font-semibold text-plate-hot">{lastPlate}</p>
         </motion.div>
       )}
+
+      <motion.div
+        className="mt-8 border-t border-line pt-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-fog">Badges</h2>
+          <p className="text-xs text-fog">
+            {unlockedCount}/{achievements.length}
+          </p>
+        </div>
+        <ul className="mt-3 flex flex-col gap-2">
+          {achievements.map((a) => (
+            <li
+              key={a.id}
+              className={`rounded-sm border px-3 py-2.5 ${
+                a.unlocked ? 'border-plate/45 bg-plate/10' : 'border-line bg-paper opacity-70'
+              }`}
+            >
+              <p className={`text-sm font-semibold ${a.unlocked ? 'text-ink' : 'text-fog'}`}>
+                {a.title}
+              </p>
+              <p className="mt-0.5 text-xs text-fog">{a.detail}</p>
+            </li>
+          ))}
+        </ul>
+      </motion.div>
 
       <motion.div
         className="mt-8 border-t border-line pt-4"
