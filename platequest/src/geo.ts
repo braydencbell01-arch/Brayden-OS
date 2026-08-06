@@ -1,4 +1,4 @@
-/** Town search (Nominatim) + route-distance helpers for road-trip rarity. */
+/** Town search (Nominatim) + route/population rarity for road-trip scoring. */
 
 export type Place = {
   id: string
@@ -138,27 +138,111 @@ export async function searchTowns(query: string, signal?: AbortSignal): Promise<
 }
 
 /**
- * Score each jurisdiction 1–100 by how far its center is from the road-trip corridor.
- * Near the route → common (low points). Far away → rare (high points).
- * Grades the state plate only — not specialty variants.
+ * Approx. 2023 Census resident population (used for plate-sighting rarity).
+ * Lower population → plates are harder to find on the road.
+ */
+export const STATE_POPULATION: Record<string, number> = {
+  AL: 5_108_468,
+  AK: 733_406,
+  AZ: 7_431_344,
+  AR: 3_067_732,
+  CA: 38_965_193,
+  CO: 5_877_610,
+  CT: 3_617_176,
+  DE: 1_031_890,
+  FL: 22_610_726,
+  GA: 11_029_227,
+  HI: 1_435_138,
+  ID: 1_964_726,
+  IL: 12_549_798,
+  IN: 6_862_199,
+  IA: 3_207_004,
+  KS: 2_940_546,
+  KY: 4_526_154,
+  LA: 4_573_749,
+  ME: 1_395_722,
+  MD: 6_180_253,
+  MA: 7_001_399,
+  MI: 10_037_261,
+  MN: 5_737_915,
+  MS: 2_939_690,
+  MO: 6_196_156,
+  MT: 1_132_812,
+  NE: 1_978_379,
+  NV: 3_194_176,
+  NH: 1_402_054,
+  NJ: 9_290_841,
+  NM: 2_114_371,
+  NY: 19_571_216,
+  NC: 10_835_491,
+  ND: 783_926,
+  OH: 11_785_935,
+  OK: 4_053_824,
+  OR: 4_233_358,
+  PA: 12_961_683,
+  RI: 1_095_962,
+  SC: 5_373_555,
+  SD: 919_318,
+  TN: 7_126_489,
+  TX: 30_503_301,
+  UT: 3_417_734,
+  VT: 647_464,
+  VA: 8_715_698,
+  WA: 7_812_880,
+  WV: 1_770_071,
+  WI: 5_910_955,
+  WY: 584_057,
+  DC: 678_972,
+}
+
+/**
+ * Score each jurisdiction 1–100 by how rare its plates are on this road trip.
+ * Combines:
+ *   - distance from the start→end corridor (farther = rarer)
+ *   - inverse population (smaller states = rarer; CA easy, KS/WY harder)
+ * One score per state — any plate from that state counts (not each design).
  */
 export function scorePlatesForRoute(
   start: { lat: number; lon: number },
   end: { lat: number; lon: number },
   codes: string[],
 ): Record<string, number> {
-  const dists = codes.map((code) => {
+  const rows = codes.map((code) => {
     const c = STATE_CENTROIDS[code]
     const miles = c ? distanceToSegmentMiles(c, start, end) : 3000
-    return { code, miles }
+    const pop = STATE_POPULATION[code] ?? 1_000_000
+    return { code, miles, pop, logPop: Math.log10(Math.max(pop, 1)) }
   })
-  const min = Math.min(...dists.map((d) => d.miles))
-  const max = Math.max(...dists.map((d) => d.miles))
-  const span = Math.max(1, max - min)
+
+  const minMiles = Math.min(...rows.map((r) => r.miles))
+  const maxMiles = Math.max(...rows.map((r) => r.miles))
+  const mileSpan = Math.max(1, maxMiles - minMiles)
+
+  const minLog = Math.min(...rows.map((r) => r.logPop))
+  const maxLog = Math.max(...rows.map((r) => r.logPop))
+  const popSpan = Math.max(0.01, maxLog - minLog)
+
+  // Population weighted a bit higher so low-pop states stay hard even near the route.
+  const W_DISTANCE = 0.4
+  const W_POPULATION = 0.6
+
+  const raw = rows.map((r) => {
+    const distRarity = (r.miles - minMiles) / mileSpan // 0 near route → 1 far
+    const popRarity = 1 - (r.logPop - minLog) / popSpan // 0 high pop → 1 low pop
+    return {
+      code: r.code,
+      rarity: W_DISTANCE * distRarity + W_POPULATION * popRarity,
+    }
+  })
+
+  const minR = Math.min(...raw.map((r) => r.rarity))
+  const maxR = Math.max(...raw.map((r) => r.rarity))
+  const span = Math.max(1e-6, maxR - minR)
+
   const out: Record<string, number> = {}
-  for (const d of dists) {
-    const t = (d.miles - min) / span
-    out[d.code] = Math.max(1, Math.min(100, Math.round(1 + t * 99)))
+  for (const r of raw) {
+    const t = (r.rarity - minR) / span
+    out[r.code] = Math.max(1, Math.min(100, Math.round(1 + t * 99)))
   }
   return out
 }
