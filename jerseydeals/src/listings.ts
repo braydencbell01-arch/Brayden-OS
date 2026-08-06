@@ -167,22 +167,38 @@ export function isSaleListing(item: Listing, _maxPrice = 25) {
   return SALE_TITLE_PATTERNS.some((pattern) => pattern.test(item.title))
 }
 
-/** Stable whole-dollar markdown $0–$50 for compare-at (same listing always same amount). */
-export function saleMarkdownAmount(item: Listing): number {
+/** Stable hash from listing identity (same listing → same markdown). */
+function listingPriceHash(item: Listing): number {
   const key = String(item.id || item.sku || item.title || '')
   let hash = 0
   for (let i = 0; i < key.length; i += 1) {
     hash = (hash * 31 + key.charCodeAt(i)) >>> 0
   }
-  return hash % 51
+  return hash
 }
 
-/** Crossed-off “was” price (current price + $0–$50). Null when markdown is $0. */
+/** Home / away / third kits get the orange compare-at treatment. */
+export function isHomeAwayOrThirdKit(item: Listing) {
+  const t = item.title || ''
+  if (/pre-?match/i.test(t) || /\btraining\b|\bstrike\b/i.test(t)) return false
+  return /\bthird\b/i.test(t) || /\baway\b/i.test(t) || /\bhome\b/i.test(t)
+}
+
+/**
+ * Whole-dollar markdown above live price for compare-at.
+ * Home / away / third: $40–$60. Other listings: no compare-at markdown.
+ */
+export function saleMarkdownAmount(item: Listing): number {
+  if (!isHomeAwayOrThirdKit(item)) return 0
+  return 40 + (listingPriceHash(item) % 21)
+}
+
+/** Crossed-off “was” price for home / away / third jerseys only. */
 export function saleCompareAtPrice(item: Listing): number | null {
   if (item.price == null || Number.isNaN(item.price)) return null
   const off = saleMarkdownAmount(item)
   if (off <= 0) return null
-  return Math.round((item.price + off) * 100) / 100
+  return Math.round(item.price + off)
 }
 
 /** Inventory price toggles — keep ranges aligned with typical kit pricing. */

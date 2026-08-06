@@ -795,7 +795,7 @@ function ProductLink({
     used ? condition : null,
   ].filter(Boolean) as string[]
   const infoLine = infoBits.slice(0, 2).join(' · ') || item.tag
-  /** Inventory / sale cards: crossed-off was-price is $0–$50 above live price. */
+  /** Home / away / third: crossed-off was-price is $40–$60 above live price. */
   const compareAt = catalog || onSale ? saleCompareAtPrice(item) : null
 
   if (catalog) {
