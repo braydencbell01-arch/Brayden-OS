@@ -3,14 +3,16 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { CameraTab } from './CameraTab'
 import { HomeTab } from './HomeTab'
 import { GamesTab } from './GamesTab'
+import { ProfileTab } from './ProfileTab'
 import { StatesTab } from './StatesTab'
 import type { PlateRead } from './plateOcr'
 import { getJurisdiction } from './jurisdictions'
 import { loadGame, logPlate, saveGame } from './roadTripGame'
 
-type TabId = 'camera' | 'home' | 'states' | 'games'
+type TabId = 'profile' | 'camera' | 'home' | 'states' | 'games'
 
 const TABS: { id: TabId; label: string }[] = [
+  { id: 'profile', label: 'Profile' },
   { id: 'camera', label: 'Camera' },
   { id: 'home', label: 'Home' },
   { id: 'states', label: 'States' },
@@ -112,6 +114,9 @@ export default function App() {
             exit={{ opacity: 0, x: tab === 'camera' ? -12 : tab === 'games' ? 12 : 0 }}
             transition={{ duration: 0.22 }}
           >
+            {tab === 'profile' && (
+              <ProfileTab points={points} foundCodes={foundCodes} lastPlate={lastPlate} />
+            )}
             {tab === 'camera' && <CameraTab onIdentified={onIdentified} />}
             {tab === 'home' && (
               <HomeTab
@@ -141,7 +146,7 @@ export default function App() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         aria-label="Primary"
       >
-        <div className="mx-auto grid max-w-lg grid-cols-4">
+        <div className="mx-auto grid max-w-lg grid-cols-5">
           {TABS.map((t) => {
             const active = tab === t.id
             return (
