@@ -2233,20 +2233,6 @@ export default function App() {
           className="scroll-mt-44 relative overflow-hidden border-y-[3px] md:border-y-4"
           style={{ borderColor: PL_PURPLE, background: `linear-gradient(160deg, ${PL_PURPLE} 0%, ${PL_PURPLE_SOFT} 42%, #1a0520 100%)` }}
         >
-          <img
-            src={asset('epl-kits-bg.jpg')}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-55 mix-blend-luminosity"
-            loading="lazy"
-            decoding="async"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(110deg, rgba(55,0,60,.72) 0%, rgba(55,0,60,.52) 48%, rgba(26,5,32,.35) 100%)',
-            }}
-          />
           <div
             className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-40 blur-3xl"
             style={{ background: PL_PURPLE_SOFT }}
@@ -2502,20 +2488,6 @@ export default function App() {
             background: `linear-gradient(160deg, ${UCL_BLUE} 0%, ${UCL_BLUE_SOFT} 42%, #020b24 100%)`,
           }}
         >
-          <img
-            src={asset('epl-kits-bg.jpg')}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover opacity-55 mix-blend-luminosity"
-            loading="lazy"
-            decoding="async"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(110deg, rgba(0,30,98,.72) 0%, rgba(0,30,98,.52) 48%, rgba(2,11,36,.35) 100%)',
-            }}
-          />
           <div
             className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-40 blur-3xl"
             style={{ background: UCL_GOLD }}
