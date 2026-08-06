@@ -18,6 +18,7 @@ import {
   type GameSettings,
   type RoadTripGame,
 } from './roadTripGame'
+import { PlateQuiz } from './PlateQuiz'
 
 type Props = {
   onGameScoreChange?: (score: number, foundCodes: string[]) => void
@@ -142,7 +143,7 @@ export function GamesTab({
   onJoinHandled,
 }: Props) {
   const [game, setGame] = useState<RoadTripGame | null>(() => loadGame())
-  const [mode, setMode] = useState<'lobby' | 'create' | 'join'>(() =>
+  const [mode, setMode] = useState<'lobby' | 'create' | 'join' | 'quiz'>(() =>
     initialJoinCode ? 'join' : 'lobby',
   )
   const [start, setStart] = useState<Place | null>(null)
@@ -274,6 +275,11 @@ export function GamesTab({
     }
     const next = logPlate(game, code)
     if (next) persistGame(next)
+  }
+
+  // —— Plate ID quiz ——
+  if (mode === 'quiz') {
+    return <PlateQuiz onBack={() => setMode('lobby')} />
   }
 
   // —— Active game view ——
@@ -504,10 +510,9 @@ export function GamesTab({
     <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 pt-3">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-plate-hot">Games</p>
-        <h1 className="font-display mt-1 text-3xl text-ink">Road trip</h1>
+        <h1 className="font-display mt-1 text-3xl text-ink">Play</h1>
         <p className="mt-1 max-w-md text-sm text-fog">
-          One game: plan a route, invite friends, and score standard state plates by how rare they are
-          where you are driving.
+          Road-trip plate hunts with friends, or quiz yourself on plate designs.
         </p>
       </header>
 
@@ -516,9 +521,20 @@ export function GamesTab({
         onClick={startNewGame}
         className="rounded-sm bg-plate px-5 py-4 text-left font-semibold text-asphalt hover:bg-plate-hot"
       >
-        <span className="font-display text-2xl tracking-normal">Start new game</span>
+        <span className="font-display text-2xl tracking-normal">Start road trip</span>
         <span className="mt-1 block text-sm font-normal opacity-80">
           Set your towns, share an invite, chase plates
+        </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setMode('quiz')}
+        className="rounded-sm border border-line px-5 py-4 text-left hover:border-plate/50"
+      >
+        <span className="font-display text-2xl text-ink tracking-normal">Plate ID quiz</span>
+        <span className="mt-1 block text-sm text-fog">
+          Guess the state from a real plate photo — build a streak
         </span>
       </button>
 
