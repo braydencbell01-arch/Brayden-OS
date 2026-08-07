@@ -1,6 +1,11 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
 import { track } from './analytics'
-import { CONTACT_EMAIL, FAMILY_NOTE } from './config'
+import {
+  CONTACT_EMAIL,
+  EBAY_SELLER_URL,
+  EBAY_SHOP_URL,
+  FAMILY_NOTE,
+} from './config'
 import { HeartIcon } from './FavoriteControls'
 import { useFavoriteClubIds, goToFavoritesScreen } from './favorites'
 import {
@@ -20,6 +25,7 @@ import {
   useRewardsMember,
   type RewardsMember,
 } from './rewardsMember'
+import { SiteFooter } from './SiteFooter'
 
 function memberContact(member: RewardsMember | null) {
   if (!member) return ''
@@ -131,10 +137,12 @@ export function ProfileScreen({
   cartCount,
   onGoToCart,
   onShopInventory,
+  onShopYouth,
 }: {
   cartCount: number
   onGoToCart: () => void
   onShopInventory: () => void
+  onShopYouth?: () => void
 }) {
   const member = useRewardsMember()
   const favoriteIds = useFavoriteClubIds()
@@ -185,8 +193,8 @@ export function ProfileScreen({
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-5 py-6" aria-label="Jersey Deals profile">
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
+      <main className="flex-1 overflow-y-auto" aria-label="Jersey Deals profile">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-8 px-5 py-6">
           <section>
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
               Rewards Club
@@ -357,6 +365,15 @@ export function ProfileScreen({
             </ul>
           </section>
         </div>
+
+        <SiteFooter
+          ebayShop={EBAY_SHOP_URL}
+          ebaySeller={EBAY_SELLER_URL}
+          onInventory={onShopInventory}
+          onYouth={onShopYouth ?? onShopInventory}
+          onBeforeNavigate={() => leaveProfileScreen()}
+          bottomPadClass="pb-12"
+        />
       </main>
     </div>
   )

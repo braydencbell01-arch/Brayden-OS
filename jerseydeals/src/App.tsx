@@ -67,6 +67,7 @@ import { RewardsOffersScreen } from './RewardsOffersScreen'
 import { useRewardsOffersOpen, goToRewardsOffers, isRewardsMember } from './rewardsMember'
 import { ProfileScreen } from './ProfileScreen'
 import { goToProfileScreen, useProfileScreenOpen } from './profile'
+import { SiteFooter } from './SiteFooter'
 import {
   capturePurchaseReturnFromUrl,
   hasPurchased,
@@ -1681,6 +1682,7 @@ export default function App() {
             track('cart_open', { place: 'profile' })
           }}
           onShopInventory={() => goInventory({ reset: true })}
+          onShopYouth={() => goInventory({ audience: 'Youth', reset: true })}
         />
       ) : null}
 
@@ -3310,7 +3312,7 @@ export default function App() {
         {!inventoryOpen ? (
           <>
         {/* Trust */}
-        <section id="buy-direct" className="cv-auto bg-white">
+        <section id="buy-direct" className="cv-auto scroll-mt-44 bg-white">
           <div className="mx-auto grid max-w-6xl md:grid-cols-2">
             <div className="relative min-h-[360px] overflow-hidden md:min-h-[560px]">
               <img
@@ -3490,7 +3492,7 @@ export default function App() {
         </section>
 
         {/* How it works */}
-        <section aria-label="How shopping works" className="border-y border-navy/10 bg-chalk py-16 md:py-20">
+        <section id="how-it-works" aria-label="How shopping works" className="scroll-mt-44 border-y border-navy/10 bg-chalk py-16 md:py-20">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-xl">
               <p className="eyebrow text-crimson">Process</p>
@@ -3669,128 +3671,13 @@ export default function App() {
         ) : null}
       </main>
 
-      <footer className="border-t border-white/10 bg-navy-deep py-14 pb-36 text-white/80 md:pb-24">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 md:grid-cols-[1.2fr_1fr_1fr_1fr] md:px-8">
-          <div>
-            <div className="flex items-center gap-3">
-              <BrandMark size="md" />
-              <p className="font-brand text-xl font-bold uppercase tracking-[0.08em] text-cream">
-                Jersey Deals
-              </p>
-            </div>
-            <p className="mt-4 max-w-sm font-brand text-sm leading-relaxed text-cream/90">
-              Premium kit shopping from live inventory — sold direct.
-            </p>
-            <p className="mt-4 text-sm">
-              <a
-                href={`mailto:${CONTACT_EMAIL}`}
-                className="font-semibold text-cream underline decoration-white/35 underline-offset-4 hover:decoration-white"
-              >
-                {CONTACT_EMAIL}
-              </a>
-            </p>
-          </div>
-          <div>
-            <p className="eyebrow text-white/75">Shop</p>
-            <ul className="mt-4 space-y-2 text-sm">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <a href={link.href} className="hover:text-white">
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow text-white/75">Discover</p>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <a href="#favorites" className="hover:text-white">
-                  Shop favorites
-                </a>
-              </li>
-              <li>
-                <a href="#clubs" className="hover:text-white">
-                  Shop by club
-                </a>
-              </li>
-              <li>
-                <a href="#brands" className="hover:text-white">
-                  Shop by brand
-                </a>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    track('cta_click', { place: 'footer_youth' })
-                    goInventory({ audience: 'Youth', reset: true })
-                  }}
-                  className="hover:text-white"
-                >
-                  Youth sizes
-                </button>
-              </li>
-              <li>
-                <a href="#size-guide" className="hover:text-white">
-                  Size guide
-                </a>
-              </li>
-              {trendingPicks.length > 0 ? (
-                <li>
-                  <a href="#trending" className="hover:text-white">
-                    Trending
-                  </a>
-                </li>
-              ) : null}
-            </ul>
-          </div>
-          <div>
-            <p className="eyebrow text-white/75">Contact</p>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <a
-                  href={`mailto:${CONTACT_EMAIL}`}
-                  className="underline decoration-white/35 underline-offset-4 hover:text-white hover:decoration-white"
-                >
-                  {CONTACT_EMAIL}
-                </a>
-              </li>
-              <li>
-                <a
-                  href={SQUARE_STORE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('outbound_click', { place: 'footer', channel: 'square' })}
-                  className="underline decoration-white/35 underline-offset-4 hover:text-white hover:decoration-white"
-                >
-                  Square
-                </a>
-              </li>
-              <li>
-                <a
-                  href={ebayShop}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track('outbound_click', { place: 'footer', channel: 'ebay' })}
-                  className="underline decoration-white/35 underline-offset-4 hover:text-white hover:decoration-white"
-                >
-                  eBay
-                </a>
-              </li>
-              <li>
-                <a href={asset('privacy.html')} className="hover:text-white">
-                  Privacy
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <p className="mx-auto mt-12 max-w-6xl px-5 text-xs text-white/70 md:px-8">
-          © {new Date().getFullYear()} JerseyDeals
-        </p>
-      </footer>
+      <SiteFooter
+        ebayShop={ebayShop}
+        ebaySeller={ebaySeller}
+        showTrending={trendingPicks.length > 0}
+        onInventory={() => goInventory({ reset: true })}
+        onYouth={() => goInventory({ audience: 'Youth', reset: true })}
+      />
 
       <div className="fixed inset-x-0 bottom-0 z-40">
         <FreeShippingBar
