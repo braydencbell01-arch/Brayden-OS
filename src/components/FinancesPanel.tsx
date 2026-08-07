@@ -14,9 +14,9 @@ import {
 import type { FinanceClub } from '../lib/stats/finances/types'
 
 /** Only skip names on razor-thin slices. */
-const NAME_MIN_PX = 9
+const NAME_MIN_PX = 6
 /** Show £ amount once the segment is tall enough. */
-const AMOUNT_MIN_PX = 28
+const AMOUNT_MIN_PX = 24
 const CHART_H = 560
 const LABEL_GUTTER = 76
 
@@ -316,7 +316,7 @@ export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
                     ratio > 1.15 ? 'text-red-300' : ratio > 0.85 ? 'text-amber-200' : 'text-lime'
                   }`}
                 >
-                  {(ratio * 100).toFixed(0)}%
+                  {(ratio * 100).toFixed(1)}%
                 </span>
                 {' · '}
                 {money(selected.squadCostGbp)} cost / {money(selected.revenueGbp)} adj. revenue

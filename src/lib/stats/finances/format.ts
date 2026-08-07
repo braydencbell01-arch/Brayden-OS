@@ -35,14 +35,10 @@ export function formatMoneyUsd(amountGbp: number, usdPerGbp: number, compact = t
 }
 
 export function clubScaleMax(club: FinanceClub): number {
-  const lineMax = Math.max(
-    club.revenueGbp,
-    club.redThresholdGbp,
-    club.uefaThresholdGbp ?? 0,
-    club.squadCostGbp,
-  )
-  // Small headroom only — keep SCR vs threshold lines visually faithful.
-  return lineMax * 1.04
+  // Scale so the Red 115% line is the chart ceiling when SCR ≤ 115%.
+  // At exactly 115%, stack top and the 115% line meet at the top of the chart.
+  // Above 115%, the chart grows with squad cost and the red line sits lower.
+  return Math.max(club.redThresholdGbp, club.squadCostGbp)
 }
 
 export function scrRatio(club: FinanceClub): number {
