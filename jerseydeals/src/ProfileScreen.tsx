@@ -1,11 +1,6 @@
 import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
 import { track } from './analytics'
-import {
-  CONTACT_EMAIL,
-  EBAY_SELLER_URL,
-  EBAY_SHOP_URL,
-  FAMILY_NOTE,
-} from './config'
+import { CONTACT_EMAIL, FAMILY_NOTE } from './config'
 import { HeartIcon } from './FavoriteControls'
 import { useFavoriteClubIds, goToFavoritesScreen } from './favorites'
 import {
@@ -367,8 +362,6 @@ export function ProfileScreen({
         </div>
 
         <SiteFooter
-          ebayShop={EBAY_SHOP_URL}
-          ebaySeller={EBAY_SELLER_URL}
           onInventory={onShopInventory}
           onYouth={onShopYouth ?? onShopInventory}
           onBeforeNavigate={() => leaveProfileScreen()}

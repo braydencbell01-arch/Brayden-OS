@@ -22,6 +22,7 @@ import {
   sortListings,
   type Listing,
 } from './listings'
+import { SiteFooter } from './SiteFooter'
 
 function asset(path: string) {
   const base = import.meta.env.BASE_URL || './'
@@ -34,10 +35,14 @@ export function FavoritesScreen({
   listings,
   onShopClub,
   onQuickView,
+  onShopInventory,
+  onShopYouth,
 }: {
   listings: Listing[]
   onShopClub: (clubId: string, clubName: string) => void
   onQuickView: (item: Listing) => void
+  onShopInventory: () => void
+  onShopYouth?: () => void
 }) {
   const favoriteIds = useFavoriteClubIds()
   const favoriteSet = useMemo(() => favoriteClubIdSet(favoriteIds), [favoriteIds])
@@ -83,8 +88,8 @@ export function FavoritesScreen({
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-5 py-6" aria-label="Favorite teams">
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
+      <main className="flex-1 overflow-y-auto" aria-label="Favorite teams">
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-8 px-5 py-6">
           <section>
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
               Find a club
@@ -263,6 +268,13 @@ export function FavoritesScreen({
             )}
           </section>
         </div>
+
+        <SiteFooter
+          onInventory={onShopInventory}
+          onYouth={onShopYouth ?? onShopInventory}
+          onBeforeNavigate={() => leaveFavoritesScreen()}
+          bottomPadClass="pb-12"
+        />
       </main>
     </div>
   )

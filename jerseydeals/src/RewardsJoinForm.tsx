@@ -88,7 +88,13 @@ function SeeOffersButton({
 }
 
 /** Full Rewards Club section form (mid-page). */
-export function RewardsSectionJoin({ className = '' }: { className?: string }) {
+export function RewardsSectionJoin({
+  className = '',
+  compact = false,
+}: {
+  className?: string
+  compact?: boolean
+}) {
   const member = useRewardsMember()
   const emailId = useId()
   const phoneId = useId()
@@ -121,29 +127,41 @@ export function RewardsSectionJoin({ className = '' }: { className?: string }) {
   if (member) {
     return (
       <div
-        className={`space-y-4 border border-cream/20 bg-navy-deep/80 px-5 py-6 ${className}`}
+        className={`space-y-2.5 border border-cream/20 bg-navy-deep/80 ${
+          compact ? 'px-4 py-3.5' : 'px-5 py-6'
+        } ${className}`}
         role="status"
       >
-        <p className="font-display text-2xl font-bold uppercase tracking-wide text-cream">
+        <p
+          className={`font-display font-bold uppercase tracking-wide text-cream ${
+            compact ? 'text-lg' : 'text-2xl'
+          }`}
+        >
           You’re already a Rewards member
         </p>
-        <p className="font-brand text-sm leading-relaxed text-cream/80">
+        <p className="font-brand text-xs leading-snug text-cream/80 sm:text-sm">
           This device is locked to your Rewards Club signup
-          {memberContact(member) ? ` (${memberContact(member)})` : ''}. You can’t join again from
-          here — watch your inbox or texts for offers.
+          {memberContact(member) ? ` (${memberContact(member)})` : ''}. Watch your inbox or texts
+          for offers.
         </p>
-        <SeeOffersButton className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot" />
+        <SeeOffersButton
+          className={`inline-flex bg-crimson font-brand font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot ${
+            compact
+              ? 'px-5 py-2.5 text-xs'
+              : 'px-7 py-3.5 text-sm'
+          }`}
+        />
       </div>
     )
   }
 
   return (
-    <form onSubmit={onSubmit} className={`space-y-3 ${className}`} noValidate>
-      <div className="grid gap-3 sm:grid-cols-2">
+    <form onSubmit={onSubmit} className={`space-y-2 ${className}`} noValidate>
+      <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
         <div>
           <label
             htmlFor={emailId}
-            className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-cream/75"
+            className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-cream/75"
           >
             Email
           </label>
@@ -155,13 +173,15 @@ export function RewardsSectionJoin({ className = '' }: { className?: string }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com"
-            className="w-full border border-cream/25 bg-navy-deep px-3 py-3 text-base text-cream outline-none placeholder:text-cream/45 focus:border-crimson"
+            className={`w-full border border-cream/25 bg-navy-deep px-3 text-base text-cream outline-none placeholder:text-cream/45 focus:border-crimson ${
+              compact ? 'py-2' : 'py-3'
+            }`}
           />
         </div>
         <div>
           <label
             htmlFor={phoneId}
-            className="mb-1.5 block text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-cream/75"
+            className="mb-1 block text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-cream/75"
           >
             Phone
           </label>
@@ -173,17 +193,21 @@ export function RewardsSectionJoin({ className = '' }: { className?: string }) {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="(555) 000-0000"
-            className="w-full border border-cream/25 bg-navy-deep px-3 py-3 text-base text-cream outline-none placeholder:text-cream/45 focus:border-crimson"
+            className={`w-full border border-cream/25 bg-navy-deep px-3 text-base text-cream outline-none placeholder:text-cream/45 focus:border-crimson ${
+              compact ? 'py-2' : 'py-3'
+            }`}
           />
         </div>
       </div>
-      <p className="text-xs text-cream/65">
-        Free to join. Email, phone, or both - whatever you prefer.
+      <p className="text-[0.7rem] leading-snug text-cream/65">
+        Free to join. Email, phone, or both.
       </p>
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex bg-crimson px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot disabled:opacity-60"
+        className={`inline-flex w-full bg-crimson font-brand font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot disabled:opacity-60 sm:w-auto ${
+          compact ? 'px-5 py-2.5 text-xs' : 'px-7 py-3.5 text-sm'
+        }`}
       >
         {busy ? 'Joining…' : 'Join Rewards Club'}
       </button>

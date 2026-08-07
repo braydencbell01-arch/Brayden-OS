@@ -8,6 +8,7 @@ import {
   type WalletOffer,
 } from './offers'
 import { useEffect, useState } from 'react'
+import { SiteFooter } from './SiteFooter'
 
 function OfferCard({ offer }: { offer: WalletOffer }) {
   const def = getOfferDef(offer.id)
@@ -28,7 +29,15 @@ function OfferCard({ offer }: { offer: WalletOffer }) {
 }
 
 /** Member offers screen. */
-export function RewardsOffersScreen({ onGoToCart }: { onGoToCart?: () => void }) {
+export function RewardsOffersScreen({
+  onGoToCart,
+  onShopInventory,
+  onShopYouth,
+}: {
+  onGoToCart?: () => void
+  onShopInventory: () => void
+  onShopYouth?: () => void
+}) {
   const [offers, setOffers] = useState<WalletOffer[]>(() => listOpenOffers())
 
   useEffect(() => {
@@ -69,52 +78,61 @@ export function RewardsOffersScreen({ onGoToCart }: { onGoToCart?: () => void })
           </button>
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-6" aria-label="Rewards offers">
-        {offers.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-            <div>
-              <p className="font-display text-2xl font-bold uppercase tracking-wide text-navy">
-                No offers yet
-              </p>
-              <p className="mt-2 max-w-sm font-brand text-sm text-navy/70">
-                Join Rewards Club or claim the first-time buyer welcome offer to fill this list.
-              </p>
-            </div>
-            {onGoToCart ? (
-              <button
-                type="button"
-                onClick={goToCart}
-                className="inline-flex bg-crimson px-6 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
-              >
-                Go to cart
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            <ul className="mx-auto flex w-full max-w-lg flex-col gap-3">
-              {offers.map((offer) => (
-                <li key={offer.id}>
-                  <OfferCard offer={offer} />
-                </li>
-              ))}
-            </ul>
-            {onGoToCart ? (
-              <div className="mx-auto mt-2 w-full max-w-lg">
-                <p className="font-brand text-sm text-navy/70">
-                  Activate an offer in your cart at checkout.
+      <main className="flex flex-1 flex-col overflow-y-auto" aria-label="Rewards offers">
+        <div className="flex flex-1 flex-col gap-4 px-5 py-6">
+          {offers.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+              <div>
+                <p className="font-display text-2xl font-bold uppercase tracking-wide text-navy">
+                  No offers yet
                 </p>
+                <p className="mt-2 max-w-sm font-brand text-sm text-navy/70">
+                  Join Rewards Club or claim the first-time buyer welcome offer to fill this list.
+                </p>
+              </div>
+              {onGoToCart ? (
                 <button
                   type="button"
                   onClick={goToCart}
-                  className="mt-3 inline-flex w-full items-center justify-center bg-crimson px-6 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+                  className="inline-flex bg-crimson px-6 py-3 font-brand text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
                 >
                   Go to cart
                 </button>
-              </div>
-            ) : null}
-          </>
-        )}
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <ul className="mx-auto flex w-full max-w-lg flex-col gap-3">
+                {offers.map((offer) => (
+                  <li key={offer.id}>
+                    <OfferCard offer={offer} />
+                  </li>
+                ))}
+              </ul>
+              {onGoToCart ? (
+                <div className="mx-auto mt-2 w-full max-w-lg">
+                  <p className="font-brand text-sm text-navy/70">
+                    Activate an offer in your cart at checkout.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={goToCart}
+                    className="mt-3 inline-flex w-full items-center justify-center bg-crimson px-6 py-3.5 font-brand text-xs font-bold uppercase tracking-[0.14em] text-white transition hover:bg-crimson-hot"
+                  >
+                    Go to cart
+                  </button>
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        <SiteFooter
+          onInventory={onShopInventory}
+          onYouth={onShopYouth ?? onShopInventory}
+          onBeforeNavigate={() => leaveRewardsOffers()}
+          bottomPadClass="pb-12"
+        />
       </main>
     </div>
   )

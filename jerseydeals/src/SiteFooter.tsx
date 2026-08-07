@@ -5,6 +5,8 @@ import {
   EBAY_FEEDBACK_COUNT,
   EBAY_OVERALL_RATING,
   EBAY_SELLER,
+  EBAY_SELLER_URL,
+  EBAY_SHOP_URL,
   SQUARE_STORE_URL,
 } from './config'
 import { goToFavoritesScreen } from './favorites'
@@ -169,16 +171,16 @@ function FooterLinkButton({
 
 /** GoalKick-style ratings badge + accordion footer (Shop / Discover / Contact / About). */
 export function SiteFooter({
-  ebayShop,
-  ebaySeller,
+  ebayShop = EBAY_SHOP_URL,
+  ebaySeller = EBAY_SELLER_URL,
   showTrending = false,
   onInventory,
   onYouth,
   onBeforeNavigate,
   bottomPadClass = 'pb-36 md:pb-24',
 }: {
-  ebayShop: string
-  ebaySeller: string
+  ebayShop?: string
+  ebaySeller?: string
   showTrending?: boolean
   onInventory: () => void
   onYouth: () => void

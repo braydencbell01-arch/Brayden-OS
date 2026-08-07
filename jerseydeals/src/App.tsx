@@ -1663,6 +1663,8 @@ export default function App() {
             setCartOpen(true)
             track('cart_open', { place: 'my_offers' })
           }}
+          onShopInventory={() => goInventory({ reset: true })}
+          onShopYouth={() => goInventory({ audience: 'Youth', reset: true })}
         />
       ) : null}
       {favoritesOpen ? (
@@ -1672,6 +1674,8 @@ export default function App() {
             goInventory({ reset: true, clubId, query: clubName })
           }}
           onQuickView={handleQuickView}
+          onShopInventory={() => goInventory({ reset: true })}
+          onShopYouth={() => goInventory({ audience: 'Youth', reset: true })}
         />
       ) : null}
       {profileOpen ? (
@@ -3305,6 +3309,14 @@ export default function App() {
             ) : null}
           </div>
         </section>
+              <SiteFooter
+                ebayShop={ebayShop}
+                ebaySeller={ebaySeller}
+                showTrending={trendingPicks.length > 0}
+                onInventory={() => goInventory({ reset: true })}
+                onYouth={() => goInventory({ audience: 'Youth', reset: true })}
+                bottomPadClass="pb-8"
+              />
             </div>
           </div>
         ) : null}
