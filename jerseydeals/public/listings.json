@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-08-07T12:32:06Z",
+  "syncedAt": "2026-08-07T15:14:11Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 63,
+  "count": 62,
   "listings": [
     {
       "id": "NK4QWAQHIVIST5HLZRY7DWRH",
@@ -2048,38 +2048,6 @@
       "description": "Waffle Crew is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/86uxXwUG",
       "checkoutUrlDiscounted": "https://square.link/u/EeqwOBLN",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
-      "id": "M4HDCO7DHEXMS4SXW2S2QYOL",
-      "itemId": "IMENLCIPQF2NARGPZH7TN6OJ",
-      "sku": "ebay:800468004717",
-      "title": "Maroon Under Armour Long Sleeve Waffle Crew S Small",
-      "price": 12.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/maroon-under-armour-long-sleeve-waffle-crew-s-small/IMENLCIPQF2NARGPZH7TN6OJ",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5D4AAeSw9h1qc8t~/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5D4AAeSw9h1qc8t~/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/nHcAAeSwD-lqc8uC/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/RR8AAeSw8EFqc8uB/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Sx8AAeSw6wpqc8uC/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GA4AAeSw~Lpqc8uF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/21IAAeSwErFqc8uE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g0cAAeSwi1Jqc8uE/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size S",
-      "size": "S",
-      "brand": "Under Armour",
-      "source": "square",
-      "category": "",
-      "description": "Waffle Crew is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/uL0lWXC9",
-      "checkoutUrlDiscounted": "https://square.link/u/MNChKPKF",
       "condition": "New",
       "conditionEbay": "New with tags",
       "conditionId": "1000"

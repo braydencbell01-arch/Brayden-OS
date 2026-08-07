@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-08-07T12:30:45Z",
+  "syncedAt": "2026-08-07T15:14:11Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 63,
+  "count": 62,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -669,19 +669,6 @@
       "discountPaymentLinkId": "RMGK25QFWBIDDT6I",
       "discountUrl": "https://square.link/u/UqPLcmJA",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/akj24vdHCjhMUqOlqRFtD9TkQh6YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "IMENLCIPQF2NARGPZH7TN6OJ",
-      "variationId": "M4HDCO7DHEXMS4SXW2S2QYOL",
-      "title": "Maroon Under Armour Long Sleeve Waffle Crew S Small",
-      "sku": "ebay:800468004717",
-      "paymentLinkId": "FBDWYPPYF7CMPPS5",
-      "url": "https://square.link/u/uL0lWXC9",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/G2ZQZ4YLXFaRiEdhsS5j5NfVz1IZY",
-      "discountPaymentLinkId": "SYHNUMGDTGBYPX3T",
-      "discountUrl": "https://square.link/u/MNChKPKF",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/g75AoEvkyC5GUVRGEVuxn2wQe68YY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
