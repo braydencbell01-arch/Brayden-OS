@@ -1,303 +1,329 @@
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { EntityLogo } from './EntityLogo'
+import { teamLogoUrl } from '../lib/stats/branding'
 import {
   PL_FINANCES,
+  axisTicks,
   blockFill,
   clubScaleMax,
   formatMoneyGbp,
   formatMoneyUsd,
   scrRatio,
 } from '../lib/stats/finances/format'
-import type { FinanceBlock, FinanceClub } from '../lib/stats/finances/types'
+import type { FinanceClub } from '../lib/stats/finances/types'
 
-// Stack: largest block at top → smallest at bottom (Bucks-style SCR column).
+/** Min segment height (px) to print name inside the block. */
+const NAME_MIN_PX = 36
+/** Min height to also print the £ amount. */
+const AMOUNT_MIN_PX = 52
 
-function StackColumn({
+function ThresholdLine({
+  label,
+  color,
+  bottomPct,
+  valueLabel,
+}: {
+  label: string
+  color: string
+  bottomPct: number
+  valueLabel: string
+}) {
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 z-30 flex items-center"
+      style={{ bottom: `${bottomPct}%` }}
+    >
+      <div className="h-0 flex-1 border-t border-dashed" style={{ borderColor: color }} />
+      <div
+        className="ml-1 shrink-0 rounded-sm px-1.5 py-0.5 text-right"
+        style={{ background: 'rgba(6, 38, 28, 0.92)' }}
+      >
+        <p className="text-[0.65rem] font-bold leading-tight" style={{ color }}>
+          {label}
+        </p>
+        <p className="text-[0.6rem] tabular-nums text-mist/70">{valueLabel}</p>
+      </div>
+    </div>
+  )
+}
+
+function BigStack({
   club,
   scaleMax,
-  selected,
-  onSelect,
   showUsd,
   reduce,
 }: {
   club: FinanceClub
   scaleMax: number
-  selected: boolean
-  onSelect: () => void
   showUsd: boolean
   reduce: boolean | null
 }) {
-  const ratio = scrRatio(club)
-  const pct = (v: number) => `${Math.max((v / scaleMax) * 100, 0)}%`
+  /** Tall Bucks-style column. */
+  const chartH = 560
+  const money = (n: number) =>
+    showUsd ? formatMoneyUsd(n, PL_FINANCES.usdPerGbp, false) : formatMoneyGbp(n, false)
+  const moneyShort = (n: number) =>
+    showUsd ? formatMoneyUsd(n, PL_FINANCES.usdPerGbp) : formatMoneyGbp(n)
+  const pct = (v: number) => Math.max((v / scaleMax) * 100, 0)
+  const stackH = (club.squadCostGbp / scaleMax) * chartH
+  const ticks = axisTicks(scaleMax, scaleMax > 600_000_000 ? 50_000_000 : 20_000_000)
+
+  const unlabeled = club.blocks
+    .map((b, i) => ({ b, i }))
+    .filter(({ b }) => (b.amountGbp / scaleMax) * chartH < NAME_MIN_PX)
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`flex w-[4.6rem] shrink-0 flex-col items-center gap-1.5 text-left transition sm:w-[5.2rem] ${
-        selected ? 'opacity-100' : 'opacity-80 hover:opacity-100'
-      }`}
-    >
-      <div
-        className={`relative h-56 w-full overflow-hidden border sm:h-64 ${
-          selected ? 'border-lime/70 bg-white/[0.06]' : 'border-white/10 bg-white/[0.03]'
-        }`}
-      >
-        {/* Threshold / revenue guides */}
-        <div
-          className="pointer-events-none absolute inset-x-0 z-20 border-t border-dashed border-cream/55"
-          style={{ bottom: pct(club.revenueGbp) }}
-          title={`Revenue ${formatMoneyGbp(club.revenueGbp)}`}
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 z-20 border-t border-dashed border-lime"
-          style={{ bottom: pct(club.greenThresholdGbp) }}
-          title={`Green 85% ${formatMoneyGbp(club.greenThresholdGbp)}`}
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 z-20 border-t border-dashed border-red-400/90"
-          style={{ bottom: pct(club.redThresholdGbp) }}
-          title={`Red 115% ${formatMoneyGbp(club.redThresholdGbp)}`}
-        />
-        {club.uefaThresholdGbp != null ? (
-          <div
-            className="pointer-events-none absolute inset-x-0 z-20 border-t border-dashed border-sky-300/80"
-            style={{ bottom: pct(club.uefaThresholdGbp) }}
-            title={`UEFA 70% ${formatMoneyGbp(club.uefaThresholdGbp)}`}
-          />
-        ) : null}
+    <div className="mt-3">
+      <div className="flex gap-2">
+        {/* Y-axis */}
+        <div className="relative w-10 shrink-0 sm:w-12" style={{ height: chartH }}>
+          {ticks.map((t) => (
+            <span
+              key={t}
+              className="absolute right-0 -translate-y-1/2 text-[0.55rem] tabular-nums text-mist/50 sm:text-[0.6rem]"
+              style={{ bottom: `${pct(t)}%` }}
+            >
+              {formatMoneyGbp(t)}
+            </span>
+          ))}
+        </div>
 
-        <div className="absolute inset-0 z-10 flex flex-col justify-end">
-          <div
-            className="flex w-full flex-col"
-            style={{ height: `${(club.squadCostGbp / scaleMax) * 100}%` }}
-          >
-            {club.blocks.map((block, i) => (
-              <motion.div
-                key={block.id}
-                initial={reduce ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.25, delay: reduce ? 0 : Math.min(i * 0.01, 0.2) }}
-                style={{
-                  flex: `${block.amountGbp} 1 0%`,
-                  background: blockFill(block.kind, i),
-                  minHeight: 1,
-                }}
-                className="w-full border-b border-pitch-deep/35"
-                title={`${block.label}: ${formatMoneyGbp(block.amountGbp)}`}
-              />
-            ))}
+        {/* Chart */}
+        <div
+          className="relative min-w-0 flex-1 overflow-hidden border border-white/15 bg-[#eef2ee]"
+          style={{ height: chartH }}
+        >
+          {/* Grid */}
+          {ticks.map((t) => (
+            <div
+              key={`g-${t}`}
+              className="pointer-events-none absolute inset-x-0 border-t border-dotted border-black/10"
+              style={{ bottom: `${pct(t)}%` }}
+            />
+          ))}
+
+          <ThresholdLine
+            label="Revenue"
+            color="#1a1a1a"
+            bottomPct={pct(club.revenueGbp)}
+            valueLabel={moneyShort(club.revenueGbp)}
+          />
+          <ThresholdLine
+            label="Green 85%"
+            color="#146b4a"
+            bottomPct={pct(club.greenThresholdGbp)}
+            valueLabel={moneyShort(club.greenThresholdGbp)}
+          />
+          <ThresholdLine
+            label="Red 115%"
+            color="#c43c3c"
+            bottomPct={pct(club.redThresholdGbp)}
+            valueLabel={moneyShort(club.redThresholdGbp)}
+          />
+          {club.uefaThresholdGbp != null ? (
+            <ThresholdLine
+              label="UEFA 70%"
+              color="#2563eb"
+              bottomPct={pct(club.uefaThresholdGbp)}
+              valueLabel={moneyShort(club.uefaThresholdGbp)}
+            />
+          ) : null}
+
+          <div className="absolute inset-y-0 left-0 right-[4.5rem] z-10 flex flex-col justify-end sm:right-28">
+            <div className="flex w-full flex-col shadow-lg" style={{ height: stackH }}>
+              {club.blocks.map((block, i) => {
+                const segH = (block.amountGbp / scaleMax) * chartH
+                const showName = segH >= NAME_MIN_PX
+                const showAmount = segH >= AMOUNT_MIN_PX
+                const fill = blockFill(block.kind, i)
+                const textOnDark = block.kind !== 'agents'
+                return (
+                  <motion.div
+                    key={block.id}
+                    initial={reduce ? false : { opacity: 0.4 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2, delay: reduce ? 0 : Math.min(i * 0.015, 0.25) }}
+                    className="relative flex w-full items-center overflow-hidden border-b border-black/15 px-2.5"
+                    style={{
+                      flex: `${block.amountGbp} 1 0%`,
+                      background: fill,
+                      minHeight: 2,
+                      color: textOnDark ? '#f7faf8' : '#1a1a1a',
+                    }}
+                    title={`${block.label}: ${money(block.amountGbp)}`}
+                  >
+                    {showName ? (
+                      <div className="min-w-0">
+                        <p className="truncate text-[0.8rem] font-bold leading-tight sm:text-[0.9rem]">
+                          {block.label}
+                        </p>
+                        {showAmount ? (
+                          <p className="text-[0.7rem] font-semibold tabular-nums opacity-90 sm:text-[0.75rem]">
+                            {money(block.amountGbp)}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
-      <span className="font-display text-lg leading-none text-cream">{club.short}</span>
-      <span
-        className={`text-[0.65rem] font-semibold tabular-nums ${
-          ratio > 1.15 ? 'text-red-300' : ratio > 0.85 ? 'text-amber-200' : 'text-lime'
-        }`}
-      >
-        {(ratio * 100).toFixed(0)}%
-      </span>
-      <span className="text-[0.6rem] text-mist/55 tabular-nums">
-        {showUsd
-          ? formatMoneyUsd(club.squadCostGbp, PL_FINANCES.usdPerGbp)
-          : formatMoneyGbp(club.squadCostGbp)}
-      </span>
-    </button>
+
+      {unlabeled.length > 0 ? (
+        <p className="mt-2 text-[0.65rem] leading-relaxed text-mist/55">
+          {unlabeled.map(({ b, i }, n) => (
+            <span key={b.id}>
+              {n > 0 ? ' · ' : ''}
+              <span style={{ color: blockFill(b.kind, i) }}>■</span> {b.label}
+            </span>
+          ))}
+        </p>
+      ) : null}
+    </div>
   )
 }
 
-function BlockRow({
-  block,
-  showUsd,
-  usdPerGbp,
+function ClubNav({
+  clubs,
+  selectedId,
+  onSelect,
 }: {
-  block: FinanceBlock
-  showUsd: boolean
-  usdPerGbp: number
+  clubs: FinanceClub[]
+  selectedId: string
+  onSelect: (id: string) => void
 }) {
-  const money = (n: number) =>
-    showUsd ? formatMoneyUsd(n, usdPerGbp, false) : formatMoneyGbp(n, false)
+  const idx = clubs.findIndex((c) => c.id === selectedId)
+  const prev = () => onSelect(clubs[(idx - 1 + clubs.length) % clubs.length].id)
+  const next = () => onSelect(clubs[(idx + 1) % clubs.length].id)
+
   return (
-    <li className="flex items-start justify-between gap-3 border-b border-white/5 py-2 text-sm">
-      <span className="min-w-0">
-        <span className="block text-cream">{block.label}</span>
-        {block.kind === 'player' && (block.wageGbp != null || block.amortGbp != null) ? (
-          <span className="text-[0.7rem] text-mist/55">
-            Wage {money(block.wageGbp ?? 0)}
-            {block.amortGbp ? ` · Amort ${money(block.amortGbp)}` : ''}
-          </span>
-        ) : (
-          <span className="text-[0.7rem] uppercase tracking-[0.12em] text-mist/45">
-            {block.kind === 'agents' ? 'FA agent fees' : 'Staff estimate'}
-          </span>
-        )}
-      </span>
-      <span className="shrink-0 font-semibold tabular-nums text-lime">{money(block.amountGbp)}</span>
-    </li>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={prev}
+        className="rounded-full border border-white/15 px-2.5 py-1 text-sm text-mist hover:border-lime/40 hover:text-lime"
+        aria-label="Previous club"
+      >
+        ‹
+      </button>
+      <div className="scrollbar-hide flex min-w-0 flex-1 gap-1 overflow-x-auto">
+        {clubs.map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => onSelect(c.id)}
+            className={`shrink-0 rounded-full px-2.5 py-1 text-[0.65rem] font-bold transition ${
+              c.id === selectedId ? 'bg-lime text-ink' : 'bg-white/5 text-mist hover:bg-white/10'
+            }`}
+          >
+            {c.short}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={next}
+        className="rounded-full border border-white/15 px-2.5 py-1 text-sm text-mist hover:border-lime/40 hover:text-lime"
+        aria-label="Next club"
+      >
+        ›
+      </button>
+    </div>
   )
 }
 
 /**
- * Premier League Squad Cost Ratio view — wages + amort + agents + coaching vs revenue.
+ * Premier League Squad Cost Ratio — one club at a time, Bucks-style stacked column.
  */
 export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
   const clubs = PL_FINANCES.clubs
-  const [selectedId, setSelectedId] = useState(clubs[0]?.id ?? 'man-city')
+  const [selectedId, setSelectedId] = useState(clubs[0]?.id ?? 'chelsea')
   const [showUsd, setShowUsd] = useState(false)
   const selected = useMemo(
     () => clubs.find((c) => c.id === selectedId) ?? clubs[0],
     [clubs, selectedId],
   )
-  const scaleMax = useMemo(
-    () => Math.max(...clubs.map((c) => clubScaleMax(c))),
-    [clubs],
-  )
 
   if (!selected) return null
 
+  const scaleMax = clubScaleMax(selected)
   const ratio = scrRatio(selected)
+  const money = (n: number) =>
+    showUsd ? formatMoneyUsd(n, PL_FINANCES.usdPerGbp, false) : formatMoneyGbp(n, false)
 
   return (
-    <div className="space-y-4">
-      <section className="border border-white/10 bg-white/[0.03] px-4 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
-              {PL_FINANCES.league} · {PL_FINANCES.season}
-            </h2>
-            <p className="mt-1 text-sm text-mist/75">
-              Squad Cost Ratio — player wages + amortisation, agent fees, and coaching staff vs club
-              revenue. Green 85% / red 115% (PL SCR); UEFA clubs also show 70%.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowUsd((v) => !v)}
-            className="shrink-0 rounded-full border border-white/15 px-3 py-1 text-[0.7rem] font-bold text-mist hover:border-lime/40 hover:text-lime"
-          >
-            {showUsd ? 'Show GBP' : 'Show USD'}
-          </button>
-        </div>
+    <div className="space-y-3">
+      <ClubNav clubs={clubs} selectedId={selected.id} onSelect={setSelectedId} />
 
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[0.65rem] text-mist/70">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 border-t border-dashed border-cream/55" /> Revenue
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 border-t border-dashed border-lime" /> Green 85%
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 border-t border-dashed border-red-400/90" /> Red 115%
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-px w-4 border-t border-dashed border-sky-300/80" /> UEFA 70%
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 bg-[#e8b84a]" /> Agents
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 bg-[#7a9bb8]" /> Coaching
-          </span>
-        </div>
+      <AnimatePresence mode="wait">
+        <motion.section
+          key={selected.id}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className="border border-white/10 bg-white/[0.03] px-3 py-4 sm:px-4"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-lime">
+                Squad cost · {PL_FINANCES.season}
+              </p>
+              <h2 className="mt-1 font-display text-4xl tracking-[0.03em] text-cream sm:text-5xl">
+                {selected.name}
+              </h2>
+              <p className="mt-1 text-sm text-mist/70">
+                SCR{' '}
+                <span
+                  className={`font-bold tabular-nums ${
+                    ratio > 1.15 ? 'text-red-300' : ratio > 0.85 ? 'text-amber-200' : 'text-lime'
+                  }`}
+                >
+                  {(ratio * 100).toFixed(0)}%
+                </span>
+                {' · '}
+                {money(selected.squadCostGbp)} cost / {money(selected.revenueGbp)} revenue
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              {selected.espnTeamId ? (
+                <EntityLogo
+                  name={selected.name}
+                  src={teamLogoUrl(selected.espnTeamId)}
+                  size="md"
+                />
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setShowUsd((v) => !v)}
+                className="rounded-full border border-white/15 px-2.5 py-0.5 text-[0.65rem] font-bold text-mist hover:border-lime/40 hover:text-lime"
+              >
+                {showUsd ? 'GBP' : 'USD'}
+              </button>
+            </div>
+          </div>
 
-        <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto pb-1">
-          {clubs.map((club) => (
-            <StackColumn
-              key={club.id}
-              club={club}
-              scaleMax={scaleMax}
-              selected={club.id === selected.id}
-              onSelect={() => setSelectedId(club.id)}
-              showUsd={showUsd}
-              reduce={reduce}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="border border-white/10 bg-white/[0.03] px-4 py-4">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h3 className="font-display text-3xl text-cream">{selected.name}</h3>
-            <p className="text-sm text-mist/70">
-              Squad cost{' '}
-              <span className="font-semibold text-cream">
-                {showUsd
-                  ? formatMoneyUsd(selected.squadCostGbp, PL_FINANCES.usdPerGbp, false)
-                  : formatMoneyGbp(selected.squadCostGbp, false)}
-              </span>
-              {' · '}
-              Revenue{' '}
-              <span className="font-semibold text-cream">
-                {showUsd
-                  ? formatMoneyUsd(selected.revenueGbp, PL_FINANCES.usdPerGbp, false)
-                  : formatMoneyGbp(selected.revenueGbp, false)}
-              </span>
-            </p>
-          </div>
-          <div className="text-right">
-            <p
-              className={`font-display text-4xl tabular-nums ${
-                ratio > 1.15 ? 'text-red-300' : ratio > 0.85 ? 'text-amber-200' : 'text-lime'
-              }`}
-            >
-              {(ratio * 100).toFixed(0)}%
-            </p>
-            <p className="text-[0.65rem] uppercase tracking-[0.14em] text-mist/55">SCR</p>
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-2 text-[0.7rem] sm:grid-cols-4">
-          <div className="border border-white/10 bg-pitch/30 px-2 py-2">
-            <p className="text-mist/50">Green 85%</p>
-            <p className="font-semibold tabular-nums text-lime">
-              {formatMoneyGbp(selected.greenThresholdGbp)}
-            </p>
-          </div>
-          <div className="border border-white/10 bg-pitch/30 px-2 py-2">
-            <p className="text-mist/50">Red 115%</p>
-            <p className="font-semibold tabular-nums text-red-300">
-              {formatMoneyGbp(selected.redThresholdGbp)}
-            </p>
-          </div>
-          <div className="border border-white/10 bg-pitch/30 px-2 py-2">
-            <p className="text-mist/50">UEFA 70%</p>
-            <p className="font-semibold tabular-nums text-sky-200">
-              {selected.uefaThresholdGbp != null
-                ? formatMoneyGbp(selected.uefaThresholdGbp)
-                : '—'}
-            </p>
-          </div>
-          <div className="border border-white/10 bg-pitch/30 px-2 py-2">
-            <p className="text-mist/50">Agents (FA)</p>
-            <p className="font-semibold tabular-nums text-[#e8b84a]">
-              {formatMoneyGbp(selected.agentFeesGbp)}
-            </p>
-          </div>
-        </div>
-
-        <ul className="mt-3 max-h-80 overflow-y-auto">
-          {selected.blocks.map((block) => (
-            <BlockRow
-              key={block.id}
-              block={block}
-              showUsd={showUsd}
-              usdPerGbp={PL_FINANCES.usdPerGbp}
-            />
-          ))}
-        </ul>
-      </section>
+          <BigStack club={selected} scaleMax={scaleMax} showUsd={showUsd} reduce={reduce} />
+        </motion.section>
+      </AnimatePresence>
 
       <p className="text-[0.7rem] leading-relaxed text-mist/50">{PL_FINANCES.disclaimer}</p>
       <details className="text-[0.7rem] text-mist/45">
-        <summary className="cursor-pointer text-mist/60 hover:text-mist">Sources</summary>
+        <summary className="cursor-pointer text-mist/60 hover:text-mist">Sources & why SCR moved</summary>
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
           {PL_FINANCES.sources.map((s) => (
             <li key={s}>{s}</li>
           ))}
           <li>
-            PL SCR rules:{' '}
+            Low ratios before were mostly undercounted amortisation (and Capology fixed wages), not
+            overstated Deloitte revenue for the big clubs.
+          </li>
+          <li>
+            PL SCR:{' '}
             <a
               className="text-lime/80 underline"
               href="https://www.premierleague.com/en/news/4467022/"

@@ -49,23 +49,35 @@ export function scrRatio(club: FinanceClub): number {
   return club.squadCostGbp / club.revenueGbp
 }
 
+/** Distinct segment colors (Bucks-style variety, pitch-friendly). */
 const PLAYER_PALETTE = [
-  '#7dd3a0',
-  '#5bbf8a',
-  '#3aa872',
-  '#2d8f5f',
-  '#9ad4b8',
-  '#6bc49a',
-  '#4a9e78',
-  '#88c9a8',
-  '#3f7d62',
-  '#a8e0c4',
-  '#62b890',
-  '#4d9a74',
+  '#1d4f91',
+  '#c43c3c',
+  '#3d9b6e',
+  '#d4a017',
+  '#5b4fc9',
+  '#2a8f9e',
+  '#c45c2a',
+  '#6b8f3d',
+  '#8b5a8c',
+  '#3a6ea5',
+  '#b85c6e',
+  '#4a7c59',
+  '#9a6b2f',
+  '#5c6bc0',
+  '#00897b',
+  '#af5a3c',
 ]
 
 export function blockFill(kind: string, index: number): string {
-  if (kind === 'agents') return '#e8b84a'
-  if (kind === 'coaching') return '#7a9bb8'
+  if (kind === 'agents') return '#c9a227'
+  if (kind === 'coaching') return '#5a7a94'
   return PLAYER_PALETTE[index % PLAYER_PALETTE.length]
+}
+
+export function axisTicks(scaleMax: number, step = 10_000_000): number[] {
+  const ticks: number[] = []
+  for (let v = 0; v <= scaleMax; v += step) ticks.push(v)
+  if (ticks[ticks.length - 1] < scaleMax * 0.98) ticks.push(Math.round(scaleMax / step) * step)
+  return ticks
 }

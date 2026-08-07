@@ -13,6 +13,7 @@ export type FinanceClub = {
   id: string
   short: string
   name: string
+  espnTeamId?: string
   revenueGbp: number
   agentFeesGbp: number
   coachingStaffGbp: number
