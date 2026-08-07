@@ -41,7 +41,8 @@ export function clubScaleMax(club: FinanceClub): number {
     club.uefaThresholdGbp ?? 0,
     club.squadCostGbp,
   )
-  return lineMax * 1.08
+  // Small headroom only — keep SCR vs threshold lines visually faithful.
+  return lineMax * 1.04
 }
 
 export function scrRatio(club: FinanceClub): number {

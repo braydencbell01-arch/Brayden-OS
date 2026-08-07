@@ -13,10 +13,21 @@ import {
 } from '../lib/stats/finances/format'
 import type { FinanceClub } from '../lib/stats/finances/types'
 
-/** Min segment height (px) to print name inside the block. */
-const NAME_MIN_PX = 36
-/** Min height to also print the £ amount. */
-const AMOUNT_MIN_PX = 52
+/** Only skip names on razor-thin slices. */
+const NAME_MIN_PX = 9
+/** Show £ amount once the segment is tall enough. */
+const AMOUNT_MIN_PX = 28
+const CHART_H = 560
+const LABEL_GUTTER = 76
+
+function shortName(label: string, segH: number): string {
+  if (segH >= 22) return label
+  // Tiny bars: last name / short label
+  const parts = label.trim().split(/\s+/)
+  if (parts.length <= 1) return label
+  if (label === 'Agent fees' || label === 'Coaching staff') return label
+  return parts[parts.length - 1]
+}
 
 function ThresholdLine({
   label,
@@ -29,20 +40,24 @@ function ThresholdLine({
   bottomPct: number
   valueLabel: string
 }) {
+  // Line sits exactly on bottomPct (container height 0). Label floats beside it.
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 z-30 flex items-center"
-      style={{ bottom: `${bottomPct}%` }}
+      className="pointer-events-none absolute left-0 z-30"
+      style={{ bottom: `${bottomPct}%`, right: 0, height: 0 }}
     >
-      <div className="h-0 flex-1 border-t border-dashed" style={{ borderColor: color }} />
       <div
-        className="ml-1 shrink-0 rounded-sm px-1.5 py-0.5 text-right"
-        style={{ background: 'rgba(6, 38, 28, 0.92)' }}
+        className="absolute top-0 border-t border-dashed"
+        style={{ borderColor: color, left: 0, right: LABEL_GUTTER }}
+      />
+      <div
+        className="absolute top-0 flex -translate-y-1/2 flex-col items-end leading-none"
+        style={{ right: 4, width: LABEL_GUTTER - 8 }}
       >
-        <p className="text-[0.65rem] font-bold leading-tight" style={{ color }}>
+        <span className="text-[0.58rem] font-bold" style={{ color }}>
           {label}
-        </p>
-        <p className="text-[0.6rem] tabular-nums text-mist/70">{valueLabel}</p>
+        </span>
+        <span className="text-[0.52rem] tabular-nums text-black/45">{valueLabel}</span>
       </div>
     </div>
   )
@@ -59,29 +74,36 @@ function BigStack({
   showUsd: boolean
   reduce: boolean | null
 }) {
-  /** Tall Bucks-style column. */
-  const chartH = 560
   const money = (n: number) =>
     showUsd ? formatMoneyUsd(n, PL_FINANCES.usdPerGbp, false) : formatMoneyGbp(n, false)
   const moneyShort = (n: number) =>
     showUsd ? formatMoneyUsd(n, PL_FINANCES.usdPerGbp) : formatMoneyGbp(n)
-  const pct = (v: number) => Math.max((v / scaleMax) * 100, 0)
-  const stackH = (club.squadCostGbp / scaleMax) * chartH
+  const y = (v: number) => (Math.max(v, 0) / scaleMax) * CHART_H
+  const pct = (v: number) => (Math.max(v, 0) / scaleMax) * 100
+  const stackH = y(club.squadCostGbp)
   const ticks = axisTicks(scaleMax, scaleMax > 600_000_000 ? 50_000_000 : 20_000_000)
 
-  const unlabeled = club.blocks
-    .map((b, i) => ({ b, i }))
-    .filter(({ b }) => (b.amountGbp / scaleMax) * chartH < NAME_MIN_PX)
+  // Exact pixel heights so the stack top matches threshold math.
+  const segs = club.blocks.map((block, i) => {
+    const h = y(block.amountGbp)
+    return { block, i, h }
+  })
+  // Fix rounding so heights sum to stackH
+  const rawSum = segs.reduce((s, x) => s + x.h, 0)
+  if (segs.length && Math.abs(rawSum - stackH) > 0.01) {
+    segs[0].h += stackH - rawSum
+  }
+
+  const unlabeled = segs.filter(({ h }) => h < NAME_MIN_PX)
 
   return (
     <div className="mt-3">
-      <div className="flex gap-2">
-        {/* Y-axis */}
-        <div className="relative w-10 shrink-0 sm:w-12" style={{ height: chartH }}>
+      <div className="flex gap-1.5 sm:gap-2">
+        <div className="relative w-9 shrink-0 sm:w-11" style={{ height: CHART_H }}>
           {ticks.map((t) => (
             <span
               key={t}
-              className="absolute right-0 -translate-y-1/2 text-[0.55rem] tabular-nums text-mist/50 sm:text-[0.6rem]"
+              className="absolute right-0 -translate-y-1/2 text-[0.5rem] tabular-nums text-mist/45 sm:text-[0.55rem]"
               style={{ bottom: `${pct(t)}%` }}
             >
               {formatMoneyGbp(t)}
@@ -89,96 +111,107 @@ function BigStack({
           ))}
         </div>
 
-        {/* Chart */}
         <div
-          className="relative min-w-0 flex-1 overflow-hidden border border-white/15 bg-[#eef2ee]"
-          style={{ height: chartH }}
+          className="relative min-w-0 flex-1 overflow-hidden rounded-sm border border-white/12 bg-[#e8ece6]"
+          style={{ height: CHART_H }}
         >
-          {/* Grid */}
           {ticks.map((t) => (
             <div
               key={`g-${t}`}
-              className="pointer-events-none absolute inset-x-0 border-t border-dotted border-black/10"
-              style={{ bottom: `${pct(t)}%` }}
+              className="pointer-events-none absolute border-t border-dotted border-black/[0.06]"
+              style={{ bottom: `${pct(t)}%`, left: 0, right: LABEL_GUTTER }}
             />
           ))}
 
           <ThresholdLine
-            label="Adj. revenue"
-            color="#1a1a1a"
+            label="Adj. rev"
+            color="#111"
             bottomPct={pct(club.revenueGbp)}
             valueLabel={moneyShort(club.revenueGbp)}
           />
           <ThresholdLine
             label="Green 85%"
-            color="#146b4a"
+            color="#0f6b45"
             bottomPct={pct(club.greenThresholdGbp)}
             valueLabel={moneyShort(club.greenThresholdGbp)}
           />
           <ThresholdLine
             label="Red 115%"
-            color="#c43c3c"
+            color="#b83232"
             bottomPct={pct(club.redThresholdGbp)}
             valueLabel={moneyShort(club.redThresholdGbp)}
           />
           {club.uefaThresholdGbp != null ? (
             <ThresholdLine
               label="UEFA 70%"
-              color="#2563eb"
+              color="#1d4ed8"
               bottomPct={pct(club.uefaThresholdGbp)}
               valueLabel={moneyShort(club.uefaThresholdGbp)}
             />
           ) : null}
 
-          <div className="absolute inset-y-0 left-0 right-[4.5rem] z-10 flex flex-col justify-end sm:right-28">
-            <div className="flex w-full flex-col shadow-lg" style={{ height: stackH }}>
-              {club.blocks.map((block, i) => {
-                const segH = (block.amountGbp / scaleMax) * chartH
-                const showName = segH >= NAME_MIN_PX
-                const showAmount = segH >= AMOUNT_MIN_PX
-                const fill = blockFill(block.kind, i)
-                const textOnDark = block.kind !== 'agents'
-                return (
-                  <motion.div
-                    key={block.id}
-                    initial={reduce ? false : { opacity: 0.4 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2, delay: reduce ? 0 : Math.min(i * 0.015, 0.25) }}
-                    className="relative flex w-full items-center overflow-hidden border-b border-black/15 px-2.5"
-                    style={{
-                      flex: `${block.amountGbp} 1 0%`,
-                      background: fill,
-                      minHeight: 2,
-                      color: textOnDark ? '#f7faf8' : '#1a1a1a',
-                    }}
-                    title={`${block.label}: ${money(block.amountGbp)}`}
-                  >
-                    {showName ? (
-                      <div className="min-w-0">
-                        <p className="truncate text-[0.8rem] font-bold leading-tight sm:text-[0.9rem]">
-                          {block.label}
+          {/* Hairline at exact squad-cost top for SCR read. */}
+          <div
+            className="pointer-events-none absolute z-20 border-t border-black/35"
+            style={{ bottom: stackH, left: 0, right: LABEL_GUTTER }}
+            title={`Squad cost ${moneyShort(club.squadCostGbp)}`}
+          />
+
+          <div
+            className="absolute bottom-0 left-0 z-10 flex flex-col overflow-hidden shadow-md"
+            style={{ height: stackH, right: LABEL_GUTTER }}
+          >
+            {segs.map(({ block, i, h }) => {
+              const showName = h >= NAME_MIN_PX
+              const showAmount = h >= AMOUNT_MIN_PX
+              const fill = blockFill(block.kind, i)
+              const darkText = block.kind === 'agents'
+              const fontPx = h >= 40 ? 13 : h >= 22 ? 11 : h >= 14 ? 9 : 8
+              return (
+                <motion.div
+                  key={block.id}
+                  initial={reduce ? false : { opacity: 0.35 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.18, delay: reduce ? 0 : Math.min(i * 0.012, 0.2) }}
+                  className="flex w-full shrink-0 items-center overflow-hidden border-b border-black/10 px-1.5"
+                  style={{
+                    height: h,
+                    background: fill,
+                    color: darkText ? '#1a1a1a' : '#f6f8f6',
+                  }}
+                  title={`${block.label}: ${money(block.amountGbp)}`}
+                >
+                  {showName ? (
+                    <div className="min-w-0 leading-none">
+                      <p
+                        className="truncate font-bold"
+                        style={{ fontSize: fontPx, lineHeight: 1.05 }}
+                      >
+                        {shortName(block.label, h)}
+                      </p>
+                      {showAmount ? (
+                        <p
+                          className="mt-0.5 truncate font-semibold tabular-nums opacity-90"
+                          style={{ fontSize: Math.max(fontPx - 2, 8) }}
+                        >
+                          {money(block.amountGbp)}
                         </p>
-                        {showAmount ? (
-                          <p className="text-[0.7rem] font-semibold tabular-nums opacity-90 sm:text-[0.75rem]">
-                            {money(block.amountGbp)}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </motion.div>
-                )
-              })}
-            </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </div>
 
       {unlabeled.length > 0 ? (
-        <p className="mt-2 text-[0.65rem] leading-relaxed text-mist/55">
-          {unlabeled.map(({ b, i }, n) => (
-            <span key={b.id}>
+        <p className="mt-2 text-[0.62rem] leading-relaxed text-mist/50">
+          {unlabeled.map(({ block, i }, n) => (
+            <span key={block.id}>
               {n > 0 ? ' · ' : ''}
-              <span style={{ color: blockFill(b.kind, i) }}>■</span> {b.label}
+              <span style={{ color: blockFill(block.kind, i) }}>■</span> {block.label}
             </span>
           ))}
         </p>
