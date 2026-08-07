@@ -20,15 +20,6 @@ const AMOUNT_MIN_PX = 24
 const CHART_H = 560
 const LABEL_GUTTER = 76
 
-function shortName(label: string, segH: number): string {
-  if (segH >= 22) return label
-  // Tiny bars: last name / short label
-  const parts = label.trim().split(/\s+/)
-  if (parts.length <= 1) return label
-  if (label === 'Agent fees' || label === 'Coaching staff') return label
-  return parts[parts.length - 1]
-}
-
 function ThresholdLine({
   label,
   color,
@@ -187,7 +178,7 @@ function BigStack({
                         className="truncate font-bold"
                         style={{ fontSize: fontPx, lineHeight: 1.05 }}
                       >
-                        {shortName(block.label, h)}
+                        {block.label}
                       </p>
                       {showAmount ? (
                         <p
