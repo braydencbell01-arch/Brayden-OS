@@ -7,6 +7,8 @@ export type FinanceBlock = {
   amountGbp: number
   wageGbp?: number
   amortGbp?: number
+  /** On loan / not in squad but still a squad-cost hit. */
+  away?: boolean
 }
 
 export type FinanceClub = {
@@ -14,14 +16,8 @@ export type FinanceClub = {
   short: string
   name: string
   espnTeamId?: string
-  /** Football turnover (£). */
   footballRevenueGbp?: number
-  /** Profit/(loss) on player disposals (£). */
   playerTradingGbp?: number
-  /**
-   * SCR adjusted revenue = football + player trading.
-   * Used for green/red/UEFA threshold lines.
-   */
   revenueGbp: number
   agentFeesGbp: number
   coachingStaffGbp: number
