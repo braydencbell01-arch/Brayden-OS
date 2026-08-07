@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EntityLogo } from './EntityLogo'
 import { teamLogoUrl } from '../lib/stats/branding'
@@ -11,6 +11,14 @@ import {
   formatMoneyUsd,
   scrRatio,
 } from '../lib/stats/finances/format'
+import {
+  SEASON_TIMELINES,
+  clubStateAtDate,
+  eventsFiredBetween,
+  formatSeasonDate,
+  isoFromProgress,
+  type SeasonEvent,
+} from '../lib/stats/finances/seasonEngine'
 import type { FinanceClub } from '../lib/stats/finances/types'
 
 /** Only skip names on razor-thin slices. */
@@ -262,35 +270,137 @@ function ClubNav({
 
 /**
  * Premier League Squad Cost Ratio — one club at a time, Bucks-style stacked column.
+ * Play animates Aug 1 → Jul 31 (2024-25) in ~60s with live events.
  */
 export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
   const clubs = PL_FINANCES.clubs
   const [selectedId, setSelectedId] = useState(clubs[0]?.id ?? 'chelsea')
   const [showUsd, setShowUsd] = useState(false)
-  const selected = useMemo(
+  const [playing, setPlaying] = useState(false)
+  const [playDate, setPlayDate] = useState<string | null>(null)
+  const [eventLog, setEventLog] = useState<SeasonEvent[]>([])
+  const [toast, setToast] = useState<SeasonEvent | null>(null)
+  const prevDateRef = useRef<string | null>(null)
+  const rafRef = useRef(0)
+  const startTsRef = useRef(0)
+  const toastTimerRef = useRef(0)
+
+  const catalogClub = useMemo(
     () => clubs.find((c) => c.id === selectedId) ?? clubs[0],
     [clubs, selectedId],
   )
+  const timeline = SEASON_TIMELINES.clubs[selectedId]
 
-  if (!selected) return null
+  const displayClub = useMemo(() => {
+    if (!catalogClub) return null
+    if (playDate && timeline) return clubStateAtDate(timeline, playDate)
+    return catalogClub
+  }, [catalogClub, playDate, timeline])
 
-  const scaleMax = clubScaleMax(selected)
-  const ratio = scrRatio(selected)
+  const stopPlayback = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = 0
+    setPlaying(false)
+  }
+
+  const selectClub = (id: string) => {
+    stopPlayback()
+    setPlayDate(null)
+    setEventLog([])
+    setToast(null)
+    prevDateRef.current = null
+    setSelectedId(id)
+  }
+
+  const flashEvent = (event: SeasonEvent) => {
+    setToast(event)
+    setEventLog((log) => [event, ...log.filter((e) => e.id !== event.id)])
+    if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = window.setTimeout(() => setToast(null), 1100)
+  }
+
+  const startPlayback = () => {
+    if (!timeline) return
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    setEventLog([])
+    setToast(null)
+    prevDateRef.current = null
+    setPlayDate(SEASON_TIMELINES.seasonStart)
+    setPlaying(true)
+    startTsRef.current = performance.now()
+  }
+
+  const togglePlay = () => {
+    if (playing) {
+      stopPlayback()
+      return
+    }
+    startPlayback()
+  }
+
+  useEffect(() => {
+    if (!playing || !timeline) return
+
+    const tick = (now: number) => {
+      const elapsed = now - startTsRef.current
+      const progress = Math.min(1, elapsed / SEASON_TIMELINES.durationMs)
+      const nextIso = isoFromProgress(
+        progress,
+        SEASON_TIMELINES.seasonStart,
+        SEASON_TIMELINES.seasonEnd,
+      )
+      const prevIso = prevDateRef.current
+      if (nextIso !== prevIso) {
+        const fired = eventsFiredBetween(timeline, prevIso, nextIso)
+        for (const event of fired) flashEvent(event)
+        prevDateRef.current = nextIso
+        setPlayDate(nextIso)
+      }
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        setPlaying(false)
+        rafRef.current = 0
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- playback loop intentionally tied to playing/timeline
+  }, [playing, timeline])
+
+  useEffect(
+    () => () => {
+      if (toastTimerRef.current) window.clearTimeout(toastTimerRef.current)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    },
+    [],
+  )
+
+  if (!displayClub) return null
+
+  const scaleMax = clubScaleMax(displayClub)
+  const ratio = scrRatio(displayClub)
   const money = (n: number) =>
     showUsd ? formatMoneyUsd(n, PL_FINANCES.usdPerGbp, false) : formatMoneyGbp(n, false)
+  const dateLabel = playDate
+    ? formatSeasonDate(playDate)
+    : `End of ${PL_FINANCES.season}`
 
   return (
     <div className="space-y-3">
-      <ClubNav clubs={clubs} selectedId={selected.id} onSelect={setSelectedId} />
+      <ClubNav clubs={clubs} selectedId={displayClub.id} onSelect={selectClub} />
 
       <AnimatePresence mode="wait">
         <motion.section
-          key={selected.id}
+          key={displayClub.id}
           initial={reduce ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reduce ? undefined : { opacity: 0, y: -6 }}
           transition={{ duration: 0.25 }}
-          className="border border-white/10 bg-white/[0.03] px-3 py-4 sm:px-4"
+          className="relative border border-white/10 bg-white/[0.03] px-3 py-4 sm:px-4"
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -298,8 +408,11 @@ export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
                 Squad cost · {PL_FINANCES.season}
               </p>
               <h2 className="mt-1 font-display text-4xl tracking-[0.03em] text-cream sm:text-5xl">
-                {selected.name}
+                {displayClub.name}
               </h2>
+              <p className="mt-1 font-display text-2xl tracking-[0.04em] text-lime tabular-nums sm:text-3xl">
+                {dateLabel}
+              </p>
               <p className="mt-1 text-sm text-mist/70">
                 SCR{' '}
                 <span
@@ -310,28 +423,37 @@ export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
                   {(ratio * 100).toFixed(1)}%
                 </span>
                 {' · '}
-                {money(selected.squadCostGbp)} cost / {money(selected.revenueGbp)} adj. revenue
+                {money(displayClub.squadCostGbp)} cost / {money(displayClub.revenueGbp)} adj.
+                revenue
               </p>
-              {selected.footballRevenueGbp != null ? (
+              {displayClub.footballRevenueGbp != null ? (
                 <p className="mt-0.5 text-[0.7rem] text-mist/50">
-                  Football {money(selected.footballRevenueGbp)}
-                  {selected.playerTradingGbp != null
-                    ? ` · Player trading ${selected.playerTradingGbp >= 0 ? '+' : '−'}${money(
-                        Math.abs(selected.playerTradingGbp),
+                  Football {money(displayClub.footballRevenueGbp)}
+                  {displayClub.playerTradingGbp != null
+                    ? ` · Player trading ${displayClub.playerTradingGbp >= 0 ? '+' : '−'}${money(
+                        Math.abs(displayClub.playerTradingGbp),
                       )}`
                     : ''}
-                  {selected.source === 'accounts' ? ' · Accounts' : ' · Est.'}
+                  {displayClub.source === 'accounts' ? ' · Accounts' : ' · Est.'}
                 </p>
               ) : null}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
-              {selected.espnTeamId ? (
+              {displayClub.espnTeamId ? (
                 <EntityLogo
-                  name={selected.name}
-                  src={teamLogoUrl(selected.espnTeamId)}
+                  name={displayClub.name}
+                  src={teamLogoUrl(displayClub.espnTeamId)}
                   size="md"
                 />
               ) : null}
+              <button
+                type="button"
+                onClick={togglePlay}
+                disabled={!timeline}
+                className="rounded-full bg-lime px-3 py-1 text-[0.7rem] font-bold text-ink disabled:opacity-40"
+              >
+                {playing ? 'Pause' : 'Play season'}
+              </button>
               <button
                 type="button"
                 onClick={() => setShowUsd((v) => !v)}
@@ -342,11 +464,78 @@ export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
             </div>
           </div>
 
-          <BigStack club={selected} scaleMax={scaleMax} showUsd={showUsd} reduce={reduce} />
+          <AnimatePresence>
+            {toast ? (
+              <motion.div
+                key={toast.id}
+                initial={{ opacity: 0, x: 24, scale: 0.96 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.2 }}
+                className="pointer-events-none absolute right-3 top-28 z-40 max-w-[14rem] border border-lime/50 bg-pitch-deep/95 px-3 py-2 shadow-lg sm:right-4"
+              >
+                <p className="text-[0.6rem] font-semibold uppercase tracking-[0.14em] text-lime">
+                  {formatSeasonDate(toast.date)}
+                </p>
+                <p className="mt-0.5 text-sm font-bold leading-snug text-cream">{toast.headline}</p>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <BigStack club={displayClub} scaleMax={scaleMax} showUsd={showUsd} reduce={reduce} />
+
+          {(playing || eventLog.length > 0 || playDate) && (
+            <div className="mt-4 border-t border-white/10 pt-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-lime">
+                  Events
+                </h3>
+                {playDate && !playing ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlayDate(null)
+                      setEventLog([])
+                      setToast(null)
+                      prevDateRef.current = null
+                    }}
+                    className="text-[0.65rem] font-bold text-mist/60 hover:text-lime"
+                  >
+                    Show season end
+                  </button>
+                ) : null}
+              </div>
+              {eventLog.length === 0 ? (
+                <p className="mt-2 text-[0.7rem] text-mist/50">
+                  {playing
+                    ? 'Waiting for the next squad-cost change…'
+                    : 'Press Play season to watch 1 Aug 2024 → 31 Jul 2025.'}
+                </p>
+              ) : (
+                <ul className="mt-2 max-h-40 space-y-1.5 overflow-y-auto">
+                  {eventLog.map((e) => (
+                    <li
+                      key={e.id}
+                      className="flex items-start justify-between gap-2 border-b border-white/5 py-1.5 text-[0.75rem]"
+                    >
+                      <span className="min-w-0 text-cream">{e.headline}</span>
+                      <span className="shrink-0 tabular-nums text-mist/55">
+                        {formatSeasonDate(e.date)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </motion.section>
       </AnimatePresence>
 
       <p className="text-[0.7rem] leading-relaxed text-mist/50">{PL_FINANCES.disclaimer}</p>
+      <p className="text-[0.65rem] leading-relaxed text-mist/40">
+        Season play uses curated transfer/contract dates plus estimated contract/agent updates so the
+        stack can move through 2024–25 — illustrative, not a full day-by-day accounts ledger.
+      </p>
       <details className="text-[0.7rem] text-mist/45">
         <summary className="cursor-pointer text-mist/60 hover:text-mist">Sources & why SCR moved</summary>
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
