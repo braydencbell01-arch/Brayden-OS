@@ -1,0 +1,4135 @@
+{
+  "season": "2024-25",
+  "league": "Premier League",
+  "currency": "GBP",
+  "usdPerGbp": 1.32,
+  "scrGreenRatio": 0.85,
+  "scrRedRatio": 1.15,
+  "uefaScrRatio": 0.7,
+  "sources": [
+    "Player wages: Capology estimates via FBref (gross fixed annual)",
+    "Amortisation: fee \u00f7 contract years (UEFA max 5); curated + heuristic for others",
+    "Agent fees: FA Football Agent Fees disclosure (2 Feb 2024 \u2013 3 Feb 2025)",
+    "Revenue: Deloitte Football Money League 2026 (2024/25) where listed; otherwise estimates",
+    "Coaching: head-coach media salary + staff estimate (not full club payroll)"
+  ],
+  "disclaimer": "Illustrative SCR view \u2014 not audited club filings. Capology wages are estimates. Coaching payroll is incomplete. Revenue may lag and SCR football revenue can include net player trading.",
+  "clubs": [
+    {
+      "id": "man-city",
+      "short": "MCI",
+      "name": "Manchester City",
+      "revenueGbp": 697000000,
+      "agentFeesGbp": 52126339,
+      "coachingStaffGbp": 28000000,
+      "uefa": true,
+      "greenThresholdGbp": 592450000,
+      "redThresholdGbp": 801549999,
+      "uefaThresholdGbp": 487899999,
+      "squadCostGbp": 445137339,
+      "blocks": [
+        {
+          "id": "man-city-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 52126339
+        },
+        {
+          "id": "erling-haaland",
+          "kind": "player",
+          "label": "Erling Haaland",
+          "wageGbp": 27300000,
+          "amortGbp": 10200000,
+          "amountGbp": 37500000
+        },
+        {
+          "id": "jack-grealish",
+          "kind": "player",
+          "label": "Jack Grealish",
+          "wageGbp": 15600000,
+          "amortGbp": 20000000,
+          "amountGbp": 35600000
+        },
+        {
+          "id": "omar-marmoush",
+          "kind": "player",
+          "label": "Omar Marmoush",
+          "wageGbp": 15340000,
+          "amortGbp": 15000000,
+          "amountGbp": 30340000
+        },
+        {
+          "id": "man-city-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Pep Guardiola)",
+          "amountGbp": 28000000
+        },
+        {
+          "id": "rodri",
+          "kind": "player",
+          "label": "Rodri",
+          "wageGbp": 11440000,
+          "amortGbp": 12500000,
+          "amountGbp": 23940000
+        },
+        {
+          "id": "bernardo-silva",
+          "kind": "player",
+          "label": "Bernardo Silva",
+          "wageGbp": 15600000,
+          "amortGbp": 8000000,
+          "amountGbp": 23600000
+        },
+        {
+          "id": "john-stones",
+          "kind": "player",
+          "label": "John Stones",
+          "wageGbp": 13000000,
+          "amortGbp": 9500000,
+          "amountGbp": 22500000
+        },
+        {
+          "id": "r-ben-dias",
+          "kind": "player",
+          "label": "R\u00faben Dias",
+          "wageGbp": 9360000,
+          "amortGbp": 13000000,
+          "amountGbp": 22360000
+        },
+        {
+          "id": "kevin-de-bruyne",
+          "kind": "player",
+          "label": "Kevin De Bruyne",
+          "wageGbp": 20800000,
+          "amortGbp": 0,
+          "amountGbp": 20800000
+        },
+        {
+          "id": "matheus-nunes",
+          "kind": "player",
+          "label": "Matheus Nunes",
+          "wageGbp": 6760000,
+          "amortGbp": 10600000,
+          "amountGbp": 17360000
+        },
+        {
+          "id": "nathan-ak",
+          "kind": "player",
+          "label": "Nathan Ak\u00e9",
+          "wageGbp": 8320000,
+          "amortGbp": 8000000,
+          "amountGbp": 16320000
+        },
+        {
+          "id": "jo-ko-gvardiol",
+          "kind": "player",
+          "label": "Jo\u0161ko Gvardiol",
+          "wageGbp": 10400000,
+          "amortGbp": 4680000,
+          "amountGbp": 15080000
+        },
+        {
+          "id": "jeremy-doku",
+          "kind": "player",
+          "label": "Jeremy Doku",
+          "wageGbp": 2600000,
+          "amortGbp": 11000000,
+          "amountGbp": 13600000
+        },
+        {
+          "id": "manuel-akanji",
+          "kind": "player",
+          "label": "Manuel Akanji",
+          "wageGbp": 9360000,
+          "amortGbp": 3000000,
+          "amountGbp": 12360000
+        },
+        {
+          "id": "kyle-walker",
+          "kind": "player",
+          "label": "Kyle Walker",
+          "wageGbp": 9100000,
+          "amortGbp": 3185000,
+          "amountGbp": 12285000
+        },
+        {
+          "id": "ederson",
+          "kind": "player",
+          "label": "Ederson",
+          "wageGbp": 5200000,
+          "amortGbp": 7000000,
+          "amountGbp": 12200000
+        },
+        {
+          "id": "i-lkay-g-ndo-an",
+          "kind": "player",
+          "label": "\u0130lkay G\u00fcndo\u011fan",
+          "wageGbp": 11960000,
+          "amortGbp": 0,
+          "amountGbp": 11960000
+        },
+        {
+          "id": "phil-foden",
+          "kind": "player",
+          "label": "Phil Foden",
+          "wageGbp": 11700000,
+          "amortGbp": 0,
+          "amountGbp": 11700000
+        },
+        {
+          "id": "mateo-kova-i",
+          "kind": "player",
+          "label": "Mateo Kova\u010di\u0107",
+          "wageGbp": 7800000,
+          "amortGbp": 2730000,
+          "amountGbp": 10530000
+        },
+        {
+          "id": "stefan-ortega",
+          "kind": "player",
+          "label": "Stefan Ortega",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "nicol-s-gonz-lez",
+          "kind": "player",
+          "label": "Nicol\u00e1s Gonz\u00e1lez",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "s-vio",
+          "kind": "player",
+          "label": "S\u00e1vio",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "scott-carson",
+          "kind": "player",
+          "label": "Scott Carson",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "issa-kabor",
+          "kind": "player",
+          "label": "Issa Kabor\u00e9",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        }
+      ]
+    },
+    {
+      "id": "man-utd",
+      "short": "MUN",
+      "name": "Manchester United",
+      "revenueGbp": 666000000,
+      "agentFeesGbp": 33022197,
+      "coachingStaffGbp": 12000000,
+      "uefa": true,
+      "greenThresholdGbp": 566100000,
+      "redThresholdGbp": 765900000,
+      "uefaThresholdGbp": 466200000,
+      "squadCostGbp": 348863197,
+      "blocks": [
+        {
+          "id": "man-utd-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 33022197
+        },
+        {
+          "id": "casemiro",
+          "kind": "player",
+          "label": "Casemiro",
+          "wageGbp": 18200000,
+          "amortGbp": 14000000,
+          "amountGbp": 32200000
+        },
+        {
+          "id": "antony",
+          "kind": "player",
+          "label": "Antony",
+          "wageGbp": 10400000,
+          "amortGbp": 17000000,
+          "amountGbp": 27400000
+        },
+        {
+          "id": "bruno-fernandes",
+          "kind": "player",
+          "label": "Bruno Fernandes",
+          "wageGbp": 15600000,
+          "amortGbp": 11000000,
+          "amountGbp": 26600000
+        },
+        {
+          "id": "mason-mount",
+          "kind": "player",
+          "label": "Mason Mount",
+          "wageGbp": 13000000,
+          "amortGbp": 12000000,
+          "amountGbp": 25000000
+        },
+        {
+          "id": "matthijs-de-ligt",
+          "kind": "player",
+          "label": "Matthijs de Ligt",
+          "wageGbp": 10140000,
+          "amortGbp": 9000000,
+          "amountGbp": 19140000
+        },
+        {
+          "id": "rasmus-h-jlund",
+          "kind": "player",
+          "label": "Rasmus H\u00f8jlund",
+          "wageGbp": 4420000,
+          "amortGbp": 14400000,
+          "amountGbp": 18820000
+        },
+        {
+          "id": "lisandro-mart-nez",
+          "kind": "player",
+          "label": "Lisandro Mart\u00ednez",
+          "wageGbp": 6240000,
+          "amortGbp": 11400000,
+          "amountGbp": 17640000
+        },
+        {
+          "id": "andr-onana",
+          "kind": "player",
+          "label": "Andr\u00e9 Onana",
+          "wageGbp": 6240000,
+          "amortGbp": 9400000,
+          "amountGbp": 15640000
+        },
+        {
+          "id": "marcus-rashford",
+          "kind": "player",
+          "label": "Marcus Rashford",
+          "wageGbp": 15600000,
+          "amortGbp": 0,
+          "amountGbp": 15600000
+        },
+        {
+          "id": "luke-shaw",
+          "kind": "player",
+          "label": "Luke Shaw",
+          "wageGbp": 7800000,
+          "amortGbp": 6000000,
+          "amountGbp": 13800000
+        },
+        {
+          "id": "harry-maguire",
+          "kind": "player",
+          "label": "Harry Maguire",
+          "wageGbp": 9880000,
+          "amortGbp": 3458000,
+          "amountGbp": 13338000
+        },
+        {
+          "id": "joshua-zirkzee",
+          "kind": "player",
+          "label": "Joshua Zirkzee",
+          "wageGbp": 5460000,
+          "amortGbp": 7400000,
+          "amountGbp": 12860000
+        },
+        {
+          "id": "jadon-sancho",
+          "kind": "player",
+          "label": "Jadon Sancho",
+          "wageGbp": 7800000,
+          "amortGbp": 5000000,
+          "amountGbp": 12800000
+        },
+        {
+          "id": "man-utd-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Ruben Amorim)",
+          "amountGbp": 12000000
+        },
+        {
+          "id": "christian-eriksen",
+          "kind": "player",
+          "label": "Christian Eriksen",
+          "wageGbp": 7800000,
+          "amortGbp": 2730000,
+          "amountGbp": 10530000
+        },
+        {
+          "id": "noussair-mazraoui",
+          "kind": "player",
+          "label": "Noussair Mazraoui",
+          "wageGbp": 7020000,
+          "amortGbp": 3000000,
+          "amountGbp": 10020000
+        },
+        {
+          "id": "victor-lindel-f",
+          "kind": "player",
+          "label": "Victor Lindel\u00f6f",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "diogo-dalot",
+          "kind": "player",
+          "label": "Diogo Dalot",
+          "wageGbp": 4420000,
+          "amortGbp": 4000000,
+          "amountGbp": 8420000
+        },
+        {
+          "id": "tyrell-malacia",
+          "kind": "player",
+          "label": "Tyrell Malacia",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "jonny-evans",
+          "kind": "player",
+          "label": "Jonny Evans",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "tom-heaton",
+          "kind": "player",
+          "label": "Tom Heaton",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "altay-bay-nd-r",
+          "kind": "player",
+          "label": "Altay Bay\u0131nd\u0131r",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "amad-diallo",
+          "kind": "player",
+          "label": "Amad Diallo",
+          "wageGbp": 1500000,
+          "amortGbp": 225000,
+          "amountGbp": 1725000
+        }
+      ]
+    },
+    {
+      "id": "arsenal",
+      "short": "ARS",
+      "name": "Arsenal",
+      "revenueGbp": 690000000,
+      "agentFeesGbp": 22791917,
+      "coachingStaffGbp": 14000000,
+      "uefa": true,
+      "greenThresholdGbp": 586500000,
+      "redThresholdGbp": 793499999,
+      "uefaThresholdGbp": 482999999,
+      "squadCostGbp": 346978917,
+      "blocks": [
+        {
+          "id": "declan-rice",
+          "kind": "player",
+          "label": "Declan Rice",
+          "wageGbp": 12480000,
+          "amortGbp": 21000000,
+          "amountGbp": 33480000
+        },
+        {
+          "id": "kai-havertz",
+          "kind": "player",
+          "label": "Kai Havertz",
+          "wageGbp": 14560000,
+          "amortGbp": 13000000,
+          "amountGbp": 27560000
+        },
+        {
+          "id": "arsenal-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 22791917
+        },
+        {
+          "id": "gabriel-jesus",
+          "kind": "player",
+          "label": "Gabriel Jesus",
+          "wageGbp": 13780000,
+          "amortGbp": 9000000,
+          "amountGbp": 22780000
+        },
+        {
+          "id": "martin-degaard",
+          "kind": "player",
+          "label": "Martin \u00d8degaard",
+          "wageGbp": 12480000,
+          "amortGbp": 7000000,
+          "amountGbp": 19480000
+        },
+        {
+          "id": "thomas-partey",
+          "kind": "player",
+          "label": "Thomas Partey",
+          "wageGbp": 10400000,
+          "amortGbp": 9000000,
+          "amountGbp": 19400000
+        },
+        {
+          "id": "ben-white",
+          "kind": "player",
+          "label": "Ben White",
+          "wageGbp": 7800000,
+          "amortGbp": 10000000,
+          "amountGbp": 17800000
+        },
+        {
+          "id": "william-saliba",
+          "kind": "player",
+          "label": "William Saliba",
+          "wageGbp": 9880000,
+          "amortGbp": 6000000,
+          "amountGbp": 15880000
+        },
+        {
+          "id": "raheem-sterling",
+          "kind": "player",
+          "label": "Raheem Sterling",
+          "wageGbp": 5720000,
+          "amortGbp": 9500000,
+          "amountGbp": 15220000
+        },
+        {
+          "id": "riccardo-calafiori",
+          "kind": "player",
+          "label": "Riccardo Calafiori",
+          "wageGbp": 6240000,
+          "amortGbp": 8400000,
+          "amountGbp": 14640000
+        },
+        {
+          "id": "arsenal-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Mikel Arteta)",
+          "amountGbp": 14000000
+        },
+        {
+          "id": "oleksandr-zinchenko",
+          "kind": "player",
+          "label": "Oleksandr Zinchenko",
+          "wageGbp": 7800000,
+          "amortGbp": 6000000,
+          "amountGbp": 13800000
+        },
+        {
+          "id": "mikel-merino",
+          "kind": "player",
+          "label": "Mikel Merino",
+          "wageGbp": 6760000,
+          "amortGbp": 6400000,
+          "amountGbp": 13160000
+        },
+        {
+          "id": "jurri-n-timber",
+          "kind": "player",
+          "label": "Jurri\u00ebn Timber",
+          "wageGbp": 4680000,
+          "amortGbp": 8000000,
+          "amountGbp": 12680000
+        },
+        {
+          "id": "gabriel-martinelli",
+          "kind": "player",
+          "label": "Gabriel Martinelli",
+          "wageGbp": 9360000,
+          "amortGbp": 3276000,
+          "amountGbp": 12636000
+        },
+        {
+          "id": "david-raya",
+          "kind": "player",
+          "label": "David Raya",
+          "wageGbp": 5200000,
+          "amortGbp": 5400000,
+          "amountGbp": 10600000
+        },
+        {
+          "id": "gabriel-magalh-es",
+          "kind": "player",
+          "label": "Gabriel Magalh\u00e3es",
+          "wageGbp": 5200000,
+          "amortGbp": 5400000,
+          "amountGbp": 10600000
+        },
+        {
+          "id": "bukayo-saka",
+          "kind": "player",
+          "label": "Bukayo Saka",
+          "wageGbp": 10140000,
+          "amortGbp": 0,
+          "amountGbp": 10140000
+        },
+        {
+          "id": "leandro-trossard",
+          "kind": "player",
+          "label": "Leandro Trossard",
+          "wageGbp": 4680000,
+          "amortGbp": 5400000,
+          "amountGbp": 10080000
+        },
+        {
+          "id": "jorginho",
+          "kind": "player",
+          "label": "Jorginho",
+          "wageGbp": 5720000,
+          "amortGbp": 1430000,
+          "amountGbp": 7150000
+        },
+        {
+          "id": "kieran-tierney",
+          "kind": "player",
+          "label": "Kieran Tierney",
+          "wageGbp": 5720000,
+          "amortGbp": 1430000,
+          "amountGbp": 7150000
+        },
+        {
+          "id": "takehiro-tomiyasu",
+          "kind": "player",
+          "label": "Takehiro Tomiyasu",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "jakub-kiwior",
+          "kind": "player",
+          "label": "Jakub Kiwior",
+          "wageGbp": 3016000,
+          "amortGbp": 754000,
+          "amountGbp": 3770000
+        },
+        {
+          "id": "neto",
+          "kind": "player",
+          "label": "Neto",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "fabio-vieira",
+          "kind": "player",
+          "label": "Fabio Vieira",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        }
+      ]
+    },
+    {
+      "id": "chelsea",
+      "short": "CHE",
+      "name": "Chelsea",
+      "revenueGbp": 491000000,
+      "agentFeesGbp": 60384449,
+      "coachingStaffGbp": 11000000,
+      "uefa": true,
+      "greenThresholdGbp": 417350000,
+      "redThresholdGbp": 564650000,
+      "uefaThresholdGbp": 343700000,
+      "squadCostGbp": 331731449,
+      "blocks": [
+        {
+          "id": "chelsea-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 60384449
+        },
+        {
+          "id": "enzo-fern-ndez",
+          "kind": "player",
+          "label": "Enzo Fern\u00e1ndez",
+          "wageGbp": 9360000,
+          "amortGbp": 21400000,
+          "amountGbp": 30760000
+        },
+        {
+          "id": "wesley-fofana",
+          "kind": "player",
+          "label": "Wesley Fofana",
+          "wageGbp": 10400000,
+          "amortGbp": 16000000,
+          "amountGbp": 26400000
+        },
+        {
+          "id": "mykhailo-mudryk",
+          "kind": "player",
+          "label": "Mykhailo Mudryk",
+          "wageGbp": 5200000,
+          "amortGbp": 17600000,
+          "amountGbp": 22800000
+        },
+        {
+          "id": "marc-cucurella",
+          "kind": "player",
+          "label": "Marc Cucurella",
+          "wageGbp": 9100000,
+          "amortGbp": 12500000,
+          "amountGbp": 21600000
+        },
+        {
+          "id": "christopher-nkunku",
+          "kind": "player",
+          "label": "Christopher Nkunku",
+          "wageGbp": 10140000,
+          "amortGbp": 10400000,
+          "amountGbp": 20540000
+        },
+        {
+          "id": "pedro-neto",
+          "kind": "player",
+          "label": "Pedro Neto",
+          "wageGbp": 8320000,
+          "amortGbp": 10800000,
+          "amountGbp": 19120000
+        },
+        {
+          "id": "cole-palmer",
+          "kind": "player",
+          "label": "Cole Palmer",
+          "wageGbp": 6760000,
+          "amortGbp": 8400000,
+          "amountGbp": 15160000
+        },
+        {
+          "id": "reece-james",
+          "kind": "player",
+          "label": "Reece James",
+          "wageGbp": 13000000,
+          "amortGbp": 0,
+          "amountGbp": 13000000
+        },
+        {
+          "id": "beno-t-badiashile",
+          "kind": "player",
+          "label": "Beno\u00eet Badiashile",
+          "wageGbp": 4680000,
+          "amortGbp": 7000000,
+          "amountGbp": 11680000
+        },
+        {
+          "id": "nicolas-jackson",
+          "kind": "player",
+          "label": "Nicolas Jackson",
+          "wageGbp": 5200000,
+          "amortGbp": 6400000,
+          "amountGbp": 11600000
+        },
+        {
+          "id": "chelsea-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Enzo Maresca)",
+          "amountGbp": 11000000
+        },
+        {
+          "id": "mois-s-caicedo",
+          "kind": "player",
+          "label": "Mois\u00e9s Caicedo",
+          "wageGbp": 7800000,
+          "amortGbp": 2730000,
+          "amountGbp": 10530000
+        },
+        {
+          "id": "kiernan-dewsbury-hall",
+          "kind": "player",
+          "label": "Kiernan Dewsbury-Hall",
+          "wageGbp": 4160000,
+          "amortGbp": 6000000,
+          "amountGbp": 10160000
+        },
+        {
+          "id": "tosin-adarabioyo",
+          "kind": "player",
+          "label": "Tosin Adarabioyo",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "malo-gusto",
+          "kind": "player",
+          "label": "Malo Gusto",
+          "wageGbp": 2340000,
+          "amortGbp": 5800000,
+          "amountGbp": 8140000
+        },
+        {
+          "id": "jo-o-f-lix",
+          "kind": "player",
+          "label": "Jo\u00e3o F\u00e9lix",
+          "wageGbp": 6760000,
+          "amortGbp": 0,
+          "amountGbp": 6760000
+        },
+        {
+          "id": "carney-chukwuemeka",
+          "kind": "player",
+          "label": "Carney Chukwuemeka",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "levi-colwill",
+          "kind": "player",
+          "label": "Levi Colwill",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "robert-s-nchez",
+          "kind": "player",
+          "label": "Robert S\u00e1nchez",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "filip-j-rgensen",
+          "kind": "player",
+          "label": "Filip J\u00f8rgensen",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "marcus-bettinelli",
+          "kind": "player",
+          "label": "Marcus Bettinelli",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "or-e-petrovi",
+          "kind": "player",
+          "label": "\u0110or\u0111e Petrovi\u0107",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "lucas-bergstr-m",
+          "kind": "player",
+          "label": "Lucas Bergstr\u00f6m",
+          "wageGbp": 390000,
+          "amortGbp": 0,
+          "amountGbp": 390000
+        }
+      ]
+    },
+    {
+      "id": "liverpool",
+      "short": "LIV",
+      "name": "Liverpool",
+      "revenueGbp": 702000000,
+      "agentFeesGbp": 20835652,
+      "coachingStaffGbp": 12000000,
+      "uefa": true,
+      "greenThresholdGbp": 596700000,
+      "redThresholdGbp": 807299999,
+      "uefaThresholdGbp": 491399999,
+      "squadCostGbp": 283412652,
+      "blocks": [
+        {
+          "id": "virgil-van-dijk",
+          "kind": "player",
+          "label": "Virgil van Dijk",
+          "wageGbp": 11440000,
+          "amortGbp": 15000000,
+          "amountGbp": 26440000
+        },
+        {
+          "id": "mohamed-salah",
+          "kind": "player",
+          "label": "Mohamed Salah",
+          "wageGbp": 18200000,
+          "amortGbp": 8000000,
+          "amountGbp": 26200000
+        },
+        {
+          "id": "liverpool-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 20835652
+        },
+        {
+          "id": "alisson",
+          "kind": "player",
+          "label": "Alisson",
+          "wageGbp": 7800000,
+          "amortGbp": 12500000,
+          "amountGbp": 20300000
+        },
+        {
+          "id": "darwin-n-ez",
+          "kind": "player",
+          "label": "Darwin N\u00fa\u00f1ez",
+          "wageGbp": 7280000,
+          "amortGbp": 12800000,
+          "amountGbp": 20080000
+        },
+        {
+          "id": "dominik-szoboszlai",
+          "kind": "player",
+          "label": "Dominik Szoboszlai",
+          "wageGbp": 6240000,
+          "amortGbp": 12000000,
+          "amountGbp": 18240000
+        },
+        {
+          "id": "diogo-jota",
+          "kind": "player",
+          "label": "Diogo Jota",
+          "wageGbp": 7280000,
+          "amortGbp": 9000000,
+          "amountGbp": 16280000
+        },
+        {
+          "id": "alexis-mac-allister",
+          "kind": "player",
+          "label": "Alexis Mac Allister",
+          "wageGbp": 7800000,
+          "amortGbp": 7000000,
+          "amountGbp": 14800000
+        },
+        {
+          "id": "ryan-gravenberch",
+          "kind": "player",
+          "label": "Ryan Gravenberch",
+          "wageGbp": 7800000,
+          "amortGbp": 7000000,
+          "amountGbp": 14800000
+        },
+        {
+          "id": "cody-gakpo",
+          "kind": "player",
+          "label": "Cody Gakpo",
+          "wageGbp": 6240000,
+          "amortGbp": 8400000,
+          "amountGbp": 14640000
+        },
+        {
+          "id": "liverpool-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Arne Slot)",
+          "amountGbp": 12000000
+        },
+        {
+          "id": "ibrahima-konat",
+          "kind": "player",
+          "label": "Ibrahima Konat\u00e9",
+          "wageGbp": 3640000,
+          "amortGbp": 7200000,
+          "amountGbp": 10840000
+        },
+        {
+          "id": "luis-d-az",
+          "kind": "player",
+          "label": "Luis D\u00edaz",
+          "wageGbp": 2860000,
+          "amortGbp": 7500000,
+          "amountGbp": 10360000
+        },
+        {
+          "id": "federico-chiesa",
+          "kind": "player",
+          "label": "Federico Chiesa",
+          "wageGbp": 7800000,
+          "amortGbp": 2500000,
+          "amountGbp": 10300000
+        },
+        {
+          "id": "andrew-robertson",
+          "kind": "player",
+          "label": "Andrew Robertson",
+          "wageGbp": 8320000,
+          "amortGbp": 1600000,
+          "amountGbp": 9920000
+        },
+        {
+          "id": "trent-alexander-arnold",
+          "kind": "player",
+          "label": "Trent Alexander-Arnold",
+          "wageGbp": 9360000,
+          "amortGbp": 0,
+          "amountGbp": 9360000
+        },
+        {
+          "id": "wataru-endo",
+          "kind": "player",
+          "label": "Wataru Endo",
+          "wageGbp": 2600000,
+          "amortGbp": 3200000,
+          "amountGbp": 5800000
+        },
+        {
+          "id": "joe-gomez",
+          "kind": "player",
+          "label": "Joe Gomez",
+          "wageGbp": 4420000,
+          "amortGbp": 1105000,
+          "amountGbp": 5525000
+        },
+        {
+          "id": "kostas-tsimikas",
+          "kind": "player",
+          "label": "Kostas Tsimikas",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "nathaniel-phillips",
+          "kind": "player",
+          "label": "Nathaniel Phillips",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "giorgi-mamardashvili",
+          "kind": "player",
+          "label": "Giorgi Mamardashvili",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "harvey-elliott",
+          "kind": "player",
+          "label": "Harvey Elliott",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "curtis-jones",
+          "kind": "player",
+          "label": "Curtis Jones",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "caoimh-n-kelleher",
+          "kind": "player",
+          "label": "Caoimh\u00edn Kelleher",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        }
+      ]
+    },
+    {
+      "id": "tottenham",
+      "short": "TOT",
+      "name": "Tottenham Hotspur",
+      "revenueGbp": 565000000,
+      "agentFeesGbp": 18429639,
+      "coachingStaffGbp": 10000000,
+      "uefa": true,
+      "greenThresholdGbp": 480250000,
+      "redThresholdGbp": 649750000,
+      "uefaThresholdGbp": 395500000,
+      "squadCostGbp": 236297039,
+      "blocks": [
+        {
+          "id": "cristian-romero",
+          "kind": "player",
+          "label": "Cristian Romero",
+          "wageGbp": 8580000,
+          "amortGbp": 10000000,
+          "amountGbp": 18580000
+        },
+        {
+          "id": "tottenham-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 18429639
+        },
+        {
+          "id": "dominic-solanke",
+          "kind": "player",
+          "label": "Dominic Solanke",
+          "wageGbp": 4680000,
+          "amortGbp": 13000000,
+          "amountGbp": 17680000
+        },
+        {
+          "id": "james-maddison",
+          "kind": "player",
+          "label": "James Maddison",
+          "wageGbp": 8840000,
+          "amortGbp": 8000000,
+          "amountGbp": 16840000
+        },
+        {
+          "id": "richarlison",
+          "kind": "player",
+          "label": "Richarlison",
+          "wageGbp": 4680000,
+          "amortGbp": 12000000,
+          "amountGbp": 16680000
+        },
+        {
+          "id": "son-heung-min",
+          "kind": "player",
+          "label": "Son Heung-min",
+          "wageGbp": 9880000,
+          "amortGbp": 4000000,
+          "amountGbp": 13880000
+        },
+        {
+          "id": "brennan-johnson",
+          "kind": "player",
+          "label": "Brennan Johnson",
+          "wageGbp": 3640000,
+          "amortGbp": 9500000,
+          "amountGbp": 13140000
+        },
+        {
+          "id": "pedro-porro",
+          "kind": "player",
+          "label": "Pedro Porro",
+          "wageGbp": 4420000,
+          "amortGbp": 8000000,
+          "amountGbp": 12420000
+        },
+        {
+          "id": "timo-werner",
+          "kind": "player",
+          "label": "Timo Werner",
+          "wageGbp": 8580000,
+          "amortGbp": 3003000,
+          "amountGbp": 11583000
+        },
+        {
+          "id": "dejan-kulusevski",
+          "kind": "player",
+          "label": "Dejan Kulusevski",
+          "wageGbp": 5720000,
+          "amortGbp": 5000000,
+          "amountGbp": 10720000
+        },
+        {
+          "id": "tottenham-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Ange Postecoglou)",
+          "amountGbp": 10000000
+        },
+        {
+          "id": "destiny-udogie",
+          "kind": "player",
+          "label": "Destiny Udogie",
+          "wageGbp": 3900000,
+          "amortGbp": 6000000,
+          "amountGbp": 9900000
+        },
+        {
+          "id": "micky-van-de-ven",
+          "kind": "player",
+          "label": "Micky van de Ven",
+          "wageGbp": 2600000,
+          "amortGbp": 7000000,
+          "amountGbp": 9600000
+        },
+        {
+          "id": "yves-bissouma",
+          "kind": "player",
+          "label": "Yves Bissouma",
+          "wageGbp": 2860000,
+          "amortGbp": 5000000,
+          "amountGbp": 7860000
+        },
+        {
+          "id": "guglielmo-vicario",
+          "kind": "player",
+          "label": "Guglielmo Vicario",
+          "wageGbp": 3900000,
+          "amortGbp": 3500000,
+          "amountGbp": 7400000
+        },
+        {
+          "id": "radu-dr-gu-in",
+          "kind": "player",
+          "label": "Radu Dr\u0103gu\u0219in",
+          "wageGbp": 4420000,
+          "amortGbp": 1105000,
+          "amountGbp": 5525000
+        },
+        {
+          "id": "ben-davies",
+          "kind": "player",
+          "label": "Ben Davies",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "mathys-tel",
+          "kind": "player",
+          "label": "Mathys Tel",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "fraser-forster",
+          "kind": "player",
+          "label": "Fraser Forster",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "rodrigo-bentancur",
+          "kind": "player",
+          "label": "Rodrigo Bentancur",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "pape-matar-sarr",
+          "kind": "player",
+          "label": "Pape Matar Sarr",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "manor-solomon",
+          "kind": "player",
+          "label": "Manor Solomon",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "sergio-reguil-n",
+          "kind": "player",
+          "label": "Sergio Reguil\u00f3n",
+          "wageGbp": 2756000,
+          "amortGbp": 413400,
+          "amountGbp": 3169400
+        },
+        {
+          "id": "djed-spence",
+          "kind": "player",
+          "label": "Djed Spence",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "kevin-danso",
+          "kind": "player",
+          "label": "Kevin Danso",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        }
+      ]
+    },
+    {
+      "id": "aston-villa",
+      "short": "AVL",
+      "name": "Aston Villa",
+      "revenueGbp": 378000000,
+      "agentFeesGbp": 25077873,
+      "coachingStaffGbp": 9000000,
+      "uefa": true,
+      "greenThresholdGbp": 321300000,
+      "redThresholdGbp": 434699999,
+      "uefaThresholdGbp": 264599999,
+      "squadCostGbp": 230434173,
+      "blocks": [
+        {
+          "id": "aston-villa-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 25077873
+        },
+        {
+          "id": "amadou-onana",
+          "kind": "player",
+          "label": "Amadou Onana",
+          "wageGbp": 7280000,
+          "amortGbp": 10000000,
+          "amountGbp": 17280000
+        },
+        {
+          "id": "boubacar-kamara",
+          "kind": "player",
+          "label": "Boubacar Kamara",
+          "wageGbp": 7800000,
+          "amortGbp": 5200000,
+          "amountGbp": 13000000
+        },
+        {
+          "id": "ian-maatsen",
+          "kind": "player",
+          "label": "Ian Maatsen",
+          "wageGbp": 5200000,
+          "amortGbp": 7400000,
+          "amountGbp": 12600000
+        },
+        {
+          "id": "ollie-watkins",
+          "kind": "player",
+          "label": "Ollie Watkins",
+          "wageGbp": 6760000,
+          "amortGbp": 5600000,
+          "amountGbp": 12360000
+        },
+        {
+          "id": "emiliano-mart-nez",
+          "kind": "player",
+          "label": "Emiliano Mart\u00ednez",
+          "wageGbp": 7800000,
+          "amortGbp": 4000000,
+          "amountGbp": 11800000
+        },
+        {
+          "id": "pau-torres",
+          "kind": "player",
+          "label": "Pau Torres",
+          "wageGbp": 5200000,
+          "amortGbp": 6300000,
+          "amountGbp": 11500000
+        },
+        {
+          "id": "lucas-digne",
+          "kind": "player",
+          "label": "Lucas Digne",
+          "wageGbp": 6240000,
+          "amortGbp": 5000000,
+          "amountGbp": 11240000
+        },
+        {
+          "id": "donyell-malen",
+          "kind": "player",
+          "label": "Donyell Malen",
+          "wageGbp": 7280000,
+          "amortGbp": 2548000,
+          "amountGbp": 9828000
+        },
+        {
+          "id": "axel-disasi",
+          "kind": "player",
+          "label": "Axel Disasi",
+          "wageGbp": 2080000,
+          "amortGbp": 7700000,
+          "amountGbp": 9780000
+        },
+        {
+          "id": "aston-villa-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Unai Emery)",
+          "amountGbp": 9000000
+        },
+        {
+          "id": "leon-bailey",
+          "kind": "player",
+          "label": "Leon Bailey",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "marco-asensio",
+          "kind": "player",
+          "label": "Marco Asensio",
+          "wageGbp": 6058000,
+          "amortGbp": 2120300,
+          "amountGbp": 8178300
+        },
+        {
+          "id": "youri-tielemans",
+          "kind": "player",
+          "label": "Youri Tielemans",
+          "wageGbp": 7800000,
+          "amortGbp": 0,
+          "amountGbp": 7800000
+        },
+        {
+          "id": "morgan-rogers",
+          "kind": "player",
+          "label": "Morgan Rogers",
+          "wageGbp": 3900000,
+          "amortGbp": 3000000,
+          "amountGbp": 6900000
+        },
+        {
+          "id": "diego-carlos",
+          "kind": "player",
+          "label": "Diego Carlos",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "tyrone-mings",
+          "kind": "player",
+          "label": "Tyrone Mings",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "john-mcginn",
+          "kind": "player",
+          "label": "John McGinn",
+          "wageGbp": 6240000,
+          "amortGbp": 0,
+          "amountGbp": 6240000
+        },
+        {
+          "id": "leander-dendoncker",
+          "kind": "player",
+          "label": "Leander Dendoncker",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "matty-cash",
+          "kind": "player",
+          "label": "Matty Cash",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "emi-buend-a",
+          "kind": "player",
+          "label": "Emi Buend\u00eda",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "j-der-dur-n",
+          "kind": "player",
+          "label": "J\u00e1der Dur\u00e1n",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "jacob-ramsey",
+          "kind": "player",
+          "label": "Jacob Ramsey",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "ezri-konsa",
+          "kind": "player",
+          "label": "Ezri Konsa",
+          "wageGbp": 3900000,
+          "amortGbp": 0,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "robin-olsen",
+          "kind": "player",
+          "label": "Robin Olsen",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "jaden-philogene-bidace",
+          "kind": "player",
+          "label": "Jaden Philogene Bidace",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "samuel-iling-junior",
+          "kind": "player",
+          "label": "Samuel Iling-Junior",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        }
+      ]
+    },
+    {
+      "id": "newcastle",
+      "short": "NEW",
+      "name": "Newcastle United",
+      "revenueGbp": 335000000,
+      "agentFeesGbp": 24366737,
+      "coachingStaffGbp": 9500000,
+      "uefa": false,
+      "greenThresholdGbp": 284750000,
+      "redThresholdGbp": 385250000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 215791537,
+      "blocks": [
+        {
+          "id": "newcastle-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 24366737
+        },
+        {
+          "id": "alexander-isak",
+          "kind": "player",
+          "label": "Alexander Isak",
+          "wageGbp": 6240000,
+          "amortGbp": 14000000,
+          "amountGbp": 20240000
+        },
+        {
+          "id": "sandro-tonali",
+          "kind": "player",
+          "label": "Sandro Tonali",
+          "wageGbp": 6240000,
+          "amortGbp": 14000000,
+          "amountGbp": 20240000
+        },
+        {
+          "id": "anthony-gordon",
+          "kind": "player",
+          "label": "Anthony Gordon",
+          "wageGbp": 7800000,
+          "amortGbp": 9000000,
+          "amountGbp": 16800000
+        },
+        {
+          "id": "bruno-guimar-es",
+          "kind": "player",
+          "label": "Bruno Guimar\u00e3es",
+          "wageGbp": 8320000,
+          "amortGbp": 8400000,
+          "amountGbp": 16720000
+        },
+        {
+          "id": "joelinton",
+          "kind": "player",
+          "label": "Joelinton",
+          "wageGbp": 7800000,
+          "amortGbp": 8000000,
+          "amountGbp": 15800000
+        },
+        {
+          "id": "harvey-barnes",
+          "kind": "player",
+          "label": "Harvey Barnes",
+          "wageGbp": 4160000,
+          "amortGbp": 7600000,
+          "amountGbp": 11760000
+        },
+        {
+          "id": "sven-botman",
+          "kind": "player",
+          "label": "Sven Botman",
+          "wageGbp": 4680000,
+          "amortGbp": 7000000,
+          "amountGbp": 11680000
+        },
+        {
+          "id": "lloyd-kelly",
+          "kind": "player",
+          "label": "Lloyd Kelly",
+          "wageGbp": 7800000,
+          "amortGbp": 2730000,
+          "amountGbp": 10530000
+        },
+        {
+          "id": "newcastle-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Eddie Howe)",
+          "amountGbp": 9500000
+        },
+        {
+          "id": "kieran-trippier",
+          "kind": "player",
+          "label": "Kieran Trippier",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "matt-targett",
+          "kind": "player",
+          "label": "Matt Targett",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "joe-willock",
+          "kind": "player",
+          "label": "Joe Willock",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "nick-pope",
+          "kind": "player",
+          "label": "Nick Pope",
+          "wageGbp": 3120000,
+          "amortGbp": 2000000,
+          "amountGbp": 5120000
+        },
+        {
+          "id": "miguel-almir-n",
+          "kind": "player",
+          "label": "Miguel Almir\u00f3n",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "dan-burn",
+          "kind": "player",
+          "label": "Dan Burn",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "emil-krafth",
+          "kind": "player",
+          "label": "Emil Krafth",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "odisseas-vlachodimos",
+          "kind": "player",
+          "label": "Odisseas Vlachodimos",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "sean-longstaff",
+          "kind": "player",
+          "label": "Sean Longstaff",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "valentino-livramento",
+          "kind": "player",
+          "label": "Valentino Livramento",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "callum-wilson",
+          "kind": "player",
+          "label": "Callum Wilson",
+          "wageGbp": 2392000,
+          "amortGbp": 358800,
+          "amountGbp": 2750800
+        },
+        {
+          "id": "fabian-sch-r",
+          "kind": "player",
+          "label": "Fabian Sch\u00e4r",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "jamaal-lascelles",
+          "kind": "player",
+          "label": "Jamaal Lascelles",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "martin-d-bravka",
+          "kind": "player",
+          "label": "Martin D\u00fabravka",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "jacob-murphy",
+          "kind": "player",
+          "label": "Jacob Murphy",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "isaac-hayden",
+          "kind": "player",
+          "label": "Isaac Hayden",
+          "wageGbp": 1144000,
+          "amortGbp": 0,
+          "amountGbp": 1144000
+        }
+      ]
+    },
+    {
+      "id": "west-ham",
+      "short": "WHU",
+      "name": "West Ham United",
+      "revenueGbp": 232000000,
+      "agentFeesGbp": 19019377,
+      "coachingStaffGbp": 7000000,
+      "uefa": false,
+      "greenThresholdGbp": 197200000,
+      "redThresholdGbp": 266799999,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 159280377,
+      "blocks": [
+        {
+          "id": "lucas-paquet",
+          "kind": "player",
+          "label": "Lucas Paquet\u00e1",
+          "wageGbp": 7800000,
+          "amortGbp": 13000000,
+          "amountGbp": 20800000
+        },
+        {
+          "id": "west-ham-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 19019377
+        },
+        {
+          "id": "edson-lvarez",
+          "kind": "player",
+          "label": "Edson \u00c1lvarez",
+          "wageGbp": 5200000,
+          "amortGbp": 7000000,
+          "amountGbp": 12200000
+        },
+        {
+          "id": "niclas-f-llkrug",
+          "kind": "player",
+          "label": "Niclas F\u00fcllkrug",
+          "wageGbp": 4680000,
+          "amortGbp": 5400000,
+          "amountGbp": 10080000
+        },
+        {
+          "id": "danny-ings",
+          "kind": "player",
+          "label": "Danny Ings",
+          "wageGbp": 6500000,
+          "amortGbp": 2275000,
+          "amountGbp": 8775000
+        },
+        {
+          "id": "alphonse-areola",
+          "kind": "player",
+          "label": "Alphonse Areola",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "jarrod-bowen",
+          "kind": "player",
+          "label": "Jarrod Bowen",
+          "wageGbp": 7800000,
+          "amortGbp": 0,
+          "amountGbp": 7800000
+        },
+        {
+          "id": "james-ward-prowse",
+          "kind": "player",
+          "label": "James Ward-Prowse",
+          "wageGbp": 5980000,
+          "amortGbp": 1495000,
+          "amountGbp": 7475000
+        },
+        {
+          "id": "west-ham-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Julen Lopetegui)",
+          "amountGbp": 7000000
+        },
+        {
+          "id": "max-kilman",
+          "kind": "player",
+          "label": "Max Kilman",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "emerson-palmieri",
+          "kind": "player",
+          "label": "Emerson Palmieri",
+          "wageGbp": 4940000,
+          "amortGbp": 1235000,
+          "amountGbp": 6175000
+        },
+        {
+          "id": "aaron-wan-bissaka",
+          "kind": "player",
+          "label": "Aaron Wan-Bissaka",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "tom-sou-ek",
+          "kind": "player",
+          "label": "Tom\u00e1\u0161 Sou\u010dek",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "michail-antonio",
+          "kind": "player",
+          "label": "Michail Antonio",
+          "wageGbp": 4420000,
+          "amortGbp": 1105000,
+          "amountGbp": 5525000
+        },
+        {
+          "id": "carlos-soler",
+          "kind": "player",
+          "label": "Carlos Soler",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "guido-rodr-guez",
+          "kind": "player",
+          "label": "Guido Rodr\u00edguez",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "ukasz-fabia-ski",
+          "kind": "player",
+          "label": "\u0141ukasz Fabia\u0144ski",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "aaron-cresswell",
+          "kind": "player",
+          "label": "Aaron Cresswell",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "konstantinos-mavropanos",
+          "kind": "player",
+          "label": "Konstantinos Mavropanos",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "vladim-r-coufal",
+          "kind": "player",
+          "label": "Vladim\u00edr Coufal",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "crysencio-summerville",
+          "kind": "player",
+          "label": "Crysencio Summerville",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "evan-ferguson",
+          "kind": "player",
+          "label": "Evan Ferguson",
+          "wageGbp": 1560000,
+          "amortGbp": 0,
+          "amountGbp": 1560000
+        },
+        {
+          "id": "jean-clair-todibo",
+          "kind": "player",
+          "label": "Jean-Clair Todibo",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "nayef-aguerd",
+          "kind": "player",
+          "label": "Nayef Aguerd",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        }
+      ]
+    },
+    {
+      "id": "fulham",
+      "short": "FUL",
+      "name": "Fulham",
+      "revenueGbp": 190000000,
+      "agentFeesGbp": 12751674,
+      "coachingStaffGbp": 5000000,
+      "uefa": false,
+      "greenThresholdGbp": 161500000,
+      "redThresholdGbp": 218499999,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 105982674,
+      "blocks": [
+        {
+          "id": "fulham-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 12751674
+        },
+        {
+          "id": "bernd-leno",
+          "kind": "player",
+          "label": "Bernd Leno",
+          "wageGbp": 6760000,
+          "amortGbp": 2366000,
+          "amountGbp": 9126000
+        },
+        {
+          "id": "ra-l-jim-nez",
+          "kind": "player",
+          "label": "Ra\u00fal Jim\u00e9nez",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "reiss-nelson",
+          "kind": "player",
+          "label": "Reiss Nelson",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "joachim-andersen",
+          "kind": "player",
+          "label": "Joachim Andersen",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "willian",
+          "kind": "player",
+          "label": "Willian",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "alex-iwobi",
+          "kind": "player",
+          "label": "Alex Iwobi",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "fulham-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Marco Silva)",
+          "amountGbp": 5000000
+        },
+        {
+          "id": "issa-diop",
+          "kind": "player",
+          "label": "Issa Diop",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "adama-traor",
+          "kind": "player",
+          "label": "Adama Traor\u00e9",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "timothy-castagne",
+          "kind": "player",
+          "label": "Timothy Castagne",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "sa-a-luki",
+          "kind": "player",
+          "label": "Sa\u0161a Luki\u0107",
+          "wageGbp": 3276000,
+          "amortGbp": 819000,
+          "amountGbp": 4095000
+        },
+        {
+          "id": "emile-smith-rowe",
+          "kind": "player",
+          "label": "Emile Smith Rowe",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "sander-berge",
+          "kind": "player",
+          "label": "Sander Berge",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "andreas-pereira",
+          "kind": "player",
+          "label": "Andreas Pereira",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "antonee-robinson",
+          "kind": "player",
+          "label": "Antonee Robinson",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "harrison-reed",
+          "kind": "player",
+          "label": "Harrison Reed",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "kenny-tete",
+          "kind": "player",
+          "label": "Kenny Tete",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "calvin-bassey",
+          "kind": "player",
+          "label": "Calvin Bassey",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "ryan-sessegnon",
+          "kind": "player",
+          "label": "Ryan Sessegnon",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "carlos-vin-cius",
+          "kind": "player",
+          "label": "Carlos Vin\u00edcius",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "harry-wilson",
+          "kind": "player",
+          "label": "Harry Wilson",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "tom-cairney",
+          "kind": "player",
+          "label": "Tom Cairney",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "jorge-cuenca",
+          "kind": "player",
+          "label": "Jorge Cuenca",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        }
+      ]
+    },
+    {
+      "id": "everton",
+      "short": "EVE",
+      "name": "Everton",
+      "revenueGbp": 175000000,
+      "agentFeesGbp": 9156995,
+      "coachingStaffGbp": 5500000,
+      "uefa": false,
+      "greenThresholdGbp": 148750000,
+      "redThresholdGbp": 201249999,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 102562995,
+      "blocks": [
+        {
+          "id": "everton-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 9156995
+        },
+        {
+          "id": "abdoulaye-doucour",
+          "kind": "player",
+          "label": "Abdoulaye Doucour\u00e9",
+          "wageGbp": 6760000,
+          "amortGbp": 2366000,
+          "amountGbp": 9126000
+        },
+        {
+          "id": "jordan-pickford",
+          "kind": "player",
+          "label": "Jordan Pickford",
+          "wageGbp": 6500000,
+          "amortGbp": 2275000,
+          "amountGbp": 8775000
+        },
+        {
+          "id": "idrissa-gana-gueye",
+          "kind": "player",
+          "label": "Idrissa Gana Gueye",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "dominic-calvert-lewin",
+          "kind": "player",
+          "label": "Dominic Calvert-Lewin",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "james-tarkowski",
+          "kind": "player",
+          "label": "James Tarkowski",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "jack-harrison",
+          "kind": "player",
+          "label": "Jack Harrison",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "everton-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (David Moyes)",
+          "amountGbp": 5500000
+        },
+        {
+          "id": "michael-keane",
+          "kind": "player",
+          "label": "Michael Keane",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "mason-holgate",
+          "kind": "player",
+          "label": "Mason Holgate",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "vitaliy-mykolenko",
+          "kind": "player",
+          "label": "Vitaliy Mykolenko",
+          "wageGbp": 3016000,
+          "amortGbp": 754000,
+          "amountGbp": 3770000
+        },
+        {
+          "id": "s-amus-coleman",
+          "kind": "player",
+          "label": "S\u00e9amus Coleman",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "beto",
+          "kind": "player",
+          "label": "Beto",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "orel-mangala",
+          "kind": "player",
+          "label": "Orel Mangala",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "jesper-lindstr-m",
+          "kind": "player",
+          "label": "Jesper Lindstr\u00f8m",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "iliman-ndiaye",
+          "kind": "player",
+          "label": "Iliman Ndiaye",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "armando-broja",
+          "kind": "player",
+          "label": "Armando Broja",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "ashley-young",
+          "kind": "player",
+          "label": "Ashley Young",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "jarrad-branthwaite",
+          "kind": "player",
+          "label": "Jarrad Branthwaite",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "asmir-begovi",
+          "kind": "player",
+          "label": "Asmir Begovi\u0107",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "james-garner",
+          "kind": "player",
+          "label": "James Garner",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "nathan-patterson",
+          "kind": "player",
+          "label": "Nathan Patterson",
+          "wageGbp": 1456000,
+          "amortGbp": 0,
+          "amountGbp": 1456000
+        },
+        {
+          "id": "dwight-mcneil",
+          "kind": "player",
+          "label": "Dwight McNeil",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "carlos-alcaraz",
+          "kind": "player",
+          "label": "Carlos Alcaraz",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        }
+      ]
+    },
+    {
+      "id": "crystal-palace",
+      "short": "CRY",
+      "name": "Crystal Palace",
+      "revenueGbp": 185000000,
+      "agentFeesGbp": 11952031,
+      "coachingStaffGbp": 5000000,
+      "uefa": false,
+      "greenThresholdGbp": 157250000,
+      "redThresholdGbp": 212749999,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 100685031,
+      "blocks": [
+        {
+          "id": "crystal-palace-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 11952031
+        },
+        {
+          "id": "daichi-kamada",
+          "kind": "player",
+          "label": "Daichi Kamada",
+          "wageGbp": 5460000,
+          "amortGbp": 1365000,
+          "amountGbp": 6825000
+        },
+        {
+          "id": "dean-henderson",
+          "kind": "player",
+          "label": "Dean Henderson",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "eberechi-eze",
+          "kind": "player",
+          "label": "Eberechi Eze",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "ben-chilwell",
+          "kind": "player",
+          "label": "Ben Chilwell",
+          "wageGbp": 5200000,
+          "amortGbp": 1300000,
+          "amountGbp": 6500000
+        },
+        {
+          "id": "eddie-nketiah",
+          "kind": "player",
+          "label": "Eddie Nketiah",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "crystal-palace-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Oliver Glasner)",
+          "amountGbp": 5000000
+        },
+        {
+          "id": "cheick-doucour",
+          "kind": "player",
+          "label": "Cheick Doucour\u00e9",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "ismaila-sarr",
+          "kind": "player",
+          "label": "Ismaila Sarr",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "jefferson-lerma",
+          "kind": "player",
+          "label": "Jefferson Lerma",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "jeffrey-schlupp",
+          "kind": "player",
+          "label": "Jeffrey Schlupp",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "chris-richards",
+          "kind": "player",
+          "label": "Chris Richards",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "jean-philippe-mateta",
+          "kind": "player",
+          "label": "Jean-Philippe Mateta",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "marc-gu-hi",
+          "kind": "player",
+          "label": "Marc Gu\u00e9hi",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "maxence-lacroix",
+          "kind": "player",
+          "label": "Maxence Lacroix",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "nathaniel-clyne",
+          "kind": "player",
+          "label": "Nathaniel Clyne",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "trevoh-chalobah",
+          "kind": "player",
+          "label": "Trevoh Chalobah",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "will-hughes",
+          "kind": "player",
+          "label": "Will Hughes",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "daniel-mu-oz",
+          "kind": "player",
+          "label": "Daniel Mu\u00f1oz",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "rob-holding",
+          "kind": "player",
+          "label": "Rob Holding",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "matt-turner",
+          "kind": "player",
+          "label": "Matt Turner",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "tyrick-mitchell",
+          "kind": "player",
+          "label": "Tyrick Mitchell",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "joel-ward",
+          "kind": "player",
+          "label": "Joel Ward",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "naouirou-ahamada",
+          "kind": "player",
+          "label": "Naouirou Ahamada",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        }
+      ]
+    },
+    {
+      "id": "brighton",
+      "short": "BHA",
+      "name": "Brighton & Hove Albion",
+      "revenueGbp": 210000000,
+      "agentFeesGbp": 16553102,
+      "coachingStaffGbp": 5500000,
+      "uefa": false,
+      "greenThresholdGbp": 178500000,
+      "redThresholdGbp": 241499999,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 90725602,
+      "blocks": [
+        {
+          "id": "brighton-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 16553102
+        },
+        {
+          "id": "jo-o-pedro",
+          "kind": "player",
+          "label": "Jo\u00e3o Pedro",
+          "wageGbp": 2600000,
+          "amortGbp": 6000000,
+          "amountGbp": 8600000
+        },
+        {
+          "id": "ferdi-kadioglu",
+          "kind": "player",
+          "label": "Ferdi Kadioglu",
+          "wageGbp": 4550000,
+          "amortGbp": 1137500,
+          "amountGbp": 5687500
+        },
+        {
+          "id": "brighton-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Fabian H\u00fcrzeler)",
+          "amountGbp": 5500000
+        },
+        {
+          "id": "lewis-dunk",
+          "kind": "player",
+          "label": "Lewis Dunk",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "georginio-rutter",
+          "kind": "player",
+          "label": "Georginio Rutter",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "kaoru-mitoma",
+          "kind": "player",
+          "label": "Kaoru Mitoma",
+          "wageGbp": 4160000,
+          "amortGbp": 500000,
+          "amountGbp": 4660000
+        },
+        {
+          "id": "danny-welbeck",
+          "kind": "player",
+          "label": "Danny Welbeck",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "james-milner",
+          "kind": "player",
+          "label": "James Milner",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "mats-wieffer",
+          "kind": "player",
+          "label": "Mats Wieffer",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "adam-webster",
+          "kind": "player",
+          "label": "Adam Webster",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "jo-l-veltman",
+          "kind": "player",
+          "label": "Jo\u00ebl Veltman",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "matt-o-riley",
+          "kind": "player",
+          "label": "Matt O'Riley",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "pervis-estupi-n",
+          "kind": "player",
+          "label": "Pervis Estupi\u00f1\u00e1n",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "solly-march",
+          "kind": "player",
+          "label": "Solly March",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "igor",
+          "kind": "player",
+          "label": "Igor",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "bart-verbruggen",
+          "kind": "player",
+          "label": "Bart Verbruggen",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "tariq-lamptey",
+          "kind": "player",
+          "label": "Tariq Lamptey",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "jan-paul-van-hecke",
+          "kind": "player",
+          "label": "Jan Paul van Hecke",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "jason-steele",
+          "kind": "player",
+          "label": "Jason Steele",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "jeremy-sarmiento",
+          "kind": "player",
+          "label": "Jeremy Sarmiento",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "eiran-cashin",
+          "kind": "player",
+          "label": "Eiran Cashin",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "simon-adingra",
+          "kind": "player",
+          "label": "Simon Adingra",
+          "wageGbp": 650000,
+          "amortGbp": 0,
+          "amountGbp": 650000
+        },
+        {
+          "id": "jakub-moder",
+          "kind": "player",
+          "label": "Jakub Moder",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        }
+      ]
+    },
+    {
+      "id": "leicester",
+      "short": "LEI",
+      "name": "Leicester City",
+      "revenueGbp": 150000000,
+      "agentFeesGbp": 9824219,
+      "coachingStaffGbp": 4500000,
+      "uefa": false,
+      "greenThresholdGbp": 127500000,
+      "redThresholdGbp": 172500000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 88892219,
+      "blocks": [
+        {
+          "id": "jamie-vardy",
+          "kind": "player",
+          "label": "Jamie Vardy",
+          "wageGbp": 7280000,
+          "amortGbp": 2548000,
+          "amountGbp": 9828000
+        },
+        {
+          "id": "leicester-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 9824219
+        },
+        {
+          "id": "harry-winks",
+          "kind": "player",
+          "label": "Harry Winks",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "odsonne-douard",
+          "kind": "player",
+          "label": "Odsonne \u00c9douard",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "boubakary-soumar",
+          "kind": "player",
+          "label": "Boubakary Soumar\u00e9",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "ricardo-pereira",
+          "kind": "player",
+          "label": "Ricardo Pereira",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "conor-coady",
+          "kind": "player",
+          "label": "Conor Coady",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "patson-daka",
+          "kind": "player",
+          "label": "Patson Daka",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "wilfred-ndidi",
+          "kind": "player",
+          "label": "Wilfred Ndidi",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "leicester-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Ruud van Nistelrooy)",
+          "amountGbp": 4500000
+        },
+        {
+          "id": "jannik-vestergaard",
+          "kind": "player",
+          "label": "Jannik Vestergaard",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "hamza-choudhury",
+          "kind": "player",
+          "label": "Hamza Choudhury",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "oliver-skipp",
+          "kind": "player",
+          "label": "Oliver Skipp",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "wout-faes",
+          "kind": "player",
+          "label": "Wout Faes",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "danny-ward",
+          "kind": "player",
+          "label": "Danny Ward",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "harry-souttar",
+          "kind": "player",
+          "label": "Harry Souttar",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "bobby-de-cordova-reid",
+          "kind": "player",
+          "label": "Bobby De Cordova-Reid",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "james-justin",
+          "kind": "player",
+          "label": "James Justin",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "jordan-ayew",
+          "kind": "player",
+          "label": "Jordan Ayew",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "caleb-okoli",
+          "kind": "player",
+          "label": "Caleb Okoli",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "daniel-iversen",
+          "kind": "player",
+          "label": "Daniel Iversen",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "kasey-mcateer",
+          "kind": "player",
+          "label": "Kasey McAteer",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "luke-thomas",
+          "kind": "player",
+          "label": "Luke Thomas",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "woyo-coulibaly",
+          "kind": "player",
+          "label": "Woyo Coulibaly",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        }
+      ]
+    },
+    {
+      "id": "wolves",
+      "short": "WOL",
+      "name": "Wolverhampton Wanderers",
+      "revenueGbp": 160000000,
+      "agentFeesGbp": 13500560,
+      "coachingStaffGbp": 4500000,
+      "uefa": false,
+      "greenThresholdGbp": 136000000,
+      "redThresholdGbp": 184000000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 84997560,
+      "blocks": [
+        {
+          "id": "wolves-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 13500560
+        },
+        {
+          "id": "matheus-cunha",
+          "kind": "player",
+          "label": "Matheus Cunha",
+          "wageGbp": 3120000,
+          "amortGbp": 5000000,
+          "amountGbp": 8120000
+        },
+        {
+          "id": "gon-alo-guedes",
+          "kind": "player",
+          "label": "Gon\u00e7alo Guedes",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "pablo-sarabia",
+          "kind": "player",
+          "label": "Pablo Sarabia",
+          "wageGbp": 4680000,
+          "amortGbp": 1170000,
+          "amountGbp": 5850000
+        },
+        {
+          "id": "n-lson-semedo",
+          "kind": "player",
+          "label": "N\u00e9lson Semedo",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "hwang-hee-chan",
+          "kind": "player",
+          "label": "Hwang Hee-chan",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "wolves-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (V\u00edtor Pereira)",
+          "amountGbp": 4500000
+        },
+        {
+          "id": "boubacar-traor",
+          "kind": "player",
+          "label": "Boubacar Traor\u00e9",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "matt-doherty",
+          "kind": "player",
+          "label": "Matt Doherty",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "marshall-munetsi",
+          "kind": "player",
+          "label": "Marshall Munetsi",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "craig-dawson",
+          "kind": "player",
+          "label": "Craig Dawson",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "mario-lemina",
+          "kind": "player",
+          "label": "Mario Lemina",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "emmanuel-agbadou",
+          "kind": "player",
+          "label": "Emmanuel Agbadou",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "jos-s",
+          "kind": "player",
+          "label": "Jos\u00e9 S\u00e1",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "sam-johnstone",
+          "kind": "player",
+          "label": "Sam Johnstone",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "andr",
+          "kind": "player",
+          "label": "Andr\u00e9",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "jean-ricner-bellegarde",
+          "kind": "player",
+          "label": "Jean-Ricner Bellegarde",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "sasa-kalajdzic",
+          "kind": "player",
+          "label": "Sasa Kalajdzic",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "jo-o-gomes",
+          "kind": "player",
+          "label": "Jo\u00e3o Gomes",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "santiago-bueno",
+          "kind": "player",
+          "label": "Santiago Bueno",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "f-bio-silva",
+          "kind": "player",
+          "label": "F\u00e1bio Silva",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "rodrigo-gomes",
+          "kind": "player",
+          "label": "Rodrigo Gomes",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "toti-gomes",
+          "kind": "player",
+          "label": "Toti Gomes",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "daniel-bentley",
+          "kind": "player",
+          "label": "Daniel Bentley",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        }
+      ]
+    },
+    {
+      "id": "bournemouth",
+      "short": "BOU",
+      "name": "AFC Bournemouth",
+      "revenueGbp": 165000000,
+      "agentFeesGbp": 16425116,
+      "coachingStaffGbp": 4500000,
+      "uefa": false,
+      "greenThresholdGbp": 140250000,
+      "redThresholdGbp": 189750000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 84131116,
+      "blocks": [
+        {
+          "id": "bournemouth-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 16425116
+        },
+        {
+          "id": "evanilson",
+          "kind": "player",
+          "label": "Evanilson",
+          "wageGbp": 4420000,
+          "amortGbp": 1105000,
+          "amountGbp": 5525000
+        },
+        {
+          "id": "justin-kluivert",
+          "kind": "player",
+          "label": "Justin Kluivert",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "kepa-arrizabalaga",
+          "kind": "player",
+          "label": "Kepa Arrizabalaga",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "ryan-christie",
+          "kind": "player",
+          "label": "Ryan Christie",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "bournemouth-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Andoni Iraola)",
+          "amountGbp": 4500000
+        },
+        {
+          "id": "luis-sinisterra",
+          "kind": "player",
+          "label": "Luis Sinisterra",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "lewis-cook",
+          "kind": "player",
+          "label": "Lewis Cook",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "tyler-adams",
+          "kind": "player",
+          "label": "Tyler Adams",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "antoine-semenyo",
+          "kind": "player",
+          "label": "Antoine Semenyo",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "david-brooks",
+          "kind": "player",
+          "label": "David Brooks",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "marcos-senesi",
+          "kind": "player",
+          "label": "Marcos Senesi",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "philip-billing",
+          "kind": "player",
+          "label": "Philip Billing",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "adam-smith",
+          "kind": "player",
+          "label": "Adam Smith",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "alex-scott",
+          "kind": "player",
+          "label": "Alex Scott",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "dango-ouattara",
+          "kind": "player",
+          "label": "Dango Ouattara",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "marcus-tavernier",
+          "kind": "player",
+          "label": "Marcus Tavernier",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "max-aarons",
+          "kind": "player",
+          "label": "Max Aarons",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "chris-mepham",
+          "kind": "player",
+          "label": "Chris Mepham",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "milos-kerkez",
+          "kind": "player",
+          "label": "Milos Kerkez",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "julian-araujo",
+          "kind": "player",
+          "label": "Julian Araujo",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "jaidon-anthony",
+          "kind": "player",
+          "label": "Jaidon Anthony",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "mark-travers",
+          "kind": "player",
+          "label": "Mark Travers",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "enes-nal",
+          "kind": "player",
+          "label": "Enes \u00dcnal",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        }
+      ]
+    },
+    {
+      "id": "nottingham-forest",
+      "short": "NFO",
+      "name": "Nottingham Forest",
+      "revenueGbp": 175000000,
+      "agentFeesGbp": 12991664,
+      "coachingStaffGbp": 5000000,
+      "uefa": false,
+      "greenThresholdGbp": 148750000,
+      "redThresholdGbp": 201249999,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 81262664,
+      "blocks": [
+        {
+          "id": "nottingham-forest-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 12991664
+        },
+        {
+          "id": "nikola-milenkovi",
+          "kind": "player",
+          "label": "Nikola Milenkovi\u0107",
+          "wageGbp": 5460000,
+          "amortGbp": 1365000,
+          "amountGbp": 6825000
+        },
+        {
+          "id": "callum-hudson-odoi",
+          "kind": "player",
+          "label": "Callum Hudson-Odoi",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "chris-wood",
+          "kind": "player",
+          "label": "Chris Wood",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "morgan-gibbs-white",
+          "kind": "player",
+          "label": "Morgan Gibbs-White",
+          "wageGbp": 4160000,
+          "amortGbp": 1040000,
+          "amountGbp": 5200000
+        },
+        {
+          "id": "nottingham-forest-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Nuno Esp\u00edrito Santo)",
+          "amountGbp": 5000000
+        },
+        {
+          "id": "ibrahim-sangar",
+          "kind": "player",
+          "label": "Ibrahim Sangar\u00e9",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "neco-williams",
+          "kind": "player",
+          "label": "Neco Williams",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "ryan-yates",
+          "kind": "player",
+          "label": "Ryan Yates",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "taiwo-awoniyi",
+          "kind": "player",
+          "label": "Taiwo Awoniyi",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "elliot-anderson",
+          "kind": "player",
+          "label": "Elliot Anderson",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "emmanuel-dennis",
+          "kind": "player",
+          "label": "Emmanuel Dennis",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "ola-aina",
+          "kind": "player",
+          "label": "Ola Aina",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "willy-boly",
+          "kind": "player",
+          "label": "Willy Boly",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "andrew-omobamidele",
+          "kind": "player",
+          "label": "Andrew Omobamidele",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "harry-toffolo",
+          "kind": "player",
+          "label": "Harry Toffolo",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "matz-sels",
+          "kind": "player",
+          "label": "Matz Sels",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "morato",
+          "kind": "player",
+          "label": "Morato",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "nicol-s-dom-nguez",
+          "kind": "player",
+          "label": "Nicol\u00e1s Dom\u00ednguez",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "danilo",
+          "kind": "player",
+          "label": "Danilo",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "ram-n-sosa",
+          "kind": "player",
+          "label": "Ram\u00f3n Sosa",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "anthony-elanga",
+          "kind": "player",
+          "label": "Anthony Elanga",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "jota-silva",
+          "kind": "player",
+          "label": "Jota Silva",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "carlos-miguel",
+          "kind": "player",
+          "label": "Carlos Miguel",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        }
+      ]
+    },
+    {
+      "id": "southampton",
+      "short": "SOU",
+      "name": "Southampton",
+      "revenueGbp": 145000000,
+      "agentFeesGbp": 8900718,
+      "coachingStaffGbp": 4000000,
+      "uefa": false,
+      "greenThresholdGbp": 123250000,
+      "redThresholdGbp": 166750000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 71257718,
+      "blocks": [
+        {
+          "id": "southampton-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 8900718
+        },
+        {
+          "id": "aaron-ramsdale",
+          "kind": "player",
+          "label": "Aaron Ramsdale",
+          "wageGbp": 6240000,
+          "amortGbp": 2184000,
+          "amountGbp": 8424000
+        },
+        {
+          "id": "jan-bednarek",
+          "kind": "player",
+          "label": "Jan Bednarek",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "joe-aribo",
+          "kind": "player",
+          "label": "Joe Aribo",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "maxwel-cornet",
+          "kind": "player",
+          "label": "Maxwel Cornet",
+          "wageGbp": 3380000,
+          "amortGbp": 845000,
+          "amountGbp": 4225000
+        },
+        {
+          "id": "southampton-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Ivan Juri\u0107)",
+          "amountGbp": 4000000
+        },
+        {
+          "id": "adam-armstrong",
+          "kind": "player",
+          "label": "Adam Armstrong",
+          "wageGbp": 3120000,
+          "amortGbp": 780000,
+          "amountGbp": 3900000
+        },
+        {
+          "id": "adam-lallana",
+          "kind": "player",
+          "label": "Adam Lallana",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "jack-stephens",
+          "kind": "player",
+          "label": "Jack Stephens",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "lesley-ugochukwu",
+          "kind": "player",
+          "label": "Lesley Ugochukwu",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "alex-mccarthy",
+          "kind": "player",
+          "label": "Alex McCarthy",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "cameron-archer",
+          "kind": "player",
+          "label": "Cameron Archer",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "kamaldeen-sulemana",
+          "kind": "player",
+          "label": "Kamaldeen Sulemana",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "ryan-fraser",
+          "kind": "player",
+          "label": "Ryan Fraser",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "yukinari-sugawara",
+          "kind": "player",
+          "label": "Yukinari Sugawara",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "ben-brereton",
+          "kind": "player",
+          "label": "Ben Brereton",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "charlie-taylor",
+          "kind": "player",
+          "label": "Charlie Taylor",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "flynn-downes",
+          "kind": "player",
+          "label": "Flynn Downes",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "paul-onuachu",
+          "kind": "player",
+          "label": "Paul Onuachu",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "william-smallbone",
+          "kind": "player",
+          "label": "William Smallbone",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "gavin-bazunu",
+          "kind": "player",
+          "label": "Gavin Bazunu",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "kyle-walker-peters",
+          "kind": "player",
+          "label": "Kyle Walker-Peters",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "ross-stewart",
+          "kind": "player",
+          "label": "Ross Stewart",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "armel-bella-kotchap",
+          "kind": "player",
+          "label": "Armel Bella Kotchap",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        }
+      ]
+    },
+    {
+      "id": "brentford",
+      "short": "BRE",
+      "name": "Brentford",
+      "revenueGbp": 160000000,
+      "agentFeesGbp": 14762657,
+      "coachingStaffGbp": 4000000,
+      "uefa": false,
+      "greenThresholdGbp": 136000000,
+      "redThresholdGbp": 184000000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 58581657,
+      "blocks": [
+        {
+          "id": "brentford-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 14762657
+        },
+        {
+          "id": "aaron-hickey",
+          "kind": "player",
+          "label": "Aaron Hickey",
+          "wageGbp": 3640000,
+          "amortGbp": 910000,
+          "amountGbp": 4550000
+        },
+        {
+          "id": "brentford-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Thomas Frank)",
+          "amountGbp": 4000000
+        },
+        {
+          "id": "ben-mee",
+          "kind": "player",
+          "label": "Ben Mee",
+          "wageGbp": 2860000,
+          "amortGbp": 429000,
+          "amountGbp": 3289000
+        },
+        {
+          "id": "mathias-jensen",
+          "kind": "player",
+          "label": "Mathias Jensen",
+          "wageGbp": 2600000,
+          "amortGbp": 390000,
+          "amountGbp": 2990000
+        },
+        {
+          "id": "bryan-mbeumo",
+          "kind": "player",
+          "label": "Bryan Mbeumo",
+          "wageGbp": 2340000,
+          "amortGbp": 351000,
+          "amountGbp": 2691000
+        },
+        {
+          "id": "fabio-carvalho",
+          "kind": "player",
+          "label": "Fabio Carvalho",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "kristoffer-ajer",
+          "kind": "player",
+          "label": "Kristoffer Ajer",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "christian-n-rgaard",
+          "kind": "player",
+          "label": "Christian N\u00f8rgaard",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "keane-lewis-potter",
+          "kind": "player",
+          "label": "Keane Lewis-Potter",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "rico-henry",
+          "kind": "player",
+          "label": "Rico Henry",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "ethan-pinnock",
+          "kind": "player",
+          "label": "Ethan Pinnock",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "josh-dasilva",
+          "kind": "player",
+          "label": "Josh Dasilva",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "mark-flekken",
+          "kind": "player",
+          "label": "Mark Flekken",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "mikkel-damsgaard",
+          "kind": "player",
+          "label": "Mikkel Damsgaard",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "nathan-collins",
+          "kind": "player",
+          "label": "Nathan Collins",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "vitaly-janelt",
+          "kind": "player",
+          "label": "Vitaly Janelt",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "yoane-wissa",
+          "kind": "player",
+          "label": "Yoane Wissa",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "mads-roerslev",
+          "kind": "player",
+          "label": "Mads Roerslev",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "sepp-van-den-berg",
+          "kind": "player",
+          "label": "Sepp van den Berg",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "kevin-schade",
+          "kind": "player",
+          "label": "Kevin Schade",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        },
+        {
+          "id": "ellery-balcombe",
+          "kind": "player",
+          "label": "Ellery Balcombe",
+          "wageGbp": 312000,
+          "amortGbp": 0,
+          "amountGbp": 312000
+        },
+        {
+          "id": "myles-peart-harris",
+          "kind": "player",
+          "label": "Myles Peart-Harris",
+          "wageGbp": 260000,
+          "amortGbp": 0,
+          "amountGbp": 260000
+        }
+      ]
+    },
+    {
+      "id": "ipswich",
+      "short": "IPS",
+      "name": "Ipswich Town",
+      "revenueGbp": 140000000,
+      "agentFeesGbp": 6264471,
+      "coachingStaffGbp": 3500000,
+      "uefa": false,
+      "greenThresholdGbp": 119000000,
+      "redThresholdGbp": 161000000,
+      "uefaThresholdGbp": null,
+      "squadCostGbp": 48192471,
+      "blocks": [
+        {
+          "id": "kalvin-phillips",
+          "kind": "player",
+          "label": "Kalvin Phillips",
+          "wageGbp": 7800000,
+          "amortGbp": 0,
+          "amountGbp": 7800000
+        },
+        {
+          "id": "ipswich-agents",
+          "kind": "agents",
+          "label": "Agent fees",
+          "amountGbp": 6264471
+        },
+        {
+          "id": "ben-godfrey",
+          "kind": "player",
+          "label": "Ben Godfrey",
+          "wageGbp": 3900000,
+          "amortGbp": 975000,
+          "amountGbp": 4875000
+        },
+        {
+          "id": "ipswich-coaching",
+          "kind": "coaching",
+          "label": "Coaching staff (Kieran McKenna)",
+          "amountGbp": 3500000
+        },
+        {
+          "id": "axel-tuanzebe",
+          "kind": "player",
+          "label": "Axel Tuanzebe",
+          "wageGbp": 2080000,
+          "amortGbp": 312000,
+          "amountGbp": 2392000
+        },
+        {
+          "id": "arijanet-muric",
+          "kind": "player",
+          "label": "Arijanet Muric",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "dara-o-shea",
+          "kind": "player",
+          "label": "Dara O'Shea",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "jens-cajuste",
+          "kind": "player",
+          "label": "Jens Cajuste",
+          "wageGbp": 1820000,
+          "amortGbp": 273000,
+          "amountGbp": 2093000
+        },
+        {
+          "id": "ben-johnson",
+          "kind": "player",
+          "label": "Ben Johnson",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "sam-morsy",
+          "kind": "player",
+          "label": "Sam Morsy",
+          "wageGbp": 1560000,
+          "amortGbp": 234000,
+          "amountGbp": 1794000
+        },
+        {
+          "id": "george-hirst",
+          "kind": "player",
+          "label": "George Hirst",
+          "wageGbp": 1430000,
+          "amortGbp": 0,
+          "amountGbp": 1430000
+        },
+        {
+          "id": "chiedozie-ogbene",
+          "kind": "player",
+          "label": "Chiedozie Ogbene",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "jack-clarke",
+          "kind": "player",
+          "label": "Jack Clarke",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "jacob-greaves",
+          "kind": "player",
+          "label": "Jacob Greaves",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "leif-davis",
+          "kind": "player",
+          "label": "Leif Davis",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "sammie-szmodics",
+          "kind": "player",
+          "label": "Sammie Szmodics",
+          "wageGbp": 1300000,
+          "amortGbp": 0,
+          "amountGbp": 1300000
+        },
+        {
+          "id": "christian-walton",
+          "kind": "player",
+          "label": "Christian Walton",
+          "wageGbp": 1040000,
+          "amortGbp": 0,
+          "amountGbp": 1040000
+        },
+        {
+          "id": "conor-chaplin",
+          "kind": "player",
+          "label": "Conor Chaplin",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "conor-townsend",
+          "kind": "player",
+          "label": "Conor Townsend",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "julio-enciso",
+          "kind": "player",
+          "label": "Julio Enciso",
+          "wageGbp": 780000,
+          "amortGbp": 0,
+          "amountGbp": 780000
+        },
+        {
+          "id": "alex-palmer",
+          "kind": "player",
+          "label": "Alex Palmer",
+          "wageGbp": 624000,
+          "amortGbp": 0,
+          "amountGbp": 624000
+        },
+        {
+          "id": "ali-al-hamadi",
+          "kind": "player",
+          "label": "Ali Al Hamadi",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        },
+        {
+          "id": "jack-taylor",
+          "kind": "player",
+          "label": "Jack Taylor",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        },
+        {
+          "id": "massimo-luongo",
+          "kind": "player",
+          "label": "Massimo Luongo",
+          "wageGbp": 520000,
+          "amortGbp": 0,
+          "amountGbp": 520000
+        }
+      ]
+    }
+  ]
+}

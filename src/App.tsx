@@ -297,7 +297,9 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()))
   const [screen, setScreen] = useState<Screen>('home')
   const [activeTab, setActiveTab] = useState<BottomTab>('home')
-  const [statsInitialTab, setStatsInitialTab] = useState<'pulse' | 'compare' | 'predict' | 'leagues'>(
+  const [statsInitialTab, setStatsInitialTab] = useState<
+    'pulse' | 'compare' | 'predict' | 'finances' | 'leagues'
+  >(
     'pulse',
   )
   const [compareDeepLink, setCompareDeepLink] = useState<{ a?: string; b?: string }>({})

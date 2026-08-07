@@ -8,9 +8,10 @@ import { LeagueLogoMark } from './LeagueLogoMark'
 import { PlayerAvatar } from './PlayerAvatar'
 import { PlayerComparePanel } from './PlayerComparePanel'
 import { PredictionGamePanel } from './PredictionGamePanel'
+import { FinancesPanel } from './FinancesPanel'
 import type { Match } from '../lib/matches'
 
-type StatsTab = 'pulse' | 'compare' | 'predict' | 'leagues'
+type StatsTab = 'pulse' | 'compare' | 'predict' | 'finances' | 'leagues'
 
 /**
  * Stats hub — real football intelligence (not Fantasy / FPL tools).
@@ -42,6 +43,7 @@ export function StatsScreen({
     { id: 'pulse', label: 'Pulse' },
     { id: 'compare', label: 'Compare' },
     { id: 'predict', label: 'Predict' },
+    { id: 'finances', label: 'Finances' },
     { id: 'leagues', label: 'Leagues' },
   ]
 
@@ -74,7 +76,7 @@ export function StatsScreen({
             Stats
           </motion.h1>
           <p className="mt-2 text-sm text-mist/80">
-            Ratings pulse, head-to-head season stats, and quick predictions.
+            Ratings pulse, head-to-head season stats, predictions, and club finances.
           </p>
         </header>
 
@@ -203,6 +205,8 @@ export function StatsScreen({
         ) : null}
 
         {tab === 'predict' ? <PredictionGamePanel matches={matches} /> : null}
+
+        {tab === 'finances' ? <FinancesPanel reduce={reduce} /> : null}
 
         {tab === 'leagues' ? (
           <div className="flex flex-col gap-2">
