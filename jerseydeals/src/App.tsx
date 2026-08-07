@@ -3643,7 +3643,7 @@ export default function App() {
         <RewardsClub />
 
         {/* Final CTA */}
-        <section className="relative overflow-hidden bg-crimson py-24 text-white md:py-28">
+        <section className="relative overflow-hidden bg-crimson py-8 text-white md:py-10">
           <div
             className="pointer-events-none absolute inset-0 opacity-35"
             style={{
@@ -3654,16 +3654,16 @@ export default function App() {
           />
           <motion.div
             {...fadeUp(reduce)}
-            className="relative mx-auto flex max-w-6xl flex-col items-start gap-8 px-5 md:flex-row md:items-center md:justify-between md:px-8"
+            className="relative mx-auto flex max-w-6xl flex-col items-start gap-4 px-5 sm:flex-row sm:items-center sm:justify-between md:px-8"
           >
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <BrandMark size="lg" />
+            <div className="flex items-center gap-3">
+              <BrandMark size="md" />
               <div>
-                <p className="font-brand text-3xl font-bold uppercase tracking-[0.06em] text-cream md:text-4xl">
+                <p className="font-brand text-xl font-bold uppercase tracking-[0.06em] text-cream md:text-2xl">
                   Jersey Deals
                 </p>
-                <p className="mt-3 max-w-md text-lg text-cream/90">
-                  The kit shop is open — youth apparel, sale racks, and the full catalog.
+                <p className="mt-0.5 max-w-md text-sm leading-snug text-cream/90">
+                  Youth apparel, sale racks, and the full catalog.
                 </p>
               </div>
             </div>
@@ -3673,7 +3673,7 @@ export default function App() {
                 track('cta_click', { place: 'final' })
                 goInventory({ reset: true })
               }}
-              className="inline-flex shrink-0 bg-navy px-8 py-4 font-brand text-xs font-bold uppercase tracking-[0.18em] text-cream transition hover:bg-navy-deep"
+              className="inline-flex shrink-0 bg-navy px-5 py-2.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.16em] text-cream transition hover:bg-navy-deep"
             >
               Browse kits
             </button>
