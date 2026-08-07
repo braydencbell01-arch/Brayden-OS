@@ -14,10 +14,19 @@ export type FinanceClub = {
   short: string
   name: string
   espnTeamId?: string
+  /** Football turnover (£). */
+  footballRevenueGbp?: number
+  /** Profit/(loss) on player disposals (£). */
+  playerTradingGbp?: number
+  /**
+   * SCR adjusted revenue = football + player trading.
+   * Used for green/red/UEFA threshold lines.
+   */
   revenueGbp: number
   agentFeesGbp: number
   coachingStaffGbp: number
   uefa: boolean
+  source?: 'accounts' | 'estimate'
   greenThresholdGbp: number
   redThresholdGbp: number
   uefaThresholdGbp: number | null

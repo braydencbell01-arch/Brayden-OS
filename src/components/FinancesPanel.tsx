@@ -104,7 +104,7 @@ function BigStack({
           ))}
 
           <ThresholdLine
-            label="Revenue"
+            label="Adj. revenue"
             color="#1a1a1a"
             bottomPct={pct(club.revenueGbp)}
             valueLabel={moneyShort(club.revenueGbp)}
@@ -286,8 +286,19 @@ export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
                   {(ratio * 100).toFixed(0)}%
                 </span>
                 {' · '}
-                {money(selected.squadCostGbp)} cost / {money(selected.revenueGbp)} revenue
+                {money(selected.squadCostGbp)} cost / {money(selected.revenueGbp)} adj. revenue
               </p>
+              {selected.footballRevenueGbp != null ? (
+                <p className="mt-0.5 text-[0.7rem] text-mist/50">
+                  Football {money(selected.footballRevenueGbp)}
+                  {selected.playerTradingGbp != null
+                    ? ` · Player trading ${selected.playerTradingGbp >= 0 ? '+' : '−'}${money(
+                        Math.abs(selected.playerTradingGbp),
+                      )}`
+                    : ''}
+                  {selected.source === 'accounts' ? ' · Accounts' : ' · Est.'}
+                </p>
+              ) : null}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               {selected.espnTeamId ? (
@@ -319,8 +330,9 @@ export function FinancesPanel({ reduce }: { reduce: boolean | null }) {
             <li key={s}>{s}</li>
           ))}
           <li>
-            Low ratios before were mostly undercounted amortisation (and Capology fixed wages), not
-            overstated Deloitte revenue for the big clubs.
+            Capology first-team fixed wages understated bills (Brentford ~£42m Capology vs ~£131m
+            accounts). The viral ~89% for Brentford is usually wages+amort÷(revenue+player sales)
+            without agents; this chart adds FA agent fees (Brentford ~97% SCR-style).
           </li>
           <li>
             PL SCR:{' '}
