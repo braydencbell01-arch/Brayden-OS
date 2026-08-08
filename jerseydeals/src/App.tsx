@@ -673,7 +673,7 @@ function ProductGallery({
     <div className={`absolute inset-0 ${bg}`}>
       <div
         ref={trackRef}
-        className="flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="jd-photo-carousel flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ WebkitOverflowScrolling: 'touch' }}
         onScroll={(event) => {
           const el = event.currentTarget
@@ -1247,6 +1247,21 @@ export default function App() {
       document.removeEventListener('keydown', onKey)
     }
   }, [menuOpen])
+
+  // Lock document scroll while a subpage overlay owns the middle viewport.
+  useEffect(() => {
+    const overlayOpen =
+      inventoryOpen || favoritesOpen || profileOpen || offersOpen || Boolean(itemPageId)
+    if (!overlayOpen) return
+    const previousOverflow = document.body.style.overflow
+    const previousOverscroll = document.documentElement.style.overscrollBehavior
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overscrollBehavior = 'none'
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.documentElement.style.overscrollBehavior = previousOverscroll
+    }
+  }, [inventoryOpen, favoritesOpen, profileOpen, offersOpen, itemPageId])
 
   useEffect(() => {
     const sync = () => setCart(readCart())
@@ -2878,11 +2893,11 @@ export default function App() {
 
         {inventoryOpen ? (
           <div
-            className="fixed inset-x-0 z-[70] flex flex-col bg-white text-navy"
+            className="jd-overlay-shell fixed inset-x-0 z-[70] bg-white text-navy"
             style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
             aria-label="Inventory"
           >
-            <div className="flex-1 overflow-y-auto">
+            <div className="jd-overlay-scroll">
         {/* Inventory — filters first, results directly below (search scrolls here). */}
         <section id="inventory" className="cv-auto scroll-mt-4 bg-white pb-10 pt-4 md:pb-14 md:pt-6">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
@@ -3753,13 +3768,13 @@ export default function App() {
       {/* Nav drawer — sits under sticky chrome so top/bottom bars stay tappable */}
       {menuOpen && (
         <div
-          className="fixed inset-x-0 z-[95] flex flex-col bg-cream"
+          className="jd-overlay-shell fixed inset-x-0 z-[95] bg-cream"
           style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
           role="dialog"
           aria-modal
           aria-label="Navigation menu"
         >
-          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4">
+          <div className="flex shrink-0 items-center justify-between border-b border-navy/10 bg-cream px-5 py-4">
             <BrandMark size="sm" withWordmark stackedWordmark wordmarkTone="navy" />
             <button
               type="button"
@@ -3770,7 +3785,7 @@ export default function App() {
               <span className="text-xl leading-none">✕</span>
             </button>
           </div>
-          <nav className="flex flex-col divide-y divide-navy/10 overflow-y-auto px-5">
+          <nav className="jd-overlay-scroll flex flex-col divide-y divide-navy/10 px-5">
             {navLinks.map((link) => (
               <a
                 key={link.href}

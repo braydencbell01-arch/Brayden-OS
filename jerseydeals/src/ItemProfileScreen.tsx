@@ -123,8 +123,7 @@ function ProfileGallery({ item }: { item: Listing }) {
     <div className="relative aspect-square w-full bg-white sm:aspect-[4/5]">
       <div
         ref={trackRef}
-        className="flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        className="jd-photo-carousel flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         onScroll={(event) => {
           const el = event.currentTarget
           const index = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1))
@@ -389,7 +388,7 @@ export function ItemProfileScreen({
 
   return (
     <div
-      className="fixed inset-x-0 z-[72] flex flex-col bg-white text-navy"
+      className="jd-overlay-shell fixed inset-x-0 z-[72] bg-white text-navy"
       style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
     >
       <header className="flex shrink-0 items-center justify-between border-b border-navy/10 bg-white px-5 py-3.5">
@@ -406,7 +405,7 @@ export function ItemProfileScreen({
         <span className="w-12" aria-hidden />
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto" aria-label={shortTitle(item.title)}>
+      <main className="jd-overlay-scroll" aria-label={shortTitle(item.title)}>
         <ProfileGallery item={item} />
 
         <div className="mx-auto w-full max-w-lg px-5 pb-4 pt-5">

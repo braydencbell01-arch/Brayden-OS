@@ -162,10 +162,10 @@ export function ProfileScreen({
 
   return (
     <div
-      className="fixed inset-x-0 z-[70] flex flex-col bg-chalk text-navy"
+      className="jd-overlay-shell fixed inset-x-0 z-[70] bg-chalk text-navy"
       style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
     >
-      <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-navy/10 bg-cream px-5 py-3">
         <p className="inline-flex items-center gap-2 font-brand text-sm font-bold uppercase leading-none tracking-[0.14em] text-navy">
           <svg
             viewBox="0 0 24 24"
@@ -191,7 +191,7 @@ export function ProfileScreen({
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto" aria-label="Jersey Deals profile">
+      <main className="jd-overlay-scroll" aria-label="Jersey Deals profile">
         <div className="mx-auto flex w-full max-w-lg flex-col gap-8 px-5 py-6">
           <section>
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">

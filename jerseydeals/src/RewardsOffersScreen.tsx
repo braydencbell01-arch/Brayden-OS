@@ -55,10 +55,10 @@ export function RewardsOffersScreen({
 
   return (
     <div
-      className="fixed inset-x-0 z-[70] flex flex-col bg-chalk text-navy"
+      className="jd-overlay-shell fixed inset-x-0 z-[70] bg-chalk text-navy"
       style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
     >
-      <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-navy/10 bg-cream px-5 py-3">
         <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">
           My offers
         </p>
@@ -81,8 +81,8 @@ export function RewardsOffersScreen({
           </button>
         </div>
       </header>
-      <main className="flex flex-1 flex-col overflow-y-auto" aria-label="Rewards offers">
-        <div className="flex flex-1 flex-col gap-4 px-5 py-6">
+      <main className="jd-overlay-scroll" aria-label="Rewards offers">
+        <div className="flex flex-col gap-4 px-5 py-6">
           {offers.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
               <div>
