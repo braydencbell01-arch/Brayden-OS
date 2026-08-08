@@ -810,18 +810,20 @@ function ProductLink({
         >
           {shortTitle(item.title)}
         </button>
-        <div className="mt-1.5 flex items-start justify-between gap-2">
-          <p className={`min-w-0 flex-1 text-[0.6rem] uppercase leading-snug tracking-[0.08em] ${muted} line-clamp-2`}>
-            {infoLine}
-          </p>
-          <span className="flex shrink-0 flex-col items-end gap-0.5 text-right sm:flex-row sm:items-baseline sm:gap-1.5">
+        <p
+          className={`mt-1 truncate text-[0.52rem] uppercase leading-none tracking-[0.06em] ${muted}`}
+        >
+          {infoLine}
+        </p>
+        <div className="mt-1.5 flex items-baseline justify-between gap-1.5">
+          <span className="flex min-w-0 items-baseline gap-1">
             {compareAt != null ? (
-              <span className="font-brand text-[0.65rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.7rem]">
+              <span className="font-brand text-[0.58rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.65rem]">
                 {formatPrice(compareAt, item.currency)}
               </span>
             ) : null}
             <span
-              className={`font-brand text-[0.75rem] font-bold tracking-wide sm:text-sm ${
+              className={`font-brand text-[0.78rem] font-bold tracking-wide sm:text-sm ${
                 tone === 'dark'
                   ? compareAt != null
                     ? 'text-white'
@@ -834,27 +836,27 @@ function ProductLink({
               {formatPrice(item.price, item.currency)}
             </span>
           </span>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-          <button
-            type="button"
-            onClick={() => onAddToCart(item)}
-            className={`text-[0.55rem] font-bold uppercase tracking-[0.14em] ${accent}`}
-          >
-            Add to cart
-          </button>
-          {buyUrl ? (
+          <span className="flex shrink-0 items-baseline gap-1.5">
             <button
               type="button"
-              onClick={() => {
-                track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
-                onBuyNow(item)
-              }}
-              className={`text-[0.55rem] font-semibold uppercase tracking-[0.14em] underline-offset-2 hover:underline ${muted}`}
+              onClick={() => onAddToCart(item)}
+              className={`text-[0.45rem] font-bold uppercase tracking-[0.08em] ${accent} sm:text-[0.5rem]`}
             >
-              Buy now
+              Add to cart
             </button>
-          ) : null}
+            {buyUrl ? (
+              <button
+                type="button"
+                onClick={() => {
+                  track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
+                  onBuyNow(item)
+                }}
+                className={`text-[0.45rem] font-semibold uppercase tracking-[0.08em] underline-offset-2 hover:underline ${muted} sm:text-[0.5rem]`}
+              >
+                Buy now
+              </button>
+            ) : null}
+          </span>
         </div>
       </div>
     </li>

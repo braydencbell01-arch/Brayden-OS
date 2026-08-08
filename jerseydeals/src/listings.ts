@@ -185,20 +185,22 @@ export function isHomeAwayOrThirdKit(item: Listing) {
 }
 
 /**
- * Whole-dollar markdown above live price for compare-at.
- * Home / away / third: $40–$60. Other listings: no compare-at markdown.
+ * Whole-dollar markup above live price for compare-at (stable per listing).
+ * $30+: $20–$50. Below $30: $10–$30.
  */
 export function saleMarkdownAmount(item: Listing): number {
-  if (!isHomeAwayOrThirdKit(item)) return 0
-  return 40 + (listingPriceHash(item) % 21)
+  if (item.price == null || Number.isNaN(item.price)) return 0
+  const hash = listingPriceHash(item)
+  if (item.price >= 30) return 20 + (hash % 31)
+  return 10 + (hash % 21)
 }
 
-/** Crossed-off “was” price for home / away / third jerseys only. */
+/** Crossed-off “was” price for every listing — always ends in .99. */
 export function saleCompareAtPrice(item: Listing): number | null {
   if (item.price == null || Number.isNaN(item.price)) return null
   const off = saleMarkdownAmount(item)
   if (off <= 0) return null
-  return Math.round(item.price + off)
+  return Math.floor(item.price + off) + 0.99
 }
 
 /** Inventory price toggles — keep ranges aligned with typical kit pricing. */
