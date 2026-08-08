@@ -31,14 +31,14 @@ export type TowerSlot = {
  * each side has a center King tower + left/right Princess towers.
  */
 export const TOWERS: TowerSlot[] = [
-  // Enemy (top)
-  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 8, row: 1, w: 3, h: 3 },
-  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 2, row: 4, w: 2, h: 2 },
-  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 14, row: 4, w: 2, h: 2 },
+  // Enemy (top) — king recessed, princesses forward like CR
+  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 7.5, row: 0.6, w: 3, h: 3.4 },
+  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 2.2, row: 4.2, w: 2.4, h: 2.8 },
+  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 13.4, row: 4.2, w: 2.4, h: 2.8 },
   // Ally (bottom)
-  { id: 'ally-king', side: 'ally', kind: 'king', col: 8, row: 28, w: 3, h: 3 },
-  { id: 'ally-left', side: 'ally', kind: 'princess', col: 2, row: 26, w: 2, h: 2 },
-  { id: 'ally-right', side: 'ally', kind: 'princess', col: 14, row: 26, w: 2, h: 2 },
+  { id: 'ally-king', side: 'ally', kind: 'king', col: 7.5, row: 28, w: 3, h: 3.4 },
+  { id: 'ally-left', side: 'ally', kind: 'princess', col: 2.2, row: 25, w: 2.4, h: 2.8 },
+  { id: 'ally-right', side: 'ally', kind: 'princess', col: 13.4, row: 25, w: 2.4, h: 2.8 },
 ]
 
 export function isRiverTile(row: number, col: number): boolean {

@@ -1,157 +1,180 @@
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  ARENA_COLS,
-  ARENA_ROWS,
-  TOWERS,
-  isBridgeTile,
-  isRiverTile,
-  type TowerSlot,
-} from './arena'
+import { Arena } from './Arena'
+import { BattleCard } from './BattleCard'
+import { getCharacter } from './characters'
+import { loadDeck } from './storage'
 
 type Props = {
   onExit: () => void
+  opponentName?: string | null
 }
 
-function towerLabel(t: TowerSlot): string {
-  if (t.kind === 'king') return 'King'
-  return t.col < ARENA_COLS / 2 ? 'Left' : 'Right'
-}
+const MAX_ELIXIR = 10
+const ELIXIR_TICK_MS = 900
 
-function ArenaTower({ tower }: { tower: TowerSlot }) {
-  const isKing = tower.kind === 'king'
-  const fill = tower.side === 'ally' ? 'var(--color-tower-ally)' : 'var(--color-tower-enemy)'
-  const left = `${(tower.col / ARENA_COLS) * 100}%`
-  const top = `${(tower.row / ARENA_ROWS) * 100}%`
-  const width = `${(tower.w / ARENA_COLS) * 100}%`
-  const height = `${(tower.h / ARENA_ROWS) * 100}%`
+export function BattleScreen({ onExit, opponentName }: Props) {
+  const deckIds = useMemo(() => loadDeck(), [])
+  const [drawPile, setDrawPile] = useState(() => [...deckIds].sort(() => Math.random() - 0.5))
+  const [hand, setHand] = useState<string[]>([])
+  const [nextId, setNextId] = useState<string | null>(null)
+  const [elixir, setElixir] = useState(5)
+  const [seconds, setSeconds] = useState(180)
+
+  useEffect(() => {
+    const pile = [...deckIds].sort(() => Math.random() - 0.5)
+    setHand(pile.slice(0, 4))
+    setNextId(pile[4] ?? null)
+    setDrawPile(pile.slice(5))
+  }, [deckIds])
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setElixir((e) => Math.min(MAX_ELIXIR, e + 1))
+    }, ELIXIR_TICK_MS)
+    return () => window.clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSeconds((s) => Math.max(0, s - 1))
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  function playCard(index: number) {
+    const id = hand[index]
+    if (!id) return
+    const card = getCharacter(id)
+    if (!card || elixir < card.elixir) return
+
+    setElixir((e) => e - card.elixir)
+    const incoming = nextId
+    const pile = [...drawPile]
+    const newNext = pile.shift() ?? null
+    if (incoming) pile.push(id)
+    else pile.push(id)
+
+    setHand((h) => {
+      const copy = [...h]
+      copy[index] = incoming ?? id
+      return copy
+    })
+    setNextId(newNext ?? (pile.length ? pile.shift()! : id))
+    setDrawPile(pile)
+  }
+
+  const mm = String(Math.floor(seconds / 60))
+  const ss = String(seconds % 60).padStart(2, '0')
+  const elixirDisplay = Math.floor(elixir)
 
   return (
-    <motion.div
-      initial={{ scale: 0.6, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 18, delay: isKing ? 0.15 : 0.05 }}
-      className="absolute flex flex-col items-center justify-end"
-      style={{ left, top, width, height }}
-      title={`${tower.side} ${towerLabel(tower)} tower`}
-    >
-      <div
-        className="relative flex h-full w-full flex-col items-center justify-end"
-        style={{ filter: 'drop-shadow(0 3px 4px #00000066)' }}
-      >
-        {isKing ? (
-          <div
-            className="mb-[2%] flex h-[22%] w-[55%] items-center justify-center rounded-sm"
-            style={{ background: 'var(--color-gold)' }}
-            aria-hidden
-          >
-            <span className="text-[clamp(0.45rem,1.8vw,0.7rem)] leading-none text-[#122018]">★</span>
-          </div>
-        ) : null}
-        <div
-          className="flex h-[70%] w-[88%] flex-col items-center justify-center rounded-sm border-2 border-black/25"
-          style={{ background: fill }}
-        >
-          <span className="px-0.5 text-center font-[family-name:var(--font-display)] text-[clamp(0.4rem,1.6vw,0.65rem)] leading-tight text-white/95">
-            {towerLabel(tower)}
-          </span>
-        </div>
-        <div
-          className="h-[12%] w-full rounded-sm"
-          style={{ background: 'var(--color-bridge)' }}
-          aria-hidden
-        />
-      </div>
-    </motion.div>
-  )
-}
-
-export function BattleScreen({ onExit }: Props) {
-  const tiles = Array.from({ length: ARENA_ROWS * ARENA_COLS }, (_, i) => {
-    const row = Math.floor(i / ARENA_COLS)
-    const col = i % ARENA_COLS
-    return { row, col, i }
-  })
-
-  return (
-    <div className="flex h-full min-h-0 flex-col bg-[var(--color-hud)]">
-      <header className="flex shrink-0 items-center justify-between gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+    <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
+      {/* Top HUD */}
+      <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-2 pb-1 pt-[max(0.35rem,env(safe-area-inset-top))]">
         <button
           type="button"
           onClick={onExit}
-          className="rounded-lg bg-[#1f3328] px-3 py-2 text-sm font-bold text-[#d8e7dc] ring-1 ring-white/10"
+          className="rounded-md bg-[#3a2418] px-2.5 py-1.5 text-xs font-extrabold text-[#f5d76e] ring-1 ring-[#c9a227]/50"
         >
-          ← Home
+          Exit
         </button>
-        <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-[var(--color-gold)]">
-          Phil Royale
-        </p>
-        <div className="min-w-[4.5rem] text-right text-xs font-bold uppercase tracking-wide text-[#8aa894]">
-          Empty arena
+        <div className="flex flex-col items-center">
+          <div
+            className="rounded-md px-3 py-0.5 font-[family-name:var(--font-display)] text-lg tracking-wide text-[#f5d76e]"
+            style={{
+              background: 'linear-gradient(180deg,#5a3a22,#2a1810)',
+              boxShadow: 'inset 0 1px 0 #c9a22766, 0 2px 4px #00000066',
+            }}
+          >
+            {mm}:{ss}
+          </div>
+          <p className="text-[0.65rem] font-bold text-white/70">
+            vs {opponentName ?? 'Trainer'}
+          </p>
+        </div>
+        <div className="min-w-[3.2rem] text-right text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/80">
+          Crowns 0
         </div>
       </header>
 
-      <div className="relative mx-auto flex min-h-0 w-full max-w-[28rem] flex-1 items-center justify-center px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      {/* Arena */}
+      <div className="relative mx-auto min-h-0 w-full max-w-[26rem] flex-1 px-1.5">
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.35 }}
-          className="relative aspect-[18/32] h-auto max-h-full w-full overflow-hidden rounded-lg ring-2 ring-[#e8c547]/35"
-          style={{
-            background: 'var(--color-grass)',
-            boxShadow: '0 0 0 4px #122018, 0 18px 40px #00000088',
-          }}
-          role="img"
-          aria-label="Battle arena with eighteen by thirty-two tiles, a river with two bridges, and three towers on each side"
+          className="h-full overflow-hidden rounded-[10px]"
+          style={{ boxShadow: '0 10px 28px #00000099' }}
         >
-          <div
-            className="absolute inset-0 grid"
-            style={{
-              gridTemplateColumns: `repeat(${ARENA_COLS}, 1fr)`,
-              gridTemplateRows: `repeat(${ARENA_ROWS}, 1fr)`,
-            }}
-          >
-            {tiles.map(({ row, col, i }) => {
-              const river = isRiverTile(row, col)
-              const bridge = isBridgeTile(row, col)
-              const checker = (row + col) % 2 === 0
-              let bg = checker ? 'var(--color-grass-lit)' : 'var(--color-lane)'
-              if (river) bg = checker ? 'var(--color-river)' : 'var(--color-river-deep)'
-              if (bridge) bg = checker ? 'var(--color-bridge-plank)' : 'var(--color-bridge)'
-              return (
-                <div
-                  key={i}
-                  className="border-[0.5px] border-black/10"
-                  style={{ background: bg }}
-                />
-              )
-            })}
-          </div>
-
-          {TOWERS.map((t) => (
-            <ArenaTower key={t.id} tower={t} />
-          ))}
-
-          <div className="pointer-events-none absolute inset-x-0 top-[48%] flex justify-center">
-            <span className="rounded bg-black/35 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-widest text-white/80">
-              Characters soon
-            </span>
-          </div>
+          <Arena />
         </motion.div>
       </div>
 
-      <div className="mx-auto w-full max-w-[28rem] shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="grid grid-cols-4 gap-2">
-          {Array.from({ length: 4 }, (_, i) => (
+      {/* Bottom battle bar — next card + hand + elixir (CR layout) */}
+      <div className="relative z-10 mx-auto w-full max-w-[26rem] shrink-0 px-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1">
+        <div
+          className="rounded-t-lg px-2 pb-2 pt-2"
+          style={{
+            background: 'linear-gradient(180deg,#5a3a22 0%,#2e1a10 55%,#1a100c 100%)',
+            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -4px 16px #00000066',
+          }}
+        >
+          <div className="flex items-end gap-1.5">
+            {/* Next card (left peek) */}
+            <div className="flex w-12 shrink-0 flex-col items-center gap-0.5">
+              <span className="text-[0.55rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
+                Next
+              </span>
+              <div className="opacity-90">
+                <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
+              </div>
+            </div>
+
+            {/* Hand of 4 */}
+            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
+              {hand.map((id, i) => {
+                const c = getCharacter(id) ?? null
+                const cantAfford = c != null && elixir < c.elixir
+                return (
+                  <button
+                    key={`${id}-${i}`}
+                    type="button"
+                    onClick={() => playCard(i)}
+                    className="min-w-0 transition-transform active:scale-95"
+                    aria-label={c ? `Play ${c.name}` : `Card ${i + 1}`}
+                  >
+                    <BattleCard character={c} dimmed={cantAfford} />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Elixir bar */}
+          <div className="mt-2 flex items-center gap-2">
             <div
-              key={i}
-              className="aspect-[3/4] rounded-lg border-2 border-dashed border-[#e8c547]/35 bg-[#1a2e24]"
-              aria-label={`Empty card slot ${i + 1}`}
-            />
-          ))}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-extrabold text-white"
+              style={{
+                background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
+                boxShadow: '0 0 0 2px #5a1848, 0 2px 4px #00000088',
+              }}
+              aria-label={`${elixirDisplay} elixir`}
+            >
+              {elixirDisplay}
+            </div>
+            <div className="relative h-4 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-2 ring-[#5a1848]">
+              <div
+                className="elixir-bar-fill absolute inset-y-0 left-0"
+                style={{ width: `${(elixir / MAX_ELIXIR) * 100}%` }}
+              />
+              <div className="absolute inset-0 flex">
+                {Array.from({ length: MAX_ELIXIR }, (_, i) => (
+                  <div key={i} className="h-full flex-1 border-r border-black/35 last:border-0" />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="mt-2 text-center text-xs font-semibold text-[#8aa894]">
-          Card hand placeholder — no characters yet
-        </p>
       </div>
     </div>
   )
