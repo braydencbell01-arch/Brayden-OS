@@ -15,8 +15,10 @@ import {
   conditionLabel,
   formatPrice,
   inferClub,
+  isWomenListing,
   isYouthListing,
   kitType,
+  listingBuyUrl,
   listingImages,
   listingSize,
   saleCompareAtPrice,
@@ -25,7 +27,11 @@ import {
   type Listing,
 } from './listings'
 import { RewardsSectionJoin } from './RewardsJoinForm'
-import { resolveSizeChart } from './sizeCharts'
+import {
+  matchSizeOption,
+  resolveSizeChart,
+  sizesForAudience,
+} from './sizeCharts'
 import { SiteFooter } from './SiteFooter'
 
 const FALLBACK_IMAGE = `${import.meta.env.BASE_URL || './'}product-home.jpg`.replace(
@@ -307,17 +313,37 @@ function relatedListings(item: Listing, all: Listing[], count = 4) {
   return [...picked, ...filler].slice(0, count)
 }
 
+function PaymentLogo({
+  label,
+  children,
+}: {
+  label: string
+  children: ReactNode
+}) {
+  return (
+    <span
+      className="inline-flex h-8 items-center justify-center rounded-sm border border-navy/10 bg-white px-2"
+      title={label}
+      aria-label={label}
+    >
+      {children}
+    </span>
+  )
+}
+
 /** Full-page GoalKick-style item profile. */
 export function ItemProfileScreen({
   item,
   listings,
   onAddToCart,
+  onBuyNow,
   onShopInventory,
   onShopYouth,
 }: {
   item: Listing
   listings: Listing[]
   onAddToCart: (item: Listing) => void
+  onBuyNow?: (item: Listing) => void
   onShopInventory: () => void
   onShopYouth?: () => void
 }) {
@@ -333,6 +359,20 @@ export function ItemProfileScreen({
   const club = inferClub(item.title)
   const kit = kitType(item)
   const youth = isYouthListing(item)
+  const women = isWomenListing(item)
+  const sizeOptions = useMemo(
+    () => sizesForAudience({ youth, women }),
+    [youth, women],
+  )
+  const availableSize = useMemo(
+    () => matchSizeOption(size, sizeOptions) || (size && size !== 'Other' ? size : null),
+    [size, sizeOptions],
+  )
+  const buyUrl = listingBuyUrl(item)
+  const colorLabelStyle =
+    color.name === 'White' || color.hex.toLowerCase() === '#f5f5f5'
+      ? { color: '#0b223f' }
+      : { color: color.hex }
   const reviews = useMemo(() => reviewsForListing(item.id, 5), [item.id])
   const related = useMemo(() => relatedListings(item, listings, 4), [item, listings])
 
@@ -455,7 +495,8 @@ export function ItemProfileScreen({
 
           <div className="mt-6">
             <p className="font-display text-sm font-bold uppercase tracking-wide text-navy">
-              Color: {color.name}
+              Color:{' '}
+              <span style={colorLabelStyle}>{color.name}</span>
             </p>
             <span
               className="mt-2 inline-block h-9 w-9 rounded-full border border-navy/20 shadow-inner"
@@ -467,10 +508,34 @@ export function ItemProfileScreen({
 
           <div className="mt-6">
             <p className="font-display text-sm font-bold uppercase tracking-wide text-navy">Size:</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="inline-flex min-w-[2.75rem] items-center justify-center bg-navy px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.12em] text-cream">
-                {size && size !== 'Other' ? size : 'One size'}
-              </span>
+            <div className="mt-2 flex flex-wrap gap-2" role="list" aria-label="Available sizes">
+              {sizeOptions.map((opt) => {
+                const selected =
+                  availableSize != null &&
+                  (opt === availableSize || opt.toLowerCase() === availableSize.toLowerCase())
+                if (selected) {
+                  return (
+                    <span
+                      key={opt}
+                      role="listitem"
+                      className="inline-flex min-w-[2.75rem] items-center justify-center bg-navy px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.12em] text-cream"
+                    >
+                      {opt}
+                    </span>
+                  )
+                }
+                return (
+                  <span
+                    key={opt}
+                    role="listitem"
+                    aria-disabled="true"
+                    title="Not in stock for this listing"
+                    className="relative inline-flex min-w-[2.75rem] items-center justify-center overflow-hidden bg-[#eceff3] px-3 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.12em] text-navy/35 after:pointer-events-none after:absolute after:left-[-12%] after:top-1/2 after:h-px after:w-[124%] after:origin-center after:-rotate-[28deg] after:bg-navy/30"
+                  >
+                    {opt}
+                  </span>
+                )
+              })}
             </div>
             <button
               type="button"
@@ -497,6 +562,18 @@ export function ItemProfileScreen({
           >
             Add to cart +
           </button>
+          {buyUrl && onBuyNow ? (
+            <button
+              type="button"
+              onClick={() => {
+                track('product_click', { id: item.id, tag: item.tag, place: 'item_profile_buy' })
+                onBuyNow(item)
+              }}
+              className="mt-2 flex w-full items-center justify-center border-2 border-navy bg-white py-3.5 font-display text-base font-bold uppercase tracking-[0.12em] text-navy transition hover:bg-mist"
+            >
+              Buy now
+            </button>
+          ) : null}
 
           <p className="mt-5 text-sm text-navy/80">
             Estimated delivery <strong className="text-navy">{deliverLabel}</strong>. Order within{' '}
@@ -532,11 +609,73 @@ export function ItemProfileScreen({
             <p className="inline-flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-navy">
               <span aria-hidden>🔒</span> Guaranteed secure checkout
             </p>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center border border-navy/15 bg-[#006aff] px-3 py-1.5 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-white">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex h-8 items-center border border-navy/15 bg-[#006aff] px-3 font-brand text-[0.65rem] font-bold uppercase tracking-[0.12em] text-white">
                 Square
               </span>
-              <span className="text-xs text-muted">Visa · Mastercard · Apple Pay · Google Pay</span>
+              <PaymentLogo label="Visa">
+                <svg viewBox="0 0 48 16" className="h-3.5 w-10" aria-hidden>
+                  <text
+                    x="0"
+                    y="13"
+                    fill="#1A1F71"
+                    fontFamily="Arial, Helvetica, sans-serif"
+                    fontSize="14"
+                    fontWeight="700"
+                    letterSpacing="-0.5"
+                  >
+                    VISA
+                  </text>
+                </svg>
+              </PaymentLogo>
+              <PaymentLogo label="Mastercard">
+                <svg viewBox="0 0 36 22" className="h-5 w-8" aria-hidden>
+                  <circle cx="13" cy="11" r="9" fill="#EB001B" />
+                  <circle cx="23" cy="11" r="9" fill="#F79E1B" />
+                  <path
+                    d="M18 4.2a9 9 0 0 1 0 13.6 9 9 0 0 1 0-13.6z"
+                    fill="#FF5F00"
+                  />
+                </svg>
+              </PaymentLogo>
+              <PaymentLogo label="Apple Pay">
+                <svg viewBox="0 0 64 22" className="h-4 w-12" aria-hidden>
+                  <text
+                    x="0"
+                    y="16"
+                    fill="#111"
+                    fontFamily="Arial, Helvetica, sans-serif"
+                    fontSize="13"
+                    fontWeight="600"
+                  >
+                    Pay
+                  </text>
+                </svg>
+              </PaymentLogo>
+              <PaymentLogo label="Google Pay">
+                <svg viewBox="0 0 56 20" className="h-4 w-11" aria-hidden>
+                  <text
+                    x="0"
+                    y="15"
+                    fill="#4285F4"
+                    fontFamily="Arial, Helvetica, sans-serif"
+                    fontSize="12"
+                    fontWeight="700"
+                  >
+                    G
+                  </text>
+                  <text
+                    x="12"
+                    y="15"
+                    fill="#3c4043"
+                    fontFamily="Arial, Helvetica, sans-serif"
+                    fontSize="12"
+                    fontWeight="600"
+                  >
+                    Pay
+                  </text>
+                </svg>
+              </PaymentLogo>
             </div>
           </div>
 

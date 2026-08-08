@@ -7,6 +7,57 @@ export type SizeChartRow = {
   note?: string
 }
 
+/** Selectable size chips on the item profile (available + greyed-out siblings). */
+export const MEN_SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL'] as const
+export const WOMEN_SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const
+export const YOUTH_SIZE_OPTIONS = ['Youth S', 'Youth M', 'Youth L', 'Youth XL'] as const
+
+export function normalizeSizeLabel(raw: string): string {
+  let s = (raw || '').trim()
+  if (!s || /^other$/i.test(s) || /^one\s*size$/i.test(s)) return ''
+  s = s
+    .replace(/\byth\b/gi, 'Youth')
+    .replace(/\byouth\b/gi, 'Youth')
+    .replace(/\bxx-?large\b/gi, 'XXL')
+    .replace(/\bx-?large\b/gi, 'XL')
+    .replace(/\blarge\b/gi, 'L')
+    .replace(/\bmedium\b/gi, 'M')
+    .replace(/\bsmall\b/gi, 'S')
+    .replace(/\bx-?small\b/gi, 'XS')
+    .replace(/\s+/g, ' ')
+    .trim()
+  // Bare adult letter on a youth listing: "XL" → "Youth XL"
+  return s
+}
+
+export function sizeKey(raw: string): string {
+  return normalizeSizeLabel(raw).toLowerCase().replace(/\s+/g, ' ')
+}
+
+export function sizesForAudience(opts: {
+  youth?: boolean
+  women?: boolean
+}): string[] {
+  if (opts.youth) return [...YOUTH_SIZE_OPTIONS]
+  if (opts.women) return [...WOMEN_SIZE_OPTIONS]
+  return [...MEN_SIZE_OPTIONS]
+}
+
+/** Map listing size onto the audience grid label when possible. */
+export function matchSizeOption(available: string, options: string[]): string | null {
+  const key = sizeKey(available)
+  if (!key) return null
+  for (const opt of options) {
+    if (sizeKey(opt) === key) return opt
+  }
+  // Youth listing stored as bare "XL"
+  for (const opt of options) {
+    const ok = sizeKey(opt)
+    if (ok.endsWith(` ${key}`) || ok === `youth ${key}`) return opt
+  }
+  return null
+}
+
 export type SizeChart = {
   brand: string
   audience: 'Adult' | 'Youth'

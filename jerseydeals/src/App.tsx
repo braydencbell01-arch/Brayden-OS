@@ -1762,6 +1762,7 @@ export default function App() {
           item={itemProfile}
           listings={listings}
           onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
           onShopInventory={() => goInventory({ reset: true })}
           onShopYouth={() => goInventory({ audience: 'Youth', reset: true })}
         />
