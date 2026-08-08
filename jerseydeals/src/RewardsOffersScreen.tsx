@@ -54,8 +54,11 @@ export function RewardsOffersScreen({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-chalk text-navy">
-      <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4">
+    <div
+      className="fixed inset-x-0 z-[70] flex flex-col bg-chalk text-navy"
+      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+    >
+      <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-3">
         <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">
           My offers
         </p>
@@ -131,7 +134,7 @@ export function RewardsOffersScreen({
           onInventory={onShopInventory}
           onYouth={onShopYouth ?? onShopInventory}
           onBeforeNavigate={() => leaveRewardsOffers()}
-          bottomPadClass="pb-12"
+          bottomPadClass="pb-8"
         />
       </main>
     </div>

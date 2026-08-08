@@ -21,6 +21,12 @@
 }
 
 @layer base {
+  :root {
+    /* Measured by App sticky chrome; overlays sit between top + bottom bars. */
+    --jd-top-chrome: 8.5rem;
+    --jd-bottom-dock: 5.5rem;
+  }
+
   /* Contrast guardrails: dark surfaces get light text; light surfaces get dark text. */
   .bg-navy,
   .bg-navy-deep,

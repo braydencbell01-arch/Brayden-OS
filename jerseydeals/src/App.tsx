@@ -46,6 +46,7 @@ import { getClubById } from './clubCatalog'
 import {
   favoriteClubIdSet,
   goToFavoritesScreen,
+  leaveFavoritesScreen,
   useFavoriteClubIds,
   useFavoritesScreenOpen,
 } from './favorites'
@@ -64,9 +65,14 @@ import { listingViewCountsLastWeek, recordListingView } from './listingViews'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
 import { RewardsOffersScreen } from './RewardsOffersScreen'
-import { useRewardsOffersOpen, goToRewardsOffers, isRewardsMember } from './rewardsMember'
+import {
+  useRewardsOffersOpen,
+  goToRewardsOffers,
+  isRewardsMember,
+  leaveRewardsOffers,
+} from './rewardsMember'
 import { ProfileScreen } from './ProfileScreen'
-import { goToProfileScreen, useProfileScreenOpen } from './profile'
+import { goToProfileScreen, leaveProfileScreen, useProfileScreenOpen } from './profile'
 import { SiteFooter } from './SiteFooter'
 import {
   capturePurchaseReturnFromUrl,
@@ -1074,6 +1080,8 @@ export default function App() {
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const [inventoryPage, setInventoryPage] = useState(1)
   const urlHydrated = useRef(false)
+  const topChromeRef = useRef<HTMLDivElement>(null)
+  const bottomDockRef = useRef<HTMLDivElement>(null)
   const favoriteClubIds = useFavoriteClubIds()
   const favoriteSet = useMemo(() => favoriteClubIdSet(favoriteClubIds), [favoriteClubIds])
   const favoriteCount = favoriteClubIds.length
@@ -1112,7 +1120,23 @@ export default function App() {
 
   useEffect(() => {
     if (!inventoryOpen) setFiltersOpen(false)
+    else setHeaderSearchOpen(true)
   }, [inventoryOpen])
+
+  useEffect(() => {
+    const topEl = topChromeRef.current
+    const bottomEl = bottomDockRef.current
+    if (!topEl || !bottomEl) return
+    const apply = () => {
+      document.documentElement.style.setProperty('--jd-top-chrome', `${topEl.offsetHeight}px`)
+      document.documentElement.style.setProperty('--jd-bottom-dock', `${bottomEl.offsetHeight}px`)
+    }
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(topEl)
+    ro.observe(bottomEl)
+    return () => ro.disconnect()
+  }, [headerSearchOpen])
 
   useEffect(() => {
     if (!filtersOpen) return
@@ -1290,7 +1314,6 @@ export default function App() {
     () => clubsData.filter((club) => favoriteSet.has(club.id)),
     [clubsData, favoriteSet],
   )
-  const channelLabel = onSquare ? 'Square' : 'eBay'
   const recentlyViewed = useMemo(() => {
     const map = new Map(listings.map((item) => [item.id, item]))
     return recentIds.map((id) => map.get(id)).filter((item): item is Listing => Boolean(item)).slice(0, 4)
@@ -1690,7 +1713,7 @@ export default function App() {
         />
       ) : null}
 
-      <div className="fixed inset-x-0 top-0 z-50">
+      <div ref={topChromeRef} className="fixed inset-x-0 top-0 z-[90]">
       {/* Promo bar — Premier League shop CTA */}
       <button
         type="button"
@@ -1699,9 +1722,12 @@ export default function App() {
           const goEpl = () => {
             document.getElementById('epl')?.scrollIntoView({ behavior: 'smooth' })
           }
-          if (inventoryOpen) {
+          if (inventoryOpen || favoritesOpen || profileOpen || offersOpen) {
             suppressLandingScrollRestore()
             leaveInventoryPage()
+            leaveFavoritesScreen()
+            leaveProfileScreen()
+            leaveRewardsOffers()
             window.setTimeout(goEpl, 40)
             return
           }
@@ -1786,10 +1812,13 @@ export default function App() {
           <a
             href="#top"
             onClick={(e) => {
-              if (!inventoryOpen) return
+              if (!inventoryOpen && !favoritesOpen && !profileOpen && !offersOpen) return
               e.preventDefault()
               suppressLandingScrollRestore()
               leaveInventoryPage()
+              leaveFavoritesScreen()
+              leaveProfileScreen()
+              leaveRewardsOffers()
               window.setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'auto' })
               }, 40)
@@ -1973,12 +2002,19 @@ export default function App() {
               ) : null}
               <button
                 type="button"
-                aria-label={inventoryOpen ? 'Back to home' : 'Go to top of page'}
+                aria-label={
+                  inventoryOpen || favoritesOpen || profileOpen || offersOpen
+                    ? 'Back to home'
+                    : 'Go to top of page'
+                }
                 onClick={() => {
                   track('nav_home', { place: 'sticky_search' })
-                  if (inventoryOpen) {
+                  if (inventoryOpen || favoritesOpen || profileOpen || offersOpen) {
                     suppressLandingScrollRestore()
                     leaveInventoryPage()
+                    leaveFavoritesScreen()
+                    leaveProfileScreen()
+                    leaveRewardsOffers()
                     window.setTimeout(() => {
                       window.scrollTo({ top: 0, behavior: 'auto' })
                     }, 40)
@@ -2785,60 +2821,18 @@ export default function App() {
         ) : null}
 
         {inventoryOpen ? (
-          <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-white text-navy">
-            <header className="border-b border-navy/10 bg-white px-5 py-4">
-              <div className="flex items-center justify-between gap-4">
-                <p className="font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy">
-                  Full inventory
-                </p>
-                <button
-                  type="button"
-                  onClick={() => leaveInventoryPage()}
-                  className="font-brand text-xs font-bold uppercase tracking-[0.14em] text-navy transition hover:text-crimson"
-                >
-                  Back
-                </button>
-              </div>
-              <form
-                className="mt-3"
-                autoComplete="off"
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  setAppliedQuery(query.trim())
-                  document.getElementById('inventory-results')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                }}
-              >
-                <label className="block">
-                  <span className="sr-only">Search kits</span>
-                  <input
-                    type="search"
-                    value={query}
-                    autoComplete="off"
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search club, player, league…"
-                    className="w-full border border-navy/15 bg-white px-3 py-2.5 text-base text-navy outline-none placeholder:text-muted focus:ring-2 focus:ring-crimson/30"
-                  />
-                </label>
-              </form>
-            </header>
-            <div className="flex-1 overflow-y-auto pb-28">
-        {/* Full inventory — filters first, results directly below (search scrolls here). */}
-        <section id="inventory" className="cv-auto scroll-mt-4 bg-white pb-16 pt-6 md:pb-20 md:pt-8">
+          <div
+            className="fixed inset-x-0 z-[70] flex flex-col bg-white text-navy"
+            style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+            aria-label="Inventory"
+          >
+            <div className="flex-1 overflow-y-auto">
+        {/* Inventory — filters first, results directly below (search scrolls here). */}
+        <section id="inventory" className="cv-auto scroll-mt-4 bg-white pb-10 pt-4 md:pb-14 md:pt-6">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <div id="inventory-browse" className="scroll-mt-48">
-              <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-                <p className="eyebrow text-crimson">Catalog</p>
-                <div className="brand-rule mt-3" aria-hidden />
-                <h2 className="mt-4 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                  Full inventory
-                </h2>
-                <p className="mt-3 font-brand text-lg text-muted">
-                  Filter live stock, add to cart, then checkout securely on {channelLabel}.
-                </p>
-              </motion.div>
-
+            <div id="inventory-browse" className="scroll-mt-4">
               {loadState === 'ready' && listings.length > 0 && (
-                <motion.div {...fadeUp(reduce, 0.08)} className="mt-6 space-y-3">
+                <motion.div {...fadeUp(reduce, 0.08)} className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <button
                       type="button"
@@ -3643,7 +3637,7 @@ export default function App() {
         onYouth={() => goInventory({ audience: 'Youth', reset: true })}
       />
 
-      <div className="fixed inset-x-0 bottom-0 z-40">
+      <div ref={bottomDockRef} className="fixed inset-x-0 bottom-0 z-[90]">
         <FreeShippingBar
           subtotal={bagSubtotal}
           currency={cart.lines[0]?.currency || 'USD'}
@@ -3689,7 +3683,7 @@ export default function App() {
       />
 
       {cartToast ? (
-        <div className="fixed bottom-16 left-1/2 z-[56] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg md:bottom-6">
+        <div className="fixed bottom-[calc(var(--jd-bottom-dock)+0.75rem)] left-1/2 z-[95] w-[min(92vw,24rem)] -translate-x-1/2 border border-navy/10 bg-navy px-4 py-3 text-center font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream shadow-lg">
           {cartToast}
         </div>
       ) : null}

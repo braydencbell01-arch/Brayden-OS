@@ -161,8 +161,11 @@ export function ProfileScreen({
     : null
 
   return (
-    <div className="fixed inset-0 z-[70] flex min-h-dvh flex-col bg-chalk text-navy">
-      <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4">
+    <div
+      className="fixed inset-x-0 z-[70] flex flex-col bg-chalk text-navy"
+      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+    >
+      <header className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-3">
         <p className="inline-flex items-center gap-2 font-brand text-sm font-bold uppercase leading-none tracking-[0.14em] text-navy">
           <svg
             viewBox="0 0 24 24"
@@ -365,7 +368,7 @@ export function ProfileScreen({
           onInventory={onShopInventory}
           onYouth={onShopYouth ?? onShopInventory}
           onBeforeNavigate={() => leaveProfileScreen()}
-          bottomPadClass="pb-12"
+          bottomPadClass="pb-8"
         />
       </main>
     </div>
