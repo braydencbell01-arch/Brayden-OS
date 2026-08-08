@@ -817,16 +817,16 @@ function ProductLink({
           {shortTitle(item.title)}
         </button>
         <p
-          className={`mt-1 truncate text-[0.52rem] uppercase leading-none tracking-[0.06em] ${muted}`}
+          className={`mt-1 truncate text-[0.62rem] uppercase leading-snug tracking-[0.06em] sm:text-[0.68rem] ${muted}`}
         >
           {infoLine}
         </p>
-        <div className="mt-1.5 flex items-end justify-between gap-1.5">
-          <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+        <div className="mt-1 flex items-end justify-between gap-1.5">
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <button
               type="button"
               onClick={() => onAddToCart(item)}
-              className={`text-[0.45rem] font-bold uppercase tracking-[0.08em] ${accent} sm:text-[0.5rem]`}
+              className={`text-[0.6rem] font-bold uppercase tracking-[0.08em] ${accent} sm:text-[0.65rem]`}
             >
               Add to cart
             </button>
@@ -837,7 +837,7 @@ function ProductLink({
                   track('product_click', { id: item.id, tag: item.tag, place: 'buy_now' })
                   onBuyNow(item)
                 }}
-                className={`text-[0.45rem] font-semibold uppercase tracking-[0.08em] underline-offset-2 hover:underline ${muted} sm:text-[0.5rem]`}
+                className={`text-[0.6rem] font-semibold uppercase tracking-[0.08em] underline-offset-2 hover:underline ${muted} sm:text-[0.65rem]`}
               >
                 Buy now
               </button>
