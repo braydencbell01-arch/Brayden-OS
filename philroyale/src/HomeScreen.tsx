@@ -79,7 +79,7 @@ export function HomeScreen({ onPlay }: Props) {
             transition={{ delay: 0.25 }}
             className="mt-4 max-w-[18rem] text-base font-semibold leading-snug text-[#d8e7dc]/90"
           >
-            Three towers. Classic lanes. Your characters coming soon.
+            Three towers. Classic lanes. Deploy Phil — sundae throw and whip crack.
           </motion.p>
         </motion.div>
 
