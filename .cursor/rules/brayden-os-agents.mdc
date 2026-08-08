@@ -10,8 +10,9 @@ alwaysApply: true
 - **BrayStats** lives at repo root → https://braydencbell01-arch.github.io/Brayden-OS/
 - **Jersey Deals** lives in `jerseydeals/` → landing https://jerseydeals.online/ (user-facing). Square storefront → https://jerseydealsofficial.square.site/. GitHub Pages path still deploys under `/jerseydeals/` — do not give that path as the landing link.
 - **PlateQuest** lives in `platequest/` → https://braydencbell01-arch.github.io/Brayden-OS/platequest/ (own app path — never BrayStats root or Jersey Deals).
+- **Phil Royale** lives in `philroyale/` → https://braydencbell01-arch.github.io/Brayden-OS/philroyale/ (own app path — never BrayStats root, Jersey Deals, or PlateQuest).
 - Never deploy one product into another’s URL path.
-- **Signup storage stays separate** (BrayStats vs Jersey Deals vs PlateQuest localStorage / env secrets).
+- **Signup storage stays separate** (BrayStats vs Jersey Deals vs PlateQuest vs Phil Royale localStorage / env secrets).
 - **Notify inbox is shared:** every collected email/phone/lead from any site emails **shop@jerseydeals.online**.
 
 ## Roles on BrayStats
@@ -24,7 +25,7 @@ alwaysApply: true
 1. Start from latest `Brayden-OS`.
 2. Merge into `Brayden-OS` before considering work done.
 3. Do not publish a feature branch to `gh-pages` as the final step without merging first — other agents redeploying from `Brayden-OS` will overwrite it.
-4. When updating Pages, preserve the other products (Stats root vs `jerseydeals/`; PlateQuest is a separate site).
+4. When updating Pages, preserve the other products (Stats root vs `jerseydeals/`; PlateQuest and Phil Royale are separate paths).
 
 ## Ship live by default (do not wait to be asked)
 
@@ -56,6 +57,7 @@ Always give the user these links, labeled:
 - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
 - Jersey Deals: https://jerseydeals.online/
 - PlateQuest: https://braydencbell01-arch.github.io/Brayden-OS/platequest/
+- Phil Royale: https://braydencbell01-arch.github.io/Brayden-OS/philroyale/
 - Square store: https://jerseydealsofficial.square.site/
 
 See `AGENTS.md` for the full checklist.

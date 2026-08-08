@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Lilita One", "Impact", sans-serif;
+  --font-sans: "Nunito", "Segoe UI", sans-serif;
+
+  --color-grass-deep: #1a3d2e;
+  --color-grass: #2f6b49;
+  --color-grass-lit: #3f8a5c;
+  --color-lane: #4a9a68;
+  --color-river: #2a6f9e;
+  --color-river-deep: #1a4f78;
+  --color-bridge: #8b5a2b;
+  --color-bridge-plank: #a66d35;
+  --color-gold: #e8c547;
+  --color-gold-hot: #f0d56a;
+  --color-crown: #d4a017;
+  --color-tower-ally: #3d7ec4;
+  --color-tower-enemy: #c45c26;
+  --color-ink: #122018;
+  --color-cream: #f3efe4;
+  --color-hud: #0f1f18;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: var(--color-grass-deep);
+    color: var(--color-cream);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  button {
+    font: inherit;
+  }
+}

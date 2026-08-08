@@ -13,17 +13,20 @@ Prefer staying under ~10% of the context window. See `.cursor/rules/lean-token-u
 | **BrayStats** | repo root (`/`) | https://braydencbell01-arch.github.io/Brayden-OS/ |
 | **Jersey Deals** | `jerseydeals/` | https://jerseydeals.online/ |
 | **PlateQuest** | `platequest/` | https://braydencbell01-arch.github.io/Brayden-OS/platequest/ |
+| **Phil Royale** | `philroyale/` | https://braydencbell01-arch.github.io/Brayden-OS/philroyale/ |
 | **Square store** | Square Online (polished via `jerseydeals/scripts`) | https://jerseydealsofficial.square.site/ |
 
-- Do **not** publish BrayStats into `/jerseydeals/` or into PlateQuest’s Pages site.
-- Do **not** publish Jersey Deals or PlateQuest into the BrayStats Pages root.
+- Do **not** publish BrayStats into `/jerseydeals/` or into PlateQuest’s / Phil Royale’s Pages paths.
+- Do **not** publish Jersey Deals, PlateQuest, or Phil Royale into the BrayStats Pages root.
 - Do **not** publish PlateQuest into the BrayStats root or Jersey Deals paths — it lives at `/platequest/` only (optional Cloudflare mirror at platequest.pages.dev when secrets exist).
-- Keep **signup storage / env vars separate** (BrayStats ≠ Jersey Deals ≠ PlateQuest localStorage keys and collector secrets).
+- Do **not** publish Phil Royale into the BrayStats root, Jersey Deals, or PlateQuest paths — it lives at `/philroyale/` only.
+- Keep **signup storage / env vars separate** (BrayStats ≠ Jersey Deals ≠ PlateQuest ≠ Phil Royale localStorage keys and collector secrets).
 - **Notify inbox (all sites):** email every collected lead (email, phone, or other fields) to **shop@jerseydeals.online** via FormSubmit (or `NOTIFY_EMAIL` / `JERSEYDEALS_CONTACT_EMAIL`).
-- When a BrayStats / Jersey Deals / PlateQuest task finishes, report these URLs, labeled:
+- When a BrayStats / Jersey Deals / PlateQuest / Phil Royale task finishes, report these URLs, labeled:
   - BrayStats: https://braydencbell01-arch.github.io/Brayden-OS/
   - Jersey Deals: https://jerseydeals.online/ (not the `github.io/.../jerseydeals/` path)
   - PlateQuest: https://braydencbell01-arch.github.io/Brayden-OS/platequest/
+  - Phil Royale: https://braydencbell01-arch.github.io/Brayden-OS/philroyale/
   - Square store: https://jerseydealsofficial.square.site/
 
 ## BrayStats agent roles
@@ -96,7 +99,7 @@ Telling the user “PR opened” for an offer without merging is a miss.
 
 1. Prefer deploying **only after merge to `Brayden-OS`** (CI on that branch, or a deploy from that tip).
 2. If you must publish Pages manually:
-   - Update **only** the path for your product (Stats = site root, Jersey Deals = `jerseydeals/` on Brayden-OS Pages; PlateQuest = `platequest/` on Brayden-OS Pages (optional Cloudflare `platequest`)).
+   - Update **only** the path for your product (Stats = site root, Jersey Deals = `jerseydeals/` on Brayden-OS Pages; PlateQuest = `platequest/` on Brayden-OS Pages (optional Cloudflare `platequest`); Phil Royale = `philroyale/` on Brayden-OS Pages).
    - **Preserve** the other products’ folders / sites.
    - Never `force_orphan` / wipe the whole `gh-pages` branch unless you rebuild **both** apps in the same deploy.
 3. Do not force-push `gh-pages` over a teammate’s newer commit without rebuilding both products from current `Brayden-OS`.
@@ -121,14 +124,15 @@ Prefer the smallest useful response and the fewest tool calls. Short answers by 
 
 ## Cursor Cloud specific instructions
 
-Three independent Vite + React + TS apps, each its own npm project (separate `package-lock.json` + `node_modules`): **BrayStats** (repo root), **Jersey Deals** (`jerseydeals/`), and **PlateQuest** (`platequest/`). There are no npm workspaces, so install and run each directory separately. Node 22 matches CI. Dependency install is handled by the startup update script (`npm ci` in root and in `jerseydeals/`; also run `npm ci` in `platequest/` when working on it).
+Four independent Vite + React + TS apps, each its own npm project (separate `package-lock.json` + `node_modules`): **BrayStats** (repo root), **Jersey Deals** (`jerseydeals/`), **PlateQuest** (`platequest/`), and **Phil Royale** (`philroyale/`). There are no npm workspaces, so install and run each directory separately. Node 22 matches CI. Dependency install is handled by the startup update script (`npm ci` in root and in `jerseydeals/`; also run `npm ci` in `platequest/` or `philroyale/` when working on them).
 
-Standard commands live in `package.json` (`dev`, `build`, `lint`, `preview`) — run them at the repo root for BrayStats, inside `jerseydeals/` for Jersey Deals, and inside `platequest/` for PlateQuest.
+Standard commands live in `package.json` (`dev`, `build`, `lint`, `preview`) — run them at the repo root for BrayStats, inside `jerseydeals/` for Jersey Deals, inside `platequest/` for PlateQuest, and inside `philroyale/` for Phil Royale.
 
 Non-obvious caveats:
-- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). PlateQuest uses relative `./` base (live https://braydencbell01-arch.github.io/Brayden-OS/platequest/). Hitting `/` on the Stats/Jersey Vite servers returns 404 — always use their base path.
-- Run the apps on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`, `--port 5175` in `platequest/`) since both default to 5173.
+- Dev servers are served under a **base path**, not `/`. BrayStats is at `http://localhost:5173/Brayden-OS/` and Jersey Deals at `http://localhost:5174/Brayden-OS/jerseydeals/` (see the `base` option in each `vite.config.ts`). PlateQuest and Phil Royale use relative `./` base (live `/platequest/` and `/philroyale/`). Hitting `/` on the Stats/Jersey Vite servers returns 404 — always use their base path.
+- Run the apps on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`, `--port 5175` in `platequest/`, `--port 5176` in `philroyale/`) since they default to 5173.
 - PlateQuest deploys with GitHub Pages under `/platequest/` (and optionally Cloudflare Pages). Never into BrayStats root or Jersey Deals.
+- Phil Royale deploys with GitHub Pages under `/philroyale/`. Never into BrayStats root, Jersey Deals, or PlateQuest.
 - BrayStats fetches live data client-side from public ESPN/FotMob APIs (no keys/secrets). Data panels need outbound internet; the shell still renders offline but stays empty.
 - No automated test suite exists; `npm run lint` (oxlint) is the only check. `npm run build` runs `tsc -b` first, so it also type-checks.
 

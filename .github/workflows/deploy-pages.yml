@@ -59,18 +59,29 @@ jobs:
           npm ci
           npm run build
 
+      - name: Build Phil Royale (/philroyale/)
+        working-directory: philroyale
+        env:
+          PHILROYALE_BASE: ./
+        run: |
+          npm ci
+          npm run build
+
       - name: Assemble Pages site
         run: |
           # Separate products on one Pages host (never swap):
           #   BrayStats   → /
           #   Jersey Deals → /jerseydeals/
           #   PlateQuest  → /platequest/
+          #   Phil Royale → /philroyale/
           mkdir -p site
           cp -a dist/. site/
           mkdir -p site/jerseydeals
           cp -a jerseydeals/dist/. site/jerseydeals/
           mkdir -p site/platequest
           cp -a platequest/dist/. site/platequest/
+          mkdir -p site/philroyale
+          cp -a philroyale/dist/. site/philroyale/
           if ! grep -q 'BrayStats' site/index.html; then
             echo "ERROR: site/index.html is not BrayStats" >&2
             exit 1
@@ -83,9 +94,14 @@ jobs:
             echo "ERROR: site/platequest/index.html is not PlateQuest" >&2
             exit 1
           fi
+          if ! grep -q 'Phil Royale' site/philroyale/index.html; then
+            echo "ERROR: site/philroyale/index.html is not Phil Royale" >&2
+            exit 1
+          fi
           cp site/index.html site/404.html
           cp site/jerseydeals/index.html site/jerseydeals/404.html
           cp site/platequest/index.html site/platequest/404.html
+          cp site/philroyale/index.html site/philroyale/404.html
           touch site/.nojekyll
 
       # Deploy Brayden-OS Pages FIRST. Dual-queue with jerseydeals.online left this
