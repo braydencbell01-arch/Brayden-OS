@@ -4,11 +4,11 @@ import { ClashMap } from './ClashMap'
 
 export type TowerHpView = { id: string; hp: number; maxHp: number }
 
-/** ClashMap playable field inset (viewBox 360×640). */
-const PAD_X = 42 / 360
-const PAD_Y = 28 / 640
-const FIELD_W = 276 / 360
-const FIELD_H = 584 / 640
+/** ClashMap playable field inset (viewBox 360×640) — slim bleachers for a bigger arena. */
+const PAD_X = 22 / 360
+const PAD_Y = 16 / 640
+const FIELD_W = 316 / 360
+const FIELD_H = 608 / 640
 
 type Props = {
   towers?: TowerHpView[]
@@ -50,13 +50,12 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
   return (
     <div
       ref={ref}
-      className={`relative h-full w-full overflow-hidden rounded-[10px] ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
+      className={`relative h-full w-full overflow-hidden ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
       role={onArenaPointerDown ? 'application' : 'img'}
       aria-label="Clash Royale style arena"
       onPointerDown={
         onArenaPointerDown
           ? (e) => {
-              // Ignore while dragging a card onto the map (handled by BattleScreen).
               if ((e.target as HTMLElement).closest('[data-card-drag]')) return
               const tile = clientToArenaTile(e.currentTarget, e.clientX, e.clientY)
               if (!tile) return
@@ -72,26 +71,34 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         if (!th || th.hp <= 0) return null
         const style = towerStyle(t.col, t.row, t.w, t.h)
         const pct = th.maxHp > 0 ? th.hp / th.maxHp : 0
+        const enemy = t.side === 'enemy'
         return (
           <div key={t.id} className="pointer-events-none absolute z-[5]" style={style}>
-            <div className="mx-auto mt-0 h-1 w-[55%] overflow-hidden rounded-sm bg-black/50">
-              <div
-                className="h-full"
-                style={{
-                  width: `${pct * 100}%`,
-                  background:
-                    t.side === 'enemy'
-                      ? 'linear-gradient(180deg,#ff7a6a,#c63c2e)'
-                      : 'linear-gradient(180deg,#7ec8ff,#2f6fbf)',
-                }}
-              />
+            <div
+              className="absolute left-1/2 z-10 w-[160%] max-w-[4.5rem] -translate-x-1/2"
+              style={{ top: t.kind === 'king' ? '-18%' : '-28%' }}
+            >
+              <div className="relative h-[0.55rem] overflow-hidden rounded-[2px] bg-black/75 ring-1 ring-black/50">
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${pct * 100}%`,
+                    background: enemy
+                      ? 'linear-gradient(180deg,#ff8a7a,#d63c2e)'
+                      : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
+                  }}
+                />
+                <span className="absolute inset-0 flex items-center justify-center text-[0.42rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+                  {Math.round(th.hp)}
+                </span>
+              </div>
             </div>
           </div>
         )
       })}
 
       <div
-        className="pointer-events-none absolute z-[2] border-t border-dashed border-white/20 bg-gradient-to-t from-[#2f6fbf22] to-transparent"
+        className="pointer-events-none absolute z-[2] border-t border-dashed border-white/15 bg-gradient-to-t from-[#2f6fbf18] to-transparent"
         style={{
           left: `${PAD_X * 100}%`,
           width: `${FIELD_W * 100}%`,

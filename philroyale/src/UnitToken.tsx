@@ -5,30 +5,35 @@ import { getCharacter } from './characters'
 type Props = {
   charId: string
   side: 'ally' | 'enemy'
-  hpPct: number
+  hp: number
+  maxHp: number
   vfx: AttackId | null
   enraged?: boolean
 }
 
-/** 1-block troop placeholder: tiny square with initial. */
-export function UnitToken({ charId, side, hpPct, vfx, enraged }: Props) {
+/** 1-block troop with always-on CR-style HP bar + number. */
+export function UnitToken({ charId, side, hp, maxHp, vfx, enraged }: Props) {
   const def = getCharacter(charId)
   if (!def) return null
   const enemy = side === 'enemy'
   const art = enraged ? 'hsl(285 70% 42%)' : `hsl(${def.hue} 60% 42%)`
+  const pct = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0
 
   return (
     <div className="relative flex w-full flex-col items-center">
-      <div className="mb-px h-0.5 w-full overflow-hidden rounded-[1px] bg-black/55">
+      <div className="relative mb-px h-[0.45rem] w-[140%] max-w-[2.2rem] overflow-hidden rounded-[1px] bg-black/70 ring-1 ring-black/40">
         <div
           className="h-full"
           style={{
-            width: `${Math.max(0, Math.min(1, hpPct)) * 100}%`,
+            width: `${pct * 100}%`,
             background: enemy
-              ? 'linear-gradient(180deg,#ff7a6a,#c63c2e)'
-              : 'linear-gradient(180deg,#7ec8ff,#2f6fbf)',
+              ? 'linear-gradient(180deg,#ff8a7a,#d63c2e)'
+              : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
           }}
         />
+        <span className="absolute inset-0 flex items-center justify-center text-[0.38rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+          {Math.max(0, Math.round(hp))}
+        </span>
       </div>
       <motion.div
         className="flex aspect-square w-full items-center justify-center rounded-[2px] border border-[#f5d76e] font-[family-name:var(--font-display)] text-[0.45rem] leading-none text-white"

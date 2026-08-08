@@ -5,7 +5,7 @@ import { Arena, clientToArenaTile, oneTileWidthPct, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
 import { ShootDot, SlobberDot, SundaeDot, UnitToken } from './UnitToken'
 import { getCharacter } from './characters'
-import { loadDeck } from './storage'
+import { loadDeck, loadPlayerName } from './storage'
 import { useBattle } from './useBattle'
 
 type Props = {
@@ -21,6 +21,8 @@ type DragState = {
   overArena: boolean
   valid: boolean
 }
+
+const EMOTES = ['👍', '😂', '😤', '😱', '🎉', '👋']
 
 function FlyingShot({
   fromCol,
@@ -59,11 +61,14 @@ function FlyingShot({
 
 export function BattleScreen({ onExit, opponentName }: Props) {
   const deckIds = useMemo(() => loadDeck(), [])
+  const myName = useMemo(() => loadPlayerName().trim() || 'You', [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(180)
   const [drag, setDrag] = useState<DragState | null>(null)
+  const [emote, setEmote] = useState<string | null>(null)
+  const [emoteIdx, setEmoteIdx] = useState(0)
   const arenaRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<DragState | null>(null)
   const dragOriginRef = useRef<{ x: number; y: number } | null>(null)
@@ -207,7 +212,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     dragOriginRef.current = null
     setDrag(null)
 
-    // Tap without drag → select only (place with second tap on map).
     if (!movedRef.current || !dropped.overArena) {
       setSelectedCharId(dropped.charId)
       return
@@ -219,117 +223,177 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     if (ok) cycleAfterDeploy(card.id)
   }
 
+  function sendEmote() {
+    const e = EMOTES[emoteIdx % EMOTES.length]!
+    setEmoteIdx((i) => i + 1)
+    setEmote(e)
+    window.setTimeout(() => setEmote(null), 1600)
+  }
+
   const mm = String(Math.floor(seconds / 60))
   const ss = String(seconds % 60).padStart(2, '0')
   const elixirDisplay = Math.floor(elixir)
   const dragChar = drag ? getCharacter(drag.charId) : null
+  const foeName = opponentName?.trim() || 'Trainer'
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-1.5 pb-0.5 pt-[max(0.25rem,env(safe-area-inset-top))]">
-        <button
-          type="button"
-          onClick={onExit}
-          className="rounded-md bg-[#3a2418] px-2 py-1 text-[0.7rem] font-extrabold text-[#f5d76e] ring-1 ring-[#c9a227]/50"
-        >
-          Exit
-        </button>
-        <div className="flex flex-col items-center">
+    <div className="relative h-full min-h-0 overflow-hidden bg-[#1a100c]">
+      {/* Full-bleed arena — CR-sized map */}
+      <div className="absolute inset-0 bottom-[7.25rem]">
+        <Arena ref={arenaRef} towers={towers} onArenaPointerDown={onArenaPointer}>
+          <AnimatePresence>
+            {units.map((u) => (
+              <div
+                key={u.id}
+                className="absolute z-10 -translate-x-1/2 -translate-y-[85%]"
+                style={{ ...unitStyle(u.col, u.row), width: oneTileWidthPct() }}
+              >
+                <UnitToken
+                  charId={u.charId}
+                  side={u.side}
+                  hp={u.hp}
+                  maxHp={u.maxHp}
+                  vfx={u.vfx}
+                  enraged={u.enraged}
+                />
+              </div>
+            ))}
+          </AnimatePresence>
+          {projectiles.map((p) =>
+            p.kind === 'sundae' || p.kind === 'slobber' || p.kind === 'shoot' ? (
+              <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
+            ) : null,
+          )}
+          {drag && drag.overArena && dragChar ? (
+            <div
+              className="absolute z-30 -translate-x-1/2 -translate-y-[85%]"
+              style={{
+                ...unitStyle(drag.col, drag.row),
+                width: oneTileWidthPct(),
+                opacity: drag.valid ? 0.9 : 0.45,
+                filter: drag.valid ? undefined : 'grayscale(1)',
+              }}
+              aria-hidden
+            >
+              <UnitToken
+                charId={dragChar.id}
+                side="ally"
+                hp={dragChar.hp}
+                maxHp={dragChar.hp}
+                vfx={null}
+              />
+              <div
+                className="absolute inset-0 rounded-sm"
+                style={{
+                  boxShadow: drag.valid ? '0 0 0 2px #7CFF9A' : '0 0 0 2px #FF6B6B',
+                }}
+              />
+            </div>
+          ) : null}
+        </Arena>
+      </div>
+
+      {/* Top HUD — opponent left, time right (CR layout) */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-2 pt-[max(0.35rem,env(safe-area-inset-top))]">
+        <div className="pointer-events-auto flex items-start gap-1.5">
+          <button
+            type="button"
+            onClick={onExit}
+            className="rounded bg-black/45 px-1.5 py-0.5 text-[0.6rem] font-extrabold text-white/80 ring-1 ring-white/20"
+          >
+            ✕
+          </button>
           <div
-            className="rounded-md px-2.5 py-0.5 font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]"
+            className="flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1"
             style={{
-              background: 'linear-gradient(180deg,#5a3a22,#2a1810)',
-              boxShadow: 'inset 0 1px 0 #c9a22766, 0 2px 4px #00000066',
+              background: 'linear-gradient(180deg,#3a2a1cdd,#1a120cdd)',
+              boxShadow: '0 2px 6px #00000066, inset 0 1px 0 #c9a22744',
             }}
           >
-            {mm}:{ss}
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white"
+              style={{
+                background: 'linear-gradient(160deg,#ff8a7a,#c63c2e)',
+                boxShadow: '0 0 0 2px #8a2018',
+              }}
+            >
+              {foeName.slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[0.75rem] font-extrabold leading-tight text-white">
+                {foeName}
+              </p>
+              <p className="truncate text-[0.55rem] font-bold text-white/55">Opponent</p>
+              <p className="text-[0.6rem] font-extrabold text-[#f5d76e]">Trophies —</p>
+            </div>
           </div>
-          <p className="text-[0.6rem] font-bold text-white/70">
-            vs {opponentName ?? 'Trainer'}
-          </p>
         </div>
-        <div className="min-w-[2.8rem] text-right text-[0.6rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/80">
-          100×150
+
+        <div
+          className="pointer-events-none rounded-md px-2 py-1 text-right"
+          style={{
+            background: 'linear-gradient(180deg,#3a2a1cdd,#1a120cdd)',
+            boxShadow: '0 2px 6px #00000066, inset 0 1px 0 #c9a22744',
+          }}
+        >
+          <p className="text-[0.55rem] font-extrabold uppercase tracking-wide text-white/65">
+            Time left:
+          </p>
+          <p className="font-[family-name:var(--font-display)] text-lg leading-none tracking-wide text-[#f5d76e]">
+            {mm}:{ss}
+          </p>
         </div>
       </header>
 
-      <div className="relative mx-auto flex min-h-0 w-full max-w-[32rem] flex-1 items-center justify-center px-1">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="h-full max-h-full w-auto max-w-full overflow-hidden rounded-[10px]"
-          style={{
-            aspectRatio: '100 / 150',
-            boxShadow: '0 10px 28px #00000099',
-          }}
-        >
-          <Arena ref={arenaRef} towers={towers} onArenaPointerDown={onArenaPointer}>
-            <AnimatePresence>
-              {units.map((u) => (
-                <div
-                  key={u.id}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-[85%]"
-                  style={{ ...unitStyle(u.col, u.row), width: oneTileWidthPct() }}
-                >
-                  <UnitToken
-                    charId={u.charId}
-                    side={u.side}
-                    hpPct={u.maxHp > 0 ? u.hp / u.maxHp : 0}
-                    vfx={u.vfx}
-                    enraged={u.enraged}
-                  />
-                </div>
-              ))}
-            </AnimatePresence>
-            {projectiles.map((p) =>
-              p.kind === 'sundae' || p.kind === 'slobber' || p.kind === 'shoot' ? (
-                <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
-              ) : null,
-            )}
-            {drag && drag.overArena && dragChar ? (
-              <div
-                className="absolute z-30 -translate-x-1/2 -translate-y-[85%]"
-                style={{
-                  ...unitStyle(drag.col, drag.row),
-                  width: oneTileWidthPct(),
-                  opacity: drag.valid ? 0.9 : 0.45,
-                  filter: drag.valid ? undefined : 'grayscale(1)',
-                }}
-                aria-hidden
-              >
-                <UnitToken charId={dragChar.id} side="ally" hpPct={1} vfx={null} />
-                <div
-                  className="absolute inset-0 rounded-sm"
-                  style={{
-                    boxShadow: drag.valid
-                      ? '0 0 0 2px #7CFF9A'
-                      : '0 0 0 2px #FF6B6B',
-                  }}
-                />
-              </div>
-            ) : null}
-          </Arena>
-        </motion.div>
-      </div>
+      {/* Ally emote float */}
+      <AnimatePresence>
+        {emote ? (
+          <motion.div
+            key={emote + emoteIdx}
+            initial={{ opacity: 0, y: 12, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="pointer-events-none absolute bottom-36 left-4 z-30 text-4xl"
+          >
+            {emote}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      <div className="relative z-10 mx-auto w-full max-w-[32rem] shrink-0 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-0.5">
+      {/* Bottom card dock — CR layout */}
+      <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.2rem,env(safe-area-inset-bottom))]">
         <div
-          className="rounded-t-md px-1.5 pb-1.5 pt-1"
+          className="px-1.5 pb-1.5 pt-1"
           style={{
-            background: 'linear-gradient(180deg,#5a3a22 0%,#2e1a10 55%,#1a100c 100%)',
-            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -4px 16px #00000066',
+            background:
+              'linear-gradient(180deg,#6b4424 0%,#4a2e18 28%,#2e1a10 70%,#1a100c 100%)',
+            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -8px 20px #00000088',
           }}
         >
-          <div className="flex items-end gap-1">
-            <div className="flex w-9 shrink-0 flex-col items-center gap-0.5">
+          <div className="mx-auto flex max-w-[34rem] items-end gap-1.5">
+            <div className="flex w-12 shrink-0 flex-col items-center gap-0.5">
+              <button
+                type="button"
+                onClick={sendEmote}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                style={{
+                  background: 'linear-gradient(180deg,#5a8fd6,#2a4a8a)',
+                  boxShadow: '0 2px 0 #1a3060, inset 0 1px 0 #ffffff44',
+                }}
+                aria-label="Emote"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" aria-hidden>
+                  <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-4 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 5a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 7 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 12 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 17 9z" />
+                </svg>
+              </button>
               <span className="text-[0.45rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
                 Next
               </span>
-              <div className="scale-90 origin-bottom">
-                <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
-              </div>
+              <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
+              <p className="max-w-full truncate text-[0.45rem] font-bold text-white/45">{myName}</p>
             </div>
-            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1">
+
+            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
               {hand.map((id, i) => {
                 const c = getCharacter(id) ?? null
                 const cantAfford = c != null && elixir < c.elixir
@@ -354,9 +418,10 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               })}
             </div>
           </div>
-          <div className="mt-1 flex items-center gap-1.5">
+
+          <div className="mx-auto mt-1.5 flex max-w-[34rem] items-center gap-1.5 px-0.5">
             <div
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-extrabold text-white"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white"
               style={{
                 background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
                 boxShadow: '0 0 0 2px #5a1848',
@@ -364,7 +429,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             >
               {elixirDisplay}
             </div>
-            <div className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-1 ring-[#5a1848]">
+            <div className="relative h-3.5 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-1 ring-[#5a1848]">
               <div
                 className="elixir-bar-fill absolute inset-y-0 left-0"
                 style={{ width: `${(elixir / elixirMax) * 100}%` }}
@@ -374,6 +439,9 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                   <div key={i} className="h-full flex-1 border-r border-black/35 last:border-0" />
                 ))}
               </div>
+              <span className="absolute inset-0 flex items-center justify-center text-[0.55rem] font-extrabold text-white/90 drop-shadow-[0_1px_0_#000]">
+                Max: {elixirMax}
+              </span>
             </div>
           </div>
         </div>

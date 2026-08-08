@@ -23,6 +23,22 @@ export type AttackDef = {
   kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot'
 }
 
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
+
+export const RARITY_RANK: Record<Rarity, number> = {
+  common: 0,
+  rare: 1,
+  epic: 2,
+  legendary: 3,
+}
+
+export const RARITY_LABEL: Record<Rarity, string> = {
+  common: 'Common',
+  rare: 'Rare',
+  epic: 'Epic',
+  legendary: 'Legendary',
+}
+
 export type CharacterDef = {
   id: string
   name: string
@@ -30,6 +46,7 @@ export type CharacterDef = {
   initial: string
   /** Pronoun shown on card profile, e.g. he / she / they. */
   pronoun: string
+  rarity: Rarity
   elixir: number
   hp: number
   /** Blocks per second. */
@@ -51,6 +68,7 @@ export const PHIL: CharacterDef = {
   name: 'Phil',
   initial: 'P',
   pronoun: 'he',
+  rarity: 'legendary',
   elixir: 4,
   hp: 500,
   moveSpeed: 8,
@@ -82,6 +100,7 @@ export const PETE: CharacterDef = {
   name: 'Pete',
   initial: 'Pe',
   pronoun: 'he',
+  rarity: 'epic',
   elixir: 7,
   hp: 1000,
   moveSpeed: 3,
@@ -106,6 +125,7 @@ export const BEANS: CharacterDef = {
   name: 'Beans',
   initial: 'B',
   pronoun: 'he',
+  rarity: 'common',
   elixir: 2,
   hp: 150,
   moveSpeed: 15,
@@ -129,6 +149,7 @@ export const FINLEY: CharacterDef = {
   name: 'Finley',
   initial: 'F',
   pronoun: 'he',
+  rarity: 'common',
   elixir: 3,
   hp: 150,
   moveSpeed: 15,
@@ -150,14 +171,14 @@ export const FINLEY: CharacterDef = {
   ],
 }
 
-/** HP not specified by design brief — 400 as a mid-cost placeholder. */
 export const JEREMY: CharacterDef = {
   id: 'jeremy',
   name: 'Jeremy',
   initial: 'J',
   pronoun: 'he',
+  rarity: 'rare',
   elixir: 5,
-  hp: 400,
+  hp: 500,
   moveSpeed: 10,
   attackDelaySec: 2.5,
   hue: 95,

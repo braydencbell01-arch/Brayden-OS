@@ -3,6 +3,7 @@ import {
   ARENA_COLS,
   ARENA_ROWS,
   TOWERS,
+  bridgeSteerDir,
   closestPointOnTower,
   distToTowerEdge,
   isInsideTower,
@@ -271,16 +272,20 @@ export function useBattle() {
         const rooted = t < u.rootedUntil
         const damage = attack.damage * dmgMult
 
-        // No target in play — push forward; never attack empty air.
+        // No target in play — push forward via bridges; never attack empty air.
         if (!best) {
           if (!rooted) {
             const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
-            const next = stepUnit(u, 0, dir * step, liveIds)
+            const goalRow = dir < 0 ? 0 : ARENA_ROWS - 1
+            const steer = bridgeSteerDir(u.col, u.row, u.col, goalRow)
+            const dCol = steer ? steer.dCol * step : 0
+            const dRow = steer ? steer.dRow * step : dir * step
+            const next = stepUnit(u, dCol, dRow, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
-            u.facing = dir < 0 ? -Math.PI / 2 : Math.PI / 2
+            u.facing = Math.atan2(dRow || dir, dCol)
             unitsChanged = true
           }
           continue
@@ -293,10 +298,17 @@ export function useBattle() {
         }
 
         // Out of this attack's range — move closer (stop outside tower area).
+        // Never path into water: steer to bridges when the target is across the river.
         if (best.d > attack.range) {
           if (!rooted) {
             const step = moveSpeed * dt
-            const next = stepUnit(u, Math.cos(u.facing) * step, Math.sin(u.facing) * step, liveIds)
+            const steer = bridgeSteerDir(u.col, u.row, best.col, best.row)
+            const dCol = steer ? steer.dCol * step : Math.cos(u.facing) * step
+            const dRow = steer ? steer.dRow * step : Math.sin(u.facing) * step
+            if (steer) {
+              u.facing = Math.atan2(steer.dRow, steer.dCol)
+            }
+            const next = stepUnit(u, dCol, dRow, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row

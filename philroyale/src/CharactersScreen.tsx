@@ -1,19 +1,47 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   CHARACTERS,
   DECK_SIZE,
+  RARITY_LABEL,
+  RARITY_RANK,
   getCharacter,
   type CharacterDef,
+  type Rarity,
 } from './characters'
 import { loadDeck, saveDeck } from './storage'
 import { BattleCard } from './BattleCard'
+
+type SortMode = 'name' | 'rarity' | 'elixir'
+
+const RARITY_PILL: Record<Rarity, string> = {
+  common: '#b8c0cc',
+  rare: '#e67e22',
+  epic: '#b14fd6',
+  legendary: '#f5d76e',
+}
 
 export function CharactersScreen() {
   const [deck, setDeck] = useState<string[]>(() => loadDeck())
   const [profileId, setProfileId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [sortMode, setSortMode] = useState<SortMode>('rarity')
 
   const profile = profileId ? getCharacter(profileId) : null
+
+  const sorted = useMemo(() => {
+    const list = [...CHARACTERS]
+    if (sortMode === 'name') {
+      list.sort((a, b) => a.name.localeCompare(b.name))
+    } else if (sortMode === 'elixir') {
+      list.sort((a, b) => a.elixir - b.elixir || a.name.localeCompare(b.name))
+    } else {
+      list.sort(
+        (a, b) =>
+          RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity] || a.name.localeCompare(b.name),
+      )
+    }
+    return list
+  }, [sortMode])
 
   function flash(msg: string) {
     setToast(msg)
@@ -44,7 +72,13 @@ export function CharactersScreen() {
   }
 
   if (profile) {
-    return <CardProfile character={profile} onBack={() => setProfileId(null)} onAdd={() => addToDeck(profile.id)} />
+    return (
+      <CardProfile
+        character={profile}
+        onBack={() => setProfileId(null)}
+        onAdd={() => addToDeck(profile.id)}
+      />
+    )
   }
 
   return (
@@ -98,11 +132,25 @@ export function CharactersScreen() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-3">
-        <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-          Collection
-        </p>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+            Collection
+          </p>
+          <label className="flex items-center gap-1 text-[0.65rem] font-bold text-white/70">
+            Sort
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+              className="rounded bg-[#221610] px-1.5 py-0.5 text-[0.65rem] font-extrabold text-white outline-none ring-1 ring-white/15"
+            >
+              <option value="rarity">Rarity</option>
+              <option value="elixir">Elixir</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
+        </div>
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {CHARACTERS.map((c) => (
+          {sorted.map((c) => (
             <li key={c.id}>
               <button
                 type="button"
@@ -113,6 +161,12 @@ export function CharactersScreen() {
                 <BattleCard character={c} size="collection" />
                 <p className="mt-1 truncate text-center text-[0.7rem] font-extrabold text-white">
                   {c.name}
+                </p>
+                <p
+                  className="text-center text-[0.55rem] font-extrabold uppercase tracking-wide"
+                  style={{ color: RARITY_PILL[c.rarity] }}
+                >
+                  {RARITY_LABEL[c.rarity]}
                 </p>
               </button>
             </li>
@@ -169,10 +223,17 @@ function CardProfile({
           <h2 className="mt-3 text-center font-[family-name:var(--font-display)] text-3xl text-[#f5d76e]">
             {character.name}
           </h2>
+          <p
+            className="mt-1 text-center text-sm font-extrabold uppercase tracking-wide"
+            style={{ color: RARITY_PILL[character.rarity] }}
+          >
+            {RARITY_LABEL[character.rarity]}
+          </p>
           <p className="mt-1 text-center text-sm font-semibold text-white/80">{character.blurb}</p>
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <Stat label="Pronoun" value={character.pronoun} />
+            <Stat label="Rarity" value={RARITY_LABEL[character.rarity]} />
             <Stat label="Elixir" value={String(character.elixir)} />
             <Stat label="Health" value={String(character.hp)} />
             <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />

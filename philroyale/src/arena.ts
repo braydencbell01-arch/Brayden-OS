@@ -101,3 +101,42 @@ export function nearestBridgeMidCol(col: number): number {
   }
   return bestMid
 }
+
+const RIVER_MIN = Math.min(...RIVER_ROWS)
+const RIVER_MAX = Math.max(...RIVER_ROWS)
+
+export function isOnBridgeLane(col: number): boolean {
+  return BRIDGES.some((b) => col >= b.colStart && col <= b.colEnd)
+}
+
+/** True when a unit must cross the river (not via water) to reach a target row. */
+export function needsRiverCrossing(fromRow: number, toRow: number): boolean {
+  const fromNorth = fromRow < RIVER_MIN
+  const fromSouth = fromRow > RIVER_MAX
+  const toNorth = toRow < RIVER_MIN
+  const toSouth = toRow > RIVER_MAX
+  return (fromNorth && toSouth) || (fromSouth && toNorth)
+}
+
+/**
+ * Preferred step when crossing the river: walk to a bridge lane first, never into water.
+ * Returns a unit vector (or null if no special steering needed).
+ */
+export function bridgeSteerDir(
+  col: number,
+  row: number,
+  _targetCol: number,
+  targetRow: number,
+): { dCol: number; dRow: number } | null {
+  if (!needsRiverCrossing(row, targetRow)) return null
+  const mid = nearestBridgeMidCol(col)
+  if (!isOnBridgeLane(col)) {
+    const dx = mid - col
+    if (Math.abs(dx) > 0.15) return { dCol: Math.sign(dx), dRow: 0 }
+  }
+  // On / near bridge lane — advance vertically toward the far side, keep centered on bridge.
+  const dy = Math.sign(targetRow - row) || (row > RIVER_MAX ? -1 : 1)
+  const dx = Math.sign(mid - col) * 0.35
+  const len = Math.hypot(dx, dy) || 1
+  return { dCol: dx / len, dRow: dy / len }
+}
