@@ -9,6 +9,7 @@ import {
   restoreLandingScroll,
   suppressLandingScrollRestore,
 } from './landingScroll'
+import { leaveToPreviousScreen, pushNavFrame } from './navStack'
 
 const REWARDS_KEY = 'jerseydeals.rewardsMember.v1'
 /** Older email-capture list — treat prior rewards_club signups as members. */
@@ -121,16 +122,16 @@ export function useRewardsMember() {
 }
 
 export function goToRewardsOffers() {
+  if (typeof window === 'undefined') return
+  if (window.location.hash === OFFERS_HASH) return
   suppressLandingScrollRestore()
   rememberLandingScroll()
+  pushNavFrame()
   window.location.hash = 'offers'
 }
 
 export function leaveRewardsOffers() {
-  const { pathname, search } = window.location
-  window.history.pushState(null, '', `${pathname}${search}`)
-  window.dispatchEvent(new Event('hashchange'))
-  restoreLandingScroll()
+  leaveToPreviousScreen()
 }
 
 export function useRewardsOffersOpen() {
@@ -140,7 +141,7 @@ export function useRewardsOffersOpen() {
     const sync = () => {
       const next = window.location.hash === OFFERS_HASH
       setOpen((prev) => {
-        if (prev && !next) restoreLandingScroll()
+        if (prev && !next && !window.location.hash) restoreLandingScroll()
         return next
       })
     }

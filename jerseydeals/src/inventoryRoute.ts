@@ -4,6 +4,7 @@ import {
   restoreLandingScroll,
   suppressLandingScrollRestore,
 } from './landingScroll'
+import { leaveToPreviousScreen, pushNavFrame } from './navStack'
 
 /** Full inventory page (hash route — safe with relative Vite base). */
 export const INVENTORY_HASH = '#inventory'
@@ -16,23 +17,20 @@ export function isInventoryOpen() {
 /** Open the full inventory page. */
 export function goToInventoryPage() {
   if (typeof window === 'undefined') return
+  if (window.location.hash === INVENTORY_HASH) {
+    window.dispatchEvent(new Event(INVENTORY_ROUTE_EVENT))
+    return
+  }
   suppressLandingScrollRestore()
   rememberLandingScroll()
-  if (window.location.hash !== INVENTORY_HASH) {
-    window.location.hash = 'inventory'
-  } else {
-    window.dispatchEvent(new Event(INVENTORY_ROUTE_EVENT))
-  }
+  pushNavFrame()
+  window.location.hash = 'inventory'
   window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
 export function leaveInventoryPage() {
   if (typeof window === 'undefined') return
-  const { pathname, search } = window.location
-  window.history.pushState(null, '', `${pathname}${search}`)
-  window.dispatchEvent(new Event('hashchange'))
-  window.dispatchEvent(new Event(INVENTORY_ROUTE_EVENT))
-  restoreLandingScroll()
+  leaveToPreviousScreen()
 }
 
 export function inventoryHref() {
@@ -46,8 +44,8 @@ export function useInventoryPageOpen() {
     const sync = () => {
       const next = isInventoryOpen()
       setOpen((prev) => {
-        // Browser back / forward — restore landing spot when leaving inventory.
-        if (prev && !next) restoreLandingScroll()
+        // Browser back to landing — restore landing spot.
+        if (prev && !next && !window.location.hash) restoreLandingScroll()
         return next
       })
     }

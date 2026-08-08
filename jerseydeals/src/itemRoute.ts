@@ -8,6 +8,7 @@ import {
   restoreLandingScroll,
   suppressLandingScrollRestore,
 } from './landingScroll'
+import { leaveToPreviousScreen, pushNavFrame } from './navStack'
 
 export const ITEM_HASH_PREFIX = '#item/'
 
@@ -28,23 +29,21 @@ export function parseItemIdFromHash(hash = typeof window !== 'undefined' ? windo
 
 export function goToItemPage(id: string) {
   if (typeof window === 'undefined') return
+  const next = itemHash(id)
+  if (window.location.hash === `#${next}`) {
+    window.dispatchEvent(new Event('hashchange'))
+    return
+  }
   suppressLandingScrollRestore()
   rememberLandingScroll()
-  const next = itemHash(id)
-  if (window.location.hash !== `#${next}`) {
-    window.location.hash = next
-  } else {
-    window.dispatchEvent(new Event('hashchange'))
-  }
+  pushNavFrame()
+  window.location.hash = next
   window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
 export function leaveItemPage() {
   if (typeof window === 'undefined') return
-  const { pathname, search } = window.location
-  window.history.pushState(null, '', `${pathname}${search}`)
-  window.dispatchEvent(new Event('hashchange'))
-  restoreLandingScroll()
+  leaveToPreviousScreen()
 }
 
 export function useItemPageId() {
@@ -54,7 +53,8 @@ export function useItemPageId() {
     const sync = () => {
       const next = parseItemIdFromHash()
       setId((prev) => {
-        if (prev && !next) restoreLandingScroll()
+        // Browser back to landing only — subpage returns handle their own scroll.
+        if (prev && !next && !window.location.hash) restoreLandingScroll()
         return next
       })
     }

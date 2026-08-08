@@ -9,20 +9,21 @@ import {
   restoreLandingScroll,
   suppressLandingScrollRestore,
 } from './landingScroll'
+import { leaveToPreviousScreen, pushNavFrame } from './navStack'
 
 export const PROFILE_HASH = '#profile'
 
 export function goToProfileScreen() {
+  if (typeof window === 'undefined') return
+  if (window.location.hash === PROFILE_HASH) return
   suppressLandingScrollRestore()
   rememberLandingScroll()
+  pushNavFrame()
   window.location.hash = 'profile'
 }
 
 export function leaveProfileScreen() {
-  const { pathname, search } = window.location
-  window.history.pushState(null, '', `${pathname}${search}`)
-  window.dispatchEvent(new Event('hashchange'))
-  restoreLandingScroll()
+  leaveToPreviousScreen()
 }
 
 export function useProfileScreenOpen() {
@@ -32,7 +33,7 @@ export function useProfileScreenOpen() {
     const sync = () => {
       const next = window.location.hash === PROFILE_HASH
       setOpen((prev) => {
-        if (prev && !next) restoreLandingScroll()
+        if (prev && !next && !window.location.hash) restoreLandingScroll()
         return next
       })
     }

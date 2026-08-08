@@ -46,7 +46,6 @@ import { getClubById } from './clubCatalog'
 import {
   favoriteClubIdSet,
   goToFavoritesScreen,
-  leaveFavoritesScreen,
   useFavoriteClubIds,
   useFavoritesScreenOpen,
 } from './favorites'
@@ -57,10 +56,8 @@ import { FreeShippingBar } from './FreeShippingBar'
 import {
   goToInventoryPage,
   inventoryHref,
-  leaveInventoryPage,
   useInventoryPageOpen,
 } from './inventoryRoute'
-import { suppressLandingScrollRestore } from './landingScroll'
 import { listingViewCountsLastWeek, recordListingView } from './listingViews'
 import { RewardsDock } from './RewardsJoinForm'
 import { RewardsClub } from './RewardsClub'
@@ -69,16 +66,16 @@ import {
   useRewardsOffersOpen,
   goToRewardsOffers,
   isRewardsMember,
-  leaveRewardsOffers,
 } from './rewardsMember'
 import { ProfileScreen } from './ProfileScreen'
-import { goToProfileScreen, leaveProfileScreen, useProfileScreenOpen } from './profile'
+import { goToProfileScreen, useProfileScreenOpen } from './profile'
 import { ItemProfileScreen } from './ItemProfileScreen'
 import {
   goToItemPage,
   leaveItemPage,
   useItemPageId,
 } from './itemRoute'
+import { leaveToHome } from './navStack'
 import { SiteFooter } from './SiteFooter'
 import {
   capturePurchaseReturnFromUrl,
@@ -1780,12 +1777,7 @@ export default function App() {
             document.getElementById('epl')?.scrollIntoView({ behavior: 'smooth' })
           }
           if (inventoryOpen || favoritesOpen || profileOpen || offersOpen || itemPageId) {
-            suppressLandingScrollRestore()
-            leaveInventoryPage()
-            leaveFavoritesScreen()
-            leaveProfileScreen()
-            leaveRewardsOffers()
-            leaveItemPage()
+            leaveToHome()
             window.setTimeout(goEpl, 40)
             return
           }
@@ -1872,15 +1864,7 @@ export default function App() {
             onClick={(e) => {
               if (!inventoryOpen && !favoritesOpen && !profileOpen && !offersOpen && !itemPageId) return
               e.preventDefault()
-              suppressLandingScrollRestore()
-              leaveInventoryPage()
-              leaveFavoritesScreen()
-              leaveProfileScreen()
-              leaveRewardsOffers()
-              leaveItemPage()
-              window.setTimeout(() => {
-                window.scrollTo({ top: 0, behavior: 'auto' })
-              }, 40)
+              leaveToHome()
             }}
             className="inline-flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-crimson"
           >
@@ -2069,15 +2053,7 @@ export default function App() {
                 onClick={() => {
                   track('nav_home', { place: 'sticky_search' })
                   if (inventoryOpen || favoritesOpen || profileOpen || offersOpen || itemPageId) {
-                    suppressLandingScrollRestore()
-                    leaveInventoryPage()
-                    leaveFavoritesScreen()
-                    leaveProfileScreen()
-                    leaveRewardsOffers()
-                    leaveItemPage()
-                    window.setTimeout(() => {
-                      window.scrollTo({ top: 0, behavior: 'auto' })
-                    }, 40)
+                    leaveToHome()
                     return
                   }
                   const preferSmooth =
@@ -3816,12 +3792,7 @@ export default function App() {
                     link.href.startsWith('#')
                   ) {
                     e.preventDefault()
-                    suppressLandingScrollRestore()
-                    leaveInventoryPage()
-                    leaveFavoritesScreen()
-                    leaveProfileScreen()
-                    leaveRewardsOffers()
-                    leaveItemPage()
+                    leaveToHome()
                     window.setTimeout(() => {
                       document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
                     }, 40)

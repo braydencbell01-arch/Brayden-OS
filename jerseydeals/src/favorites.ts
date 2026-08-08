@@ -9,6 +9,7 @@ import {
   restoreLandingScroll,
   suppressLandingScrollRestore,
 } from './landingScroll'
+import { leaveToPreviousScreen, pushNavFrame } from './navStack'
 
 const STORAGE_KEY = 'jerseydeals.favoriteClubs.v1'
 export const FAVORITES_EVENT = 'jerseydeals:favorites'
@@ -92,17 +93,17 @@ export function favoriteClubIdSet(ids: string[]): Set<string> {
 }
 
 export function goToFavoritesScreen() {
+  if (typeof window === 'undefined') return
+  if (window.location.hash === FAVORITES_HASH) return
   // Switching between subpages should not jump the landing scroll under the overlay.
   suppressLandingScrollRestore()
   rememberLandingScroll()
+  pushNavFrame()
   window.location.hash = 'favorites'
 }
 
 export function leaveFavoritesScreen() {
-  const { pathname, search } = window.location
-  window.history.pushState(null, '', `${pathname}${search}`)
-  window.dispatchEvent(new Event('hashchange'))
-  restoreLandingScroll()
+  leaveToPreviousScreen()
 }
 
 export function useFavoritesScreenOpen() {
@@ -112,8 +113,8 @@ export function useFavoritesScreenOpen() {
     const sync = () => {
       const next = window.location.hash === FAVORITES_HASH
       setOpen((prev) => {
-        // Browser back / forward — restore landing spot when leaving.
-        if (prev && !next) restoreLandingScroll()
+        // Browser back to landing — restore landing spot.
+        if (prev && !next && !window.location.hash) restoreLandingScroll()
         return next
       })
     }
