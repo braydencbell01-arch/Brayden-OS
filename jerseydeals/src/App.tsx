@@ -38,7 +38,6 @@ import {
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
 import { ClubFavoriteButton, ClubLogoMark, HeartIcon } from './FavoriteControls'
-import { UCL_TEAM_COLOR } from './clubColors'
 import { getClubById } from './clubCatalog'
 import {
   favoriteClubIdSet,
@@ -118,7 +117,6 @@ import {
   pickFeatured,
   pickNewDrops,
   pickSaleItems,
-  championsLeagueClubsInStock,
   pickTrending,
   PRICE_FILTERS,
   pushRecentlyViewed,
@@ -307,177 +305,10 @@ const ease = [0.22, 1, 0.36, 1] as const
 const PL_PURPLE = '#37003c'
 const PL_PURPLE_DEEP = '#240028'
 
-/**
- * Newest home-kit art for Shop EPL / Shop UCL tiles (not inventory listing photos).
- * Paths under public/home-kits/.
- */
-const HOME_KIT_IMAGE: Record<string, string> = {
-  chelsea: 'home-kits/chelsea.jpg',
-  arsenal: 'home-kits/arsenal.jpg',
-  liverpool: 'home-kits/liverpool.jpg',
-  'manchester-city': 'home-kits/manchester-city.jpg',
-  'manchester-united': 'home-kits/manchester-united.jpg',
-  tottenham: 'home-kits/tottenham.jpg',
-  newcastle: 'home-kits/newcastle.jpg',
-  'real-madrid': 'home-kits/real-madrid.jpg',
-  barcelona: 'home-kits/barcelona.jpg',
-  'paris-saint-germain': 'home-kits/paris-saint-germain.jpg',
-  'inter-milan': 'home-kits/inter-milan.jpg',
-  'ac-milan': 'home-kits/ac-milan.jpg',
-  'borussia-dortmund': 'home-kits/borussia-dortmund.jpg',
-}
-
-/** Champions League blue for UCL tiles. */
+/** Champions League blue. */
 const UCL_BLUE = '#001E62'
-const UCL_BLUE_SOFT = '#0A2F7A'
+const UCL_BLUE_DEEP = '#010b28'
 const UCL_GOLD = '#C4A35A'
-
-function clubHomeKitSrc(clubId: string) {
-  const path = HOME_KIT_IMAGE[clubId]
-  return path ? asset(path) : null
-}
-
-/** Short club flavor for EPL / UCL stock rows. */
-const CLUB_STOCK_BLURB: Record<string, string> = {
-  chelsea: 'West London · Stamford Bridge',
-  arsenal: 'North London · Emirates Stadium',
-  liverpool: 'Merseyside · Anfield',
-  'manchester-city': 'Manchester · Etihad Stadium',
-  'manchester-united': 'Manchester · Old Trafford',
-  tottenham: 'North London · Tottenham Hotspur Stadium',
-  newcastle: 'Tyneside · St James’ Park',
-  'aston-villa': 'Birmingham · Villa Park',
-  brighton: 'South Coast · American Express Stadium',
-  'crystal-palace': 'South London · Selhurst Park',
-  'nottingham-forest': 'East Midlands · City Ground',
-  bournemouth: 'South Coast · Vitality Stadium',
-  brentford: 'West London · Gtech Community Stadium',
-  fulham: 'West London · Craven Cottage',
-  'west-ham': 'East London · London Stadium',
-  everton: 'Merseyside · Goodison Park',
-  wolves: 'Midlands · Molineux',
-  'real-madrid': 'Madrid · Santiago Bernabéu',
-  barcelona: 'Catalonia · Spotify Camp Nou',
-  bayern: 'Munich · Allianz Arena',
-  'paris-saint-germain': 'Paris · Parc des Princes',
-  'inter-milan': 'Milan · San Siro',
-  'ac-milan': 'Milan · San Siro',
-  juventus: 'Turin · Allianz Stadium',
-  'borussia-dortmund': 'Dortmund · Signal Iduna Park',
-  'atletico-madrid': 'Madrid · Metropolitano',
-  napoli: 'Naples · Diego Armando Maradona',
-  'bayer-leverkusen': 'Leverkusen · BayArena',
-  ajax: 'Amsterdam · Johan Cruijff Arena',
-  monaco: 'Principality · Stade Louis II',
-  atalanta: 'Bergamo · Gewiss Stadium',
-  lille: 'Northern France · Decathlon Arena',
-}
-
-function ClubInStockRow({
-  club,
-  leagueId,
-  place,
-  nameColor,
-  imageFallbackClass,
-  reduce,
-  delay,
-  favorited,
-  onShop,
-}: {
-  club: ClubInfo
-  leagueId: string
-  place: string
-  nameColor: string
-  imageFallbackClass: string
-  reduce: boolean | null
-  delay: number
-  favorited: boolean
-  onShop: () => void
-}) {
-  const kitSrc = clubHomeKitSrc(club.id)
-  const catalogClub = getClubById(club.id)
-  const leagueName = catalogClub?.leagueName || 'Club'
-  const blurb = CLUB_STOCK_BLURB[club.id] || `${leagueName} side`
-  const kitsLabel = `${club.count} kit${club.count === 1 ? '' : 's'} in stock`
-
-  return (
-    <motion.li {...fadeUp(reduce, delay)} className="relative">
-      <article
-        className="flex w-full overflow-hidden bg-white text-left"
-      >
-        <button
-          type="button"
-          onClick={onShop}
-          className={`relative w-[40%] shrink-0 overflow-hidden sm:w-48 md:w-56 ${imageFallbackClass} outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson`}
-          aria-label={`Shop ${club.name}`}
-        >
-          <div className="aspect-[4/5] w-full sm:aspect-square">
-            {kitSrc ? (
-              <img
-                src={kitSrc}
-                alt=""
-                className="h-full w-full object-cover object-center transition duration-500 hover:scale-[1.03]"
-                loading="lazy"
-                decoding="async"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                {catalogClub ? (
-                  <ClubLogoMark club={catalogClub} size="lg" className="!h-16 !w-16" />
-                ) : (
-                  <span className="font-display text-2xl font-bold uppercase text-white/80">
-                    {club.name.slice(0, 3)}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </button>
-
-        <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 bg-cream px-4 py-4 sm:px-5 sm:py-5">
-          <div className="pr-10">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-muted">
-              {leagueName}
-              {leagueId === 'champions-league' && catalogClub?.leagueId !== 'champions-league'
-                ? ' · Champions League'
-                : ''}
-            </p>
-            <h3
-              className="mt-1 font-display text-xl font-bold uppercase leading-tight tracking-wide sm:text-2xl"
-              style={{ color: nameColor }}
-            >
-              {club.name}
-            </h3>
-            <p className="mt-2 font-brand text-sm leading-relaxed text-navy/75">{blurb}</p>
-            <p className="mt-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
-              {kitsLabel}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={onShop}
-              className="inline-flex bg-navy px-4 py-2.5 font-brand text-xs font-bold uppercase tracking-[0.14em] text-cream transition hover:bg-navy-deep"
-            >
-              Shop {club.name}
-            </button>
-          </div>
-        </div>
-      </article>
-      <ClubFavoriteButton
-        clubId={club.id}
-        clubName={club.name}
-        favorited={favorited}
-        place={place}
-        className={`absolute right-3 top-3 z-10 h-9 w-9 border border-crimson/30 sm:right-4 sm:top-4 ${
-          favorited
-            ? 'bg-crimson text-cream'
-            : 'bg-white text-crimson hover:bg-crimson hover:text-cream'
-        }`}
-      />
-    </motion.li>
-  )
-}
 
 /** Company logos used in Shop by company (reuse collection art). */
 const COMPANY_LOGO: Record<string, string> = {
@@ -1348,7 +1179,6 @@ export default function App() {
   // Stable order — do not re-sort on favorite toggle (avoids the grid jumping).
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const leaguesData = useMemo<LeagueInfo[]>(() => leaguesInStock(listings), [listings])
-  const uclClubs = useMemo<ClubInfo[]>(() => championsLeagueClubsInStock(listings), [listings])
   const trendingPicks = useMemo(() => pickTrending(listings, 4, viewCounts), [listings, viewCounts])
   const favoriteClubs = useMemo(
     () => clubsData.filter((club) => favoriteSet.has(club.id)),
@@ -2448,89 +2278,84 @@ export default function App() {
           </section>
         )}
 
-        {/* Shop Champions League */}
+        {/* Champions League — blue promo band; shop-by-club is a separate section */}
         <section
           id="ucl"
-          className="scroll-mt-44 relative overflow-hidden border-y-[3px] md:border-y-4"
-          style={{
-            borderColor: UCL_GOLD,
-            background: `linear-gradient(160deg, ${UCL_BLUE} 0%, ${UCL_BLUE_SOFT} 42%, #020b24 100%)`,
-          }}
+          className="scroll-mt-44 relative overflow-hidden"
+          style={{ background: UCL_BLUE_DEEP }}
+          aria-labelledby="ucl-shop-heading"
         >
-          <div
-            className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-40 blur-3xl"
-            style={{ background: UCL_GOLD }}
-            aria-hidden
-          />
-          <p
-            className="absolute right-4 top-4 z-10 font-display text-2xl font-bold uppercase tracking-[0.18em] text-white drop-shadow-lg md:right-8 md:top-8 md:text-4xl"
-            style={{ color: UCL_GOLD }}
-            aria-label="UEFA Champions League"
-          >
-            UCL
-          </p>
-          <div className="relative z-10 mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
-            <motion.div {...fadeUp(reduce)} className="max-w-xl">
-              <p className="eyebrow" style={{ color: UCL_GOLD }}>
-                UEFA Champions League
-              </p>
-              <div
-                className="mt-3 h-[3px] w-16"
-                style={{ background: `linear-gradient(90deg, ${UCL_GOLD}, #fff)` }}
-                aria-hidden
-              />
-              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-white md:text-6xl">
-                Shop Champions League
+          <div className="absolute inset-0" aria-hidden>
+            <motion.img
+              src={asset('epl-tunnel.jpg')}
+              alt=""
+              initial={reduce ? false : { scale: 1.04 }}
+              whileInView={reduce ? undefined : { scale: 1 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 1.15, ease }}
+              className="h-full w-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: [
+                  `linear-gradient(105deg, ${UCL_BLUE_DEEP} 0%, ${UCL_BLUE}ee 38%, ${UCL_BLUE}99 62%, ${UCL_BLUE}55 100%)`,
+                  `linear-gradient(180deg, ${UCL_BLUE_DEEP}66 0%, transparent 28%, ${UCL_BLUE_DEEP}aa 100%)`,
+                ].join(', '),
+              }}
+            />
+          </div>
+
+          <div className="relative z-10 mx-auto flex min-h-[22rem] max-w-6xl flex-col justify-end px-5 py-14 md:min-h-[26rem] md:px-8 md:py-20">
+            <motion.div
+              initial={reduce ? false : { opacity: 0.001, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.45 }}
+              transition={{ duration: 0.75, ease }}
+              className="max-w-xl"
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={asset('ucl-badge.svg')}
+                  alt=""
+                  className="h-11 w-11 object-contain md:h-12 md:w-12"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p
+                  className="font-display text-lg font-bold uppercase tracking-[0.14em] md:text-xl"
+                  style={{ color: UCL_GOLD }}
+                >
+                  Champions League
+                </p>
+              </div>
+              <h2
+                id="ucl-shop-heading"
+                className="mt-5 font-display text-4xl font-bold uppercase leading-[0.95] tracking-wide text-white sm:text-5xl md:text-6xl"
+              >
+                Europe’s biggest stage.
+                <br />
+                Shop the kits.
               </h2>
-              <p className="mt-3 max-w-md font-brand text-base text-white/80">
-                Real kits from Europe’s biggest clubs — shop UCL sides we stock.
+              <p className="mt-4 max-w-md font-brand text-sm leading-relaxed text-white/85 md:text-base">
+                Authentic Champions League jerseys from Europe’s biggest clubs — shop what we stock.
               </p>
-              <button
+              <motion.button
                 type="button"
                 onClick={() => {
                   track('cta_click', { place: 'shop_ucl' })
                   goInventory({ reset: true, leagueId: 'champions-league' })
                 }}
-                className="mt-6 inline-flex px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110"
-                style={{ background: UCL_BLUE_SOFT, boxShadow: `0 0 0 1px ${UCL_GOLD}` }}
+                whileHover={reduce ? undefined : { scale: 1.02 }}
+                whileTap={reduce ? undefined : { scale: 0.98 }}
+                className="mt-7 inline-flex bg-white px-8 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] transition hover:bg-cream"
+                style={{ color: UCL_BLUE }}
               >
                 Shop UCL
-              </button>
+              </motion.button>
             </motion.div>
-
-            <div id="ucl-clubs" className="mt-14 scroll-mt-48">
-              <p className="eyebrow text-white/85">Clubs in stock</p>
-              {uclClubs.length > 0 ? (
-                <ul className="mt-5 flex flex-col gap-4">
-                  {uclClubs.map((club, i) => (
-                    <ClubInStockRow
-                      key={club.id}
-                      club={club}
-                      leagueId="champions-league"
-                      place="ucl_club"
-                      nameColor={UCL_TEAM_COLOR[club.id] || '#0b223f'}
-                      imageFallbackClass="bg-[#020b24] bg-gradient-to-b from-[#0a2f7a] to-[#020b24]"
-                      reduce={reduce}
-                      delay={0.04 * i}
-                      favorited={favoriteSet.has(club.id)}
-                      onShop={() => {
-                        track('category_click', { category: 'ucl_club', club: club.id })
-                        goInventory({
-                          reset: true,
-                          clubId: club.id,
-                          leagueId: 'champions-league',
-                          query: club.name,
-                        })
-                      }}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-4 font-brand text-white/90">
-                  Champions League kits will appear here when in stock.
-                </p>
-              )}
-            </div>
           </div>
         </section>
 
