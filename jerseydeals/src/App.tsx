@@ -2916,9 +2916,9 @@ export default function App() {
                       />
                       <div
                         id="inventory-filter-drawer"
-                        className="absolute inset-y-0 right-0 flex w-[min(100%,22rem)] flex-col bg-white shadow-2xl"
+                        className="absolute right-0 top-0 flex max-h-full w-[min(100%,22rem)] flex-col bg-white shadow-2xl"
                       >
-                        <div className="flex items-center justify-between border-b border-navy/10 px-5 py-4">
+                        <div className="flex shrink-0 items-center justify-between border-b border-navy/10 px-5 py-4">
                           <p className="font-brand text-base font-bold tracking-wide text-navy">
                             Shop &amp; Filter
                           </p>
@@ -2931,7 +2931,7 @@ export default function App() {
                             ×
                           </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto px-5">
+                        <div className="min-h-0 overflow-y-auto px-5">
                           <FilterAccordion
                             id="gender"
                             label="Gender"
@@ -3109,7 +3109,7 @@ export default function App() {
                             ))}
                           </FilterAccordion>
                         </div>
-                        <div className="flex gap-2 border-t border-navy/10 px-5 py-4">
+                        <div className="flex shrink-0 gap-2 border-t border-navy/10 px-5 py-4">
                           <button
                             type="button"
                             onClick={() => {
