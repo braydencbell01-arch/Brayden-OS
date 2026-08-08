@@ -1144,8 +1144,12 @@ export default function App() {
     const ro = new ResizeObserver(apply)
     ro.observe(topEl)
     ro.observe(bottomEl)
-    return () => ro.disconnect()
-  }, [headerSearchOpen])
+    window.addEventListener('resize', apply)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', apply)
+    }
+  }, [headerSearchOpen, menuOpen, inventoryOpen, itemPageId])
 
   useEffect(() => {
     if (!filtersOpen) return
@@ -2070,11 +2074,22 @@ export default function App() {
       </header>
       </div>
 
-      <main id="top" className="pb-28 md:pb-24">
+      <main
+        id="top"
+        className="pb-[calc(var(--jd-bottom-dock)+1rem)]"
+        style={{ scrollPaddingTop: 'var(--jd-top-chrome)', scrollPaddingBottom: 'var(--jd-bottom-dock)' }}
+      >
         {!inventoryOpen ? (
           <>
-        {/* Hero — exactly one screen; Collections starts on the next scroll */}
-        <section className="relative h-[100svh] max-h-[100svh] overflow-hidden bg-[#8f1218] text-white">
+        {/* Hero — one screen between sticky top chrome and bottom dock */}
+        <section
+          className="relative overflow-hidden bg-[#8f1218] text-white"
+          style={{
+            height: 'calc(100svh - var(--jd-top-chrome) - var(--jd-bottom-dock))',
+            maxHeight: 'calc(100svh - var(--jd-top-chrome) - var(--jd-bottom-dock))',
+            marginTop: 'var(--jd-top-chrome)',
+          }}
+        >
           <div className="absolute inset-0" aria-hidden>
             <motion.img
               key={heroImage}
@@ -2101,8 +2116,8 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/35 via-transparent to-[#d7282f]/16" />
           </div>
 
-          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 pb-[5.75rem] pt-40 md:px-8 md:pb-24 md:pt-44">
-            <div className="flex min-h-0 flex-1 flex-col justify-start pt-3 md:justify-center md:pt-2">
+          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 py-6 md:px-8 md:py-10">
+            <div className="flex min-h-0 flex-1 flex-col justify-start pt-2 md:justify-center md:pt-0">
               <motion.div
                 className="w-full max-w-2xl md:max-w-3xl"
                 initial={reduce ? false : { opacity: 0.001, y: 26 }}

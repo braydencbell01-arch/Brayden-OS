@@ -382,8 +382,11 @@ export function ItemProfileScreen({
   }
 
   return (
-    <div className="fixed inset-0 z-[72] flex min-h-dvh flex-col bg-white text-navy">
-      <header className="flex items-center justify-between border-b border-navy/10 bg-white px-5 py-3.5">
+    <div
+      className="fixed inset-x-0 z-[72] flex flex-col bg-white text-navy"
+      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+    >
+      <header className="flex shrink-0 items-center justify-between border-b border-navy/10 bg-white px-5 py-3.5">
         <button
           type="button"
           onClick={() => leaveItemPage()}
@@ -397,7 +400,7 @@ export function ItemProfileScreen({
         <span className="w-12" aria-hidden />
       </header>
 
-      <main className="flex-1 overflow-y-auto" aria-label={shortTitle(item.title)}>
+      <main className="min-h-0 flex-1 overflow-y-auto" aria-label={shortTitle(item.title)}>
         <ProfileGallery item={item} />
 
         <div className="mx-auto w-full max-w-lg px-5 pb-4 pt-5">
@@ -793,7 +796,7 @@ export function ItemProfileScreen({
             window.setTimeout(() => (onShopYouth ?? onShopInventory)(), 40)
           }}
           onBeforeNavigate={() => leaveItemPage()}
-          bottomPadClass="pb-28 md:pb-16"
+          bottomPadClass="pb-10"
         />
       </main>
 

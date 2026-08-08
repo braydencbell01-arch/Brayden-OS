@@ -50,6 +50,9 @@
     scroll-behavior: auto;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    /* Keep in-page anchors clear of sticky promo/header and bottom dock. */
+    scroll-padding-top: var(--jd-top-chrome);
+    scroll-padding-bottom: var(--jd-bottom-dock);
   }
 
   @media (hover: hover) and (pointer: fine) {

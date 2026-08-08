@@ -177,7 +177,8 @@ export function SiteFooter({
   onInventory,
   onYouth,
   onBeforeNavigate,
-  bottomPadClass = 'pb-36 md:pb-24',
+  /** Extra space under the footer — landing defaults clear the sticky bottom dock. */
+  bottomPadClass = 'pb-[calc(var(--jd-bottom-dock)+1.5rem)]',
 }: {
   ebayShop?: string
   ebaySeller?: string
