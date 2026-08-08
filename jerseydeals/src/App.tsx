@@ -2195,7 +2195,7 @@ export default function App() {
                 {[
                   `Free shipping over $${FREE_SHIPPING_THRESHOLD}`,
                   'Trusted Square checkout',
-                  `${EBAY_POSITIVE_FEEDBACK} eBay rating`,
+                  `${EBAY_POSITIVE_FEEDBACK} rating on eBay`,
                 ].map((label) => (
                   <li key={label} className="flex items-center gap-2.5">
                     <span
