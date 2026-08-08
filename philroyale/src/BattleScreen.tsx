@@ -106,17 +106,17 @@ export function BattleScreen({ onExit, opponentName }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-2 pb-1 pt-[max(0.35rem,env(safe-area-inset-top))]">
+      <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-1.5 pb-0.5 pt-[max(0.25rem,env(safe-area-inset-top))]">
         <button
           type="button"
           onClick={onExit}
-          className="rounded-md bg-[#3a2418] px-2.5 py-1.5 text-xs font-extrabold text-[#f5d76e] ring-1 ring-[#c9a227]/50"
+          className="rounded-md bg-[#3a2418] px-2 py-1 text-[0.7rem] font-extrabold text-[#f5d76e] ring-1 ring-[#c9a227]/50"
         >
           Exit
         </button>
         <div className="flex flex-col items-center">
           <div
-            className="rounded-md px-3 py-0.5 font-[family-name:var(--font-display)] text-lg tracking-wide text-[#f5d76e]"
+            className="rounded-md px-2.5 py-0.5 font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]"
             style={{
               background: 'linear-gradient(180deg,#5a3a22,#2a1810)',
               boxShadow: 'inset 0 1px 0 #c9a22766, 0 2px 4px #00000066',
@@ -124,21 +124,25 @@ export function BattleScreen({ onExit, opponentName }: Props) {
           >
             {mm}:{ss}
           </div>
-          <p className="text-[0.65rem] font-bold text-white/70">
+          <p className="text-[0.6rem] font-bold text-white/70">
             vs {opponentName ?? 'Trainer'}
           </p>
         </div>
-        <div className="min-w-[3.2rem] text-right text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/80">
+        <div className="min-w-[2.8rem] text-right text-[0.6rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/80">
           100×150
         </div>
       </header>
 
-      <div className="relative mx-auto min-h-0 w-full max-w-[26rem] flex-1 px-1.5">
+      {/* Map takes most of the screen; aspect 100:150 keeps tiles square */}
+      <div className="relative mx-auto flex min-h-0 w-full max-w-[32rem] flex-1 items-center justify-center px-1">
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="h-full overflow-hidden rounded-[10px]"
-          style={{ boxShadow: '0 10px 28px #00000099' }}
+          className="h-full max-h-full w-auto max-w-full overflow-hidden rounded-[10px]"
+          style={{
+            aspectRatio: '100 / 150',
+            boxShadow: '0 10px 28px #00000099',
+          }}
         >
           <Arena towers={towers} onArenaPointerDown={onArenaPointer}>
             <AnimatePresence>
@@ -164,22 +168,25 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </motion.div>
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-[26rem] shrink-0 px-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1">
+      {/* Compact card bar — smaller so the map can grow */}
+      <div className="relative z-10 mx-auto w-full max-w-[32rem] shrink-0 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-0.5">
         <div
-          className="rounded-t-lg px-2 pb-2 pt-2"
+          className="rounded-t-md px-1.5 pb-1.5 pt-1"
           style={{
             background: 'linear-gradient(180deg,#5a3a22 0%,#2e1a10 55%,#1a100c 100%)',
             boxShadow: 'inset 0 2px 0 #c9a22755, 0 -4px 16px #00000066',
           }}
         >
-          <div className="flex items-end gap-1.5">
-            <div className="flex w-12 shrink-0 flex-col items-center gap-0.5">
-              <span className="text-[0.55rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
+          <div className="flex items-end gap-1">
+            <div className="flex w-9 shrink-0 flex-col items-center gap-0.5">
+              <span className="text-[0.45rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
                 Next
               </span>
-              <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
+              <div className="scale-90 origin-bottom">
+                <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
+              </div>
             </div>
-            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
+            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1">
               {hand.map((id, i) => {
                 const c = getCharacter(id) ?? null
                 const cantAfford = c != null && elixir < c.elixir
@@ -199,17 +206,17 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               })}
             </div>
           </div>
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-1 flex items-center gap-1.5">
             <div
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-extrabold text-white"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-extrabold text-white"
               style={{
                 background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
-                boxShadow: '0 0 0 2px #5a1848, 0 2px 4px #00000088',
+                boxShadow: '0 0 0 2px #5a1848',
               }}
             >
               {elixirDisplay}
             </div>
-            <div className="relative h-4 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-2 ring-[#5a1848]">
+            <div className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-1 ring-[#5a1848]">
               <div
                 className="elixir-bar-fill absolute inset-y-0 left-0"
                 style={{ width: `${(elixir / elixirMax) * 100}%` }}
@@ -221,9 +228,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               </div>
             </div>
           </div>
-          <p className="mt-1 text-center text-[0.65rem] font-bold text-white/55">
-            Select a card, tap your half to deploy
-          </p>
         </div>
       </div>
     </div>

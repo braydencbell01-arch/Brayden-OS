@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ARENA_COLS, ARENA_ROWS, TOWERS, type Side } from './arena'
+import {
+  ARENA_COLS,
+  ARENA_ROWS,
+  TOWERS,
+  isWalkableTile,
+  nearestBridgeMidCol,
+  type Side,
+} from './arena'
 import { getCharacter, type CharacterDef } from './characters'
 import type { BattleUnit, Projectile } from './battleTypes'
 
@@ -27,6 +34,34 @@ function towerCenter(id: string): { col: number; row: number } | null {
   const t = TOWERS.find((x) => x.id === id)
   if (!t) return null
   return { col: t.col + t.w / 2, row: t.row + t.h / 2 }
+}
+
+/** Move with river collision — water blocked; cross only on bridges. */
+function stepUnit(
+  u: { col: number; row: number },
+  dCol: number,
+  dRow: number,
+): { col: number; row: number } {
+  let nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + dCol))
+  let nr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dRow))
+
+  if (isWalkableTile(nc, nr)) {
+    return { col: nc, row: nr }
+  }
+
+  // Hit river water — steer toward nearest bridge, don't enter water
+  const bridgeCol = nearestBridgeMidCol(u.col)
+  const towardBridge = Math.sign(bridgeCol - u.col) || (dCol >= 0 ? 1 : -1)
+  const sideStep = Math.max(Math.abs(dCol), Math.abs(dRow))
+  nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + towardBridge * sideStep))
+  if (isWalkableTile(nc, u.row)) {
+    return { col: nc, row: u.row }
+  }
+  // Try row-only if somehow on bridge edge
+  if (isWalkableTile(u.col, nr)) {
+    return { col: u.col, row: nr }
+  }
+  return { col: u.col, row: u.row }
 }
 
 let seq = 0
@@ -64,6 +99,7 @@ export function useBattle() {
       if (side === 'enemy' && row >= ARENA_ROWS / 2) return false
       const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, col))
       const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, row))
+      if (!isWalkableTile(clampedCol, clampedRow)) return false
       const t = performance.now()
       setElixir((e) => e - char.elixir)
       setUnits((prev) => [
@@ -174,7 +210,9 @@ export function useBattle() {
           if (!rooted) {
             const step = def.moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
-            u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dir * step))
+            const next = stepUnit(u, 0, dir * step)
+            u.col = next.col
+            u.row = next.row
             u.facing = dir < 0 ? -Math.PI / 2 : Math.PI / 2
             unitsChanged = true
           }
@@ -191,8 +229,9 @@ export function useBattle() {
         if (best.d > attack.range) {
           if (!rooted) {
             const step = def.moveSpeed * dt
-            u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col + Math.cos(u.facing) * step))
-            u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + Math.sin(u.facing) * step))
+            const next = stepUnit(u, Math.cos(u.facing) * step, Math.sin(u.facing) * step)
+            u.col = next.col
+            u.row = next.row
             unitsChanged = true
           }
           continue
