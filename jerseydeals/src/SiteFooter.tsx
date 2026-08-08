@@ -7,6 +7,8 @@ import {
   EBAY_SELLER,
   EBAY_SELLER_URL,
   EBAY_SHOP_URL,
+  FACEBOOK_PAGE_URL,
+  INSTAGRAM_URL,
   SQUARE_STORE_URL,
 } from './config'
 import { goToFavoritesScreen } from './favorites'
@@ -17,6 +19,9 @@ import {
 import { suppressLandingScrollRestore } from './landingScroll'
 import { goToProfileScreen } from './profile'
 import { goToRewardsOffers, isRewardsMember } from './rewardsMember'
+
+/** Footer social icons — bright green on the black strip. */
+const SOCIAL_GREEN = '#3DDC84'
 
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
 
@@ -57,6 +62,101 @@ function Chevron({ open }: { open: boolean }) {
         d="M5.2 7.3a.9.9 0 0 1 1.27-.05L10 10.55l3.53-3.3a.9.9 0 0 1 1.22 1.32l-4.14 3.87a.9.9 0 0 1-1.22 0L5.25 8.57a.9.9 0 0 1-.05-1.27Z"
       />
     </svg>
+  )
+}
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M14 8.2h2.2V5.1c-.4-.05-1.6-.15-3-.15-3 0-5 1.8-5 5.1V13H5.8v3.3H8.2V22h3.4v-5.7h2.7l.4-3.3h-3.1v-2.5c0-.95.26-1.6 1.6-1.6Z"
+      />
+    </svg>
+  )
+}
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M12 7.2A4.8 4.8 0 1 0 12 16.8 4.8 4.8 0 0 0 12 7.2Zm0 7.9a3.1 3.1 0 1 1 0-6.2 3.1 3.1 0 0 1 0 6.2Zm6.1-8.1a1.12 1.12 0 1 1-2.24 0 1.12 1.12 0 0 1 2.24 0ZM21 12.1c0-2.45.05-3.46-.2-4.68a4.3 4.3 0 0 0-2.45-2.45C17.12 4.7 16.1 4.7 13.65 4.7h-3.3c-2.45 0-3.46 0-4.68.25A4.3 4.3 0 0 0 3.22 7.4C2.95 8.64 3 9.65 3 12.1s-.05 3.46.22 4.68a4.3 4.3 0 0 0 2.45 2.45c1.22.25 2.23.25 4.68.25h3.3c2.45 0 3.46 0 4.68-.25a4.3 4.3 0 0 0 2.45-2.45c.25-1.22.22-2.23.22-4.68Zm-1.7 4.5a2.6 2.6 0 0 1-1.48 1.48c-.97.2-3.26.19-4.82.19s-3.85 0-4.82-.19a2.6 2.6 0 0 1-1.48-1.48c-.2-.97-.19-3.26-.19-4.82s0-3.85.19-4.82A2.6 2.6 0 0 1 8.2 5.8c.97-.2 3.26-.19 4.82-.19s3.85 0 4.82.19a2.6 2.6 0 0 1 1.48 1.48c.2.97.19 3.26.19 4.82s0 3.85-.19 4.82Z"
+      />
+    </svg>
+  )
+}
+
+function EbayIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 24" className={className} aria-hidden>
+      <text
+        x="0"
+        y="18"
+        fill="currentColor"
+        fontFamily="Arial Black, Arial, sans-serif"
+        fontSize="16"
+        fontWeight="800"
+        letterSpacing="-0.5"
+      >
+        ebay
+      </text>
+    </svg>
+  )
+}
+
+function FooterSocials({ ebaySeller }: { ebaySeller: string }) {
+  const iconClass = 'h-7 w-7'
+  const linkClass =
+    'inline-flex items-center justify-center transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3DDC84]'
+
+  return (
+    <nav
+      className="mt-8 flex items-center justify-center gap-7"
+      aria-label="Social links"
+      style={{ color: SOCIAL_GREEN }}
+    >
+      <a
+        href={FACEBOOK_PAGE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClass}
+        aria-label="Jersey Deals on Facebook"
+        onClick={() => track('outbound_click', { place: 'footer_social', channel: 'facebook' })}
+      >
+        <FacebookIcon className={iconClass} />
+      </a>
+      {INSTAGRAM_URL ? (
+        <a
+          href={INSTAGRAM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClass}
+          aria-label="Jersey Deals on Instagram"
+          onClick={() => track('outbound_click', { place: 'footer_social', channel: 'instagram' })}
+        >
+          <InstagramIcon className={iconClass} />
+        </a>
+      ) : (
+        <span
+          className="inline-flex cursor-default items-center justify-center opacity-90"
+          aria-label="Instagram coming soon"
+          title="Instagram coming soon"
+        >
+          <InstagramIcon className={iconClass} />
+        </span>
+      )}
+      <a
+        href={ebaySeller}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkClass}
+        aria-label="Jersey Deals on eBay"
+        onClick={() => track('outbound_click', { place: 'footer_social', channel: 'ebay' })}
+      >
+        <EbayIcon className="h-7 w-12" />
+      </a>
+    </nav>
   )
 }
 
@@ -305,7 +405,9 @@ export function SiteFooter({
           })}
         </ul>
 
-        <p className="mt-8 pb-6 text-center text-xs text-white/55">
+        <FooterSocials ebaySeller={ebaySeller} />
+
+        <p className="mt-6 pb-6 text-center text-xs text-white/55">
           © {new Date().getFullYear()} JerseyDeals
         </p>
       </div>

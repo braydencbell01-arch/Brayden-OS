@@ -18,6 +18,15 @@ export const EBAY_SHOP_URL = `https://www.ebay.com/sch/i.html?_ssn=${EBAY_SELLER
 
 export const EBAY_SALE_URL = `https://www.ebay.com/sch/i.html?_ssn=${EBAY_SELLER}&_udhi=25&_sop=15`
 
+/** Public Facebook Page — override with VITE_FACEBOOK_PAGE_URL if the handle changes. */
+export const FACEBOOK_PAGE_URL =
+  (import.meta.env.VITE_FACEBOOK_PAGE_URL as string | undefined)?.trim() ||
+  'https://www.facebook.com/jerseydealsofficial'
+
+/** Instagram handle/URL when the shop creates one (empty = icon shown, not linked). */
+export const INSTAGRAM_URL =
+  (import.meta.env.VITE_INSTAGRAM_URL as string | undefined)?.trim() || ''
+
 /** Detailed seller ratings shown on the storefront (from eBay). */
 export const EBAY_RATINGS = [
   { label: 'Accurate description', score: 4.6 },
