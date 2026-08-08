@@ -1,84 +1,15 @@
-import type { PointerEvent } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  ARENA_COLS,
-  ARENA_ROWS,
-  TOWERS,
-  isBridgeTile,
-  isRiverTile,
-  type TowerSlot,
-} from './arena'
-import { PHIL, getCharacter } from './characters'
+import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ARENA_COLS, ARENA_ROWS } from './arena'
+import { Arena } from './Arena'
+import { BattleCard } from './BattleCard'
+import { getCharacter } from './characters'
+import { loadDeck } from './storage'
 import { useBattle } from './useBattle'
 
 type Props = {
   onExit: () => void
-}
-
-function towerLabel(t: TowerSlot): string {
-  if (t.kind === 'king') return 'King'
-  return t.col < ARENA_COLS / 2 ? 'Left' : 'Right'
-}
-
-function ArenaTower({
-  tower,
-  hp,
-  maxHp,
-}: {
-  tower: TowerSlot
-  hp: number
-  maxHp: number
-}) {
-  const isKing = tower.kind === 'king'
-  const fill = tower.side === 'ally' ? 'var(--color-tower-ally)' : 'var(--color-tower-enemy)'
-  const left = `${(tower.col / ARENA_COLS) * 100}%`
-  const top = `${(tower.row / ARENA_ROWS) * 100}%`
-  const width = `${(tower.w / ARENA_COLS) * 100}%`
-  const height = `${(tower.h / ARENA_ROWS) * 100}%`
-  const pct = maxHp > 0 ? Math.max(0, hp / maxHp) : 0
-  if (hp <= 0) return null
-
-  return (
-    <motion.div
-      initial={{ scale: 0.6, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 18, delay: isKing ? 0.15 : 0.05 }}
-      className="absolute flex flex-col items-center justify-end"
-      style={{ left, top, width, height }}
-      title={`${tower.side} ${towerLabel(tower)} tower`}
-    >
-      <div
-        className="relative flex h-full w-full flex-col items-center justify-end"
-        style={{ filter: 'drop-shadow(0 3px 4px #00000066)' }}
-      >
-        {isKing ? (
-          <div
-            className="mb-[2%] flex h-[22%] w-[55%] items-center justify-center rounded-sm"
-            style={{ background: 'var(--color-gold)' }}
-            aria-hidden
-          >
-            <span className="text-[clamp(0.45rem,1.8vw,0.7rem)] leading-none text-[#122018]">★</span>
-          </div>
-        ) : null}
-        <div
-          className="flex h-[70%] w-[88%] flex-col items-center justify-center rounded-sm border-2 border-black/25"
-          style={{ background: fill }}
-        >
-          <span className="px-0.5 text-center font-[family-name:var(--font-display)] text-[clamp(0.4rem,1.6vw,0.65rem)] leading-tight text-white/95">
-            {towerLabel(tower)}
-          </span>
-        </div>
-        <div className="mt-0.5 h-1 w-full overflow-hidden rounded-sm bg-black/40" aria-hidden>
-          <div className="h-full bg-[#6dce7a]" style={{ width: `${pct * 100}%` }} />
-        </div>
-        <div
-          className="h-[12%] w-full rounded-sm"
-          style={{ background: 'var(--color-bridge)' }}
-          aria-hidden
-        />
-      </div>
-    </motion.div>
-  )
+  opponentName?: string | null
 }
 
 function SundaeProjectile({
@@ -108,7 +39,7 @@ function SundaeProjectile({
 
   return (
     <div
-      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2"
+      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
       style={{ left, top }}
       aria-hidden
     >
@@ -122,7 +53,12 @@ function SundaeProjectile({
   )
 }
 
-export function BattleScreen({ onExit }: Props) {
+export function BattleScreen({ onExit, opponentName }: Props) {
+  const deckIds = useMemo(() => loadDeck(), [])
+  const [drawPile, setDrawPile] = useState<string[]>([])
+  const [hand, setHand] = useState<string[]>([])
+  const [nextId, setNextId] = useState<string | null>(null)
+  const [seconds, setSeconds] = useState(180)
   const {
     elixir,
     elixirMax,
@@ -135,231 +71,219 @@ export function BattleScreen({ onExit }: Props) {
     now,
   } = useBattle()
 
-  const tiles = Array.from({ length: ARENA_ROWS * ARENA_COLS }, (_, i) => {
-    const row = Math.floor(i / ARENA_COLS)
-    const col = i % ARENA_COLS
-    return { row, col, i }
-  })
+  useEffect(() => {
+    const pile = [...deckIds].sort(() => Math.random() - 0.5)
+    const h = pile.slice(0, 4)
+    setHand(h)
+    setNextId(pile[4] ?? null)
+    setDrawPile(pile.slice(5))
+    setSelectedCharId(h[0] ?? null)
+  }, [deckIds, setSelectedCharId])
 
-  const selected = selectedCharId ? getCharacter(selectedCharId) : null
-  const canAfford = selected ? elixir >= selected.elixir : false
+  useEffect(() => {
+    const id = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
+    return () => window.clearInterval(id)
+  }, [])
 
-  const onArenaPointer = (e: PointerEvent<HTMLDivElement>) => {
-    if (!selected || !canAfford) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / rect.width
-    const y = (e.clientY - rect.top) / rect.height
-    const col = x * ARENA_COLS
-    const row = y * ARENA_ROWS
-    deploy(selected, col, row, 'ally')
+  function cycleAfterDeploy(playedId: string) {
+    const incoming = nextId
+    const pile = [...drawPile]
+    const newNext = pile.shift() ?? null
+    pile.push(playedId)
+    setHand((h) => {
+      const idx = h.indexOf(playedId)
+      if (idx < 0) return h
+      const copy = [...h]
+      copy[idx] = incoming ?? playedId
+      if (selectedCharId === playedId) setSelectedCharId(copy[idx])
+      return copy
+    })
+    setNextId(newNext)
+    setDrawPile(pile)
   }
 
-  const hand = [PHIL, null, null, null] as const
+  function onArenaPointer(col: number, row: number) {
+    if (!selectedCharId) return
+    const card = getCharacter(selectedCharId)
+    if (!card || elixir < card.elixir) return
+    const ok = deploy(card, col, row, 'ally')
+    if (ok) cycleAfterDeploy(card.id)
+  }
+
+  const mm = String(Math.floor(seconds / 60))
+  const ss = String(seconds % 60).padStart(2, '0')
+  const elixirDisplay = Math.floor(elixir)
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[var(--color-hud)]">
-      <header className="flex shrink-0 items-center justify-between gap-3 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+    <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
+      <header className="relative z-10 flex shrink-0 items-center justify-between gap-2 px-2 pb-1 pt-[max(0.35rem,env(safe-area-inset-top))]">
         <button
           type="button"
           onClick={onExit}
-          className="rounded-lg bg-[#1f3328] px-3 py-2 text-sm font-bold text-[#d8e7dc] ring-1 ring-white/10"
+          className="rounded-md bg-[#3a2418] px-2.5 py-1.5 text-xs font-extrabold text-[#f5d76e] ring-1 ring-[#c9a227]/50"
         >
-          ← Home
+          Exit
         </button>
-        <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-[var(--color-gold)]">
-          Phil Royale
-        </p>
-        <div className="min-w-[4.5rem] text-right text-xs font-bold uppercase tracking-wide text-[#8aa894]">
-          Battle
+        <div className="flex flex-col items-center">
+          <div
+            className="rounded-md px-3 py-0.5 font-[family-name:var(--font-display)] text-lg tracking-wide text-[#f5d76e]"
+            style={{
+              background: 'linear-gradient(180deg,#5a3a22,#2a1810)',
+              boxShadow: 'inset 0 1px 0 #c9a22766, 0 2px 4px #00000066',
+            }}
+          >
+            {mm}:{ss}
+          </div>
+          <p className="text-[0.65rem] font-bold text-white/70">
+            vs {opponentName ?? 'Trainer'}
+          </p>
+        </div>
+        <div className="min-w-[3.2rem] text-right text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/80">
+          Crowns 0
         </div>
       </header>
 
-      <div className="relative mx-auto flex min-h-0 w-full max-w-[28rem] flex-1 items-center justify-center px-2 pb-2">
+      <div className="relative mx-auto min-h-0 w-full max-w-[26rem] flex-1 px-1.5">
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.35 }}
-          className="relative aspect-[18/32] h-auto max-h-full w-full cursor-crosshair overflow-hidden rounded-lg ring-2 ring-[#e8c547]/35"
-          style={{
-            background: 'var(--color-grass)',
-            boxShadow: '0 0 0 4px #122018, 0 18px 40px #00000088',
-          }}
-          role="application"
-          aria-label="Battle arena — tap your half to deploy Phil"
-          onPointerDown={onArenaPointer}
+          className="h-full overflow-hidden rounded-[10px]"
+          style={{ boxShadow: '0 10px 28px #00000099' }}
         >
-          <div
-            className="absolute inset-0 grid"
-            style={{
-              gridTemplateColumns: `repeat(${ARENA_COLS}, 1fr)`,
-              gridTemplateRows: `repeat(${ARENA_ROWS}, 1fr)`,
-            }}
-          >
-            {tiles.map(({ row, col, i }) => {
-              const river = isRiverTile(row, col)
-              const bridge = isBridgeTile(row, col)
-              const checker = (row + col) % 2 === 0
-              let bg = checker ? 'var(--color-grass-lit)' : 'var(--color-lane)'
-              if (river) bg = checker ? 'var(--color-river)' : 'var(--color-river-deep)'
-              if (bridge) bg = checker ? 'var(--color-bridge-plank)' : 'var(--color-bridge)'
-              return (
-                <div
-                  key={i}
-                  className="border-[0.5px] border-black/10"
-                  style={{ background: bg }}
-                />
-              )
-            })}
-          </div>
-
-          {/* Ally deploy zone hint */}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 border-t border-dashed border-white/15 bg-gradient-to-t from-[#3d7ec422] to-transparent"
-            aria-hidden
-          />
-
-          {TOWERS.map((t) => {
-            const th = towers.find((x) => x.id === t.id)
-            return (
-              <ArenaTower
-                key={t.id}
-                tower={t}
-                hp={th?.hp ?? 0}
-                maxHp={th?.maxHp ?? 1}
-              />
-            )
-          })}
-
-          {units.map((u) => {
-            const def = getCharacter(u.charId)
-            if (!def) return null
-            const left = `${((u.col + 0.5) / ARENA_COLS) * 100}%`
-            const top = `${((u.row + 0.5) / ARENA_ROWS) * 100}%`
-            const hpPct = u.maxHp > 0 ? u.hp / u.maxHp : 0
-            return (
-              <div
-                key={u.id}
-                className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-                style={{ left, top, width: `${(1.8 / ARENA_COLS) * 100}%` }}
-              >
-                <motion.div
-                  animate={
-                    u.vfx === 'whip'
-                      ? { rotate: [0, -18, 14, -8, 0], scale: [1, 1.08, 1] }
-                      : u.vfx === 'sundae'
-                        ? { y: [0, -6, 0], scale: [1, 1.05, 1] }
-                        : { y: [0, -1.5, 0] }
-                  }
-                  transition={
-                    u.vfx
-                      ? { duration: 0.35 }
-                      : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
-                  }
-                  className="relative"
-                >
-                  <img
-                    src={def.portrait}
-                    alt={def.name}
-                    className="aspect-square w-full rounded-full object-cover object-[50%_18%] ring-2 ring-[#e8c547] shadow-lg"
-                    draggable={false}
-                  />
-                  {u.vfx === 'whip' ? (
+          <Arena towers={towers} onArenaPointerDown={onArenaPointer}>
+            <AnimatePresence>
+              {units.map((u) => {
+                const def = getCharacter(u.charId)
+                if (!def) return null
+                const left = `${((u.col + 0.5) / ARENA_COLS) * 100}%`
+                const top = `${((u.row + 0.5) / ARENA_ROWS) * 100}%`
+                const hpPct = u.maxHp > 0 ? u.hp / u.maxHp : 0
+                return (
+                  <div
+                    key={u.id}
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                    style={{ left, top, width: `${(2.1 / ARENA_COLS) * 100}%` }}
+                  >
                     <motion.div
-                      initial={{ opacity: 0.9, scale: 0.4 }}
-                      animate={{ opacity: 0, scale: 2.4 }}
-                      transition={{ duration: 0.35 }}
-                      className="pointer-events-none absolute inset-0 rounded-full border-2 border-[#f0d56a]"
-                      aria-hidden
-                    />
-                  ) : null}
-                </motion.div>
-                <div className="mx-auto mt-0.5 h-1 w-[90%] overflow-hidden rounded-sm bg-black/50">
-                  <div className="h-full bg-[#6dce7a]" style={{ width: `${hpPct * 100}%` }} />
-                </div>
-                <p className="mt-0.5 text-center font-[family-name:var(--font-display)] text-[clamp(0.45rem,2vw,0.65rem)] leading-none text-white drop-shadow">
-                  {def.name}
-                </p>
-              </div>
-            )
-          })}
-
-          {projectiles.map((p) => (
-            <SundaeProjectile key={p.id} {...p} now={now} />
-          ))}
+                      animate={
+                        u.vfx === 'whip'
+                          ? { rotate: [0, -18, 14, -8, 0], scale: [1, 1.08, 1] }
+                          : u.vfx === 'sundae'
+                            ? { y: [0, -6, 0], scale: [1, 1.05, 1] }
+                            : { y: [0, -1.5, 0] }
+                      }
+                      transition={
+                        u.vfx
+                          ? { duration: 0.35 }
+                          : { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
+                      }
+                    >
+                      <div className="mb-0.5 h-1 w-full overflow-hidden rounded-sm bg-black/50">
+                        <div
+                          className="h-full bg-[#6dce7a]"
+                          style={{ width: `${hpPct * 100}%` }}
+                        />
+                      </div>
+                      <div className="overflow-hidden rounded-md border-2 border-[#f5d76e] shadow-lg">
+                        {def.portrait ? (
+                          <img
+                            src={def.portrait}
+                            alt={def.name}
+                            className="aspect-square w-full object-cover object-top"
+                            draggable={false}
+                          />
+                        ) : (
+                          <div
+                            className="flex aspect-square items-center justify-center text-[0.55rem] font-extrabold text-white"
+                            style={{ background: `hsl(${def.hue} 55% 40%)` }}
+                          >
+                            {def.name.slice(0, 3)}
+                          </div>
+                        )}
+                      </div>
+                      {u.vfx === 'whip' ? (
+                        <div
+                          className="pointer-events-none absolute -right-2 top-1/3 h-0.5 w-5 origin-left rounded-full bg-[#f5d76e]"
+                          style={{ transform: 'rotate(-25deg)' }}
+                          aria-hidden
+                        />
+                      ) : null}
+                    </motion.div>
+                  </div>
+                )
+              })}
+            </AnimatePresence>
+            {projectiles.map((p) => (
+              <SundaeProjectile key={p.id} {...p} now={now} />
+            ))}
+          </Arena>
         </motion.div>
       </div>
 
-      {/* Elixir */}
-      <div className="mx-auto flex w-full max-w-[28rem] shrink-0 items-center gap-2 px-3 pb-1">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1f6fbf] text-sm font-black text-white shadow ring-2 ring-[#e8c547]/50">
-          {Math.floor(elixir)}
-        </div>
-        <div className="h-3 flex-1 overflow-hidden rounded-full bg-[#1a2e24] ring-1 ring-white/10">
-          <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-[#1f6fbf] to-[#5eb0ef]"
-            animate={{ width: `${(elixir / elixirMax) * 100}%` }}
-            transition={{ type: 'tween', duration: 0.12 }}
-          />
-        </div>
-        <span className="text-xs font-bold text-[#8ec4ef]">/{elixirMax}</span>
-      </div>
+      <div className="relative z-10 mx-auto w-full max-w-[26rem] shrink-0 px-1.5 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1">
+        <div
+          className="rounded-t-lg px-2 pb-2 pt-2"
+          style={{
+            background: 'linear-gradient(180deg,#5a3a22 0%,#2e1a10 55%,#1a100c 100%)',
+            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -4px 16px #00000066',
+          }}
+        >
+          <div className="flex items-end gap-1.5">
+            <div className="flex w-12 shrink-0 flex-col items-center gap-0.5">
+              <span className="text-[0.55rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
+                Next
+              </span>
+              <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
+            </div>
 
-      <div className="mx-auto w-full max-w-[28rem] shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="grid grid-cols-4 gap-2">
-          {hand.map((card, i) => {
-            if (!card) {
-              return (
-                <div
-                  key={`empty-${i}`}
-                  className="aspect-[3/4] rounded-lg border-2 border-dashed border-[#e8c547]/25 bg-[#1a2e24]"
-                  aria-label={`Empty card slot ${i + 1}`}
-                />
-              )
-            }
-            const selectedCard = selectedCharId === card.id
-            const affordable = elixir >= card.elixir
-            return (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => setSelectedCharId(card.id)}
-                className={`relative aspect-[3/4] overflow-hidden rounded-lg border-2 text-left transition ${
-                  selectedCard
-                    ? 'border-[#e8c547] shadow-[0_0_0_2px_#e8c54755]'
-                    : 'border-[#2a4638]'
-                } ${affordable ? 'opacity-100' : 'opacity-55'}`}
-                aria-pressed={selectedCard}
-                aria-label={`${card.name}, ${card.elixir} elixir`}
-              >
-                <img
-                  src={card.portrait}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover object-[50%_20%]"
-                  draggable={false}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-                <span className="absolute left-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#1f6fbf] text-xs font-black text-white ring-1 ring-[#e8c547]/45">
-                  {card.elixir}
-                </span>
-                <span className="absolute inset-x-1 bottom-1 font-[family-name:var(--font-display)] text-sm leading-none text-[#e8c547]">
-                  {card.name}
-                </span>
-              </button>
-            )
-          })}
+            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
+              {hand.map((id, i) => {
+                const c = getCharacter(id) ?? null
+                const cantAfford = c != null && elixir < c.elixir
+                const selected = id === selectedCharId
+                return (
+                  <button
+                    key={`${id}-${i}`}
+                    type="button"
+                    onClick={() => setSelectedCharId(id)}
+                    className="min-w-0 transition-transform active:scale-95"
+                    aria-label={c ? `Select ${c.name}` : `Card ${i + 1}`}
+                    aria-pressed={selected}
+                  >
+                    <BattleCard character={c} dimmed={cantAfford} selected={selected} />
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2">
+            <div
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-extrabold text-white"
+              style={{
+                background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
+                boxShadow: '0 0 0 2px #5a1848, 0 2px 4px #00000088',
+              }}
+              aria-label={`${elixirDisplay} elixir`}
+            >
+              {elixirDisplay}
+            </div>
+            <div className="relative h-4 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-2 ring-[#5a1848]">
+              <div
+                className="elixir-bar-fill absolute inset-y-0 left-0"
+                style={{ width: `${(elixir / elixirMax) * 100}%` }}
+              />
+              <div className="absolute inset-0 flex">
+                {Array.from({ length: elixirMax }, (_, i) => (
+                  <div key={i} className="h-full flex-1 border-r border-black/35 last:border-0" />
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="mt-1 text-center text-[0.65rem] font-bold text-white/55">
+            Select a card, then tap your half of the arena
+          </p>
         </div>
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={selected?.id ?? 'none'}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-2 text-center text-xs font-semibold text-[#8aa894]"
-          >
-            {selected
-              ? `Tap your half to deploy ${selected.name} · sundae throw ↔ whip crack · 1s`
-              : 'Select a character'}
-          </motion.p>
-        </AnimatePresence>
       </div>
     </div>
   )

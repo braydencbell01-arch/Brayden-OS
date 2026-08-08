@@ -4,22 +4,15 @@
   --font-display: "Lilita One", "Impact", sans-serif;
   --font-sans: "Nunito", "Segoe UI", sans-serif;
 
-  --color-grass-deep: #1a3d2e;
-  --color-grass: #2f6b49;
-  --color-grass-lit: #3f8a5c;
-  --color-lane: #4a9a68;
-  --color-river: #2a6f9e;
-  --color-river-deep: #1a4f78;
-  --color-bridge: #8b5a2b;
-  --color-bridge-plank: #a66d35;
-  --color-gold: #e8c547;
-  --color-gold-hot: #f0d56a;
-  --color-crown: #d4a017;
-  --color-tower-ally: #3d7ec4;
-  --color-tower-enemy: #c45c26;
-  --color-ink: #122018;
-  --color-cream: #f3efe4;
-  --color-hud: #0f1f18;
+  --color-gold: #f5d76e;
+  --color-gold-deep: #c9a227;
+  --color-ink: #1a1410;
+  --color-cream: #fff6e8;
+  --color-hud: #1c120c;
+  --color-elixir: #e85ad0;
+  --color-elixir-deep: #9b2d8a;
+  --color-ui-blue: #3a7bd5;
+  --color-ui-wood: #6b3e1f;
 }
 
 @layer base {
@@ -32,7 +25,7 @@
   body {
     margin: 0;
     font-family: var(--font-sans);
-    background: var(--color-grass-deep);
+    background: #1a1410;
     color: var(--color-cream);
     -webkit-font-smoothing: antialiased;
     overflow: hidden;
@@ -45,4 +38,62 @@
   button {
     font: inherit;
   }
+}
+
+@keyframes river-flow {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 48px 0;
+  }
+}
+
+@keyframes elixir-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.25);
+  }
+}
+
+.arena-river {
+  background:
+    linear-gradient(180deg, #1a6fb5 0%, #2490d8 35%, #1e7fc4 65%, #155a96 100%);
+  overflow: hidden;
+}
+
+.arena-river::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  background-image: repeating-linear-gradient(
+    -18deg,
+    transparent 0 10px,
+    rgba(255, 255, 255, 0.18) 10px 14px,
+    transparent 14px 28px
+  );
+  animation: river-flow 2.4s linear infinite;
+}
+
+.arena-stands-left,
+.arena-stands-right {
+  background: linear-gradient(180deg, #5a3a28 0%, #3d2418 40%, #2a1810 100%);
+}
+
+.card-frame {
+  background: linear-gradient(180deg, #f0d48a 0%, #c9a227 45%, #8a6a12 100%);
+  box-shadow:
+    inset 0 1px 0 #fff6c8,
+    0 3px 0 #5a4010,
+    0 6px 12px rgba(0, 0, 0, 0.45);
+}
+
+.elixir-bar-fill {
+  background: linear-gradient(180deg, #ff9ae8 0%, #e85ad0 40%, #9b2d8a 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  animation: elixir-pulse 1.6s ease-in-out infinite;
 }
