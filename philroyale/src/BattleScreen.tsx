@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Arena, unitStyle } from './Arena'
+import { Arena, oneTileWidthPct, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
 import { SundaeDot, UnitToken } from './UnitToken'
 import { getCharacter } from './characters'
@@ -145,8 +145,8 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               {units.map((u) => (
                 <div
                   key={u.id}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-[70%]"
-                  style={unitStyle(u.col, u.row)}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-[85%]"
+                  style={{ ...unitStyle(u.col, u.row), width: oneTileWidthPct() }}
                 >
                   <UnitToken
                     charId={u.charId}

@@ -18,6 +18,8 @@ export type CharacterDef = {
   name: string
   /** Letter shown on the placeholder square. */
   initial: string
+  /** Pronoun shown on card profile, e.g. he / she / they. */
+  pronoun: string
   elixir: number
   hp: number
   /** Blocks per second. */
@@ -34,6 +36,7 @@ export const PHIL: CharacterDef = {
   id: 'phil',
   name: 'Phil',
   initial: 'P',
+  pronoun: 'he',
   elixir: 4,
   hp: 500,
   moveSpeed: 8,
@@ -64,6 +67,7 @@ export const PETE: CharacterDef = {
   id: 'pete',
   name: 'Pete',
   initial: 'Pe',
+  pronoun: 'he',
   elixir: 7,
   hp: 1000,
   moveSpeed: 3,

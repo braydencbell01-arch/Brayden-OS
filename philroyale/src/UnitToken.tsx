@@ -9,7 +9,7 @@ type Props = {
   vfx: AttackId | null
 }
 
-/** Placeholder troop: colored square with initial (graphics later). */
+/** 1-block troop placeholder: tiny square with initial. */
 export function UnitToken({ charId, side, hpPct, vfx }: Props) {
   const def = getCharacter(charId)
   if (!def) return null
@@ -17,8 +17,8 @@ export function UnitToken({ charId, side, hpPct, vfx }: Props) {
   const art = `hsl(${def.hue} 60% 42%)`
 
   return (
-    <div className="relative flex w-8 flex-col items-center sm:w-9">
-      <div className="mb-0.5 h-1 w-full overflow-hidden rounded-sm bg-black/55">
+    <div className="relative flex w-full flex-col items-center">
+      <div className="mb-px h-0.5 w-full overflow-hidden rounded-[1px] bg-black/55">
         <div
           className="h-full"
           style={{
@@ -30,22 +30,22 @@ export function UnitToken({ charId, side, hpPct, vfx }: Props) {
         />
       </div>
       <motion.div
-        className="flex aspect-square w-full items-center justify-center rounded-md border-2 border-[#f5d76e] font-[family-name:var(--font-display)] text-base text-white shadow-lg sm:text-lg"
+        className="flex aspect-square w-full items-center justify-center rounded-[2px] border border-[#f5d76e] font-[family-name:var(--font-display)] text-[0.45rem] leading-none text-white"
         style={{
           background: art,
-          boxShadow: '2px 3px 0 #00000066, inset 0 1px 0 #ffffff33',
+          boxShadow: '1px 1px 0 #00000066',
         }}
         animate={
           vfx === 'chickenWhip' || vfx === 'deathHug'
-            ? { scale: [1, 1.15, 1], rotate: [0, -8, 8, 0] }
+            ? { scale: [1, 1.2, 1], rotate: [0, -10, 10, 0] }
             : vfx === 'sundaeThrow'
-              ? { y: [0, -3, 0] }
-              : { y: [0, -1.5, 0] }
+              ? { y: [0, -2, 0] }
+              : { y: [0, -0.5, 0] }
         }
         transition={
           vfx
-            ? { duration: 0.4 }
-            : { duration: 0.75, repeat: Infinity, ease: 'easeInOut' }
+            ? { duration: 0.35 }
+            : { duration: 0.7, repeat: Infinity, ease: 'easeInOut' }
         }
       >
         {def.initial}
@@ -56,12 +56,11 @@ export function UnitToken({ charId, side, hpPct, vfx }: Props) {
 
 export function SundaeDot() {
   return (
-    <div className="relative h-4 w-3" aria-hidden>
-      <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#d62828]" />
-      <div className="absolute left-[1px] top-1 h-2 w-2 rounded-full bg-[#fff6e8]" />
-      <div className="absolute right-0 top-1.5 h-2 w-2 rounded-full bg-[#ffb4c8]" />
+    <div className="relative h-2.5 w-2" aria-hidden>
+      <div className="absolute left-1/2 top-0 h-1 w-1 -translate-x-1/2 rounded-full bg-[#d62828]" />
+      <div className="absolute left-0 top-0.5 h-1.5 w-1.5 rounded-full bg-[#fff6e8]" />
       <div
-        className="absolute bottom-0 left-1/2 h-2 w-2.5 -translate-x-1/2 bg-[#e8eef8]"
+        className="absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 bg-[#e8eef8]"
         style={{ clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0 100%)' }}
       />
     </div>

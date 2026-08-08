@@ -146,8 +146,8 @@ export function useBattle() {
         const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
 
         type Target = {
-          kind: 'unit' | 'tower' | 'air'
-          id: string | null
+          kind: 'unit' | 'tower'
+          id: string
           col: number
           row: number
           d: number
@@ -165,15 +165,20 @@ export function useBattle() {
           const d = dist(me.col, me.row, c.col, c.row)
           if (!best || d < best.d) best = { kind: 'tower', id: tw.id, col: c.col, row: c.row, d }
         }
+
+        const attack = def.attacks[u.attackIndex % def.attacks.length]!
+        const rooted = t < u.rootedUntil
+
+        // No enemy/tower anywhere — push forward, never attack empty air
         if (!best) {
-          const forwardRow = u.side === 'ally' ? me.row - 10 : me.row + 10
-          best = {
-            kind: 'air',
-            id: null,
-            col: me.col,
-            row: Math.max(0, Math.min(ARENA_ROWS - 1, forwardRow)),
-            d: 10,
+          if (!rooted) {
+            const step = def.moveSpeed * dt
+            const dir = u.side === 'ally' ? -1 : 1
+            u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dir * step))
+            u.facing = dir < 0 ? -Math.PI / 2 : Math.PI / 2
+            unitsChanged = true
           }
+          continue
         }
 
         const face = Math.atan2(best.row - me.row, best.col - me.col)
@@ -182,24 +187,20 @@ export function useBattle() {
           unitsChanged = true
         }
 
-        const attack = def.attacks[u.attackIndex % def.attacks.length]!
-        const rooted = t < u.rootedUntil
-
-        if (!rooted && best.d > attack.range && best.kind !== 'air') {
-          const step = def.moveSpeed * dt
-          u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col + Math.cos(u.facing) * step))
-          u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + Math.sin(u.facing) * step))
-          unitsChanged = true
-        } else if (!rooted && best.kind === 'air') {
-          const step = def.moveSpeed * dt
-          const dir = u.side === 'ally' ? -1 : 1
-          u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dir * step))
-          unitsChanged = true
+        // Out of this attack's range — move closer, do not attack
+        if (best.d > attack.range) {
+          if (!rooted) {
+            const step = def.moveSpeed * dt
+            u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col + Math.cos(u.facing) * step))
+            u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + Math.sin(u.facing) * step))
+            unitsChanged = true
+          }
+          continue
         }
 
+        // In range of a real target — only then attack
         if (t < u.nextAttackAt) continue
 
-        const inRange = best.d <= attack.range
         u.vfx = attack.id
         u.vfxUntil = t + (attack.rootWhileAttacking ? ROOT_VFX_MS : RANGED_VFX_MS)
         u.nextAttackAt = t + def.attackDelaySec * 1000
@@ -218,9 +219,9 @@ export function useBattle() {
             fromRow: me.row,
             toCol: best.col,
             toRow: best.row,
-            damage: inRange && best.kind !== 'air' ? attack.damage : 0,
-            targetId: inRange && best.kind === 'unit' ? best.id : null,
-            targetTowerId: inRange && best.kind === 'tower' ? best.id : null,
+            damage: attack.damage,
+            targetId: best.kind === 'unit' ? best.id : null,
+            targetTowerId: best.kind === 'tower' ? best.id : null,
             bornAt: t,
             arriveAt: t + PROJECTILE_MS,
           })
@@ -228,10 +229,7 @@ export function useBattle() {
           continue
         }
 
-        // Melee / hug / whip — hit instantly if in range
-        if (!inRange || best.kind === 'air') continue
-
-        if (best.kind === 'unit' && best.id) {
+        if (best.kind === 'unit') {
           const target = nextUnits.find((x) => x.id === best.id)
           if (target) {
             target.hp -= attack.damage
@@ -248,7 +246,7 @@ export function useBattle() {
             }
             unitsChanged = true
           }
-        } else if (best.kind === 'tower' && best.id) {
+        } else {
           const tw = nextTowers.find((x) => x.id === best.id)
           if (tw) {
             tw.hp = Math.max(0, tw.hp - attack.damage)

@@ -1,6 +1,6 @@
 /**
- * Clash Royale–style arena art (grass grid, dirt ring, river, bridges,
- * king/princess towers, stands/trees). Layout matches classic CR arena.
+ * Clash Royale–style arena: grass, dirt ring, river, bridges,
+ * crown towers (stone + cannon + banner), and side bleachers.
  */
 export function ClashMap() {
   return (
@@ -18,6 +18,11 @@ export function ClashMap() {
           <rect x="10" width="10" height="10" fill="#449e4a" />
           <rect y="10" width="10" height="10" fill="#449e4a" />
         </pattern>
+        <pattern id="brick" width="14" height="10" patternUnits="userSpaceOnUse">
+          <rect width="14" height="10" fill="#c8c2b4" />
+          <rect width="13" height="9" fill="#d4cfc0" />
+          <path d="M0 5 H14 M7 0 V5 M0 10 H14" stroke="#9a9488" strokeWidth="0.8" />
+        </pattern>
         <linearGradient id="river" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#2b8fd4" />
           <stop offset="45%" stopColor="#4db2ef" />
@@ -31,101 +36,134 @@ export function ClashMap() {
           <stop offset="0%" stopColor="#c48a4a" />
           <stop offset="100%" stopColor="#7a4a22" />
         </linearGradient>
-        <linearGradient id="redRoof" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#e85a3c" />
-          <stop offset="100%" stopColor="#9a2418" />
+        <linearGradient id="baseDark" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3a3a3e" />
+          <stop offset="100%" stopColor="#1a1a1e" />
         </linearGradient>
-        <linearGradient id="blueRoof" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5aa8ff" />
-          <stop offset="100%" stopColor="#1d4a86" />
-        </linearGradient>
-        <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d8cbb4" />
-          <stop offset="100%" stopColor="#9a8b72" />
+        <linearGradient id="cannonMetal" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#5a6578" />
+          <stop offset="100%" stopColor="#2a3344" />
         </linearGradient>
       </defs>
 
-      {/* Outer dirt / stadium rim */}
-      <rect width="360" height="640" fill="#6b4a2e" />
-      <rect x="8" y="8" width="344" height="624" rx="10" fill="#5a3a22" />
+      {/* Outer rim */}
+      <rect width="360" height="640" fill="#4a3220" />
 
-      {/* Side stands */}
-      <rect x="8" y="40" width="28" height="560" fill="#4a3018" />
-      <rect x="324" y="40" width="28" height="560" fill="#4a3018" />
-      {Array.from({ length: 18 }, (_, i) => (
-        <g key={i}>
-          <rect x="10" y={50 + i * 30} width="24" height="14" fill={i < 9 ? '#8a3030' : '#2f5a8a'} opacity="0.55" />
-          <rect x="326" y={50 + i * 30} width="24" height="14" fill={i < 9 ? '#8a3030' : '#2f5a8a'} opacity="0.55" />
-        </g>
-      ))}
+      {/* Wide side bleachers / stands (fill empty side space) */}
+      <Bleachers x={0} w={42} />
+      <Bleachers x={318} w={42} />
 
-      {/* Trees / rocks along sides */}
-      {[60, 120, 200, 280, 360, 440, 520, 580].map((y, i) => (
+      {/* Trees tucked in stand corners */}
+      {[70, 160, 250, 340, 430, 520, 580].map((y, i) => (
         <g key={`t${i}`}>
-          <ellipse cx="22" cy={y} rx="10" ry="8" fill="#2d6a2d" />
-          <ellipse cx="338" cy={y + 10} rx="10" ry="8" fill="#2d6a2d" />
-          <circle cx="22" cy={y - 6} r="7" fill="#3f8f4a" />
-          <circle cx="338" cy={y + 4} r="7" fill="#3f8f4a" />
+          <ellipse cx="14" cy={y} rx="9" ry="7" fill="#2d6a2d" />
+          <circle cx="14" cy={y - 5} r="6" fill="#3f8f4a" />
+          <ellipse cx="346" cy={y + 8} rx="9" ry="7" fill="#2d6a2d" />
+          <circle cx="346" cy={y + 3} r="6" fill="#3f8f4a" />
         </g>
       ))}
 
-      {/* Playable grass */}
-      <rect x="36" y="36" width="288" height="568" rx="6" fill="url(#grass)" stroke="#2f6b3a" strokeWidth="3" />
+      {/* Playable grass (narrower to leave stand space) */}
+      <rect x="42" y="28" width="276" height="584" rx="6" fill="url(#grass)" stroke="#2f6b3a" strokeWidth="3" />
 
-      {/* Dirt path loop (tower ring) */}
+      {/* Dirt path loop */}
       <path
-        d="M90 120 H270 V200 H300 V440 H270 V520 H90 V440 H60 V200 H90 Z"
+        d="M95 115 H265 V195 H292 V445 H265 V525 H95 V445 H68 V195 H95 Z"
         fill="none"
         stroke="url(#dirt)"
-        strokeWidth="22"
+        strokeWidth="20"
         strokeLinejoin="round"
         opacity="0.92"
       />
       <path
-        d="M90 120 H270 V200 H300 V440 H270 V520 H90 V440 H60 V200 H90 Z"
+        d="M95 115 H265 V195 H292 V445 H265 V525 H95 V445 H68 V195 H95 Z"
         fill="none"
         stroke="#b88952"
-        strokeWidth="10"
+        strokeWidth="9"
         strokeLinejoin="round"
-        opacity="0.55"
+        opacity="0.5"
       />
 
-      {/* King pads */}
-      <ellipse cx="180" cy="78" rx="52" ry="28" fill="#8a7350" opacity="0.85" />
-      <ellipse cx="180" cy="562" rx="52" ry="28" fill="#8a7350" opacity="0.85" />
+      <ellipse cx="180" cy="72" rx="48" ry="26" fill="#8a7350" opacity="0.85" />
+      <ellipse cx="180" cy="568" rx="48" ry="26" fill="#8a7350" opacity="0.85" />
 
       {/* River */}
-      <rect x="36" y="300" width="288" height="40" fill="url(#river)" />
+      <rect x="42" y="300" width="276" height="40" fill="url(#river)" />
       <path
-        d="M36 308 Q70 318 110 308 T180 308 T250 308 T324 308"
+        d="M42 308 Q80 318 120 308 T200 308 T280 308 T318 308"
         fill="none"
         stroke="#ffffff55"
         strokeWidth="3"
       />
       <path
-        d="M36 328 Q80 318 120 328 T200 328 T280 328 T324 328"
+        d="M42 328 Q90 318 140 328 T230 328 T318 328"
         fill="none"
         stroke="#ffffff33"
         strokeWidth="2"
       />
 
-      {/* Bridges */}
       <Bridge x={78} />
       <Bridge x={238} />
 
-      {/* Enemy towers (red) */}
-      <Tower x={180} y={70} king enemy />
-      <Tower x={95} y={145} king={false} enemy />
-      <Tower x={265} y={145} king={false} enemy />
+      {/* Towers matching reference: stone + crown + banner + cannon */}
+      <CrownTower x={180} y={68} king enemy />
+      <CrownTower x={95} y={140} king={false} enemy />
+      <CrownTower x={265} y={140} king={false} enemy />
+      <CrownTower x={180} y={572} king enemy={false} />
+      <CrownTower x={95} y={500} king={false} enemy={false} />
+      <CrownTower x={265} y={500} king={false} enemy={false} />
 
-      {/* Ally towers (blue) */}
-      <Tower x={180} y={570} king enemy={false} />
-      <Tower x={95} y={495} king={false} enemy={false} />
-      <Tower x={265} y={495} king={false} enemy={false} />
-
-      {/* Wood frame */}
-      <rect x="34" y="34" width="292" height="572" rx="6" fill="none" stroke="#c9a227" strokeWidth="2" opacity="0.55" />
+      <rect x="41" y="27" width="278" height="586" rx="6" fill="none" stroke="#c9a227" strokeWidth="2" opacity="0.45" />
     </svg>
+  )
+}
+
+function Bleachers({ x, w }: { x: number; w: number }) {
+  const rows = 22
+  return (
+    <g>
+      <rect x={x} y={20} width={w} height={600} fill="#3d2818" />
+      {Array.from({ length: rows }, (_, i) => {
+        const y = 28 + i * 26
+        const topHalf = i < rows / 2
+        return (
+          <g key={i}>
+            {/* seat tier */}
+            <rect
+              x={x + 3}
+              y={y}
+              width={w - 6}
+              height={20}
+              rx="2"
+              fill={topHalf ? '#6a3030' : '#2a4a6e'}
+              opacity="0.85"
+            />
+            <rect
+              x={x + 5}
+              y={y + 3}
+              width={w - 10}
+              height={6}
+              rx="1"
+              fill={topHalf ? '#8a4040' : '#3a6a9a'}
+              opacity="0.7"
+            />
+            {/* crowd dots */}
+            {[0, 1, 2, 3].map((c) => (
+              <circle
+                key={c}
+                cx={x + 10 + c * ((w - 16) / 3.2)}
+                cy={y + 13}
+                r="2.2"
+                fill={topHalf ? '#c45c4a' : '#6a9acc'}
+                opacity="0.9"
+              />
+            ))}
+          </g>
+        )
+      })}
+      {/* aisle rail */}
+      <rect x={x + w / 2 - 1.5} y={24} width="3" height={592} fill="#2a1810" opacity="0.55" />
+    </g>
   )
 }
 
@@ -152,7 +190,8 @@ function Bridge({ x }: { x: number }) {
   )
 }
 
-function Tower({
+/** Reference-style crown tower: flared base, brick body, crown emblem, banner, cannon. */
+function CrownTower({
   x,
   y,
   king,
@@ -163,47 +202,73 @@ function Tower({
   king: boolean
   enemy: boolean
 }) {
-  const w = king ? 54 : 40
-  const h = king ? 58 : 44
-  const left = x - w / 2
-  const top = y - h / 2
-  const roof = enemy ? 'url(#redRoof)' : 'url(#blueRoof)'
-  const trim = enemy ? '#8a2418' : '#1d4a86'
+  const s = king ? 1.15 : 0.92
+  const banner = enemy ? '#e53935' : '#1e88e5'
+  const bannerDark = enemy ? '#b71c1c' : '#0d47a1'
+
   return (
-    <g>
-      <ellipse cx={x} cy={top + h + 2} rx={w * 0.42} ry={6} fill="#00000055" />
-      <rect x={left + 6} y={top + 16} width={w - 12} height={h - 18} rx="3" fill="url(#stone)" stroke="#6e5c45" strokeWidth="2" />
-      {[0, 1, 2, 3].map((i) => (
-        <rect
-          key={i}
-          x={left + 6 + i * ((w - 12) / 4)}
-          y={top + 12}
-          width={(w - 12) / 4 - 2}
-          height={8}
-          fill="#c4b39a"
-          stroke="#6e5c45"
-          strokeWidth="1"
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      {/* Shadow */}
+      <ellipse cx="0" cy="34" rx="28" ry="7" fill="#00000055" />
+
+      {/* Flared dark base with pyramid studs */}
+      <path
+        d="M-26 28 L-20 12 L20 12 L26 28 Z"
+        fill="url(#baseDark)"
+        stroke="#0a0a0c"
+        strokeWidth="1.2"
+      />
+      {[-16, -5, 6].map((sx) => (
+        <polygon
+          key={sx}
+          points={`${sx},26 ${sx + 5},26 ${sx + 2.5},18`}
+          fill="#2a2a30"
+          stroke="#111"
+          strokeWidth="0.6"
         />
       ))}
-      <polygon
-        points={`${left + 4},${top + 18} ${x},${top + 2} ${left + w - 4},${top + 18}`}
-        fill={roof}
-        stroke="#3a2010"
-        strokeWidth="1.5"
+
+      {/* Stone brick body */}
+      <rect x="-18" y="-18" width="36" height="32" fill="url(#brick)" stroke="#7a7468" strokeWidth="1.5" />
+      {/* brick seams overlay */}
+      <path
+        d="M-18 -2 H18 M-18 14 H18 M0 -18 V14 M-9 -2 V14 M9 -2 V14"
+        stroke="#8a8478"
+        strokeWidth="0.7"
+        opacity="0.7"
       />
-      <rect x={x - 4} y={top + 22} width="8" height={king ? 12 : 9} fill="#1a1410" rx="1" />
-      {king ? (
+
+      {/* Gold crown emblem */}
+      <g transform="translate(0 2)">
+        <circle cx="0" cy="0" r="9" fill="#f0d060" stroke="#b8860b" strokeWidth="1.2" />
         <path
-          d={`M${x - 7} ${top + 14} L${x - 3} ${top + 7} L${x} ${top + 12} L${x + 3} ${top + 7} L${x + 7} ${top + 14} Z`}
-          fill="#f5d76e"
-          stroke="#8a6a12"
-          strokeWidth="1"
+          d="M-6 3 L-6 -2 L-3 1 L0 -4 L3 1 L6 -2 L6 3 Z"
+          fill="#fff3a0"
+          stroke="#a07410"
+          strokeWidth="0.7"
         />
-      ) : (
-        <path d={`M${x} ${top + 4} L${x} ${top + 16} L${x + 12} ${top + 10} Z`} fill={roof} />
-      )}
-      <circle cx={x} cy={top + 28} r={king ? 5 : 4} fill="#e8c4a8" />
-      <rect x={x - 3} y={top + 32} width="6" height="7" rx="1" fill={trim} />
+      </g>
+
+      {/* Banner (left side, jagged bottom) */}
+      <path
+        d="M-18 -14 H-8 V18 L-10.5 14 L-13 18 L-15.5 14 L-18 18 Z"
+        fill={banner}
+        stroke={bannerDark}
+        strokeWidth="0.8"
+      />
+      <line x1="-18" y1="-10" x2="-8" y2="-10" stroke="#ffffff44" strokeWidth="1" />
+
+      {/* Battlements */}
+      {[-16, -6, 4, 14].map((bx) => (
+        <rect key={bx} x={bx} y="-26" width="8" height="10" fill="#c8c2b4" stroke="#7a7468" strokeWidth="1" />
+      ))}
+      <rect x="-18" y="-20" width="36" height="6" fill="#b8b2a4" stroke="#7a7468" strokeWidth="0.8" />
+
+      {/* Cannon on roof */}
+      <rect x="-8" y="-32" width="16" height="8" rx="2" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="1" />
+      <ellipse cx="0" cy="-34" rx="7" ry="5" fill="#3a4558" stroke="#1a2030" strokeWidth="1" />
+      <ellipse cx="0" cy="-34" rx="3.2" ry="2.4" fill="#121820" />
+      <rect x="-3" y="-40" width="6" height="8" rx="1.5" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="0.8" />
     </g>
   )
 }

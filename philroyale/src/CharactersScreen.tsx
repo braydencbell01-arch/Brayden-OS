@@ -172,10 +172,12 @@ function CardProfile({
           <p className="mt-1 text-center text-sm font-semibold text-white/80">{character.blurb}</p>
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
+            <Stat label="Pronoun" value={character.pronoun} />
             <Stat label="Elixir" value={String(character.elixir)} />
             <Stat label="Health" value={String(character.hp)} />
             <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
             <Stat label="Attack CD" value={`${character.attackDelaySec}s`} />
+            <Stat label="Size" value="1 block" />
           </dl>
 
           <p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
