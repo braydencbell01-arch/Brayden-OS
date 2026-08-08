@@ -26,7 +26,7 @@ export type BattleUnit = {
 
 export type Projectile = {
   id: string
-  kind: 'sundae' | 'hug' | 'slobber' | 'shoot'
+  kind: 'sundae' | 'hug' | 'slobber' | 'shoot' | 'arrow' | 'cannon'
   fromCol: number
   fromRow: number
   toCol: number

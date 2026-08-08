@@ -4,6 +4,8 @@ import {
   ARENA_ROWS,
   TOWERS,
   bridgeSteerDir,
+  canDeployAllyAt,
+  canDeployEnemyAt,
   closestPointOnTower,
   distToTowerEdge,
   isInsideTower,
@@ -18,10 +20,31 @@ import type { BattleUnit, Projectile } from './battleTypes'
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
 const PROJECTILE_MS = 420
+const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const RANGED_VFX_MS = 280
 
-export type TowerHp = { id: string; hp: number; maxHp: number; side: Side }
+const PRINCESS_RANGE = 25
+const PRINCESS_DAMAGE = 100
+const PRINCESS_CD_MS = 1000
+const KING_RANGE = 40
+const KING_DAMAGE = 150
+const KING_CD_MS = 1500
+const KING_WAKE_RANGE = 15
+const KING_WAKE_DELAY_MS = 3000
+
+export type TowerHp = {
+  id: string
+  hp: number
+  maxHp: number
+  side: Side
+  kind: 'king' | 'princess'
+  /** King starts asleep; princesses are always active. */
+  activated: boolean
+  /** When the king may begin firing (after 3s wake delay). */
+  fireReadyAt: number
+  nextShotAt: number
+}
 
 function towerMaxHp(kind: 'king' | 'princess'): number {
   return kind === 'king' ? 4000 : 2500
@@ -43,6 +66,19 @@ function towerSlot(id: string) {
   return TOWERS.find((x) => x.id === id) ?? null
 }
 
+function wakeKing(tw: TowerHp, now: number) {
+  if (tw.kind !== 'king' || tw.activated || tw.hp <= 0) return
+  tw.activated = true
+  tw.fireReadyAt = now + KING_WAKE_DELAY_MS
+  tw.nextShotAt = tw.fireReadyAt
+}
+
+function applyTowerDamage(tw: TowerHp, damage: number, now: number) {
+  const before = tw.hp
+  tw.hp = Math.max(0, tw.hp - damage)
+  if (before > 0 && damage > 0) wakeKing(tw, now)
+}
+
 /** Move with river + living-tower collision — units cannot enter tower footprints. */
 function stepUnit(
   u: { col: number; row: number },
@@ -57,7 +93,6 @@ function stepUnit(
     return { col: nc, row: nr }
   }
 
-  // Slide on one axis first (towers / map edges).
   if (isWalkableTile(nc, u.row, liveTowers)) {
     return { col: nc, row: u.row }
   }
@@ -65,7 +100,6 @@ function stepUnit(
     return { col: u.col, row: nr }
   }
 
-  // Hit river water — steer toward nearest bridge.
   const midC = Math.floor(nc)
   const midR = Math.floor(nr)
   if (isRiverTile(midR, midC) || isRiverTile(Math.floor(u.row), midC) || isRiverTile(midR, Math.floor(u.col))) {
@@ -84,7 +118,6 @@ function stepUnit(
   return { col: u.col, row: u.row }
 }
 
-/** Push a unit just outside a tower footprint if somehow inside. */
 function ejectFromTowers(
   col: number,
   row: number,
@@ -98,7 +131,6 @@ function ejectFromTowers(
     const ox = col + 0.5 - cx
     const oy = row + 0.5 - cy
     const ol = Math.hypot(ox, oy) || 1
-    // Place on the boundary, then nudge outward by half a tile.
     const edge = closestPointOnTower(col + 0.5, row + 0.5, t)
     return {
       col: Math.max(0, Math.min(ARENA_COLS - 1, edge.col + (ox / ol) * 0.55 - 0.5)),
@@ -121,7 +153,16 @@ export function useBattle() {
   const [towers, setTowers] = useState<TowerHp[]>(() =>
     TOWERS.map((t) => {
       const maxHp = towerMaxHp(t.kind)
-      return { id: t.id, hp: maxHp, maxHp, side: t.side }
+      return {
+        id: t.id,
+        hp: maxHp,
+        maxHp,
+        side: t.side,
+        kind: t.kind,
+        activated: t.kind === 'princess',
+        fireReadyAt: 0,
+        nextShotAt: 0,
+      }
     }),
   )
   const [selectedCharId, setSelectedCharId] = useState<string | null>('phil')
@@ -139,12 +180,14 @@ export function useBattle() {
   const deploy = useCallback(
     (char: CharacterDef, col: number, row: number, side: Side = 'ally') => {
       if (elixirRef.current < char.elixir) return false
-      if (side === 'ally' && row < ARENA_ROWS / 2) return false
-      if (side === 'enemy' && row >= ARENA_ROWS / 2) return false
       const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
       const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
       const live = liveTowerIdSet(towersRef.current)
-      if (!isWalkableTile(clampedCol, clampedRow, live)) return false
+      const ok =
+        side === 'ally'
+          ? canDeployAllyAt(clampedCol, clampedRow, towersRef.current, live)
+          : canDeployEnemyAt(clampedCol, clampedRow, towersRef.current, live)
+      if (!ok) return false
       const t = performance.now()
       setElixir((e) => e - char.elixir)
       setUnits((prev) => [
@@ -206,7 +249,7 @@ export function useBattle() {
         } else if (p.targetTowerId) {
           const tw = nextTowers.find((x) => x.id === p.targetTowerId)
           if (tw) {
-            tw.hp = Math.max(0, tw.hp - p.damage)
+            applyTowerDamage(tw, p.damage, t)
             towersChanged = true
           }
         }
@@ -260,7 +303,6 @@ export function useBattle() {
         for (const tw of foeTowers) {
           const slot = towerSlot(tw.id)
           if (!slot) continue
-          // Range / pathing use nearest edge of the 3×3 / 5×5 footprint.
           const d = distToTowerEdge(me.col, me.row, slot)
           const aim = closestPointOnTower(me.col, me.row, slot)
           if (!best || d < best.d) {
@@ -272,7 +314,6 @@ export function useBattle() {
         const rooted = t < u.rootedUntil
         const damage = attack.damage * dmgMult
 
-        // No target in play — push forward via bridges; never attack empty air.
         if (!best) {
           if (!rooted) {
             const step = moveSpeed * dt
@@ -297,8 +338,6 @@ export function useBattle() {
           unitsChanged = true
         }
 
-        // Out of this attack's range — move closer (stop outside tower area).
-        // Never path into water: steer to bridges when the target is across the river.
         if (best.d > attack.range) {
           if (!rooted) {
             const step = moveSpeed * dt
@@ -326,8 +365,7 @@ export function useBattle() {
 
         u.vfx = attack.id
         u.vfxUntil = t + (attack.rootWhileAttacking ? ROOT_VFX_MS : RANGED_VFX_MS)
-        u.nextAttackAt =
-          t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
+        u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
         u.burstShot = burstDone ? 0 : nextBurst
         if (burstDone) {
           u.attackIndex = (u.attackIndex + 1) % def.attacks.length
@@ -371,20 +409,72 @@ export function useBattle() {
                 Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * attack.pullToRange),
               )
               const ejected = ejectFromTowers(pc, pr, liveIds)
-              pc = ejected.col
-              pr = ejected.row
-              target.col = pc
-              target.row = pr
+              target.col = ejected.col
+              target.row = ejected.row
             }
             unitsChanged = true
           }
         } else {
           const tw = nextTowers.find((x) => x.id === best.id)
           if (tw) {
-            tw.hp = Math.max(0, tw.hp - damage)
+            applyTowerDamage(tw, damage, t)
             towersChanged = true
           }
         }
+      }
+
+      // Tower combat — princess archers always; king wakes at 15 range or on damage, then 3s delay.
+      for (const tw of nextTowers) {
+        if (tw.hp <= 0) continue
+        const slot = towerSlot(tw.id)
+        if (!slot) continue
+        const origin = { col: slot.col + slot.w / 2, row: slot.row + slot.h / 2 }
+        const foes = nextUnits.filter((u) => u.side !== tw.side && u.hp > 0)
+
+        if (tw.kind === 'king' && !tw.activated) {
+          for (const f of foes) {
+            const c = unitCenter(f)
+            if (distToTowerEdge(c.col, c.row, slot) <= KING_WAKE_RANGE) {
+              wakeKing(tw, t)
+              towersChanged = true
+              break
+            }
+          }
+        }
+
+        const canFire =
+          tw.kind === 'princess' || (tw.activated && t >= tw.fireReadyAt)
+        if (!canFire || t < tw.nextShotAt) continue
+
+        const range = tw.kind === 'king' ? KING_RANGE : PRINCESS_RANGE
+        const damage = tw.kind === 'king' ? KING_DAMAGE : PRINCESS_DAMAGE
+        const cd = tw.kind === 'king' ? KING_CD_MS : PRINCESS_CD_MS
+
+        let best: { id: string; col: number; row: number; d: number } | null = null
+        for (const f of foes) {
+          const c = unitCenter(f)
+          const d = distToTowerEdge(c.col, c.row, slot)
+          if (d > range) continue
+          if (!best || d < best.d) best = { id: f.id, col: c.col, row: c.row, d }
+        }
+        if (!best) continue
+
+        tw.nextShotAt = t + cd
+        towersChanged = true
+        nextProjectiles.push({
+          id: nid('p'),
+          kind: tw.kind === 'king' ? 'cannon' : 'arrow',
+          fromCol: origin.col,
+          fromRow: origin.row - (tw.kind === 'king' ? 1.2 : 0.8),
+          toCol: best.col,
+          toRow: best.row,
+          damage,
+          targetId: best.id,
+          targetTowerId: null,
+          bornAt: t,
+          arriveAt: t + TOWER_PROJECTILE_MS,
+        })
+        projectilesChanged = true
       }
 
       const filteredUnits = nextUnits.filter((u) => u.hp > 0)

@@ -1,19 +1,29 @@
 import { forwardRef, type ReactNode } from 'react'
-import { ARENA_COLS, ARENA_ROWS, TOWERS } from './arena'
+import {
+  ARENA_COLS,
+  ARENA_ROWS,
+  DEPLOY_PAST_RIVER,
+  RIVER_MAX,
+  RIVER_MIN,
+  TOWERS,
+} from './arena'
 import { ClashMap } from './ClashMap'
 
 export type TowerHpView = { id: string; hp: number; maxHp: number }
 
-/** ClashMap playable field inset (viewBox 360×640) — slim bleachers for a bigger arena. */
-const PAD_X = 22 / 360
-const PAD_Y = 16 / 640
-const FIELD_W = 316 / 360
-const FIELD_H = 608 / 640
+/** ClashMap playable field inset (viewBox 360×640). */
+export const PAD_X = 28 / 360
+export const PAD_Y = 14 / 640
+export const FIELD_W = 304 / 360
+export const FIELD_H = 612 / 640
 
 type Props = {
   towers?: TowerHpView[]
   children?: ReactNode
   onArenaPointerDown?: (col: number, row: number) => void
+  /** When true, red-shade illegal deploy zones (drag only). */
+  showBlockedOverlay?: boolean
+  overlaySide?: 'ally' | 'enemy'
 }
 
 /** Map client coordinates to arena tile space (null if outside the playable field). */
@@ -41,8 +51,99 @@ function towerStyle(col: number, row: number, w: number, h: number) {
   }
 }
 
+function rowPct(row: number) {
+  return (PAD_Y + (row / ARENA_ROWS) * FIELD_H) * 100
+}
+
+function colPct(col: number) {
+  return (PAD_X + (col / ARENA_COLS) * FIELD_W) * 100
+}
+
+/** Red mask over illegal ally deploy zones; black holes = placeable. */
+function DeployBlockOverlay({
+  towers,
+  side,
+}: {
+  towers: TowerHpView[]
+  side: 'ally' | 'enemy'
+}) {
+  const leftId = side === 'ally' ? 'enemy-left' : 'ally-left'
+  const rightId = side === 'ally' ? 'enemy-right' : 'ally-right'
+  const leftAlive = (towers.find((t) => t.id === leftId)?.hp ?? 0) > 0
+  const rightAlive = (towers.find((t) => t.id === rightId)?.hp ?? 0) > 0
+
+  // Ally placeable: own half below river; plus past-river pockets when princesses fall.
+  const ownTop = side === 'ally' ? RIVER_MAX + 1 : 0
+  const ownBottom = side === 'ally' ? ARENA_ROWS : RIVER_MIN
+  const pastTop = side === 'ally' ? RIVER_MIN - DEPLOY_PAST_RIVER : RIVER_MAX + 1
+  const pastBottom = side === 'ally' ? RIVER_MIN : RIVER_MAX + DEPLOY_PAST_RIVER
+
+  const holes: { x: number; y: number; w: number; h: number }[] = []
+
+  // Own side (full width)
+  holes.push({
+    x: colPct(0),
+    y: rowPct(ownTop),
+    w: FIELD_W * 100,
+    h: rowPct(ownBottom) - rowPct(ownTop),
+  })
+
+  if (!leftAlive && !rightAlive) {
+    holes.push({
+      x: colPct(0),
+      y: rowPct(Math.min(pastTop, pastBottom)),
+      w: FIELD_W * 100,
+      h: Math.abs(rowPct(pastBottom) - rowPct(pastTop)),
+    })
+  } else {
+    if (!leftAlive) {
+      holes.push({
+        x: colPct(0),
+        y: rowPct(Math.min(pastTop, pastBottom)),
+        w: (FIELD_W * 100) / 2,
+        h: Math.abs(rowPct(pastBottom) - rowPct(pastTop)),
+      })
+    }
+    if (!rightAlive) {
+      holes.push({
+        x: colPct(ARENA_COLS / 2),
+        y: rowPct(Math.min(pastTop, pastBottom)),
+        w: (FIELD_W * 100) / 2,
+        h: Math.abs(rowPct(pastBottom) - rowPct(pastTop)),
+      })
+    }
+  }
+
+  return (
+    <svg
+      className="pointer-events-none absolute inset-0 z-[6] h-full w-full"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <defs>
+        <mask id="deploy-mask">
+          <rect x="0" y="0" width="100" height="100" fill="white" />
+          {holes.map((h, i) => (
+            <rect key={i} x={h.x} y={h.y} width={h.w} height={Math.max(0, h.h)} fill="black" />
+          ))}
+        </mask>
+      </defs>
+      <rect
+        x={PAD_X * 100}
+        y={PAD_Y * 100}
+        width={FIELD_W * 100}
+        height={FIELD_H * 100}
+        fill="#c62828"
+        opacity="0.32"
+        mask="url(#deploy-mask)"
+      />
+    </svg>
+  )
+}
+
 export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
-  { towers = [], children, onArenaPointerDown },
+  { towers = [], children, onArenaPointerDown, showBlockedOverlay, overlaySide = 'ally' },
   ref,
 ) {
   const hpMap = new Map(towers.map((t) => [t.id, t]))
@@ -68,8 +169,23 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
 
       {TOWERS.map((t) => {
         const th = hpMap.get(t.id)
-        if (!th || th.hp <= 0) return null
         const style = towerStyle(t.col, t.row, t.w, t.h)
+        if (!th || th.hp <= 0) {
+          return (
+            <div key={t.id} className="pointer-events-none absolute z-[4]" style={style}>
+              <div
+                className="absolute inset-x-[10%] bottom-[5%] top-[35%] rounded-sm"
+                style={{
+                  background:
+                    'linear-gradient(180deg,#6a655c 0%,#3a3830 55%,#1a1814 100%)',
+                  boxShadow: 'inset 0 1px 0 #00000055',
+                  opacity: 0.85,
+                }}
+              />
+              <div className="absolute inset-x-[5%] bottom-0 h-[22%] rounded-[2px] bg-[#2a2418]/9" />
+            </div>
+          )
+        }
         const pct = th.maxHp > 0 ? th.hp / th.maxHp : 0
         const enemy = t.side === 'enemy'
         return (
@@ -97,6 +213,8 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         )
       })}
 
+      {showBlockedOverlay ? <DeployBlockOverlay towers={towers} side={overlaySide} /> : null}
+
       <div
         className="pointer-events-none absolute z-[2] border-t border-dashed border-white/15 bg-gradient-to-t from-[#2f6fbf18] to-transparent"
         style={{
@@ -113,7 +231,6 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
   )
 })
 
-/** Center of a tile → % position in the arena. */
 export function unitStyle(col: number, row: number) {
   return {
     left: `${(PAD_X + ((col + 0.5) / ARENA_COLS) * FIELD_W) * 100}%`,
@@ -121,7 +238,6 @@ export function unitStyle(col: number, row: number) {
   }
 }
 
-/** One tile width as % of the full arena element. */
 export function oneTileWidthPct(): string {
   return `${(FIELD_W / ARENA_COLS) * 100}%`
 }

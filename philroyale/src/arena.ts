@@ -102,8 +102,11 @@ export function nearestBridgeMidCol(col: number): number {
   return bestMid
 }
 
-const RIVER_MIN = Math.min(...RIVER_ROWS)
-const RIVER_MAX = Math.max(...RIVER_ROWS)
+export const RIVER_MIN = Math.min(...RIVER_ROWS)
+export const RIVER_MAX = Math.max(...RIVER_ROWS)
+
+/** How far past the river (enemy half) you may deploy after a princess falls. */
+export const DEPLOY_PAST_RIVER = 30
 
 export function isOnBridgeLane(col: number): boolean {
   return BRIDGES.some((b) => col >= b.colStart && col <= b.colEnd)
@@ -139,4 +142,66 @@ export function bridgeSteerDir(
   const dx = Math.sign(mid - col) * 0.35
   const len = Math.hypot(dx, dy) || 1
   return { dCol: dx / len, dRow: dy / len }
+}
+
+type TowerHpLite = { id: string; hp: number }
+
+/**
+ * Ally deploy zones (Clash Royale style):
+ * - Own side of the river always (not on the river band).
+ * - If enemy-left princess is dead: also up to 30 tiles past the river on the left half.
+ * - If enemy-right is dead: same on the right half.
+ * - If both princesses are dead: anywhere up to 30 tiles past the river.
+ */
+export function canDeployAllyAt(
+  col: number,
+  row: number,
+  towers: TowerHpLite[],
+  liveTowerIds?: ReadonlySet<string>,
+): boolean {
+  const c = Math.floor(col)
+  const r = Math.floor(row)
+  if (c < 0 || c >= ARENA_COLS || r < 0 || r >= ARENA_ROWS) return false
+  if (r >= RIVER_MIN && r <= RIVER_MAX) return false
+  if (!isWalkableTile(c, r, liveTowerIds)) return false
+
+  if (r > RIVER_MAX) return true
+
+  // Enemy half — only with a destroyed princess lane (or both).
+  const past = RIVER_MIN - r
+  if (past < 1 || past > DEPLOY_PAST_RIVER) return false
+
+  const leftAlive = (towers.find((t) => t.id === 'enemy-left')?.hp ?? 0) > 0
+  const rightAlive = (towers.find((t) => t.id === 'enemy-right')?.hp ?? 0) > 0
+  if (!leftAlive && !rightAlive) return true
+  const leftHalf = c < ARENA_COLS / 2
+  if (!leftAlive && leftHalf) return true
+  if (!rightAlive && !leftHalf) return true
+  return false
+}
+
+export function canDeployEnemyAt(
+  col: number,
+  row: number,
+  towers: TowerHpLite[],
+  liveTowerIds?: ReadonlySet<string>,
+): boolean {
+  const c = Math.floor(col)
+  const r = Math.floor(row)
+  if (c < 0 || c >= ARENA_COLS || r < 0 || r >= ARENA_ROWS) return false
+  if (r >= RIVER_MIN && r <= RIVER_MAX) return false
+  if (!isWalkableTile(c, r, liveTowerIds)) return false
+
+  if (r < RIVER_MIN) return true
+
+  const past = r - RIVER_MAX
+  if (past < 1 || past > DEPLOY_PAST_RIVER) return false
+
+  const leftAlive = (towers.find((t) => t.id === 'ally-left')?.hp ?? 0) > 0
+  const rightAlive = (towers.find((t) => t.id === 'ally-right')?.hp ?? 0) > 0
+  if (!leftAlive && !rightAlive) return true
+  const leftHalf = c < ARENA_COLS / 2
+  if (!leftAlive && leftHalf) return true
+  if (!rightAlive && !leftHalf) return true
+  return false
 }

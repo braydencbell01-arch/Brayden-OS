@@ -4,7 +4,8 @@ import { RARITY_LABEL } from './characters'
 type Props = {
   character: CharacterDef | null
   size?: 'hand' | 'next' | 'collection'
-  dimmed?: boolean
+  /** Current elixir — drives Clash-style grey afford overlay on hand cards. */
+  elixir?: number
   selected?: boolean
 }
 
@@ -38,7 +39,7 @@ const RARITY_FRAME: Record<
   },
 }
 
-export function BattleCard({ character, size = 'hand', dimmed, selected }: Props) {
+export function BattleCard({ character, size = 'hand', elixir, selected }: Props) {
   const next = size === 'next'
   const collection = size === 'collection'
 
@@ -58,10 +59,13 @@ export function BattleCard({ character, size = 'hand', dimmed, selected }: Props
   const art = `hsl(${character.hue} 55% 38%)`
   const artLit = `hsl(${character.hue} 65% 52%)`
   const legendary = character.rarity === 'legendary'
+  const afford =
+    elixir == null ? 1 : Math.max(0, Math.min(1, elixir / Math.max(1, character.elixir)))
+  const greyPct = (1 - afford) * 100
 
   return (
     <div
-      className={`relative overflow-hidden ${next ? 'h-[3.6rem] w-[2.75rem]' : 'aspect-[3/4] w-full'} ${dimmed ? 'opacity-55' : ''} ${selected ? 'scale-[1.04]' : ''}`}
+      className={`relative overflow-hidden ${next ? 'h-[3.6rem] w-[2.75rem]' : 'aspect-[3/4] w-full'} ${selected ? 'scale-[1.04]' : ''}`}
       style={{
         borderRadius: legendary ? '0.65rem' : '0.55rem',
         background: legendary
@@ -100,9 +104,9 @@ export function BattleCard({ character, size = 'hand', dimmed, selected }: Props
           ) : null}
         </div>
 
-        {/* Elixir droplet — CR style at bottom center */}
+        {/* Elixir droplet — top-left like Clash Royale */}
         <div
-          className={`absolute ${next ? 'bottom-0.5 left-1/2 h-3.5 w-3.5 -translate-x-1/2 text-[0.55rem]' : 'bottom-1 left-1/2 h-[1.15rem] w-[1.15rem] -translate-x-1/2 text-[0.7rem]'} flex items-center justify-center font-extrabold text-white`}
+          className={`absolute ${next ? 'left-0.5 top-0.5 h-3.5 w-3.5 text-[0.55rem]' : 'left-1 top-1 h-[1.15rem] w-[1.15rem] text-[0.7rem]'} z-[2] flex items-center justify-center font-extrabold text-white`}
           style={{
             background: 'radial-gradient(circle at 35% 28%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
             clipPath: 'ellipse(46% 52% at 50% 48%)',
@@ -111,11 +115,20 @@ export function BattleCard({ character, size = 'hand', dimmed, selected }: Props
         >
           {character.elixir}
         </div>
+
+        {/* Grey afford veil: unaffordable fraction from the top */}
+        {elixir != null && greyPct > 0.5 ? (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[3] bg-[#1a1410]/62"
+            style={{ height: `${greyPct}%` }}
+            aria-hidden
+          />
+        ) : null}
       </div>
 
       {!next && collection ? (
         <span
-          className="pointer-events-none absolute left-1 top-1 rounded px-1 py-px text-[0.5rem] font-extrabold uppercase tracking-wide text-[#1a1410]"
+          className="pointer-events-none absolute right-1 top-1 z-[2] rounded px-1 py-px text-[0.5rem] font-extrabold uppercase tracking-wide text-[#1a1410]"
           style={{ background: frame.border }}
         >
           {RARITY_LABEL[character.rarity]}

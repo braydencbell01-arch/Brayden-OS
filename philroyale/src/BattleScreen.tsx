@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ARENA_ROWS, isWalkableTile } from './arena'
+import { canDeployAllyAt } from './arena'
 import { Arena, clientToArenaTile, oneTileWidthPct, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
 import { ShootDot, SlobberDot, SundaeDot, UnitToken } from './UnitToken'
@@ -41,13 +41,14 @@ function FlyingShot({
   bornAt: number
   arriveAt: number
   now: number
-  kind: 'sundae' | 'slobber' | 'shoot'
+  kind: 'sundae' | 'slobber' | 'shoot' | 'arrow' | 'cannon'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
   const col = fromCol + (toCol - fromCol) * p
   const row = fromRow + (toRow - fromRow) * p
-  const arc = Math.sin(p * Math.PI) * (kind === 'shoot' ? 2 : 4)
+  const arc =
+    kind === 'arrow' || kind === 'cannon' ? Math.sin(p * Math.PI) * 1.2 : Math.sin(p * Math.PI) * (kind === 'shoot' ? 2 : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
 
   return (
@@ -55,6 +56,15 @@ function FlyingShot({
       {kind === 'sundae' ? <SundaeDot /> : null}
       {kind === 'slobber' ? <SlobberDot /> : null}
       {kind === 'shoot' ? <ShootDot /> : null}
+      {kind === 'arrow' ? (
+        <div className="h-0.5 w-2.5 rounded-full bg-[#5a3a18]" style={{ boxShadow: '0 0 2px #0008' }} />
+      ) : null}
+      {kind === 'cannon' ? (
+        <div
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ background: 'radial-gradient(circle at 35% 30%, #888,#222)' }}
+        />
+      ) : null}
     </div>
   )
 }
@@ -67,6 +77,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   const [nextId, setNextId] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(180)
   const [drag, setDrag] = useState<DragState | null>(null)
+  const [draggingActive, setDraggingActive] = useState(false)
   const [emote, setEmote] = useState<string | null>(null)
   const [emoteIdx, setEmoteIdx] = useState(0)
   const arenaRef = useRef<HTMLDivElement>(null)
@@ -121,10 +132,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   }
 
   function canPlace(col: number, row: number): boolean {
-    if (row < ARENA_ROWS / 2) return false
-    const c = Math.floor(col)
-    const r = Math.floor(row)
-    return isWalkableTile(c, r, liveTowerIds())
+    return canDeployAllyAt(col, row, towers, liveTowerIds())
   }
 
   function onArenaPointer(col: number, row: number) {
@@ -171,6 +179,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     }
     e.currentTarget.setPointerCapture(e.pointerId)
     movedRef.current = false
+    setDraggingActive(false)
     dragOriginRef.current = { x: e.clientX, y: e.clientY }
     const start: DragState = {
       charId,
@@ -193,7 +202,10 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     if (origin) {
       const dx = e.clientX - origin.x
       const dy = e.clientY - origin.y
-      if (dx * dx + dy * dy > 100) movedRef.current = true
+      if (dx * dx + dy * dy > 100) {
+        movedRef.current = true
+        setDraggingActive(true)
+      }
     }
     updateDragFromPointer(e.clientX, e.clientY, d)
   }
@@ -208,11 +220,13 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     }
 
     const dropped = d
+    const didDrag = movedRef.current
     dragRef.current = null
     dragOriginRef.current = null
     setDrag(null)
+    setDraggingActive(false)
 
-    if (!movedRef.current || !dropped.overArena) {
+    if (!didDrag || !dropped.overArena) {
       setSelectedCharId(dropped.charId)
       return
     }
@@ -235,12 +249,16 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   const elixirDisplay = Math.floor(elixir)
   const dragChar = drag ? getCharacter(drag.charId) : null
   const foeName = opponentName?.trim() || 'Trainer'
-
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-[#1a100c]">
-      {/* Full-bleed arena — CR-sized map */}
-      <div className="absolute inset-0 bottom-[7.25rem]">
-        <Arena ref={arenaRef} towers={towers} onArenaPointerDown={onArenaPointer}>
+      <div className="absolute inset-0 bottom-[7.1rem]">
+        <Arena
+          ref={arenaRef}
+          towers={towers}
+          onArenaPointerDown={onArenaPointer}
+          showBlockedOverlay={draggingActive}
+          overlaySide="ally"
+        >
           <AnimatePresence>
             {units.map((u) => (
               <div
@@ -260,7 +278,11 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             ))}
           </AnimatePresence>
           {projectiles.map((p) =>
-            p.kind === 'sundae' || p.kind === 'slobber' || p.kind === 'shoot' ? (
+            p.kind === 'sundae' ||
+            p.kind === 'slobber' ||
+            p.kind === 'shoot' ||
+            p.kind === 'arrow' ||
+            p.kind === 'cannon' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -293,59 +315,64 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </Arena>
       </div>
 
-      {/* Top HUD — opponent left, time right (CR layout) */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 px-2 pt-[max(0.35rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto flex items-start gap-1.5">
+      {/* Compact CR HUD — tucked into the top edge */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-1.5 pt-[max(0.05rem,env(safe-area-inset-top))]">
+        <div className="pointer-events-auto flex items-start gap-1">
           <button
             type="button"
             onClick={onExit}
-            className="rounded bg-black/45 px-1.5 py-0.5 text-[0.6rem] font-extrabold text-white/80 ring-1 ring-white/20"
+            className="mt-0.5 rounded bg-black/50 px-1 py-px text-[0.55rem] font-extrabold text-white/75"
           >
             ✕
           </button>
           <div
-            className="flex min-w-0 items-center gap-1.5 rounded-md px-1.5 py-1"
+            className="flex items-center gap-1 rounded-sm py-0.5 pl-0.5 pr-1.5"
             style={{
-              background: 'linear-gradient(180deg,#3a2a1cdd,#1a120cdd)',
-              boxShadow: '0 2px 6px #00000066, inset 0 1px 0 #c9a22744',
+              background: 'linear-gradient(180deg,#4a3424ee,#241810ee)',
+              boxShadow: '0 1px 4px #00000088, inset 0 1px 0 #c9a22733',
             }}
           >
-            <div
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white"
-              style={{
-                background: 'linear-gradient(160deg,#ff8a7a,#c63c2e)',
-                boxShadow: '0 0 0 2px #8a2018',
-              }}
-            >
-              {foeName.slice(0, 1).toUpperCase()}
+            <div className="relative">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold text-white"
+                style={{
+                  background: 'linear-gradient(160deg,#ff9a7a,#c63c2e)',
+                  boxShadow: '0 0 0 2px #f5d76e, 0 0 0 3px #8a2018',
+                }}
+              >
+                {foeName.slice(0, 1).toUpperCase()}
+              </div>
+              <div
+                className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full"
+                style={{
+                  background: 'linear-gradient(180deg,#7ec8ff,#2f6fbf)',
+                  boxShadow: '0 0 0 1px #1a3a6a',
+                }}
+                title="League"
+              />
             </div>
-            <div className="min-w-0">
-              <p className="truncate text-[0.75rem] font-extrabold leading-tight text-white">
+            <div className="min-w-0 leading-none">
+              <p className="max-w-[6.5rem] truncate text-[0.7rem] font-extrabold text-white">
                 {foeName}
               </p>
-              <p className="truncate text-[0.55rem] font-bold text-white/55">Opponent</p>
-              <p className="text-[0.6rem] font-extrabold text-[#f5d76e]">Trophies —</p>
+              <p className="mt-0.5 text-[0.5rem] font-bold text-[#f5d76e]/90">
+                <span className="inline-block h-2 w-2 rounded-sm bg-[#f5d76e] align-middle" />{' '}
+                —
+              </p>
             </div>
           </div>
         </div>
 
-        <div
-          className="pointer-events-none rounded-md px-2 py-1 text-right"
-          style={{
-            background: 'linear-gradient(180deg,#3a2a1cdd,#1a120cdd)',
-            boxShadow: '0 2px 6px #00000066, inset 0 1px 0 #c9a22744',
-          }}
-        >
-          <p className="text-[0.55rem] font-extrabold uppercase tracking-wide text-white/65">
-            Time left:
+        <div className="pt-0.5 text-right leading-none">
+          <p className="text-[0.5rem] font-extrabold uppercase tracking-wide text-white/70 drop-shadow-[0_1px_1px_#000]">
+            Time left
           </p>
-          <p className="font-[family-name:var(--font-display)] text-lg leading-none tracking-wide text-[#f5d76e]">
+          <p className="font-[family-name:var(--font-display)] text-[1.15rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
             {mm}:{ss}
           </p>
         </div>
       </header>
 
-      {/* Ally emote float */}
       <AnimatePresence>
         {emote ? (
           <motion.div
@@ -360,10 +387,9 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         ) : null}
       </AnimatePresence>
 
-      {/* Bottom card dock — CR layout */}
-      <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.2rem,env(safe-area-inset-bottom))]">
+      <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.15rem,env(safe-area-inset-bottom))]">
         <div
-          className="px-1.5 pb-1.5 pt-1"
+          className="px-1.5 pb-1 pt-1"
           style={{
             background:
               'linear-gradient(180deg,#6b4424 0%,#4a2e18 28%,#2e1a10 70%,#1a100c 100%)',
@@ -375,7 +401,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               <button
                 type="button"
                 onClick={sendEmote}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                className="flex h-7 w-7 items-center justify-center rounded-full"
                 style={{
                   background: 'linear-gradient(180deg,#5a8fd6,#2a4a8a)',
                   boxShadow: '0 2px 0 #1a3060, inset 0 1px 0 #ffffff44',
@@ -389,14 +415,17 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               <span className="text-[0.45rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
                 Next
               </span>
-              <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
+              <BattleCard
+                character={nextId ? getCharacter(nextId) ?? null : null}
+                size="next"
+                elixir={elixir}
+              />
               <p className="max-w-full truncate text-[0.45rem] font-bold text-white/45">{myName}</p>
             </div>
 
             <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
               {hand.map((id, i) => {
                 const c = getCharacter(id) ?? null
-                const cantAfford = c != null && elixir < c.elixir
                 const selected = id === selectedCharId
                 const dragging = drag?.charId === id
                 return (
@@ -412,7 +441,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                     aria-label={c ? `Select or drag ${c.name}` : `Card ${i + 1}`}
                     aria-pressed={selected}
                   >
-                    <BattleCard character={c} dimmed={cantAfford} selected={selected} />
+                    <BattleCard character={c} elixir={elixir} selected={selected} />
                   </button>
                 )
               })}
@@ -440,7 +469,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 ))}
               </div>
               <span className="absolute inset-0 flex items-center justify-center text-[0.55rem] font-extrabold text-white/90 drop-shadow-[0_1px_0_#000]">
-                Max: {elixirMax}
+                {elixirDisplay} / {elixirMax}
               </span>
             </div>
           </div>

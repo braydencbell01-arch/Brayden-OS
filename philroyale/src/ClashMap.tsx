@@ -1,13 +1,16 @@
 /**
- * Clash-style outdoor arena: grass, dirt lanes, 3D river/bridges/towers.
- * Bleachers are slim so the playable field fills most of the screen like CR.
+ * Clash Royale–style outdoor arena (grass, dirt lanes, 3D river/bridges/towers/stands).
+ * Lane mids match bridge cols 23 & 77; path width matches bridge footprint.
  */
 export function ClashMap() {
-  // Field x=22..338 (316 wide). Lane centers ≈ bridge mids (cols 23, 77).
-  const leftLane = 22 + (23 / 100) * 316
-  const rightLane = 22 + (77 / 100) * 316
-  const riverY = 308
-  const riverH = 44
+  const fieldX = 28
+  const fieldW = 304
+  // Bridge mids: col 23 → ~70.5% wait: (23/100)*304 + 28 = 97.92; (77/100)*304+28 = 262.08
+  const leftLane = fieldX + (23 / 100) * fieldW
+  const rightLane = fieldX + (77 / 100) * fieldW
+  const pathW = (11 / 100) * fieldW // matches bridge col span 18–28 / 72–82
+  const riverY = 312
+  const riverH = 26
 
   return (
     <svg
@@ -18,269 +21,334 @@ export function ClashMap() {
     >
       <defs>
         <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4aad55" />
-          <stop offset="40%" stopColor="#3d9a48" />
-          <stop offset="100%" stopColor="#2f7f3a" />
+          <stop offset="0%" stopColor="#4cb356" />
+          <stop offset="45%" stopColor="#3a9a45" />
+          <stop offset="100%" stopColor="#2d7a36" />
         </linearGradient>
-        <linearGradient id="dirt" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#e0b878" />
-          <stop offset="45%" stopColor="#c4924e" />
-          <stop offset="100%" stopColor="#8a5c2e" />
-        </linearGradient>
-        <linearGradient id="dirtSide" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#6a4220" />
-          <stop offset="50%" stopColor="#c4924e" />
-          <stop offset="100%" stopColor="#6a4220" />
+        <linearGradient id="dirt" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#7a4a22" />
+          <stop offset="20%" stopColor="#d2a05a" />
+          <stop offset="50%" stopColor="#e8c07a" />
+          <stop offset="80%" stopColor="#d2a05a" />
+          <stop offset="100%" stopColor="#7a4a22" />
         </linearGradient>
         <linearGradient id="riverBase" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1a6fb5" />
-          <stop offset="35%" stopColor="#3ab0e8" />
-          <stop offset="70%" stopColor="#1e7fc4" />
-          <stop offset="100%" stopColor="#0d4a7a" />
+          <stop offset="0%" stopColor="#0d5a9a" />
+          <stop offset="30%" stopColor="#2a9ad8" />
+          <stop offset="70%" stopColor="#1a7ab8" />
+          <stop offset="100%" stopColor="#063a68" />
         </linearGradient>
-        <linearGradient id="bank" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6b9e3e" />
+        <linearGradient id="bankTop" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#7ec84a" />
           <stop offset="100%" stopColor="#3d6a22" />
         </linearGradient>
         <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d4a66a" />
-          <stop offset="40%" stopColor="#9a6a32" />
-          <stop offset="100%" stopColor="#4a2c10" />
+          <stop offset="0%" stopColor="#e0b878" />
+          <stop offset="40%" stopColor="#a07038" />
+          <stop offset="100%" stopColor="#4a2810" />
         </linearGradient>
-        <linearGradient id="woodRail" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#b08048" />
-          <stop offset="100%" stopColor="#3a2010" />
+        <linearGradient id="woodSide" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#6a4220" />
+          <stop offset="100%" stopColor="#2a1408" />
         </linearGradient>
         <linearGradient id="stoneFace" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ece6d8" />
-          <stop offset="45%" stopColor="#c8c0b0" />
-          <stop offset="100%" stopColor="#8a8478" />
+          <stop offset="0%" stopColor="#f0ebe0" />
+          <stop offset="40%" stopColor="#cfc6b6" />
+          <stop offset="100%" stopColor="#8a8274" />
         </linearGradient>
         <linearGradient id="stoneSide" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#6a655c" />
+          <stop offset="0%" stopColor="#5a5448" />
           <stop offset="100%" stopColor="#a8a090" />
         </linearGradient>
         <linearGradient id="baseDark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4a4a52" />
-          <stop offset="100%" stopColor="#151518" />
+          <stop offset="0%" stopColor="#4a4a54" />
+          <stop offset="100%" stopColor="#121216" />
         </linearGradient>
         <linearGradient id="cannonMetal" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6a7588" />
+          <stop offset="0%" stopColor="#7a8598" />
           <stop offset="100%" stopColor="#1a2030" />
         </linearGradient>
-        <linearGradient id="roof" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5a6578" />
-          <stop offset="100%" stopColor="#1e2838" />
+        <linearGradient id="standStone" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8a8680" />
+          <stop offset="100%" stopColor="#3a3834" />
         </linearGradient>
-        <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodOpacity="0.4" />
+        <linearGradient id="standStep" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#b0aaa0" />
+          <stop offset="100%" stopColor="#5a564e" />
+        </linearGradient>
+        <filter id="softShadow" x="-35%" y="-35%" width="170%" height="170%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.4" />
         </filter>
-        <filter id="towerShade" x="-40%" y="-40%" width="180%" height="180%">
-          <feDropShadow dx="1" dy="4" stdDeviation="3" floodOpacity="0.45" />
+        <filter id="towerShade" x="-45%" y="-45%" width="190%" height="190%">
+          <feDropShadow dx="1.5" dy="4" stdDeviation="3" floodOpacity="0.5" />
         </filter>
       </defs>
 
-      <rect width="360" height="640" fill="#3a2818" />
+      <rect width="360" height="640" fill="#2a2218" />
 
-      <Bleachers x={0} w={22} />
-      <Bleachers x={338} w={22} />
+      <Stands x={0} w={fieldX} side="left" />
+      <Stands x={fieldX + fieldW} w={360 - fieldX - fieldW} side="right" />
 
-      {/* Playable grass */}
-      <rect x="22" y="16" width="316" height="608" rx="4" fill="url(#grassGrad)" />
-      <ellipse cx="180" cy="170" rx="130" ry="90" fill="#2f7a3a" opacity="0.14" />
-      <ellipse cx="180" cy="470" rx="130" ry="90" fill="#2f7a3a" opacity="0.14" />
-      {/* subtle mow stripes */}
-      {Array.from({ length: 14 }, (_, i) => (
+      <rect x={fieldX} y="14" width={fieldW} height="612" rx="3" fill="url(#grassGrad)" />
+      {Array.from({ length: 16 }, (_, i) => (
         <rect
           key={i}
-          x="22"
-          y={20 + i * 44}
-          width="316"
-          height="18"
+          x={fieldX}
+          y={18 + i * 38}
+          width={fieldW}
+          height="16"
           fill="#ffffff"
-          opacity={i % 2 === 0 ? 0.03 : 0.015}
+          opacity={i % 2 === 0 ? 0.035 : 0.015}
         />
       ))}
 
-      {/* Twin dirt lanes + cross connectors (CR two-path layout) */}
-      <LanePath cx={leftLane} />
-      <LanePath cx={rightLane} />
+      {/* Twin dirt lanes — CR placement / width */}
+      <DirtLane cx={leftLane} w={pathW} />
+      <DirtLane cx={rightLane} w={pathW} />
+      {/* Cross connectors near princess / king pads */}
       <path
-        d={`M${leftLane} 120 H${rightLane} M${leftLane} 520 H${rightLane}
-            M${leftLane} 195 H155 M205 195 H${rightLane}
-            M${leftLane} 445 H155 M205 445 H${rightLane}`}
+        d={`M${leftLane} 118 H${rightLane}
+            M${leftLane} 522 H${rightLane}
+            M${leftLane} 188 H148 M212 188 H${rightLane}
+            M${leftLane} 452 H148 M212 452 H${rightLane}`}
         fill="none"
         stroke="url(#dirt)"
-        strokeWidth="14"
+        strokeWidth={pathW * 0.55}
         strokeLinecap="round"
-        opacity="0.92"
+        opacity="0.9"
       />
 
-      {/* Tower pads */}
-      <ellipse cx="180" cy="62" rx="42" ry="22" fill="#8a7350" opacity="0.95" />
-      <ellipse cx="180" cy="578" rx="42" ry="22" fill="#8a7350" opacity="0.95" />
-      <ellipse cx={leftLane} cy={132} rx="20" ry="12" fill="#8a7350" opacity="0.85" />
-      <ellipse cx={rightLane} cy={132} rx="20" ry="12" fill="#8a7350" opacity="0.85" />
-      <ellipse cx={leftLane} cy={508} rx="20" ry="12" fill="#8a7350" opacity="0.85" />
-      <ellipse cx={rightLane} cy={508} rx="20" ry="12" fill="#8a7350" opacity="0.85" />
+      <ellipse cx="180" cy="58" rx={pathW * 1.35} ry="18" fill="#8a6a40" opacity="0.9" />
+      <ellipse cx="180" cy="582" rx={pathW * 1.35} ry="18" fill="#8a6a40" opacity="0.9" />
+      <ellipse cx={leftLane} cy={128} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
+      <ellipse cx={rightLane} cy={128} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
+      <ellipse cx={leftLane} cy={512} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
+      <ellipse cx={rightLane} cy={512} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
 
-      {/* 3D river channel */}
+      {/* Thin 3D river */}
       <g>
-        {/* far bank lip */}
-        <rect x="22" y={riverY - 6} width="316" height="8" fill="url(#bank)" />
-        <rect x="22" y={riverY - 6} width="316" height="3" fill="#8fce5a" opacity="0.35" />
-        {/* water body with depth */}
-        <rect x="22" y={riverY} width="316" height={riverH} fill="url(#riverBase)" />
-        {/* near bank lip (thicker = closer) */}
-        <rect x="22" y={riverY + riverH - 2} width="316" height="10" fill="#2a5a18" />
-        <rect x="22" y={riverY + riverH - 2} width="316" height="4" fill="#5a9a30" opacity="0.5" />
-        {/* water surface highlight */}
-        <rect x="22" y={riverY} width="316" height="10" fill="#ffffff22" />
-        <rect x="22" y={riverY + riverH - 12} width="316" height="8" fill="#06182855" />
-        {[0, 1, 2, 3].map((i) => (
+        <rect x={fieldX} y={riverY - 5} width={fieldW} height="6" fill="url(#bankTop)" />
+        <rect x={fieldX} y={riverY - 5} width={fieldW} height="2" fill="#a8e070" opacity="0.4" />
+        <rect x={fieldX} y={riverY} width={fieldW} height={riverH} fill="url(#riverBase)" />
+        <rect x={fieldX} y={riverY} width={fieldW} height="6" fill="#ffffff28" />
+        <rect x={fieldX} y={riverY + riverH - 5} width={fieldW} height="5" fill="#04182866" />
+        <rect x={fieldX} y={riverY + riverH} width={fieldW} height="7" fill="#2a5018" />
+        <rect x={fieldX} y={riverY + riverH} width={fieldW} height="3" fill="#5a9a30" opacity="0.45" />
+        {[0, 1, 2].map((i) => (
           <path
             key={i}
-            d={`M22 ${riverY + 10 + i * 8} Q70 ${riverY + 4 + i * 8} 120 ${riverY + 10 + i * 8} T220 ${riverY + 10 + i * 8} T338 ${riverY + 10 + i * 8}`}
+            d={`M${fieldX} ${riverY + 7 + i * 6} Q90 ${riverY + 3 + i * 6} 140 ${riverY + 7 + i * 6} T260 ${riverY + 7 + i * 6} T${fieldX + fieldW} ${riverY + 7 + i * 6}`}
             fill="none"
             stroke="#e8f6ff"
-            strokeWidth="1.5"
-            opacity="0.45"
+            strokeWidth="1.2"
+            opacity="0.4"
           >
             <animate
               attributeName="d"
-              dur={`${2 + i * 0.4}s`}
+              dur={`${1.8 + i * 0.35}s`}
               repeatCount="indefinite"
               values={`
-                M22 ${riverY + 10 + i * 8} Q70 ${riverY + 4 + i * 8} 120 ${riverY + 10 + i * 8} T220 ${riverY + 10 + i * 8} T338 ${riverY + 10 + i * 8};
-                M22 ${riverY + 10 + i * 8} Q70 ${riverY + 16 + i * 8} 120 ${riverY + 10 + i * 8} T220 ${riverY + 10 + i * 8} T338 ${riverY + 10 + i * 8};
-                M22 ${riverY + 10 + i * 8} Q70 ${riverY + 4 + i * 8} 120 ${riverY + 10 + i * 8} T220 ${riverY + 10 + i * 8} T338 ${riverY + 10 + i * 8}
+                M${fieldX} ${riverY + 7 + i * 6} Q90 ${riverY + 3 + i * 6} 140 ${riverY + 7 + i * 6} T260 ${riverY + 7 + i * 6} T${fieldX + fieldW} ${riverY + 7 + i * 6};
+                M${fieldX} ${riverY + 7 + i * 6} Q90 ${riverY + 11 + i * 6} 140 ${riverY + 7 + i * 6} T260 ${riverY + 7 + i * 6} T${fieldX + fieldW} ${riverY + 7 + i * 6};
+                M${fieldX} ${riverY + 7 + i * 6} Q90 ${riverY + 3 + i * 6} 140 ${riverY + 7 + i * 6} T260 ${riverY + 7 + i * 6} T${fieldX + fieldW} ${riverY + 7 + i * 6}
               `}
             />
           </path>
         ))}
       </g>
 
-      <Bridge3D cx={leftLane} riverY={riverY} riverH={riverH} />
-      <Bridge3D cx={rightLane} riverY={riverY} riverH={riverH} />
+      <Bridge3D cx={leftLane} w={pathW} riverY={riverY} riverH={riverH} />
+      <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
-      <CrownTower x={180} y={58} king enemy />
-      <CrownTower x={leftLane} y={128} king={false} enemy />
-      <CrownTower x={rightLane} y={128} king={false} enemy />
-      <CrownTower x={180} y={578} king enemy={false} />
-      <CrownTower x={leftLane} y={508} king={false} enemy={false} />
-      <CrownTower x={rightLane} y={508} king={false} enemy={false} />
+      <CrownTower x={180} y={54} king enemy />
+      <CrownTower x={leftLane} y={124} king={false} enemy />
+      <CrownTower x={rightLane} y={124} king={false} enemy />
+      <CrownTower x={180} y={586} king enemy={false} />
+      <CrownTower x={leftLane} y={516} king={false} enemy={false} />
+      <CrownTower x={rightLane} y={516} king={false} enemy={false} />
 
-      <rect x="21" y="15" width="318" height="610" rx="4" fill="none" stroke="#c9a227" strokeWidth="2" opacity="0.35" />
+      <rect
+        x={fieldX - 1}
+        y="13"
+        width={fieldW + 2}
+        height="614"
+        rx="3"
+        fill="none"
+        stroke="#c9a227"
+        strokeWidth="1.8"
+        opacity="0.35"
+      />
     </svg>
   )
 }
 
-function LanePath({ cx }: { cx: number }) {
+function DirtLane({ cx, w }: { cx: number; w: number }) {
+  const x = cx - w / 2
   return (
     <g>
       <path
-        d={`M${cx} 105 V300 M${cx} 352 V535`}
+        d={`M${cx} 100 V${312 - 2} M${cx} ${312 + 26 + 2} V540`}
         fill="none"
-        stroke="url(#dirtSide)"
-        strokeWidth="22"
-        strokeLinecap="round"
-        opacity="0.95"
+        stroke="url(#dirt)"
+        strokeWidth={w}
+        strokeLinecap="butt"
       />
       <path
-        d={`M${cx} 105 V300 M${cx} 352 V535`}
+        d={`M${cx} 100 V${312 - 2} M${cx} ${312 + 26 + 2} V540`}
         fill="none"
-        stroke="#f0d49a"
-        strokeWidth="5"
-        strokeLinecap="round"
+        stroke="#fff6d0"
+        strokeWidth={w * 0.18}
+        strokeLinecap="butt"
         opacity="0.28"
+      />
+      {/* edge ruts */}
+      <path
+        d={`M${x + 2} 100 V${312 - 2} M${x + 2} ${312 + 26 + 2} V540`}
+        fill="none"
+        stroke="#5a3418"
+        strokeWidth="1.2"
+        opacity="0.35"
+      />
+      <path
+        d={`M${x + w - 2} 100 V${312 - 2} M${x + w - 2} ${312 + 26 + 2} V540`}
+        fill="none"
+        stroke="#5a3418"
+        strokeWidth="1.2"
+        opacity="0.35"
       />
     </g>
   )
 }
 
-function Bleachers({ x, w }: { x: number; w: number }) {
-  const rows = 24
+/** Tiered stone stands with crowd — Clash-like arenas. */
+function Stands({ x, w, side }: { x: number; w: number; side: 'left' | 'right' }) {
+  const tiers = 18
+  const tierH = 33
   return (
     <g>
-      <rect x={x} y="12" width={w} height="616" fill="#2e1c12" />
-      {Array.from({ length: rows }, (_, i) => {
-        const y = 18 + i * 25
-        const topHalf = i < rows / 2
+      <rect x={x} y="10" width={w} height="620" fill="#2c2824" />
+      {Array.from({ length: tiers }, (_, i) => {
+        const y = 14 + i * tierH
+        const inset = side === 'left' ? i * 0.35 : 0
+        const topHalf = i < tiers / 2
+        const crowd = topHalf ? '#c45c4a' : '#5a8ecc'
+        const crowdDark = topHalf ? '#8a3028' : '#2a5080'
         return (
           <g key={i}>
+            {/* stone riser */}
             <rect
-              x={x + 2}
+              x={x + 1 + inset}
               y={y}
-              width={w - 4}
-              height="18"
-              rx="1.5"
-              fill={topHalf ? '#6a3030' : '#2a4a6e'}
-              opacity="0.9"
+              width={w - 2 - inset}
+              height={tierH - 3}
+              fill="url(#standStep)"
+              stroke="#2a2824"
+              strokeWidth="0.8"
             />
-            {[0, 1].map((c) => (
-              <circle
-                key={c}
-                cx={x + 6 + c * ((w - 10) / 1.4)}
-                cy={y + 11}
-                r="1.8"
-                fill={topHalf ? '#c45c4a' : '#6a9acc'}
-              />
-            ))}
+            <rect
+              x={x + 1 + inset}
+              y={y}
+              width={w - 2 - inset}
+              height="4"
+              fill="#d0ccc4"
+              opacity="0.35"
+            />
+            {/* seat lip */}
+            <rect
+              x={x + 2 + inset}
+              y={y + tierH - 10}
+              width={w - 4 - inset}
+              height="5"
+              rx="1"
+              fill="url(#standStone)"
+            />
+            {/* crowd blobs */}
+            {Array.from({ length: 3 }, (_, c) => {
+              const cx = x + 5 + inset + c * ((w - 10 - inset) / 2.2)
+              return (
+                <g key={c}>
+                  <ellipse cx={cx} cy={y + 12} rx="3.2" ry="2.6" fill={crowd} />
+                  <circle cx={cx} cy={y + 8} r="2.2" fill="#f0d0b0" />
+                  <ellipse cx={cx} cy={y + 15} rx="3.6" ry="2.2" fill={crowdDark} />
+                </g>
+              )
+            })}
           </g>
         )
       })}
+      {/* outer wall face */}
+      <rect
+        x={side === 'left' ? x + w - 3 : x}
+        y="12"
+        width="3"
+        height="616"
+        fill="#1a1814"
+        opacity="0.65"
+      />
     </g>
   )
 }
 
-function Bridge3D({ cx, riverY, riverH }: { cx: number; riverY: number; riverH: number }) {
-  const w = 38
+function Bridge3D({
+  cx,
+  w,
+  riverY,
+  riverH,
+}: {
+  cx: number
+  w: number
+  riverY: number
+  riverH: number
+}) {
   const x = cx - w / 2
-  const top = riverY - 4
-  const h = riverH + 10
+  const top = riverY - 3
+  const h = riverH + 8
   return (
     <g filter="url(#softShadow)">
-      <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.6} ry="8" fill="#061828" opacity="0.55" />
-      {/* abutments with 3D face */}
+      <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.55} ry="5" fill="#041828" opacity="0.55" />
+      {/* abutments */}
       <path
-        d={`M${x - 5} ${top} h8 v${h} l-5 4 h-3 z`}
+        d={`M${x - 3} ${top} h5 v${h} l-4 3 h-2 z`}
         fill="#7a7468"
-        stroke="#4a4438"
-        strokeWidth="1"
+        stroke="#3a3830"
+        strokeWidth="0.8"
       />
       <path
-        d={`M${x + w - 3} ${top} h8 v${h} l-5 4 h-3 z`}
-        fill="#9a9488"
-        stroke="#4a4438"
-        strokeWidth="1"
+        d={`M${x + w - 2} ${top} h5 v${h} l-4 3 h-2 z`}
+        fill="#a8a090"
+        stroke="#3a3830"
+        strokeWidth="0.8"
       />
-      {/* deck top */}
-      <rect x={x} y={top + 6} width={w} height={h - 14} rx="2" fill="url(#wood)" stroke="#3d2410" strokeWidth="1.4" />
-      {/* deck side thickness */}
-      <path
-        d={`M${x} ${top + h - 8} h${w} l3 5 h-${w + 6} z`}
-        fill="#4a2c10"
-        opacity="0.9"
-      />
-      {Array.from({ length: 8 }, (_, i) => (
+      {/* deck */}
+      <rect x={x} y={top + 4} width={w} height={h - 10} rx="1.5" fill="url(#wood)" stroke="#3d2410" strokeWidth="1.2" />
+      {/* thickness */}
+      <path d={`M${x} ${top + h - 6} h${w} l2 4 h-${w + 4} z`} fill="url(#woodSide)" />
+      {Array.from({ length: Math.max(5, Math.round(w / 4)) }, (_, i) => (
         <line
           key={i}
-          x1={x + 3 + i * 4.2}
-          x2={x + 3 + i * 4.2}
-          y1={top + 8}
-          y2={top + h - 10}
+          x1={x + 2 + i * (w / 6)}
+          x2={x + 2 + i * (w / 6)}
+          y1={top + 5}
+          y2={top + h - 7}
           stroke="#3a2010"
-          strokeWidth="1.1"
-          opacity="0.5"
+          strokeWidth="1"
+          opacity="0.45"
         />
       ))}
-      <rect x={x - 1} y={top + 4} width={w + 2} height="5" rx="1" fill="url(#woodRail)" />
-      <rect x={x - 1} y={top + h - 12} width={w + 2} height="5" rx="1" fill="url(#woodRail)" />
-      {[0, 0.33, 0.66, 1].map((t, i) => (
-        <g key={i}>
-          <rect x={x + t * (w - 5)} y={top + 2} width="5" height={h - 6} rx="1" fill="#6a4220" stroke="#2a1808" strokeWidth="0.7" />
-          <rect x={x + t * (w - 5) + 1} y={top + 2} width="2" height={h - 6} fill="#c9a06a" opacity="0.25" />
-        </g>
+      <rect x={x - 0.5} y={top + 3} width={w + 1} height="3.5" rx="0.5" fill="#6a4220" />
+      <rect x={x - 0.5} y={top + h - 9} width={w + 1} height="3.5" rx="0.5" fill="#6a4220" />
+      {[0, 0.5, 1].map((t, i) => (
+        <rect
+          key={i}
+          x={x + t * (w - 3.5)}
+          y={top + 1}
+          width="3.5"
+          height={h - 5}
+          rx="0.5"
+          fill="#5a3418"
+          stroke="#2a1808"
+          strokeWidth="0.5"
+        />
       ))}
     </g>
   )
@@ -297,80 +365,81 @@ function CrownTower({
   king: boolean
   enemy: boolean
 }) {
-  // Larger 3D presence while footprints stay 5×5 / 3×3 in gameplay.
-  const s = king ? 0.72 : 0.48
+  const s = king ? 0.78 : 0.52
   const banner = enemy ? '#e53935' : '#1e88e5'
   const bannerDark = enemy ? '#8e1a1a' : '#0d47a1'
 
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`} filter="url(#towerShade)">
-      {/* ground shadow */}
-      <ellipse cx="0" cy="38" rx="32" ry="9" fill="#00000055" />
-      {/* spiked circular base — isometric-ish */}
-      <ellipse cx="0" cy="30" rx="30" ry="10" fill="#1a1a1e" stroke="#0a0a0c" strokeWidth="1.2" />
-      <path
-        d="M-28 28 L-22 10 L22 10 L28 28 Z"
-        fill="url(#baseDark)"
-        stroke="#0a0a0c"
-        strokeWidth="1.2"
-      />
-      {[-20, -10, 0, 10].map((sx) => (
+      <ellipse cx="0" cy="40" rx="34" ry="10" fill="#00000055" />
+      <ellipse cx="0" cy="32" rx="32" ry="11" fill="#1a1a1e" stroke="#0a0a0c" strokeWidth="1.2" />
+      <path d="M-30 30 L-24 8 L24 8 L30 30 Z" fill="url(#baseDark)" stroke="#0a0a0c" strokeWidth="1.2" />
+      {[-22, -11, 0, 11].map((sx) => (
         <polygon
           key={sx}
-          points={`${sx},26 ${sx + 6},26 ${sx + 3},16`}
+          points={`${sx},28 ${sx + 7},28 ${sx + 3.5},15`}
           fill="#2e2e36"
           stroke="#111"
           strokeWidth="0.6"
         />
       ))}
-      {/* 3D body: side + face */}
-      <path d="M18 -20 L28 -14 L28 16 L18 10 Z" fill="url(#stoneSide)" stroke="#5a5448" strokeWidth="0.8" />
-      <rect x="-20" y="-22" width="38" height="34" fill="url(#stoneFace)" stroke="#7a7468" strokeWidth="1.4" />
+      {/* 3D body */}
+      <path d="M20 -22 L32 -14 L32 18 L20 10 Z" fill="url(#stoneSide)" stroke="#5a5448" strokeWidth="0.9" />
+      <rect x="-22" y="-24" width="42" height="36" fill="url(#stoneFace)" stroke="#7a7468" strokeWidth="1.4" />
       <path
-        d="M-20 -4 H18 M-20 12 H18 M-1 -22 V12 M-10 -4 V12 M8 -4 V12"
+        d="M-22 -6 H20 M-22 10 H20 M-1 -24 V10 M-11 -6 V10 M9 -6 V10"
         stroke="#8a8478"
-        strokeWidth="0.75"
+        strokeWidth="0.8"
         opacity="0.65"
       />
-      {/* crown emblem */}
       <g transform="translate(-1 0)">
-        <circle cx="0" cy="0" r="10" fill="#f0d060" stroke="#b8860b" strokeWidth="1.3" />
+        <circle cx="0" cy="0" r="11" fill="#f0d060" stroke="#b8860b" strokeWidth="1.4" />
         <path
-          d="M-6.5 3.5 L-6.5 -2.5 L-3.5 1 L0 -5 L3.5 1 L6.5 -2.5 L6.5 3.5 Z"
+          d="M-7 4 L-7 -3 L-3.5 1 L0 -6 L3.5 1 L7 -3 L7 4 Z"
           fill="#fff3a0"
           stroke="#a07410"
-          strokeWidth="0.7"
+          strokeWidth="0.75"
         />
       </g>
-      {/* banner hanging left */}
       <path
-        d="M-20 -16 H-9 V22 L-11.5 17.5 L-14.5 22 L-17.5 17.5 L-20 22 Z"
+        d="M-22 -18 H-10 V24 L-13 19 L-16 24 L-19 19 L-22 24 Z"
         fill={banner}
         stroke={bannerDark}
-        strokeWidth="0.85"
+        strokeWidth="0.9"
       />
-      <line x1="-20" y1="-12" x2="-9" y2="-12" stroke="#ffffff44" strokeWidth="1.1" />
-      {/* battlements */}
-      {[-18, -7, 4, 15].map((bx) => (
+      {[-20, -8, 4, 16].map((bx) => (
         <g key={bx}>
-          <rect x={bx} y="-32" width="9" height="12" fill="#d4cfc0" stroke="#7a7468" strokeWidth="1" />
-          <rect x={bx + 1} y="-32" width="3" height="12" fill="#ffffff33" />
+          <rect x={bx} y="-36" width="10" height="14" fill="#d8d2c4" stroke="#7a7468" strokeWidth="1" />
+          <rect x={bx + 1} y="-36" width="3" height="14" fill="#ffffff33" />
         </g>
       ))}
-      <rect x="-20" y="-24" width="38" height="6" fill="#b8b2a4" stroke="#7a7468" strokeWidth="0.8" />
-      {/* turret / cannon dome */}
-      <rect x="-10" y="-40" width="18" height="10" rx="2" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="1" />
-      <ellipse cx="-1" cy="-42" rx="9" ry="6" fill="url(#roof)" stroke="#1a2030" strokeWidth="1" />
-      <ellipse cx="-1" cy="-42" rx="4" ry="3" fill="#0c1018" />
-      <rect x="-4" y="-50" width="6" height="10" rx="1.5" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="0.8" />
-      {/* tiny king silhouette on king towers */}
+      <rect x="-22" y="-26" width="42" height="6" fill="#b8b2a4" stroke="#7a7468" strokeWidth="0.8" />
+      <rect x="-11" y="-44" width="20" height="12" rx="2" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="1" />
+      <ellipse cx="-1" cy="-46" rx="10" ry="7" fill="#3a4558" stroke="#1a2030" strokeWidth="1" />
+      <ellipse cx="-1" cy="-46" rx="4.5" ry="3.2" fill="#0c1018" />
+      <rect x="-4.5" y="-56" width="7" height="12" rx="1.5" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="0.8" />
+
       {king ? (
-        <g transform="translate(-1 -54)">
-          <circle cx="0" cy="-2" r="3.2" fill="#f5d0a0" />
-          <path d="M-4 2 Q0 8 4 2" fill="#2a3344" />
-          <path d="M-3.5 -5 L-1.5 -8 L0 -5 L1.5 -8 L3.5 -5 Z" fill="#f5d76e" />
+        <g transform="translate(-1 -60)">
+          <circle cx="0" cy="-2" r="3.4" fill="#f5d0a0" />
+          <path d="M-4.5 2 Q0 9 4.5 2" fill="#2a3344" />
+          <path d="M-4 -6 L-1.5 -9.5 L0 -6 L1.5 -9.5 L4 -6 Z" fill="#f5d76e" />
         </g>
-      ) : null}
+      ) : (
+        /* Archers on princess towers */
+        <g transform="translate(-1 -50)">
+          <g transform="translate(-6 0)">
+            <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
+            <rect x="-2" y="2" width="4" height="5" rx="0.5" fill={enemy ? '#c63c2e' : '#2f6fbf'} />
+            <line x1="2" y1="3" x2="7" y2="1" stroke="#5a3a18" strokeWidth="1.1" />
+          </g>
+          <g transform="translate(6 0)">
+            <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
+            <rect x="-2" y="2" width="4" height="5" rx="0.5" fill={enemy ? '#c63c2e' : '#2f6fbf'} />
+            <line x1="2" y1="3" x2="7" y2="1" stroke="#5a3a18" strokeWidth="1.1" />
+          </g>
+        </g>
+      )}
     </g>
   )
 }
