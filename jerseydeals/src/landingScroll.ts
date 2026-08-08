@@ -10,10 +10,16 @@ let hasSaved = false
 let restoreToken = 0
 let suppressUntil = 0
 
+function isSubpageHash(hash: string) {
+  if (!hash) return false
+  if (SUBPAGE_HASHES.has(hash)) return true
+  return hash.startsWith('#item/')
+}
+
 function isLandingHash() {
   if (typeof window === 'undefined') return true
   const hash = window.location.hash
-  return !hash || !SUBPAGE_HASHES.has(hash)
+  return !isSubpageHash(hash)
 }
 
 /** Capture current window scroll while still on the landing page. */

@@ -73,6 +73,12 @@ import {
 } from './rewardsMember'
 import { ProfileScreen } from './ProfileScreen'
 import { goToProfileScreen, leaveProfileScreen, useProfileScreenOpen } from './profile'
+import { ItemProfileScreen } from './ItemProfileScreen'
+import {
+  goToItemPage,
+  leaveItemPage,
+  useItemPageId,
+} from './itemRoute'
 import { SiteFooter } from './SiteFooter'
 import {
   capturePurchaseReturnFromUrl,
@@ -1078,6 +1084,7 @@ export default function App() {
   const favoritesOpen = useFavoritesScreenOpen()
   const profileOpen = useProfileScreenOpen()
   const inventoryOpen = useInventoryPageOpen()
+  const itemPageId = useItemPageId()
   const [pendingBuy, setPendingBuy] = useState<Listing | null>(null)
   const [soldIds, setSoldIds] = useState<Set<string>>(() => new Set(readLocalSoldOutIds()))
   const [inventoryPage, setInventoryPage] = useState(1)
@@ -1281,11 +1288,11 @@ export default function App() {
   }
 
   function handleQuickView(item: Listing) {
-    setQuickView(item)
     setRecentIds(pushRecentlyViewed(item.id))
     recordListingView(item)
     setViewCounts(listingViewCountsLastWeek())
-    track('quick_view', { id: item.id, tag: item.tag })
+    track('item_profile_open', { id: item.id, tag: item.tag })
+    goToItemPage(item.id)
   }
 
   const onSquare = Boolean(SQUARE_STORE_URL || isSquareCatalog(catalog))
@@ -1295,6 +1302,20 @@ export default function App() {
     const rows = (catalog?.listings ?? []).filter((item) => !isListingSoldOut(item, soldIds))
     return dedupeListingsByTitle(rows)
   }, [catalog, soldIds])
+  const itemProfile = useMemo(() => {
+    if (!itemPageId) return null
+    return (
+      listings.find((row) => row.id === itemPageId) ||
+      (catalog?.listings ?? []).find((row) => row.id === itemPageId) ||
+      null
+    )
+  }, [itemPageId, listings, catalog])
+
+  useEffect(() => {
+    if (!itemPageId || !catalog) return
+    if (itemProfile) return
+    leaveItemPage()
+  }, [itemPageId, itemProfile, catalog])
   const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 6), [listings])
   const salePicks = useMemo(() => pickSaleItems(listings), [listings])
@@ -1714,6 +1735,15 @@ export default function App() {
           onShopYouth={() => goInventory({ audience: 'Youth', reset: true })}
         />
       ) : null}
+      {itemProfile ? (
+        <ItemProfileScreen
+          item={itemProfile}
+          listings={listings}
+          onAddToCart={handleAddToCart}
+          onShopInventory={() => goInventory({ reset: true })}
+          onShopYouth={() => goInventory({ audience: 'Youth', reset: true })}
+        />
+      ) : null}
 
       <div ref={topChromeRef} className="fixed inset-x-0 top-0 z-[90]">
       {/* Promo bar — Premier League shop CTA */}
@@ -1724,12 +1754,13 @@ export default function App() {
           const goEpl = () => {
             document.getElementById('epl')?.scrollIntoView({ behavior: 'smooth' })
           }
-          if (inventoryOpen || favoritesOpen || profileOpen || offersOpen) {
+          if (inventoryOpen || favoritesOpen || profileOpen || offersOpen || itemPageId) {
             suppressLandingScrollRestore()
             leaveInventoryPage()
             leaveFavoritesScreen()
             leaveProfileScreen()
             leaveRewardsOffers()
+            leaveItemPage()
             window.setTimeout(goEpl, 40)
             return
           }
@@ -1814,13 +1845,14 @@ export default function App() {
           <a
             href="#top"
             onClick={(e) => {
-              if (!inventoryOpen && !favoritesOpen && !profileOpen && !offersOpen) return
+              if (!inventoryOpen && !favoritesOpen && !profileOpen && !offersOpen && !itemPageId) return
               e.preventDefault()
               suppressLandingScrollRestore()
               leaveInventoryPage()
               leaveFavoritesScreen()
               leaveProfileScreen()
               leaveRewardsOffers()
+              leaveItemPage()
               window.setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'auto' })
               }, 40)
@@ -2005,18 +2037,19 @@ export default function App() {
               <button
                 type="button"
                 aria-label={
-                  inventoryOpen || favoritesOpen || profileOpen || offersOpen
+                  inventoryOpen || favoritesOpen || profileOpen || offersOpen || itemPageId
                     ? 'Back to home'
                     : 'Go to top of page'
                 }
                 onClick={() => {
                   track('nav_home', { place: 'sticky_search' })
-                  if (inventoryOpen || favoritesOpen || profileOpen || offersOpen) {
+                  if (inventoryOpen || favoritesOpen || profileOpen || offersOpen || itemPageId) {
                     suppressLandingScrollRestore()
                     leaveInventoryPage()
                     leaveFavoritesScreen()
                     leaveProfileScreen()
                     leaveRewardsOffers()
+                    leaveItemPage()
                     window.setTimeout(() => {
                       window.scrollTo({ top: 0, behavior: 'auto' })
                     }, 40)
