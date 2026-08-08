@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { initAnalytics, track } from './analytics'
 import {
@@ -2951,10 +2952,10 @@ export default function App() {
                     </div>
                   ) : null}
 
-                  {filtersOpen ? (
+                  {filtersOpen
+                    ? createPortal(
                     <div
-                      className="fixed inset-x-0 z-[95]"
-                      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+                      className="fixed inset-0 z-[120]"
                       role="dialog"
                       aria-modal="true"
                       aria-label="Shop and filter"
@@ -2967,7 +2968,7 @@ export default function App() {
                       />
                       <div
                         id="inventory-filter-drawer"
-                        className="absolute right-0 top-0 flex max-h-full w-[min(100%,22rem)] flex-col bg-white shadow-2xl"
+                        className="absolute right-0 top-0 flex max-h-[min(100%,100dvh)] w-[min(100%,22rem)] flex-col bg-white shadow-2xl"
                       >
                         <div className="flex shrink-0 items-center justify-between border-b border-navy/10 px-5 py-4">
                           <p className="font-brand text-base font-bold tracking-wide text-navy">
@@ -3179,8 +3180,10 @@ export default function App() {
                           </button>
                         </div>
                       </div>
-                    </div>
-                  ) : null}
+                    </div>,
+                    document.body,
+                  )
+                    : null}
                 </motion.div>
               )}
 
