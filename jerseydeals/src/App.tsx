@@ -923,7 +923,13 @@ function QuickViewModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label="Product quick view">
+    <div
+      className="fixed inset-x-0 z-[95] flex items-end justify-center sm:items-center sm:p-6"
+      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+      role="dialog"
+      aria-modal
+      aria-label="Product quick view"
+    >
       <button type="button" className="absolute inset-0 bg-navy-deep/60" aria-label="Close quick view" onClick={onClose} />
       <div className="relative z-10 flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-cream shadow-2xl sm:max-h-[88dvh] sm:flex-row">
         <div className="relative aspect-square w-full shrink-0 bg-mist sm:aspect-auto sm:h-auto sm:w-[48%]">
@@ -1749,7 +1755,7 @@ export default function App() {
         />
       ) : null}
 
-      <div ref={topChromeRef} className="fixed inset-x-0 top-0 z-[90]">
+      <div ref={topChromeRef} className="pointer-events-auto fixed inset-x-0 top-0 z-[100]">
       {/* Promo bar — Premier League shop CTA */}
       <button
         type="button"
@@ -2955,7 +2961,13 @@ export default function App() {
                   ) : null}
 
                   {filtersOpen ? (
-                    <div className="fixed inset-0 z-[95]" role="dialog" aria-modal="true" aria-label="Shop and filter">
+                    <div
+                      className="fixed inset-x-0 z-[95]"
+                      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="Shop and filter"
+                    >
                       <button
                         type="button"
                         className="absolute inset-0 bg-navy-deep/45"
@@ -3687,7 +3699,7 @@ export default function App() {
         onYouth={() => goInventory({ audience: 'Youth', reset: true })}
       />
 
-      <div ref={bottomDockRef} className="fixed inset-x-0 bottom-0 z-[90]">
+      <div ref={bottomDockRef} className="pointer-events-auto fixed inset-x-0 bottom-0 z-[100]">
         <FreeShippingBar
           subtotal={bagSubtotal}
           currency={cart.lines[0]?.currency || 'USD'}
@@ -3738,15 +3750,16 @@ export default function App() {
         </div>
       ) : null}
 
-      {/* Nav drawer */}
+      {/* Nav drawer — sits under sticky chrome so top/bottom bars stay tappable */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-[45] flex flex-col bg-cream"
+          className="fixed inset-x-0 z-[95] flex flex-col bg-cream"
+          style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
           role="dialog"
           aria-modal
           aria-label="Navigation menu"
         >
-          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4 pt-[calc(1rem+3rem)] sm:pt-[calc(1rem+2.25rem)]">
+          <div className="flex items-center justify-between border-b border-navy/10 bg-cream px-5 py-4">
             <BrandMark size="sm" withWordmark stackedWordmark wordmarkTone="navy" />
             <button
               type="button"
@@ -3779,10 +3792,21 @@ export default function App() {
                     goInventory()
                     return
                   }
-                  if (inventoryOpen && link.href.startsWith('#')) {
+                  if (
+                    (inventoryOpen ||
+                      favoritesOpen ||
+                      profileOpen ||
+                      offersOpen ||
+                      itemPageId) &&
+                    link.href.startsWith('#')
+                  ) {
                     e.preventDefault()
                     suppressLandingScrollRestore()
                     leaveInventoryPage()
+                    leaveFavoritesScreen()
+                    leaveProfileScreen()
+                    leaveRewardsOffers()
+                    leaveItemPage()
                     window.setTimeout(() => {
                       document.querySelector(link.href)?.scrollIntoView({ behavior: 'smooth' })
                     }, 40)

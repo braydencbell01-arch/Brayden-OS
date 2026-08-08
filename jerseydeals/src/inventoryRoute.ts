@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
+import {
+  rememberLandingScroll,
+  restoreLandingScroll,
+  suppressLandingScrollRestore,
+} from './landingScroll'
 
 /** Full inventory page (hash route — safe with relative Vite base). */
 export const INVENTORY_HASH = '#inventory'
@@ -12,6 +16,7 @@ export function isInventoryOpen() {
 /** Open the full inventory page. */
 export function goToInventoryPage() {
   if (typeof window === 'undefined') return
+  suppressLandingScrollRestore()
   rememberLandingScroll()
   if (window.location.hash !== INVENTORY_HASH) {
     window.location.hash = 'inventory'

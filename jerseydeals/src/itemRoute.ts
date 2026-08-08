@@ -3,7 +3,11 @@
  */
 
 import { useEffect, useState } from 'react'
-import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
+import {
+  rememberLandingScroll,
+  restoreLandingScroll,
+  suppressLandingScrollRestore,
+} from './landingScroll'
 
 export const ITEM_HASH_PREFIX = '#item/'
 
@@ -24,6 +28,7 @@ export function parseItemIdFromHash(hash = typeof window !== 'undefined' ? windo
 
 export function goToItemPage(id: string) {
   if (typeof window === 'undefined') return
+  suppressLandingScrollRestore()
   rememberLandingScroll()
   const next = itemHash(id)
   if (window.location.hash !== `#${next}`) {

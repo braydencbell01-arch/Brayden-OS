@@ -4,11 +4,16 @@
  */
 
 import { useEffect, useState } from 'react'
-import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
+import {
+  rememberLandingScroll,
+  restoreLandingScroll,
+  suppressLandingScrollRestore,
+} from './landingScroll'
 
 export const PROFILE_HASH = '#profile'
 
 export function goToProfileScreen() {
+  suppressLandingScrollRestore()
   rememberLandingScroll()
   window.location.hash = 'profile'
 }

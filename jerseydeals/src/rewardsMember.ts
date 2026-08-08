@@ -4,7 +4,11 @@
  */
 
 import { useEffect, useState } from 'react'
-import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
+import {
+  rememberLandingScroll,
+  restoreLandingScroll,
+  suppressLandingScrollRestore,
+} from './landingScroll'
 
 const REWARDS_KEY = 'jerseydeals.rewardsMember.v1'
 /** Older email-capture list — treat prior rewards_club signups as members. */
@@ -117,6 +121,7 @@ export function useRewardsMember() {
 }
 
 export function goToRewardsOffers() {
+  suppressLandingScrollRestore()
   rememberLandingScroll()
   window.location.hash = 'offers'
 }

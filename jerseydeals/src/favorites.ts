@@ -4,7 +4,11 @@
  */
 
 import { useEffect, useState } from 'react'
-import { rememberLandingScroll, restoreLandingScroll } from './landingScroll'
+import {
+  rememberLandingScroll,
+  restoreLandingScroll,
+  suppressLandingScrollRestore,
+} from './landingScroll'
 
 const STORAGE_KEY = 'jerseydeals.favoriteClubs.v1'
 export const FAVORITES_EVENT = 'jerseydeals:favorites'
@@ -88,6 +92,8 @@ export function favoriteClubIdSet(ids: string[]): Set<string> {
 }
 
 export function goToFavoritesScreen() {
+  // Switching between subpages should not jump the landing scroll under the overlay.
+  suppressLandingScrollRestore()
   rememberLandingScroll()
   window.location.hash = 'favorites'
 }

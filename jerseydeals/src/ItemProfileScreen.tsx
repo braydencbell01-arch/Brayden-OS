@@ -233,7 +233,13 @@ function SizeChartModal({
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[85] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label="Size chart">
+    <div
+      className="fixed inset-x-0 z-[95] flex items-end justify-center sm:items-center sm:p-6"
+      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+      role="dialog"
+      aria-modal
+      aria-label="Size chart"
+    >
       <button type="button" className="absolute inset-0 bg-navy-deep/55" aria-label="Close size chart" onClick={onClose} />
       <div className="relative z-10 max-h-[88dvh] w-full max-w-lg overflow-y-auto bg-white px-5 py-6 shadow-2xl sm:px-7">
         <div className="flex items-start justify-between gap-3">

@@ -122,7 +122,12 @@ export function FirstBuyerOfferModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal>
+    <div
+      className="fixed inset-x-0 z-[95] flex items-center justify-center p-4"
+      style={{ top: 'var(--jd-top-chrome)', bottom: 'var(--jd-bottom-dock)' }}
+      role="dialog"
+      aria-modal
+    >
       <button
         type="button"
         className="absolute inset-0 bg-navy-deep/70"
