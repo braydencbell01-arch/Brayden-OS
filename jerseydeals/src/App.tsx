@@ -2781,54 +2781,6 @@ export default function App() {
           </section>
         ) : null}
 
-        {/* Category lookbook strip */}
-        <section aria-label="Kit categories" className="grid grid-cols-1 md:grid-cols-3">
-          {[
-            {
-              src: asset('product-training.jpg'),
-              label: 'Training',
-              onClick: () => {
-                track('category_click', { category: 'lookbook_training' })
-                goInventory({ tag: 'Training', reset: true })
-              },
-            },
-            {
-              src: asset('product-hoodie.jpg'),
-              label: 'Apparel',
-              onClick: () => {
-                track('category_click', { category: 'lookbook_apparel' })
-                goInventory({ tag: 'Apparel', reset: true })
-              },
-            },
-            {
-              src: asset('product-home.jpg'),
-              label: 'Matchday',
-              onClick: () => {
-                track('category_click', { category: 'lookbook_matchday' })
-                goInventory({ tag: 'Jerseys', reset: true })
-              },
-            },
-          ].map((tile) => (
-            <button
-              key={tile.label}
-              type="button"
-              onClick={tile.onClick}
-              className="group relative min-h-[280px] overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson md:min-h-[380px]"
-            >
-              <img
-                src={tile.src}
-                alt=""
-                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="absolute inset-0 bg-navy-deep/40 transition group-hover:bg-navy-deep/55" />
-              <span className="relative flex h-full items-end p-6 font-display text-3xl font-bold uppercase tracking-wide text-white md:p-8 md:text-4xl">
-                {tile.label}
-              </span>
-            </button>
-          ))}
-        </section>
           </>
         ) : null}
 
