@@ -815,28 +815,8 @@ function ProductLink({
         >
           {infoLine}
         </p>
-        <div className="mt-1.5 flex items-baseline justify-between gap-1.5">
-          <span className="flex min-w-0 items-baseline gap-1">
-            {compareAt != null ? (
-              <span className="font-brand text-[0.58rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.65rem]">
-                {formatPrice(compareAt, item.currency)}
-              </span>
-            ) : null}
-            <span
-              className={`font-brand text-[0.78rem] font-bold tracking-wide sm:text-sm ${
-                tone === 'dark'
-                  ? compareAt != null
-                    ? 'text-white'
-                    : 'text-[#e85d04]'
-                  : compareAt != null
-                    ? 'text-navy'
-                    : 'text-[#e85d04]'
-              }`}
-            >
-              {formatPrice(item.price, item.currency)}
-            </span>
-          </span>
-          <span className="flex shrink-0 items-baseline gap-1.5">
+        <div className="mt-1.5 flex items-end justify-between gap-1.5">
+          <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
             <button
               type="button"
               onClick={() => onAddToCart(item)}
@@ -856,6 +836,26 @@ function ProductLink({
                 Buy now
               </button>
             ) : null}
+          </span>
+          <span className="flex shrink-0 flex-col items-end gap-0.5 leading-none">
+            {compareAt != null ? (
+              <span className="font-brand text-[0.58rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.65rem]">
+                {formatPrice(compareAt, item.currency)}
+              </span>
+            ) : null}
+            <span
+              className={`font-brand text-[0.78rem] font-bold tracking-wide sm:text-sm ${
+                tone === 'dark'
+                  ? compareAt != null
+                    ? 'text-white'
+                    : 'text-[#e85d04]'
+                  : compareAt != null
+                    ? 'text-navy'
+                    : 'text-[#e85d04]'
+              }`}
+            >
+              {formatPrice(item.price, item.currency)}
+            </span>
           </span>
         </div>
       </div>
