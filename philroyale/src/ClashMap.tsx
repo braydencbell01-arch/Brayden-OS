@@ -284,7 +284,8 @@ function CrownTower({
   king: boolean
   enemy: boolean
 }) {
-  const s = king ? 1.15 : 0.92
+  // Match gameplay footprints: king 5×5 tiles, princess 3×3 (~2.76 svg units/tile in field).
+  const s = king ? 0.48 : 0.3
   const banner = enemy ? '#e53935' : '#1e88e5'
   const bannerDark = enemy ? '#b71c1c' : '#0d47a1'
 

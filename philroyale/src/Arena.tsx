@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { forwardRef, type ReactNode } from 'react'
 import { ARENA_COLS, ARENA_ROWS, TOWERS } from './arena'
 import { ClashMap } from './ClashMap'
 
@@ -16,6 +16,22 @@ type Props = {
   onArenaPointerDown?: (col: number, row: number) => void
 }
 
+/** Map client coordinates to arena tile space (null if outside the playable field). */
+export function clientToArenaTile(
+  arenaEl: HTMLElement,
+  clientX: number,
+  clientY: number,
+): { col: number; row: number } | null {
+  const rect = arenaEl.getBoundingClientRect()
+  if (rect.width <= 0 || rect.height <= 0) return null
+  const x = (clientX - rect.left) / rect.width
+  const y = (clientY - rect.top) / rect.height
+  const fx = (x - PAD_X) / FIELD_W
+  const fy = (y - PAD_Y) / FIELD_H
+  if (fx < 0 || fx > 1 || fy < 0 || fy > 1) return null
+  return { col: fx * ARENA_COLS, row: fy * ARENA_ROWS }
+}
+
 function towerStyle(col: number, row: number, w: number, h: number) {
   return {
     left: `${(PAD_X + (col / ARENA_COLS) * FIELD_W) * 100}%`,
@@ -25,24 +41,26 @@ function towerStyle(col: number, row: number, w: number, h: number) {
   }
 }
 
-export function Arena({ towers = [], children, onArenaPointerDown }: Props) {
+export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
+  { towers = [], children, onArenaPointerDown },
+  ref,
+) {
   const hpMap = new Map(towers.map((t) => [t.id, t]))
 
   return (
     <div
+      ref={ref}
       className={`relative h-full w-full overflow-hidden rounded-[10px] ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
       role={onArenaPointerDown ? 'application' : 'img'}
       aria-label="Clash Royale style arena"
       onPointerDown={
         onArenaPointerDown
           ? (e) => {
-              const rect = e.currentTarget.getBoundingClientRect()
-              const x = (e.clientX - rect.left) / rect.width
-              const y = (e.clientY - rect.top) / rect.height
-              const fx = (x - PAD_X) / FIELD_W
-              const fy = (y - PAD_Y) / FIELD_H
-              if (fx < 0 || fx > 1 || fy < 0 || fy > 1) return
-              onArenaPointerDown(fx * ARENA_COLS, fy * ARENA_ROWS)
+              // Ignore while dragging a card onto the map (handled by BattleScreen).
+              if ((e.target as HTMLElement).closest('[data-card-drag]')) return
+              const tile = clientToArenaTile(e.currentTarget, e.clientX, e.clientY)
+              if (!tile) return
+              onArenaPointerDown(tile.col, tile.row)
             }
           : undefined
       }
@@ -86,7 +104,7 @@ export function Arena({ towers = [], children, onArenaPointerDown }: Props) {
       <div className="pointer-events-none absolute inset-0 z-[8]">{children}</div>
     </div>
   )
-}
+})
 
 /** Center of a tile → % position in the arena. */
 export function unitStyle(col: number, row: number) {

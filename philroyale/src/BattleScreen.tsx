@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Arena, oneTileWidthPct, unitStyle } from './Arena'
+import { ARENA_ROWS, isWalkableTile } from './arena'
+import { Arena, clientToArenaTile, oneTileWidthPct, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
 import { SundaeDot, UnitToken } from './UnitToken'
 import { getCharacter } from './characters'
@@ -10,6 +11,15 @@ import { useBattle } from './useBattle'
 type Props = {
   onExit: () => void
   opponentName?: string | null
+}
+
+type DragState = {
+  charId: string
+  pointerId: number
+  col: number
+  row: number
+  overArena: boolean
+  valid: boolean
 }
 
 function FlyingSundae({
@@ -49,6 +59,11 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
   const [seconds, setSeconds] = useState(180)
+  const [drag, setDrag] = useState<DragState | null>(null)
+  const arenaRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<DragState | null>(null)
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null)
+  const movedRef = useRef(false)
   const {
     elixir,
     elixirMax,
@@ -92,7 +107,19 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     setDrawPile(pile)
   }
 
+  function liveTowerIds() {
+    return new Set(towers.filter((t) => t.hp > 0).map((t) => t.id))
+  }
+
+  function canPlace(col: number, row: number): boolean {
+    if (row < ARENA_ROWS / 2) return false
+    const c = Math.floor(col)
+    const r = Math.floor(row)
+    return isWalkableTile(c, r, liveTowerIds())
+  }
+
   function onArenaPointer(col: number, row: number) {
+    if (dragRef.current) return
     if (!selectedCharId) return
     const card = getCharacter(selectedCharId)
     if (!card || elixir < card.elixir) return
@@ -100,9 +127,98 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     if (ok) cycleAfterDeploy(card.id)
   }
 
+  function updateDragFromPointer(clientX: number, clientY: number, base: DragState) {
+    const arena = arenaRef.current
+    if (!arena) {
+      const next = { ...base, overArena: false, valid: false }
+      dragRef.current = next
+      setDrag(next)
+      return
+    }
+    const tile = clientToArenaTile(arena, clientX, clientY)
+    if (!tile) {
+      const next = { ...base, overArena: false, valid: false, col: base.col, row: base.row }
+      dragRef.current = next
+      setDrag(next)
+      return
+    }
+    const valid = canPlace(tile.col, tile.row)
+    const next = {
+      ...base,
+      overArena: true,
+      valid,
+      col: Math.floor(tile.col),
+      row: Math.floor(tile.row),
+    }
+    dragRef.current = next
+    setDrag(next)
+  }
+
+  function onCardPointerDown(e: React.PointerEvent, charId: string) {
+    const card = getCharacter(charId)
+    if (!card || elixir < card.elixir) {
+      setSelectedCharId(charId)
+      return
+    }
+    e.currentTarget.setPointerCapture(e.pointerId)
+    movedRef.current = false
+    dragOriginRef.current = { x: e.clientX, y: e.clientY }
+    const start: DragState = {
+      charId,
+      pointerId: e.pointerId,
+      col: 50,
+      row: 120,
+      overArena: false,
+      valid: false,
+    }
+    dragRef.current = start
+    setDrag(start)
+    setSelectedCharId(charId)
+    updateDragFromPointer(e.clientX, e.clientY, start)
+  }
+
+  function onCardPointerMove(e: React.PointerEvent) {
+    const d = dragRef.current
+    if (!d || d.pointerId !== e.pointerId) return
+    const origin = dragOriginRef.current
+    if (origin) {
+      const dx = e.clientX - origin.x
+      const dy = e.clientY - origin.y
+      if (dx * dx + dy * dy > 100) movedRef.current = true
+    }
+    updateDragFromPointer(e.clientX, e.clientY, d)
+  }
+
+  function onCardPointerUp(e: React.PointerEvent) {
+    const d = dragRef.current
+    if (!d || d.pointerId !== e.pointerId) return
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      /* already released */
+    }
+
+    const dropped = d
+    dragRef.current = null
+    dragOriginRef.current = null
+    setDrag(null)
+
+    // Tap without drag → select only (place with second tap on map).
+    if (!movedRef.current || !dropped.overArena) {
+      setSelectedCharId(dropped.charId)
+      return
+    }
+
+    const card = getCharacter(dropped.charId)
+    if (!card || elixir < card.elixir || !dropped.valid) return
+    const ok = deploy(card, dropped.col, dropped.row, 'ally')
+    if (ok) cycleAfterDeploy(card.id)
+  }
+
   const mm = String(Math.floor(seconds / 60))
   const ss = String(seconds % 60).padStart(2, '0')
   const elixirDisplay = Math.floor(elixir)
+  const dragChar = drag ? getCharacter(drag.charId) : null
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -133,7 +249,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </div>
       </header>
 
-      {/* Map takes most of the screen; aspect 100:150 keeps tiles square */}
       <div className="relative mx-auto flex min-h-0 w-full max-w-[32rem] flex-1 items-center justify-center px-1">
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
@@ -144,7 +259,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             boxShadow: '0 10px 28px #00000099',
           }}
         >
-          <Arena towers={towers} onArenaPointerDown={onArenaPointer}>
+          <Arena ref={arenaRef} towers={towers} onArenaPointerDown={onArenaPointer}>
             <AnimatePresence>
               {units.map((u) => (
                 <div
@@ -164,11 +279,32 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             {projectiles.map((p) =>
               p.kind === 'sundae' ? <FlyingSundae key={p.id} {...p} now={now} /> : null,
             )}
+            {drag && drag.overArena && dragChar ? (
+              <div
+                className="absolute z-30 -translate-x-1/2 -translate-y-[85%]"
+                style={{
+                  ...unitStyle(drag.col, drag.row),
+                  width: oneTileWidthPct(),
+                  opacity: drag.valid ? 0.9 : 0.45,
+                  filter: drag.valid ? undefined : 'grayscale(1)',
+                }}
+                aria-hidden
+              >
+                <UnitToken charId={dragChar.id} side="ally" hpPct={1} vfx={null} />
+                <div
+                  className="absolute inset-0 rounded-sm"
+                  style={{
+                    boxShadow: drag.valid
+                      ? '0 0 0 2px #7CFF9A'
+                      : '0 0 0 2px #FF6B6B',
+                  }}
+                />
+              </div>
+            ) : null}
           </Arena>
         </motion.div>
       </div>
 
-      {/* Compact card bar — smaller so the map can grow */}
       <div className="relative z-10 mx-auto w-full max-w-[32rem] shrink-0 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-0.5">
         <div
           className="rounded-t-md px-1.5 pb-1.5 pt-1"
@@ -191,13 +327,18 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 const c = getCharacter(id) ?? null
                 const cantAfford = c != null && elixir < c.elixir
                 const selected = id === selectedCharId
+                const dragging = drag?.charId === id
                 return (
                   <button
                     key={`${id}-${i}`}
                     type="button"
-                    onClick={() => setSelectedCharId(id)}
-                    className="min-w-0 transition-transform active:scale-95"
-                    aria-label={c ? `Select ${c.name}` : `Card ${i + 1}`}
+                    data-card-drag
+                    onPointerDown={(e) => onCardPointerDown(e, id)}
+                    onPointerMove={onCardPointerMove}
+                    onPointerUp={onCardPointerUp}
+                    onPointerCancel={onCardPointerUp}
+                    className={`min-w-0 touch-none transition-transform active:scale-95 ${dragging ? 'opacity-40' : ''}`}
+                    aria-label={c ? `Select or drag ${c.name}` : `Card ${i + 1}`}
                     aria-pressed={selected}
                   >
                     <BattleCard character={c} dimmed={cantAfford} selected={selected} />

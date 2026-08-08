@@ -3,6 +3,10 @@ import {
   ARENA_COLS,
   ARENA_ROWS,
   TOWERS,
+  closestPointOnTower,
+  distToTowerEdge,
+  isInsideTower,
+  isRiverTile,
   isWalkableTile,
   nearestBridgeMidCol,
   type Side,
@@ -30,38 +34,77 @@ function unitCenter(u: BattleUnit): { col: number; row: number } {
   return { col: u.col + 0.5, row: u.row + 0.5 }
 }
 
-function towerCenter(id: string): { col: number; row: number } | null {
-  const t = TOWERS.find((x) => x.id === id)
-  if (!t) return null
-  return { col: t.col + t.w / 2, row: t.row + t.h / 2 }
+function liveTowerIdSet(towers: TowerHp[]): ReadonlySet<string> {
+  return new Set(towers.filter((t) => t.hp > 0).map((t) => t.id))
 }
 
-/** Move with river collision — water blocked; cross only on bridges. */
+function towerSlot(id: string) {
+  return TOWERS.find((x) => x.id === id) ?? null
+}
+
+/** Move with river + living-tower collision — units cannot enter tower footprints. */
 function stepUnit(
   u: { col: number; row: number },
   dCol: number,
   dRow: number,
+  liveTowers: ReadonlySet<string>,
 ): { col: number; row: number } {
   let nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + dCol))
   let nr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dRow))
 
-  if (isWalkableTile(nc, nr)) {
+  if (isWalkableTile(nc, nr, liveTowers)) {
     return { col: nc, row: nr }
   }
 
-  // Hit river water — steer toward nearest bridge, don't enter water
-  const bridgeCol = nearestBridgeMidCol(u.col)
-  const towardBridge = Math.sign(bridgeCol - u.col) || (dCol >= 0 ? 1 : -1)
-  const sideStep = Math.max(Math.abs(dCol), Math.abs(dRow))
-  nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + towardBridge * sideStep))
-  if (isWalkableTile(nc, u.row)) {
+  // Slide on one axis first (towers / map edges).
+  if (isWalkableTile(nc, u.row, liveTowers)) {
     return { col: nc, row: u.row }
   }
-  // Try row-only if somehow on bridge edge
-  if (isWalkableTile(u.col, nr)) {
+  if (isWalkableTile(u.col, nr, liveTowers)) {
     return { col: u.col, row: nr }
   }
+
+  // Hit river water — steer toward nearest bridge.
+  const midC = Math.floor(nc)
+  const midR = Math.floor(nr)
+  if (isRiverTile(midR, midC) || isRiverTile(Math.floor(u.row), midC) || isRiverTile(midR, Math.floor(u.col))) {
+    const bridgeCol = nearestBridgeMidCol(u.col)
+    const towardBridge = Math.sign(bridgeCol - u.col) || (dCol >= 0 ? 1 : -1)
+    const sideStep = Math.max(Math.abs(dCol), Math.abs(dRow))
+    nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + towardBridge * sideStep))
+    if (isWalkableTile(nc, u.row, liveTowers)) {
+      return { col: nc, row: u.row }
+    }
+    if (isWalkableTile(u.col, nr, liveTowers)) {
+      return { col: u.col, row: nr }
+    }
+  }
+
   return { col: u.col, row: u.row }
+}
+
+/** Push a unit just outside a tower footprint if somehow inside. */
+function ejectFromTowers(
+  col: number,
+  row: number,
+  liveTowers: ReadonlySet<string>,
+): { col: number; row: number } {
+  for (const t of TOWERS) {
+    if (!liveTowers.has(t.id)) continue
+    if (!isInsideTower(col, row, t) && !isInsideTower(col + 0.5, row + 0.5, t)) continue
+    const cx = t.col + t.w / 2
+    const cy = t.row + t.h / 2
+    const ox = col + 0.5 - cx
+    const oy = row + 0.5 - cy
+    const ol = Math.hypot(ox, oy) || 1
+    // Place on the boundary, then nudge outward by half a tile.
+    const edge = closestPointOnTower(col + 0.5, row + 0.5, t)
+    return {
+      col: Math.max(0, Math.min(ARENA_COLS - 1, edge.col + (ox / ol) * 0.55 - 0.5)),
+      row: Math.max(0, Math.min(ARENA_ROWS - 1, edge.row + (oy / ol) * 0.55 - 0.5)),
+    }
+  }
+  return { col, row }
 }
 
 let seq = 0
@@ -97,9 +140,10 @@ export function useBattle() {
       if (elixirRef.current < char.elixir) return false
       if (side === 'ally' && row < ARENA_ROWS / 2) return false
       if (side === 'enemy' && row >= ARENA_ROWS / 2) return false
-      const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, col))
-      const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, row))
-      if (!isWalkableTile(clampedCol, clampedRow)) return false
+      const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
+      const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+      const live = liveTowerIdSet(towersRef.current)
+      if (!isWalkableTile(clampedCol, clampedRow, live)) return false
       const t = performance.now()
       setElixir((e) => e - char.elixir)
       setUnits((prev) => [
@@ -166,6 +210,7 @@ export function useBattle() {
       nextProjectiles = stillFlying
 
       const liveTowers = nextTowers.filter((tw) => tw.hp > 0)
+      const liveIds = liveTowerIdSet(nextTowers)
 
       for (const u of nextUnits) {
         if (u.hp <= 0) continue
@@ -196,23 +241,27 @@ export function useBattle() {
           if (!best || d < best.d) best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d }
         }
         for (const tw of foeTowers) {
-          const c = towerCenter(tw.id)
-          if (!c) continue
-          const d = dist(me.col, me.row, c.col, c.row)
-          if (!best || d < best.d) best = { kind: 'tower', id: tw.id, col: c.col, row: c.row, d }
+          const slot = towerSlot(tw.id)
+          if (!slot) continue
+          // Range / pathing use nearest edge of the 3×3 / 5×5 footprint.
+          const d = distToTowerEdge(me.col, me.row, slot)
+          const aim = closestPointOnTower(me.col, me.row, slot)
+          if (!best || d < best.d) {
+            best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d }
+          }
         }
 
         const attack = def.attacks[u.attackIndex % def.attacks.length]!
         const rooted = t < u.rootedUntil
 
-        // No enemy/tower anywhere — push forward, never attack empty air
         if (!best) {
           if (!rooted) {
             const step = def.moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
-            const next = stepUnit(u, 0, dir * step)
-            u.col = next.col
-            u.row = next.row
+            const next = stepUnit(u, 0, dir * step, liveIds)
+            const ejected = ejectFromTowers(next.col, next.row, liveIds)
+            u.col = ejected.col
+            u.row = ejected.row
             u.facing = dir < 0 ? -Math.PI / 2 : Math.PI / 2
             unitsChanged = true
           }
@@ -225,19 +274,19 @@ export function useBattle() {
           unitsChanged = true
         }
 
-        // Out of this attack's range — move closer, do not attack
+        // Out of this attack's range — move closer (stop outside tower area).
         if (best.d > attack.range) {
           if (!rooted) {
             const step = def.moveSpeed * dt
-            const next = stepUnit(u, Math.cos(u.facing) * step, Math.sin(u.facing) * step)
-            u.col = next.col
-            u.row = next.row
+            const next = stepUnit(u, Math.cos(u.facing) * step, Math.sin(u.facing) * step, liveIds)
+            const ejected = ejectFromTowers(next.col, next.row, liveIds)
+            u.col = ejected.col
+            u.row = ejected.row
             unitsChanged = true
           }
           continue
         }
 
-        // In range of a real target — only then attack
         if (t < u.nextAttackAt) continue
 
         u.vfx = attack.id
@@ -274,14 +323,19 @@ export function useBattle() {
             target.hp -= attack.damage
             if (attack.pullToRange != null) {
               const ang = Math.atan2(target.row - u.row, target.col - u.col)
-              target.col = Math.max(
+              let pc = Math.max(
                 0,
                 Math.min(ARENA_COLS - 1, u.col + Math.cos(ang) * attack.pullToRange),
               )
-              target.row = Math.max(
+              let pr = Math.max(
                 0,
                 Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * attack.pullToRange),
               )
+              const ejected = ejectFromTowers(pc, pr, liveIds)
+              pc = ejected.col
+              pr = ejected.row
+              target.col = pc
+              target.row = pr
             }
             unitsChanged = true
           }
