@@ -38,10 +38,7 @@ import {
 import { CartDrawer } from './Cart'
 import { CollectionsRail } from './CollectionsRail'
 import { ClubFavoriteButton, ClubLogoMark, HeartIcon } from './FavoriteControls'
-import {
-  EPL_TEAM_COLOR,
-  UCL_TEAM_COLOR,
-} from './clubColors'
+import { UCL_TEAM_COLOR } from './clubColors'
 import { getClubById } from './clubCatalog'
 import {
   favoriteClubIdSet,
@@ -123,7 +120,6 @@ import {
   pickSaleItems,
   championsLeagueClubsInStock,
   pickTrending,
-  premierLeagueClubsInStock,
   PRICE_FILTERS,
   pushRecentlyViewed,
   readRecentlyViewed,
@@ -307,9 +303,9 @@ function ProductCardCover({
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-/** Premier League purple (logo) + club name colors for EPL tiles. */
+/** Official Premier League purple. */
 const PL_PURPLE = '#37003c'
-const PL_PURPLE_SOFT = '#4a0e52'
+const PL_PURPLE_DEEP = '#240028'
 
 /**
  * Newest home-kit art for Shop EPL / Shop UCL tiles (not inventory listing photos).
@@ -1352,7 +1348,6 @@ export default function App() {
   // Stable order — do not re-sort on favorite toggle (avoids the grid jumping).
   const clubsData = useMemo<ClubInfo[]>(() => clubsInStock(listings), [listings])
   const leaguesData = useMemo<LeagueInfo[]>(() => leaguesInStock(listings), [listings])
-  const eplClubs = useMemo<ClubInfo[]>(() => premierLeagueClubsInStock(listings), [listings])
   const uclClubs = useMemo<ClubInfo[]>(() => championsLeagueClubsInStock(listings), [listings])
   const trendingPicks = useMemo(() => pickTrending(listings, 4, viewCounts), [listings, viewCounts])
   const favoriteClubs = useMemo(
@@ -2204,84 +2199,81 @@ export default function App() {
           }}
         />
 
-        {/* Shop Premier League */}
+        {/* Premier League sale — purple promo band; shop-by-club is a separate section */}
         <section
           id="epl"
-          className="scroll-mt-44 relative overflow-hidden border-y-[3px] md:border-y-4"
-          style={{ borderColor: PL_PURPLE, background: `linear-gradient(160deg, ${PL_PURPLE} 0%, ${PL_PURPLE_SOFT} 42%, #1a0520 100%)` }}
+          className="scroll-mt-44 relative overflow-hidden"
+          style={{ background: PL_PURPLE_DEEP }}
+          aria-labelledby="epl-sale-heading"
         >
-          <div
-            className="pointer-events-none absolute -right-16 top-0 h-64 w-64 rounded-full opacity-40 blur-3xl"
-            style={{ background: PL_PURPLE_SOFT }}
-            aria-hidden
-          />
-          <img
-            src={asset('premier-league-badge.png')}
-            alt="Premier League"
-            className="absolute right-4 top-4 z-10 h-14 w-14 object-contain drop-shadow-lg md:right-8 md:top-8 md:h-20 md:w-20"
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="relative z-10 mx-auto max-w-6xl px-5 py-20 md:px-8 md:py-28">
-            <motion.div {...fadeUp(reduce)} className="max-w-xl">
-              <p className="eyebrow" style={{ color: '#c9b3d6' }}>
-                English Premier League
-              </p>
-              <div
-                className="mt-3 h-[3px] w-16"
-                style={{ background: 'linear-gradient(90deg, #a288b5, #fff)' }}
-                aria-hidden
-              />
-              <h2 className="mt-4 font-display text-5xl font-bold uppercase tracking-wide text-white md:text-6xl">
-                Shop Premier League
+          <div className="absolute inset-0" aria-hidden>
+            <motion.img
+              src={asset('epl-kits-bg.jpg')}
+              alt=""
+              initial={reduce ? false : { scale: 1.04 }}
+              whileInView={reduce ? undefined : { scale: 1 }}
+              viewport={{ once: true, amount: 0.35 }}
+              transition={{ duration: 1.15, ease }}
+              className="h-full w-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: [
+                  `linear-gradient(105deg, ${PL_PURPLE_DEEP} 0%, ${PL_PURPLE}ee 38%, ${PL_PURPLE}99 62%, ${PL_PURPLE}55 100%)`,
+                  `linear-gradient(180deg, ${PL_PURPLE_DEEP}66 0%, transparent 28%, ${PL_PURPLE_DEEP}aa 100%)`,
+                ].join(', '),
+              }}
+            />
+          </div>
+
+          <div className="relative z-10 mx-auto flex min-h-[22rem] max-w-6xl flex-col justify-end px-5 py-14 md:min-h-[26rem] md:px-8 md:py-20">
+            <motion.div
+              initial={reduce ? false : { opacity: 0.001, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.45 }}
+              transition={{ duration: 0.75, ease }}
+              className="max-w-xl"
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={asset('premier-league-logo.png')}
+                  alt=""
+                  className="h-11 w-11 object-contain md:h-12 md:w-12"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <p className="font-display text-lg font-bold uppercase tracking-[0.14em] text-white md:text-xl">
+                  Premier League sale
+                </p>
+              </div>
+              <h2
+                id="epl-sale-heading"
+                className="mt-5 font-display text-4xl font-bold uppercase leading-[0.95] tracking-wide text-white sm:text-5xl md:text-6xl"
+              >
+                Top-flight kits.
+                <br />
+                On sale now.
               </h2>
-              <p className="mt-3 max-w-md font-brand text-base text-white/80">
-                {PROMO_BAR}
+              <p className="mt-4 max-w-md font-brand text-sm leading-relaxed text-white/85 md:text-base">
+                Authentic Premier League jerseys at sale prices — shop the selection while stock lasts.
               </p>
-              <button
+              <motion.button
                 type="button"
                 onClick={() => {
-                  track('cta_click', { place: 'shop_epl' })
+                  track('cta_click', { place: 'shop_epl_sale' })
                   goInventory({ reset: true, leagueId: 'premier-league' })
                 }}
-                className="mt-6 inline-flex px-7 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-white transition hover:brightness-110"
-                style={{ background: PL_PURPLE_SOFT, boxShadow: '0 0 0 1px rgba(255,255,255,.22)' }}
+                whileHover={reduce ? undefined : { scale: 1.02 }}
+                whileTap={reduce ? undefined : { scale: 0.98 }}
+                className="mt-7 inline-flex bg-white px-8 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] transition hover:bg-cream"
+                style={{ color: PL_PURPLE }}
               >
-                Shop EPL
-              </button>
+                Shop the sale
+              </motion.button>
             </motion.div>
-
-            <div id="epl-clubs" className="mt-14 scroll-mt-48">
-              <p className="eyebrow text-white/85">Clubs in stock</p>
-              {eplClubs.length > 0 ? (
-                <ul className="mt-5 flex flex-col gap-4">
-                  {eplClubs.map((club, i) => (
-                    <ClubInStockRow
-                      key={club.id}
-                      club={club}
-                      leagueId="premier-league"
-                      place="epl_club"
-                      nameColor={EPL_TEAM_COLOR[club.id] || '#0b223f'}
-                      imageFallbackClass="bg-[#120018] bg-gradient-to-b from-[#2a0830] to-[#120018]"
-                      reduce={reduce}
-                      delay={0.04 * i}
-                      favorited={favoriteSet.has(club.id)}
-                      onShop={() => {
-                        track('category_click', { category: 'epl_club', club: club.id })
-                        goInventory({
-                          reset: true,
-                          clubId: club.id,
-                          leagueId: 'premier-league',
-                          query: club.name,
-                        })
-                      }}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-4 font-brand text-white/90">Premier League kits will appear here when in stock.</p>
-              )}
-            </div>
           </div>
         </section>
 
