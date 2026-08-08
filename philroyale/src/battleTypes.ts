@@ -1,4 +1,4 @@
-import type { AttackKind, CharacterDef } from './characters'
+import type { AttackId, CharacterDef } from './characters'
 import type { Side } from './arena'
 
 export type UnitId = string
@@ -11,19 +11,18 @@ export type BattleUnit = {
   row: number
   hp: number
   maxHp: number
-  nextAttack: AttackKind
+  /** Index into character.attacks */
+  attackIndex: number
   nextAttackAt: number
-  vfx: AttackKind | null
+  vfx: AttackId | null
   vfxUntil: number
-  /** Facing angle in radians (for whip / walk). */
   facing: number
-  /** While whipping, unit cannot move. */
   rootedUntil: number
 }
 
 export type Projectile = {
   id: string
-  kind: 'sundae'
+  kind: 'sundae' | 'hug'
   fromCol: number
   fromRow: number
   toCol: number

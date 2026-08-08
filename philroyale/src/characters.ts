@@ -1,49 +1,96 @@
-export type AttackKind = 'sundae' | 'whip'
+export type AttackId = 'sundaeThrow' | 'chickenWhip' | 'deathHug'
+
+export type AttackDef = {
+  id: AttackId
+  name: string
+  /** Block radius. */
+  range: number
+  damage: number
+  /** If true, unit stops moving for the attack animation. */
+  rootWhileAttacking: boolean
+  /** Pull unit targets to this distance (tiles). Towers never move. */
+  pullToRange?: number
+  kind: 'sundae' | 'whip' | 'hug'
+}
 
 export type CharacterDef = {
   id: string
   name: string
+  /** Letter shown on the placeholder square. */
+  initial: string
   elixir: number
   hp: number
-  sundaeDamage: number
-  sundaeRangeTiles: number
-  whipDamage: number
-  whipRangeTiles: number
-  /** Seconds between attacks (sundae ↔ whip cycle). */
+  /** Blocks per second. */
+  moveSpeed: number
+  /** Seconds between successive attacks. */
   attackDelaySec: number
-  portrait: string
-  whipAudio: string
-  firstAttack: AttackKind
-  role: 'troop'
+  /** Attacks cycle in order. */
+  attacks: AttackDef[]
+  hue: number
   blurb: string
 }
 
-const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`
-
-/** Only character for now — likeness from the reference photo. */
 export const PHIL: CharacterDef = {
   id: 'phil',
   name: 'Phil',
-  elixir: 7,
-  hp: 2800,
-  sundaeDamage: 320,
-  sundaeRangeTiles: 10,
-  whipDamage: 380,
-  whipRangeTiles: 2.5,
+  initial: 'P',
+  elixir: 4,
+  hp: 500,
+  moveSpeed: 8,
   attackDelaySec: 1,
-  portrait: asset('characters/phil.png'),
-  whipAudio: asset('audio/phil-whip.mp3'),
-  firstAttack: 'sundae',
-  role: 'troop',
-  blurb: 'Throws a full ice cream sundae (10 tiles), then cracks a whip up close.',
+  hue: 210,
+  blurb: 'Sundae Throw at range, then Chicken Whip up close.',
+  attacks: [
+    {
+      id: 'sundaeThrow',
+      name: 'Sundae Throw',
+      range: 30,
+      damage: 100,
+      rootWhileAttacking: false,
+      kind: 'sundae',
+    },
+    {
+      id: 'chickenWhip',
+      name: 'Chicken Whip',
+      range: 10,
+      damage: 150,
+      rootWhileAttacking: true,
+      kind: 'whip',
+    },
+  ],
 }
 
-export const CHARACTERS: CharacterDef[] = [PHIL]
+export const PETE: CharacterDef = {
+  id: 'pete',
+  name: 'Pete',
+  initial: 'Pe',
+  elixir: 7,
+  hp: 1000,
+  moveSpeed: 3,
+  attackDelaySec: 3,
+  hue: 25,
+  blurb: 'Death Hug pulls enemies in close for big damage.',
+  attacks: [
+    {
+      id: 'deathHug',
+      name: 'Death Hug',
+      range: 10,
+      damage: 250,
+      rootWhileAttacking: true,
+      pullToRange: 1,
+      kind: 'hug',
+    },
+  ],
+}
+
+export const CHARACTERS: CharacterDef[] = [PHIL, PETE]
 
 export const DECK_SIZE = 8
 
-/** Battle deck is eight Phil cards until more characters are added. */
-export const DEFAULT_DECK = Array.from({ length: DECK_SIZE }, () => PHIL.id)
+/** Fill an 8-card deck with Phil + Pete until more cards exist. */
+export const DEFAULT_DECK = Array.from({ length: DECK_SIZE }, (_, i) =>
+  i % 2 === 0 ? PHIL.id : PETE.id,
+)
 
 export function getCharacter(id: string): CharacterDef | undefined {
   return CHARACTERS.find((c) => c.id === id)

@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ARENA_COLS, ARENA_ROWS, TOWERS, type Side } from './arena'
-import { playSfx } from './audio'
-import { getCharacter, type AttackKind, type CharacterDef } from './characters'
+import { getCharacter, type CharacterDef } from './characters'
 import type { BattleUnit, Projectile } from './battleTypes'
 
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
-const MOVE_TILES_PER_SEC = 1.35
-const SUNDAE_FLIGHT_MS = 480
-const SUNDAE_VFX_MS = 320
-const WHIP_VFX_MS = 550
+const PROJECTILE_MS = 420
+const ROOT_VFX_MS = 450
+const RANGED_VFX_MS = 280
 
 export type TowerHp = { id: string; hp: number; maxHp: number; side: Side }
 
@@ -38,7 +36,7 @@ function nid(prefix: string): string {
 }
 
 export function useBattle() {
-  const [elixir, setElixir] = useState(7)
+  const [elixir, setElixir] = useState(5)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
   const [towers, setTowers] = useState<TowerHp[]>(() =>
@@ -64,8 +62,8 @@ export function useBattle() {
       if (elixirRef.current < char.elixir) return false
       if (side === 'ally' && row < ARENA_ROWS / 2) return false
       if (side === 'enemy' && row >= ARENA_ROWS / 2) return false
-      const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
-      const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+      const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, col))
+      const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, row))
       const t = performance.now()
       setElixir((e) => e - char.elixir)
       setUnits((prev) => [
@@ -78,8 +76,8 @@ export function useBattle() {
           row: clampedRow,
           hp: char.hp,
           maxHp: char.hp,
-          nextAttack: char.firstAttack,
-          nextAttackAt: t + 350,
+          attackIndex: 0,
+          nextAttackAt: t + 300,
           vfx: null,
           vfxUntil: 0,
           facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
@@ -141,7 +139,7 @@ export function useBattle() {
         }
 
         const def = getCharacter(u.charId)
-        if (!def) continue
+        if (!def || def.attacks.length === 0) continue
 
         const me = unitCenter(u)
         const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
@@ -167,16 +165,14 @@ export function useBattle() {
           const d = dist(me.col, me.row, c.col, c.row)
           if (!best || d < best.d) best = { kind: 'tower', id: tw.id, col: c.col, row: c.row, d }
         }
-
-        // Always have a facing target — nearest foe or forward toward enemy side
         if (!best) {
-          const forwardRow = u.side === 'ally' ? me.row - 6 : me.row + 6
+          const forwardRow = u.side === 'ally' ? me.row - 10 : me.row + 10
           best = {
             kind: 'air',
             id: null,
             col: me.col,
             row: Math.max(0, Math.min(ARENA_ROWS - 1, forwardRow)),
-            d: 6,
+            d: 10,
           }
         }
 
@@ -186,19 +182,16 @@ export function useBattle() {
           unitsChanged = true
         }
 
-        const attack: AttackKind = u.nextAttack
-        const range = attack === 'sundae' ? def.sundaeRangeTiles : def.whipRangeTiles
-        const damage = attack === 'sundae' ? def.sundaeDamage : def.whipDamage
+        const attack = def.attacks[u.attackIndex % def.attacks.length]!
         const rooted = t < u.rootedUntil
 
-        // Move toward target when out of range (never while whipping)
-        if (!rooted && best.d > range && best.kind !== 'air') {
-          const step = MOVE_TILES_PER_SEC * dt
+        if (!rooted && best.d > attack.range && best.kind !== 'air') {
+          const step = def.moveSpeed * dt
           u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col + Math.cos(u.facing) * step))
           u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + Math.sin(u.facing) * step))
           unitsChanged = true
         } else if (!rooted && best.kind === 'air') {
-          const step = MOVE_TILES_PER_SEC * dt
+          const step = def.moveSpeed * dt
           const dir = u.side === 'ally' ? -1 : 1
           u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dir * step))
           unitsChanged = true
@@ -206,49 +199,61 @@ export function useBattle() {
 
         if (t < u.nextAttackAt) continue
 
-        // Must attack on cooldown even with no enemy in range
-        const inRange = best.d <= range
-        u.vfx = attack
-        u.vfxUntil = t + (attack === 'whip' ? WHIP_VFX_MS : SUNDAE_VFX_MS)
-        u.nextAttack = attack === 'sundae' ? 'whip' : 'sundae'
+        const inRange = best.d <= attack.range
+        u.vfx = attack.id
+        u.vfxUntil = t + (attack.rootWhileAttacking ? ROOT_VFX_MS : RANGED_VFX_MS)
         u.nextAttackAt = t + def.attackDelaySec * 1000
+        u.attackIndex = (u.attackIndex + 1) % def.attacks.length
         unitsChanged = true
 
-        if (attack === 'whip') {
-          // Stop while whipping
-          u.rootedUntil = t + WHIP_VFX_MS
-          playSfx(def.whipAudio)
-          if (inRange && best.kind === 'unit' && best.id) {
-            const target = nextUnits.find((x) => x.id === best.id)
-            if (target) {
-              target.hp -= damage
-              unitsChanged = true
-            }
-          } else if (inRange && best.kind === 'tower' && best.id) {
-            const tw = nextTowers.find((x) => x.id === best.id)
-            if (tw) {
-              tw.hp = Math.max(0, tw.hp - damage)
-              towersChanged = true
-            }
-          }
-        } else {
-          // Sundae — can keep moving; throw at target or forward air
-          const toCol = best.col
-          const toRow = best.row
+        if (attack.rootWhileAttacking) {
+          u.rootedUntil = t + ROOT_VFX_MS
+        }
+
+        if (attack.kind === 'sundae') {
           nextProjectiles.push({
             id: nid('p'),
             kind: 'sundae',
             fromCol: me.col,
             fromRow: me.row,
-            toCol,
-            toRow,
-            damage: inRange && best.kind !== 'air' ? damage : 0,
+            toCol: best.col,
+            toRow: best.row,
+            damage: inRange && best.kind !== 'air' ? attack.damage : 0,
             targetId: inRange && best.kind === 'unit' ? best.id : null,
             targetTowerId: inRange && best.kind === 'tower' ? best.id : null,
             bornAt: t,
-            arriveAt: t + SUNDAE_FLIGHT_MS,
+            arriveAt: t + PROJECTILE_MS,
           })
           projectilesChanged = true
+          continue
+        }
+
+        // Melee / hug / whip — hit instantly if in range
+        if (!inRange || best.kind === 'air') continue
+
+        if (best.kind === 'unit' && best.id) {
+          const target = nextUnits.find((x) => x.id === best.id)
+          if (target) {
+            target.hp -= attack.damage
+            if (attack.pullToRange != null) {
+              const ang = Math.atan2(target.row - u.row, target.col - u.col)
+              target.col = Math.max(
+                0,
+                Math.min(ARENA_COLS - 1, u.col + Math.cos(ang) * attack.pullToRange),
+              )
+              target.row = Math.max(
+                0,
+                Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * attack.pullToRange),
+              )
+            }
+            unitsChanged = true
+          }
+        } else if (best.kind === 'tower' && best.id) {
+          const tw = nextTowers.find((x) => x.id === best.id)
+          if (tw) {
+            tw.hp = Math.max(0, tw.hp - attack.damage)
+            towersChanged = true
+          }
         }
       }
 

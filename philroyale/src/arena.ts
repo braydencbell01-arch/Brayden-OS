@@ -1,12 +1,13 @@
-/** Clash Royale–style arena: 18 tiles wide × 32 tiles long. */
-export const ARENA_COLS = 18
-export const ARENA_ROWS = 32
+/** Phil Royale arena: 100 tiles wide × 150 tiles long. */
+export const ARENA_COLS = 100
+export const ARENA_ROWS = 150
 
-export const RIVER_ROWS = [15, 16] as const
+/** River band near the midline. */
+export const RIVER_ROWS = [74, 75] as const
 
 export const BRIDGES = [
-  { colStart: 3, colEnd: 5 },
-  { colStart: 12, colEnd: 14 },
+  { colStart: 18, colEnd: 28 },
+  { colStart: 72, colEnd: 82 },
 ] as const
 
 export type TowerKind = 'king' | 'princess'
@@ -22,14 +23,13 @@ export type TowerSlot = {
   h: number
 }
 
-/** Positions aligned to ClashMap SVG towers. */
 export const TOWERS: TowerSlot[] = [
-  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 7.5, row: 1.2, w: 3, h: 3 },
-  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 2.5, row: 5.2, w: 2.4, h: 2.6 },
-  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 13.1, row: 5.2, w: 2.4, h: 2.6 },
-  { id: 'ally-king', side: 'ally', kind: 'king', col: 7.5, row: 27.8, w: 3, h: 3 },
-  { id: 'ally-left', side: 'ally', kind: 'princess', col: 2.5, row: 24.2, w: 2.4, h: 2.6 },
-  { id: 'ally-right', side: 'ally', kind: 'princess', col: 13.1, row: 24.2, w: 2.4, h: 2.6 },
+  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 46, row: 4, w: 8, h: 8 },
+  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 16, row: 16, w: 6, h: 6 },
+  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 78, row: 16, w: 6, h: 6 },
+  { id: 'ally-king', side: 'ally', kind: 'king', col: 46, row: 138, w: 8, h: 8 },
+  { id: 'ally-left', side: 'ally', kind: 'princess', col: 16, row: 128, w: 6, h: 6 },
+  { id: 'ally-right', side: 'ally', kind: 'princess', col: 78, row: 128, w: 6, h: 6 },
 ]
 
 export function isRiverTile(row: number, col: number): boolean {

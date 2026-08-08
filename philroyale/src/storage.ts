@@ -1,6 +1,6 @@
 import { CHARACTERS, DEFAULT_DECK, DECK_SIZE } from './characters'
 
-const DECK_KEY = 'philroyale.deck'
+const DECK_KEY = 'philroyale.deck.v2'
 const FRIENDS_KEY = 'philroyale.friends'
 const MY_CLUB_KEY = 'philroyale.myClub'
 const MY_CLUB_META_KEY = 'philroyale.myClubMeta'

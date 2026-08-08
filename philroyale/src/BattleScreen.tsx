@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Arena, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
-import { FullSundae, PhilUnit } from './PhilUnit'
+import { SundaeDot, UnitToken } from './UnitToken'
 import { getCharacter } from './characters'
 import { loadDeck } from './storage'
 import { useBattle } from './useBattle'
@@ -12,7 +12,7 @@ type Props = {
   opponentName?: string | null
 }
 
-function SundaeProjectile({
+function FlyingSundae({
   fromCol,
   fromRow,
   toCol,
@@ -33,12 +33,12 @@ function SundaeProjectile({
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
   const col = fromCol + (toCol - fromCol) * p
   const row = fromRow + (toRow - fromRow) * p
-  const arc = Math.sin(p * Math.PI) * 2.8
+  const arc = Math.sin(p * Math.PI) * 4
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
 
   return (
     <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-hidden>
-      <FullSundae className="scale-125 drop-shadow-md" />
+      <SundaeDot />
     </div>
   )
 }
@@ -129,7 +129,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
           </p>
         </div>
         <div className="min-w-[3.2rem] text-right text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/80">
-          Crowns 0
+          100×150
         </div>
       </header>
 
@@ -142,29 +142,24 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         >
           <Arena towers={towers} onArenaPointerDown={onArenaPointer}>
             <AnimatePresence>
-              {units.map((u) => {
-                const def = getCharacter(u.charId)
-                if (!def) return null
-                const style = unitStyle(u.col, u.row)
-                return (
-                  <div
-                    key={u.id}
-                    className="absolute z-10 -translate-x-1/2 -translate-y-[70%]"
-                    style={style}
-                  >
-                    <PhilUnit
-                      side={u.side}
-                      hpPct={u.maxHp > 0 ? u.hp / u.maxHp : 0}
-                      vfx={u.vfx}
-                      facing={u.facing}
-                    />
-                  </div>
-                )
-              })}
+              {units.map((u) => (
+                <div
+                  key={u.id}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-[70%]"
+                  style={unitStyle(u.col, u.row)}
+                >
+                  <UnitToken
+                    charId={u.charId}
+                    side={u.side}
+                    hpPct={u.maxHp > 0 ? u.hp / u.maxHp : 0}
+                    vfx={u.vfx}
+                  />
+                </div>
+              ))}
             </AnimatePresence>
-            {projectiles.map((p) => (
-              <SundaeProjectile key={p.id} {...p} now={now} />
-            ))}
+            {projectiles.map((p) =>
+              p.kind === 'sundae' ? <FlyingSundae key={p.id} {...p} now={now} /> : null,
+            )}
           </Arena>
         </motion.div>
       </div>
@@ -227,7 +222,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             </div>
           </div>
           <p className="mt-1 text-center text-[0.65rem] font-bold text-white/55">
-            Select Phil, tap your half to deploy
+            Select a card, tap your half to deploy
           </p>
         </div>
       </div>
