@@ -19,35 +19,18 @@ export function BattleCard({ character, size = 'hand', dimmed, selected }: Props
     )
   }
 
-  const art = `hsl(${character.hue} 55% 42%)`
-  const artLit = `hsl(${character.hue} 65% 55%)`
-
   return (
     <div
       className={`card-frame relative overflow-hidden rounded-md ${next ? 'h-14 w-11' : 'aspect-[3/4] w-full'} ${dimmed ? 'opacity-55' : ''} ${selected ? 'ring-2 ring-white scale-[1.03]' : ''}`}
     >
-      <div
-        className="absolute inset-[3px] flex flex-col overflow-hidden rounded-sm"
-        style={{
-          background: character.portrait
-            ? '#1a1410'
-            : `linear-gradient(165deg, ${artLit} 0%, ${art} 55%, #1a1410 140%)`,
-        }}
-      >
+      <div className="absolute inset-[3px] flex flex-col overflow-hidden rounded-sm bg-[#1a2744]">
         <div className="relative flex min-h-0 flex-1 items-center justify-center">
-          {character.portrait ? (
-            <img
-              src={character.portrait}
-              alt=""
-              className="h-full w-full object-cover object-top"
-              draggable={false}
-            />
-          ) : (
-            <div
-              className={`${next ? 'h-6 w-6' : 'h-9 w-9'} rounded-full border-2 border-white/30`}
-              style={{ background: `hsl(${character.hue} 70% 65%)` }}
-            />
-          )}
+          <img
+            src={character.portrait}
+            alt=""
+            className="h-full w-full object-cover object-[50%_18%]"
+            draggable={false}
+          />
           {!next ? (
             <span className="absolute bottom-0.5 left-0 right-0 truncate bg-black/45 px-0.5 text-center text-[0.55rem] font-extrabold leading-tight text-white">
               {character.name}

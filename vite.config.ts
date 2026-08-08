@@ -60,6 +60,10 @@ export default defineConfig({
         navigateFallbackDenylist: [
           /^\/Brayden-OS\/jerseydeals(?:\/|$)/i,
           /\/jerseydeals(?:\/|$)/i,
+          /^\/Brayden-OS\/platequest(?:\/|$)/i,
+          /\/platequest(?:\/|$)/i,
+          /^\/Brayden-OS\/philroyale(?:\/|$)/i,
+          /\/philroyale(?:\/|$)/i,
         ],
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff2}'],
         cleanupOutdatedCaches: true,

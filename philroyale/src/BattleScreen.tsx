@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ARENA_COLS, ARENA_ROWS } from './arena'
-import { Arena } from './Arena'
+import { Arena, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
+import { FullSundae, PhilUnit } from './PhilUnit'
 import { getCharacter } from './characters'
 import { loadDeck } from './storage'
 import { useBattle } from './useBattle'
@@ -33,22 +33,12 @@ function SundaeProjectile({
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
   const col = fromCol + (toCol - fromCol) * p
   const row = fromRow + (toRow - fromRow) * p
-  const arc = Math.sin(p * Math.PI) * 2.2
-  const left = `${(col / ARENA_COLS) * 100}%`
-  const top = `${((row - arc) / ARENA_ROWS) * 100}%`
+  const arc = Math.sin(p * Math.PI) * 2.8
+  const style = unitStyle(col - 0.5, row - 0.5 - arc)
 
   return (
-    <div
-      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-      style={{ left, top }}
-      aria-hidden
-    >
-      <div className="relative h-5 w-4">
-        <div className="absolute bottom-0 left-1/2 h-2.5 w-3 -translate-x-1/2 rounded-b-full bg-[#f3efe4] shadow" />
-        <div className="absolute bottom-1.5 left-1/2 h-2.5 w-3.5 -translate-x-1/2 rounded-full bg-[#ff8fab]" />
-        <div className="absolute bottom-3 left-1/2 h-2 w-2.5 -translate-x-1/2 rounded-full bg-[#fff6d6]" />
-        <div className="absolute left-[55%] top-0 h-1.5 w-1.5 rounded-full bg-[#6b3a2a]" />
-      </div>
+    <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-hidden>
+      <FullSundae className="scale-125 drop-shadow-md" />
     </div>
   )
 }
@@ -77,7 +67,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     setHand(h)
     setNextId(pile[4] ?? null)
     setDrawPile(pile.slice(5))
-    setSelectedCharId(h[0] ?? null)
+    setSelectedCharId(h[0] ?? 'phil')
   }, [deckIds, setSelectedCharId])
 
   useEffect(() => {
@@ -155,60 +145,19 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               {units.map((u) => {
                 const def = getCharacter(u.charId)
                 if (!def) return null
-                const left = `${((u.col + 0.5) / ARENA_COLS) * 100}%`
-                const top = `${((u.row + 0.5) / ARENA_ROWS) * 100}%`
-                const hpPct = u.maxHp > 0 ? u.hp / u.maxHp : 0
+                const style = unitStyle(u.col, u.row)
                 return (
                   <div
                     key={u.id}
-                    className="absolute -translate-x-1/2 -translate-y-1/2"
-                    style={{ left, top, width: `${(2.1 / ARENA_COLS) * 100}%` }}
+                    className="absolute z-10 -translate-x-1/2 -translate-y-[70%]"
+                    style={style}
                   >
-                    <motion.div
-                      animate={
-                        u.vfx === 'whip'
-                          ? { rotate: [0, -18, 14, -8, 0], scale: [1, 1.08, 1] }
-                          : u.vfx === 'sundae'
-                            ? { y: [0, -6, 0], scale: [1, 1.05, 1] }
-                            : { y: [0, -1.5, 0] }
-                      }
-                      transition={
-                        u.vfx
-                          ? { duration: 0.35 }
-                          : { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }
-                      }
-                    >
-                      <div className="mb-0.5 h-1 w-full overflow-hidden rounded-sm bg-black/50">
-                        <div
-                          className="h-full bg-[#6dce7a]"
-                          style={{ width: `${hpPct * 100}%` }}
-                        />
-                      </div>
-                      <div className="overflow-hidden rounded-md border-2 border-[#f5d76e] shadow-lg">
-                        {def.portrait ? (
-                          <img
-                            src={def.portrait}
-                            alt={def.name}
-                            className="aspect-square w-full object-cover object-top"
-                            draggable={false}
-                          />
-                        ) : (
-                          <div
-                            className="flex aspect-square items-center justify-center text-[0.55rem] font-extrabold text-white"
-                            style={{ background: `hsl(${def.hue} 55% 40%)` }}
-                          >
-                            {def.name.slice(0, 3)}
-                          </div>
-                        )}
-                      </div>
-                      {u.vfx === 'whip' ? (
-                        <div
-                          className="pointer-events-none absolute -right-2 top-1/3 h-0.5 w-5 origin-left rounded-full bg-[#f5d76e]"
-                          style={{ transform: 'rotate(-25deg)' }}
-                          aria-hidden
-                        />
-                      ) : null}
-                    </motion.div>
+                    <PhilUnit
+                      side={u.side}
+                      hpPct={u.maxHp > 0 ? u.hp / u.maxHp : 0}
+                      vfx={u.vfx}
+                      facing={u.facing}
+                    />
                   </div>
                 )
               })}
@@ -235,7 +184,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               </span>
               <BattleCard character={nextId ? getCharacter(nextId) ?? null : null} size="next" />
             </div>
-
             <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
               {hand.map((id, i) => {
                 const c = getCharacter(id) ?? null
@@ -256,7 +204,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               })}
             </div>
           </div>
-
           <div className="mt-2 flex items-center gap-2">
             <div
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-extrabold text-white"
@@ -264,7 +211,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
                 boxShadow: '0 0 0 2px #5a1848, 0 2px 4px #00000088',
               }}
-              aria-label={`${elixirDisplay} elixir`}
             >
               {elixirDisplay}
             </div>
@@ -281,7 +227,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             </div>
           </div>
           <p className="mt-1 text-center text-[0.65rem] font-bold text-white/55">
-            Select a card, then tap your half of the arena
+            Select Phil, tap your half to deploy
           </p>
         </div>
       </div>

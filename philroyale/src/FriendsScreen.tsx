@@ -1,95 +1,131 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  loadClubs,
+  clubInviteUrl,
+  friendInviteUrl,
   loadFriends,
-  loadMyClubId,
-  saveClubs,
+  loadMyClub,
+  loadPlayerName,
   saveFriends,
-  saveMyClubId,
+  saveMyClub,
+  savePlayerName,
+  shareText,
   type Club,
   type Friend,
 } from './storage'
 
+function makeCode(): string {
+  return Math.random().toString(36).slice(2, 8).toUpperCase()
+}
+
 export function FriendsScreen() {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
-  const [clubs, setClubs] = useState<Club[]>(() => loadClubs())
-  const [myClubId, setMyClubId] = useState<string | null>(() => loadMyClubId())
-  const [friendName, setFriendName] = useState('')
+  const [club, setClub] = useState<Club | null>(() => loadMyClub())
+  const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [clubName, setClubName] = useState('')
-  const [clubDesc, setClubDesc] = useState('')
+  const [joinCode, setJoinCode] = useState('')
   const [section, setSection] = useState<'friends' | 'clubs'>('friends')
 
-  const myClub = useMemo(
-    () => clubs.find((c) => c.id === myClubId) ?? null,
-    [clubs, myClubId],
-  )
-
-  function addFriend() {
-    const name = friendName.trim()
-    if (!name) return
-    if (friends.some((f) => f.name.toLowerCase() === name.toLowerCase())) {
-      setFriendName('')
-      return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const clubCode = params.get('club')
+    const friendFrom = params.get('friend')
+    if (clubCode) {
+      const joined: Club = {
+        id: `joined-${clubCode}`,
+        name: `Club ${clubCode}`,
+        tag: `#${clubCode}`,
+        description: 'Joined from a text invite.',
+        code: clubCode.toUpperCase(),
+      }
+      setClub(joined)
+      saveMyClub(joined)
+      setSection('clubs')
     }
-    const next: Friend[] = [
-      ...friends,
-      { id: `f-${Date.now()}`, name, online: Math.random() > 0.4 },
-    ]
-    setFriends(next)
-    saveFriends(next)
-    setFriendName('')
+    if (friendFrom) {
+      const name = friendFrom.trim()
+      if (name) {
+        setFriends((prev) => {
+          if (prev.some((f) => f.name.toLowerCase() === name.toLowerCase())) return prev
+          const next = [
+            ...prev,
+            { id: `f-${Date.now()}`, name, addedAt: new Date().toISOString() },
+          ]
+          saveFriends(next)
+          return next
+        })
+        setSection('friends')
+      }
+    }
+    if (clubCode || friendFrom) {
+      const url = new URL(window.location.href)
+      url.search = ''
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
+
+  function persistName(name: string) {
+    setPlayerName(name)
+    savePlayerName(name)
+  }
+
+  async function inviteFriendSms() {
+    const me = playerName.trim() || 'me'
+    await shareText(
+      'Phil Royale',
+      `Add me on Phil Royale — open this link to friend ${me} and play:`,
+      friendInviteUrl(me),
+    )
+  }
+
+  async function shareClubSms() {
+    if (!club) return
+    await shareText(
+      'Phil Royale club',
+      `Join my Phil Royale club "${club.name}" (${club.tag}). Open the link, then we can battle:`,
+      clubInviteUrl(club.code),
+    )
+  }
+
+  function createClub() {
+    const name = clubName.trim()
+    if (!name) return
+    const code = makeCode()
+    const next: Club = {
+      id: `c-${Date.now()}`,
+      name,
+      tag: `#${code}`,
+      description: 'Your club — share the link by text so friends can join.',
+      code,
+    }
+    setClub(next)
+    saveMyClub(next)
+    setClubName('')
+  }
+
+  function joinByCode() {
+    const code = joinCode.trim().toUpperCase()
+    if (code.length < 4) return
+    const next: Club = {
+      id: `joined-${code}`,
+      name: `Club ${code}`,
+      tag: `#${code}`,
+      description: 'Joined with an invite code from a friend.',
+      code,
+    }
+    setClub(next)
+    saveMyClub(next)
+    setJoinCode('')
+  }
+
+  function leaveClub() {
+    setClub(null)
+    saveMyClub(null)
   }
 
   function removeFriend(id: string) {
     const next = friends.filter((f) => f.id !== id)
     setFriends(next)
     saveFriends(next)
-  }
-
-  function createClub() {
-    const name = clubName.trim()
-    if (!name) return
-    const tag = `#${name.replace(/\s+/g, '').slice(0, 6).toUpperCase()}`
-    const club: Club = {
-      id: `c-${Date.now()}`,
-      name,
-      tag,
-      members: 1,
-      description: clubDesc.trim() || 'A new Phil Royale club.',
-    }
-    const next = [club, ...clubs]
-    setClubs(next)
-    saveClubs(next)
-    setMyClubId(club.id)
-    saveMyClubId(club.id)
-    setClubName('')
-    setClubDesc('')
-    setSection('clubs')
-  }
-
-  function joinClub(id: string) {
-    setMyClubId(id)
-    saveMyClubId(id)
-    setClubs((prev) => {
-      const next = prev.map((c) =>
-        c.id === id ? { ...c, members: c.members + (myClubId === id ? 0 : 1) } : c,
-      )
-      saveClubs(next)
-      return next
-    })
-  }
-
-  function leaveClub() {
-    if (!myClubId) return
-    setClubs((prev) => {
-      const next = prev.map((c) =>
-        c.id === myClubId ? { ...c, members: Math.max(1, c.members - 1) } : c,
-      )
-      saveClubs(next)
-      return next
-    })
-    setMyClubId(null)
-    saveMyClubId(null)
   }
 
   return (
@@ -99,8 +135,17 @@ export function FriendsScreen() {
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Add friends and join or create clubs.
+          Invite real friends by text. No fake players.
         </p>
+        <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+          Your name
+          <input
+            value={playerName}
+            onChange={(e) => persistName(e.target.value)}
+            placeholder="Name friends will see"
+            className="mt-1 w-full rounded-lg bg-[#221610] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+          />
+        </label>
         <div className="mt-2 flex gap-2">
           {(
             [
@@ -115,9 +160,7 @@ export function FriendsScreen() {
               className="flex-1 rounded-lg py-2 text-sm font-extrabold"
               style={{
                 background:
-                  section === id
-                    ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
-                    : '#2a1a12',
+                  section === id ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : '#2a1a12',
                 color: section === id ? '#1a1410' : '#fff6e8',
                 boxShadow: section === id ? '0 3px 0 #8a6a12' : 'none',
               }}
@@ -131,59 +174,48 @@ export function FriendsScreen() {
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
         {section === 'friends' ? (
           <div className="flex flex-col gap-3">
-            <div
-              className="rounded-xl p-3"
-              style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+            <button
+              type="button"
+              onClick={() => void inviteFriendSms()}
+              className="w-full rounded-xl py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{
+                background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
+                color: '#fff',
+                boxShadow: '0 4px 0 #1d4a86',
+              }}
             >
-              <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-                Add friend
+              Text invite to a friend
+            </button>
+            <p className="text-center text-xs font-semibold text-white/50">
+              Opens Messages / share — they tap your link to appear here.
+            </p>
+            {friends.length === 0 ? (
+              <p className="rounded-lg bg-[#221610] px-3 py-4 text-center text-sm font-semibold text-white/55 ring-1 ring-white/10">
+                No friends yet. Send a text invite.
               </p>
-              <div className="flex gap-2">
-                <input
-                  value={friendName}
-                  onChange={(e) => setFriendName(e.target.value)}
-                  placeholder="Friend name"
-                  className="min-w-0 flex-1 rounded-lg border-0 bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
-                />
-                <button
-                  type="button"
-                  onClick={addFriend}
-                  className="rounded-lg px-3 py-2 text-sm font-extrabold text-[#1a1410]"
-                  style={{ background: 'linear-gradient(180deg,#7dff9a,#2f9f55)' }}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-
-            <ul className="flex flex-col gap-1.5">
-              {friends.map((f) => (
-                <li
-                  key={f.id}
-                  className="flex items-center justify-between rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
-                >
-                  <div>
-                    <p className="font-bold text-white">{f.name}</p>
-                    <p
-                      className={`text-xs font-extrabold ${f.online ? 'text-[#7dff9a]' : 'text-white/40'}`}
-                    >
-                      {f.online ? 'Online' : 'Offline'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFriend(f.id)}
-                    className="text-xs font-extrabold text-[#ff8a7a]"
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {friends.map((f) => (
+                  <li
+                    key={f.id}
+                    className="flex items-center justify-between rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
                   >
-                    Remove
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <p className="font-bold text-white">{f.name}</p>
+                    <button
+                      type="button"
+                      onClick={() => removeFriend(f.id)}
+                      className="text-xs font-extrabold text-[#ff8a7a]"
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {myClub ? (
+            {club ? (
               <div
                 className="rounded-xl p-3"
                 style={{
@@ -195,12 +227,19 @@ export function FriendsScreen() {
                   Your club
                 </p>
                 <p className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
-                  {myClub.name}
+                  {club.name}
                 </p>
                 <p className="text-sm font-semibold text-white/85">
-                  {myClub.tag} · {myClub.members} members
+                  {club.tag} · code {club.code}
                 </p>
-                <p className="mt-1 text-sm text-white/75">{myClub.description}</p>
+                <p className="mt-1 text-sm text-white/75">{club.description}</p>
+                <button
+                  type="button"
+                  onClick={() => void shareClubSms()}
+                  className="mt-2 w-full rounded-lg bg-[#f5d76e] py-2 text-sm font-extrabold text-[#1a1410]"
+                >
+                  Text club invite
+                </button>
                 <button
                   type="button"
                   onClick={leaveClub}
@@ -209,70 +248,56 @@ export function FriendsScreen() {
                   Leave club
                 </button>
               </div>
-            ) : null}
-
-            <div
-              className="rounded-xl p-3"
-              style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
-            >
-              <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-                Create a club
-              </p>
-              <input
-                value={clubName}
-                onChange={(e) => setClubName(e.target.value)}
-                placeholder="Club name"
-                className="mb-2 w-full rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
-              />
-              <input
-                value={clubDesc}
-                onChange={(e) => setClubDesc(e.target.value)}
-                placeholder="Short description"
-                className="mb-2 w-full rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
-              />
-              <button
-                type="button"
-                onClick={createClub}
-                className="w-full rounded-lg py-2 text-sm font-extrabold text-[#1a1410]"
-                style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-              >
-                Create club
-              </button>
-            </div>
-
-            <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Join a club
-            </p>
-            <ul className="flex flex-col gap-1.5">
-              {clubs.map((c) => (
-                <li
-                  key={c.id}
-                  className="rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
+            ) : (
+              <>
+                <div
+                  className="rounded-xl p-3"
+                  style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-bold text-white">{c.name}</p>
-                      <p className="text-xs font-semibold text-white/55">
-                        {c.tag} · {c.members} members
-                      </p>
-                      <p className="mt-0.5 text-sm text-white/70">{c.description}</p>
-                    </div>
+                  <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+                    Create a club
+                  </p>
+                  <input
+                    value={clubName}
+                    onChange={(e) => setClubName(e.target.value)}
+                    placeholder="Club name"
+                    className="mb-2 w-full rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+                  />
+                  <button
+                    type="button"
+                    onClick={createClub}
+                    className="w-full rounded-lg py-2 text-sm font-extrabold text-[#1a1410]"
+                    style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                  >
+                    Create club
+                  </button>
+                </div>
+                <div
+                  className="rounded-xl p-3"
+                  style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+                >
+                  <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+                    Join with code from a text
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      placeholder="CODE"
+                      className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold uppercase text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+                    />
                     <button
                       type="button"
-                      disabled={myClubId === c.id}
-                      onClick={() => joinClub(c.id)}
-                      className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-extrabold disabled:opacity-40"
-                      style={{
-                        background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
-                        color: '#fff',
-                      }}
+                      onClick={joinByCode}
+                      className="rounded-lg px-3 py-2 text-sm font-extrabold text-white"
+                      style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
                     >
-                      {myClubId === c.id ? 'Joined' : 'Join'}
+                      Join
                     </button>
                   </div>
-                </li>
-              ))}
-            </ul>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

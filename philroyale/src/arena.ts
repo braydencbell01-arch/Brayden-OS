@@ -2,13 +2,11 @@
 export const ARENA_COLS = 18
 export const ARENA_ROWS = 32
 
-/** River occupies two center rows. */
 export const RIVER_ROWS = [15, 16] as const
 
-/** Bridge column spans (0-indexed, inclusive). */
 export const BRIDGES = [
-  { colStart: 2, colEnd: 5 },
-  { colStart: 12, colEnd: 15 },
+  { colStart: 3, colEnd: 5 },
+  { colStart: 12, colEnd: 14 },
 ] as const
 
 export type TowerKind = 'king' | 'princess'
@@ -24,13 +22,14 @@ export type TowerSlot = {
   h: number
 }
 
+/** Positions aligned to ClashMap SVG towers. */
 export const TOWERS: TowerSlot[] = [
-  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 7.5, row: 0.6, w: 3, h: 3.4 },
-  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 2.2, row: 4.2, w: 2.4, h: 2.8 },
-  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 13.4, row: 4.2, w: 2.4, h: 2.8 },
-  { id: 'ally-king', side: 'ally', kind: 'king', col: 7.5, row: 28, w: 3, h: 3.4 },
-  { id: 'ally-left', side: 'ally', kind: 'princess', col: 2.2, row: 25, w: 2.4, h: 2.8 },
-  { id: 'ally-right', side: 'ally', kind: 'princess', col: 13.4, row: 25, w: 2.4, h: 2.8 },
+  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 7.5, row: 1.2, w: 3, h: 3 },
+  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 2.5, row: 5.2, w: 2.4, h: 2.6 },
+  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 13.1, row: 5.2, w: 2.4, h: 2.6 },
+  { id: 'ally-king', side: 'ally', kind: 'king', col: 7.5, row: 27.8, w: 3, h: 3 },
+  { id: 'ally-left', side: 'ally', kind: 'princess', col: 2.5, row: 24.2, w: 2.4, h: 2.6 },
+  { id: 'ally-right', side: 'ally', kind: 'princess', col: 13.1, row: 24.2, w: 2.4, h: 2.6 },
 ]
 
 export function isRiverTile(row: number, col: number): boolean {

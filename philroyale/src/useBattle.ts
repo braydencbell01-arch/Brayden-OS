@@ -7,8 +7,9 @@ import type { BattleUnit, Projectile } from './battleTypes'
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
 const MOVE_TILES_PER_SEC = 1.35
-const SUNDAE_FLIGHT_MS = 420
-const VFX_MS = 380
+const SUNDAE_FLIGHT_MS = 480
+const SUNDAE_VFX_MS = 320
+const WHIP_VFX_MS = 550
 
 export type TowerHp = { id: string; hp: number; maxHp: number; side: Side }
 
@@ -17,9 +18,7 @@ function towerMaxHp(kind: 'king' | 'princess'): number {
 }
 
 function dist(aCol: number, aRow: number, bCol: number, bRow: number): number {
-  const dc = aCol - bCol
-  const dr = aRow - bRow
-  return Math.hypot(dc, dr)
+  return Math.hypot(aCol - bCol, aRow - bRow)
 }
 
 function unitCenter(u: BattleUnit): { col: number; row: number } {
@@ -80,9 +79,11 @@ export function useBattle() {
           hp: char.hp,
           maxHp: char.hp,
           nextAttack: char.firstAttack,
-          nextAttackAt: t + 400,
+          nextAttackAt: t + 350,
           vfx: null,
           vfxUntil: 0,
+          facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
+          rootedUntil: 0,
         },
       ])
       return true
@@ -107,7 +108,6 @@ export function useBattle() {
       let towersChanged = false
       let projectilesChanged = false
 
-      // Resolve arriving sundae hits
       const stillFlying: Projectile[] = []
       for (const p of nextProjectiles) {
         if (t < p.arriveAt) {
@@ -147,9 +147,13 @@ export function useBattle() {
         const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
         const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
 
-        type Target =
-          | { kind: 'unit'; id: string; col: number; row: number; d: number }
-          | { kind: 'tower'; id: string; col: number; row: number; d: number }
+        type Target = {
+          kind: 'unit' | 'tower' | 'air'
+          id: string | null
+          col: number
+          row: number
+          d: number
+        }
 
         let best: Target | null = null
         for (const f of foes) {
@@ -163,38 +167,64 @@ export function useBattle() {
           const d = dist(me.col, me.row, c.col, c.row)
           if (!best || d < best.d) best = { kind: 'tower', id: tw.id, col: c.col, row: c.row, d }
         }
-        if (!best) continue
+
+        // Always have a facing target — nearest foe or forward toward enemy side
+        if (!best) {
+          const forwardRow = u.side === 'ally' ? me.row - 6 : me.row + 6
+          best = {
+            kind: 'air',
+            id: null,
+            col: me.col,
+            row: Math.max(0, Math.min(ARENA_ROWS - 1, forwardRow)),
+            d: 6,
+          }
+        }
+
+        const face = Math.atan2(best.row - me.row, best.col - me.col)
+        if (Math.abs(face - u.facing) > 0.04) {
+          u.facing = face
+          unitsChanged = true
+        }
 
         const attack: AttackKind = u.nextAttack
         const range = attack === 'sundae' ? def.sundaeRangeTiles : def.whipRangeTiles
         const damage = attack === 'sundae' ? def.sundaeDamage : def.whipDamage
+        const rooted = t < u.rootedUntil
 
-        if (best.d > range) {
+        // Move toward target when out of range (never while whipping)
+        if (!rooted && best.d > range && best.kind !== 'air') {
           const step = MOVE_TILES_PER_SEC * dt
-          const ang = Math.atan2(best.row - me.row, best.col - me.col)
-          u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col + Math.cos(ang) * step))
-          u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * step))
+          u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col + Math.cos(u.facing) * step))
+          u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + Math.sin(u.facing) * step))
           unitsChanged = true
-          continue
+        } else if (!rooted && best.kind === 'air') {
+          const step = MOVE_TILES_PER_SEC * dt
+          const dir = u.side === 'ally' ? -1 : 1
+          u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dir * step))
+          unitsChanged = true
         }
 
         if (t < u.nextAttackAt) continue
 
+        // Must attack on cooldown even with no enemy in range
+        const inRange = best.d <= range
         u.vfx = attack
-        u.vfxUntil = t + VFX_MS
+        u.vfxUntil = t + (attack === 'whip' ? WHIP_VFX_MS : SUNDAE_VFX_MS)
         u.nextAttack = attack === 'sundae' ? 'whip' : 'sundae'
         u.nextAttackAt = t + def.attackDelaySec * 1000
         unitsChanged = true
 
         if (attack === 'whip') {
+          // Stop while whipping
+          u.rootedUntil = t + WHIP_VFX_MS
           playSfx(def.whipAudio)
-          if (best.kind === 'unit') {
+          if (inRange && best.kind === 'unit' && best.id) {
             const target = nextUnits.find((x) => x.id === best.id)
             if (target) {
               target.hp -= damage
               unitsChanged = true
             }
-          } else {
+          } else if (inRange && best.kind === 'tower' && best.id) {
             const tw = nextTowers.find((x) => x.id === best.id)
             if (tw) {
               tw.hp = Math.max(0, tw.hp - damage)
@@ -202,16 +232,19 @@ export function useBattle() {
             }
           }
         } else {
+          // Sundae — can keep moving; throw at target or forward air
+          const toCol = best.col
+          const toRow = best.row
           nextProjectiles.push({
             id: nid('p'),
             kind: 'sundae',
             fromCol: me.col,
             fromRow: me.row,
-            toCol: best.col,
-            toRow: best.row,
-            damage,
-            targetId: best.kind === 'unit' ? best.id : null,
-            targetTowerId: best.kind === 'tower' ? best.id : null,
+            toCol,
+            toRow,
+            damage: inRange && best.kind !== 'air' ? damage : 0,
+            targetId: inRange && best.kind === 'unit' ? best.id : null,
+            targetTowerId: inRange && best.kind === 'tower' ? best.id : null,
             bornAt: t,
             arriveAt: t + SUNDAE_FLIGHT_MS,
           })
