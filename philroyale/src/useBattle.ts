@@ -157,11 +157,14 @@ export function useBattle() {
           hp: char.hp,
           maxHp: char.hp,
           attackIndex: 0,
+          burstShot: 0,
           nextAttackAt: t + 300,
           vfx: null,
           vfxUntil: 0,
           facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
           rootedUntil: 0,
+          spawnedAt: t,
+          enraged: false,
         },
       ])
       return true
@@ -222,6 +225,19 @@ export function useBattle() {
         const def = getCharacter(u.charId)
         if (!def || def.attacks.length === 0) continue
 
+        if (
+          def.rageAfterSec != null &&
+          !u.enraged &&
+          t - u.spawnedAt >= def.rageAfterSec * 1000
+        ) {
+          u.enraged = true
+          unitsChanged = true
+        }
+
+        const moveSpeed =
+          def.moveSpeed * (u.enraged && def.rageMoveMult != null ? def.rageMoveMult : 1)
+        const dmgMult = u.enraged && def.rageDamageMult != null ? def.rageDamageMult : 1
+
         const me = unitCenter(u)
         const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
         const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
@@ -253,10 +269,12 @@ export function useBattle() {
 
         const attack = def.attacks[u.attackIndex % def.attacks.length]!
         const rooted = t < u.rootedUntil
+        const damage = attack.damage * dmgMult
 
+        // No target in play — push forward; never attack empty air.
         if (!best) {
           if (!rooted) {
-            const step = def.moveSpeed * dt
+            const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
             const next = stepUnit(u, 0, dir * step, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
@@ -277,7 +295,7 @@ export function useBattle() {
         // Out of this attack's range — move closer (stop outside tower area).
         if (best.d > attack.range) {
           if (!rooted) {
-            const step = def.moveSpeed * dt
+            const step = moveSpeed * dt
             const next = stepUnit(u, Math.cos(u.facing) * step, Math.sin(u.facing) * step, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
@@ -289,25 +307,34 @@ export function useBattle() {
 
         if (t < u.nextAttackAt) continue
 
+        const burstShots = attack.burstShots ?? 1
+        const burstGapSec = attack.burstGapSec ?? 0
+        const nextBurst = u.burstShot + 1
+        const burstDone = nextBurst >= burstShots
+
         u.vfx = attack.id
         u.vfxUntil = t + (attack.rootWhileAttacking ? ROOT_VFX_MS : RANGED_VFX_MS)
-        u.nextAttackAt = t + def.attackDelaySec * 1000
-        u.attackIndex = (u.attackIndex + 1) % def.attacks.length
+        u.nextAttackAt =
+          t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
+        u.burstShot = burstDone ? 0 : nextBurst
+        if (burstDone) {
+          u.attackIndex = (u.attackIndex + 1) % def.attacks.length
+        }
         unitsChanged = true
 
         if (attack.rootWhileAttacking) {
           u.rootedUntil = t + ROOT_VFX_MS
         }
 
-        if (attack.kind === 'sundae') {
+        if (attack.kind === 'sundae' || attack.kind === 'slobber' || attack.kind === 'shoot') {
           nextProjectiles.push({
             id: nid('p'),
-            kind: 'sundae',
+            kind: attack.kind,
             fromCol: me.col,
             fromRow: me.row,
             toCol: best.col,
             toRow: best.row,
-            damage: attack.damage,
+            damage,
             targetId: best.kind === 'unit' ? best.id : null,
             targetTowerId: best.kind === 'tower' ? best.id : null,
             bornAt: t,
@@ -320,7 +347,7 @@ export function useBattle() {
         if (best.kind === 'unit') {
           const target = nextUnits.find((x) => x.id === best.id)
           if (target) {
-            target.hp -= attack.damage
+            target.hp -= damage
             if (attack.pullToRange != null) {
               const ang = Math.atan2(target.row - u.row, target.col - u.col)
               let pc = Math.max(
@@ -342,7 +369,7 @@ export function useBattle() {
         } else {
           const tw = nextTowers.find((x) => x.id === best.id)
           if (tw) {
-            tw.hp = Math.max(0, tw.hp - attack.damage)
+            tw.hp = Math.max(0, tw.hp - damage)
             towersChanged = true
           }
         }

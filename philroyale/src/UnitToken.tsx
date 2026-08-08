@@ -7,14 +7,15 @@ type Props = {
   side: 'ally' | 'enemy'
   hpPct: number
   vfx: AttackId | null
+  enraged?: boolean
 }
 
 /** 1-block troop placeholder: tiny square with initial. */
-export function UnitToken({ charId, side, hpPct, vfx }: Props) {
+export function UnitToken({ charId, side, hpPct, vfx, enraged }: Props) {
   const def = getCharacter(charId)
   if (!def) return null
   const enemy = side === 'enemy'
-  const art = `hsl(${def.hue} 60% 42%)`
+  const art = enraged ? 'hsl(285 70% 42%)' : `hsl(${def.hue} 60% 42%)`
 
   return (
     <div className="relative flex w-full flex-col items-center">
@@ -33,12 +34,14 @@ export function UnitToken({ charId, side, hpPct, vfx }: Props) {
         className="flex aspect-square w-full items-center justify-center rounded-[2px] border border-[#f5d76e] font-[family-name:var(--font-display)] text-[0.45rem] leading-none text-white"
         style={{
           background: art,
-          boxShadow: '1px 1px 0 #00000066',
+          boxShadow: enraged
+            ? '0 0 6px #c44dff88, 1px 1px 0 #00000066'
+            : '1px 1px 0 #00000066',
         }}
         animate={
-          vfx === 'chickenWhip' || vfx === 'deathHug'
+          vfx === 'chickenWhip' || vfx === 'deathHug' || vfx === 'bite'
             ? { scale: [1, 1.2, 1], rotate: [0, -10, 10, 0] }
-            : vfx === 'sundaeThrow'
+            : vfx === 'sundaeThrow' || vfx === 'slobber' || vfx === 'shoot'
               ? { y: [0, -2, 0] }
               : { y: [0, -0.5, 0] }
         }
@@ -64,5 +67,31 @@ export function SundaeDot() {
         style={{ clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0 100%)' }}
       />
     </div>
+  )
+}
+
+export function SlobberDot() {
+  return (
+    <div
+      className="h-2 w-2 rounded-full"
+      style={{
+        background: 'radial-gradient(circle at 35% 30%, #c8f070, #6a9a28 60%, #3d5c12)',
+        boxShadow: '0 0 3px #8bc34a88',
+      }}
+      aria-hidden
+    />
+  )
+}
+
+export function ShootDot() {
+  return (
+    <div
+      className="h-1.5 w-1.5 rounded-[1px]"
+      style={{
+        background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+        boxShadow: '0 0 4px #ffd54f99',
+      }}
+      aria-hidden
+    />
   )
 }

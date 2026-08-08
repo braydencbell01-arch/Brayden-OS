@@ -178,6 +178,12 @@ function CardProfile({
             <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
             <Stat label="Attack CD" value={`${character.attackDelaySec}s`} />
             <Stat label="Size" value="1 block" />
+            {character.rageAfterSec != null ? (
+              <Stat
+                label="Rage"
+                value={`${character.rageAfterSec}s → ×${character.rageDamageMult ?? 1} dmg / ×${character.rageMoveMult ?? 1} speed`}
+              />
+            ) : null}
           </dl>
 
           <p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
@@ -194,6 +200,9 @@ function CardProfile({
                   {a.damage} dmg · {a.range} block range
                   {a.rootWhileAttacking ? ' · stops to attack' : ' · can move while attacking'}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
+                  {a.burstShots != null && a.burstShots > 1
+                    ? ` · ${a.burstShots} shots ${a.burstGapSec ?? 0}s apart`
+                    : ''}
                 </p>
               </li>
             ))}

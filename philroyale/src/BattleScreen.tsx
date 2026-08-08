@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ARENA_ROWS, isWalkableTile } from './arena'
 import { Arena, clientToArenaTile, oneTileWidthPct, unitStyle } from './Arena'
 import { BattleCard } from './BattleCard'
-import { SundaeDot, UnitToken } from './UnitToken'
+import { ShootDot, SlobberDot, SundaeDot, UnitToken } from './UnitToken'
 import { getCharacter } from './characters'
 import { loadDeck } from './storage'
 import { useBattle } from './useBattle'
@@ -22,7 +22,7 @@ type DragState = {
   valid: boolean
 }
 
-function FlyingSundae({
+function FlyingShot({
   fromCol,
   fromRow,
   toCol,
@@ -30,6 +30,7 @@ function FlyingSundae({
   bornAt,
   arriveAt,
   now,
+  kind,
 }: {
   fromCol: number
   fromRow: number
@@ -38,17 +39,20 @@ function FlyingSundae({
   bornAt: number
   arriveAt: number
   now: number
+  kind: 'sundae' | 'slobber' | 'shoot'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
   const col = fromCol + (toCol - fromCol) * p
   const row = fromRow + (toRow - fromRow) * p
-  const arc = Math.sin(p * Math.PI) * 4
+  const arc = Math.sin(p * Math.PI) * (kind === 'shoot' ? 2 : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
 
   return (
     <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-hidden>
-      <SundaeDot />
+      {kind === 'sundae' ? <SundaeDot /> : null}
+      {kind === 'slobber' ? <SlobberDot /> : null}
+      {kind === 'shoot' ? <ShootDot /> : null}
     </div>
   )
 }
@@ -272,12 +276,15 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                     side={u.side}
                     hpPct={u.maxHp > 0 ? u.hp / u.maxHp : 0}
                     vfx={u.vfx}
+                    enraged={u.enraged}
                   />
                 </div>
               ))}
             </AnimatePresence>
             {projectiles.map((p) =>
-              p.kind === 'sundae' ? <FlyingSundae key={p.id} {...p} now={now} /> : null,
+              p.kind === 'sundae' || p.kind === 'slobber' || p.kind === 'shoot' ? (
+                <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
+              ) : null,
             )}
             {drag && drag.overArena && dragChar ? (
               <div

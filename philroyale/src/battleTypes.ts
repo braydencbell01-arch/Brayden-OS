@@ -13,16 +13,20 @@ export type BattleUnit = {
   maxHp: number
   /** Index into character.attacks */
   attackIndex: number
+  /** Shot index within the current burst (0-based). */
+  burstShot: number
   nextAttackAt: number
   vfx: AttackId | null
   vfxUntil: number
   facing: number
   rootedUntil: number
+  spawnedAt: number
+  enraged: boolean
 }
 
 export type Projectile = {
   id: string
-  kind: 'sundae' | 'hug'
+  kind: 'sundae' | 'hug' | 'slobber' | 'shoot'
   fromCol: number
   fromRow: number
   toCol: number
