@@ -672,6 +672,50 @@ export function saveTrophyRoad(state: TrophyRoadState): void {
   localStorage.setItem(ROAD_KEY, JSON.stringify(state))
 }
 
+function grantRoadStep(
+  step: (typeof TROPHY_ROAD)[number],
+  profile: PlayerProfile,
+  progress: CardProgress,
+): string[] {
+  const messages: string[] = []
+  if (step.gold) {
+    profile.gold += step.gold
+    messages.push(`+${step.gold} gold`)
+  }
+  if (step.gems) {
+    profile.gems += step.gems
+    messages.push(`+${step.gems} gems`)
+  }
+  if (step.chest) {
+    const r = addChest(step.chest)
+    if (r.ok) messages.push(CHEST_META[step.chest].label)
+    else messages.push(`${CHEST_META[step.chest].label} (slots full)`)
+  }
+  if (step.unlockCard && !progress.unlocked.includes(step.unlockCard)) {
+    progress.unlocked.push(step.unlockCard)
+    const name = CHARACTERS.find((c) => c.id === step.unlockCard)?.name ?? step.unlockCard
+    messages.push(`Unlocked ${name}`)
+  }
+  return messages
+}
+
+/** Claim one trophy-road node (must be reached and unclaimed). */
+export function claimRoadStep(idx: number): { ok: boolean; message: string } {
+  const step = TROPHY_ROAD[idx]
+  if (!step) return { ok: false, message: 'Invalid reward' }
+  const profile = loadProfile()
+  const state = loadTrophyRoad()
+  if (profile.trophies < step.trophies) return { ok: false, message: 'Not enough trophies' }
+  if (state.claimed.includes(idx)) return { ok: false, message: 'Already claimed' }
+  const progress = loadCardProgress()
+  state.claimed.push(idx)
+  const messages = grantRoadStep(step, profile, progress)
+  saveTrophyRoad(state)
+  saveProfile(profile)
+  saveCardProgress(progress)
+  return { ok: true, message: messages.join(' · ') || 'Claimed!' }
+}
+
 export function claimAvailableRoadRewards(): string[] {
   const profile = loadProfile()
   const state = loadTrophyRoad()
@@ -681,29 +725,21 @@ export function claimAvailableRoadRewards(): string[] {
     if (state.claimed.includes(idx)) return
     if (profile.trophies < step.trophies) return
     state.claimed.push(idx)
-    if (step.gold) {
-      profile.gold += step.gold
-      messages.push(`+${step.gold} gold`)
-    }
-    if (step.gems) {
-      profile.gems += step.gems
-      messages.push(`+${step.gems} gems`)
-    }
-    if (step.chest) {
-      const r = addChest(step.chest)
-      if (r.ok) messages.push(CHEST_META[step.chest].label)
-      else messages.push(`${CHEST_META[step.chest].label} (slots full)`)
-    }
-    if (step.unlockCard && !progress.unlocked.includes(step.unlockCard)) {
-      progress.unlocked.push(step.unlockCard)
-      const name = CHARACTERS.find((c) => c.id === step.unlockCard)?.name ?? step.unlockCard
-      messages.push(`Unlocked ${name}`)
-    }
+    messages.push(...grantRoadStep(step, profile, progress))
   })
   saveTrophyRoad(state)
   saveProfile(profile)
   saveCardProgress(progress)
   return messages
+}
+
+export function countUnclaimedRoadRewards(): number {
+  const trophies = loadProfile().trophies
+  const claimed = new Set(loadTrophyRoad().claimed)
+  return TROPHY_ROAD.reduce(
+    (n, step, idx) => (trophies >= step.trophies && !claimed.has(idx) ? n + 1 : n),
+    0,
+  )
 }
 
 /* ——— Shop ——— */

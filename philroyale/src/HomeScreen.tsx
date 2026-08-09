@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { BattleCard } from './BattleCard'
 import { getCharacter } from './characters'
 import {
+  ARENA_COLORS,
   CHEST_META,
   botNameForTrophies,
   nextRoadStep,
@@ -12,6 +13,7 @@ import {
   claimCrownChest,
   claimDailyChest,
   claimDailyQuest,
+  countUnclaimedRoadRewards,
   friendInviteUrl,
   loadChests,
   loadDaily,
@@ -61,6 +63,18 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
 
   const nextStep = nextRoadStep(profile.trophies)
   const botName = botNameForTrophies(profile.trophies)
+  const unclaimed = countUnclaimedRoadRewards()
+  const arenaColors = ARENA_COLORS[arenaTitle(profile.trophies)] ?? ARENA_COLORS['Goblin Boot']!
+  const roadProgress = nextStep
+    ? Math.max(
+        0,
+        Math.min(
+          1,
+          (profile.trophies - (nextStep.trophies > 0 ? Math.max(0, nextStep.trophies - 100) : 0)) /
+            Math.max(1, nextStep.trophies - Math.max(0, nextStep.trophies - 100)),
+        ),
+      )
+    : 1
 
   function flash(msg: string) {
     setToast(msg)
@@ -183,18 +197,46 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
           <p className="mt-2 text-center text-xs font-extrabold uppercase tracking-wide text-white/70">
             {arenaTitle(profile.trophies)} · {profile.wins}W / {profile.losses}L
           </p>
-          <button
-            type="button"
-            onClick={onOpenRoad}
-            className="mt-2 w-full rounded-lg py-2 text-xs font-extrabold text-[#1a1410]"
-            style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-          >
-            Trophy Road
-            {nextStep
-              ? ` · next ${nextStep.trophies} (${nextStep.label})`
-              : ' · complete'}
-          </button>
         </section>
+
+        {/* Big clickable Trophy Road entry — CR style */}
+        <motion.button
+          type="button"
+          onClick={onOpenRoad}
+          whileTap={{ scale: 0.98 }}
+          className="relative mt-3 w-full max-w-md self-center overflow-hidden rounded-2xl px-3 py-3 text-left"
+          style={{
+            background: `linear-gradient(135deg, ${arenaColors.sky}, ${arenaColors.ground})`,
+            boxShadow: '0 6px 0 #00000055, inset 0 1px 0 #ffffff33',
+          }}
+        >
+          {unclaimed > 0 ? (
+            <span className="absolute right-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#ff3b3b] px-1.5 text-xs font-black text-white shadow">
+              {unclaimed}
+            </span>
+          ) : null}
+          <p className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[#f5d76e]">
+            Trophy Road
+          </p>
+          <p className="text-xs font-bold text-white/90">
+            Tap to scroll the path · claim chests, gold & cards
+          </p>
+          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-black/35 ring-1 ring-white/20">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.round(roadProgress * 100)}%`,
+                background: 'linear-gradient(90deg,#ffe08a,#f5d76e)',
+              }}
+            />
+          </div>
+          <p className="mt-1 text-[0.7rem] font-extrabold text-white">
+            {profile.trophies} trophies
+            {nextStep
+              ? ` · next reward at ${nextStep.trophies} (${nextStep.label})`
+              : ' · road complete!'}
+          </p>
+        </motion.button>
 
         {/* Chest slots */}
         <section className="mt-3 w-full max-w-md self-center">

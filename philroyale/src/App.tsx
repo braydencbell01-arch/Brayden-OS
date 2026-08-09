@@ -16,6 +16,7 @@ import {
   clearBattleAccepted,
   clearIncomingChallenge,
   clearOutgoingChallenge,
+  countUnclaimedRoadRewards,
   createBattleChallenge,
   isChallengeForMe,
   loadBattleAccepted,
@@ -33,13 +34,14 @@ import {
   type BattleChannelMessage,
 } from './storage'
 
-type TabId = 'home' | 'characters' | 'shop' | 'friends'
+type TabId = 'home' | 'road' | 'characters' | 'shop' | 'friends'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'home', label: 'Battle' },
+  { id: 'road', label: 'Road' },
   { id: 'characters', label: 'Cards' },
   { id: 'shop', label: 'Shop' },
-  { id: 'friends', label: 'Friends' },
+  { id: 'friends', label: 'Social' },
 ]
 
 function clearBattleUrlParams(): void {
@@ -243,12 +245,59 @@ export default function App() {
     )
   }
 
-  if (showRoad) {
+  const openRoad = showRoad || tab === 'road'
+  const roadBadge = countUnclaimedRoadRewards()
+
+  if (openRoad) {
     return (
-      <TrophyRoadScreen
-        onBack={() => setShowRoad(false)}
-        onPlayBot={() => startMatch(null)}
-      />
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="min-h-0 flex-1">
+          <TrophyRoadScreen
+            onBack={() => {
+              setShowRoad(false)
+              setTab('home')
+            }}
+            onPlayBot={() => startMatch(null)}
+          />
+        </div>
+        <nav
+          className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+          style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
+          aria-label="Main"
+        >
+          <ul className="mx-auto flex max-w-md gap-0.5">
+            {TABS.map((t) => {
+              const active = t.id === 'road'
+              return (
+                <li key={t.id} className="relative flex-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRoad(false)
+                      setTab(t.id)
+                    }}
+                    className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                    style={{
+                      background: active
+                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                        : 'transparent',
+                      color: active ? '#1a1410' : '#f5d76e',
+                      boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                  {t.id === 'road' && roadBadge > 0 ? (
+                    <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3b3b] px-1 text-[0.55rem] font-black text-white">
+                      {roadBadge}
+                    </span>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+      </div>
     )
   }
 
@@ -268,7 +317,10 @@ export default function App() {
               <HomeScreen
                 onPlay={startMatch}
                 onRequestBattle={requestBattle}
-                onOpenRoad={() => setShowRoad(true)}
+                onOpenRoad={() => {
+                  setShowRoad(true)
+                  setTab('road')
+                }}
               />
             ) : null}
             {tab === 'characters' ? <CharactersScreen /> : null}
@@ -285,19 +337,19 @@ export default function App() {
       </div>
 
       <nav
-        className="shrink-0 border-t border-[#c9a227]/30 px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1.5"
+        className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
         style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
         aria-label="Main"
       >
-        <ul className="mx-auto flex max-w-md gap-1">
+        <ul className="mx-auto flex max-w-md gap-0.5">
           {TABS.map((t) => {
             const active = tab === t.id
             return (
-              <li key={t.id} className="flex-1">
+              <li key={t.id} className="relative flex-1">
                 <button
                   type="button"
                   onClick={() => setTab(t.id)}
-                  className="flex w-full flex-col items-center rounded-lg py-2 text-xs font-extrabold uppercase tracking-wide"
+                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
                   style={{
                     background: active
                       ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
@@ -308,6 +360,11 @@ export default function App() {
                 >
                   {t.label}
                 </button>
+                {t.id === 'road' && roadBadge > 0 ? (
+                  <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3b3b] px-1 text-[0.55rem] font-black text-white">
+                    {roadBadge}
+                  </span>
+                ) : null}
               </li>
             )
           })}
