@@ -45,7 +45,7 @@ export function UnitToken({
         className="relative w-full"
         style={{
           aspectRatio:
-            charId === 'finley'
+            charId === 'finley' || charId === 'beans'
               ? '5 / 4'
               : charId === 'jeremy'
                 ? '3 / 5.4'
@@ -132,13 +132,58 @@ export function SundaeSplat({ ageMs }: { ageMs: number }) {
 export function SlobberDot() {
   return (
     <div
-      className="h-2 w-2 rounded-full"
+      className="relative h-3.5 w-4"
       style={{
-        background: 'radial-gradient(circle at 35% 30%, #c8f070, #6a9a28 60%, #3d5c12)',
-        boxShadow: '0 0 3px #8bc34a88',
+        background: 'radial-gradient(circle at 35% 30%, #d8f090, #8bc34a 55%, #4a7018)',
+        borderRadius: '55% 45% 60% 40%',
+        boxShadow: '0 0 6px #8bc34aaa, 0 2px 2px #0004',
       }}
       aria-hidden
-    />
+    >
+      <div className="absolute -bottom-1 left-1 h-1.5 w-1.5 rounded-full bg-[#8bc34a] opacity-80" />
+      <div className="absolute -bottom-0.5 right-0.5 h-1 w-1 rounded-full bg-[#aed581]" />
+    </div>
+  )
+}
+
+/** Beans slobber impact — goo explodes everywhere. */
+export function SlobberSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 780)
+  const scale = 0.45 + p * 1.9
+  const opacity = 1 - p * 0.95
+  return (
+    <div
+      className="relative h-10 w-10"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #d8f090 0%, #8bc34a 45%, #5a8a1833 70%, transparent 75%)',
+        }}
+      />
+      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            width: deg % 60 === 0 ? 10 : 7,
+            height: deg % 60 === 0 ? 7 : 5,
+            background: deg % 90 === 0 ? '#c8f070' : '#7cb342',
+            transform: `rotate(${deg}deg) translateY(-${5 + p * 10}px)`,
+            borderRadius: '60% 40% 55% 45%',
+          }}
+        />
+      ))}
+      {[15, 105, 195, 285].map((deg) => (
+        <div
+          key={`d-${deg}`}
+          className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#aed581]"
+          style={{ transform: `rotate(${deg}deg) translateY(-${8 + p * 12}px)` }}
+        />
+      ))}
+    </div>
   )
 }
 

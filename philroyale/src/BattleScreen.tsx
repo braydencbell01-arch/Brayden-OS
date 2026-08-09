@@ -3,7 +3,15 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { canDeployAllyAt } from './arena'
 import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct } from './Arena'
 import { BattleCard } from './BattleCard'
-import { BulletBoom, ShootDot, SlobberDot, SundaeDot, SundaeSplat, UnitToken } from './UnitToken'
+import {
+  BulletBoom,
+  ShootDot,
+  SlobberDot,
+  SlobberSplat,
+  SundaeDot,
+  SundaeSplat,
+  UnitToken,
+} from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
 import { getCharacter } from './characters'
 import { loadDeck } from './storage'
@@ -73,7 +81,7 @@ function FlyingShot({
   const arc =
     kind === 'arrow' || kind === 'cannon'
       ? Math.sin(p * Math.PI) * 1.2
-      : Math.sin(p * Math.PI) * (kind === 'shoot' ? 0.6 : 4)
+      : Math.sin(p * Math.PI) * (kind === 'shoot' ? 0.6 : kind === 'slobber' ? 5.5 : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
 
   return (
@@ -371,6 +379,8 @@ export function BattleScreen({
             >
               {s.kind === 'boom' ? (
                 <BulletBoom ageMs={now - s.bornAt} />
+              ) : s.kind === 'slobber' ? (
+                <SlobberSplat ageMs={now - s.bornAt} />
               ) : (
                 <SundaeSplat ageMs={now - s.bornAt} />
               )}

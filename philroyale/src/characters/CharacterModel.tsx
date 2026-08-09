@@ -1,4 +1,5 @@
 import type { AttackId } from '../characters'
+import { BeansModel } from './BeansModel'
 import { CrUnitModel } from './CrUnitModel'
 import { FinleyModel } from './FinleyModel'
 import { JeremyModel } from './JeremyModel'
@@ -34,22 +35,7 @@ export function CharacterModel({
   }
 
   if (charId === 'beans') {
-    return (
-      <CrUnitModel
-        anim={anim}
-        facing={facing}
-        portrait={portrait}
-        build="small"
-        shirt="#c89050"
-        shirtDark="#6a4020"
-        pants="#5a7a3a"
-        pantsDark="#2a4018"
-        accent="#8bc34a"
-        hair="#5a3a20"
-        hat="none"
-        prop="drool"
-      />
-    )
+    return <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   }
 
   if (charId === 'finley') {

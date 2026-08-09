@@ -136,7 +136,7 @@ export const BEANS: CharacterDef = {
   moveSpeed: 7.5,
   attackDelaySec: 1.5,
   hue: 35,
-  blurb: 'Cheap and fast. Slobber hits from far away — he stops to spit.',
+  blurb: 'Yellow dog, tongue always out. Spits a slow slobber that explodes on impact.',
   attacks: [
     {
       id: 'slobber',

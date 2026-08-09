@@ -13,7 +13,7 @@ type Props = {
   objectPos?: string
   enraged?: boolean
   gait?: 'jog' | 'run' | 'dog' | 'limp'
-  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'none'
+  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'slobber' | 'none'
   /** Pants / fur color for running leg overlays */
   legColor?: string
   shoeColor?: string
@@ -90,7 +90,9 @@ export function PhotoTroop({
                     ? { x: [0, 12, 16, 0], y: [0, -5, 2, 0], rotate: [0, -4, 8, 0] }
                     : attack === 'hug'
                       ? { y: [0, -2, 0], scale: [1, 1.04, 1] }
-                      : { y: [0, -3, 0] }
+                      : attack === 'slobber'
+                        ? { y: [0, -3, -1, 0], rotate: [0, -6, 4, 0], scaleY: [1, 0.96, 1.02, 1] }
+                        : { y: [0, -3, 0] }
             : walking
               ? gait === 'limp'
                 ? {
@@ -114,7 +116,7 @@ export function PhotoTroop({
                 duration:
                   attack === 'whip' || attack === 'hug'
                     ? 0.72
-                    : attack === 'sundae'
+                    : attack === 'slobber' || attack === 'sundae'
                       ? 0.55
                       : 0.36,
               }
@@ -149,6 +151,7 @@ export function PhotoTroop({
         {attacking && attack === 'sundae' ? <SundaeThrowOverlay /> : null}
         {attacking && attack === 'bite' ? <BiteOverlay enraged={enraged} /> : null}
         {attacking && attack === 'hug' ? <HugOverlay /> : null}
+        {attacking && attack === 'slobber' ? <SlobberSpitOverlay /> : null}
 
         {enraged ? (
           <div
@@ -458,4 +461,34 @@ function BiteOverlay({ enraged }: { enraged?: boolean }) {
       ) : null}
     </svg>
   )
+}
+
+function SpitOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+      <motion.g
+        initial={{ x: 40, y: 52, scale: 0.3, opacity: 1 }}
+        animate={{ x: [40, 58, 78], y: [52, 44, 30], scale: [0.4, 0.9, 1.1], opacity: [1, 1, 0] }}
+        transition={{ duration: 0.5 }}
+      >
+        <ellipse cx="0" cy="0" rx="7" ry="5" fill="#9ccc3a" stroke="#5a8a18" strokeWidth="0.8" />
+        <ellipse cx="-2" cy="-1" rx="2" ry="1.5" fill="#d8f090" opacity="0.8" />
+      </motion.g>
+      {/* Cheek puff */}
+      <motion.ellipse
+        cx="42"
+        cy="52"
+        rx="6"
+        ry="5"
+        fill="#e8b060"
+        opacity="0.35"
+        animate={{ scale: [1, 1.25, 1] }}
+        transition={{ duration: 0.5 }}
+      />
+    </svg>
+  )
+}
+
+function SlobberSpitOverlay() {
+  return <SpitOverlay />
 }

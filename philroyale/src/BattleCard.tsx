@@ -99,7 +99,8 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
               character.id === 'phil' ||
               character.id === 'finley' ||
               character.id === 'jeremy' ||
-              character.id === 'pete'
+              character.id === 'pete' ||
+              character.id === 'beans'
                 ? 'absolute inset-0'
                 : next
                   ? 'relative h-[85%] w-[90%]'

@@ -21,6 +21,8 @@ import type { BattleUnit, Projectile, SplatFx } from './battleTypes'
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
 const PROJECTILE_MS = 480
+/** Beans slobber — slow lob that takes a beat to land. */
+const SLOBBER_PROJECTILE_MS = 1100
 /** Jeremy dual-pistol rounds — very fast. */
 const SHOOT_PROJECTILE_MS = 140
 const TOWER_PROJECTILE_MS = 320
@@ -29,6 +31,7 @@ const HUG_VFX_MS = 780
 const WHIP_VFX_MS = 780
 const RANGED_VFX_MS = 380
 const SPLAT_MS = 520
+const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 380
 
 const PRINCESS_RANGE = 30
@@ -337,7 +340,8 @@ export function useBattle(opts?: { paused?: boolean }) {
 
       let nextProjectiles = projectilesRef.current.slice()
       let nextSplats = splatsRef.current.filter((s) => {
-        const life = s.kind === 'boom' ? BOOM_MS : SPLAT_MS
+        const life =
+          s.kind === 'boom' ? BOOM_MS : s.kind === 'slobber' ? SLOBBER_SPLAT_MS : SPLAT_MS
         return t - s.bornAt < life
       })
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
@@ -361,6 +365,15 @@ export function useBattle(opts?: { paused?: boolean }) {
             row: p.toRow,
             bornAt: t,
             kind: 'sundae',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'slobber') {
+          nextSplats.push({
+            id: nid('slobber'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'slobber',
           })
           splatsChanged = true
         } else if (p.kind === 'shoot') {
@@ -548,7 +561,13 @@ export function useBattle(opts?: { paused?: boolean }) {
             targetId: best.kind === 'unit' ? best.id : null,
             targetTowerId: best.kind === 'tower' ? best.id : null,
             bornAt: t,
-            arriveAt: t + (attack.kind === 'shoot' ? SHOOT_PROJECTILE_MS : PROJECTILE_MS),
+            arriveAt:
+              t +
+              (attack.kind === 'shoot'
+                ? SHOOT_PROJECTILE_MS
+                : attack.kind === 'slobber'
+                  ? SLOBBER_PROJECTILE_MS
+                  : PROJECTILE_MS),
           })
           projectilesChanged = true
           continue
