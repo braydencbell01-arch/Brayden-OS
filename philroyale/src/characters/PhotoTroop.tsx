@@ -2,15 +2,16 @@ import { motion } from 'framer-motion'
 import type { CharacterAnim } from './PhilModel'
 
 type Props = {
-  src: string
+  /** Full framed promo art for cards */
+  cardSrc: string
+  /** Same likeness for battlefield (cropped unit art) */
+  unitSrc: string
   alt: string
   anim: CharacterAnim
   facing: number
   portrait?: boolean
   /** object-position for card/portrait crop */
   objectPos?: string
-  /** Extra battlefield clip to drop card chrome / empty sky */
-  clipPath?: string
   /** Rage purple filter (Finley) */
   enraged?: boolean
   /** Walk style */
@@ -20,17 +21,16 @@ type Props = {
 }
 
 /**
- * Battlefield + card art from the same photo — looks like the reference picture,
- * with Clash-style bob / attack motion (not a flat 2D stick figure).
+ * Card + battlefield share the same 3D promo likeness (not flat cartoon stick figures).
  */
 export function PhotoTroop({
-  src,
+  cardSrc,
+  unitSrc,
   alt,
   anim,
   facing,
   portrait,
   objectPos = '50% 20%',
-  clipPath = 'inset(2% 6% 4% 6%)',
   enraged,
   gait = 'run',
   attack = 'none',
@@ -43,7 +43,7 @@ export function PhotoTroop({
   if (portrait) {
     return (
       <img
-        src={src}
+        src={cardSrc}
         alt={alt}
         className="h-full w-full object-cover"
         style={{ objectPosition: objectPos }}
@@ -64,6 +64,11 @@ export function PhotoTroop({
       />
       <motion.div
         className="absolute inset-0"
+        style={{
+          // Slight billboard tilt so the promo still reads as a 3D troop, not a flat sticker.
+          transform: 'perspective(420px) rotateX(8deg)',
+          transformOrigin: '50% 100%',
+        }}
         animate={
           attacking
             ? attack === 'whip'
@@ -76,7 +81,9 @@ export function PhotoTroop({
                     ? { x: [0, 8, 12, 0], y: [0, -3, 1, 0] }
                     : { y: [0, -3, 0] }
             : walking
-              ? { y: [0, -4, 0, -3, 0], rotate: [0, 2.5, 0, -2.5, 0] }
+              ? gait === 'dog'
+                ? { y: [0, -3, 0, -2, 0], rotate: [0, 3, 0, -3, 0], x: [0, 1, 0, -1, 0] }
+                : { y: [0, -4, 0, -3, 0], rotate: [0, 2.5, 0, -2.5, 0] }
               : { y: [0, -1.5, 0] }
         }
         transition={
@@ -88,13 +95,12 @@ export function PhotoTroop({
         }
       >
         <img
-          src={src}
+          src={unitSrc}
           alt=""
           draggable={false}
           aria-hidden
-          className="h-full w-full object-contain object-bottom drop-shadow-[1px_3px_4px_rgba(0,0,0,0.55)]"
+          className="h-full w-full object-contain object-bottom drop-shadow-[1px_3px_5px_rgba(0,0,0,0.6)]"
           style={{
-            clipPath,
             filter: enraged
               ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
               : undefined,

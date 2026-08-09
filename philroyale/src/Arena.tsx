@@ -158,8 +158,8 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         ref={ref}
         className={`relative h-full w-full origin-bottom ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
         style={{
-          // Mild scale only — full board + both king towers stay on screen.
-          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.04, 1.06)`,
+          // No zoom — entire board (both kings + all princess towers) stays visible.
+          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1, 1)`,
           transformStyle: 'preserve-3d',
         }}
         role={onArenaPointerDown ? 'application' : 'img'}
@@ -212,16 +212,16 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
               style={{ ...style, zIndex: 5 + z }}
             >
               <div
-                className="absolute left-1/2 w-[260%] max-w-[7.5rem] -translate-x-1/2"
+                className="absolute left-1/2 w-[340%] max-w-[10rem] -translate-x-1/2"
                 style={{
-                  // HP bar on the tower base for every tower (ally + enemy).
-                  bottom: '0%',
+                  // HP at the tower base (feet) for ally + enemy — not above the crown.
+                  bottom: '-2%',
                   transform: `rotateX(${-ARENA_TILT_DEG}deg)`,
                   transformOrigin: '50% 100%',
                 }}
               >
                 <div
-                  className="relative h-[0.7rem] overflow-hidden rounded-[2px] bg-black/80"
+                  className="relative h-[0.85rem] overflow-hidden rounded-[2px] bg-black/80"
                   style={{
                     boxShadow: enemy
                       ? '0 0 0 1px #8a2018, 0 1px 3px #0008'

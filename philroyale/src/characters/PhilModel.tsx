@@ -3,7 +3,8 @@ import { PhotoTroop } from './PhotoTroop'
 
 export type CharacterAnim = 'idle' | 'walk' | 'attack'
 
-const PHIL_SRC = `${import.meta.env.BASE_URL}characters/phil-card.png`
+const PHIL_CARD = `${import.meta.env.BASE_URL}characters/phil-card.png`
+const PHIL_UNIT = `${import.meta.env.BASE_URL}characters/phil-unit.png`
 
 type Props = {
   anim: CharacterAnim
@@ -12,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Phil — same promo 3D likeness on card and battlefield. */
+/** Phil — same 3D coach promo on card and battlefield. */
 export function PhilModel({ anim, facing, attackId, portrait }: Props) {
   const attack =
     anim === 'attack' && attackId === 'chickenWhip'
@@ -22,13 +23,13 @@ export function PhilModel({ anim, facing, attackId, portrait }: Props) {
         : 'none'
   return (
     <PhotoTroop
-      src={PHIL_SRC}
+      cardSrc={PHIL_CARD}
+      unitSrc={PHIL_UNIT}
       alt="Phil"
       anim={anim}
       facing={facing}
       portrait={portrait}
       objectPos="50% 18%"
-      clipPath="inset(1% 8% 3% 8%)"
       gait="jog"
       attack={attack}
     />

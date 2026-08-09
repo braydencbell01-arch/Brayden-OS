@@ -2,7 +2,8 @@ import type { AttackId } from '../characters'
 import type { CharacterAnim } from './PhilModel'
 import { PhotoTroop } from './PhotoTroop'
 
-const JEREMY_SRC = `${import.meta.env.BASE_URL}characters/jeremy-card.png`
+const JEREMY_CARD = `${import.meta.env.BASE_URL}characters/jeremy-card.png`
+const JEREMY_UNIT = `${import.meta.env.BASE_URL}characters/jeremy-unit.png`
 
 type Props = {
   anim: CharacterAnim
@@ -15,13 +16,13 @@ type Props = {
 export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
-      src={JEREMY_SRC}
+      cardSrc={JEREMY_CARD}
+      unitSrc={JEREMY_UNIT}
       alt="Jeremy"
       anim={anim}
       facing={facing}
       portrait={portrait}
       objectPos="50% 12%"
-      clipPath="inset(2% 10% 4% 10%)"
       gait="run"
       attack={anim === 'attack' && attackId === 'shoot' ? 'shoot' : 'none'}
     />

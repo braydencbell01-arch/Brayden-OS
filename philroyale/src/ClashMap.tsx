@@ -7,8 +7,8 @@ export function ClashMap() {
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
   const rightLane = fieldX + (77 / 100) * fieldW
-  /** Lane + bridge width match (bridge cols ~11% of field). */
-  const pathW = (11 / 100) * fieldW
+  /** Lane + bridge share one width (CR-style dirt paths, not fat bridge slabs). */
+  const pathW = (8.5 / 100) * fieldW
   const riverY = 312
   const riverH = 26
 
@@ -158,10 +158,11 @@ export function ClashMap() {
       <Bridge3D cx={leftLane} w={pathW} riverY={riverY} riverH={riverH} />
       <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
-      <CrownTower x={180} y={52} king enemy />
-      <CrownTower x={leftLane} y={120} king={false} enemy />
-      <CrownTower x={rightLane} y={120} king={false} enemy />
-      <CrownTower x={180} y={560} king enemy={false} />
+      {/* Pull enemy king slightly in so both kings stay fully on-screen */}
+      <CrownTower x={180} y={62} king enemy />
+      <CrownTower x={leftLane} y={128} king={false} enemy />
+      <CrownTower x={rightLane} y={128} king={false} enemy />
+      <CrownTower x={180} y={555} king enemy={false} />
       <CrownTower x={leftLane} y={508} king={false} enemy={false} />
       <CrownTower x={rightLane} y={508} king={false} enemy={false} />
 
@@ -212,32 +213,30 @@ function Bridge3D({
   riverY: number
   riverH: number
 }) {
+  // Exact same width as DirtLane — no abutments or side skirts past `w`.
   const x = cx - w / 2
-  const top = riverY - 2
-  const h = riverH + 6
+  const top = riverY - 1
+  const h = riverH + 4
+  const plankN = Math.max(3, Math.round(w / 6))
   return (
     <g filter="url(#softShadow)">
-      <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.48} ry="4" fill="#041828" opacity="0.5" />
-      {/* Slim abutments — same width as the dirt lane */}
-      <rect x={x - 1} y={top} width="2.5" height={h} fill="#7a7468" stroke="#3a3830" strokeWidth="0.6" />
-      <rect x={x + w - 1.5} y={top} width="2.5" height={h} fill="#a8a090" stroke="#3a3830" strokeWidth="0.6" />
-      {/* deck — same w as path */}
-      <rect x={x} y={top + 3} width={w} height={h - 8} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="1" />
-      <path d={`M${x} ${top + h - 5} h${w} l1.5 3 h-${w + 3} z`} fill="url(#woodSide)" />
-      {Array.from({ length: Math.max(4, Math.round(w / 5)) }, (_, i) => (
+      <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.42} ry="3.2" fill="#041828" opacity="0.42" />
+      <rect x={x} y={top + 2} width={w} height={h - 5} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="0.9" />
+      <path d={`M${x} ${top + h - 4} h${w} l0.8 2.2 h-${w + 1.6} z`} fill="url(#woodSide)" />
+      {Array.from({ length: plankN }, (_, i) => (
         <line
           key={i}
-          x1={x + 2 + i * (w / 5)}
-          x2={x + 2 + i * (w / 5)}
-          y1={top + 4}
-          y2={top + h - 6}
+          x1={x + 1.5 + i * (w / plankN)}
+          x2={x + 1.5 + i * (w / plankN)}
+          y1={top + 3}
+          y2={top + h - 5}
           stroke="#3a2010"
-          strokeWidth="0.9"
-          opacity="0.45"
+          strokeWidth="0.75"
+          opacity="0.4"
         />
       ))}
-      <rect x={x} y={top + 2} width={w} height="2.5" rx="0.4" fill="#6a4220" />
-      <rect x={x} y={top + h - 7} width={w} height="2.5" rx="0.4" fill="#6a4220" />
+      <rect x={x} y={top + 1.5} width={w} height="2" rx="0.3" fill="#6a4220" />
+      <rect x={x} y={top + h - 5.5} width={w} height="2" rx="0.3" fill="#6a4220" />
     </g>
   )
 }
