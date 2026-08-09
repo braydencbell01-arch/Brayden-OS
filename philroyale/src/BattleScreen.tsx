@@ -27,6 +27,7 @@ import {
   noteCardDeployed,
   recordMatchResult,
 } from './storage'
+import type { BattleNet } from './battleSync'
 import { useBattle } from './useBattle'
 
 type Props = {
@@ -39,6 +40,8 @@ type Props = {
   mode?: GameMode
   /** Override battle deck (touchdown draft). */
   deckIds?: string[]
+  /** Shared friend-battle room (host authoritative). */
+  net?: BattleNet | null
 }
 
 type DragState = {
@@ -127,6 +130,7 @@ export function BattleScreen({
   botLevel = 1,
   mode = 'classic',
   deckIds: deckOverride,
+  net = null,
 }: Props) {
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
   const [drawPile, setDrawPile] = useState<string[]>([])
@@ -159,12 +163,15 @@ export function BattleScreen({
     allyScore,
     enemyScore,
     touchdownWinScore,
+    syncReady,
+    netRole,
   } = useBattle({
     paused: ended,
     allyLevels,
     botLevel,
     mode,
     enemyDeckIds: deckIds,
+    net,
   })
 
   useEffect(() => {
@@ -258,7 +265,7 @@ export function BattleScreen({
   }
 
   function onArenaPointer(col: number, row: number) {
-    if (ended) return
+    if (ended || (net && !syncReady)) return
     if (dragRef.current) return
     setEmotePickerOpen(false)
     if (!selectedCharId) return
@@ -299,7 +306,7 @@ export function BattleScreen({
   }
 
   function onCardPointerDown(e: React.PointerEvent, charId: string) {
-    if (ended) return
+    if (ended || (net && !syncReady)) return
     setEmotePickerOpen(false)
     const card = getCharacter(charId)
     if (!card || elixir < card.elixir) {
@@ -390,6 +397,13 @@ export function BattleScreen({
 
   return (
     <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
+      {net && !syncReady ? (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 px-6 text-center">
+          <p className="font-[family-name:var(--font-display)] text-xl text-white">
+            {netRole === 'guest' ? 'Linking battle…' : 'Waiting for opponent…'}
+          </p>
+        </div>
+      ) : null}
       {/* Map sits above the solid CR blue dock so all six towers stay visible. */}
       <div className="absolute inset-x-0 top-0 bottom-[6.85rem]">
         <Arena

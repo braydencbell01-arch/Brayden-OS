@@ -26,6 +26,18 @@ import type { GameMode } from './storage'
 import { getCharacter, DEFAULT_DECK, type CharacterDef } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
 import { cardLevelMult, scaledStat } from './progression'
+import {
+  type BattleNet,
+  type BattleRoomMessage,
+  flipForGuestView,
+  flipSide,
+  flipTowerId,
+  guestDeployToHostEnemy,
+  publishBattle,
+  subscribeBattle,
+} from './battleSync'
+
+const SYNC_INTERVAL_MS = 220
 
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
@@ -521,8 +533,11 @@ export function useBattle(opts?: {
   mode?: GameMode
   /** Cards the AI may play (touchdown draft). */
   enemyDeckIds?: string[]
+  /** Friend battle: host sim + guest mirror over ntfy. */
+  net?: BattleNet | null
 }) {
   const mode = opts?.mode ?? 'classic'
+  const net = opts?.net ?? null
   const [elixir, setElixir] = useState(5)
   const [enemyElixir, setEnemyElixir] = useState(5)
   const [units, setUnits] = useState<BattleUnit[]>([])
@@ -531,6 +546,7 @@ export function useBattle(opts?: {
   const [hearts, setHearts] = useState<RageHeart[]>([])
   const [allyScore, setAllyScore] = useState(0)
   const [enemyScore, setEnemyScore] = useState(0)
+  const [syncReady, setSyncReady] = useState(!net)
   const [towers, setTowers] = useState<TowerHp[]>(() =>
     TOWERS.map((t) => {
       const maxHp = towerMaxHp(t.kind)
@@ -560,8 +576,16 @@ export function useBattle(opts?: {
   modeRef.current = mode
   const enemyDeckRef = useRef(opts?.enemyDeckIds ?? DEFAULT_DECK)
   enemyDeckRef.current = opts?.enemyDeckIds ?? DEFAULT_DECK
+  const netRef = useRef(net)
+  netRef.current = net
   const allyScoreRef = useRef(0)
   const enemyScoreRef = useRef(0)
+  const syncSeqRef = useRef(0)
+  const lastSyncAtRef = useRef(0)
+  const lastRemoteSeqRef = useRef(0)
+  const pendingGuestDeploysRef = useRef<
+    { charId: string; col: number; row: number; at: number }[]
+  >([])
 
   const unitsRef = useRef(units)
   const towersRef = useRef(towers)
@@ -580,17 +604,170 @@ export function useBattle(opts?: {
   elixirRef.current = elixir
   enemyElixirRef.current = enemyElixir
 
-  const deploy = useCallback((char: CharacterDef, col: number, row: number) => {
-    if (pausedRef.current) return false
-    if (elixirRef.current < char.elixir) return false
-    const live = liveTowerIdSet(towersRef.current)
-    if (!canSpawnAt(col, row, 'ally', towersRef.current, live, modeRef.current)) return false
-    const spawnT = performance.now()
-    const level = allyLevelsRef.current[char.id] ?? 1
-    setElixir((e) => e - char.elixir)
-    setUnits((prev) => [...prev, makeBattleUnit(char, col, row, 'ally', spawnT, level)])
-    return true
+  const publishHostState = useCallback((force = false) => {
+    const n = netRef.current
+    if (!n || n.role !== 'host') return
+    const t = performance.now()
+    if (!force && t - lastSyncAtRef.current < SYNC_INTERVAL_MS) return
+    lastSyncAtRef.current = t
+    syncSeqRef.current += 1
+    const msg: BattleRoomMessage = {
+      type: 'battle_state',
+      challengeId: n.challengeId,
+      seq: syncSeqRef.current,
+      hostElixir: elixirRef.current,
+      guestElixir: enemyElixirRef.current,
+      towers: towersRef.current.map((tw) => ({
+        id: tw.id,
+        hp: tw.hp,
+        maxHp: tw.maxHp,
+      })),
+      units: unitsRef.current.map((u) => ({
+        id: u.id,
+        charId: u.charId,
+        side: u.side,
+        col: u.col,
+        row: u.row,
+        hp: u.hp,
+        maxHp: u.maxHp,
+        facing: u.facing,
+        vfx: u.vfx,
+        enraged: u.enraged,
+        moving: u.movingUntil > t,
+        level: u.level,
+      })),
+      allyScore: allyScoreRef.current,
+      enemyScore: enemyScoreRef.current,
+    }
+    void publishBattle(n.challengeId, msg)
   }, [])
+
+  const deploy = useCallback(
+    (char: CharacterDef, col: number, row: number) => {
+      if (pausedRef.current) return false
+      if (elixirRef.current < char.elixir) return false
+      const live = liveTowerIdSet(towersRef.current)
+      if (!canSpawnAt(col, row, 'ally', towersRef.current, live, modeRef.current)) return false
+
+      const n = netRef.current
+      if (n?.role === 'guest') {
+        // Optimistic elixir; host confirms via mirrored state.
+        setElixir((e) => Math.max(0, e - char.elixir))
+        void publishBattle(n.challengeId, {
+          type: 'battle_deploy',
+          challengeId: n.challengeId,
+          charId: char.id,
+          col,
+          row,
+          at: Date.now(),
+        })
+        return true
+      }
+
+      const spawnT = performance.now()
+      const level = allyLevelsRef.current[char.id] ?? 1
+      setElixir((e) => e - char.elixir)
+      setUnits((prev) => [...prev, makeBattleUnit(char, col, row, 'ally', spawnT, level)])
+      if (n?.role === 'host') {
+        // Push immediately so guest sees the troop without waiting for the tick.
+        queueMicrotask(() => publishHostState(true))
+      }
+      return true
+    },
+    [publishHostState],
+  )
+
+  // Friend-battle room: host publishes state; guest mirrors + sends deploys.
+  useEffect(() => {
+    if (!net) return
+    const unsub = subscribeBattle(net.challengeId, (msg) => {
+      if (msg.type === 'battle_ready') {
+        if (net.role === 'host') publishHostState(true)
+        return
+      }
+
+      if (msg.type === 'battle_deploy' && net.role === 'host') {
+        pendingGuestDeploysRef.current.push({
+          charId: msg.charId,
+          col: msg.col,
+          row: msg.row,
+          at: msg.at,
+        })
+        return
+      }
+
+      if (msg.type === 'battle_state' && net.role === 'guest') {
+        if (msg.seq <= lastRemoteSeqRef.current) return
+        lastRemoteSeqRef.current = msg.seq
+        const t = performance.now()
+        const nextTowers = towersRef.current.map((tw) => {
+          const remoteId = flipTowerId(tw.id)
+          const remote = msg.towers.find((x) => x.id === remoteId)
+          if (!remote) return tw
+          return {
+            ...tw,
+            hp: remote.hp,
+            maxHp: remote.maxHp,
+            activated: remote.hp > 0 ? tw.activated || tw.kind === 'princess' : false,
+          }
+        })
+        const nextUnits: BattleUnit[] = msg.units.map((u) => {
+          const pos = flipForGuestView(u.col, u.row)
+          const side = flipSide(u.side)
+          return {
+            id: u.id,
+            charId: u.charId,
+            side,
+            col: pos.col,
+            row: pos.row,
+            hp: u.hp,
+            maxHp: u.maxHp,
+            level: u.level || 1,
+            attackIndex: 0,
+            burstShot: 0,
+            nextAttackAt: 0,
+            vfx: u.vfx,
+            vfxUntil: u.vfx ? t + 400 : 0,
+            facing: u.facing + Math.PI,
+            rootedUntil: 0,
+            spawnedAt: t,
+            enraged: u.enraged,
+            movingUntil: u.moving ? t + 200 : 0,
+            lockKey: null,
+          }
+        })
+        setTowers(nextTowers)
+        setUnits(nextUnits)
+        // Guest elixir = host's guestElixir; enemy bar = host's hostElixir
+        setElixir(msg.guestElixir)
+        setEnemyElixir(msg.hostElixir)
+        if (typeof msg.allyScore === 'number') {
+          // Scores are host-perspective; flip for guest view.
+          allyScoreRef.current = msg.enemyScore ?? 0
+          enemyScoreRef.current = msg.allyScore
+          setAllyScore(allyScoreRef.current)
+          setEnemyScore(enemyScoreRef.current)
+        }
+        setSyncReady(true)
+        // Guest does not simulate projectiles — clear local leftovers.
+        setProjectiles([])
+      }
+    })
+
+    void publishBattle(net.challengeId, {
+      type: 'battle_ready',
+      challengeId: net.challengeId,
+      role: net.role,
+      name: net.role,
+      at: new Date().toISOString(),
+    })
+    if (net.role === 'host') {
+      setSyncReady(true)
+      publishHostState(true)
+    }
+
+    return unsub
+  }, [net, publishHostState])
 
   useEffect(() => {
     let raf = 0
@@ -604,6 +781,13 @@ export function useBattle(opts?: {
         raf = requestAnimationFrame(tick)
         return
       }
+
+      // Guest only mirrors host state — do not run a second local sim.
+      if (netRef.current?.role === 'guest') {
+        raf = requestAnimationFrame(tick)
+        return
+      }
+
       setElixir((e) => Math.min(ELIXIR_MAX, e + ELIXIR_PER_SEC * dt))
       let nextEnemyElixir = Math.min(
         ELIXIR_MAX,
@@ -714,7 +898,28 @@ export function useBattle(opts?: {
       const liveTowers = nextTowers.filter((tw) => tw.hp > 0)
       const liveIds = liveTowerIdSet(nextTowers)
 
-      if (t >= aiNextDeployRef.current) {
+      // Apply guest deploys (friend battle) as enemy units on the host.
+      if (netRef.current?.role === 'host' && pendingGuestDeploysRef.current.length) {
+        const pending = pendingGuestDeploysRef.current
+        pendingGuestDeploysRef.current = []
+        for (const d of pending) {
+          const char = getCharacter(d.charId)
+          if (!char || nextEnemyElixir < char.elixir) continue
+          const hostPos = guestDeployToHostEnemy(d.col, d.row)
+          if (!canSpawnAt(hostPos.col, hostPos.row, 'enemy', nextTowers, liveIds, modeRef.current)) {
+            continue
+          }
+          nextUnits.push(
+            makeBattleUnit(char, hostPos.col, hostPos.row, 'enemy', t, botLevelRef.current),
+          )
+          nextEnemyElixir -= char.elixir
+          enemyElixirChanged = true
+          unitsChanged = true
+        }
+      }
+
+      // Bot AI only in solo matches — never during friend battles.
+      if (!netRef.current && t >= aiNextDeployRef.current) {
         aiNextDeployRef.current =
           t + AI_DEPLOY_MIN_MS + Math.random() * (AI_DEPLOY_MAX_MS - AI_DEPLOY_MIN_MS)
         const ai = tryEnemyAiDeploy(
@@ -1282,12 +1487,20 @@ export function useBattle(opts?: {
         setEnemyElixir(nextEnemyElixir)
       }
 
+      if (netRef.current?.role === 'host') {
+        // Keep refs current before publish so guests see this frame's HP.
+        if (unitsChanged) unitsRef.current = filteredUnits
+        if (towersChanged) towersRef.current = nextTowers
+        if (enemyElixirChanged) enemyElixirRef.current = nextEnemyElixir
+        publishHostState(towersChanged || unitsChanged)
+      }
+
       raf = requestAnimationFrame(tick)
     }
 
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [])
+  }, [publishHostState])
 
   return {
     elixir,
@@ -1306,5 +1519,7 @@ export function useBattle(opts?: {
     allyScore,
     enemyScore,
     touchdownWinScore: TOUCHDOWN_WIN_SCORE,
+    syncReady,
+    netRole: net?.role ?? null,
   }
 }

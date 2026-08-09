@@ -9,6 +9,7 @@ import { HomeScreen } from './HomeScreen'
 import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
+import type { BattleNet } from './battleSync'
 import { publishSocial, subscribeSocial, type SocialMessage } from './socialHub'
 import {
   botLevelForTrophies,
@@ -80,6 +81,7 @@ export default function App() {
   const [friendToast, setFriendToast] = useState<string | null>(null)
   const [battle, setBattle] = useState(false)
   const [battleMode, setBattleMode] = useState<GameMode>('classic')
+  const [battleNet, setBattleNet] = useState<BattleNet | null>(null)
   const [draftingTouchdown, setDraftingTouchdown] = useState(false)
   const [touchdownDeck, setTouchdownDeck] = useState<string[] | null>(null)
   const [opponent, setOpponent] = useState<string | null>(null)
@@ -98,21 +100,25 @@ export default function App() {
     window.setTimeout(() => setFriendToast(null), 2800)
   }, [])
 
-  const startMatch = useCallback((name?: string | null, mode: GameMode = 'classic') => {
-    const trophies = loadProfile().trophies
-    setOpponent(name ?? botNameForTrophies(trophies))
-    setBattleMode(mode)
-    setShowRoad(false)
-    if (mode === 'touchdown') {
-      setDraftingTouchdown(true)
+  const startMatch = useCallback(
+    (name?: string | null, mode: GameMode = 'classic', net: BattleNet | null = null) => {
+      const trophies = loadProfile().trophies
+      setOpponent(name ?? botNameForTrophies(trophies))
+      setBattleMode(mode)
+      setBattleNet(net)
+      setShowRoad(false)
+      if (mode === 'touchdown') {
+        setDraftingTouchdown(true)
+        setTouchdownDeck(null)
+        setBattle(false)
+        return
+      }
+      setDraftingTouchdown(false)
       setTouchdownDeck(null)
-      setBattle(false)
-      return
-    }
-    setDraftingTouchdown(false)
-    setTouchdownDeck(null)
-    setBattle(true)
-  }, [])
+      setBattle(true)
+    },
+    [],
+  )
 
   const completeFriendLink = useCallback(
     async (link: { playerId: string; name: string }) => {
@@ -178,7 +184,12 @@ export default function App() {
     clearIncomingChallenge()
     setIncomingChallenge(null)
     clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
-    startMatch(fromName, mode ?? 'classic')
+    // Accepter is guest; challenger (fromPlayerId) hosts the shared sim.
+    startMatch(fromName, mode ?? 'classic', {
+      challengeId,
+      role: 'guest',
+      peerPlayerId: fromPlayerId,
+    })
   }, [incomingChallenge, startMatch])
 
   const handleDeclineChallenge = useCallback(() => {
@@ -325,10 +336,15 @@ export default function App() {
         if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
           const opponentName = outgoingNow.toName
           const mode = msg.mode ?? outgoingNow.mode ?? 'classic'
+          const challengeId = outgoingNow.challengeId
           clearOutgoingChallenge()
           clearBattleAccepted()
           setOutgoingChallenge(null)
-          startMatch(opponentName, mode)
+          startMatch(opponentName, mode, {
+            challengeId,
+            role: 'host',
+            peerPlayerId: outgoingNow.toPlayerId,
+          })
         }
         return
       }
@@ -356,10 +372,15 @@ export default function App() {
           const outgoingNow = loadOutgoingChallenge()
           if (outgoingNow && outgoingNow.challengeId === accepted.challengeId) {
             const opponentName = outgoingNow.toName
+            const challengeId = outgoingNow.challengeId
             clearOutgoingChallenge()
             clearBattleAccepted()
             setOutgoingChallenge(null)
-            startMatch(opponentName, outgoingNow.mode ?? 'classic')
+            startMatch(opponentName, outgoingNow.mode ?? 'classic', {
+              challengeId,
+              role: 'host',
+              peerPlayerId: outgoingNow.toPlayerId,
+            })
           }
         } catch {
           /* ignore */
@@ -388,10 +409,17 @@ export default function App() {
       const accepted = loadBattleAccepted()
       if (accepted && accepted.challengeId === outgoingChallenge.challengeId) {
         const opponentName = outgoingChallenge.toName
+        const challengeId = outgoingChallenge.challengeId
+        const mode = outgoingChallenge.mode ?? 'classic'
+        const peerPlayerId = outgoingChallenge.toPlayerId
         clearOutgoingChallenge()
         clearBattleAccepted()
         setOutgoingChallenge(null)
-        startMatch(opponentName, outgoingChallenge.mode ?? 'classic')
+        startMatch(opponentName, mode, {
+          challengeId,
+          role: 'host',
+          peerPlayerId,
+        })
       }
     }, 800)
 
@@ -423,10 +451,16 @@ export default function App() {
       if (msg.type === 'battle_accept') {
         const outgoingNow = loadOutgoingChallenge()
         if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
+          const challengeId = outgoingNow.challengeId
+          const mode = msg.mode ?? outgoingNow.mode ?? 'classic'
           clearOutgoingChallenge()
           clearBattleAccepted()
           setOutgoingChallenge(null)
-          startMatch(msg.fromName || outgoingNow.toName, msg.mode ?? outgoingNow.mode)
+          startMatch(msg.fromName || outgoingNow.toName, mode, {
+            challengeId,
+            role: 'host',
+            peerPlayerId: msg.fromPlayerId || outgoingNow.toPlayerId,
+          })
         }
         return
       }
@@ -507,6 +541,7 @@ export default function App() {
             onCancel={() => {
               setDraftingTouchdown(false)
               setOpponent(null)
+              setBattleNet(null)
             }}
             onReady={(ids) => {
               setTouchdownDeck(ids)
@@ -531,9 +566,11 @@ export default function App() {
           botLevel={botLevelForTrophies(trophies)}
           mode={battleMode}
           deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
+          net={battleNet}
           onExit={() => {
             setBattle(false)
             setOpponent(null)
+            setBattleNet(null)
             setTouchdownDeck(null)
             setBattleMode('classic')
             setTab('home')
