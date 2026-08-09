@@ -205,7 +205,7 @@ export function BattleScreen({
     if (!selectedCharId) return
     const card = getCharacter(selectedCharId)
     if (!card || elixir < card.elixir) return
-    const ok = deploy(card, col, row, 'ally')
+    const ok = deploy(card, col, row)
     if (ok) cycleAfterDeploy(card.id)
   }
 
@@ -300,7 +300,7 @@ export function BattleScreen({
 
     const card = getCharacter(dropped.charId)
     if (!card || elixir < card.elixir || !dropped.valid) return
-    const ok = deploy(card, dropped.col, dropped.row, 'ally')
+    const ok = deploy(card, dropped.col, dropped.row)
     if (ok) cycleAfterDeploy(card.id)
   }
 

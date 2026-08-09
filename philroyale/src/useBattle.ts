@@ -15,7 +15,7 @@ import {
   steerTowardGoal,
   type Side,
 } from './arena'
-import { getCharacter, type CharacterDef } from './characters'
+import { getCharacter, DEFAULT_DECK, type CharacterDef } from './characters'
 import type { BattleUnit, Projectile, SplatFx } from './battleTypes'
 
 const ELIXIR_MAX = 10
@@ -44,6 +44,9 @@ const KING_WAKE_RANGE = 7.5
 const KING_WAKE_DELAY_MS = 3000
 /** Soft collision radius (tiles) for CR-style unit push / bunching. */
 const UNIT_RADIUS = 0.85
+const AI_DEPLOY_MIN_MS = 2200
+const AI_DEPLOY_MAX_MS = 3500
+const FACING_TURN_HARD_RAD = 0.4
 
 export type TowerHp = {
   id: string
@@ -89,6 +92,130 @@ function applyTowerDamage(tw: TowerHp, damage: number, now: number) {
   const before = tw.hp
   tw.hp = Math.max(0, tw.hp - damage)
   if (before > 0 && damage > 0) wakeKing(tw, now)
+}
+
+function lerpAngle(from: number, to: number, t: number): number {
+  const diff = Math.atan2(Math.sin(to - from), Math.cos(to - from))
+  return from + diff * t
+}
+
+/** Update facing from actual displacement; ignore steer when barely moved. */
+function updateFacingFromMove(u: BattleUnit, prevCol: number, prevRow: number): void {
+  const dCol = u.col - prevCol
+  const dRow = u.row - prevRow
+  if (Math.hypot(dCol, dRow) < 0.001) return
+  const moveFacing = Math.atan2(dRow, dCol)
+  const turn = Math.abs(Math.atan2(Math.sin(moveFacing - u.facing), Math.cos(moveFacing - u.facing)))
+  u.facing = turn > FACING_TURN_HARD_RAD ? moveFacing : lerpAngle(u.facing, moveFacing, 0.45)
+}
+
+/** Nudge laterally toward the nearest bridge when stuck behind a tower. */
+function nudgeTowardBridgeIfStuck(
+  u: BattleUnit,
+  prevCol: number,
+  prevRow: number,
+  step: number,
+  liveTowers: ReadonlySet<string>,
+): void {
+  if (Math.hypot(u.col - prevCol, u.row - prevRow) >= 0.002) return
+  const bridgeMid = nearestBridgeMidCol(u.col)
+  const nudge = Math.sign(bridgeMid - (u.col + 0.5)) || 1
+  const ncol = Math.max(0, Math.min(ARENA_COLS - 1, u.col + nudge * step * 0.9))
+  if (isWalkableTile(ncol, u.row, liveTowers)) {
+    u.col = ncol
+  }
+}
+
+function makeBattleUnit(
+  char: CharacterDef,
+  col: number,
+  row: number,
+  side: Side,
+  t: number,
+): BattleUnit {
+  const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
+  const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+  return {
+    id: nid('u'),
+    charId: char.id,
+    side,
+    col: clampedCol,
+    row: clampedRow,
+    hp: char.hp,
+    maxHp: char.hp,
+    attackIndex: 0,
+    burstShot: 0,
+    nextAttackAt: t + 300,
+    vfx: null,
+    vfxUntil: 0,
+    facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
+    rootedUntil: 0,
+    spawnedAt: t,
+    enraged: false,
+    movingUntil: 0,
+  }
+}
+
+function canSpawnAt(
+  col: number,
+  row: number,
+  side: Side,
+  towers: TowerHp[],
+  live: ReadonlySet<string>,
+): boolean {
+  const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
+  const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+  return side === 'ally'
+    ? canDeployAllyAt(clampedCol, clampedRow, towers, live)
+    : canDeployEnemyAt(clampedCol, clampedRow, towers, live)
+}
+
+function pickAiLane(units: BattleUnit[]): 'left' | 'right' {
+  let left = 0
+  let right = 0
+  for (const u of units) {
+    if (u.side !== 'ally' || u.hp <= 0) continue
+    if (u.col < ARENA_COLS / 2) left++
+    else right++
+  }
+  if (left > right) return 'left'
+  if (right > left) return 'right'
+  return Math.random() < 0.5 ? 'left' : 'right'
+}
+
+function tryEnemyAiDeploy(
+  units: BattleUnit[],
+  towers: TowerHp[],
+  live: ReadonlySet<string>,
+  enemyElixir: number,
+  deckIndex: number,
+  t: number,
+): { unit: BattleUnit | null; elixir: number; deckIndex: number } {
+  const lane = pickAiLane(units)
+  const colBase = lane === 'left' ? 20 : 72
+  const colSpan = 9
+  const rowBase = 8
+  const rowSpan = 21
+
+  for (let attempt = 0; attempt < DEFAULT_DECK.length * 3; attempt++) {
+    const charId = DEFAULT_DECK[deckIndex % DEFAULT_DECK.length]!
+    deckIndex = (deckIndex + 1) % DEFAULT_DECK.length
+    const char = getCharacter(charId)
+    if (!char || enemyElixir < char.elixir) continue
+
+    for (let tileTry = 0; tileTry < 6; tileTry++) {
+      const col = colBase + Math.floor(Math.random() * colSpan)
+      const row = rowBase + Math.floor(Math.random() * rowSpan)
+      if (!canSpawnAt(col, row, 'enemy', towers, live)) continue
+      return {
+        unit: makeBattleUnit(char, col, row, 'enemy', t),
+        elixir: enemyElixir - char.elixir,
+        deckIndex,
+      }
+    }
+  }
+
+  return { unit: null, elixir: enemyElixir, deckIndex }
 }
 
 /** Move with river + living-tower collision — units cannot enter tower footprints. */
@@ -249,6 +376,7 @@ function nid(prefix: string): string {
 
 export function useBattle(opts?: { paused?: boolean }) {
   const [elixir, setElixir] = useState(5)
+  const [enemyElixir, setEnemyElixir] = useState(5)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
   const [splats, setSplats] = useState<SplatFx[]>([])
@@ -277,52 +405,26 @@ export function useBattle(opts?: { paused?: boolean }) {
   const projectilesRef = useRef(projectiles)
   const splatsRef = useRef(splats)
   const elixirRef = useRef(elixir)
+  const enemyElixirRef = useRef(enemyElixir)
+  const aiDeckIndexRef = useRef(0)
+  const aiNextDeployRef = useRef(performance.now() + AI_DEPLOY_MIN_MS)
   unitsRef.current = units
   towersRef.current = towers
   projectilesRef.current = projectiles
   splatsRef.current = splats
   elixirRef.current = elixir
+  enemyElixirRef.current = enemyElixir
 
-  const deploy = useCallback(
-    (char: CharacterDef, col: number, row: number, side: Side = 'ally') => {
-      if (pausedRef.current) return false
-      if (elixirRef.current < char.elixir) return false
-      const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
-      const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
-      const live = liveTowerIdSet(towersRef.current)
-      const ok =
-        side === 'ally'
-          ? canDeployAllyAt(clampedCol, clampedRow, towersRef.current, live)
-          : canDeployEnemyAt(clampedCol, clampedRow, towersRef.current, live)
-      if (!ok) return false
-      const t = performance.now()
-      setElixir((e) => e - char.elixir)
-      setUnits((prev) => [
-        ...prev,
-        {
-          id: nid('u'),
-          charId: char.id,
-          side,
-          col: clampedCol,
-          row: clampedRow,
-          hp: char.hp,
-          maxHp: char.hp,
-          attackIndex: 0,
-          burstShot: 0,
-          nextAttackAt: t + 300,
-          vfx: null,
-          vfxUntil: 0,
-          facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
-          rootedUntil: 0,
-          spawnedAt: t,
-          enraged: false,
-          movingUntil: 0,
-        },
-      ])
-      return true
-    },
-    [],
-  )
+  const deploy = useCallback((char: CharacterDef, col: number, row: number) => {
+    if (pausedRef.current) return false
+    if (elixirRef.current < char.elixir) return false
+    const live = liveTowerIdSet(towersRef.current)
+    if (!canSpawnAt(col, row, 'ally', towersRef.current, live)) return false
+    const spawnT = performance.now()
+    setElixir((e) => e - char.elixir)
+    setUnits((prev) => [...prev, makeBattleUnit(char, col, row, 'ally', spawnT)])
+    return true
+  }, [])
 
   useEffect(() => {
     let raf = 0
@@ -337,6 +439,11 @@ export function useBattle(opts?: { paused?: boolean }) {
         return
       }
       setElixir((e) => Math.min(ELIXIR_MAX, e + ELIXIR_PER_SEC * dt))
+      let nextEnemyElixir = Math.min(
+        ELIXIR_MAX,
+        enemyElixirRef.current + ELIXIR_PER_SEC * dt,
+      )
+      let enemyElixirChanged = nextEnemyElixir !== enemyElixirRef.current
 
       let nextProjectiles = projectilesRef.current.slice()
       let nextSplats = splatsRef.current.filter((s) => {
@@ -404,6 +511,26 @@ export function useBattle(opts?: { paused?: boolean }) {
 
       const liveTowers = nextTowers.filter((tw) => tw.hp > 0)
       const liveIds = liveTowerIdSet(nextTowers)
+
+      if (t >= aiNextDeployRef.current) {
+        aiNextDeployRef.current =
+          t + AI_DEPLOY_MIN_MS + Math.random() * (AI_DEPLOY_MAX_MS - AI_DEPLOY_MIN_MS)
+        const ai = tryEnemyAiDeploy(
+          nextUnits,
+          nextTowers,
+          liveIds,
+          nextEnemyElixir,
+          aiDeckIndexRef.current,
+          t,
+        )
+        aiDeckIndexRef.current = ai.deckIndex
+        if (ai.unit) {
+          nextUnits.push(ai.unit)
+          nextEnemyElixir = ai.elixir
+          enemyElixirChanged = true
+          unitsChanged = true
+        }
+      }
 
       for (const u of nextUnits) {
         if (u.hp <= 0) continue
@@ -482,7 +609,8 @@ export function useBattle(opts?: { paused?: boolean }) {
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
-            u.facing = Math.atan2(steer.dRow, steer.dCol)
+            nudgeTowardBridgeIfStuck(u, prevCol, prevRow, step, liveIds)
+            updateFacingFromMove(u, prevCol, prevRow)
             if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
               u.movingUntil = t + 140
             }
@@ -506,13 +634,14 @@ export function useBattle(opts?: { paused?: boolean }) {
             const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds)
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
-            u.facing = Math.atan2(steer.dRow, steer.dCol)
             const prevCol = u.col
             const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
+            nudgeTowardBridgeIfStuck(u, prevCol, prevRow, step, liveIds)
+            updateFacingFromMove(u, prevCol, prevRow)
             if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
               u.movingUntil = t + 140
             }
@@ -680,6 +809,10 @@ export function useBattle(opts?: { paused?: boolean }) {
       if (towersChanged) setTowers(nextTowers)
       if (projectilesChanged) setProjectiles(nextProjectiles)
       if (splatsChanged) setSplats(nextSplats)
+      if (enemyElixirChanged) {
+        enemyElixirRef.current = nextEnemyElixir
+        setEnemyElixir(nextEnemyElixir)
+      }
 
       raf = requestAnimationFrame(tick)
     }
@@ -690,6 +823,7 @@ export function useBattle(opts?: { paused?: boolean }) {
 
   return {
     elixir,
+    enemyElixir,
     elixirMax: ELIXIR_MAX,
     units,
     projectiles,

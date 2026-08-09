@@ -174,8 +174,9 @@ function towerDetourPoint(
   targetCol: number,
   targetRow: number,
   t: TowerSlot,
+  bridgeBiasCol?: number,
 ): { col: number; row: number } {
-  const pad = 0.7
+  const pad = 1.6
   const corners = [
     { col: t.col - pad, row: t.row - pad },
     { col: t.col + t.w + pad, row: t.row - pad },
@@ -191,8 +192,11 @@ function towerDetourPoint(
   for (const c of corners) {
     const cc = Math.max(0, Math.min(ARENA_COLS - 1, c.col))
     const rr = Math.max(0, Math.min(ARENA_ROWS - 1, c.row))
-    const cost =
+    let cost =
       Math.hypot(cc - col, rr - row) + Math.hypot(targetCol - cc, targetRow - rr)
+    if (bridgeBiasCol != null) {
+      cost += Math.abs(cc - bridgeBiasCol) * 0.35
+    }
     if (cost < bestCost) {
       bestCost = cost
       best = { col: cc, row: rr }
@@ -231,7 +235,8 @@ export function steerTowardGoal(
     }
   }
   if (blocker) {
-    const wp = towerDetourPoint(col + 0.5, row + 0.5, targetCol, targetRow, blocker)
+    const bridgeMid = nearestBridgeMidCol(col)
+    const wp = towerDetourPoint(col + 0.5, row + 0.5, targetCol, targetRow, blocker, bridgeMid)
     aimCol = wp.col
     aimRow = wp.row
   }
