@@ -315,7 +315,7 @@ export const LYNNE: CharacterDef = {
 
 export const DAN: CharacterDef = {
   id: 'dan',
-  name: 'Dan',
+  name: 'Chuck',
   initial: 'D',
   pronoun: 'he',
   height: "6'2\"",

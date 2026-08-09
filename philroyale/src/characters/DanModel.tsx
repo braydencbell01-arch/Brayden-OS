@@ -19,7 +19,7 @@ export function DanModel({ anim, facing, portrait, enraged }: Props) {
       cardSrc={DAN_CARD}
       troopSrc={DAN_TROOP}
       troopBackSrc={DAN_BACK}
-      alt="Dan"
+      alt="Chuck"
       anim={anim}
       facing={facing}
       portrait={portrait}
