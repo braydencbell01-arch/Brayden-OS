@@ -12,6 +12,8 @@ import { useBattle } from './useBattle'
 type Props = {
   onExit: () => void
   opponentName?: string | null
+  opponentClanName?: string | null
+  opponentTrophies?: number
 }
 
 type DragState = {
@@ -92,7 +94,12 @@ function FlyingShot({
   )
 }
 
-export function BattleScreen({ onExit, opponentName }: Props) {
+export function BattleScreen({
+  onExit,
+  opponentName,
+  opponentClanName = 'Clan',
+  opponentTrophies = 3200,
+}: Props) {
   const deckIds = useMemo(() => loadDeck(), [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
@@ -304,6 +311,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   const elixirDisplay = Math.floor(elixir)
   const dragChar = drag ? getCharacter(drag.charId) : null
   const foeName = opponentName?.trim() || 'Trainer'
+  const clanLine = opponentClanName?.trim() || null
   const resultCopy =
     result === 'victory' ? 'Victory!' : result === 'defeat' ? 'Defeat' : result === 'draw' ? 'Draw' : null
 
@@ -401,44 +409,56 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </Arena>
       </div>
 
-      {/* HUD overlays grass — profile hugging the left edge, exit beside the timer. */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between pt-[max(0.15rem,env(safe-area-inset-top))]">
-        <div
-          className="pointer-events-auto flex items-center gap-1 rounded-r-sm py-0.5 pl-0.5 pr-1.5"
-          style={{
-            background: 'linear-gradient(180deg,#4a3424bb,#241810bb)',
-            boxShadow: '0 2px 6px #00000066, inset 0 1px 0 #c9a22733',
-          }}
-        >
+      {/* HUD — CR-style: compact opponent (no panel), timer pill top-right. */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-1.5 pt-[max(0.2rem,env(safe-area-inset-top))]">
+        <div className="pointer-events-auto flex items-center gap-1.5 pl-0.5">
           <div
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-extrabold text-white"
             style={{
               background: 'linear-gradient(160deg,#ff9a7a,#c63c2e)',
-              boxShadow: '0 0 0 2px #f5d76e, 0 0 0 3px #8a2018',
+              boxShadow: '0 0 0 2px #f5d76e, 0 1px 4px #00000088',
             }}
           >
             {foeName.slice(0, 1).toUpperCase()}
           </div>
-          <div className="min-w-0 leading-none">
-            <p className="max-w-[4.5rem] truncate text-[0.6rem] font-extrabold text-white drop-shadow-[0_1px_1px_#000]">
+          <div className="min-w-0 leading-tight">
+            <p
+              className="max-w-[5.5rem] truncate text-[0.62rem] font-extrabold drop-shadow-[0_1px_1px_#000]"
+              style={{ color: '#f06ad8' }}
+            >
               {foeName}
+            </p>
+            {clanLine ? (
+              <p className="max-w-[5.5rem] truncate text-[0.48rem] font-bold text-white drop-shadow-[0_1px_1px_#000]">
+                {clanLine}
+              </p>
+            ) : null}
+            <p className="flex items-center gap-0.5 text-[0.5rem] font-extrabold leading-none text-[#f5d76e] drop-shadow-[0_1px_1px_#000]">
+              <span aria-hidden className="text-[0.55rem]">
+                🏆
+              </span>
+              {opponentTrophies.toLocaleString()}
             </p>
           </div>
         </div>
 
-        <div className="pointer-events-auto mr-1 flex items-start gap-1">
-          <div className="rounded-sm bg-black/40 px-1.5 py-0.5 text-right leading-none backdrop-blur-[2px]">
-            <p className="text-[0.45rem] font-extrabold uppercase tracking-wide text-white/80 drop-shadow-[0_1px_1px_#000]">
+        <div className="pointer-events-auto flex items-start gap-1">
+          <div
+            className="rounded-md px-2 py-0.5 text-right leading-none"
+            style={{ background: 'rgba(12,12,18,0.72)', boxShadow: '0 2px 6px #00000066' }}
+          >
+            <p className="text-[0.38rem] font-extrabold uppercase tracking-[0.08em] text-white/75">
               Time left
             </p>
-            <p className="font-[family-name:var(--font-display)] text-[1.05rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
+            <p className="font-[family-name:var(--font-display)] text-[1.15rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
               {mm}:{ss}
             </p>
           </div>
           <button
             type="button"
             onClick={onExit}
-            className="mt-0.5 rounded-sm bg-black/50 px-1.5 py-1 text-[0.65rem] font-extrabold text-white/85 drop-shadow-[0_1px_2px_#000]"
+            className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white/90 drop-shadow-[0_1px_2px_#000]"
+            style={{ background: 'rgba(12,12,18,0.55)' }}
             aria-label="Leave battle"
           >
             ✕
@@ -453,7 +473,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             initial={{ opacity: 0, y: 16, scale: 0.75 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10 }}
-            className="pointer-events-none absolute bottom-[5.6rem] left-3 z-40"
+            className="pointer-events-none absolute bottom-[6.4rem] left-3 z-40"
           >
             <div
               className="relative rounded-2xl bg-white px-2.5 py-2 shadow-[0_4px_14px_#00000055]"
@@ -518,22 +538,24 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </div>
       ) : null}
 
-      <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.1rem,env(safe-area-inset-bottom))]">
-        <div
-          className="px-1 pb-0.5 pt-1"
-          style={{
-            background: 'linear-gradient(180deg, transparent 0%, #1a100c99 55%, #1a100cee 100%)',
-          }}
-        >
-          <div className="mx-auto flex max-w-[22rem] items-end justify-center gap-1">
-            <div className="relative flex w-9 shrink-0 flex-col items-center gap-px">
+      {/* CR-style solid blue card dock */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.15rem,env(safe-area-inset-bottom))]"
+        style={{
+          background: '#2a5db0',
+          boxShadow: '0 -3px 12px #00000055, inset 0 1px 0 #4a7dd055',
+        }}
+      >
+        <div className="mx-auto max-w-[24rem] px-1.5 pb-1 pt-1.5">
+          <div className="flex items-end justify-center gap-1.5">
+            <div className="relative flex w-10 shrink-0 flex-col items-center gap-0.5">
               <AnimatePresence>
                 {emotePickerOpen ? (
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.92 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                    className="absolute bottom-[calc(100%+0.3rem)] left-0 z-40 w-[10.5rem] rounded-2xl bg-white p-1.5 shadow-[0_6px_20px_#00000055]"
+                    className="absolute bottom-[calc(100%+0.35rem)] left-0 z-40 w-[10.5rem] rounded-2xl bg-white p-1.5 shadow-[0_6px_20px_#00000055]"
                     style={{ border: '2px solid #e8e4dc' }}
                   >
                     <div className="grid grid-cols-3 gap-1">
@@ -570,7 +592,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                   if (ended) return
                   setEmotePickerOpen((o) => !o)
                 }}
-                className="flex h-5 w-5 items-center justify-center rounded-full"
+                className="flex h-6 w-6 items-center justify-center rounded-full"
                 style={{
                   background: 'linear-gradient(180deg,#5a8fd6,#2a4a8a)',
                   boxShadow: '0 1px 0 #1a3060, inset 0 1px 0 #ffffff44',
@@ -578,11 +600,11 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 aria-label="Emote"
                 aria-expanded={emotePickerOpen}
               >
-                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-white" aria-hidden>
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-white" aria-hidden>
                   <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-4 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 5a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 7 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 12 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 17 9z" />
                 </svg>
               </button>
-              <span className="text-[0.4rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
+              <span className="text-[0.38rem] font-extrabold uppercase tracking-wider text-white/90">
                 Next
               </span>
               <BattleCard
@@ -617,17 +639,17 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             </div>
           </div>
 
-          <div className="mx-auto mt-1 flex max-w-[22rem] items-center gap-1 px-0.5">
+          <div className="mt-1.5 flex items-center gap-1 px-0.5">
             <div
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-extrabold text-white"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.65rem] font-extrabold text-white"
               style={{
                 background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
-                boxShadow: '0 0 0 1.5px #5a1848',
+                boxShadow: '0 0 0 2px #5a1848, 0 1px 3px #00000066',
               }}
             >
               {elixirDisplay}
             </div>
-            <div className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-[#1a100c]/90 ring-1 ring-[#5a1848]">
+            <div className="relative h-3 flex-1 overflow-hidden rounded-sm bg-[#1a0a28]/85 ring-1 ring-[#5a1848]">
               <div
                 className="elixir-bar-fill absolute inset-y-0 left-0"
                 style={{ width: `${(elixir / elixirMax) * 100}%` }}
@@ -637,9 +659,6 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                   <div key={i} className="h-full flex-1 border-r border-black/35 last:border-0" />
                 ))}
               </div>
-              <span className="absolute inset-0 flex items-center justify-center text-[0.45rem] font-extrabold text-white/90 drop-shadow-[0_1px_0_#000]">
-                {elixirDisplay} / {elixirMax}
-              </span>
             </div>
           </div>
         </div>

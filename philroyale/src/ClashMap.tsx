@@ -109,7 +109,6 @@ export function ClashMap() {
         opacity="0.14"
       />
 
-      {/* Twin continuous dirt lanes (no pad blobs) */}
       <DirtLane cx={leftLane} w={pathW} />
       <DirtLane cx={rightLane} w={pathW} />
       {/* Short cross-links into king pads only */}
@@ -187,17 +186,17 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
   const bot = 568
   const riverTop = 312 - 2
   const riverBot = 312 + 26 + 2
+  const overlap = 2
   return (
     <g>
-      {/* Filled strips so thickness matches bridges end-to-end (not hairline strokes). */}
-      <rect x={x} y={top} width={w} height={riverTop - top} fill="url(#dirt)" />
-      <rect x={x} y={riverBot} width={w} height={bot - riverBot} fill="url(#dirt)" />
-      <rect x={x + w * 0.38} y={top} width={w * 0.24} height={riverTop - top} fill="#fff6d0" opacity="0.22" />
-      <rect x={x + w * 0.38} y={riverBot} width={w * 0.24} height={bot - riverBot} fill="#fff6d0" opacity="0.22" />
-      <rect x={x} y={top} width="1.4" height={riverTop - top} fill="#5a3418" opacity="0.35" />
-      <rect x={x + w - 1.4} y={top} width="1.4" height={riverTop - top} fill="#5a3418" opacity="0.35" />
-      <rect x={x} y={riverBot} width="1.4" height={bot - riverBot} fill="#5a3418" opacity="0.35" />
-      <rect x={x + w - 1.4} y={riverBot} width="1.4" height={bot - riverBot} fill="#5a3418" opacity="0.35" />
+      {/* Filled strips — same width as bridges end-to-end */}
+      <rect x={x} y={top} width={w} height={riverTop - top + overlap} fill="url(#dirt)" />
+      <rect x={x} y={riverBot - overlap} width={w} height={bot - riverBot + overlap} fill="url(#dirt)" />
+      {/* Bridge-gap filler so lane reads continuous through the river */}
+      <rect x={x} y={riverTop - overlap} width={w} height={riverBot - riverTop + overlap * 2} fill="url(#dirt)" opacity="0.92" />
+      <rect x={x + w * 0.38} y={top} width={w * 0.24} height={bot - top} fill="#fff6d0" opacity="0.18" />
+      <rect x={x} y={top} width="1.2" height={bot - top} fill="#5a3418" opacity="0.3" />
+      <rect x={x + w - 1.2} y={top} width="1.2" height={bot - top} fill="#5a3418" opacity="0.3" />
     </g>
   )
 }
@@ -213,9 +212,9 @@ function Bridge3D({
   riverY: number
   riverH: number
 }) {
-  // Exact same width as DirtLane — no abutments or side skirts past `w`.
+  // Exact same width as DirtLane — planks sit on the continuous lane.
   const x = cx - w / 2
-  const top = riverY - 1
+  const top = riverY - 2
   const h = riverH + 4
   const plankN = Math.max(3, Math.round(w / 6))
   return (

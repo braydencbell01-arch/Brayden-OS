@@ -44,10 +44,10 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
   const collection = size === 'collection'
 
   const box = next
-    ? 'h-[2.35rem] w-[1.8rem]'
+    ? 'h-[2.5rem] w-[1.85rem]'
     : collection
       ? 'aspect-[3/4] w-full'
-      : 'h-[3.85rem] w-[2.85rem]'
+      : 'h-[4.35rem] w-[3.05rem]'
 
   if (!character) {
     return (

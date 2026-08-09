@@ -212,32 +212,29 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
               style={{ ...style, zIndex: 5 + z }}
             >
               <div
-                className="absolute left-1/2 w-[340%] max-w-[10rem] -translate-x-1/2"
+                className="absolute left-1/2 w-[280%] max-w-[5.5rem] -translate-x-1/2"
                 style={{
-                  // HP at the tower base (feet) for ally + enemy — not above the crown.
-                  bottom: '-2%',
+                  // Thin HP bar at tower feet — CR style, not above crown.
+                  bottom: '-1%',
                   transform: `rotateX(${-ARENA_TILT_DEG}deg)`,
                   transformOrigin: '50% 100%',
                 }}
               >
                 <div
-                  className="relative h-[0.85rem] overflow-hidden rounded-[2px] bg-black/80"
+                  className="relative h-[0.32rem] overflow-hidden rounded-[1px]"
                   style={{
-                    boxShadow: enemy
-                      ? '0 0 0 1px #8a2018, 0 1px 3px #0008'
-                      : '0 0 0 1.5px #c9a227, 0 1px 3px #0008',
+                    background: '#0a0a0c',
+                    boxShadow: '0 0 0 1px #000, 0 1px 2px #0006',
                   }}
                 >
                   <div
                     className="h-full"
                     style={{
                       width: `${pct * 100}%`,
-                      background: enemy
-                        ? 'linear-gradient(180deg,#ff8a7a,#d63c2e)'
-                        : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
+                      background: enemy ? '#e53935' : '#1e88e5',
                     }}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center text-[0.45rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+                  <span className="absolute inset-0 flex items-center justify-center text-[0.28rem] font-bold leading-none text-white/80">
                     {Math.round(th.hp)}
                   </span>
                 </div>
