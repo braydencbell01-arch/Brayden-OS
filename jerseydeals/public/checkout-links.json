@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-08-09T13:56:29Z",
+  "syncedAt": "2026-08-09T14:05:21Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 79,
+  "count": 77,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -27,15 +27,6 @@
       "paymentLinkId": "Z57MC4E7WXM3Z257",
       "url": "https://square.link/u/GyPPoxm1",
       "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ecOgXIs9Zf9R6wGR5nRMzuFIlFHZY"
-    },
-    {
-      "itemId": "4EQWZRBDZUJ64K6SWRW4D3D2",
-      "variationId": "DX72TIG4T47LOPW5S6BWHJAC",
-      "title": "Paris Saint-Germain 22/23 Pre-Match Jersey (Nike) · L",
-      "sku": "ebay:389366033549",
-      "paymentLinkId": "X4JO6YPFOKIR54EJ",
-      "url": "https://square.link/u/KeBdvXBA",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0hzmQOAkaJanxTMM9tcCfzJxqANZY"
     },
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -669,15 +660,6 @@
       "discountUrl": "https://square.link/u/lyZPk8FD",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aWEimiuks5rL2Uyh0cjzMGwDwLcZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "5E5TTM6DX34ITIGQME5MUKEQ",
-      "variationId": "5E47JH42BMEZCGDI6BM344VV",
-      "title": "Grey adidas T-Shirt With Outdoors Graphic On Back L Large",
-      "sku": "ebay:800462519354",
-      "paymentLinkId": "35ZM6F4FFNKCHEMT",
-      "url": "https://square.link/u/ErV8EBo9",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SErlQgqoM6Pv4Rpvhn9CfLP2ywQZY"
     },
     {
       "itemId": "BCG7CYGMENMJHX2UA7Z5IRGP",

@@ -1,6 +1,18 @@
 {
-  "syncedAt": "2026-08-09T13:56:29Z",
+  "syncedAt": "2026-08-09T14:05:21Z",
   "orders": {
+    "YLpzAeiPj9rhJZjXCv5jVnvBxNCZY": {
+      "variationId": "DX72TIG4T47LOPW5S6BWHJAC",
+      "qty": 1,
+      "qtyAfter": 0,
+      "appliedAt": "2026-08-09T14:05:21Z"
+    },
+    "sdvAA5LjPBOXLKaPmkraq7GMOL9YY": {
+      "variationId": "5E47JH42BMEZCGDI6BM344VV",
+      "qty": 1,
+      "qtyAfter": 0,
+      "appliedAt": "2026-08-09T14:05:19Z"
+    },
     "cP4EN0f3VmfBwKex9Mm7oKdXnZZZY": {
       "variationId": "6DXVTBZHQXRZQ7Q5G23SYRWL",
       "qty": 1,
