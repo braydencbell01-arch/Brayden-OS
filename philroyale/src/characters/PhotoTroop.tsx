@@ -95,17 +95,17 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Full figure on solid blue — leave room under feet for the name band.
+    // Card art (cool pose on solid blue) — never show black troop studio squares.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
         style={{ background: CARD_PORTRAIT_BG }}
       >
         <img
-          src={troopSrc || cardSrc}
+          src={cardSrc || troopSrc}
           alt={alt}
-          className="h-full w-full object-contain px-[3%] pb-[20%] pt-[4%]"
-          style={{ objectPosition: '50% 92%' }}
+          className="h-full w-full object-contain px-[2%] pb-[18%] pt-[2%]"
+          style={{ objectPosition: '50% 100%' }}
           draggable={false}
         />
       </div>
@@ -275,9 +275,11 @@ export function PhotoTroop({
             className="h-full w-full object-contain object-bottom"
             style={{
               objectPosition: '50% 100%',
-              // Slight scale-down so ears/paws aren't cropped by the token box.
-              transform: 'scale(0.92)',
+              // Fit full character — transparent PNGs, no black studio square.
+              transform: 'scale(0.96)',
               transformOrigin: '50% 100%',
+              // Drop any leftover near-black fringe from old assets.
+              mixBlendMode: 'normal',
               filter: enraged
                 ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
                 : undefined,

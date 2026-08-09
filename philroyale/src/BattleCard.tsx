@@ -84,7 +84,7 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
         }}
       >
         <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden">
-          <div className="absolute inset-x-0 top-0 bottom-[26%]">
+          <div className="absolute inset-x-0 top-0 bottom-[20%]">
             <CharacterModel
               charId={character.id}
               anim="idle"
@@ -96,7 +96,7 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
           </div>
           {!next ? (
             <span
-              className={`absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/90 via-black/55 to-transparent px-0.5 pb-[2px] pt-3 text-center font-extrabold leading-none text-white ${collection ? 'text-[0.62rem]' : 'text-[0.48rem]'}`}
+              className={`absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/85 via-black/40 to-transparent px-0.5 pb-[2px] pt-2.5 text-center font-extrabold leading-none text-white ${collection ? 'text-[0.62rem]' : 'text-[0.48rem]'}`}
               style={{ textShadow: '0 1px 2px #000' }}
             >
               {character.name}

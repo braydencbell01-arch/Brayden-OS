@@ -152,7 +152,7 @@ export const KATHIE: CharacterDef = {
   moveSpeed: 3,
   attackDelaySec: 1,
   hue: 200,
-  blurb: 'Stops to Chicken Whip — same crack as Phil, 1s cooldown.',
+  blurb: 'Grandma energy — stops to Chicken Whip, same crack as Phil, 1s cooldown.',
   attacks: [
     {
       id: 'chickenWhip',
@@ -400,7 +400,7 @@ export const DOG_HUT: CharacterDef = {
   pronoun: 'it',
   height: "4'0\"",
   rarity: 'common',
-  elixir: 6,
+  elixir: 7,
   hp: 1250,
   moveSpeed: 0,
   attackDelaySec: 0,
