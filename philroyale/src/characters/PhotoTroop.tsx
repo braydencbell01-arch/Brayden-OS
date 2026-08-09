@@ -98,7 +98,11 @@ export function PhotoTroop({
         src={cardSrc}
         alt={alt}
         className="h-full w-full object-cover"
-        style={{ objectPosition: objectPos }}
+        style={{
+          objectPosition: objectPos,
+          transform: 'scale(1.5)',
+          transformOrigin: objectPos,
+        }}
         draggable={false}
       />
     )
