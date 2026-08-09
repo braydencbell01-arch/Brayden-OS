@@ -287,7 +287,7 @@ export function CharactersScreen() {
                 >
                   <BattleCard character={c} size="collection" />
                   <p className="mt-1 truncate text-center text-[0.7rem] font-extrabold text-white">
-                    {locked ? '🔒 ' : fav ? '★ ' : ''}
+                    {locked ? '· ' : fav ? '★ ' : ''}
                     {c.name}
                   </p>
                   <p
