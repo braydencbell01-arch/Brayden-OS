@@ -7,8 +7,8 @@ export function ClashMap() {
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
   const rightLane = fieldX + (77 / 100) * fieldW
-  /** Full-length lane thickness — matches the thick near-king dirt. */
-  const pathW = (17 / 100) * fieldW
+  /** Lane + bridge width match (bridge cols ~11% of field). */
+  const pathW = (11 / 100) * fieldW
   const riverY = 312
   const riverH = 26
 
@@ -158,12 +158,12 @@ export function ClashMap() {
       <Bridge3D cx={leftLane} w={pathW} riverY={riverY} riverH={riverH} />
       <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
-      <CrownTower x={180} y={62} king enemy />
-      <CrownTower x={leftLane} y={128} king={false} enemy />
-      <CrownTower x={rightLane} y={128} king={false} enemy />
-      <CrownTower x={180} y={548} king enemy={false} />
-      <CrownTower x={leftLane} y={498} king={false} enemy={false} />
-      <CrownTower x={rightLane} y={498} king={false} enemy={false} />
+      <CrownTower x={180} y={52} king enemy />
+      <CrownTower x={leftLane} y={120} king={false} enemy />
+      <CrownTower x={rightLane} y={120} king={false} enemy />
+      <CrownTower x={180} y={560} king enemy={false} />
+      <CrownTower x={leftLane} y={508} king={false} enemy={false} />
+      <CrownTower x={rightLane} y={508} king={false} enemy={false} />
 
       <rect
         x="1"
@@ -188,35 +188,15 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
   const riverBot = 312 + 26 + 2
   return (
     <g>
-      <path
-        d={`M${cx} ${top} V${riverTop} M${cx} ${riverBot} V${bot}`}
-        fill="none"
-        stroke="url(#dirt)"
-        strokeWidth={w}
-        strokeLinecap="butt"
-      />
-      <path
-        d={`M${cx} ${top} V${riverTop} M${cx} ${riverBot} V${bot}`}
-        fill="none"
-        stroke="#fff6d0"
-        strokeWidth={w * 0.18}
-        strokeLinecap="butt"
-        opacity="0.28"
-      />
-      <path
-        d={`M${x + 2} ${top} V${riverTop} M${x + 2} ${riverBot} V${bot}`}
-        fill="none"
-        stroke="#5a3418"
-        strokeWidth="1.2"
-        opacity="0.35"
-      />
-      <path
-        d={`M${x + w - 2} ${top} V${riverTop} M${x + w - 2} ${riverBot} V${bot}`}
-        fill="none"
-        stroke="#5a3418"
-        strokeWidth="1.2"
-        opacity="0.35"
-      />
+      {/* Filled strips so thickness matches bridges end-to-end (not hairline strokes). */}
+      <rect x={x} y={top} width={w} height={riverTop - top} fill="url(#dirt)" />
+      <rect x={x} y={riverBot} width={w} height={bot - riverBot} fill="url(#dirt)" />
+      <rect x={x + w * 0.38} y={top} width={w * 0.24} height={riverTop - top} fill="#fff6d0" opacity="0.22" />
+      <rect x={x + w * 0.38} y={riverBot} width={w * 0.24} height={bot - riverBot} fill="#fff6d0" opacity="0.22" />
+      <rect x={x} y={top} width="1.4" height={riverTop - top} fill="#5a3418" opacity="0.35" />
+      <rect x={x + w - 1.4} y={top} width="1.4" height={riverTop - top} fill="#5a3418" opacity="0.35" />
+      <rect x={x} y={riverBot} width="1.4" height={bot - riverBot} fill="#5a3418" opacity="0.35" />
+      <rect x={x + w - 1.4} y={riverBot} width="1.4" height={bot - riverBot} fill="#5a3418" opacity="0.35" />
     </g>
   )
 }
@@ -233,55 +213,31 @@ function Bridge3D({
   riverH: number
 }) {
   const x = cx - w / 2
-  const top = riverY - 3
-  const h = riverH + 8
+  const top = riverY - 2
+  const h = riverH + 6
   return (
     <g filter="url(#softShadow)">
-      <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.55} ry="5" fill="#041828" opacity="0.55" />
-      {/* abutments */}
-      <path
-        d={`M${x - 3} ${top} h5 v${h} l-4 3 h-2 z`}
-        fill="#7a7468"
-        stroke="#3a3830"
-        strokeWidth="0.8"
-      />
-      <path
-        d={`M${x + w - 2} ${top} h5 v${h} l-4 3 h-2 z`}
-        fill="#a8a090"
-        stroke="#3a3830"
-        strokeWidth="0.8"
-      />
-      {/* deck */}
-      <rect x={x} y={top + 4} width={w} height={h - 10} rx="1.5" fill="url(#wood)" stroke="#3d2410" strokeWidth="1.2" />
-      {/* thickness */}
-      <path d={`M${x} ${top + h - 6} h${w} l2 4 h-${w + 4} z`} fill="url(#woodSide)" />
-      {Array.from({ length: Math.max(5, Math.round(w / 4)) }, (_, i) => (
+      <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.48} ry="4" fill="#041828" opacity="0.5" />
+      {/* Slim abutments — same width as the dirt lane */}
+      <rect x={x - 1} y={top} width="2.5" height={h} fill="#7a7468" stroke="#3a3830" strokeWidth="0.6" />
+      <rect x={x + w - 1.5} y={top} width="2.5" height={h} fill="#a8a090" stroke="#3a3830" strokeWidth="0.6" />
+      {/* deck — same w as path */}
+      <rect x={x} y={top + 3} width={w} height={h - 8} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="1" />
+      <path d={`M${x} ${top + h - 5} h${w} l1.5 3 h-${w + 3} z`} fill="url(#woodSide)" />
+      {Array.from({ length: Math.max(4, Math.round(w / 5)) }, (_, i) => (
         <line
           key={i}
-          x1={x + 2 + i * (w / 6)}
-          x2={x + 2 + i * (w / 6)}
-          y1={top + 5}
-          y2={top + h - 7}
+          x1={x + 2 + i * (w / 5)}
+          x2={x + 2 + i * (w / 5)}
+          y1={top + 4}
+          y2={top + h - 6}
           stroke="#3a2010"
-          strokeWidth="1"
+          strokeWidth="0.9"
           opacity="0.45"
         />
       ))}
-      <rect x={x - 0.5} y={top + 3} width={w + 1} height="3.5" rx="0.5" fill="#6a4220" />
-      <rect x={x - 0.5} y={top + h - 9} width={w + 1} height="3.5" rx="0.5" fill="#6a4220" />
-      {[0, 0.5, 1].map((t, i) => (
-        <rect
-          key={i}
-          x={x + t * (w - 3.5)}
-          y={top + 1}
-          width="3.5"
-          height={h - 5}
-          rx="0.5"
-          fill="#5a3418"
-          stroke="#2a1808"
-          strokeWidth="0.5"
-        />
-      ))}
+      <rect x={x} y={top + 2} width={w} height="2.5" rx="0.4" fill="#6a4220" />
+      <rect x={x} y={top + h - 7} width={w} height="2.5" rx="0.4" fill="#6a4220" />
     </g>
   )
 }
