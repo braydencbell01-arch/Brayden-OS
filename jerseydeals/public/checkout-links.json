@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-08-09T13:39:15Z",
+  "syncedAt": "2026-08-09T13:44:02Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 67,
+  "count": 79,
   "links": [
     {
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
@@ -18,6 +18,24 @@
       "discountUrl": "https://square.link/u/IXChODiV",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/47LedKBB7iYUEEXtuJlC9ZKhVlJZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "ODYCQWI7KR7ACDL7C7K4EXFS",
+      "variationId": "5IGOAAVG5N3HVSBTOXMQ6AH7",
+      "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · XL",
+      "sku": "ebay:800059395254",
+      "paymentLinkId": "Z57MC4E7WXM3Z257",
+      "url": "https://square.link/u/GyPPoxm1",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ecOgXIs9Zf9R6wGR5nRMzuFIlFHZY"
+    },
+    {
+      "itemId": "4EQWZRBDZUJ64K6SWRW4D3D2",
+      "variationId": "DX72TIG4T47LOPW5S6BWHJAC",
+      "title": "Paris Saint-Germain 22/23 Pre-Match Jersey (Nike) · L",
+      "sku": "ebay:389366033549",
+      "paymentLinkId": "X4JO6YPFOKIR54EJ",
+      "url": "https://square.link/u/KeBdvXBA",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0hzmQOAkaJanxTMM9tcCfzJxqANZY"
     },
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -174,6 +192,15 @@
       "discountUrl": "https://square.link/u/s4Wnhdrq",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Y5c1MB9noMpCgyYtlBjiLYnpksMZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "FW6CHQFW7YHRGVIVWL3UKBOC",
+      "variationId": "IICEPL6TBH6ZVJPRURFJ4HBU",
+      "title": "Tottenham Hotspur 23/24 Pre-Match Jersey (Nike) · M",
+      "sku": "ebay:389131856395",
+      "paymentLinkId": "QZOEYMAHJ4HUXAA2",
+      "url": "https://square.link/u/bKgg30yM",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cVrqyhgxYx1MpkGsmAuNIs1IA7fZY"
     },
     {
       "itemId": "FFGES2GD3B3I4G3CTO2KT6JZ",
@@ -385,6 +412,15 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
+      "itemId": "YB3RYUU4FJL7WEQGGQ7YYVVZ",
+      "variationId": "6DXVTBZHQXRZQ7Q5G23SYRWL",
+      "title": "Inter Miami 23/24 Away Jersey (adidas) · Youth XL",
+      "sku": "ebay:800407206007",
+      "paymentLinkId": "C432LFK7MKWNL77F",
+      "url": "https://square.link/u/QdHe9ki4",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0rG18uCjJe4gC5Z3x2nKvAYVETZZY"
+    },
+    {
       "itemId": "MESUKSIHUJYM6FHJIBSGKZ4Q",
       "variationId": "NPGYT7TP5A4DA25PU5TQNYQI",
       "title": "Inter Milan 23/24 Home Jersey (Nike) · S",
@@ -422,6 +458,60 @@
       "discountUrl": "https://square.link/u/6orjWQYi",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/62WjoOpPD5EhF9VvnLvDjx5Ew0ZZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "YADWORMUYICFV3TKSCYFG5S5",
+      "variationId": "3J2OXHY3PHBWVK264JTYPLBD",
+      "title": "Inter Miami 24/25 Home Jersey (adidas) · Youth XL",
+      "sku": "ebay:800407292943",
+      "paymentLinkId": "TJ7DBDVMQ2QEE5WZ",
+      "url": "https://square.link/u/XepylSms",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/01BGdpspjaEHKv9OtRN3f5eBip9YY"
+    },
+    {
+      "itemId": "2XQEA724GIQ5Y6KNEU4ORRMP",
+      "variationId": "LOZJTBWZQOMQHZNL2RDVIC7I",
+      "title": "Crystal Palace “South London And Proud” Authentic Scarf | 2 Sided | 148cm-18cm |",
+      "sku": "ebay:800359862342",
+      "paymentLinkId": "FLKE7WTDFLQFG2LV",
+      "url": "https://square.link/u/nNFhc1P8",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YfD9ftaLZUAc1y01QwpwQiWUvf9YY"
+    },
+    {
+      "itemId": "OD6YIUBCUHYJ2AO6NYGFFGUA",
+      "variationId": "D64QTOZEGBEVILNL7Z56KCXZ",
+      "title": "Nike Home Jersey · XL",
+      "sku": "ebay:389482595662",
+      "paymentLinkId": "N4262HC6ZLOVLWGO",
+      "url": "https://square.link/u/GqGOTAn0",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KsfQOUMs9cGYHK8wsi5FNIg5odbZY"
+    },
+    {
+      "itemId": "SBAVTLJB6ZVZYIXLIGQFHNBF",
+      "variationId": "THLDKRIEWM4TJP4DHLAIC7C5",
+      "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · L",
+      "sku": "ebay:389482553724",
+      "paymentLinkId": "ISAFVP2SBFV6RSN5",
+      "url": "https://square.link/u/MuV5oX2O",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2CfK5XohuK3KSS4yrSt9Zqrvr6PZY"
+    },
+    {
+      "itemId": "M53N7TDUII4HBUAFOYNHUQ5J",
+      "variationId": "4GJCJOMTUO2XTLHDGFL2W6Y3",
+      "title": "Inter Miami 22/23 Home Jersey (Adidas) · M",
+      "sku": "ebay:389367191599",
+      "paymentLinkId": "QXGLI7PBZREAUA2R",
+      "url": "https://square.link/u/QajteGUT",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6sXayUwiPIGUs93v6koUInac3c7YY"
+    },
+    {
+      "itemId": "2STRESTWOXQ5WRDMX7QOXMYM",
+      "variationId": "VW5JS2QK6DEVPFE7WUCXJNMK",
+      "title": "Manchester City 25/26 Third Jersey (Puma) · Youth L",
+      "sku": "ebay:800189791714",
+      "paymentLinkId": "GTOSLPVQOFV5QSXU",
+      "url": "https://square.link/u/fWdv6lLo",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/iklK5HjJf2fpmRVHbFSHPnWq0zZZY"
     },
     {
       "itemId": "KSQAQS5FD2JUDR2OSVTR2CKN",
@@ -581,6 +671,15 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
+      "itemId": "5E5TTM6DX34ITIGQME5MUKEQ",
+      "variationId": "5E47JH42BMEZCGDI6BM344VV",
+      "title": "Grey adidas T-Shirt With Outdoors Graphic On Back L Large",
+      "sku": "ebay:800462519354",
+      "paymentLinkId": "35ZM6F4FFNKCHEMT",
+      "url": "https://square.link/u/ErV8EBo9",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SErlQgqoM6Pv4Rpvhn9CfLP2ywQZY"
+    },
+    {
       "itemId": "BCG7CYGMENMJHX2UA7Z5IRGP",
       "variationId": "ZNFNJDQEXT24M2USPO63GIIT",
       "title": "Green adidas Logo Graphic T-Shirt L Large",
@@ -705,6 +804,15 @@
       "discountUrl": "https://square.link/u/UqPLcmJA",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/akj24vdHCjhMUqOlqRFtD9TkQh6YY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "IMENLCIPQF2NARGPZH7TN6OJ",
+      "variationId": "M4HDCO7DHEXMS4SXW2S2QYOL",
+      "title": "Maroon Under Armour Long Sleeve Waffle Crew S Small",
+      "sku": "ebay:800468004717",
+      "paymentLinkId": "VV4COCBI2XMFZGGV",
+      "url": "https://square.link/u/HEbsp48E",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2GrnZBIZ0ZzT4fsEGqFpVi6pLv5YY"
     },
     {
       "itemId": "6OWM243QJBQTIAHD2ZENZS7Y",
