@@ -406,8 +406,18 @@ export function loadCardProgress(): CardProgress {
     if (step?.unlockCard) unlockedSet.add(step.unlockCard)
   }
   for (const c of CHARACTERS) {
-    levels[c.id] = Math.max(1, Math.min(MAX_CARD_LEVEL, raw.levels?.[c.id] ?? 1))
-    copies[c.id] = Math.max(0, raw.copies?.[c.id] ?? (c.rarity === 'common' ? 4 : 1))
+    const level = Math.max(1, Math.min(MAX_CARD_LEVEL, raw.levels?.[c.id] ?? 1))
+    levels[c.id] = level
+    const savedCopies = raw.copies?.[c.id]
+    const ownedFromSaves = savedCopies != null && savedCopies > 0
+    if (ownedFromSaves) unlockedSet.add(c.id)
+    const unlocked = unlockedSet.has(c.id)
+    let count = savedCopies ?? (unlocked ? startingCopiesFor(c.rarity) : 0)
+    // Unstuck: unlocked Lv1 cards always have enough copies for the first upgrade.
+    if (unlocked && level === 1) {
+      count = Math.max(count, startingCopiesFor(c.rarity))
+    }
+    copies[c.id] = Math.max(0, count)
   }
   return {
     levels,
@@ -426,29 +436,50 @@ export function isCardUnlocked(charId: string): boolean {
 }
 
 export function copiesToUpgrade(level: number, rarity: string): number {
-  const base = rarity === 'legendary' ? 2 : rarity === 'epic' ? 4 : rarity === 'rare' ? 6 : 8
-  return base + (level - 1) * 2
+  // Playable CR-style curve — first upgrade is reachable with starter copies.
+  const base = rarity === 'legendary' ? 1 : rarity === 'epic' ? 2 : rarity === 'rare' ? 2 : 2
+  const step = rarity === 'legendary' || rarity === 'epic' ? 1 : 2
+  return base + (level - 1) * step
 }
 
 export function goldToUpgrade(level: number): number {
-  return 50 + (level - 1) * 40
+  return 40 + (level - 1) * 30
+}
+
+export function startingCopiesFor(rarity: string): number {
+  if (rarity === 'legendary') return 2
+  if (rarity === 'epic') return 3
+  if (rarity === 'rare') return 4
+  return 5
 }
 
 export function tryUpgradeCard(charId: string): { ok: boolean; message: string; progress: CardProgress } {
   const char = CHARACTERS.find((c) => c.id === charId)
   const progress = loadCardProgress()
   if (!char) return { ok: false, message: 'Unknown card', progress }
+  const have = progress.copies[charId] ?? 0
+  // Owning copies counts as unlocked for upgrades (chests/shop may have granted them).
   if (!progress.unlocked.includes(charId)) {
-    return { ok: false, message: 'Card locked — unlock on Trophy Road', progress }
+    if (have <= 0) {
+      return { ok: false, message: 'Card locked — unlock on Trophy Road', progress }
+    }
+    progress.unlocked.push(charId)
   }
   const level = progress.levels[charId] ?? 1
   if (level >= MAX_CARD_LEVEL) return { ok: false, message: 'Max level 10', progress }
   const need = copiesToUpgrade(level, char.rarity)
-  const have = progress.copies[charId] ?? 0
   const cost = goldToUpgrade(level)
   const profile = loadProfile()
-  if (have < need) return { ok: false, message: `Need ${need} copies`, progress }
-  if (profile.gold < cost) return { ok: false, message: `Need ${cost} gold`, progress }
+  if (have < need) {
+    return {
+      ok: false,
+      message: `Need ${need} copies (have ${have}) — buy more in Shop or open chests`,
+      progress,
+    }
+  }
+  if (profile.gold < cost) {
+    return { ok: false, message: `Need ${cost} gold (have ${profile.gold})`, progress }
+  }
   progress.copies[charId] = have - need
   progress.levels[charId] = level + 1
   profile.gold -= cost
@@ -457,7 +488,7 @@ export function tryUpgradeCard(charId: string): { ok: boolean; message: string; 
   return {
     ok: true,
     message: `${char.name} → Lv ${level + 1} (+5% HP & dmg)`,
-    progress,
+    progress: loadCardProgress(),
   }
 }
 
@@ -689,8 +720,11 @@ function grantRoadStep(
   }
   if (step.unlockCard && !progress.unlocked.includes(step.unlockCard)) {
     progress.unlocked.push(step.unlockCard)
-    const name = CHARACTERS.find((c) => c.id === step.unlockCard)?.name ?? step.unlockCard
-    messages.push(`Unlocked ${name}`)
+    const char = CHARACTERS.find((c) => c.id === step.unlockCard)
+    if (char && (progress.copies[step.unlockCard] ?? 0) <= 0) {
+      progress.copies[step.unlockCard] = startingCopiesFor(char.rarity)
+    }
+    messages.push(`Unlocked ${char?.name ?? step.unlockCard}`)
   }
   return messages
 }
