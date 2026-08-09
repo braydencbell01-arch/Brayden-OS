@@ -663,9 +663,10 @@ export function useBattle(opts?: { paused?: boolean }) {
         }
 
         // Shields (Dan) walk into contact then idle as a meat wall — never attack.
+        // Global floor: nothing engages/attacks under 2 blocks.
         const attackRange = noAttack
-          ? 1
-          : Math.max(1, def.attacks[u.attackIndex % def.attacks.length]!.range)
+          ? 2
+          : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
         if (best.rangeD > attackRange) {
           if (!rooted) {
             const step = moveSpeed * dt

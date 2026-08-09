@@ -199,7 +199,7 @@ export const FINLEY: CharacterDef = {
     {
       id: 'bite',
       name: 'Bite',
-      range: 1,
+      range: 2,
       damage: 100,
       rootWhileAttacking: false,
       kind: 'bite',
@@ -301,7 +301,7 @@ export const LYNNE: CharacterDef = {
     {
       id: 'headButt',
       name: 'Head Butt',
-      range: 1,
+      range: 2,
       damage: 125,
       rootWhileAttacking: true,
       kind: 'headbutt',
