@@ -26,6 +26,15 @@ export type BattleUnit = {
   enraged: boolean
   /** Walk anim while recently relocated. */
   movingUntil: number
+  /** Progress probe used to detect motion that is not getting closer to the objective. */
+  pathProbeAt: number
+  pathProbeDistance: number
+  pathTargetKey: string
+  /** Persistent waypoint prevents symmetric tower detours from flipping every frame. */
+  detourUntil: number
+  detourCol: number
+  detourRow: number
+  detourSide: number
 }
 
 export type Projectile = {
