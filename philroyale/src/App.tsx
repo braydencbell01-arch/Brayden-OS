@@ -440,7 +440,11 @@ export default function App() {
 
   useEffect(() => {
     const id = loadPlayerId()
-    flashFriend(`Your friend code is ${id} — 3 digits. Share that under Social → Friends.`)
+    const flag = 'philroyale.friendCode3DigitNotice.v1'
+    if (!localStorage.getItem(flag)) {
+      localStorage.setItem(flag, '1')
+      flashFriend(`Friend codes are now 3 digits. Yours is ${id} — share it under Social → Friends.`)
+    }
     repairBrokenLocalClub()
     const friendLink = parseFriendInviteFromUrl()
     if (friendLink) {
