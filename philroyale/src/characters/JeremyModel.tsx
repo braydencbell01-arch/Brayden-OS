@@ -4,6 +4,7 @@ import { PhotoTroop } from './PhotoTroop'
 
 const JEREMY_CARD = `${import.meta.env.BASE_URL}characters/jeremy-card.png`
 const JEREMY_TROOP = `${import.meta.env.BASE_URL}characters/jeremy-troop.png`
+const JEREMY_BACK = `${import.meta.env.BASE_URL}characters/jeremy-troop-back.png`
 
 type Props = {
   anim: CharacterAnim
@@ -12,12 +13,13 @@ type Props = {
   portrait?: boolean
 }
 
-/** Jeremy — card promo art; separate 3D suit troop on the field. */
+/** Jeremy — card art; front/back 3D suit troop with dual-gun fire overlay. */
 export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
       cardSrc={JEREMY_CARD}
       troopSrc={JEREMY_TROOP}
+      troopBackSrc={JEREMY_BACK}
       alt="Jeremy"
       anim={anim}
       facing={facing}
@@ -25,6 +27,8 @@ export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 12%"
       gait="run"
       attack={anim === 'attack' && attackId === 'shoot' ? 'shoot' : 'none'}
+      legColor="#2a2a32"
+      shoeColor="#0a0a0c"
     />
   )
 }

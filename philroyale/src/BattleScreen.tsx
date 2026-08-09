@@ -326,32 +326,30 @@ export function BattleScreen({
           showBlockedOverlay={draggingActive && !ended}
           overlaySide="ally"
         >
-          <AnimatePresence>
-            {[...units]
-              .sort((a, b) => a.row - b.row)
-              .map((u) => (
-                <div
-                  key={u.id}
-                  className="absolute -translate-x-1/2 -translate-y-[92%]"
-                  style={{
-                    ...unitStyle(u.col, u.row),
-                    width: unitVisualWidthPct(),
-                    zIndex: 10 + Math.round(u.row),
-                  }}
-                >
-                  <UnitToken
-                    charId={u.charId}
-                    side={u.side}
-                    hp={u.hp}
-                    maxHp={u.maxHp}
-                    vfx={u.vfx}
-                    enraged={u.enraged}
-                    facing={u.facing}
-                    moving={now < u.movingUntil}
-                  />
-                </div>
-              ))}
-          </AnimatePresence>
+          {[...units]
+            .sort((a, b) => a.row - b.row)
+            .map((u) => (
+              <div
+                key={u.id}
+                className="absolute -translate-x-1/2 -translate-y-[92%]"
+                style={{
+                  ...unitStyle(u.col, u.row),
+                  width: unitVisualWidthPct(),
+                  zIndex: 10 + Math.round(u.row),
+                }}
+              >
+                <UnitToken
+                  charId={u.charId}
+                  side={u.side}
+                  hp={u.hp}
+                  maxHp={u.maxHp}
+                  vfx={u.vfx}
+                  enraged={u.enraged}
+                  facing={u.facing}
+                  moving={now < u.movingUntil}
+                />
+              </div>
+            ))}
           {projectiles.map((p) =>
             p.kind === 'sundae' ||
             p.kind === 'slobber' ||

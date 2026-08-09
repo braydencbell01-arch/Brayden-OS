@@ -5,6 +5,7 @@ export type CharacterAnim = 'idle' | 'walk' | 'attack'
 
 const PHIL_CARD = `${import.meta.env.BASE_URL}characters/phil-card.png`
 const PHIL_TROOP = `${import.meta.env.BASE_URL}characters/phil-troop.png`
+const PHIL_BACK = `${import.meta.env.BASE_URL}characters/phil-troop-back.png`
 
 type Props = {
   anim: CharacterAnim
@@ -13,7 +14,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Phil — card promo art; separate 3D troop sprite on the field. */
+/** Phil — card art; front/back 3D troop with sundae throw + whip overlays. */
 export function PhilModel({ anim, facing, attackId, portrait }: Props) {
   const attack =
     anim === 'attack' && attackId === 'chickenWhip'
@@ -25,6 +26,7 @@ export function PhilModel({ anim, facing, attackId, portrait }: Props) {
     <PhotoTroop
       cardSrc={PHIL_CARD}
       troopSrc={PHIL_TROOP}
+      troopBackSrc={PHIL_BACK}
       alt="Phil"
       anim={anim}
       facing={facing}
@@ -32,6 +34,8 @@ export function PhilModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 18%"
       gait="jog"
       attack={attack}
+      legColor="#c4a06a"
+      shoeColor="#1e3a6e"
     />
   )
 }

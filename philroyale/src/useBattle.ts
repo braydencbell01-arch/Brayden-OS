@@ -30,10 +30,10 @@ const RANGED_VFX_MS = 380
 const SPLAT_MS = 520
 const BOOM_MS = 380
 
-const PRINCESS_RANGE = 12.5
+const PRINCESS_RANGE = 30
 const PRINCESS_DAMAGE = 100
 const PRINCESS_CD_MS = 1000
-const KING_RANGE = 20
+const KING_RANGE = 30
 const KING_DAMAGE = 150
 const KING_CD_MS = 1500
 const KING_WAKE_RANGE = 7.5
@@ -484,7 +484,9 @@ export function useBattle(opts?: { paused?: boolean }) {
         }
 
         // Move along nearest legal path until in attack range of the target.
-        if (best.rangeD > attack.range) {
+        // Never allow attack range below 1 tile.
+        const attackRange = Math.max(1, attack.range)
+        if (best.rangeD > attackRange) {
           if (!rooted) {
             const step = moveSpeed * dt
             const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds)

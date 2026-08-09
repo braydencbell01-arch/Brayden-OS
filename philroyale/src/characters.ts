@@ -169,7 +169,7 @@ export const FINLEY: CharacterDef = {
     {
       id: 'bite',
       name: 'Bite',
-      range: 0.5,
+      range: 1,
       damage: 100,
       rootWhileAttacking: false,
       kind: 'bite',

@@ -69,7 +69,7 @@ export function UnitToken({
               : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
           }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-[0.38rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+        <span className="absolute inset-0 flex items-center justify-center text-[0.38rem] font-extrabold leading-none text-white [text-shadow:0_1px_0_#000]">
           {Math.max(0, Math.round(hp))}
         </span>
       </div>

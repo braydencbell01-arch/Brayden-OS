@@ -2,10 +2,10 @@ import { motion } from 'framer-motion'
 import type { CharacterAnim } from './PhilModel'
 
 type Props = {
-  /** Card portrait art */
   cardSrc: string
-  /** Battlefield 3D troop sprite (not the card) */
   troopSrc: string
+  /** Shown when moving “up” the map (away from camera) */
+  troopBackSrc?: string
   alt: string
   anim: CharacterAnim
   facing: number
@@ -14,14 +14,19 @@ type Props = {
   enraged?: boolean
   gait?: 'jog' | 'run' | 'dog'
   attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'none'
+  /** Pants / fur color for running leg overlays */
+  legColor?: string
+  shoeColor?: string
 }
 
 /**
- * Cards use promo art; battlefield uses a separate 3D troop sprite with CR-like motion.
+ * Cards use promo art. Battlefield uses front/back 3D troop sprites + attack overlays.
+ * No CSS drop-shadow (that caused a ghost “second troop” while moving).
  */
 export function PhotoTroop({
   cardSrc,
   troopSrc,
+  troopBackSrc,
   alt,
   anim,
   facing,
@@ -30,11 +35,20 @@ export function PhotoTroop({
   enraged,
   gait = 'run',
   attack = 'none',
+  legColor = '#2a2a32',
+  shoeColor = '#1a1a20',
 }: Props) {
-  const flip = Math.cos(facing) < -0.15 ? -1 : 1
+  // atan2(dRow,dCol): up the map ≈ -π/2 (show back), down ≈ π/2 (show front).
+  const towardTop = Math.sin(facing) < -0.25
+  const towardBottom = Math.sin(facing) > 0.25
+  // Side strafe: flip so the sprite faces the travel direction.
+  const flip = Math.cos(facing) < -0.2 ? -1 : 1
+  const showBack = Boolean(troopBackSrc) && towardTop && !towardBottom
+  const src = showBack && troopBackSrc ? troopBackSrc : troopSrc
+
   const walking = anim === 'walk'
   const attacking = anim === 'attack'
-  const duration = gait === 'dog' ? 0.32 : gait === 'jog' ? 0.42 : 0.48
+  const duration = gait === 'dog' ? 0.28 : gait === 'jog' ? 0.36 : 0.4
 
   if (portrait) {
     return (
@@ -50,57 +64,73 @@ export function PhotoTroop({
 
   return (
     <div
-      className="relative h-full w-full"
+      className="relative h-full w-full overflow-visible"
       style={{ transform: `scaleX(${flip})`, transformOrigin: '50% 100%' }}
     >
+      {/* Soft ground blob only — never filter:drop-shadow on the moving sprite */}
       <div
-        className="absolute bottom-0 left-1/2 h-[12%] w-[70%] -translate-x-1/2 rounded-[50%]"
-        style={{ background: 'radial-gradient(ellipse, #00000070 0%, transparent 72%)' }}
+        className="absolute bottom-0 left-1/2 h-[9%] w-[62%] -translate-x-1/2 rounded-[50%]"
+        style={{ background: 'radial-gradient(ellipse, #00000066 0%, transparent 70%)' }}
         aria-hidden
       />
+
       <motion.div
         className="absolute inset-0"
-        style={{ transformOrigin: '50% 100%' }}
+        style={{ transformOrigin: '50% 100%', willChange: 'transform' }}
         animate={
           attacking
             ? attack === 'whip'
-              ? { rotate: [0, -12, -16, 18, 0], y: [0, -3, -5, 2, 0], scaleY: [1, 1.02, 0.96, 1.04, 1] }
+              ? { y: [0, -2, -4, 1, 0], rotate: [0, -8, -14, 16, 0] }
               : attack === 'sundae'
-                ? { y: [0, -6, -10, 0], rotate: [0, -6, 8, 0], scaleY: [1, 0.95, 1.05, 1] }
+                ? { y: [0, -5, -9, 0], rotate: [0, -5, 6, 0] }
                 : attack === 'shoot'
-                  ? { y: [0, -3, 0], rotate: [0, -4, 4, 0], x: [0, 2, 0] }
+                  ? { y: [0, -2, 0], rotate: [0, -2, 2, 0] }
                   : attack === 'bite'
-                    ? { x: [0, 10, 14, 0], y: [0, -4, 1, 0], rotate: [0, -3, 6, 0] }
-                    : { y: [0, -4, 0] }
+                    ? { x: [0, 12, 16, 0], y: [0, -5, 2, 0], rotate: [0, -4, 8, 0] }
+                    : { y: [0, -3, 0] }
             : walking
               ? {
-                  y: [0, -5, 0, -4, 0],
-                  rotate: [0, 4, 0, -4, 0],
-                  scaleY: [1, 0.96, 1, 0.97, 1],
-                  scaleX: [1, 1.02, 1, 1.02, 1],
+                  // Running stride: bounce + lean (no scaleX — that looked like a twin)
+                  y: [0, -6, -1, -7, 0],
+                  rotate: [0, 5, 0, -5, 0],
+                  scaleY: [1, 0.94, 1, 0.93, 1],
                 }
-              : { y: [0, -2, 0], scaleY: [1, 1.015, 1] }
+              : { y: [0, -1.5, 0] }
         }
         transition={
           attacking
-            ? { duration: attack === 'whip' ? 0.75 : 0.38 }
+            ? { duration: attack === 'whip' ? 0.72 : attack === 'sundae' ? 0.55 : 0.36 }
             : walking
               ? { duration, repeat: Infinity, ease: 'easeInOut' }
-              : { duration: 1.25, repeat: Infinity, ease: 'easeInOut' }
+              : { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
         }
       >
-        <img
-          src={troopSrc}
-          alt=""
-          draggable={false}
-          aria-hidden
-          className="h-full w-full object-contain object-bottom drop-shadow-[1px_3px_5px_rgba(0,0,0,0.55)]"
-          style={{
-            filter: enraged
-              ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
-              : undefined,
-          }}
-        />
+        {/* Upper body sprite; legs clipped so SVG runners show underneath */}
+        <div className="absolute inset-0 overflow-hidden" style={{ clipPath: walking || attacking ? 'inset(0 0 18% 0)' : 'inset(0)' }}>
+          <img
+            key={src}
+            src={src}
+            alt=""
+            draggable={false}
+            aria-hidden
+            className="h-full w-full object-contain object-bottom"
+            style={{
+              filter: enraged
+                ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
+                : undefined,
+            }}
+          />
+        </div>
+
+        {/* Running / stance legs under the clipped sprite */}
+        <RunLegs gait={gait} walking={walking} legColor={legColor} shoeColor={shoeColor} />
+
+        {/* Attack props */}
+        {attacking && attack === 'shoot' ? <GunOverlay /> : null}
+        {attacking && attack === 'whip' ? <WhipOverlay /> : null}
+        {attacking && attack === 'sundae' ? <SundaeThrowOverlay /> : null}
+        {attacking && attack === 'bite' ? <BiteOverlay enraged={enraged} /> : null}
+
         {enraged ? (
           <div
             className="pointer-events-none absolute inset-0"
@@ -113,5 +143,228 @@ export function PhotoTroop({
         ) : null}
       </motion.div>
     </div>
+  )
+}
+
+function RunLegs({
+  gait,
+  walking,
+  legColor,
+  shoeColor,
+}: {
+  gait: 'jog' | 'run' | 'dog'
+  walking: boolean
+  legColor: string
+  shoeColor: string
+}) {
+  if (!walking) return null
+  const dur = gait === 'dog' ? 0.28 : gait === 'jog' ? 0.36 : 0.4
+  const dog = gait === 'dog'
+  const color = legColor
+  const accent = shoeColor
+
+  if (dog) {
+    return (
+      <svg viewBox="0 0 80 40" className="absolute bottom-[2%] left-1/2 h-[28%] w-[85%] -translate-x-1/2" aria-hidden>
+        {(
+          [
+            { ox: 22, phase: 0 },
+            { ox: 34, phase: 0.5 },
+            { ox: 46, phase: 0.25 },
+            { ox: 58, phase: 0.75 },
+          ] as const
+        ).map((leg, i) => (
+          <motion.g
+            key={i}
+            animate={
+              walking
+                ? { rotate: [18, -22, 18], y: [0, 2, 0] }
+                : { rotate: 0 }
+            }
+            transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut', delay: leg.phase * dur } : undefined}
+            style={{ transformOrigin: `${leg.ox}px 8px` }}
+          >
+            <path
+              d={`M${leg.ox - 2} 6 Q${leg.ox} 18 ${leg.ox - 1} 28 L${leg.ox + 4} 28 Q${leg.ox + 3} 16 ${leg.ox + 2} 6 Z`}
+              fill={color}
+            />
+            <ellipse cx={leg.ox + 1} cy={30} rx="4" ry="2.2" fill={accent} />
+          </motion.g>
+        ))}
+      </svg>
+    )
+  }
+
+  return (
+    <svg viewBox="0 0 80 48" className="absolute bottom-0 left-1/2 h-[32%] w-[70%] -translate-x-1/2" aria-hidden>
+      <motion.g
+        animate={walking ? { rotate: [28, -32, 28] } : { rotate: 6 }}
+        transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
+        style={{ transformOrigin: '30px 6px' }}
+      >
+        <path d="M26 4 Q28 22 27 36 L35 36 Q36 20 34 4 Z" fill={color} />
+        <ellipse cx="31" cy="38" rx="7" ry="3" fill={accent} />
+      </motion.g>
+      <motion.g
+        animate={walking ? { rotate: [-32, 28, -32] } : { rotate: -6 }}
+        transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
+        style={{ transformOrigin: '46px 6px' }}
+      >
+        <path d="M42 4 Q44 22 43 36 L51 36 Q52 20 50 4 Z" fill={color} />
+        <ellipse cx="47" cy="38" rx="7" ry="3" fill={accent} />
+      </motion.g>
+    </svg>
+  )
+}
+
+function GunOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      {/* Dual pistols raised */}
+      <motion.g
+        initial={{ rotate: 20, y: 8 }}
+        animate={{ rotate: [-8, -12, -8], y: [0, -1, 0] }}
+        transition={{ duration: 0.35 }}
+        style={{ transformOrigin: '22px 52px' }}
+      >
+        <rect x="8" y="48" width="16" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
+        <rect x="20" y="46" width="10" height="4" rx="1" fill="#4a4a52" />
+        <rect x="6" y="52" width="5" height="8" rx="1" fill="#1a1a20" />
+        <motion.circle
+          cx="32"
+          cy="48"
+          r="3"
+          fill="#ffe08a"
+          animate={{ opacity: [0, 1, 0], scale: [0.4, 1.3, 0.2] }}
+          transition={{ duration: 0.28, times: [0, 0.2, 1] }}
+        />
+      </motion.g>
+      <motion.g
+        initial={{ rotate: -20, y: 8 }}
+        animate={{ rotate: [8, 12, 8], y: [0, -1, 0] }}
+        transition={{ duration: 0.35, delay: 0.12 }}
+        style={{ transformOrigin: '58px 52px' }}
+      >
+        <rect x="56" y="48" width="16" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
+        <rect x="50" y="46" width="10" height="4" rx="1" fill="#4a4a52" />
+        <rect x="69" y="52" width="5" height="8" rx="1" fill="#1a1a20" />
+        <motion.circle
+          cx="48"
+          cy="48"
+          r="3"
+          fill="#ffe08a"
+          animate={{ opacity: [0, 0, 1, 0], scale: [0.4, 0.4, 1.3, 0.2] }}
+          transition={{ duration: 0.4, times: [0, 0.35, 0.5, 1] }}
+        />
+      </motion.g>
+    </svg>
+  )
+}
+
+function WhipOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.g
+        initial={{ rotate: -40 }}
+        animate={{ rotate: [-50, -60, 55, 20] }}
+        transition={{ duration: 0.72, times: [0, 0.35, 0.55, 1] }}
+        style={{ transformOrigin: '48px 50px' }}
+      >
+        <path
+          d="M48 50 Q70 40 78 22"
+          fill="none"
+          stroke="#6a3a18"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M48 50 Q70 40 78 22"
+          fill="none"
+          stroke="#c9a227"
+          strokeWidth="1"
+          strokeLinecap="round"
+          opacity="0.7"
+        />
+        <circle cx="78" cy="20" r="2.2" fill="#8a2018" />
+      </motion.g>
+      {/* Grip hand cue */}
+      <circle cx="48" cy="52" r="4" fill="#e8b888" stroke="#a86838" strokeWidth="0.6" />
+    </svg>
+  )
+}
+
+function SundaeThrowOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.g
+        initial={{ x: 0, y: 0, opacity: 1 }}
+        animate={{ x: [0, 6, 28], y: [0, -18, -40], opacity: [1, 1, 0], rotate: [0, -20, -40] }}
+        transition={{ duration: 0.5 }}
+        style={{ transformOrigin: '54px 44px' }}
+      >
+        <ellipse cx="54" cy="52" rx="5" ry="4" fill="#fff6e8" stroke="#d0c4a8" strokeWidth="0.6" />
+        <circle cx="54" cy="46" r="4.5" fill="#fffaf0" />
+        <circle cx="54" cy="42" r="2" fill="#d62828" />
+      </motion.g>
+      <motion.g
+        animate={{ rotate: [-10, -50, -10] }}
+        transition={{ duration: 0.5 }}
+        style={{ transformOrigin: '42px 48px' }}
+      >
+        <path d="M40 46 Q34 54 36 64 L44 64 Q44 52 46 46 Z" fill="#e8b888" />
+      </motion.g>
+    </svg>
+  )
+}
+
+function BiteOverlay({ enraged }: { enraged?: boolean }) {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.g
+        animate={{ scaleX: [1, 1.15, 1], scaleY: [1, 0.9, 1] }}
+        transition={{ duration: 0.32 }}
+        style={{ transformOrigin: '40px 52px' }}
+      >
+        <motion.path
+          d="M28 48 Q40 62 52 48"
+          fill="none"
+          stroke={enraged ? '#ff60ff' : '#fff'}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          initial={{ pathLength: 0.2 }}
+          animate={{ pathLength: [0.2, 1, 0.3] }}
+          transition={{ duration: 0.32 }}
+        />
+        {/* Fangs */}
+        <motion.path
+          d="M34 50 L32 58 M46 50 L48 58"
+          stroke="#fffaf0"
+          strokeWidth="2"
+          strokeLinecap="round"
+          animate={{ y: [0, 4, 0] }}
+          transition={{ duration: 0.32 }}
+        />
+      </motion.g>
+      {enraged ? (
+        <>
+          <motion.path
+            d="M18 56 L8 50 M18 62 L6 62"
+            stroke="#c060ff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            animate={{ x: [0, -4, 0], opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.32 }}
+          />
+          <motion.path
+            d="M62 56 L72 50 M62 62 L74 62"
+            stroke="#c060ff"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            animate={{ x: [0, 4, 0], opacity: [0.4, 1, 0.4] }}
+            transition={{ duration: 0.32 }}
+          />
+        </>
+      ) : null}
+    </svg>
   )
 }
