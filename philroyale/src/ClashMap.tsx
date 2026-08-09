@@ -108,28 +108,19 @@ export function ClashMap() {
         opacity="0.14"
       />
 
-      {/* Twin dirt lanes — CR placement / width */}
+      {/* Twin continuous dirt lanes (no pad blobs) */}
       <DirtLane cx={leftLane} w={pathW} />
       <DirtLane cx={rightLane} w={pathW} />
-      {/* Cross connectors near princess / king pads */}
+      {/* Short cross-links into king pads only */}
       <path
-        d={`M${leftLane} 118 H${rightLane}
-            M${leftLane} 522 H${rightLane}
-            M${leftLane} 188 H148 M212 188 H${rightLane}
-            M${leftLane} 452 H148 M212 452 H${rightLane}`}
+        d={`M${leftLane} 70 H${rightLane}
+            M${leftLane} 560 H${rightLane}`}
         fill="none"
         stroke="url(#dirt)"
-        strokeWidth={pathW * 0.55}
+        strokeWidth={pathW * 0.45}
         strokeLinecap="round"
-        opacity="0.9"
+        opacity="0.75"
       />
-
-      <ellipse cx="180" cy="58" rx={pathW * 1.35} ry="18" fill="#8a6a40" opacity="0.9" />
-      <ellipse cx="180" cy="582" rx={pathW * 1.35} ry="18" fill="#8a6a40" opacity="0.9" />
-      <ellipse cx={leftLane} cy={128} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
-      <ellipse cx={rightLane} cy={128} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
-      <ellipse cx={leftLane} cy={512} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
-      <ellipse cx={rightLane} cy={512} rx={pathW * 0.55} ry="11" fill="#8a6a40" opacity="0.85" />
 
       {/* Thin 3D river */}
       <g>
@@ -166,12 +157,12 @@ export function ClashMap() {
       <Bridge3D cx={leftLane} w={pathW} riverY={riverY} riverH={riverH} />
       <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
-      <CrownTower x={180} y={54} king enemy />
-      <CrownTower x={leftLane} y={124} king={false} enemy />
-      <CrownTower x={rightLane} y={124} king={false} enemy />
-      <CrownTower x={180} y={586} king enemy={false} />
-      <CrownTower x={leftLane} y={516} king={false} enemy={false} />
-      <CrownTower x={rightLane} y={516} king={false} enemy={false} />
+      <CrownTower x={180} y={48} king enemy />
+      <CrownTower x={leftLane} y={118} king={false} enemy />
+      <CrownTower x={rightLane} y={118} king={false} enemy />
+      <CrownTower x={180} y={548} king enemy={false} />
+      <CrownTower x={leftLane} y={498} king={false} enemy={false} />
+      <CrownTower x={rightLane} y={498} king={false} enemy={false} />
 
       <rect
         x="1"
@@ -190,33 +181,36 @@ export function ClashMap() {
 
 function DirtLane({ cx, w }: { cx: number; w: number }) {
   const x = cx - w / 2
+  const top = 62
+  const bot = 568
+  const riverTop = 312 - 2
+  const riverBot = 312 + 26 + 2
   return (
     <g>
       <path
-        d={`M${cx} 100 V${312 - 2} M${cx} ${312 + 26 + 2} V540`}
+        d={`M${cx} ${top} V${riverTop} M${cx} ${riverBot} V${bot}`}
         fill="none"
         stroke="url(#dirt)"
         strokeWidth={w}
         strokeLinecap="butt"
       />
       <path
-        d={`M${cx} 100 V${312 - 2} M${cx} ${312 + 26 + 2} V540`}
+        d={`M${cx} ${top} V${riverTop} M${cx} ${riverBot} V${bot}`}
         fill="none"
         stroke="#fff6d0"
         strokeWidth={w * 0.18}
         strokeLinecap="butt"
         opacity="0.28"
       />
-      {/* edge ruts */}
       <path
-        d={`M${x + 2} 100 V${312 - 2} M${x + 2} ${312 + 26 + 2} V540`}
+        d={`M${x + 2} ${top} V${riverTop} M${x + 2} ${riverBot} V${bot}`}
         fill="none"
         stroke="#5a3418"
         strokeWidth="1.2"
         opacity="0.35"
       />
       <path
-        d={`M${x + w - 2} 100 V${312 - 2} M${x + w - 2} ${312 + 26 + 2} V540`}
+        d={`M${x + w - 2} ${top} V${riverTop} M${x + w - 2} ${riverBot} V${bot}`}
         fill="none"
         stroke="#5a3418"
         strokeWidth="1.2"

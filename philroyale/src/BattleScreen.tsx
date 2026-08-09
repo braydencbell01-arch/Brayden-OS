@@ -6,7 +6,7 @@ import { BattleCard } from './BattleCard'
 import { ShootDot, SlobberDot, SundaeDot, SundaeSplat, UnitToken } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
 import { getCharacter } from './characters'
-import { loadDeck, loadPlayerName } from './storage'
+import { loadDeck } from './storage'
 import { useBattle } from './useBattle'
 
 type Props = {
@@ -92,7 +92,6 @@ function FlyingShot({
 
 export function BattleScreen({ onExit, opponentName }: Props) {
   const deckIds = useMemo(() => loadDeck(), [])
-  const myName = useMemo(() => loadPlayerName().trim() || 'You', [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
@@ -308,8 +307,8 @@ export function BattleScreen({ onExit, opponentName }: Props) {
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-[#2a6e34]">
-      {/* Map fills nearly the whole screen; top HUD sits on the grass edge. */}
-      <div className="absolute inset-x-0 bottom-0 top-[2.55rem]">
+      {/* Full-bleed map — HUD / cards overlay on top of the grass. */}
+      <div className="absolute inset-0">
         <Arena
           ref={arenaRef}
           towers={towers}
@@ -396,26 +395,26 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </Arena>
       </div>
 
-      {/* Compact CR HUD — profile + timer only; map runs right up to them */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[2.55rem] items-start justify-between px-1.5 pt-[max(0.05rem,env(safe-area-inset-top))]">
+      {/* Profile + timer float on the map (no opaque bar / no map crop). */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-1.5 pt-[max(0.2rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto flex items-start gap-1">
           <button
             type="button"
             onClick={onExit}
-            className="mt-0.5 rounded bg-black/50 px-1 py-px text-[0.55rem] font-extrabold text-white/75"
+            className="mt-0.5 rounded bg-black/45 px-1 py-px text-[0.55rem] font-extrabold text-white/80 drop-shadow-[0_1px_2px_#000]"
           >
             ✕
           </button>
           <div
             className="flex items-center gap-1 rounded-sm py-0.5 pl-0.5 pr-1.5"
             style={{
-              background: 'linear-gradient(180deg,#4a3424ee,#241810ee)',
-              boxShadow: '0 1px 4px #00000088, inset 0 1px 0 #c9a22733',
+              background: 'linear-gradient(180deg,#4a3424cc,#241810cc)',
+              boxShadow: '0 2px 6px #00000077, inset 0 1px 0 #c9a22733',
             }}
           >
             <div className="relative">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-extrabold text-white"
+                className="flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white"
                 style={{
                   background: 'linear-gradient(160deg,#ff9a7a,#c63c2e)',
                   boxShadow: '0 0 0 2px #f5d76e, 0 0 0 3px #8a2018',
@@ -424,7 +423,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 {foeName.slice(0, 1).toUpperCase()}
               </div>
               <div
-                className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full"
+                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full"
                 style={{
                   background: 'linear-gradient(180deg,#7ec8ff,#2f6fbf)',
                   boxShadow: '0 0 0 1px #1a3a6a',
@@ -433,22 +432,22 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               />
             </div>
             <div className="min-w-0 leading-none">
-              <p className="max-w-[6.5rem] truncate text-[0.7rem] font-extrabold text-white">
+              <p className="max-w-[6rem] truncate text-[0.65rem] font-extrabold text-white drop-shadow-[0_1px_1px_#000]">
                 {foeName}
               </p>
-              <p className="mt-0.5 text-[0.5rem] font-bold text-[#f5d76e]/90">
-                <span className="inline-block h-2 w-2 rounded-sm bg-[#f5d76e] align-middle" />{' '}
+              <p className="mt-0.5 text-[0.45rem] font-bold text-[#f5d76e]/90">
+                <span className="inline-block h-1.5 w-1.5 rounded-sm bg-[#f5d76e] align-middle" />{' '}
                 —
               </p>
             </div>
           </div>
         </div>
 
-        <div className="pt-0.5 text-right leading-none">
-          <p className="text-[0.5rem] font-extrabold uppercase tracking-wide text-white/70 drop-shadow-[0_1px_1px_#000]">
+        <div className="rounded-sm bg-black/35 px-1.5 py-0.5 text-right leading-none backdrop-blur-[2px]">
+          <p className="text-[0.45rem] font-extrabold uppercase tracking-wide text-white/80 drop-shadow-[0_1px_1px_#000]">
             Time left
           </p>
-          <p className="font-[family-name:var(--font-display)] text-[1.15rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
+          <p className="font-[family-name:var(--font-display)] text-[1.05rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
             {mm}:{ss}
           </p>
         </div>
@@ -461,7 +460,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             initial={{ opacity: 0, y: 16, scale: 0.75 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10 }}
-            className="pointer-events-none absolute bottom-[8.6rem] left-3 z-40"
+            className="pointer-events-none absolute bottom-[5.6rem] left-3 z-40"
           >
             <div
               className="relative rounded-2xl bg-white px-2.5 py-2 shadow-[0_4px_14px_#00000055]"
@@ -526,49 +525,47 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </div>
       ) : null}
 
-      <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.15rem,env(safe-area-inset-bottom))]">
+      <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.1rem,env(safe-area-inset-bottom))]">
         <div
-          className="px-1.5 pb-1 pt-1"
+          className="px-1 pb-0.5 pt-1"
           style={{
-            background:
-              'linear-gradient(180deg,#6b442488 0%,#4a2e18bb 35%,#2e1a10ee 75%,#1a100cff 100%)',
-            boxShadow: 'inset 0 2px 0 #c9a22744, 0 -6px 16px #00000055',
+            background: 'linear-gradient(180deg, transparent 0%, #1a100c99 55%, #1a100cee 100%)',
           }}
         >
-          <div className="mx-auto flex max-w-[34rem] items-end gap-1.5">
-            <div className="relative flex w-12 shrink-0 flex-col items-center gap-0.5">
+          <div className="mx-auto flex max-w-[22rem] items-end justify-center gap-1">
+            <div className="relative flex w-9 shrink-0 flex-col items-center gap-px">
               <AnimatePresence>
                 {emotePickerOpen ? (
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.92 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                    className="absolute bottom-[calc(100%+0.35rem)] left-0 z-40 w-[11.5rem] rounded-2xl bg-white p-2 shadow-[0_6px_20px_#00000055]"
+                    className="absolute bottom-[calc(100%+0.3rem)] left-0 z-40 w-[10.5rem] rounded-2xl bg-white p-1.5 shadow-[0_6px_20px_#00000055]"
                     style={{ border: '2px solid #e8e4dc' }}
                   >
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1">
                       {EMOTE_OPTIONS.map((opt) => (
                         <button
                           key={opt.id}
                           type="button"
                           onClick={() => pickEmote(opt)}
-                          className="flex h-11 w-full items-center justify-center rounded-xl bg-[#f4f1ea] transition active:scale-95"
+                          className="flex h-9 w-full items-center justify-center rounded-xl bg-[#f4f1ea] transition active:scale-95"
                           aria-label={opt.kind === 'phil' ? 'Phil emote' : opt.emoji}
                         >
                           {opt.kind === 'phil' ? (
                             <img
                               src={PHIL_EMOTE_SRC}
                               alt=""
-                              className="h-9 w-9 rounded-full object-cover"
+                              className="h-7 w-7 rounded-full object-cover"
                             />
                           ) : (
-                            <span className="text-2xl leading-none">{opt.emoji}</span>
+                            <span className="text-xl leading-none">{opt.emoji}</span>
                           )}
                         </button>
                       ))}
                     </div>
                     <div
-                      className="absolute -bottom-1.5 left-4 h-3 w-3 rotate-45 bg-white"
+                      className="absolute -bottom-1.5 left-3 h-3 w-3 rotate-45 bg-white"
                       style={{ borderRight: '2px solid #e8e4dc', borderBottom: '2px solid #e8e4dc' }}
                     />
                   </motion.div>
@@ -580,19 +577,19 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                   if (ended) return
                   setEmotePickerOpen((o) => !o)
                 }}
-                className="flex h-7 w-7 items-center justify-center rounded-full"
+                className="flex h-5 w-5 items-center justify-center rounded-full"
                 style={{
                   background: 'linear-gradient(180deg,#5a8fd6,#2a4a8a)',
-                  boxShadow: '0 2px 0 #1a3060, inset 0 1px 0 #ffffff44',
+                  boxShadow: '0 1px 0 #1a3060, inset 0 1px 0 #ffffff44',
                 }}
                 aria-label="Emote"
                 aria-expanded={emotePickerOpen}
               >
-                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" aria-hidden>
+                <svg viewBox="0 0 24 24" className="h-3 w-3 fill-white" aria-hidden>
                   <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-4 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 5a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 7 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 12 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 17 9z" />
                 </svg>
               </button>
-              <span className="text-[0.45rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
+              <span className="text-[0.4rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
                 Next
               </span>
               <BattleCard
@@ -600,10 +597,9 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 size="next"
                 elixir={elixir}
               />
-              <p className="max-w-full truncate text-[0.45rem] font-bold text-white/45">{myName}</p>
             </div>
 
-            <div className="grid min-w-0 flex-1 grid-cols-4 gap-1.5">
+            <div className="flex items-end gap-1">
               {hand.map((id, i) => {
                 const c = getCharacter(id) ?? null
                 const selected = id === selectedCharId
@@ -617,7 +613,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                     onPointerMove={onCardPointerMove}
                     onPointerUp={onCardPointerUp}
                     onPointerCancel={onCardPointerUp}
-                    className={`min-w-0 touch-none transition-transform active:scale-95 ${dragging ? 'opacity-40' : ''}`}
+                    className={`shrink-0 touch-none transition-transform active:scale-95 ${dragging ? 'opacity-40' : ''}`}
                     aria-label={c ? `Select or drag ${c.name}` : `Card ${i + 1}`}
                     aria-pressed={selected}
                   >
@@ -628,17 +624,17 @@ export function BattleScreen({ onExit, opponentName }: Props) {
             </div>
           </div>
 
-          <div className="mx-auto mt-1.5 flex max-w-[34rem] items-center gap-1.5 px-0.5">
+          <div className="mx-auto mt-1 flex max-w-[22rem] items-center gap-1 px-0.5">
             <div
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[0.6rem] font-extrabold text-white"
               style={{
                 background: 'radial-gradient(circle at 35% 30%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
-                boxShadow: '0 0 0 2px #5a1848',
+                boxShadow: '0 0 0 1.5px #5a1848',
               }}
             >
               {elixirDisplay}
             </div>
-            <div className="relative h-3.5 flex-1 overflow-hidden rounded-sm bg-[#1a100c] ring-1 ring-[#5a1848]">
+            <div className="relative h-2.5 flex-1 overflow-hidden rounded-sm bg-[#1a100c]/90 ring-1 ring-[#5a1848]">
               <div
                 className="elixir-bar-fill absolute inset-y-0 left-0"
                 style={{ width: `${(elixir / elixirMax) * 100}%` }}
@@ -648,7 +644,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                   <div key={i} className="h-full flex-1 border-r border-black/35 last:border-0" />
                 ))}
               </div>
-              <span className="absolute inset-0 flex items-center justify-center text-[0.55rem] font-extrabold text-white/90 drop-shadow-[0_1px_0_#000]">
+              <span className="absolute inset-0 flex items-center justify-center text-[0.45rem] font-extrabold text-white/90 drop-shadow-[0_1px_0_#000]">
                 {elixirDisplay} / {elixirMax}
               </span>
             </div>

@@ -43,10 +43,16 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
   const next = size === 'next'
   const collection = size === 'collection'
 
+  const box = next
+    ? 'h-[2.35rem] w-[1.8rem]'
+    : collection
+      ? 'aspect-[3/4] w-full'
+      : 'h-[3.85rem] w-[2.85rem]'
+
   if (!character) {
     return (
       <div
-        className={`relative overflow-hidden ${next ? 'h-[3.6rem] w-[2.75rem]' : 'aspect-[3/4] w-full'} rounded-[0.55rem]`}
+        className={`relative overflow-hidden ${box} rounded-[0.4rem]`}
         style={{
           background: 'linear-gradient(180deg,#4a3a2a,#2a2018)',
           boxShadow: 'inset 0 0 0 2px #5a4a3a',
@@ -65,9 +71,9 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
 
   return (
     <div
-      className={`relative overflow-hidden ${next ? 'h-[3.6rem] w-[2.75rem]' : 'aspect-[3/4] w-full'} ${selected ? 'scale-[1.04]' : ''}`}
+      className={`relative overflow-hidden ${box} ${selected ? 'scale-[1.04]' : ''}`}
       style={{
-        borderRadius: legendary ? '0.65rem' : '0.55rem',
+        borderRadius: legendary ? '0.5rem' : '0.4rem',
         background: legendary
           ? `linear-gradient(145deg, ${frame.top}, #ffe08a 35%, ${frame.border} 55%, ${frame.bottom})`
           : `linear-gradient(180deg, ${frame.top}, ${frame.border} 40%, ${frame.bottom})`,
@@ -109,14 +115,16 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
             />
           </div>
           {!next ? (
-            <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-0.5 pb-0.5 pt-3 text-center text-[0.55rem] font-extrabold leading-tight text-white">
+            <span
+              className={`absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-0.5 pb-0.5 pt-2 text-center font-extrabold leading-tight text-white ${collection ? 'text-[0.55rem]' : 'text-[0.42rem]'}`}
+            >
               {character.name}
             </span>
           ) : null}
         </div>
 
         <div
-          className={`absolute ${next ? 'left-0.5 top-0.5 h-3.5 w-3.5 text-[0.55rem]' : 'left-1 top-1 h-[1.15rem] w-[1.15rem] text-[0.7rem]'} z-[2] flex items-center justify-center font-extrabold text-white`}
+          className={`absolute ${next ? 'left-0.5 top-0.5 h-3 w-3 text-[0.45rem]' : collection ? 'left-1 top-1 h-[1.15rem] w-[1.15rem] text-[0.7rem]' : 'left-0.5 top-0.5 h-3.5 w-3.5 text-[0.5rem]'} z-[2] flex items-center justify-center font-extrabold text-white`}
           style={{
             background: 'radial-gradient(circle at 35% 28%, #ff9ae8, #e85ad0 45%, #9b2d8a)',
             clipPath: 'ellipse(46% 52% at 50% 48%)',
