@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import type { CharacterAnim } from './PhilModel'
 
@@ -38,12 +39,21 @@ export function PhotoTroop({
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
 }: Props) {
-  // atan2(dRow,dCol): up the map ≈ -π/2 (show back), down ≈ π/2 (show front).
-  const towardTop = Math.sin(facing) < -0.25
-  const towardBottom = Math.sin(facing) > 0.25
-  // Side strafe: flip so the sprite faces the travel direction.
-  const flip = Math.cos(facing) < -0.2 ? -1 : 1
-  const showBack = Boolean(troopBackSrc) && towardTop && !towardBottom
+  // Hysteresis stops flip/back thrashing when pathing around towers (looked like two directions).
+  const flipRef = useRef(1)
+  const backRef = useRef(false)
+  const cosF = Math.cos(facing)
+  const sinF = Math.sin(facing)
+  if (cosF < -0.55) flipRef.current = -1
+  else if (cosF > 0.55) flipRef.current = 1
+  if (troopBackSrc) {
+    if (sinF < -0.6) backRef.current = true
+    else if (sinF > 0.35) backRef.current = false
+  } else {
+    backRef.current = false
+  }
+  const flip = flipRef.current
+  const showBack = backRef.current
   const src = showBack && troopBackSrc ? troopBackSrc : troopSrc
 
   const walking = anim === 'walk'
@@ -103,9 +113,8 @@ export function PhotoTroop({
                     scaleY: [1, 0.98, 1, 0.94, 1],
                   }
                 : {
-                    // Running stride: bounce + lean (no scaleX — that looked like a twin)
+                    // Running stride: bounce only (no left/right rotate — that looked two-way)
                     y: [0, -6, -1, -7, 0],
-                    rotate: [0, 5, 0, -5, 0],
                     scaleY: [1, 0.94, 1, 0.93, 1],
                   }
               : { y: [0, -1.5, 0] }

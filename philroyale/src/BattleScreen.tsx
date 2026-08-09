@@ -5,11 +5,13 @@ import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct } from './Arena
 import { BattleCard } from './BattleCard'
 import {
   BulletBoom,
+  CannonBall,
   ShootDot,
   SlobberDot,
   SlobberSplat,
   SundaeDot,
   SundaeSplat,
+  TowerArrow,
   UnitToken,
 } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
@@ -79,25 +81,22 @@ function FlyingShot({
   const col = fromCol + (toCol - fromCol) * p
   const row = fromRow + (toRow - fromRow) * p
   const arc =
-    kind === 'arrow' || kind === 'cannon'
-      ? Math.sin(p * Math.PI) * 1.2
-      : Math.sin(p * Math.PI) * (kind === 'shoot' ? 0.6 : kind === 'slobber' ? 5.5 : 4)
+    kind === 'arrow'
+      ? Math.sin(p * Math.PI) * 2.2
+      : kind === 'cannon'
+        ? Math.sin(p * Math.PI) * 1.6
+        : Math.sin(p * Math.PI) * (kind === 'shoot' ? 0.6 : kind === 'slobber' ? 5.5 : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
+  const travelAngle =
+    (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
 
   return (
     <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-hidden>
       {kind === 'sundae' ? <SundaeDot /> : null}
       {kind === 'slobber' ? <SlobberDot /> : null}
       {kind === 'shoot' ? <ShootDot /> : null}
-      {kind === 'arrow' ? (
-        <div className="h-0.5 w-2.5 rounded-full bg-[#5a3a18]" style={{ boxShadow: '0 0 2px #0008' }} />
-      ) : null}
-      {kind === 'cannon' ? (
-        <div
-          className="h-1.5 w-1.5 rounded-full"
-          style={{ background: 'radial-gradient(circle at 35% 30%, #888,#222)' }}
-        />
-      ) : null}
+      {kind === 'arrow' ? <TowerArrow angleDeg={travelAngle} /> : null}
+      {kind === 'cannon' ? <CannonBall /> : null}
     </div>
   )
 }

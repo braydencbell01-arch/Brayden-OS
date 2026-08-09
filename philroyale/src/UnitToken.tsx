@@ -200,6 +200,54 @@ export function ShootDot() {
   )
 }
 
+/** Princess tower archer arrow — wood shaft + iron tip. */
+export function TowerArrow({ angleDeg = 90 }: { angleDeg?: number }) {
+  return (
+    <div
+      className="relative h-1 w-5"
+      style={{ transform: `rotate(${angleDeg}deg)` }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-y-[2px] left-0.5 right-1 rounded-sm"
+        style={{ background: 'linear-gradient(90deg,#8a5a28,#c9a06a,#6a3a14)' }}
+      />
+      <div
+        className="absolute right-0 top-1/2 h-0 w-0 -translate-y-1/2"
+        style={{
+          borderTop: '3px solid transparent',
+          borderBottom: '3px solid transparent',
+          borderLeft: '5px solid #4a4a54',
+        }}
+      />
+      <div
+        className="absolute left-0 top-1/2 h-0 w-0 -translate-y-1/2"
+        style={{
+          borderTop: '2.5px solid transparent',
+          borderBottom: '2.5px solid transparent',
+          borderRight: '4px solid #c62828',
+        }}
+      />
+    </div>
+  )
+}
+
+/** King tower cannon ball. */
+export function CannonBall() {
+  return (
+    <div
+      className="relative h-3 w-3 rounded-full"
+      style={{
+        background: 'radial-gradient(circle at 32% 28%, #9a9aa8, #3a3a44 55%, #121218)',
+        boxShadow: '0 1px 2px #0008, inset 0 -1px 2px #0006',
+      }}
+      aria-hidden
+    >
+      <div className="absolute left-[22%] top-[18%] h-1 w-1 rounded-full bg-white/35" />
+    </div>
+  )
+}
+
 /** Small muzzle/impact explosion for Jeremy's bullets. */
 export function BulletBoom({ ageMs }: { ageMs: number }) {
   const p = Math.min(1, ageMs / 320)

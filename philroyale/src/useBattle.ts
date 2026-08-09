@@ -773,7 +773,8 @@ export function useBattle(opts?: { paused?: boolean }) {
           id: nid('p'),
           kind: tw.kind === 'king' ? 'cannon' : 'arrow',
           fromCol: origin.col,
-          fromRow: origin.row - (tw.kind === 'king' ? 1.2 : 0.8),
+          // Spawn from the cannon barrel / archer window, not the tower pad center.
+          fromRow: origin.row - (tw.kind === 'king' ? 2.4 : 1.8),
           toCol: best.col,
           toRow: best.row,
           damage,
