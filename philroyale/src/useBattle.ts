@@ -698,6 +698,10 @@ export function useBattle(opts?: {
         const me = unitCenter(u)
         const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
         const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
+        const currentAttack = def.attacks[u.attackIndex % def.attacks.length]
+        // Towers are the default objective. Units only pull aggro when nearby;
+        // ranged troops may notice enemies up to their own firing range.
+        const unitAggroRange = Math.max(12, currentAttack?.range ?? 0)
 
         type Target = {
           kind: 'unit' | 'tower'
@@ -710,16 +714,8 @@ export function useBattle(opts?: {
           rangeD: number
         }
 
-        // Prefer nearest foe by bridge-aware path cost; attack range still uses edge/center dist.
+        // Start with the nearest tower so troops always advance the match objective.
         let best: Target | null = null
-        for (const f of foes) {
-          const c = unitCenter(f)
-          const edge = dist(me.col, me.row, c.col, c.row)
-          const path = pathCostTo(me.col, me.row, c.col, c.row)
-          if (!best || path < best.d) {
-            best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
-          }
-        }
         for (const tw of foeTowers) {
           const slot = towerSlot(tw.id)
           if (!slot) continue
@@ -730,6 +726,17 @@ export function useBattle(opts?: {
           const path = pathCostTo(me.col, me.row, aim.col, aim.row)
           if (!best || path < best.d) {
             best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d: path, rangeD: edge }
+          }
+        }
+        // Nearby enemy troops can distract a unit, but distant troops cannot make it
+        // chase forever across Trophy Road instead of pushing a tower.
+        for (const f of foes) {
+          const c = unitCenter(f)
+          const edge = dist(me.col, me.row, c.col, c.row)
+          if (edge > unitAggroRange) continue
+          const path = pathCostTo(me.col, me.row, c.col, c.row)
+          if (!best || path < best.d) {
+            best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
           }
         }
 
