@@ -27,6 +27,11 @@ type Props = {
     | 'none'
   /** Persistent hand prop (Mike curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
+  /**
+   * When true, keep the full troop sprite legs (no SVG runner overlays).
+   * Use for photo troops whose art already includes feet — overlay shoes looked like ankle weights.
+   */
+  spriteLegs?: boolean
   /** Pants / fur color for running leg overlays */
   legColor?: string
   shoeColor?: string
@@ -49,6 +54,7 @@ export function PhotoTroop({
   gait = 'run',
   attack = 'none',
   carry = 'none',
+  spriteLegs = false,
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
 }: Props) {
@@ -213,8 +219,14 @@ export function PhotoTroop({
               : { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
         }
       >
-        {/* Upper body sprite; legs clipped so SVG runners show underneath */}
-        <div className="absolute inset-0 overflow-hidden" style={{ clipPath: walking || attacking ? 'inset(0 0 18% 0)' : 'inset(0)' }}>
+        {/* Full-body photo troops keep real legs; others clip for SVG runners underneath */}
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{
+            clipPath:
+              spriteLegs || !(walking || attacking) ? 'inset(0)' : 'inset(0 0 18% 0)',
+          }}
+        >
           <img
             key={src}
             src={src}
@@ -230,8 +242,9 @@ export function PhotoTroop({
           />
         </div>
 
-        {/* Running / stance legs under the clipped sprite */}
-        <RunLegs gait={gait} walking={walking} legColor={legColor} shoeColor={shoeColor} />
+        {!spriteLegs ? (
+          <RunLegs gait={gait} walking={walking} legColor={legColor} shoeColor={shoeColor} />
+        ) : null}
 
         {/* Attack props */}
         {attacking && attack === 'shoot' ? <GunOverlay /> : null}

@@ -28,6 +28,7 @@ export function MikeModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 12%"
       gait="stiff"
       carry="dumbbell"
+      spriteLegs
       attack={throwing ? 'dumbbell' : 'none'}
       legColor="#3a3a42"
       shoeColor="#0a0a0c"

@@ -124,20 +124,59 @@ function updateFacingFromMove(u: BattleUnit, prevCol: number, prevRow: number): 
   u.facing = turn > FACING_TURN_HARD_RAD ? moveFacing : lerpAngle(u.facing, moveFacing, 0.45)
 }
 
-/** Nudge laterally toward the nearest bridge when stuck behind a tower. */
+/**
+ * When a step fails (usually jammed on own tower), slide sideways hard —
+ * try bridge side first, then opposite, then around the nearest tower face.
+ */
 function nudgeTowardBridgeIfStuck(
   u: BattleUnit,
   prevCol: number,
   prevRow: number,
   step: number,
   liveTowers: ReadonlySet<string>,
+  preferCol?: number,
 ): void {
   if (Math.hypot(u.col - prevCol, u.row - prevRow) >= 0.002) return
-  const bridgeMid = nearestBridgeMidCol(u.col)
-  const nudge = Math.sign(bridgeMid - (u.col + 0.5)) || 1
-  const ncol = Math.max(0, Math.min(ARENA_COLS - 1, u.col + nudge * step * 0.9))
-  if (isWalkableTile(ncol, u.row, liveTowers)) {
+  const prefer = preferCol ?? nearestBridgeMidCol(u.col)
+  const primary = Math.sign(prefer - (u.col + 0.5)) || 1
+  const forward = u.side === 'ally' ? -1 : 1
+  const tryMove = (dCol: number, dRow: number) => {
+    const ncol = Math.max(0, Math.min(ARENA_COLS - 1, u.col + dCol))
+    const nrow = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dRow))
+    if (!isWalkableTile(ncol, nrow, liveTowers)) return false
     u.col = ncol
+    u.row = nrow
+    return true
+  }
+  for (const dir of [primary, -primary]) {
+    for (const mult of [1.4, 2.6, 4.2]) {
+      if (tryMove(dir * step * mult, 0)) return
+      if (tryMove(dir * step * mult, forward * step * 0.6)) return
+      if (tryMove(dir * step * mult, -forward * step * 0.35)) return
+    }
+  }
+  // Last resort: jump to the nearer clear side of the closest living tower.
+  let nearest: (typeof TOWERS)[number] | null = null
+  let nearestD = Infinity
+  for (const t of TOWERS) {
+    if (!liveTowers.has(t.id)) continue
+    const d = distToTowerEdge(u.col + 0.5, u.row + 0.5, t)
+    if (d < nearestD) {
+      nearestD = d
+      nearest = t
+    }
+  }
+  if (!nearest || nearestD > 3.5) return
+  const left = nearest.col - 1.8
+  const right = nearest.col + nearest.w + 1.8
+  const sideCol = Math.abs(u.col - left) <= Math.abs(u.col - right) ? left : right
+  const sideRow = Math.max(
+    0,
+    Math.min(ARENA_ROWS - 1, nearest.row + nearest.h / 2 + forward * 0.2),
+  )
+  if (isWalkableTile(sideCol, sideRow, liveTowers)) {
+    u.col = Math.max(0, Math.min(ARENA_COLS - 1, sideCol))
+    u.row = sideRow
   }
 }
 
@@ -679,7 +718,7 @@ export function useBattle(opts?: { paused?: boolean }) {
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
-            nudgeTowardBridgeIfStuck(u, prevCol, prevRow, step, liveIds)
+            nudgeTowardBridgeIfStuck(u, prevCol, prevRow, step, liveIds, best.col)
             updateFacingFromMove(u, prevCol, prevRow)
             if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
               u.movingUntil = t + 140

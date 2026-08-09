@@ -248,6 +248,13 @@ function towerDetourPoint(
     if (bridgeBiasCol != null) {
       cost += Math.abs(cc - bridgeBiasCol) * 0.35
     }
+    // Heavy penalty for detouring deeper "behind" a tower (away from the goal row).
+    // Stops allies from picking south corners when they need to go north past their own base.
+    const goingNorth = targetRow < row
+    const goingSouth = targetRow > row
+    if ((goingNorth && rr > row + 0.4) || (goingSouth && rr < row - 0.4)) {
+      cost += 12
+    }
     if (cost < bestCost) {
       bestCost = cost
       best = { col: cc, row: rr }
