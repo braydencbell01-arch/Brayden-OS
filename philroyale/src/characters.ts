@@ -453,6 +453,18 @@ export const DEFAULT_DECK = [
   FINLEY.id,
 ]
 
+/** Fresh random 8-card bot deck (unique cards, shuffled) for each solo match. */
+export function randomBotDeck(): string[] {
+  const pool = CHARACTERS.map((c) => c.id)
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const a = pool[i]!
+    pool[i] = pool[j]!
+    pool[j] = a
+  }
+  return pool.slice(0, DECK_SIZE)
+}
+
 export function cardKindOf(c: CharacterDef): CardKind {
   return c.cardKind ?? 'troop'
 }

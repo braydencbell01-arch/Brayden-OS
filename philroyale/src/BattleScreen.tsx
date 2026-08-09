@@ -27,6 +27,7 @@ import {
   battlefieldScaleForHeight,
   getCharacter,
   isSpellCard,
+  randomBotDeck,
 } from './characters'
 import { ARENA_COLS, ARENA_ROWS } from './arena'
 import {
@@ -182,6 +183,8 @@ export function BattleScreen({
 }: Props) {
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
+  // Solo bots get a fresh random deck each match (not a copy of yours).
+  const botDeckIds = useMemo(() => randomBotDeck(), [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
@@ -220,7 +223,7 @@ export function BattleScreen({
     allyLevels,
     botLevel,
     mode,
-    enemyDeckIds: deckIds,
+    enemyDeckIds: net ? undefined : botDeckIds,
     net,
   })
 
