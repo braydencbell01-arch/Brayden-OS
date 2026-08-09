@@ -38,7 +38,7 @@ const DUMBBELL_VFX_MS = 520
 /** Lynne head butt — short so 0.5s cadence feels constant. */
 const HEADBUTT_VFX_MS = 420
 const RANGED_VFX_MS = 380
-const SPLAT_MS = 520
+const SPLAT_MS = 820
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 380
 const DUMBBELL_SPLAT_MS = 480

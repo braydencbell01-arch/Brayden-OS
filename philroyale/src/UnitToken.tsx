@@ -93,48 +93,125 @@ export function UnitToken({
   )
 }
 
-/** Flying sundae for Sundae Huck. */
+/** Flying ice cream sundae for Sundae Huck. */
 export function SundaeDot() {
   return (
-    <div className="relative h-4 w-3.5" aria-hidden>
-      <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#d62828] shadow-sm" />
+    <div className="relative h-6 w-5" aria-hidden>
+      {/* Wafer cone */}
       <div
-        className="absolute left-1/2 top-1 h-2 w-2.5 -translate-x-1/2 rounded-full bg-[#fffaf0]"
-        style={{ boxShadow: 'inset 0 1px 0 #ffffff88' }}
-      />
-      <div
-        className="absolute bottom-0 left-1/2 h-2 w-3 -translate-x-1/2 bg-[#fff6e8]"
+        className="absolute bottom-0 left-1/2 h-3 w-[14px] -translate-x-1/2"
         style={{
-          clipPath: 'polygon(10% 0, 90% 0, 100% 100%, 0 100%)',
-          boxShadow: '0 1px 1px #0004',
+          background: 'linear-gradient(180deg,#e8b86a 0%,#c48a3a 55%,#9a6420 100%)',
+          clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0 100%)',
+          boxShadow: 'inset 0 1px 0 #f5d49a88',
         }}
       />
+      {/* Cone waffle lines */}
+      <div
+        className="absolute bottom-[1px] left-1/2 h-[10px] w-[12px] -translate-x-1/2 opacity-40"
+        style={{
+          background:
+            'repeating-linear-gradient(135deg, transparent 0 2px, #7a4a18 2px 3px)',
+          clipPath: 'polygon(15% 0, 85% 0, 100% 100%, 0 100%)',
+        }}
+      />
+      {/* Vanilla scoop */}
+      <div
+        className="absolute left-1/2 top-[7px] h-[11px] w-[15px] -translate-x-1/2 rounded-[50%]"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, #ffffff, #fff4e0 55%, #f0e0c0)',
+          boxShadow: '0 1px 1px #0003',
+        }}
+      />
+      {/* Chocolate scoop */}
+      <div
+        className="absolute left-[3px] top-[3px] h-[9px] w-[10px] rounded-[50%]"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, #8b5a2b, #5a3010 70%)',
+        }}
+      />
+      {/* Strawberry scoop */}
+      <div
+        className="absolute right-[2px] top-[2px] h-[9px] w-[10px] rounded-[50%]"
+        style={{
+          background: 'radial-gradient(circle at 40% 30%, #ff8aa0, #d62848 70%)',
+        }}
+      />
+      {/* Cherry */}
+      <div
+        className="absolute left-1/2 top-0 h-[6px] w-[6px] -translate-x-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, #ff4d5a, #b01020)',
+          boxShadow: '0 0 3px #ff607088',
+        }}
+      />
+      <div className="absolute left-[52%] top-[-1px] h-[4px] w-[1.5px] -translate-x-1/2 rounded-full bg-[#2e7d32]" />
     </div>
   )
 }
 
 export function SundaeSplat({ ageMs }: { ageMs: number }) {
-  const p = Math.min(1, ageMs / 520)
-  const scale = 0.4 + p * 1.4
-  const opacity = 1 - p
+  const p = Math.min(1, ageMs / 820)
+  const scale = 0.55 + p * 2.4
+  const opacity = 1 - p * 0.95
+  const scoops = [
+    { deg: 0, c: '#fff6e8', r: 11 },
+    { deg: 28, c: '#ff8aa0', r: 13 },
+    { deg: 55, c: '#8b5a2b', r: 10 },
+    { deg: 85, c: '#fffaf0', r: 14 },
+    { deg: 115, c: '#d62848', r: 12 },
+    { deg: 145, c: '#c48a3a', r: 11 },
+    { deg: 175, c: '#ffe0e8', r: 13 },
+    { deg: 205, c: '#5a3010', r: 10 },
+    { deg: 235, c: '#fff4e0', r: 14 },
+    { deg: 265, c: '#ff6b7a', r: 12 },
+    { deg: 295, c: '#e8b86a', r: 11 },
+    { deg: 325, c: '#ffffff', r: 13 },
+  ]
   return (
     <div
-      className="relative h-6 w-6"
+      className="relative h-14 w-14"
       style={{ transform: `scale(${scale})`, opacity }}
       aria-hidden
     >
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+      {/* Melty puddle */}
+      <div
+        className="absolute left-1/2 top-1/2 h-8 w-10 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+        style={{
+          background:
+            'radial-gradient(ellipse, #fff6e8ee 0%, #ffc0cb88 35%, #8b5a2b55 55%, transparent 70%)',
+        }}
+      />
+      {scoops.map(({ deg, c, r }) => (
         <div
           key={deg}
-          className="absolute left-1/2 top-1/2 h-1.5 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[55%_45%_60%_40%]"
           style={{
-            background: deg % 90 === 0 ? '#fff6e8' : '#d62828',
-            transform: `rotate(${deg}deg) translateY(-${4 + p * 6}px)`,
+            width: deg % 2 === 0 ? 9 : 7,
+            height: deg % 3 === 0 ? 7 : 5,
+            background: c,
+            transform: `rotate(${deg}deg) translateY(-${r + p * 14}px)`,
+            boxShadow: '0 0 2px #0002',
           }}
         />
       ))}
-      <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#fff6e8] opacity-90" />
-      <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d62828]" />
+      {/* Cherry bounce */}
+      <div
+        className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, #ff4d5a, #b01020)',
+          transform: `translate(-50%, -50%) translate(${p * 8}px, ${-6 - p * 10}px)`,
+        }}
+      />
+      {/* Cone shard */}
+      <div
+        className="absolute left-1/2 top-1/2 h-3 w-2.5 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          background: 'linear-gradient(180deg,#e8b86a,#9a6420)',
+          clipPath: 'polygon(20% 0, 80% 0, 100% 100%, 0 100%)',
+          transform: `rotate(${25 + p * 40}deg) translate(${-4 - p * 6}px, ${2 + p * 8}px)`,
+        }}
+      />
     </div>
   )
 }

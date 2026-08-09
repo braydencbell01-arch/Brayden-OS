@@ -522,20 +522,27 @@ function WhipOverlay() {
 
 function SundaeThrowOverlay() {
   return (
-    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
       <motion.g
-        initial={{ x: 0, y: 0, opacity: 1 }}
-        animate={{ x: [0, 6, 28], y: [0, -18, -40], opacity: [1, 1, 0], rotate: [0, -20, -40] }}
-        transition={{ duration: 0.5 }}
-        style={{ transformOrigin: '54px 44px' }}
+        initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+        animate={{ x: [0, 8, 30], y: [0, -20, -44], opacity: [1, 1, 0], rotate: [0, -25, -50], scale: [1, 1.05, 0.9] }}
+        transition={{ duration: 0.55 }}
+        style={{ transformOrigin: '54px 48px' }}
       >
-        <ellipse cx="54" cy="52" rx="5" ry="4" fill="#fff6e8" stroke="#d0c4a8" strokeWidth="0.6" />
-        <circle cx="54" cy="46" r="4.5" fill="#fffaf0" />
-        <circle cx="54" cy="42" r="2" fill="#d62828" />
+        {/* Cone */}
+        <path d="M48 58 L60 58 L54 72 Z" fill="#c48a3a" stroke="#8a5a20" strokeWidth="0.6" />
+        <path d="M49 59 L59 59 L54 70 Z" fill="#e8b86a" opacity="0.55" />
+        {/* Scoops */}
+        <ellipse cx="50" cy="54" rx="5.5" ry="4.8" fill="#8b5a2b" />
+        <ellipse cx="58" cy="53" rx="5.2" ry="4.6" fill="#ff8aa0" />
+        <ellipse cx="54" cy="48" rx="5.8" ry="5" fill="#fffaf0" stroke="#e8dcc0" strokeWidth="0.5" />
+        {/* Cherry + stem */}
+        <circle cx="54" cy="42" r="2.4" fill="#d62828" />
+        <path d="M54 40 Q56 36 58 35" fill="none" stroke="#2e7d32" strokeWidth="1" strokeLinecap="round" />
       </motion.g>
       <motion.g
-        animate={{ rotate: [-10, -50, -10] }}
-        transition={{ duration: 0.5 }}
+        animate={{ rotate: [-10, -55, -10] }}
+        transition={{ duration: 0.55 }}
         style={{ transformOrigin: '42px 48px' }}
       >
         <path d="M40 46 Q34 54 36 64 L44 64 Q44 52 46 46 Z" fill="#e8b888" />
