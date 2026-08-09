@@ -177,22 +177,34 @@ export function savePlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim())
 }
 
-/** Short shareable account code (also used as the live social player id). */
+/** Friend codes are exactly 3 digits (100–999) — easy to share with a small player base. */
+export const FRIEND_CODE_LEN = 3
+
+/** Short shareable friend code (also the live social player id). */
 export function generateAccountCode(): string {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let out = ''
-  const bytes =
+  const n =
     typeof crypto !== 'undefined' && crypto.getRandomValues
-      ? crypto.getRandomValues(new Uint8Array(8))
-      : null
-  for (let i = 0; i < 8; i++) {
-    const n = bytes ? bytes[i]! : Math.floor(Math.random() * alphabet.length)
-    out += alphabet[n % alphabet.length]!
-  }
-  return out
+      ? 100 + (crypto.getRandomValues(new Uint32Array(1))[0]! % 900)
+      : 100 + Math.floor(Math.random() * 900)
+  return String(n)
 }
 
+/** Digits only, max 3 — for friend codes. */
+export function normalizeFriendCode(raw: string): string {
+  return String(raw || '')
+    .replace(/\D/g, '')
+    .slice(0, FRIEND_CODE_LEN)
+}
+
+export function isFriendCode(code: string): boolean {
+  return /^\d{3}$/.test(code)
+}
+
+/** @deprecated use normalizeFriendCode — kept for call sites that also strip club junk */
 export function normalizeAccountCode(raw: string): string {
+  // Prefer digits-only friend codes; fall back to alnum for rare legacy reads.
+  const digits = normalizeFriendCode(raw)
+  if (digits.length === FRIEND_CODE_LEN) return digits
   return String(raw || '')
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '')
@@ -200,33 +212,44 @@ export function normalizeAccountCode(raw: string): string {
 }
 
 export function formatAccountCode(code: string): string {
-  const c = normalizeAccountCode(code)
-  if (c.length <= 4) return c
-  return `${c.slice(0, 4)}-${c.slice(4)}`
+  const c = normalizeFriendCode(code) || normalizeAccountCode(code)
+  return c
 }
 
 /**
- * Canonical online id = short account code.
- * Migrates older UUID-style ids to a new code while keeping the legacy id for inbox.
+ * Canonical online id = 3-digit friend code.
+ * Migrates older 8-char / UUID ids to a new code while keeping legacy inboxes.
  */
 export function loadPlayerId(): string {
   const existing = localStorage.getItem(PLAYER_ID_KEY) || ''
   let code = localStorage.getItem(ACCOUNT_CODE_KEY) || ''
 
-  if (!code) {
-    const normalized = normalizeAccountCode(existing)
-    if (normalized.length >= 6 && normalized.length <= 10 && /^[A-Z0-9]+$/.test(normalized)) {
-      code = normalized
-    } else {
-      if (existing) localStorage.setItem(LEGACY_PLAYER_ID_KEY, existing)
-      code = generateAccountCode()
+  // Force cutover to 3-digit codes (old 8-char codes never matched reliably).
+  if (!isFriendCode(code)) {
+    const old = code || existing
+    if (old && old !== code) {
+      /* keep falling through */
     }
+    if (old && !isFriendCode(old)) {
+      const prevLegacy = localStorage.getItem(LEGACY_PLAYER_ID_KEY)?.trim()
+      if (!prevLegacy) localStorage.setItem(LEGACY_PLAYER_ID_KEY, old)
+      else if (prevLegacy !== old) {
+        // Keep the oldest legacy; stash the mid-tier code as a second legacy via comma.
+        const parts = new Set(prevLegacy.split(',').map((s) => s.trim()).filter(Boolean))
+        parts.add(old)
+        localStorage.setItem(LEGACY_PLAYER_ID_KEY, [...parts].join(','))
+      }
+    }
+    code = generateAccountCode()
     localStorage.setItem(ACCOUNT_CODE_KEY, code)
   }
 
-  if (existing && existing !== code && !localStorage.getItem(LEGACY_PLAYER_ID_KEY)) {
-    // Existing long id — keep receiving on it after cutover.
-    if (existing.length > 12) localStorage.setItem(LEGACY_PLAYER_ID_KEY, existing)
+  if (existing && existing !== code && !isFriendCode(existing)) {
+    const prevLegacy = localStorage.getItem(LEGACY_PLAYER_ID_KEY)?.trim()
+    if (!prevLegacy) localStorage.setItem(LEGACY_PLAYER_ID_KEY, existing)
+    else if (!prevLegacy.split(',').includes(existing)) {
+      localStorage.setItem(LEGACY_PLAYER_ID_KEY, `${prevLegacy},${existing}`)
+    }
   }
 
   localStorage.setItem(PLAYER_ID_KEY, code)
@@ -242,8 +265,11 @@ export function loadAccountCode(): string {
 export function loadLegacyPlayerIds(): string[] {
   const legacy = localStorage.getItem(LEGACY_PLAYER_ID_KEY)?.trim()
   const current = localStorage.getItem(ACCOUNT_CODE_KEY) || localStorage.getItem(PLAYER_ID_KEY) || ''
-  if (!legacy || legacy === current) return []
-  return [legacy]
+  if (!legacy) return []
+  return legacy
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s && s !== current)
 }
 
 function isPlaceholderFriendName(name: string): boolean {

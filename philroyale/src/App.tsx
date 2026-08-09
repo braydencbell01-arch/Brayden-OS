@@ -12,9 +12,14 @@ import { TrophyRoadScreen } from './TrophyRoadScreen'
 import type { BattleNet } from './battleSync'
 import { joinClubVerified, startClubSync } from './clubSync'
 import {
+  DIRECTORY_HEARTBEAT_MS,
   PRESENCE_HEARTBEAT_MS,
   PRESENCE_ONLINE_MS,
+  lookupDirectory,
+  pollDirectory,
+  publishDirectory,
   publishSocial,
+  subscribeDirectory,
   subscribeSocial,
   waitForSocial,
   type FriendPresenceInfo,
@@ -32,8 +37,8 @@ import {
   clubInviteUrl,
   countUnclaimedRoadRewards,
   createBattleChallenge,
-  formatAccountCode,
   isChallengeForMe,
+  isFriendCode,
   loadBattleAccepted,
   loadCardProgress,
   loadFriends,
@@ -46,7 +51,7 @@ import {
   loadPlayerName,
   loadProfile,
   loadRichClub,
-  normalizeAccountCode,
+  normalizeFriendCode,
   parseBattleChallengeFromUrl,
   parseFriendInviteFromUrl,
   postBattleMessage,
@@ -314,24 +319,31 @@ export default function App() {
 
   const addFriendByCode = useCallback(
     async (rawCode: string) => {
-      const code = normalizeAccountCode(rawCode)
+      const code = normalizeFriendCode(rawCode)
       const me = loadPlayerName().trim()
       const myId = loadPlayerId()
       if (!me) return { ok: false, message: 'Set your name first.' }
-      if (code.length !== 8) {
+      if (!isFriendCode(code)) {
+        const alnum = String(rawCode || '')
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, '')
         return {
           ok: false,
           message:
-            code.length === 6
+            alnum.length === 6
               ? 'That looks like a club code — use Club → Join instead.'
-              : 'Account codes are exactly 8 characters (example ABCD-EFGH).',
+              : 'Friend codes are exactly 3 digits (example 247). Hard-refresh both phones first.',
         }
       }
       if (code === myId) return { ok: false, message: "That's your own code." }
 
-      // Pending row only — removed if nobody with that code answers.
       upsertFriend({ name: 'Adding…', playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
+
+      // Announce ourselves + scan the live directory for their 3-digit code.
+      void publishDirectory(myId, me)
+      await pollDirectory()
+      let foundName = lookupDirectory(code)
 
       const published = await publishSocial(code, {
         type: 'friend_request',
@@ -347,36 +359,44 @@ export default function App() {
         at: new Date().toISOString(),
       })
 
-      if (!published) {
+      if (!published && !foundName) {
         removeFriendByPlayerId(code)
         window.dispatchEvent(new Event('philroyale-friends-changed'))
         return { ok: false, message: 'Could not reach the network. Try again.' }
       }
 
-      const reply = await waitForSocial(
-        (msg) =>
-          (msg.type === 'friend_hello' || msg.type === 'friend_request' || msg.type === 'presence') &&
-          msg.fromPlayerId === code,
-        16_000,
-      )
+      if (!foundName) {
+        const reply = await waitForSocial(
+          (msg) =>
+            (msg.type === 'dir_ping' ||
+              msg.type === 'friend_hello' ||
+              msg.type === 'friend_request') &&
+            msg.fromPlayerId === code,
+          20_000,
+        )
+        if (reply && 'fromName' in reply && reply.fromName) {
+          foundName = reply.fromName
+        } else {
+          await pollDirectory()
+          foundName = lookupDirectory(code)
+        }
+      }
 
-      if (!reply) {
+      if (!foundName) {
         removeFriendByPlayerId(code)
         window.dispatchEvent(new Event('philroyale-friends-changed'))
         return {
           ok: false,
           message:
-            'Nobody online with that account code. Copy their 8-character code under Friends (not the club code), and keep Phil Royale open on both phones.',
+            'Nobody online with that 3-digit code. Both of you: hard-refresh Phil Royale, open Social → Friends, copy the new 3-digit code, and try again while both apps stay open.',
         }
       }
 
-      const realName =
-        'fromName' in reply && reply.fromName ? reply.fromName : formatAccountCode(code)
-      upsertFriend({ name: realName, playerId: code })
+      upsertFriend({ name: foundName, playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
       return {
         ok: true,
-        message: `Added ${realName}. Open their profile → Invite — they get Accept / Decline on their screen.`,
+        message: `Added ${foundName}. Open their profile → Invite — they get Accept / Decline.`,
       }
     },
     [],
@@ -419,7 +439,8 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadPlayerId()
+    const id = loadPlayerId()
+    flashFriend(`Your friend code is ${id} — 3 digits. Share that under Social → Friends.`)
     repairBrokenLocalClub()
     const friendLink = parseFriendInviteFromUrl()
     if (friendLink) {
@@ -683,13 +704,20 @@ export default function App() {
     }
   }, [flashFriend, showIncoming, startMatch])
 
-  // Heartbeat so friends can see you're online / in battle (and receive invites).
+  // Friend-code directory — both phones must stay open so 3-digit lookup works.
+  useEffect(() => {
+    if (needsName) return
+    return subscribeDirectory()
+  }, [needsName])
+
+  // Heartbeat: directory ping + presence to friends.
   useEffect(() => {
     if (needsName) return
     const beat = () => {
       const me = loadPlayerName().trim() || 'Player'
       const myId = loadPlayerId()
       const at = new Date().toISOString()
+      void publishDirectory(myId, me)
       const inMatch = battle && !!battleNet && !spectating
       const role =
         battleNet?.role === 'guest' ? 'guest' : battleNet?.role === 'host' ? 'host' : undefined
@@ -710,7 +738,7 @@ export default function App() {
       }
     }
     beat()
-    const id = window.setInterval(beat, PRESENCE_HEARTBEAT_MS)
+    const id = window.setInterval(beat, Math.min(PRESENCE_HEARTBEAT_MS, DIRECTORY_HEARTBEAT_MS))
     return () => window.clearInterval(id)
   }, [needsName, playerName, battle, battleNet, battleMode, opponent, spectating])
 
@@ -887,7 +915,7 @@ export default function App() {
             Welcome to Phil Royale
           </h1>
           <p className="mt-2 text-sm font-semibold text-white/80">
-            Pick a name friends will see. You&apos;ll get an account code to add friends — battle
+            Pick a name friends will see. You&apos;ll get a 3-digit friend code — battle
             invites only work when they&apos;re online.
           </p>
           <input

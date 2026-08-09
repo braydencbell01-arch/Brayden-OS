@@ -157,8 +157,8 @@ export async function joinClubVerified(
     return {
       ok: false,
       message:
-        code.length === 8
-          ? 'That is an account code — use Friends → Add friend (8 characters).'
+        code.length === 3
+          ? 'That is a friend code — use Friends → Add friend (3 digits).'
           : 'Club invite codes are exactly 6 characters.',
       club: null,
     }

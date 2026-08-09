@@ -196,7 +196,7 @@ export function ClubScreen({
               Join with club invite code (6 letters)
             </p>
             <p className="mt-1 text-[0.7rem] font-semibold text-white/50">
-              Not an account code (those are 8 chars under Friends). Brother must keep Phil Royale
+              Not a friend code (those are 3 digits under Friends). Brother must keep Phil Royale
               open while you join.
             </p>
             <div className="mt-2 flex gap-2">
@@ -215,8 +215,8 @@ export function ClubScreen({
                   const c = normalizeClubCode(joinCode)
                   if (c.length !== 6) {
                     flash(
-                      c.length === 8
-                        ? 'That is an account code — use Friends → Add friend'
+                      c.length === 3
+                        ? 'That is a friend code — use Friends → Add friend'
                         : 'Club codes are exactly 6 characters',
                     )
                     return

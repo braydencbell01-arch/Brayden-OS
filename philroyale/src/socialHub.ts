@@ -67,6 +67,13 @@ export type SocialMessage =
       clubName: string
       at: string
     }
+  | {
+      /** Broadcast so friends can find a 3-digit code while both apps are open. */
+      type: 'dir_ping'
+      fromPlayerId: string
+      fromName: string
+      at: string
+    }
 
 /** Latest presence snapshot for a friend (from heartbeats). */
 export type FriendPresenceInfo = {
@@ -82,8 +89,12 @@ export type FriendPresenceInfo = {
 /** How recently a presence ping counts as "online". */
 export const PRESENCE_ONLINE_MS = 45_000
 export const PRESENCE_HEARTBEAT_MS = 15_000
+/** Shared lobby so 3-digit codes can be discovered while both apps are open. */
+export const DIRECTORY_HEARTBEAT_MS = 8_000
+const DIRECTORY_TOPIC = 'philroyale-dir-v3'
+const DIRECTORY_FRESH_MS = 60_000
 
-const TOPIC_PREFIX = 'philroyale-v2-'
+const TOPIC_PREFIX = 'philroyale-v3-'
 
 function topicFor(playerId: string): string {
   return `${TOPIC_PREFIX}${playerId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64)}`
@@ -91,6 +102,149 @@ function topicFor(playerId: string): string {
 
 function endpoint(playerId: string): string {
   return `https://ntfy.sh/${topicFor(playerId)}`
+}
+
+function directoryEndpoint(): string {
+  return `https://ntfy.sh/${DIRECTORY_TOPIC}`
+}
+
+type DirEntry = { name: string; at: number }
+const directoryCache = new Map<string, DirEntry>()
+
+export function rememberDirectoryPing(code: string, name: string, atMs = Date.now()): void {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 3)
+  if (c.length !== 3) return
+  const prev = directoryCache.get(c)
+  if (prev && prev.at > atMs) return
+  directoryCache.set(c, { name: name.trim() || `Player ${c}`, at: atMs })
+}
+
+export function lookupDirectory(code: string): string | null {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 3)
+  const e = directoryCache.get(c)
+  if (!e) return null
+  if (Date.now() - e.at > DIRECTORY_FRESH_MS) return null
+  return e.name
+}
+
+export async function publishDirectory(code: string, name: string): Promise<boolean> {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 3)
+  if (c.length !== 3) return false
+  rememberDirectoryPing(c, name)
+  try {
+    const res = await fetch(directoryEndpoint(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Title: 'Phil Royale directory',
+        Priority: 'default',
+        Tags: 'bust_in_silhouette',
+      },
+      body: JSON.stringify({
+        type: 'dir_ping',
+        fromPlayerId: c,
+        fromName: name.trim() || `Player ${c}`,
+        at: new Date().toISOString(),
+      } satisfies SocialMessage),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+function handleDirectoryRaw(raw: string): void {
+  try {
+    const data = JSON.parse(raw) as SocialMessage
+    if (!data || data.type !== 'dir_ping') return
+    rememberDirectoryPing(data.fromPlayerId, data.fromName, Date.parse(data.at) || Date.now())
+    notifySocialWaiters(data)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Pull recent directory pings into the local cache. */
+export async function pollDirectory(): Promise<void> {
+  try {
+    const since = Math.floor(Date.now() / 1000) - 90
+    const res = await fetch(`${directoryEndpoint()}/json?poll=1&since=${since}`)
+    if (!res.ok) return
+    const text = (await res.text()).trim()
+    if (!text) return
+    for (const line of text.split('\n')) {
+      if (!line.trim()) continue
+      try {
+        const envelope = JSON.parse(line) as { message?: string; event?: string }
+        if (envelope.event && envelope.event !== 'message') continue
+        if (envelope.message) handleDirectoryRaw(envelope.message)
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Stay subscribed to the friend-code directory while the app is open. */
+export function subscribeDirectory(): () => void {
+  if (typeof window === 'undefined') return () => {}
+  let stopped = false
+  let lastSince = Math.floor(Date.now() / 1000) - 90
+  let es: EventSource | null = null
+  try {
+    es = new EventSource(`${directoryEndpoint()}/sse`)
+    es.onmessage = (ev) => {
+      try {
+        const envelope = JSON.parse(ev.data) as {
+          id?: string
+          message?: string
+          time?: number
+        }
+        if (envelope.time) lastSince = Math.max(lastSince, envelope.time)
+        if (envelope.message) handleDirectoryRaw(envelope.message)
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    es = null
+  }
+  const poll = window.setInterval(() => {
+    if (stopped) return
+    void (async () => {
+      try {
+        const res = await fetch(`${directoryEndpoint()}/json?poll=1&since=${lastSince}`)
+        if (!res.ok) return
+        const text = (await res.text()).trim()
+        if (!text) return
+        for (const line of text.split('\n')) {
+          if (!line.trim()) continue
+          try {
+            const envelope = JSON.parse(line) as {
+              message?: string
+              time?: number
+              event?: string
+            }
+            if (envelope.event && envelope.event !== 'message') continue
+            if (envelope.time) lastSince = Math.max(lastSince, envelope.time + 1)
+            if (envelope.message) handleDirectoryRaw(envelope.message)
+          } catch {
+            /* ignore */
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    })()
+  }, 3000)
+  void pollDirectory()
+  return () => {
+    stopped = true
+    window.clearInterval(poll)
+    es?.close()
+  }
 }
 
 export async function publishSocial(

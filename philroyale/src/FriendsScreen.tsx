@@ -14,7 +14,8 @@ import {
   loadPlayerName,
   loadRichClub,
   markFriendBattled,
-  normalizeAccountCode,
+  isFriendCode,
+  normalizeFriendCode,
   saveFriendMeta,
   saveFriends,
   savePlayerName,
@@ -123,7 +124,7 @@ export function FriendsScreen({
 
   async function sendInvite(friend: Friend, mode: GameMode) {
     if (!friend.playerId) {
-      setAddMsg('Add them with their account code before inviting.')
+      setAddMsg('Add them with their 3-digit friend code before inviting.')
       setInviteTarget(null)
       return
     }
@@ -145,12 +146,13 @@ export function FriendsScreen({
   }
 
   async function addFriendByCode() {
-    const code = normalizeAccountCode(friendCode)
-    if (!code || code.length !== 8) {
+    const code = normalizeFriendCode(friendCode)
+    if (!isFriendCode(code)) {
+      const alnum = friendCode.toUpperCase().replace(/[^A-Z0-9]/g, '')
       setAddMsg(
-        code.length === 6
-          ? 'That looks like a club code — use Club → Join. Account codes are 8 characters.'
-          : 'Enter their 8-character account code (e.g. ABCD-EFGH).',
+        alnum.length === 6
+          ? 'That looks like a club code — use Club → Join. Friend codes are 3 digits.'
+          : 'Enter their 3-digit friend code (example 247).',
       )
       return
     }
@@ -158,6 +160,7 @@ export function FriendsScreen({
       setAddMsg("That's your own code.")
       return
     }
+    setAddMsg('Looking for that code… keep both apps open.')
     if (onAddByCode) {
       const res = await onAddByCode(code)
       setAddMsg(res.message)
@@ -249,9 +252,8 @@ export function FriendsScreen({
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Share your <span className="text-[#f5d76e]">8-character account code</span>. Add
-          friends by theirs (not a club code) — then open their profile → Invite for Accept /
-          Decline.
+          Share your <span className="text-[#f5d76e]">3-digit friend code</span>. Both keep
+          Phil Royale open, add each other, then profile → Invite for Accept / Decline.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
           Your name
@@ -294,9 +296,9 @@ export function FriendsScreen({
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Your account code
+              Your friend code (3 digits)
             </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-[0.12em] text-white">
+            <p className="mt-1 font-[family-name:var(--font-display)] text-4xl tracking-[0.35em] text-white">
               {formatAccountCode(myCode)}
             </p>
             <button
@@ -304,7 +306,7 @@ export function FriendsScreen({
               onClick={() => void copyAccountCode()}
               className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
             >
-              {copied ? 'Copied!' : 'Copy account code'}
+              {copied ? 'Copied!' : 'Copy friend code'}
             </button>
           </div>
 
@@ -313,15 +315,16 @@ export function FriendsScreen({
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Add friend by account code (8 chars)
+              Add friend by 3-digit code
             </p>
             <div className="flex gap-2">
               <input
                 value={friendCode}
-                onChange={(e) => setFriendCode(e.target.value.toUpperCase())}
-                placeholder="e.g. ABCD-EFGH"
-                maxLength={12}
-                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold tracking-wider text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+                onChange={(e) => setFriendCode(e.target.value.replace(/\D/g, '').slice(0, 3))}
+                placeholder="e.g. 247"
+                inputMode="numeric"
+                maxLength={3}
+                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-center text-lg font-extrabold tracking-[0.35em] text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
               />
               <button
                 type="button"
@@ -336,7 +339,7 @@ export function FriendsScreen({
               <p className="mt-2 text-xs font-semibold text-[#7dff9a]">{addMsg}</p>
             ) : (
               <p className="mt-2 text-xs font-semibold text-white/45">
-                They must have Phil Royale open to accept invites to battle.
+                Both phones must have Phil Royale open on Friends.
               </p>
             )}
           </div>
