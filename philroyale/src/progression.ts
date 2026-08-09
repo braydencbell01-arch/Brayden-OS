@@ -46,6 +46,8 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 500, arena: 'Training Camp', label: 'Epic Chest', chest: 'epic', gold: 40 },
   { trophies: 550, arena: 'Training Camp', label: 'Gold pouch', gold: 70 },
   { trophies: 600, arena: 'Sundae Strip', label: 'Arena unlocked!', gold: 150, unlockCard: 'mike' },
+  { trophies: 625, arena: 'Sundae Strip', label: 'Unlock Scott', unlockCard: 'scott', gold: 60 },
+  { trophies: 650, arena: 'Sundae Strip', label: 'Unlock Football Huck', unlockCard: 'footballHuck', gold: 70 },
   { trophies: 675, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 50 },
   { trophies: 750, arena: 'Sundae Strip', label: 'Common Chest', chest: 'common', gold: 60 },
   { trophies: 825, arena: 'Sundae Strip', label: 'Gold pouch', gold: 80 },
@@ -100,6 +102,8 @@ export const STARTER_UNLOCKS = [
   'pete',
   'dogHut',
   'iceCream',
+  'scott',
+  'footballHuck',
 ]
 
 export function cardLevelMult(level: number): number {

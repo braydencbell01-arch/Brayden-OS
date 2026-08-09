@@ -13,6 +13,8 @@ import { PhilModel, type CharacterAnim } from './PhilModel'
 import { ShayModel } from './ShayModel'
 import { ToddModel } from './ToddModel'
 import { DogHutModel } from './DogHutModel'
+import { FootballModel } from './FootballModel'
+import { ScottModel } from './ScottModel'
 import { IceCreamModel } from './IceCreamModel'
 
 type Props = {
@@ -60,10 +62,14 @@ export function CharacterModel({
     model = <ShayModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'jeremy') {
     model = <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'scott') {
+    model = <ScottModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dogHut') {
     model = <DogHutModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'iceCream') {
     model = <IceCreamModel anim={anim} facing={facing} portrait={portrait} />
+  } else if (charId === 'footballHuck') {
+    model = <FootballModel anim={anim} facing={facing} portrait={portrait} />
   } else {
     model = (
       <CrUnitModel

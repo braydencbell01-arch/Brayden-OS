@@ -9,6 +9,7 @@ export type AttackId =
   | 'dumbbellHuck'
   | 'headButt'
   | 'love'
+  | 'cashGun'
 
 export type AttackDef = {
   id: AttackId
@@ -26,6 +27,8 @@ export type AttackDef = {
   burstGapSec?: number
   /** If set, hit every opponent within this many blocks of the impact point. */
   splashRadius?: number
+  /** Splash damage when different from primary hit (e.g. Cash Gun). */
+  splashDamage?: number
   kind:
     | 'sundae'
     | 'whip'
@@ -37,6 +40,7 @@ export type AttackDef = {
     | 'dumbbell'
     | 'headbutt'
     | 'love'
+    | 'cash'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -95,6 +99,8 @@ export type CharacterDef = {
   spellDamage?: number
   /** Spell: radius in blocks (hits anything within this distance). */
   spellRadius?: number
+  /** Spell: flight time from cast to impact (ms). */
+  spellTravelMs?: number
 }
 
 export const PHIL: CharacterDef = {
@@ -389,7 +395,7 @@ export const DOG_HUT: CharacterDef = {
   initial: 'H',
   pronoun: 'it',
   height: "4'0\"",
-  rarity: 'rare',
+  rarity: 'common',
   elixir: 6,
   hp: 1250,
   moveSpeed: 0,
@@ -417,10 +423,61 @@ export const ICE_CREAM: CharacterDef = {
   attackDelaySec: 0,
   hue: 330,
   cardKind: 'spell',
-  blurb: 'Spell — throw a sundae anywhere. 325 damage in a 10-block radius.',
+  blurb: 'Spell — throw a sundae anywhere. Lands in 2s for 325 damage in a 10-block radius.',
   spellDamage: 325,
   spellRadius: 10,
+  spellTravelMs: 2000,
   attacks: [],
+}
+
+/** Slow football lob — huge splash, long hang time. */
+export const FOOTBALL_HUCK: CharacterDef = {
+  id: 'footballHuck',
+  name: 'Football Huck',
+  initial: 'Fb',
+  pronoun: 'it',
+  height: "1'0\"",
+  rarity: 'rare',
+  elixir: 5,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 30,
+  cardKind: 'spell',
+  blurb: 'Spell — huck a football. Lands in 4s for 470 damage in a 30-block diameter (15 radius).',
+  spellDamage: 470,
+  spellRadius: 15,
+  spellTravelMs: 4000,
+  attacks: [],
+}
+
+/** Skinny rich guy — Cash Gun money launcher. */
+export const SCOTT: CharacterDef = {
+  id: 'scott',
+  name: 'Scott',
+  initial: 'Sc',
+  pronoun: 'he',
+  height: "5'11\"",
+  rarity: 'rare',
+  elixir: 4,
+  hp: 450,
+  moveSpeed: 7,
+  attackDelaySec: 2.5,
+  hue: 210,
+  blurb:
+    'Cash Gun — stops and launches cash (range 35). Direct hit 400; impact explodes for 200 in a 10-block diameter.',
+  attacks: [
+    {
+      id: 'cashGun',
+      name: 'Cash Gun',
+      range: 35,
+      damage: 400,
+      rootWhileAttacking: true,
+      splashRadius: 5,
+      splashDamage: 200,
+      kind: 'cash',
+    },
+  ],
 }
 
 export const CHARACTERS: CharacterDef[] = [
@@ -435,8 +492,10 @@ export const CHARACTERS: CharacterDef[] = [
   FINLEY,
   SHAY,
   JEREMY,
+  SCOTT,
   DOG_HUT,
   ICE_CREAM,
+  FOOTBALL_HUCK,
 ]
 
 export const DECK_SIZE = 8

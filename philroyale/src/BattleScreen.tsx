@@ -17,6 +17,10 @@ import {
   ShootDot,
   SlobberDot,
   SlobberSplat,
+  CashDot,
+  CashSplat,
+  FootballDot,
+  FootballSplat,
   SundaeDot,
   SundaeSplat,
   TowerArrow,
@@ -103,7 +107,17 @@ function FlyingShot({
   bornAt: number
   arriveAt: number
   now: number
-  kind: 'sundae' | 'slobber' | 'shoot' | 'dumbbell' | 'love' | 'arrow' | 'cannon' | 'iceCream'
+  kind:
+    | 'sundae'
+    | 'slobber'
+    | 'shoot'
+    | 'dumbbell'
+    | 'love'
+    | 'arrow'
+    | 'cannon'
+    | 'iceCream'
+    | 'football'
+    | 'cash'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
@@ -117,15 +131,19 @@ function FlyingShot({
         : Math.sin(p * Math.PI) *
           (kind === 'shoot'
             ? 0.6
-            : kind === 'dumbbell'
-              ? 7.5
-              : kind === 'slobber'
-                ? 5.5
-                : kind === 'love'
-                  ? 2.4
-                  : kind === 'iceCream'
-                    ? 9
-                    : 4)
+            : kind === 'cash'
+              ? 3.2
+              : kind === 'dumbbell'
+                ? 7.5
+                : kind === 'slobber'
+                  ? 5.5
+                  : kind === 'love'
+                    ? 2.4
+                    : kind === 'iceCream'
+                      ? 9
+                      : kind === 'football'
+                        ? 14
+                        : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
   const travelAngle =
     (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
@@ -133,6 +151,8 @@ function FlyingShot({
   return (
     <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-hidden>
       {kind === 'sundae' || kind === 'iceCream' ? <SundaeDot /> : null}
+      {kind === 'football' ? <FootballDot /> : null}
+      {kind === 'cash' ? <CashDot /> : null}
       {kind === 'slobber' ? <SlobberDot /> : null}
       {kind === 'shoot' ? <ShootDot /> : null}
       {kind === 'dumbbell' ? <DumbbellDot /> : null}
@@ -527,7 +547,9 @@ export function BattleScreen({
             p.kind === 'love' ||
             p.kind === 'arrow' ||
             p.kind === 'cannon' ||
-            p.kind === 'iceCream' ? (
+            p.kind === 'iceCream' ||
+            p.kind === 'football' ||
+            p.kind === 'cash' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -551,6 +573,10 @@ export function BattleScreen({
                 <LoveSplat ageMs={now - s.bornAt} />
               ) : s.kind === 'iceCream' ? (
                 <IceCreamSplat ageMs={now - s.bornAt} />
+              ) : s.kind === 'football' ? (
+                <FootballSplat ageMs={now - s.bornAt} />
+              ) : s.kind === 'cash' ? (
+                <CashSplat ageMs={now - s.bornAt} />
               ) : s.kind === 'melee' ||
                 s.kind === 'whip' ||
                 s.kind === 'bite' ||

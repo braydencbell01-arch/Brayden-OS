@@ -47,6 +47,8 @@ export type Projectile = {
     | 'arrow'
     | 'cannon'
     | 'iceCream'
+    | 'football'
+    | 'cash'
   fromCol: number
   fromRow: number
   toCol: number
@@ -60,6 +62,8 @@ export type Projectile = {
   ownerSide?: Side
   /** Splash radius in blocks around the impact point. */
   splashRadius?: number
+  /** When set with splashRadius, AoE uses this instead of `damage` (primary still uses `damage`). */
+  splashDamage?: number
 }
 
 /** Impact FX — sundae splat, slobber explode, bullet boom, or melee strike. */
@@ -80,6 +84,8 @@ export type SplatFx = {
     | 'kick'
     | 'hug'
     | 'iceCream'
+    | 'football'
+    | 'cash'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

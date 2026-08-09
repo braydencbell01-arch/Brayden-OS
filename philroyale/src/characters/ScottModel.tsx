@@ -1,0 +1,35 @@
+import type { AttackId } from '../characters'
+import type { CharacterAnim } from './PhilModel'
+import { PhotoTroop } from './PhotoTroop'
+
+const SCOTT_CARD = `${import.meta.env.BASE_URL}characters/scott-card.png`
+const SCOTT_TROOP = `${import.meta.env.BASE_URL}characters/scott-troop.png`
+const SCOTT_BACK = `${import.meta.env.BASE_URL}characters/scott-troop-back.png`
+
+type Props = {
+  anim: CharacterAnim
+  facing: number
+  attackId?: AttackId | null
+  portrait?: boolean
+}
+
+/** Scott — skinny rich guy; Cash Gun money launcher. */
+export function ScottModel({ anim, facing, attackId, portrait }: Props) {
+  return (
+    <PhotoTroop
+      cardSrc={SCOTT_CARD}
+      troopSrc={SCOTT_TROOP}
+      troopBackSrc={SCOTT_BACK}
+      alt="Scott"
+      anim={anim}
+      facing={facing}
+      portrait={portrait}
+      objectPos="50% 12%"
+      gait="jog"
+      attack={anim === 'attack' && attackId === 'cashGun' ? 'shoot' : 'none'}
+      spriteLegs
+      legColor="#1e2a4a"
+      shoeColor="#2a1810"
+    />
+  )
+}

@@ -55,8 +55,10 @@ const SLOBBER_PROJECTILE_MS = 1100
 const SHOOT_PROJECTILE_MS = 140
 /** Mike overhead dumbbell lob — long hang time. */
 const DUMBBELL_PROJECTILE_MS = 920
-/** Sundae spell — thrown from king tower, lands with a splat. */
-const ICE_CREAM_PROJECTILE_MS = 980
+/** Default spell lob when a card omits spellTravelMs. */
+const ICE_CREAM_PROJECTILE_MS = 2000
+/** Scott Cash Gun bills — medium lob. */
+const CASH_PROJECTILE_MS = 700
 const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
 /** Shay Love heart — drifts slowly toward the target. */
@@ -156,24 +158,28 @@ function applySplashAt(
   radius: number,
   damage: number,
   now: number,
+  opts?: { excludeUnitId?: string | null; skipTowers?: boolean },
 ): { unitsChanged: boolean; towersChanged: boolean } {
   let unitsChanged = false
   let towersChanged = false
   for (const u of units) {
     if (u.hp <= 0 || u.side === ownerSide) continue
+    if (opts?.excludeUnitId && u.id === opts.excludeUnitId) continue
     const c = unitCenter(u)
     if (dist(c.col, c.row, col, row) <= radius) {
       u.hp -= damage
       unitsChanged = true
     }
   }
-  for (const tw of towers) {
-    if (tw.hp <= 0 || tw.side === ownerSide) continue
-    const slot = towerSlot(tw.id)
-    if (!slot) continue
-    if (distToTowerEdge(col, row, slot) <= radius) {
-      applyTowerDamage(tw, damage, now)
-      towersChanged = true
+  if (!opts?.skipTowers) {
+    for (const tw of towers) {
+      if (tw.hp <= 0 || tw.side === ownerSide) continue
+      const slot = towerSlot(tw.id)
+      if (!slot) continue
+      if (distToTowerEdge(col, row, slot) <= radius) {
+        applyTowerDamage(tw, damage, now)
+        towersChanged = true
+      }
     }
   }
   return { unitsChanged, towersChanged }
@@ -337,9 +343,11 @@ function castSpellProjectile(
   const radius = char.spellRadius ?? 0
   if (damage <= 0 || radius <= 0) return false
   const from = kingThrowPoint(side)
+  const travel = char.spellTravelMs ?? ICE_CREAM_PROJECTILE_MS
+  const kind = char.id === 'footballHuck' ? 'football' : 'iceCream'
   into.push({
     id: nid('spell'),
-    kind: 'iceCream',
+    kind,
     fromCol: from.col,
     fromRow: from.row,
     toCol: Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col))),
@@ -348,7 +356,7 @@ function castSpellProjectile(
     targetId: null,
     targetTowerId: null,
     bornAt: t,
-    arriveAt: t + ICE_CREAM_PROJECTILE_MS,
+    arriveAt: t + travel,
     ownerSide: side,
     splashRadius: radius,
   })
@@ -960,13 +968,13 @@ export function useBattle(opts?: {
             continue
           }
           projectilesChanged = true
-          if (p.kind === 'iceCream') {
+          if (p.kind === 'iceCream' || p.kind === 'football') {
             nextSplats.push({
-              id: nid('ic'),
+              id: nid('spellfx'),
               col: p.toCol,
               row: p.toRow,
               bornAt: t,
-              kind: 'iceCream',
+              kind: p.kind,
             })
             splatsChanged = true
           }
@@ -1077,8 +1085,54 @@ export function useBattle(opts?: {
             kind: 'iceCream',
           })
           splatsChanged = true
+        } else if (p.kind === 'football') {
+          nextSplats.push({
+            id: nid('fb'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'football',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'cash') {
+          nextSplats.push({
+            id: nid('cash'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'cash',
+          })
+          splatsChanged = true
         }
-        if (p.splashRadius != null && p.ownerSide != null) {
+        if (p.splashRadius != null && p.ownerSide != null && p.splashDamage != null) {
+          // Primary hit + separate splash (Cash Gun).
+          if (p.targetId) {
+            const target = nextUnits.find((u) => u.id === p.targetId)
+            if (target) {
+              target.hp -= p.damage
+              unitsChanged = true
+            }
+          } else if (p.targetTowerId) {
+            const tw = nextTowers.find((x) => x.id === p.targetTowerId)
+            if (tw) {
+              applyTowerDamage(tw, p.damage, t)
+              towersChanged = true
+            }
+          }
+          const splash = applySplashAt(
+            nextUnits,
+            nextTowers,
+            p.ownerSide,
+            p.toCol,
+            p.toRow,
+            p.splashRadius,
+            p.splashDamage,
+            t,
+            { excludeUnitId: p.targetId },
+          )
+          if (splash.unitsChanged) unitsChanged = true
+          if (splash.towersChanged) towersChanged = true
+        } else if (p.splashRadius != null && p.ownerSide != null) {
           const splash = applySplashAt(
             nextUnits,
             nextTowers,
@@ -1474,7 +1528,8 @@ export function useBattle(opts?: {
           attack.kind === 'slobber' ||
           attack.kind === 'shoot' ||
           attack.kind === 'dumbbell' ||
-          attack.kind === 'love'
+          attack.kind === 'love' ||
+          attack.kind === 'cash'
         ) {
           nextProjectiles.push({
             id: nid('p'),
@@ -1491,15 +1546,18 @@ export function useBattle(opts?: {
               t +
               (attack.kind === 'shoot'
                 ? SHOOT_PROJECTILE_MS
-                : attack.kind === 'slobber'
-                  ? SLOBBER_PROJECTILE_MS
-                  : attack.kind === 'dumbbell'
-                    ? DUMBBELL_PROJECTILE_MS
-                    : attack.kind === 'love'
-                      ? LOVE_PROJECTILE_MS
-                      : PROJECTILE_MS),
+                : attack.kind === 'cash'
+                  ? CASH_PROJECTILE_MS
+                  : attack.kind === 'slobber'
+                    ? SLOBBER_PROJECTILE_MS
+                    : attack.kind === 'dumbbell'
+                      ? DUMBBELL_PROJECTILE_MS
+                      : attack.kind === 'love'
+                        ? LOVE_PROJECTILE_MS
+                        : PROJECTILE_MS),
             ownerSide: u.side,
             splashRadius: attack.splashRadius,
+            splashDamage: attack.splashDamage,
           })
           projectilesChanged = true
           continue

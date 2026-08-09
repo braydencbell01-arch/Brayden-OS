@@ -48,13 +48,13 @@ export function UnitToken({
           aspectRatio:
             charId === 'dogHut'
               ? '5 / 4.6'
-              : charId === 'iceCream'
+              : charId === 'iceCream' || charId === 'footballHuck'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
               ? '4 / 4.85'
               : charId === 'jeremy'
                 ? '3 / 6.1'
-                : charId === 'pete'
+                : charId === 'pete' || charId === 'scott'
                   ? '3 / 5.9'
                   : charId === 'mike'
                     ? '3 / 5.55'
@@ -96,6 +96,49 @@ export function UnitToken({
           {Math.max(0, Math.round(hp))}
         </span>
       </div>
+    </div>
+  )
+}
+
+/** Flying cash wad for Scott's Cash Gun. */
+export function CashDot() {
+  return (
+    <div className="relative h-5 w-7" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="absolute rounded-[2px]"
+          style={{
+            left: `${i * 4}px`,
+            top: `${2 - i}px`,
+            width: '14px',
+            height: '9px',
+            background: 'linear-gradient(180deg,#7dff9a,#2a9a4a)',
+            boxShadow: '0 1px 1px #0008, inset 0 0 0 1px #1a5a28',
+            transform: `rotate(${-12 + i * 10}deg)`,
+          }}
+        />
+      ))}
+      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[0.45rem] font-black text-[#0a3a14]">
+        $
+      </span>
+    </div>
+  )
+}
+
+/** Flying football for Football Huck. */
+export function FootballDot() {
+  return (
+    <div
+      className="relative h-4 w-6 rounded-full"
+      style={{
+        background: 'radial-gradient(circle at 30% 30%, #c48a4a, #6a3a18 70%, #3a1a08)',
+        boxShadow: '0 1px 2px #000a',
+      }}
+      aria-hidden
+    >
+      <div className="absolute inset-x-[20%] top-1/2 h-[1px] -translate-y-1/2 bg-white/80" />
+      <div className="absolute left-1/2 top-[20%] h-[60%] w-[1px] -translate-x-1/2 bg-white/70" />
     </div>
   )
 }
@@ -522,6 +565,60 @@ export function CannonBall() {
       aria-hidden
     >
       <div className="absolute left-[22%] top-[18%] h-1 w-1 rounded-full bg-white/35" />
+    </div>
+  )
+}
+
+/** Cash Gun impact — green money burst. */
+export function CashSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 720)
+  const scale = 0.45 + p * 2.2
+  const opacity = 1 - p * 0.9
+  return (
+    <div
+      className="relative h-14 w-14"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #b8ffc8 0%, #3ecf6aaa 40%, #1a7a3a55 55%, transparent 70%)',
+        }}
+      />
+      {[0, 40, 80, 120, 160, 200, 240, 280, 320].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-2 w-3 -translate-x-1/2 -translate-y-1/2 rounded-[1px]"
+          style={{
+            background: 'linear-gradient(180deg,#9dffb0,#2a9a4a)',
+            transform: `rotate(${deg}deg) translateY(-${5 + p * 9}px)`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Football spell impact — dusty turf burst. */
+export function FootballSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 900)
+  const scale = 0.5 + p * 3.2
+  const opacity = 1 - p * 0.92
+  return (
+    <div
+      className="relative h-16 w-16"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #e8c090 0%, #8a5a28aa 40%, #3a201055 55%, transparent 70%)',
+        }}
+      />
     </div>
   )
 }

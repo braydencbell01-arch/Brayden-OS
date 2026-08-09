@@ -95,7 +95,7 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Troop cutout on solid blue — full body, no white studio glow from card PNGs.
+    // Full figure on solid blue — leave room under feet for the name band.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
@@ -104,8 +104,8 @@ export function PhotoTroop({
         <img
           src={troopSrc || cardSrc}
           alt={alt}
-          className="h-full w-full object-contain px-[8%] pb-[14%] pt-[10%]"
-          style={{ objectPosition: '50% 100%' }}
+          className="h-full w-full object-contain px-[3%] pb-[20%] pt-[4%]"
+          style={{ objectPosition: '50% 92%' }}
           draggable={false}
         />
       </div>

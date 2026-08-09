@@ -259,7 +259,7 @@ export function CharactersScreen() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-3">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24 pt-3">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <input
             value={query}
