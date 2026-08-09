@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode } from 'react'
+import { forwardRef, useMemo, type ReactNode } from 'react'
 import {
   ARENA_COLS,
   ARENA_ROWS,
@@ -148,6 +148,13 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
   ref,
 ) {
   const hpMap = new Map(towers.map((t) => [t.id, t]))
+  const destroyedIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const t of towers) {
+      if (t.hp <= 0) ids.add(t.id)
+    }
+    return ids
+  }, [towers])
 
   return (
     <div
@@ -175,34 +182,13 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
             : undefined
         }
       >
-        <ClashMap />
+        <ClashMap destroyedIds={destroyedIds} />
 
         {TOWERS.map((t) => {
           const th = hpMap.get(t.id)
+          if (!th || th.hp <= 0) return null
           const style = towerStyle(t.col, t.row, t.w, t.h)
           const z = Math.round(t.row + t.h)
-          if (!th || th.hp <= 0) {
-            return (
-              <div
-                key={t.id}
-                className="pointer-events-none absolute"
-                style={{ ...style, zIndex: 4 + z }}
-              >
-                <div
-                  className="absolute inset-x-[10%] bottom-[5%] top-[20%]"
-                  style={{
-                    transform: `rotateX(${-ARENA_TILT_DEG}deg)`,
-                    transformOrigin: '50% 100%',
-                    background:
-                      'linear-gradient(180deg,#6a655c 0%,#3a3830 55%,#1a1814 100%)',
-                    boxShadow: '0 4px 8px #00000055',
-                    opacity: 0.9,
-                    borderRadius: 4,
-                  }}
-                />
-              </div>
-            )
-          }
           const pct = th.maxHp > 0 ? th.hp / th.maxHp : 0
           const enemy = t.side === 'enemy'
           return (

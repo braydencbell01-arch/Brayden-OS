@@ -1,16 +1,31 @@
 /**
- * Clash Royale–style outdoor arena (grass, dirt lanes, 3D river/bridges/towers/stands).
+ * Clash Royale–style outdoor arena (textured grass, plank paths, river, bridges, towers).
  * Lane mids match bridge cols 23 & 77; path width matches bridge footprint.
  */
-export function ClashMap() {
+
+type Props = {
+  /** Tower ids with hp <= 0 — shown as rubble instead of intact towers. */
+  destroyedIds?: ReadonlySet<string>
+}
+
+const TOWER_PLACES = [
+  { id: 'enemy-king', x: 180, y: 62, king: true, enemy: true },
+  { id: 'enemy-left', x: null as number | null, y: 128, king: false, enemy: true, lane: 'left' as const },
+  { id: 'enemy-right', x: null as number | null, y: 128, king: false, enemy: true, lane: 'right' as const },
+  { id: 'ally-king', x: 180, y: 555, king: true, enemy: false },
+  { id: 'ally-left', x: null as number | null, y: 508, king: false, enemy: false, lane: 'left' as const },
+  { id: 'ally-right', x: null as number | null, y: 508, king: false, enemy: false, lane: 'right' as const },
+] as const
+
+export function ClashMap({ destroyedIds }: Props) {
   const fieldX = 0
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
   const rightLane = fieldX + (77 / 100) * fieldW
-  /** Continuous wooden lanes — same width as bridges (CR plank paths). */
   const pathW = (7.5 / 100) * fieldW
   const riverY = 312
   const riverH = 26
+  const dead = destroyedIds ?? new Set<string>()
 
   return (
     <svg
@@ -21,7 +36,6 @@ export function ClashMap() {
     >
       <defs>
         <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-          {/* Far (top) darker / cooler; near (bottom) brighter — reads under tilt */}
           <stop offset="0%" stopColor="#2a6e34" />
           <stop offset="35%" stopColor="#3a9a45" />
           <stop offset="70%" stopColor="#4cb356" />
@@ -75,6 +89,77 @@ export function ClashMap() {
           <stop offset="0%" stopColor="#7a8598" />
           <stop offset="100%" stopColor="#1a2030" />
         </linearGradient>
+        <linearGradient id="rubbleGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#b8b0a0" />
+          <stop offset="55%" stopColor="#6a6558" />
+          <stop offset="100%" stopColor="#2a2820" />
+        </linearGradient>
+
+        {/* ——— Terrain textures ——— */}
+        <filter id="grassNoise" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n" />
+          <feColorMatrix
+            in="n"
+            type="matrix"
+            values="0 0 0 0 0.15
+                    0 0 0 0 0.45
+                    0 0 0 0 0.18
+                    0 0 0 0.35 0"
+            result="tint"
+          />
+        </filter>
+        <pattern id="grassBlades" width="18" height="14" patternUnits="userSpaceOnUse">
+          <path d="M2 14 Q3 6 2 2" fill="none" stroke="#2e7d32" strokeWidth="0.7" opacity="0.35" />
+          <path d="M6 14 Q8 5 7 1" fill="none" stroke="#66bb6a" strokeWidth="0.65" opacity="0.3" />
+          <path d="M11 14 Q10 7 12 3" fill="none" stroke="#1b5e20" strokeWidth="0.75" opacity="0.28" />
+          <path d="M15 14 Q16 8 15 4" fill="none" stroke="#81c784" strokeWidth="0.55" opacity="0.25" />
+          <circle cx="4" cy="11" r="0.7" fill="#c9a227" opacity="0.12" />
+          <circle cx="13" cy="9" r="0.55" fill="#fff8e0" opacity="0.1" />
+        </pattern>
+        <pattern id="turfPatches" width="48" height="40" patternUnits="userSpaceOnUse">
+          <ellipse cx="12" cy="18" rx="10" ry="6" fill="#2e7d32" opacity="0.12" />
+          <ellipse cx="34" cy="10" rx="9" ry="5" fill="#1b5e20" opacity="0.1" />
+          <ellipse cx="28" cy="30" rx="11" ry="5" fill="#66bb6a" opacity="0.08" />
+        </pattern>
+        <pattern id="woodGrain" width="8" height="22" patternUnits="userSpaceOnUse">
+          <rect width="8" height="22" fill="#a07038" opacity="0" />
+          <path d="M1 0 Q3 8 1.5 14 T2 22" fill="none" stroke="#5a3418" strokeWidth="0.55" opacity="0.35" />
+          <path d="M5 0 Q4 10 5.5 16 T5 22" fill="none" stroke="#3a2010" strokeWidth="0.45" opacity="0.28" />
+          <line x1="0" y1="7" x2="8" y2="7" stroke="#2a1408" strokeWidth="0.4" opacity="0.2" />
+          <line x1="0" y1="16" x2="8" y2="16" stroke="#2a1408" strokeWidth="0.35" opacity="0.18" />
+        </pattern>
+        <pattern id="plankWear" width="12" height="12" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="4" r="0.8" fill="#3a2010" opacity="0.2" />
+          <circle cx="9" cy="9" r="0.6" fill="#fff6d0" opacity="0.12" />
+          <circle cx="7" cy="2" r="0.5" fill="#2a1408" opacity="0.15" />
+        </pattern>
+        <pattern id="waterRipple" width="40" height="16" patternUnits="userSpaceOnUse">
+          <path
+            d="M0 8 Q10 4 20 8 T40 8"
+            fill="none"
+            stroke="#e8f6ff"
+            strokeWidth="1.1"
+            opacity="0.35"
+          />
+          <path
+            d="M0 12 Q10 9 20 12 T40 12"
+            fill="none"
+            stroke="#a8d8ff"
+            strokeWidth="0.7"
+            opacity="0.22"
+          />
+        </pattern>
+        <filter id="waterNoise" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="turbulence" baseFrequency="0.045 0.12" numOctaves="2" seed="3" result="w" />
+          <feColorMatrix
+            in="w"
+            type="matrix"
+            values="0 0 0 0 0.15
+                    0 0 0 0 0.45
+                    0 0 0 0 0.75
+                    0 0 0 0.28 0"
+          />
+        </filter>
         <filter id="softShadow" x="-35%" y="-35%" width="170%" height="170%">
           <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.4" />
         </filter>
@@ -83,7 +168,11 @@ export function ClashMap() {
         </filter>
       </defs>
 
+      {/* Grass base + texture layers */}
       <rect width="360" height="640" fill="url(#grassGrad)" />
+      <rect width="360" height="640" filter="url(#grassNoise)" opacity="0.55" />
+      <rect width="360" height="640" fill="url(#turfPatches)" />
+      <rect width="360" height="640" fill="url(#grassBlades)" />
       <rect width="360" height="640" fill="url(#depthFog)" />
       {Array.from({ length: 16 }, (_, i) => (
         <rect
@@ -93,13 +182,11 @@ export function ClashMap() {
           width={fieldW}
           height="18"
           fill="#ffffff"
-          opacity={i % 2 === 0 ? 0.04 + i * 0.002 : 0.015}
+          opacity={i % 2 === 0 ? 0.035 + i * 0.0015 : 0.012}
         />
       ))}
-      {/* Soft side vignette instead of bleachers */}
       <rect width="18" height="640" fill="#000000" opacity="0.12" />
       <rect x="342" width="18" height="640" fill="#000000" opacity="0.12" />
-      {/* Near-edge ground lip for 3/4 depth */}
       <ellipse
         cx={180}
         cy={628}
@@ -111,7 +198,6 @@ export function ClashMap() {
 
       <DirtLane cx={leftLane} w={pathW} />
       <DirtLane cx={rightLane} w={pathW} />
-      {/* Short cross-links into king pads — same wood as lanes */}
       <path
         d={`M${leftLane} 70 H${rightLane}
             M${leftLane} 560 H${rightLane}`}
@@ -121,12 +207,37 @@ export function ClashMap() {
         strokeLinecap="round"
         opacity="0.9"
       />
+      <path
+        d={`M${leftLane} 70 H${rightLane}
+            M${leftLane} 560 H${rightLane}`}
+        fill="none"
+        stroke="url(#woodGrain)"
+        strokeWidth={pathW * 0.4}
+        strokeLinecap="round"
+        opacity="0.55"
+      />
 
-      {/* Thin 3D river */}
+      {/* River with water texture */}
       <g>
         <rect x={fieldX} y={riverY - 5} width={fieldW} height="6" fill="url(#bankTop)" />
         <rect x={fieldX} y={riverY - 5} width={fieldW} height="2" fill="#a8e070" opacity="0.4" />
         <rect x={fieldX} y={riverY} width={fieldW} height={riverH} fill="url(#riverBase)" />
+        <rect
+          x={fieldX}
+          y={riverY}
+          width={fieldW}
+          height={riverH}
+          filter="url(#waterNoise)"
+          opacity="0.65"
+        />
+        <rect
+          x={fieldX}
+          y={riverY}
+          width={fieldW}
+          height={riverH}
+          fill="url(#waterRipple)"
+          opacity="0.55"
+        />
         <rect x={fieldX} y={riverY} width={fieldW} height="6" fill="#ffffff28" />
         <rect x={fieldX} y={riverY + riverH - 5} width={fieldW} height="5" fill="#04182866" />
         <rect x={fieldX} y={riverY + riverH} width={fieldW} height="7" fill="#2a5018" />
@@ -138,7 +249,7 @@ export function ClashMap() {
             fill="none"
             stroke="#e8f6ff"
             strokeWidth="1.2"
-            opacity="0.4"
+            opacity="0.45"
           >
             <animate
               attributeName="d"
@@ -157,13 +268,29 @@ export function ClashMap() {
       <Bridge3D cx={leftLane} w={pathW} riverY={riverY} riverH={riverH} />
       <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
-      {/* Pull enemy king slightly in so both kings stay fully on-screen */}
-      <CrownTower x={180} y={62} king enemy />
-      <CrownTower x={leftLane} y={128} king={false} enemy />
-      <CrownTower x={rightLane} y={128} king={false} enemy />
-      <CrownTower x={180} y={555} king enemy={false} />
-      <CrownTower x={leftLane} y={508} king={false} enemy={false} />
-      <CrownTower x={rightLane} y={508} king={false} enemy={false} />
+      {TOWER_PLACES.map((place) => {
+        const x =
+          place.x ??
+          (place.lane === 'left' ? leftLane : rightLane)
+        const destroyed = dead.has(place.id)
+        return destroyed ? (
+          <CrumbledTower
+            key={place.id}
+            x={x}
+            y={place.y}
+            king={place.king}
+            enemy={place.enemy}
+          />
+        ) : (
+          <CrownTower
+            key={place.id}
+            x={x}
+            y={place.y}
+            king={place.king}
+            enemy={place.enemy}
+          />
+        )
+      })}
 
       <rect
         x="1"
@@ -188,9 +315,10 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
   const plankN = Math.max(18, Math.round(h / 14))
   return (
     <g>
-      {/* Full-length wooden plank lane — same look + width as the bridge */}
       <rect x={x} y={top} width={w} height={h} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="0.8" />
-      <rect x={x + w * 0.36} y={top} width={w * 0.28} height={h} fill="#fff6d0" opacity="0.14" />
+      <rect x={x} y={top} width={w} height={h} fill="url(#woodGrain)" opacity="0.55" />
+      <rect x={x} y={top} width={w} height={h} fill="url(#plankWear)" opacity="0.7" />
+      <rect x={x + w * 0.36} y={top} width={w * 0.28} height={h} fill="#fff6d0" opacity="0.12" />
       {Array.from({ length: plankN }, (_, i) => (
         <line
           key={i}
@@ -200,7 +328,7 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
           y2={top + 2 + i * (h / plankN)}
           stroke="#3a2010"
           strokeWidth="0.7"
-          opacity="0.35"
+          opacity="0.4"
         />
       ))}
       <rect x={x} y={top} width="1.5" height={h} fill="#5a3418" opacity="0.4" />
@@ -220,7 +348,6 @@ function Bridge3D({
   riverY: number
   riverH: number
 }) {
-  // Exact same width as DirtLane — planks sit on the continuous lane.
   const x = cx - w / 2
   const top = riverY - 2
   const h = riverH + 4
@@ -229,6 +356,8 @@ function Bridge3D({
     <g filter="url(#softShadow)">
       <ellipse cx={cx} cy={riverY + riverH * 0.55} rx={w * 0.42} ry="3.2" fill="#041828" opacity="0.42" />
       <rect x={x} y={top + 2} width={w} height={h - 5} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="0.9" />
+      <rect x={x} y={top + 2} width={w} height={h - 5} fill="url(#woodGrain)" opacity="0.6" />
+      <rect x={x} y={top + 2} width={w} height={h - 5} fill="url(#plankWear)" opacity="0.65" />
       <path d={`M${x} ${top + h - 4} h${w} l0.8 2.2 h-${w + 1.6} z`} fill="url(#woodSide)" />
       {Array.from({ length: plankN }, (_, i) => (
         <line
@@ -239,8 +368,15 @@ function Bridge3D({
           y2={top + h - 5}
           stroke="#3a2010"
           strokeWidth="0.75"
-          opacity="0.4"
+          opacity="0.45"
         />
+      ))}
+      {/* Nail heads */}
+      {[0.2, 0.5, 0.8].map((t) => (
+        <g key={t}>
+          <circle cx={x + w * t} cy={top + 5} r="0.9" fill="#3a2010" opacity="0.55" />
+          <circle cx={x + w * t} cy={top + h - 7} r="0.9" fill="#3a2010" opacity="0.55" />
+        </g>
       ))}
       <rect x={x} y={top + 1.5} width={w} height="2" rx="0.3" fill="#6a4220" />
       <rect x={x} y={top + h - 5.5} width={w} height="2" rx="0.3" fill="#6a4220" />
@@ -277,7 +413,6 @@ function CrownTower({
           strokeWidth="0.6"
         />
       ))}
-      {/* 3D body */}
       <path d="M20 -22 L32 -14 L32 18 L20 10 Z" fill="url(#stoneSide)" stroke="#5a5448" strokeWidth="0.9" />
       <rect x="-22" y="-24" width="42" height="36" fill="url(#stoneFace)" stroke="#7a7468" strokeWidth="1.4" />
       <path
@@ -320,7 +455,6 @@ function CrownTower({
           <path d="M-4 -6 L-1.5 -9.5 L0 -6 L1.5 -9.5 L4 -6 Z" fill="#f5d76e" />
         </g>
       ) : (
-        /* Archers on princess towers */
         <g transform="translate(-1 -50)">
           <g transform="translate(-6 0)">
             <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
@@ -334,6 +468,94 @@ function CrownTower({
           </g>
         </g>
       )}
+    </g>
+  )
+}
+
+/** Visibly crumbled tower ruin — plays a short collapse when mounted. */
+function CrumbledTower({
+  x,
+  y,
+  king,
+  enemy,
+}: {
+  x: number
+  y: number
+  king: boolean
+  enemy: boolean
+}) {
+  const s = king ? 0.78 : 0.52
+  const banner = enemy ? '#e53935' : '#1e88e5'
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`} filter="url(#towerShade)">
+      {/* Dust burst on appear */}
+      <g opacity="0.85">
+        {[
+          { cx: -8, cy: -10, r: 14 },
+          { cx: 10, cy: -6, r: 12 },
+          { cx: 0, cy: -18, r: 16 },
+        ].map((c, i) => (
+          <circle key={i} cx={c.cx} cy={c.cy} r={c.r} fill="#cfc6b6">
+            <animate attributeName="r" from={String(c.r * 0.3)} to={String(c.r * 1.6)} dur="0.55s" fill="freeze" />
+            <animate attributeName="opacity" from="0.7" to="0" dur="0.7s" fill="freeze" />
+          </circle>
+        ))}
+      </g>
+
+      {/* Scorched pad */}
+      <ellipse cx="0" cy="36" rx="36" ry="12" fill="#00000055" />
+      <ellipse cx="0" cy="30" rx="30" ry="10" fill="#2a2824" stroke="#1a1814" strokeWidth="1" />
+      <path d="M-28 28 L-20 14 L18 16 L26 28 Z" fill="url(#rubbleGrad)" stroke="#1a1814" strokeWidth="1" />
+
+      {/* Collapsed wall chunks */}
+      <g>
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          from="0 -28"
+          to="0 0"
+          dur="0.45s"
+          fill="freeze"
+        />
+        <rect x="-18" y="4" width="16" height="12" rx="1" fill="#a8a090" stroke="#5a5448" strokeWidth="0.8" transform="rotate(-18 -10 10)" />
+        <rect x="2" y="6" width="18" height="11" rx="1" fill="#cfc6b6" stroke="#7a7468" strokeWidth="0.8" transform="rotate(14 11 11)" />
+        <rect x="-8" y="14" width="14" height="9" rx="1" fill="#8a8274" stroke="#5a5448" strokeWidth="0.7" transform="rotate(-6 -1 18)" />
+        <polygon points="-22,22 -14,8 -6,24" fill="#6a6558" stroke="#3a3830" strokeWidth="0.6" />
+        <polygon points="8,20 18,6 26,22" fill="#9a9488" stroke="#5a5448" strokeWidth="0.6" />
+        {/* Broken battlement */}
+        <rect x="-16" y="-2" width="8" height="10" fill="#d8d2c4" stroke="#7a7468" strokeWidth="0.7" transform="rotate(-32 -12 3)" />
+        <rect x="6" y="0" width="7" height="9" fill="#b8b2a4" stroke="#7a7468" strokeWidth="0.7" transform="rotate(28 10 4)" />
+        {/* Torn banner scrap */}
+        <path
+          d="M-20 8 Q-16 14 -18 22 L-12 20 Q-10 12 -14 6 Z"
+          fill={banner}
+          opacity="0.75"
+        />
+        {/* Crown / cannon debris */}
+        <circle cx="4" cy="18" r="5" fill="#f0d060" stroke="#b8860b" strokeWidth="0.8" opacity="0.85" />
+        <rect x="-4" y="10" width="9" height="5" rx="1" fill="#3a4558" transform="rotate(-40 0 12)" />
+      </g>
+
+      {/* Settled rubble scatter */}
+      {[
+        [-24, 26, 3.2],
+        [-12, 28, 2.4],
+        [0, 30, 2.8],
+        [14, 27, 3.5],
+        [22, 29, 2.2],
+        [-6, 24, 1.8],
+        [8, 25, 2],
+      ].map(([cx, cy, r], i) => (
+        <circle
+          key={i}
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill={i % 2 === 0 ? '#8a8274' : '#cfc6b6'}
+          stroke="#3a3830"
+          strokeWidth="0.4"
+        />
+      ))}
     </g>
   )
 }
