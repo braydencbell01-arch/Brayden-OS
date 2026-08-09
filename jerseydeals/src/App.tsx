@@ -604,9 +604,12 @@ function ProductLink({
   const kit = kitType(item)
   const onSale = isSaleListing(item)
   const size = listingSize(item)
-  const muted = tone === 'dark' ? 'text-white/75' : 'text-muted'
-  const titleTone = tone === 'dark' ? 'text-white/95' : 'text-navy'
-  const accent = tone === 'dark' ? 'text-crimson-hot' : 'text-crimson'
+  const muted = tone === 'dark' ? 'text-white/80' : 'text-muted'
+  const titleTone = tone === 'dark' ? 'text-white' : 'text-navy'
+  const accent = tone === 'dark' ? 'text-[#ffd56a]' : 'text-crimson'
+  /** High-contrast price — never dark orange on navy (was unreadable). */
+  const priceTone = tone === 'dark' ? 'text-white' : 'text-navy'
+  const compareTone = tone === 'dark' ? 'text-white/55' : 'text-muted'
   const used = /used|pre-?owned|worn/i.test(condition)
   const infoBits = [
     kit !== 'Other' ? kit : null,
@@ -645,7 +648,7 @@ function ProductLink({
         >
           {infoLine}
         </p>
-        <div className="mt-1 flex items-end justify-between gap-1.5">
+        <div className="mt-1.5 flex items-end justify-between gap-1.5">
           <span className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <button
               type="button"
@@ -669,20 +672,14 @@ function ProductLink({
           </span>
           <span className="flex shrink-0 flex-col items-end gap-0.5 leading-none">
             {compareAt != null ? (
-              <span className="font-brand text-[0.58rem] font-semibold tracking-wide text-[#e85d04] line-through sm:text-[0.65rem]">
+              <span
+                className={`font-brand text-[0.58rem] font-semibold tracking-wide line-through sm:text-[0.65rem] ${compareTone}`}
+              >
                 {formatPrice(compareAt, item.currency)}
               </span>
             ) : null}
             <span
-              className={`font-brand text-[0.78rem] font-bold tracking-wide sm:text-sm ${
-                tone === 'dark'
-                  ? compareAt != null
-                    ? 'text-white'
-                    : 'text-[#e85d04]'
-                  : compareAt != null
-                    ? 'text-navy'
-                    : 'text-[#e85d04]'
-              }`}
+              className={`font-brand text-[0.95rem] font-bold tracking-wide sm:text-[1.05rem] ${priceTone}`}
             >
               {formatPrice(item.price, item.currency)}
             </span>
@@ -1964,7 +1961,7 @@ export default function App() {
                   Hi, welcome to JerseyDeals. We sell top quality jerseys from top quality brands, for the lowest
                   prices you’ll find! EVERYTHING we sell is NEW and AUTHENTIC!
                 </p>
-                <div className="mt-6 flex w-full max-w-md flex-col items-center gap-3 sm:mt-8 sm:max-w-lg">
+                <div className="mt-6 flex w-full max-w-md flex-col items-stretch gap-3 sm:mt-8 sm:max-w-lg">
                   <motion.button
                     type="button"
                     onClick={() => {
@@ -1973,7 +1970,7 @@ export default function App() {
                     }}
                     whileHover={reduce ? undefined : { scale: 1.02 }}
                     whileTap={reduce ? undefined : { scale: 0.98 }}
-                    className="inline-flex w-full items-center justify-center bg-navy px-8 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] text-cream shadow-[0_8px_24px_rgba(0,0,0,0.25)] transition hover:bg-navy-deep"
+                    className="inline-flex w-full items-center justify-center border-2 border-white bg-white px-8 py-4 font-brand text-sm font-bold uppercase tracking-[0.14em] text-navy shadow-[0_10px_28px_rgba(0,0,0,0.28)] transition hover:bg-cream"
                   >
                     Shop Jersey Deals
                   </motion.button>
@@ -1983,7 +1980,7 @@ export default function App() {
                       track('cta_click', { place: 'hero_shop_all' })
                       goInventory({ reset: true })
                     }}
-                    className="font-brand text-sm font-semibold uppercase tracking-[0.14em] text-cream underline decoration-cream/70 underline-offset-4 transition hover:decoration-cream"
+                    className="inline-flex w-full items-center justify-center border border-white/70 bg-transparent px-8 py-3 font-brand text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10"
                   >
                     Shop all gear
                   </button>
@@ -2442,6 +2439,7 @@ export default function App() {
                     favoriteSet={favoriteSet}
                     reduce={reduce}
                     delay={i * 0.03}
+                    tone="dark"
                     size="compact"
                     onAddToCart={handleAddToCart}
                     onQuickView={handleQuickView}
@@ -2661,7 +2659,17 @@ export default function App() {
               </motion.div>
               <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
                 {visibleSalePicks.map((item, i) => (
-                  <ProductLink key={item.id} item={item} favoriteSet={favoriteSet} reduce={reduce} delay={i * 0.05} onAddToCart={handleAddToCart} onQuickView={handleQuickView} onBuyNow={handleBuyNow} />
+                  <ProductLink
+                    key={item.id}
+                    item={item}
+                    favoriteSet={favoriteSet}
+                    reduce={reduce}
+                    delay={i * 0.05}
+                    tone="dark"
+                    onAddToCart={handleAddToCart}
+                    onQuickView={handleQuickView}
+                    onBuyNow={handleBuyNow}
+                  />
                 ))}
               </ul>
               {salePicksShown < salePicks.length ? (
