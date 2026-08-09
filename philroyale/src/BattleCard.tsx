@@ -62,8 +62,6 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
   }
 
   const frame = RARITY_FRAME[character.rarity]
-  const art = `hsl(${character.hue} 55% 38%)`
-  const artLit = `hsl(${character.hue} 65% 52%)`
   const legendary = character.rarity === 'legendary'
   const afford =
     elixir == null ? 1 : Math.max(0, Math.min(1, elixir / Math.max(1, character.elixir)))
@@ -89,7 +87,9 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
         className="absolute inset-[3px] flex flex-col overflow-hidden"
         style={{
           borderRadius: legendary ? '0.45rem' : '0.4rem',
-          background: `linear-gradient(165deg, ${artLit} 0%, ${art} 55%, #1a1410 130%)`,
+          /* Match card art: clean Clash-style blue portrait field */
+          background:
+            'radial-gradient(ellipse 85% 70% at 50% 42%, #2a8fd4 0%, #0a5cb0 55%, #003e8a 100%)',
           boxShadow: 'inset 0 1px 0 #ffffff33',
         }}
       >

@@ -49,7 +49,7 @@ export function PhotoTroop({
   anim,
   facing,
   portrait,
-  objectPos = '50% 20%',
+  objectPos: _objectPos = '50% 20%',
   enraged,
   gait = 'run',
   attack = 'none',
@@ -93,15 +93,16 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
+    // Card art is battlefield troop on blue + tower pedestal — show most of the body.
     return (
       <img
         src={cardSrc}
         alt={alt}
         className="h-full w-full object-cover"
         style={{
-          objectPosition: objectPos,
-          transform: 'scale(1.5)',
-          transformOrigin: objectPos,
+          objectPosition: '50% 42%',
+          transform: 'scale(1.08)',
+          transformOrigin: '50% 42%',
         }}
         draggable={false}
       />
