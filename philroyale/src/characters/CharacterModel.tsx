@@ -47,9 +47,11 @@ export function CharacterModel({
   } else if (charId === 'lynne') {
     model = <LynneModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dan') {
-    model = <DanModel anim={anim} facing={facing} portrait={portrait} />
-  } else if (charId === 'pete') {
+    // Pete — Death Hug (PeteModel art)
     model = <PeteModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'pete') {
+    // Chuck — human shield (DanModel art)
+    model = <DanModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'beans') {
     model = <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'finley') {

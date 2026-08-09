@@ -54,11 +54,11 @@ export function UnitToken({
               ? '4 / 4.35'
               : charId === 'jeremy'
                 ? '3 / 6.1'
-                : charId === 'dan'
+                : charId === 'pete'
                   ? '3 / 5.8'
                   : charId === 'mike'
                     ? '3 / 5.45'
-                    : charId === 'pete'
+                    : charId === 'dan'
                       ? '3 / 4.65'
                       : charId === 'kathie'
                         ? '3 / 4.25'
@@ -526,7 +526,7 @@ export function CannonBall() {
   )
 }
 
-/** Ice Cream spell impact — creamy splash across the blast radius. */
+/** Sundae spell impact — creamy splash across the blast radius. */
 export function IceCreamSplat({ ageMs }: { ageMs: number }) {
   const p = Math.min(1, ageMs / 900)
   const scale = 0.4 + p * 2.8

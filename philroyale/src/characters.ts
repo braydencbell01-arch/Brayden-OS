@@ -155,30 +155,22 @@ export const KATHIE: CharacterDef = {
   ],
 }
 
+/** Chuck — human shield (kit swapped with Pete; keeps 7 elixir). */
 export const PETE: CharacterDef = {
   id: 'pete',
   name: 'Chuck',
   initial: 'C',
   pronoun: 'he',
-  height: "5'8\"",
+  height: "6'2\"",
   rarity: 'epic',
   elixir: 7,
-  hp: 2000,
-  moveSpeed: 1.5,
-  attackDelaySec: 3,
-  hue: 25,
-  blurb: 'Very old — limps into range, then Death Hug: giant arms yank foes in close.',
-  attacks: [
-    {
-      id: 'deathHug',
-      name: 'Death Hug',
-      range: 10,
-      damage: 500,
-      rootWhileAttacking: true,
-      pullToRange: 1,
-      kind: 'hug',
-    },
-  ],
+  hp: 3000,
+  moveSpeed: 4,
+  attackDelaySec: 0,
+  hue: 220,
+  blurb: 'Human shield — no attack. On death, drops a purple rage heart for 3s.',
+  attacks: [],
+  dropsRageHeart: true,
 }
 
 export const BEANS: CharacterDef = {
@@ -363,21 +355,31 @@ export const LYNNE: CharacterDef = {
   ],
 }
 
+/** Pete — Death Hug (kit swapped with Chuck; keeps 5 elixir). */
 export const DAN: CharacterDef = {
   id: 'dan',
   name: 'Pete',
   initial: 'Pe',
   pronoun: 'he',
-  height: "6'2\"",
+  height: "5'8\"",
   rarity: 'epic',
   elixir: 5,
-  hp: 3000,
-  moveSpeed: 4,
-  attackDelaySec: 0,
-  hue: 220,
-  blurb: 'Human shield — no attack. On death, drops a purple rage heart for 3s.',
-  attacks: [],
-  dropsRageHeart: true,
+  hp: 2000,
+  moveSpeed: 1.5,
+  attackDelaySec: 3,
+  hue: 25,
+  blurb: 'Very old — limps into range, then Death Hug: giant arms yank foes in close.',
+  attacks: [
+    {
+      id: 'deathHug',
+      name: 'Death Hug',
+      range: 10,
+      damage: 500,
+      rootWhileAttacking: true,
+      pullToRange: 1,
+      kind: 'hug',
+    },
+  ],
 }
 
 /** Spawns Shay / Beans / Finley on place, every 10s, and on death. */
@@ -401,11 +403,11 @@ export const DOG_HUT: CharacterDef = {
   attacks: [],
 }
 
-/** First spell — ice cream cone from your king, splat AoE. */
+/** First spell — sundae from your king, splat AoE. */
 export const ICE_CREAM: CharacterDef = {
   id: 'iceCream',
-  name: 'Ice Cream',
-  initial: 'I',
+  name: 'Sundae',
+  initial: 'S',
   pronoun: 'it',
   height: "1'0\"",
   rarity: 'common',
@@ -415,7 +417,7 @@ export const ICE_CREAM: CharacterDef = {
   attackDelaySec: 0,
   hue: 330,
   cardKind: 'spell',
-  blurb: 'Spell — throw an ice cream cone anywhere. 325 damage in a 10-block radius.',
+  blurb: 'Spell — throw a sundae anywhere. 325 damage in a 10-block radius.',
   spellDamage: 325,
   spellRadius: 10,
   attacks: [],
@@ -450,6 +452,15 @@ export const DEFAULT_DECK = [
   BEANS.id,
   FINLEY.id,
 ]
+
+export function cardKindOf(c: CharacterDef): CardKind {
+  return c.cardKind ?? 'troop'
+}
+
+export function cardKindLabel(c: CharacterDef): string {
+  const kind = cardKindOf(c)
+  return kind === 'building' ? '(building)' : kind === 'spell' ? '(spell)' : '(troop)'
+}
 
 export function isBuildingCard(c: CharacterDef | undefined): boolean {
   return c?.cardKind === 'building'

@@ -1,5 +1,6 @@
 import type { CharacterDef, Rarity } from './characters'
 import { RARITY_LABEL } from './characters'
+import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import { CharacterModel } from './characters/CharacterModel'
 
 type Props = {
@@ -79,8 +80,7 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
       <div
         className="absolute inset-[3px] flex flex-col overflow-hidden rounded-[0.4rem]"
         style={{
-          background:
-            'radial-gradient(ellipse 85% 70% at 50% 42%, #2a8fd4 0%, #0a5cb0 55%, #003e8a 100%)',
+          background: CARD_PORTRAIT_BG,
           boxShadow: 'inset 0 1px 0 #ffffff33',
         }}
       >

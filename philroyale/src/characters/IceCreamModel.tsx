@@ -1,4 +1,5 @@
 import type { CharacterAnim } from './PhilModel'
+import { CARD_PORTRAIT_BG } from './cardArt'
 
 const CARD = `${import.meta.env.BASE_URL}characters/ice-cream-card.png`
 
@@ -8,13 +9,16 @@ type Props = {
   portrait?: boolean
 }
 
-/** Spell card art — cone portrait for the hand / collection. */
+/** Spell card art — sundae portrait for the hand / collection. */
 export function IceCreamModel({ portrait }: Props) {
   return (
-    <div className="relative flex h-full w-full items-center justify-center">
+    <div
+      className="relative flex h-full w-full items-center justify-center overflow-hidden"
+      style={portrait ? { background: CARD_PORTRAIT_BG } : undefined}
+    >
       <img
         src={CARD}
-        alt="Ice Cream"
+        alt="Sundae"
         draggable={false}
         className="pointer-events-none h-full w-full object-contain"
         style={{

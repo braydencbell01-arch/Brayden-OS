@@ -1,4 +1,5 @@
 import type { CharacterAnim } from './PhilModel'
+import { CARD_PORTRAIT_BG } from './cardArt'
 
 const HUT = `${import.meta.env.BASE_URL}characters/dog-hut-troop.png`
 const HUT_CARD = `${import.meta.env.BASE_URL}characters/dog-hut-card.png`
@@ -13,7 +14,10 @@ type Props = {
 export function DogHutModel({ portrait }: Props) {
   const src = portrait ? HUT_CARD : HUT
   return (
-    <div className="relative flex h-full w-full items-end justify-center">
+    <div
+      className="relative flex h-full w-full items-end justify-center overflow-hidden"
+      style={portrait ? { background: CARD_PORTRAIT_BG } : undefined}
+    >
       <img
         src={src}
         alt="Dog Hut"

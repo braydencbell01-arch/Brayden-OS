@@ -12,14 +12,14 @@ type Props = {
   enraged?: boolean
 }
 
-/** Pete — walking human shield; no attack. */
+/** Chuck — walking human shield; no attack. */
 export function DanModel({ anim, facing, portrait, enraged }: Props) {
   return (
     <PhotoTroop
       cardSrc={DAN_CARD}
       troopSrc={DAN_TROOP}
       troopBackSrc={DAN_BACK}
-      alt="Dan"
+      alt="Chuck"
       anim={anim}
       facing={facing}
       portrait={portrait}

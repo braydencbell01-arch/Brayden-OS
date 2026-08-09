@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { motion } from 'framer-motion'
+import { CARD_PORTRAIT_BG } from './cardArt'
 import type { CharacterAnim } from './PhilModel'
 
 type Props = {
@@ -94,17 +95,14 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Full card / troop art — never clip feet or paws.
+    // Troop cutout on the shared blue — same bg for every card.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
-        style={{
-          background:
-            'radial-gradient(ellipse 85% 70% at 50% 42%, #2a8fd4 0%, #0a5cb0 55%, #003e8a 100%)',
-        }}
+        style={{ background: CARD_PORTRAIT_BG }}
       >
         <img
-          src={cardSrc || troopSrc}
+          src={troopSrc || cardSrc}
           alt={alt}
           className="h-full w-full object-contain px-[4%] pb-[10%] pt-[6%]"
           style={{ objectPosition: objectPos }}

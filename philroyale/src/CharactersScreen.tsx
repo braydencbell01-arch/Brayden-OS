@@ -4,6 +4,7 @@ import {
   DECK_SIZE,
   RARITY_LABEL,
   RARITY_RANK,
+  cardKindLabel,
   getCharacter,
   type CharacterDef,
   type Rarity,
@@ -364,8 +365,7 @@ function CardProfile({
   const cost = upgradeCost
   const maxed = level >= MAX_CARD_LEVEL
   const hpNow = scaledStat(character.hp, level)
-  const pronounTag =
-    character.pronoun === 'she' ? '(she)' : character.pronoun === 'he' ? '(he)' : `(${character.pronoun})`
+  const kindTag = cardKindLabel(character)
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -395,7 +395,7 @@ function CardProfile({
           </div>
           <h2 className="mt-3 text-center font-[family-name:var(--font-display)] text-3xl text-[#f5d76e]">
             {character.name}{' '}
-            <span className="text-xl font-semibold text-[#f5d76e]/85">{pronounTag}</span>
+            <span className="text-xl font-semibold text-[#f5d76e]/85">{kindTag}</span>
           </h2>
           <p
             className="mt-1 text-center text-sm font-extrabold uppercase tracking-wide"

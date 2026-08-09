@@ -55,7 +55,7 @@ const SLOBBER_PROJECTILE_MS = 1100
 const SHOOT_PROJECTILE_MS = 140
 /** Mike overhead dumbbell lob — long hang time. */
 const DUMBBELL_PROJECTILE_MS = 920
-/** Ice Cream spell — thrown from king tower, lands with a splat. */
+/** Sundae spell — thrown from king tower, lands with a splat. */
 const ICE_CREAM_PROJECTILE_MS = 980
 const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
@@ -927,7 +927,7 @@ export function useBattle(opts?: {
       }
 
       // Guest only mirrors host state — do not run a second local sim.
-      // Still advance local spell VFX (ice cream throw) so casts feel responsive.
+      // Still advance local spell VFX (sundae throw) so casts feel responsive.
       if (netRef.current?.role === 'guest') {
         let nextProjectiles = projectilesRef.current.slice()
         let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < 900)
