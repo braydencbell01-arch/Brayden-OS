@@ -360,3 +360,25 @@ export const DEFAULT_DECK = [
 export function getCharacter(id: string): CharacterDef | undefined {
   return CHARACTERS.find((c) => c.id === id)
 }
+
+/** Parse display height like 6'3" into total inches. */
+export function heightToInches(height: string): number | null {
+  const m = height.match(/(\d+)\s*'\s*(\d+)/)
+  if (!m) return null
+  return Number(m[1]) * 12 + Number(m[2])
+}
+
+/**
+ * Soft battlefield size from height. Dogs stay readable (not tiny);
+ * taller humans (Jeremy/Dan) read a bit bigger. Mid ~5'7" = 1.
+ */
+export function battlefieldScaleForHeight(height: string): number {
+  const inches = heightToInches(height) ?? 67
+  const ref = 67 // 5'7"
+  if (inches < 40) {
+    // Pets — slightly smaller only
+    return Math.min(0.88, Math.max(0.78, 0.76 + inches * 0.004))
+  }
+  // Adults: Kathie ~0.93 … Phil 1.0 … Mike ~1.09 … Dan ~1.13 … Jeremy ~1.14
+  return Math.min(1.16, Math.max(0.9, 1 + (inches - ref) * 0.018))
+}

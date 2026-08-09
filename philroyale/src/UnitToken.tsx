@@ -44,23 +44,24 @@ export function UnitToken({
       <div
         className="relative w-full"
         style={{
+          // Taller aspect ≈ taller silhouette; dogs stay squat, Jeremy/Dan stretch up.
           aspectRatio:
             charId === 'finley' || charId === 'beans'
               ? '5 / 4'
               : charId === 'jeremy'
-                ? '3 / 5.4'
-                : charId === 'pete'
-                  ? '3 / 4.2'
-                  : charId === 'kathie'
-                    ? '3 / 4.0'
-                    : charId === 'todd'
-                      ? '3 / 4.3'
-                      : charId === 'mike'
-                        ? '3 / 5.0'
-                        : charId === 'lynne'
-                          ? '3 / 4.5'
-                          : charId === 'dan'
-                            ? '3 / 5.1'
+                ? '3 / 5.85'
+                : charId === 'dan'
+                  ? '3 / 5.55'
+                  : charId === 'mike'
+                    ? '3 / 5.15'
+                    : charId === 'pete'
+                      ? '3 / 4.35'
+                      : charId === 'kathie'
+                        ? '3 / 3.95'
+                        : charId === 'todd'
+                          ? '3 / 4.35'
+                          : charId === 'lynne'
+                            ? '3 / 4.4'
                             : '3 / 4.4',
         }}
       >

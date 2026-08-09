@@ -18,7 +18,7 @@ import {
   UnitToken,
 } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
-import { getCharacter } from './characters'
+import { battlefieldScaleForHeight, getCharacter } from './characters'
 import { loadDeck, noteCardDeployed, recordMatchResult } from './storage'
 import { useBattle } from './useBattle'
 
@@ -352,13 +352,16 @@ export function BattleScreen({
         >
           {[...units]
             .sort((a, b) => a.row - b.row)
-            .map((u) => (
+            .map((u) => {
+              const uDef = getCharacter(u.charId)
+              const sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
+              return (
               <div
                 key={u.id}
                 className="absolute -translate-x-1/2 -translate-y-[92%]"
                 style={{
                   ...unitStyle(u.col, u.row),
-                  width: unitVisualWidthPct(),
+                  width: unitVisualWidthPct(sizeScale),
                   zIndex: 10 + Math.round(u.row),
                 }}
               >
@@ -373,7 +376,8 @@ export function BattleScreen({
                   moving={now < u.movingUntil}
                 />
               </div>
-            ))}
+              )
+            })}
           {projectiles.map((p) =>
             p.kind === 'sundae' ||
             p.kind === 'slobber' ||
@@ -424,7 +428,7 @@ export function BattleScreen({
               className="absolute -translate-x-1/2 -translate-y-[92%]"
               style={{
                 ...unitStyle(drag.col, drag.row),
-                width: unitVisualWidthPct(),
+                width: unitVisualWidthPct(battlefieldScaleForHeight(dragChar.height)),
                 zIndex: 40,
                 opacity: drag.valid ? 0.9 : 0.45,
                 filter: drag.valid ? undefined : 'grayscale(1)',
