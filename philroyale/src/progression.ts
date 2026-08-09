@@ -68,6 +68,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 2300, arena: 'Royal Yard', label: 'Epic Chest', chest: 'epic', gold: 120 },
   { trophies: 2450, arena: 'Royal Yard', label: 'Common Chest', chest: 'common', gold: 90 },
   { trophies: 2600, arena: 'Royal Yard', label: 'Unlock Phil', unlockCard: 'phil', gold: 200 },
+  { trophies: 2700, arena: 'Royal Yard', label: "Unlock Phil's Car", unlockCard: 'philsCar', gold: 180 },
   { trophies: 2800, arena: 'Royal Yard', label: 'Legendary Chest', chest: 'legendary', gold: 120 },
   { trophies: 3000, arena: 'Royal Yard', label: 'Epic Chest', chest: 'epic', gold: 150 },
   { trophies: 3200, arena: 'Royal Yard', label: 'Gold pouch', gold: 160 },
@@ -104,6 +105,7 @@ export const STARTER_UNLOCKS = [
   'iceCream',
   'scott',
   'footballHuck',
+  'philsCar',
 ]
 
 export function cardLevelMult(level: number): number {

@@ -59,6 +59,9 @@ const DUMBBELL_PROJECTILE_MS = 920
 const ICE_CREAM_PROJECTILE_MS = 2000
 /** Scott Cash Gun bills — medium lob. */
 const CASH_PROJECTILE_MS = 700
+/** Phil's Car rocket — long hang time. */
+const ROCKET_PROJECTILE_MS = 5000
+const ROCKET_VFX_MS = 620
 const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
 /** Shay Love heart — drifts slowly toward the target. */
@@ -1103,6 +1106,15 @@ export function useBattle(opts?: {
             kind: 'cash',
           })
           splatsChanged = true
+        } else if (p.kind === 'rocket') {
+          nextSplats.push({
+            id: nid('rocket'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'rocket',
+          })
+          splatsChanged = true
         }
         if (p.splashRadius != null && p.ownerSide != null && p.splashDamage != null) {
           // Primary hit + separate splash (Cash Gun).
@@ -1250,21 +1262,145 @@ export function useBattle(opts?: {
         const def = getCharacter(u.charId)
         if (!def) continue
 
-        // Buildings: stationary spawners — no pathing / attacks.
+        // Buildings: stationary. Spawners (Dog Hut) or turrets (Phil's Car).
         if (isBuildingCard(def)) {
-          // Dog Hut (and buildings) bleed 25 HP / sec while standing.
+          // Buildings bleed 25 HP / sec while standing.
           const drain = 25 * dt
           if (drain > 0 && u.hp > 0) {
             u.hp = Math.max(0, u.hp - drain)
             unitsChanged = true
           }
           if (u.hp <= 0) continue
-          const every = (def.spawnEverySec ?? 10) * 1000
-          if (u.nextSpawnAt == null) u.nextSpawnAt = t + every
-          if (t >= u.nextSpawnAt) {
-            spawnDogFromBuilding(u, t, nextUnits)
-            u.nextSpawnAt = t + every
+
+          if (def.spawnPool?.length) {
+            const every = (def.spawnEverySec ?? 10) * 1000
+            if (u.nextSpawnAt == null) u.nextSpawnAt = t + every
+            if (t >= u.nextSpawnAt) {
+              spawnDogFromBuilding(u, t, nextUnits)
+              u.nextSpawnAt = t + every
+              unitsChanged = true
+            }
+            continue
+          }
+
+          // Attacking building — no pathing; face + lock + fire.
+          if (def.attacks.length === 0) continue
+
+          const me = unitCenter(u)
+          const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
+          const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
+          const attack = def.attacks[u.attackIndex % def.attacks.length]!
+          const attackRange = Math.max(2, attack.range)
+
+          type BTarget = {
+            kind: 'unit' | 'tower'
+            id: string
+            col: number
+            row: number
+            rangeD: number
+          }
+
+          let best: BTarget | null = null
+          if (u.lockKey) {
+            const [kind, id] = u.lockKey.split(':') as ['unit' | 'tower', string]
+            if (kind === 'unit') {
+              const f = foes.find((x) => x.id === id)
+              if (f) {
+                const c = unitCenter(f)
+                const edge = dist(me.col, me.row, c.col, c.row)
+                if (edge <= attackRange) {
+                  best = { kind: 'unit', id: f.id, col: c.col, row: c.row, rangeD: edge }
+                }
+              }
+            } else if (kind === 'tower') {
+              const tw = foeTowers.find((x) => x.id === id)
+              const slot = tw ? towerSlot(tw.id) : null
+              if (tw && slot) {
+                const edge = distUnitTileToTower(u.col, u.row, slot)
+                if (edge <= attackRange) {
+                  const aim = towerFrontAimPoint(slot)
+                  best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, rangeD: edge }
+                }
+              }
+            }
+            if (!best) {
+              u.lockKey = null
+              unitsChanged = true
+            }
+          }
+
+          // Acquire closest enemy (unit or tower) in range when unlocked.
+          if (!best) {
+            for (const f of foes) {
+              const c = unitCenter(f)
+              const edge = dist(me.col, me.row, c.col, c.row)
+              if (edge > attackRange) continue
+              if (!best || edge < best.rangeD) {
+                best = { kind: 'unit', id: f.id, col: c.col, row: c.row, rangeD: edge }
+              }
+            }
+            for (const tw of foeTowers) {
+              const slot = towerSlot(tw.id)
+              if (!slot) continue
+              const edge = distUnitTileToTower(u.col, u.row, slot)
+              if (edge > attackRange) continue
+              const aim = towerFrontAimPoint(slot)
+              if (!best || edge < best.rangeD) {
+                best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, rangeD: edge }
+              }
+            }
+          }
+
+          if (!best) {
+            if (u.lockKey) {
+              u.lockKey = null
+              unitsChanged = true
+            }
+            continue
+          }
+
+          // Always turn the vehicle to face the current target.
+          const face = Math.atan2(best.row - me.row, best.col - me.col)
+          if (Math.abs(face - u.facing) > 0.04) {
+            u.facing = face
             unitsChanged = true
+          }
+
+          const nextLock = `${best.kind}:${best.id}`
+          if (u.lockKey !== nextLock) {
+            u.lockKey = nextLock
+            unitsChanged = true
+          }
+
+          if (t < u.nextAttackAt) continue
+
+          const damage = attack.damage * cardLevelMult(u.level)
+          const shotAim = { col: best.col, row: best.row }
+          const vfxMs = attack.id === 'philsRocket' ? ROCKET_VFX_MS : RANGED_VFX_MS
+          u.vfx = attack.id
+          u.vfxUntil = t + vfxMs
+          u.nextAttackAt = t + def.attackDelaySec * 1000
+          u.rootedUntil = t + vfxMs
+          unitsChanged = true
+
+          if (attack.kind === 'rocket' || attack.kind === 'shoot' || attack.kind === 'cash') {
+            // Launch from the front bumper (toward the target).
+            const nose = 1.4
+            nextProjectiles.push({
+              id: nid('p'),
+              kind: attack.kind,
+              fromCol: me.col + Math.cos(face) * nose,
+              fromRow: me.row + Math.sin(face) * nose,
+              toCol: shotAim.col,
+              toRow: shotAim.row,
+              damage,
+              targetId: best.kind === 'unit' ? best.id : null,
+              targetTowerId: best.kind === 'tower' ? best.id : null,
+              bornAt: t,
+              arriveAt: t + (attack.projectileMs ?? ROCKET_PROJECTILE_MS),
+              ownerSide: u.side,
+            })
+            projectilesChanged = true
           }
           continue
         }
@@ -1529,7 +1665,8 @@ export function useBattle(opts?: {
           attack.kind === 'shoot' ||
           attack.kind === 'dumbbell' ||
           attack.kind === 'love' ||
-          attack.kind === 'cash'
+          attack.kind === 'cash' ||
+          attack.kind === 'rocket'
         ) {
           nextProjectiles.push({
             id: nid('p'),
@@ -1544,17 +1681,21 @@ export function useBattle(opts?: {
             bornAt: t,
             arriveAt:
               t +
-              (attack.kind === 'shoot'
-                ? SHOOT_PROJECTILE_MS
-                : attack.kind === 'cash'
-                  ? CASH_PROJECTILE_MS
-                  : attack.kind === 'slobber'
-                    ? SLOBBER_PROJECTILE_MS
-                    : attack.kind === 'dumbbell'
-                      ? DUMBBELL_PROJECTILE_MS
-                      : attack.kind === 'love'
-                        ? LOVE_PROJECTILE_MS
-                        : PROJECTILE_MS),
+              (attack.projectileMs != null
+                ? attack.projectileMs
+                : attack.kind === 'shoot'
+                  ? SHOOT_PROJECTILE_MS
+                  : attack.kind === 'cash'
+                    ? CASH_PROJECTILE_MS
+                    : attack.kind === 'rocket'
+                      ? ROCKET_PROJECTILE_MS
+                      : attack.kind === 'slobber'
+                        ? SLOBBER_PROJECTILE_MS
+                        : attack.kind === 'dumbbell'
+                          ? DUMBBELL_PROJECTILE_MS
+                          : attack.kind === 'love'
+                            ? LOVE_PROJECTILE_MS
+                            : PROJECTILE_MS),
             ownerSide: u.side,
             splashRadius: attack.splashRadius,
             splashDamage: attack.splashDamage,

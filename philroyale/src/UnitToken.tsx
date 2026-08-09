@@ -48,6 +48,8 @@ export function UnitToken({
           aspectRatio:
             charId === 'dogHut'
               ? '5 / 4.6'
+              : charId === 'philsCar'
+                ? '5 / 3.4'
               : charId === 'iceCream' || charId === 'footballHuck'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
@@ -96,6 +98,47 @@ export function UnitToken({
           {Math.max(0, Math.round(hp))}
         </span>
       </div>
+    </div>
+  )
+}
+
+/** Flying rocket for Phil's Car. */
+export function RocketDot() {
+  return (
+    <div
+      className="relative h-3 w-7 rounded-sm"
+      style={{
+        background: 'linear-gradient(90deg,#f5d76e 0%,#e85a20 45%,#6a6a70 45%,#3a3a40 100%)',
+        boxShadow: '0 0 6px #ff6a2088, 0 1px 2px #000a',
+      }}
+      aria-hidden
+    >
+      <div
+        className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+        style={{ background: 'radial-gradient(circle, #fff6a0, #ff6a20 60%, transparent)' }}
+      />
+    </div>
+  )
+}
+
+/** Rocket impact boom. */
+export function RocketSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 700)
+  const scale = 0.5 + p * 2.6
+  const opacity = 1 - p * 0.9
+  return (
+    <div
+      className="relative h-14 w-14"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #fff2a0 0%, #ff8a30cc 35%, #c0301088 55%, transparent 70%)',
+        }}
+      />
     </div>
   )
 }

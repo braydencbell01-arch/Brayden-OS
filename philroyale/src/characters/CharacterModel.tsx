@@ -14,6 +14,7 @@ import { ShayModel } from './ShayModel'
 import { ToddModel } from './ToddModel'
 import { DogHutModel } from './DogHutModel'
 import { FootballModel } from './FootballModel'
+import { PhilsCarModel } from './PhilsCarModel'
 import { ScottModel } from './ScottModel'
 import { IceCreamModel } from './IceCreamModel'
 
@@ -66,6 +67,10 @@ export function CharacterModel({
     model = <ScottModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dogHut') {
     model = <DogHutModel anim={anim} facing={facing} portrait={portrait} />
+  } else if (charId === 'philsCar') {
+    model = (
+      <PhilsCarModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
   } else if (charId === 'iceCream') {
     model = <IceCreamModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'footballHuck') {

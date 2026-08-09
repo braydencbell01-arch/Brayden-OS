@@ -10,6 +10,7 @@ export type AttackId =
   | 'headButt'
   | 'love'
   | 'cashGun'
+  | 'philsRocket'
 
 export type AttackDef = {
   id: AttackId
@@ -29,6 +30,8 @@ export type AttackDef = {
   splashRadius?: number
   /** Splash damage when different from primary hit (e.g. Cash Gun). */
   splashDamage?: number
+  /** Projectile flight time in ms (overrides kind defaults). */
+  projectileMs?: number
   kind:
     | 'sundae'
     | 'whip'
@@ -41,6 +44,7 @@ export type AttackDef = {
     | 'headbutt'
     | 'love'
     | 'cash'
+    | 'rocket'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -480,6 +484,35 @@ export const SCOTT: CharacterDef = {
   ],
 }
 
+/** Legendary grey SUV — stationary turret; Phil's Rocket. */
+export const PHILS_CAR: CharacterDef = {
+  id: 'philsCar',
+  name: "Phil's Car",
+  initial: 'SUV',
+  pronoun: 'it',
+  height: "5'0\"",
+  rarity: 'legendary',
+  elixir: 3,
+  hp: 1850,
+  moveSpeed: 0,
+  attackDelaySec: 8,
+  hue: 210,
+  cardKind: 'building',
+  blurb:
+    "Building — grey SUV that turns to face foes. Phil's Rocket: 80 range, 5s flight, 150 damage, 8s reload. Locks until dead or out of range.",
+  attacks: [
+    {
+      id: 'philsRocket',
+      name: "Phil's Rocket",
+      range: 80,
+      damage: 150,
+      rootWhileAttacking: true,
+      projectileMs: 5000,
+      kind: 'rocket',
+    },
+  ],
+}
+
 export const CHARACTERS: CharacterDef[] = [
   PHIL,
   KATHIE,
@@ -494,6 +527,7 @@ export const CHARACTERS: CharacterDef[] = [
   JEREMY,
   SCOTT,
   DOG_HUT,
+  PHILS_CAR,
   ICE_CREAM,
   FOOTBALL_HUCK,
 ]

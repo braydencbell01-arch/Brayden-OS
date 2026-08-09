@@ -49,6 +49,7 @@ export type Projectile = {
     | 'iceCream'
     | 'football'
     | 'cash'
+    | 'rocket'
   fromCol: number
   fromRow: number
   toCol: number
@@ -86,6 +87,7 @@ export type SplatFx = {
     | 'iceCream'
     | 'football'
     | 'cash'
+    | 'rocket'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */
