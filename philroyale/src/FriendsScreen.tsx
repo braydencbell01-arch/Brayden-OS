@@ -17,13 +17,20 @@ function makeCode(): string {
   return Math.random().toString(36).slice(2, 8).toUpperCase()
 }
 
-export function FriendsScreen() {
+type Props = {
+  onBattle: (opponentName: string) => void
+  onRequestBattle: (friendName: string) => Promise<void>
+  waitingForFriend?: string | null
+}
+
+export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
   const [club, setClub] = useState<Club | null>(() => loadMyClub())
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [clubName, setClubName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [section, setSection] = useState<'friends' | 'clubs'>('friends')
+  const [pendingBattleFriend, setPendingBattleFriend] = useState<string | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -58,7 +65,8 @@ export function FriendsScreen() {
     }
     if (clubCode || friendFrom) {
       const url = new URL(window.location.href)
-      url.search = ''
+      if (clubCode) url.searchParams.delete('club')
+      if (friendFrom) url.searchParams.delete('friend')
       window.history.replaceState({}, '', url.toString())
     }
   }, [])
@@ -84,6 +92,19 @@ export function FriendsScreen() {
       `Join my Phil Royale club "${club.name}" (${club.tag}). Open the link, then we can battle:`,
       clubInviteUrl(club.code),
     )
+  }
+
+  async function requestBattle(friend: Friend) {
+    setPendingBattleFriend(friend.name)
+    try {
+      await onRequestBattle(friend.name)
+    } finally {
+      setPendingBattleFriend(null)
+    }
+  }
+
+  async function shareBattleLink(friend: Friend) {
+    await onRequestBattle(friend.name)
   }
 
   function createClub() {
@@ -127,6 +148,8 @@ export function FriendsScreen() {
     setFriends(next)
     saveFriends(next)
   }
+
+  const waitingName = waitingForFriend?.toLowerCase() ?? null
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -195,21 +218,58 @@ export function FriendsScreen() {
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
-                {friends.map((f) => (
-                  <li
-                    key={f.id}
-                    className="flex items-center justify-between rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
-                  >
-                    <p className="font-bold text-white">{f.name}</p>
-                    <button
-                      type="button"
-                      onClick={() => removeFriend(f.id)}
-                      className="text-xs font-extrabold text-[#ff8a7a]"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
+                {friends.map((f) => {
+                  const isWaiting =
+                    waitingName === f.name.toLowerCase() ||
+                    pendingBattleFriend?.toLowerCase() === f.name.toLowerCase()
+                  return (
+                    <li key={f.id}>
+                      <button
+                        type="button"
+                        onClick={() => void requestBattle(f)}
+                        disabled={isWaiting}
+                        className="flex w-full items-center justify-between rounded-lg bg-[#221610] px-3 py-2.5 text-left ring-1 ring-white/10 disabled:opacity-70"
+                      >
+                        <p className="font-bold text-white">{f.name}</p>
+                        <span className="text-xs font-extrabold text-[#7dff9a]">
+                          {isWaiting ? 'Requesting…' : 'Battle'}
+                        </span>
+                      </button>
+                      <div className="mt-1 flex justify-end gap-2 px-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void shareBattleLink(f)
+                          }}
+                          className="text-[10px] font-extrabold uppercase tracking-wide text-[#4a9eff]"
+                        >
+                          Share link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onBattle(f.name)
+                          }}
+                          className="text-[10px] font-extrabold uppercase tracking-wide text-white/45"
+                        >
+                          Play now
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeFriend(f.id)
+                          }}
+                          className="text-[10px] font-extrabold uppercase tracking-wide text-[#ff8a7a]"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>

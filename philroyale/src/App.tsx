@@ -244,7 +244,11 @@ export default function App() {
             ) : null}
             {tab === 'characters' ? <CharactersScreen /> : null}
             {tab === 'friends' ? (
-              <FriendsScreen onBattle={startMatch} onRequestBattle={requestBattle} />
+              <FriendsScreen
+                onBattle={startMatch}
+                onRequestBattle={requestBattle}
+                waitingForFriend={outgoingChallenge?.toName ?? null}
+              />
             ) : null}
           </motion.div>
         </AnimatePresence>

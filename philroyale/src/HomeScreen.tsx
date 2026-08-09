@@ -4,9 +4,10 @@ import { friendInviteUrl, loadFriends, shareText, type Friend } from './storage'
 
 type Props = {
   onPlay: (opponentName?: string | null) => void
+  onRequestBattle: (friendName: string) => Promise<void>
 }
 
-export function HomeScreen({ onPlay }: Props) {
+export function HomeScreen({ onPlay, onRequestBattle }: Props) {
   const friends = useMemo(() => loadFriends(), [])
   const [inviteOpen, setInviteOpen] = useState(false)
 
@@ -18,9 +19,9 @@ export function HomeScreen({ onPlay }: Props) {
     )
   }
 
-  function battleFriend(friend: Friend) {
+  async function battleFriend(friend: Friend) {
     setInviteOpen(false)
-    onPlay(friend.name)
+    await onRequestBattle(friend.name)
   }
 
   return (
@@ -107,7 +108,7 @@ export function HomeScreen({ onPlay }: Props) {
                   <li key={f.id}>
                     <button
                       type="button"
-                      onClick={() => battleFriend(f)}
+                      onClick={() => void battleFriend(f)}
                       className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2 text-left ring-1 ring-white/10"
                     >
                       <span className="font-bold text-white">{f.name}</span>
