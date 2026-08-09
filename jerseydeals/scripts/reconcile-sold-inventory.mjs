@@ -1,29 +1,26 @@
 #!/usr/bin/env node
 /**
- * When something sells OR is removed on Square OR eBay, clear it everywhere:
- *  - Square inventory → 0, variation unsellable
- *  - Delete Square Payment Links (regular + first10)
- *  - End matching eBay listing (sku ebay:{itemId})
- *  - Drop from listings.json + checkout-links.json
+ * When something *actually sells*, update stock everywhere:
+ *  - Decrement Square inventory for captured unit sales
+ *  - Drop sold-out rows from listings.json + checkout-links.json
  *  - Write public/sold-out.json for instant client filtering
  *
- * Sale / removal signals:
+ * Confirmed sale signals ONLY:
  *  - Square COMPLETED orders + paid OPEN orders (Payment Links stay OPEN until fulfilled)
  *    — OPEN only counts when net_amount_due=0 AND payment status is COMPLETED/APPROVED
  *    — FAILED card tenders must never delist (Chelsea Torres regression)
- *  - Square inventory qty 0
- *  - Square variation marked unsellable (still linked to an active eBay item)
  *  - eBay SoldList (GetMyeBaySelling) mapped via sku ebay:{itemId}
- *  - eBay UnsoldList / ended listings (ActiveList miss) mapped the same way
  *
- * Multi-qty: Square/eBay unit sales decrement remaining stock (remove sold qty only).
- * Full delist (qty 0, unsellable, end eBay, drop site) only when nothing remains.
+ * NEVER auto-wipe from:
+ *  - eBay UnsoldList / ended / ActiveList misses (Aug 2026 mass-wipe)
+ *  - Bare Square qty 0 / unsellable without a confirmed sale
  *
- * Re-apply: if cross-platform sync overwrites Square qty after a captured sale,
- * the next reconcile re-applies the SOLD adjustment (processedOrderIds alone is not enough).
+ * Nuclear delistVariation (unsellable + EndItem + delete Payment Links) is OFF unless
+ * RECONCILE_FULL_DELIST=1. Mass removals are capped (RECONCILE_MAX_DELIST, default 3).
+ * Never overwrites a non-empty listings.json with an empty file.
  *
  * Requires: SQUARE_ACCESS_TOKEN
- * Optional: EBAY_* (needed for eBay sold/ended detection + EndItem), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
+ * Optional: EBAY_* (SoldList + optional EndItem), SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT
  *
  *   node jerseydeals/scripts/reconcile-sold-inventory.mjs
  *   DRY_RUN=1 node jerseydeals/scripts/reconcile-sold-inventory.mjs
@@ -35,10 +32,20 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   appliedSaleStillSettled,
+  hasConfirmedSaleSignal,
+  massDelistGuard,
   openOrderHasCapturedPayment,
   orderLooksLikePaidCandidate,
   shouldFullDelist,
+  shouldPreserveListingsFile,
 } from './lib/sold-inventory-rules.mjs'
+
+/** Nuclear Square/eBay teardown — off by default after Aug 2026 wipe. */
+const ALLOW_FULL_DELIST = process.env.RECONCILE_FULL_DELIST === '1'
+const MAX_DELIST_PER_RUN = Math.max(
+  1,
+  Number.parseInt(process.env.RECONCILE_MAX_DELIST || '3', 10) || 3,
+)
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const LISTINGS_PATH = join(__dirname, '../public/listings.json')
@@ -276,7 +283,8 @@ async function collectEbaySoldVariationIds({ keepInStock, listings, links, soldO
 
   for (const ebayId of soldEbayIds) {
     const meta = byEbay.get(ebayId)
-    if (!meta?.variationId || keep.has(meta.variationId)) continue
+    // Confirmed SoldList always applies (keepInStock is for false-ended protection only).
+    if (!meta?.variationId) continue
     sold.set(meta.variationId, {
       orderIds: [],
       title: meta.title,
@@ -421,68 +429,46 @@ async function collectRemovedVariationIds({ keepInStock, listings, links, soldOu
   const squareByEbay = new Map(squareLinked.map((r) => [r.ebayId, r]))
 
   if (!HAS_EBAY) {
-    // Without eBay we can still clear site/Square for unsellable linked rows already known.
-    for (const row of squareLinked) {
-      if (row.sellable || keep.has(row.variationId)) continue
-      removed.set(row.variationId, {
-        orderIds: [],
-        title: row.title,
-        qty: 0,
-        sku: row.sku,
-        itemId: row.itemId,
-        ebayId: row.ebayId,
-        fromSquareUnsellable: true,
-      })
-    }
+    // Unsellable alone must never become a delist candidate.
     return removed
   }
 
   let activeIds = new Set()
-  let unsoldIds = new Set()
   try {
     activeIds = await fetchEbayActiveIds()
   } catch (err) {
     console.warn(`eBay ActiveList skipped: ${err.message}`)
     return removed
   }
-  try {
-    unsoldIds = await fetchEbayUnsoldIds()
-  } catch (err) {
-    console.warn(`eBay UnsoldList skipped: ${err.message}`)
+
+  // Guard: empty ActiveList used to mark every kit "ended" and wipe Square.
+  if (activeIds.size === 0 && byEbay.size > 3) {
+    console.warn(
+      `::warning title=eBay ActiveList empty::Refusing ended/unsold delist scan (${byEbay.size} linked kits). SoldList still applies.`,
+    )
+    return removed
   }
 
+  let endedNoise = 0
   for (const [ebayId, meta] of byEbay) {
     if (!meta?.variationId || keep.has(meta.variationId)) continue
     const square = squareByEbay.get(ebayId)
     const isActive = activeIds.has(ebayId)
 
     if (isActive) {
-      // Merchant removed / hid on Square — end the live eBay twin.
-      if (square && square.sellable === false) {
-        removed.set(meta.variationId, {
-          orderIds: [],
-          title: meta.title || square.title,
-          qty: 0,
-          sku: meta.sku || square.sku,
-          itemId: meta.itemId || square.itemId,
-          ebayId,
-          fromSquareUnsellable: true,
-        })
-      }
+      // Do not auto-delist for Square unsellable alone — that cascaded after false wipes.
       continue
     }
 
-    // Not active on eBay → clear Square + site (sold path also covers SoldList).
-    removed.set(meta.variationId, {
-      orderIds: [],
-      title: meta.title,
-      qty: 0,
-      sku: meta.sku,
-      itemId: meta.itemId,
-      ebayId,
-      fromEbayUnsold: unsoldIds.has(ebayId),
-      fromEbayEnded: !unsoldIds.has(ebayId),
-    })
+    // Ended / unsold on eBay is informational only — NEVER a delist candidate.
+    endedNoise += 1
+    void ebayId
+    void square
+  }
+  if (endedNoise) {
+    console.log(
+      `eBay ended/unsold noise ignored for ${endedNoise} kit(s) (will not delist without a confirmed sale)`,
+    )
   }
 
   return removed
@@ -710,7 +696,8 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
     }
     for (const line of order.line_items || []) {
       const variationId = line.catalog_object_id
-      if (!variationId || keep.has(variationId)) continue
+      // keepInStock no longer blocks confirmed Square sales — only false ended/qty0 noise.
+      if (!variationId) continue
       const lineQty = Number.parseFloat(line.quantity || '1') || 1
       const prev = sold.get(variationId) || {
         orderIds: [],
@@ -731,7 +718,8 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
     console.log(`Skipped ${skippedFailedOpen} OPEN order(s) without captured payment (not sold)`)
   }
 
-  // Also catch tracked variations already at qty 0 (Payment Link may have decremented)
+  // Qty-0 alone is NOT a delist candidate (was part of the Aug 2026 cascade).
+  // Only enrich rows that already have a confirmed sale signal.
   const links = loadJson(LINKS_PATH, { links: [] })
   const listings = loadJson(LISTINGS_PATH, { listings: [] })
   const candidates = new Set([
@@ -752,22 +740,16 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
       if (qty > 0) continue
       const variationId = row.catalog_object_id
       if (keep.has(variationId)) continue
-      const listing = (listings.listings || []).find((l) => l.id === variationId)
-      const link = (links.links || []).find((l) => l.variationId === variationId)
-      const prev = sold.get(variationId) || {
-        orderIds: [],
-        title: listing?.title || link?.title || variationId,
-        qty: 0,
-      }
+      const prev = sold.get(variationId)
+      if (!prev || !hasConfirmedSaleSignal(prev)) continue
       prev.fromInventoryZero = true
-      prev.title = prev.title || listing?.title || link?.title || variationId
       sold.set(variationId, prev)
     }
   }
 
   const soldOutFile = loadJson(SOLD_OUT_PATH, { items: [] })
 
-  // eBay sales must also delist Square + Jersey Deals (was the Spurs gap).
+  // eBay SoldList — confirmed sales only.
   try {
     const ebaySold = await collectEbaySoldVariationIds({
       keepInStock: keep,
@@ -794,33 +776,21 @@ async function collectSoldVariationIds(locationId, { ignoredOrderIds, keepInStoc
     console.warn(`eBay sold scan skipped: ${err.message}`)
   }
 
-  // Ended / removed (not necessarily sold) — keep Square + site + eBay twins aligned.
+  // Ended/unsold scan — logs only; never adds delist candidates.
   try {
-    const removed = await collectRemovedVariationIds({
+    await collectRemovedVariationIds({
       keepInStock: keep,
       listings: listings.listings || [],
       links: links.links || [],
       soldOutItems: soldOutFile.items || [],
     })
-    let added = 0
-    for (const [variationId, info] of removed) {
-      const prev = sold.get(variationId)
-      if (prev) {
-        // Already flagged as sold/qty0 — just enrich sources.
-        if (info.fromEbayUnsold) prev.fromEbayUnsold = true
-        if (info.fromEbayEnded) prev.fromEbayEnded = true
-        if (info.fromSquareUnsellable) prev.fromSquareUnsellable = true
-        prev.ebayId = info.ebayId || prev.ebayId
-        prev.sku = info.sku || prev.sku
-        sold.set(variationId, prev)
-        continue
-      }
-      sold.set(variationId, { ...info })
-      added += 1
-    }
-    console.log(`eBay/Square removals mapped to catalog: ${added} (scanned ${removed.size})`)
   } catch (err) {
     console.warn(`removal scan skipped: ${err.message}`)
+  }
+
+  // Drop any non-sale noise that slipped in.
+  for (const [variationId, info] of [...sold.entries()]) {
+    if (!hasConfirmedSaleSignal(info)) sold.delete(variationId)
   }
 
   return sold
@@ -1011,6 +981,10 @@ async function main() {
   const originalLinks = [...(linksFile.links || [])]
   const results = []
   const decrementedIds = new Map() // variationId -> remainingQty
+  let fullDelistCount = 0
+  console.log(
+    `Full nuclear delist: ${ALLOW_FULL_DELIST ? 'ON' : 'OFF'} (RECONCILE_FULL_DELIST) · max ${MAX_DELIST_PER_RUN}/run`,
+  )
 
   for (const [variationId, info] of soldMap) {
     const listing = originalListings.find((l) => l.id === variationId)
@@ -1024,27 +998,11 @@ async function main() {
       sku: info.sku || listing?.sku || link?.sku || '',
       itemId: info.itemId || listing?.itemId || link?.itemId || '',
     }
-    // ebay-ended / ebay-unsold alone must NOT wipe Square stock — eBay listings
-    // end for many non-sale reasons (ended early, API glitches, renewals).
-    // Only real sales (SoldList / Square orders) or confirmed Square qty-0/unsellable
-    // should force a full delist.
-    const forceRemoval =
-      info.fromInventoryZero ||
-      info.fromSquareUnsellable ||
-      (info.fromEbayEnded && (info.fromEbaySold || info.fromSquareOrder)) ||
-      (info.fromEbayUnsold && (info.fromEbaySold || info.fromSquareOrder))
-    // Skip ended/unsold eBay noise with no confirmed sale — never wipe Square for these.
-    if (
-      (info.fromEbayEnded || info.fromEbayUnsold) &&
-      !info.fromEbaySold &&
-      !info.fromSquareOrder &&
-      !info.fromInventoryZero &&
-      !info.fromSquareUnsellable
-    ) {
-      continue
-    }
+    // Hard rule: no confirmed Square/eBay sale → never touch this kit.
+    if (!hasConfirmedSaleSignal(info)) continue
     // eBay SoldList while listing still active (multi-qty) is NOT a full delist —
     // Square unit sales / inventory alignment handle remaining stock.
+    const forceRemoval = false
 
     const candidateLines =
       (info.orderLines || []).length > 0
@@ -1147,21 +1105,47 @@ async function main() {
 
     const why = [
       info.fromEbaySold ? 'ebay-sold' : '',
-      info.fromEbayUnsold ? 'ebay-unsold' : '',
-      info.fromEbayEnded ? 'ebay-ended' : '',
       info.fromSquareOrder ? 'square-order' : '',
-      info.fromInventoryZero ? 'square-qty-0' : '',
-      info.fromSquareUnsellable ? 'square-unsellable' : '',
     ]
       .filter(Boolean)
       .join('+')
-    console.log(`→ delist ${meta.title.slice(0, 70)} (${variationId}) [${why || 'unknown'}]`)
-    const row = await delistVariation(variationId, { ...meta }, locationId, {
-      links: originalLinks,
-    })
-    row.itemId = meta.itemId
-    row.sources = why ? why.split('+') : ['unknown']
-    results.push(row)
+
+    // Soft site remove (default): drop from listings/links + sold-out, keep Square sellable.
+    // Nuclear delistVariation only when RECONCILE_FULL_DELIST=1 and under the mass cap.
+    if (ALLOW_FULL_DELIST && fullDelistCount < MAX_DELIST_PER_RUN) {
+      console.log(`→ full delist ${meta.title.slice(0, 70)} (${variationId}) [${why || 'sale'}]`)
+      const row = await delistVariation(variationId, { ...meta }, locationId, {
+        links: originalLinks,
+      })
+      row.itemId = meta.itemId
+      row.sources = why ? why.split('+') : ['sale']
+      results.push(row)
+      fullDelistCount += 1
+    } else {
+      if (ALLOW_FULL_DELIST && fullDelistCount >= MAX_DELIST_PER_RUN) {
+        console.warn(
+          `::warning title=Mass delist cap::Skipping nuclear delist for ${variationId} (max ${MAX_DELIST_PER_RUN}/run)`,
+        )
+      }
+      // Ensure stock is 0 on Square for a confirmed sell-through without tearing down catalog.
+      try {
+        const live = await getInventoryQty(variationId, locationId)
+        if (live > 0 && !DRY) await setInventoryQty(variationId, locationId, 0)
+      } catch (err) {
+        console.warn(`soft qty-zero failed ${variationId}: ${err.message}`)
+      }
+      console.log(`→ site-remove ${meta.title.slice(0, 70)} (${variationId}) [${why || 'sale'}]`)
+      results.push({
+        variationId,
+        title: meta.title,
+        action: 'site-remove',
+        itemId: meta.itemId,
+        ebayId: ebayIdFromSku(meta.sku) || info.ebayId || '',
+        sources: why ? why.split('+') : ['sale'],
+        remainingQty: 0,
+        error: '',
+      })
+    }
     already.add(variationId)
     for (const oid of info.orderIds || []) {
       processedOrders.add(oid)
@@ -1171,6 +1155,19 @@ async function main() {
 
   const soldIds = new Set(already)
   const beforeListings = originalListings.length
+  const removeCount = originalListings.filter((l) => soldIds.has(l.id)).length
+  const guard = massDelistGuard({
+    beforeCount: beforeListings,
+    removeCount,
+    maxPerRun: MAX_DELIST_PER_RUN,
+  })
+  if (!guard.ok) {
+    console.error(`::error title=Mass delist blocked::${guard.reason}`)
+    console.error('No catalog files written. Investigate sales signals before re-running.')
+    process.exitCode = 1
+    return
+  }
+
   listingsFile.listings = originalListings
     .filter((l) => !soldIds.has(l.id))
     .map((l) => {
@@ -1179,6 +1176,14 @@ async function main() {
     })
   listingsFile.count = listingsFile.listings.length
   listingsFile.syncedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+
+  if (shouldPreserveListingsFile(beforeListings, listingsFile.count)) {
+    console.error(
+      `::error title=Empty catalog blocked::Refusing to write 0 listings over ${beforeListings}. No files written.`,
+    )
+    process.exitCode = 1
+    return
+  }
 
   const beforeLinks = originalLinks.length
   linksFile.links = originalLinks.filter((l) => !soldIds.has(l.variationId))
@@ -1196,7 +1201,7 @@ async function main() {
       title: r.title || listing?.title || link?.title || r.variationId,
       ebayId: r.ebayId || ebayIdFromSku(listing?.sku || link?.sku),
       soldAt: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-      sources: Array.isArray(r.sources) && r.sources.length ? r.sources : ['square-order-or-zero-qty'],
+      sources: Array.isArray(r.sources) && r.sources.length ? r.sources : ['sale'],
     })
   }
 

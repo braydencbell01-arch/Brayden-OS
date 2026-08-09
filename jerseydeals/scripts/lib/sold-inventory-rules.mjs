@@ -51,6 +51,51 @@ export function shouldFullDelist({ forceRemoval = false, remainingQty = 0 } = {}
 }
 
 /**
+ * Confirmed sale signal required before wiping Square / site stock.
+ * eBay-ended / unsold / bare qty-0 must never qualify (Aug 2026 mass-wipe).
+ */
+export function hasConfirmedSaleSignal(info = {}) {
+  return Boolean(info.fromSquareOrder || info.fromEbaySold)
+}
+
+/**
+ * Refuse mass wipes: if a run would remove too many listings, abort writes.
+ * @returns {{ ok: boolean, reason?: string }}
+ */
+export function massDelistGuard({
+  beforeCount = 0,
+  removeCount = 0,
+  maxPerRun = 3,
+  maxFraction = 0.08,
+} = {}) {
+  const before = Math.max(0, Math.floor(Number(beforeCount) || 0))
+  const remove = Math.max(0, Math.floor(Number(removeCount) || 0))
+  if (remove <= 0) return { ok: true }
+  const maxAbs = Math.max(1, Math.floor(Number(maxPerRun) || 3))
+  if (remove > maxAbs) {
+    return {
+      ok: false,
+      reason: `refusing to remove ${remove} listings (max ${maxAbs}/run) — set RECONCILE_MAX_DELIST to raise`,
+    }
+  }
+  if (before > 0) {
+    const frac = Math.min(1, Math.max(0, Number(maxFraction) || 0.08))
+    if (remove / before > frac && remove > 1) {
+      return {
+        ok: false,
+        reason: `refusing to remove ${remove}/${before} listings (>${Math.round(frac * 100)}%)`,
+      }
+    }
+  }
+  return { ok: true }
+}
+
+/** Never persist an empty catalog over a non-empty one. */
+export function shouldPreserveListingsFile(beforeCount, afterCount) {
+  return Number(beforeCount) > 0 && Number(afterCount) <= 0
+}
+
+/**
  * Cross-platform must never raise Square stock from eBay.
  * Allow set when Square qty is unknown (create) or eBay available is strictly lower.
  */

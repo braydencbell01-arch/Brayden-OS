@@ -8,6 +8,9 @@ import {
   remainingAfterSale,
   shouldFullDelist,
   appliedSaleStillSettled,
+  hasConfirmedSaleSignal,
+  massDelistGuard,
+  shouldPreserveListingsFile,
 } from './sold-inventory-rules.mjs'
 
 describe('orderLooksLikePaidCandidate', () => {
@@ -111,5 +114,36 @@ describe('appliedSaleStillSettled', () => {
   it('needs re-apply when sync physical raises stock after apply', () => {
     const row = { appliedAt: '2026-07-30T15:50:50Z', qtyAfter: 1 }
     assert.equal(appliedSaleStillSettled(row, '2026-07-30T16:06:31Z', 2), false)
+  })
+})
+
+describe('hasConfirmedSaleSignal', () => {
+  it('rejects ebay-ended / qty-0 noise without a sale', () => {
+    // Regression: Aug 2026 wipe — 60+ kits delisted from ebay-ended alone.
+    assert.equal(hasConfirmedSaleSignal({ fromEbayEnded: true }), false)
+    assert.equal(hasConfirmedSaleSignal({ fromEbayUnsold: true }), false)
+    assert.equal(hasConfirmedSaleSignal({ fromInventoryZero: true }), false)
+    assert.equal(hasConfirmedSaleSignal({ fromSquareUnsellable: true }), false)
+  })
+
+  it('accepts Square order or eBay SoldList', () => {
+    assert.equal(hasConfirmedSaleSignal({ fromSquareOrder: true }), true)
+    assert.equal(hasConfirmedSaleSignal({ fromEbaySold: true }), true)
+  })
+})
+
+describe('massDelistGuard', () => {
+  it('blocks wiping most of the catalog in one run', () => {
+    assert.equal(massDelistGuard({ beforeCount: 79, removeCount: 60 }).ok, false)
+    assert.equal(massDelistGuard({ beforeCount: 79, removeCount: 2 }).ok, true)
+    assert.equal(massDelistGuard({ beforeCount: 79, removeCount: 4, maxPerRun: 3 }).ok, false)
+  })
+})
+
+describe('shouldPreserveListingsFile', () => {
+  it('never overwrites a live catalog with empty', () => {
+    assert.equal(shouldPreserveListingsFile(79, 0), true)
+    assert.equal(shouldPreserveListingsFile(79, 78), false)
+    assert.equal(shouldPreserveListingsFile(0, 0), false)
   })
 })

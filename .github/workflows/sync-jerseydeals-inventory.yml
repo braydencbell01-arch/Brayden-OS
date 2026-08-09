@@ -57,6 +57,8 @@ jobs:
           EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
           EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          RECONCILE_FULL_DELIST: '0'
+          RECONCILE_MAX_DELIST: '3'
         run: npm run reconcile:sold
 
       - name: Sync new listings + updates across eBay ↔ Square
@@ -129,6 +131,8 @@ jobs:
           EBAY_CERT_ID: ${{ secrets.EBAY_CERT_ID }}
           EBAY_DEV_ID: ${{ secrets.EBAY_DEV_ID }}
           EBAY_USER_TOKEN: ${{ secrets.EBAY_USER_TOKEN }}
+          RECONCILE_FULL_DELIST: '0'
+          RECONCILE_MAX_DELIST: '3'
         run: npm run reconcile:sold
 
       - name: Sync eBay description + condition onto Square / listings
