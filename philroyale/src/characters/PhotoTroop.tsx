@@ -105,8 +105,8 @@ export function PhotoTroop({
         <img
           src={troopSrc}
           alt={alt}
-          className="h-full w-full object-contain px-[5%] pb-[2%] pt-[4%]"
-          style={{ clipPath: 'inset(0 0 3% 0)' }}
+          className="h-full w-full object-contain px-[5%] pb-[4%] pt-[4%]"
+          style={{ clipPath: 'inset(0 0 6% 0)' }}
           draggable={false}
         />
       </div>
