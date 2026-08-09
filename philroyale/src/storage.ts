@@ -1,5 +1,21 @@
 import { CHARACTERS, DEFAULT_DECK, DECK_SIZE } from './characters'
 import {
+  CLUB_CHEST_GOAL,
+  CLUB_MAX_MEMBERS,
+  DONATE_LIMIT_DAY,
+  SEASON_FREE_TRACK,
+  clubChestTier,
+  currentSeasonId,
+  generateClubMembers,
+  kingLevelFromXp,
+  randomDonateCharId,
+  seedClubChat,
+  weekKey,
+  type ClubChatMsg,
+  type ClubDonateRequest,
+  type RichClub,
+} from './clubMeta'
+import {
   CHEST_META,
   MAX_CARD_LEVEL,
   STARTER_UNLOCKS,
@@ -47,6 +63,7 @@ export type Friend = {
   addedAt: string
 }
 
+/** Legacy shape — prefer RichClub via loadRichClub(). */
 export type Club = {
   id: string
   name: string
@@ -55,6 +72,8 @@ export type Club = {
   /** Invite code shared over text */
   code: string
 }
+
+export type { RichClub, ClubChatMsg, ClubDonateRequest }
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -272,6 +291,11 @@ export type PlayerProfile = {
   battlesPlayed: number
   /** Crown chest progress 0–10 */
   crownChest: number
+  /** King tower XP */
+  xp: number
+  /** Daily donation remaining */
+  donateLeft: number
+  donateDay: string
 }
 
 export type CardProgress = {
@@ -326,6 +350,28 @@ const DEFAULT_PROFILE: PlayerProfile = {
   bestWinStreak: 0,
   battlesPlayed: 0,
   crownChest: 0,
+  xp: 0,
+  donateLeft: DONATE_LIMIT_DAY,
+  donateDay: '',
+}
+
+const RICH_CLUB_KEY = 'philroyale.richClub.v1'
+const SEASON_KEY = 'philroyale.season.v1'
+const EVENTS_KEY = 'philroyale.events.v1'
+
+export type SeasonState = {
+  seasonId: string
+  points: number
+  claimed: number[]
+}
+
+export type EventsState = {
+  day: string
+  classicWins: number
+  classicClaimed: boolean
+  suddenWins: number
+  suddenClaimed: boolean
+  friendlyWins: number
 }
 
 function todayKey(): string {
@@ -340,7 +386,14 @@ export function arenaTitle(trophies: number): string {
 export function loadProfile(): PlayerProfile {
   const legacy = readJson<Partial<PlayerProfile>>('philroyale.profile.v1', {})
   const cur = readJson<Partial<PlayerProfile>>(PROFILE_KEY, {})
-  return { ...DEFAULT_PROFILE, ...legacy, ...cur }
+  const p = { ...DEFAULT_PROFILE, ...legacy, ...cur }
+  const day = todayKey()
+  if (p.donateDay !== day) {
+    p.donateDay = day
+    p.donateLeft = DONATE_LIMIT_DAY
+    saveProfile(p)
+  }
+  return p
 }
 
 export function saveProfile(profile: PlayerProfile): void {
@@ -361,18 +414,24 @@ export function recordMatchResult(
     p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
     p.trophies += 30
     p.gold += 50
+    p.xp += 40
   } else if (result === 'defeat') {
     p.losses += 1
     p.winStreak = 0
     p.trophies = Math.max(0, p.trophies - 20)
     p.gold += 15
+    p.xp += 15
   } else {
     p.draws += 1
     p.winStreak = 0
     p.trophies += 5
     p.gold += 25
+    p.xp += 25
   }
   saveProfile(p)
+  addSeasonPoints(result === 'victory' ? 25 : result === 'draw' ? 10 : 5)
+  addClubCrowns(result === 'victory' ? 3 : result === 'draw' ? 1 : 0)
+  if (result === 'victory') noteEventWin('ladder')
 
   const daily = loadDaily()
   if (!daily.questClaimed) {
@@ -821,4 +880,500 @@ export function grantBattleChest(result: 'victory' | 'defeat' | 'draw'): void {
   const rarity: ChestRarity =
     roll < 0.05 ? 'legendary' : roll < 0.2 ? 'epic' : roll < 0.55 ? 'rare' : 'common'
   addChest(rarity)
+}
+
+/* ——— Rich clubs ——— */
+
+function emptyRichFromLegacy(club: Club): RichClub {
+  const you = loadPlayerName().trim() || 'You'
+  const trophies = loadProfile().trophies
+  return {
+    id: club.id,
+    name: club.name,
+    tag: club.tag,
+    description: club.description,
+    code: club.code,
+    badge: club.code.charCodeAt(0) % 12,
+    access: 'invite',
+    minTrophies: 0,
+    trophies: trophies + 1200,
+    weeklyDonations: 0,
+    chestCrowns: 0,
+    chestClaimed: false,
+    members: generateClubMembers(you, club.code, trophies),
+    chat: seedClubChat(club.name),
+    donateRequests: [],
+    warStars: 0,
+    warDay: 1,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+export function loadRichClub(): RichClub | null {
+  const rich = readJson<RichClub | null>(RICH_CLUB_KEY, null)
+  if (rich) {
+    // Refresh your trophy line
+    const you = rich.members.find((m) => m.isYou)
+    if (you) {
+      you.name = loadPlayerName().trim() || you.name
+      you.trophies = loadProfile().trophies
+    }
+    return rich
+  }
+  const legacy = loadMyClub()
+  if (!legacy) return null
+  const migrated = emptyRichFromLegacy(legacy)
+  saveRichClub(migrated)
+  return migrated
+}
+
+export function saveRichClub(club: RichClub | null): void {
+  if (!club) {
+    localStorage.removeItem(RICH_CLUB_KEY)
+    saveMyClub(null)
+    return
+  }
+  localStorage.setItem(RICH_CLUB_KEY, JSON.stringify(club))
+  saveMyClub({
+    id: club.id,
+    name: club.name,
+    tag: club.tag,
+    description: club.description,
+    code: club.code,
+  })
+}
+
+export function createRichClub(name: string, description: string, badge: number): RichClub {
+  const code = Math.random().toString(36).slice(2, 8).toUpperCase()
+  const you = loadPlayerName().trim() || 'You'
+  const trophies = loadProfile().trophies
+  const club: RichClub = {
+    id: `c-${Date.now()}`,
+    name: name.trim(),
+    tag: `#${code}`,
+    description: description.trim() || 'A Phil Royale club. Donate, chat, war.',
+    code,
+    badge: Math.max(0, Math.min(11, badge)),
+    access: 'invite',
+    minTrophies: 0,
+    trophies: trophies + 800,
+    weeklyDonations: 0,
+    chestCrowns: 0,
+    chestClaimed: false,
+    members: generateClubMembers(you, code, trophies),
+    chat: seedClubChat(name.trim()),
+    donateRequests: [],
+    warStars: 0,
+    warDay: 1,
+    createdAt: new Date().toISOString(),
+  }
+  club.chat.push({
+    id: `join-${Date.now()}`,
+    from: 'System',
+    text: `${you} founded the club as Leader.`,
+    at: new Date().toISOString(),
+    kind: 'join',
+  })
+  saveRichClub(club)
+  return club
+}
+
+export function joinRichClubByCode(code: string): RichClub {
+  const c = code.trim().toUpperCase()
+  const you = loadPlayerName().trim() || 'You'
+  const trophies = loadProfile().trophies
+  const club: RichClub = {
+    id: `joined-${c}`,
+    name: `Club ${c}`,
+    tag: `#${c}`,
+    description: 'Joined with an invite code.',
+    code: c,
+    badge: c.charCodeAt(0) % 12,
+    access: 'invite',
+    minTrophies: 0,
+    trophies: trophies + 1500,
+    weeklyDonations: 40,
+    chestCrowns: 12,
+    chestClaimed: false,
+    members: generateClubMembers(you, c, trophies).map((m) =>
+      m.isYou ? { ...m, role: 'member' as const } : m,
+    ),
+    chat: seedClubChat(`Club ${c}`),
+    donateRequests: [
+      {
+        id: 'dr0',
+        from: 'BeansBoss3',
+        charId: 'finley',
+        need: 4,
+        have: 1,
+        createdAt: new Date().toISOString(),
+      },
+    ],
+    warStars: 4,
+    warDay: 2,
+    createdAt: new Date().toISOString(),
+  }
+  // Ensure you aren't leader when joining
+  const leader = club.members.find((m) => !m.isYou)
+  if (leader) leader.role = 'leader'
+  club.chat.push({
+    id: `join-${Date.now()}`,
+    from: 'System',
+    text: `${you} joined the club.`,
+    at: new Date().toISOString(),
+    kind: 'join',
+  })
+  saveRichClub(club)
+  return club
+}
+
+export function postClubChat(text: string): RichClub | null {
+  const club = loadRichClub()
+  if (!club) return null
+  const msg: ClubChatMsg = {
+    id: `chat-${Date.now()}`,
+    from: loadPlayerName().trim() || 'You',
+    text: text.trim().slice(0, 140),
+    at: new Date().toISOString(),
+    kind: 'chat',
+  }
+  if (!msg.text) return club
+  club.chat = [...club.chat.slice(-40), msg]
+  saveRichClub(club)
+  return club
+}
+
+export function requestClubDonation(charId: string): { ok: boolean; message: string; club: RichClub | null } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'Join a club first', club: null }
+  if (club.donateRequests.length >= 8) {
+    return { ok: false, message: 'Too many open requests', club }
+  }
+  const char = CHARACTERS.find((c) => c.id === charId)
+  if (!char) return { ok: false, message: 'Unknown card', club }
+  const req: ClubDonateRequest = {
+    id: `dr-${Date.now()}`,
+    from: loadPlayerName().trim() || 'You',
+    charId,
+    need: char.rarity === 'common' ? 6 : 4,
+    have: 0,
+    createdAt: new Date().toISOString(),
+  }
+  club.donateRequests = [req, ...club.donateRequests].slice(0, 8)
+  club.chat.push({
+    id: `donreq-${Date.now()}`,
+    from: req.from,
+    text: `Requests ${req.need}× ${char.name}`,
+    at: new Date().toISOString(),
+    kind: 'donate',
+  })
+  saveRichClub(club)
+  return { ok: true, message: 'Donation request posted', club }
+}
+
+export function fulfillDonation(requestId: string): { ok: boolean; message: string; club: RichClub | null } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'No club', club: null }
+  const profile = loadProfile()
+  if (profile.donateLeft <= 0) {
+    return { ok: false, message: 'Daily donation limit reached', club }
+  }
+  const req = club.donateRequests.find((r) => r.id === requestId)
+  if (!req) return { ok: false, message: 'Request gone', club }
+  if (req.have >= req.need) return { ok: false, message: 'Already filled', club }
+  const progress = loadCardProgress()
+  const have = progress.copies[req.charId] ?? 0
+  if (have < 1) return { ok: false, message: 'No copies to donate', club }
+  progress.copies[req.charId] = have - 1
+  req.have += 1
+  profile.donateLeft -= 1
+  club.weeklyDonations += 1
+  const you = club.members.find((m) => m.isYou)
+  if (you) you.donations += 1
+  const char = CHARACTERS.find((c) => c.id === req.charId)
+  club.chat.push({
+    id: `don-${Date.now()}`,
+    from: loadPlayerName().trim() || 'You',
+    text: `Donated 1× ${char?.name ?? req.charId} to ${req.from}`,
+    at: new Date().toISOString(),
+    kind: 'donate',
+  })
+  if (req.have >= req.need) {
+    club.donateRequests = club.donateRequests.filter((r) => r.id !== requestId)
+  }
+  // Simulate a bot request occasionally
+  if (Math.random() < 0.35 && club.donateRequests.length < 5) {
+    club.donateRequests.push({
+      id: `dr-bot-${Date.now()}`,
+      from: club.members.find((m) => !m.isYou)?.name ?? 'Clubmate',
+      charId: randomDonateCharId(),
+      need: 4,
+      have: 0,
+      createdAt: new Date().toISOString(),
+    })
+  }
+  saveCardProgress(progress)
+  saveProfile(profile)
+  saveRichClub(club)
+  return { ok: true, message: 'Donated!', club }
+}
+
+export function addClubCrowns(n: number): void {
+  if (n <= 0) return
+  const club = loadRichClub()
+  if (!club || club.chestClaimed) return
+  club.chestCrowns = Math.min(CLUB_CHEST_GOAL, club.chestCrowns + n)
+  club.warStars += n > 2 ? 1 : 0
+  saveRichClub(club)
+}
+
+export function claimClubChest(): { ok: boolean; message: string } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'Join a club first' }
+  if (club.chestClaimed) return { ok: false, message: 'Already claimed this week' }
+  if (club.chestCrowns < 20) return { ok: false, message: 'Need 20+ club crowns' }
+  const tier = clubChestTier(club.chestCrowns)
+  const added = addChest(tier.rarity)
+  if (!added.ok) return added
+  club.chestClaimed = true
+  saveRichClub(club)
+  return { ok: true, message: `${tier.label} added to your slots!` }
+}
+
+export function playClubWarBattle(): { ok: boolean; message: string; club: RichClub | null } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'Join a club first', club: null }
+  const win = Math.random() < 0.55
+  const stars = win ? 1 + Math.floor(Math.random() * 3) : 0
+  club.warStars += stars
+  club.warDay = Math.min(7, club.warDay)
+  club.chat.push({
+    id: `war-${Date.now()}`,
+    from: 'War',
+    text: win
+      ? `${loadPlayerName().trim() || 'You'} scored ${stars} war star${stars === 1 ? '' : 's'}!`
+      : `${loadPlayerName().trim() || 'You'} fought bravely (0 stars).`,
+    at: new Date().toISOString(),
+    kind: 'war',
+  })
+  if (win) {
+    const p = loadProfile()
+    p.gold += 20
+    p.xp += 20
+    saveProfile(p)
+    addClubCrowns(2)
+  }
+  saveRichClub(club)
+  return {
+    ok: true,
+    message: win ? `War win · +${stars} stars` : 'War battle lost — try again',
+    club,
+  }
+}
+
+export function clubMemberCount(club: RichClub): string {
+  return `${club.members.length}/${CLUB_MAX_MEMBERS}`
+}
+
+export type ClubShopOffer = {
+  id: string
+  label: string
+  costGold: number
+  gold?: number
+  gems?: number
+  copies?: number
+  xp?: number
+}
+
+export const CLUB_SHOP_OFFERS: ClubShopOffer[] = [
+  { id: 'boost', label: 'War Boost (+2 war stars)', costGold: 150, xp: 10 },
+  { id: 'pack', label: 'Donation Pack (5 random copies)', costGold: 200, copies: 5 },
+  { id: 'gemlet', label: 'Club Gemlet', costGold: 400, gems: 3 },
+  { id: 'chestgold', label: 'Treasury Tip', costGold: 100, gold: 80, xp: 25 },
+]
+
+export function buyClubShopOffer(
+  offerId: string,
+): { ok: boolean; message: string; club: RichClub | null } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'Join a club first', club: null }
+  const offer = CLUB_SHOP_OFFERS.find((o) => o.id === offerId)
+  if (!offer) return { ok: false, message: 'Unknown offer', club: null }
+  const profile = loadProfile()
+  if (profile.gold < offer.costGold) {
+    return { ok: false, message: `Need ${offer.costGold} gold`, club: null }
+  }
+  profile.gold -= offer.costGold
+  if (offer.gold) profile.gold += offer.gold
+  if (offer.gems) profile.gems += offer.gems
+  if (offer.xp) profile.xp += offer.xp
+  if (offer.id === 'boost') {
+    club.warStars += 2
+    club.chat.push({
+      id: `shop-${Date.now()}`,
+      from: 'Club Shop',
+      text: `${loadPlayerName().trim() || 'You'} bought a War Boost (+2 stars).`,
+      at: new Date().toISOString(),
+      kind: 'system',
+    })
+  }
+  if (offer.copies) {
+    const progress = loadCardProgress()
+    for (let i = 0; i < offer.copies; i++) {
+      const pool = progress.unlocked.length ? progress.unlocked : ['finley']
+      const id = pool[Math.floor(Math.random() * pool.length)]!
+      progress.copies[id] = (progress.copies[id] ?? 0) + 1
+    }
+    saveCardProgress(progress)
+  }
+  saveProfile(profile)
+  saveRichClub(club)
+  return { ok: true, message: `Bought ${offer.label}`, club }
+}
+
+export function advanceRiverRace(): { ok: boolean; message: string; club: RichClub | null } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'Join a club first', club: null }
+  const gain = 3 + Math.floor(Math.random() * 5)
+  club.chestCrowns = Math.min(CLUB_CHEST_GOAL, club.chestCrowns + gain)
+  club.weeklyDonations += gain
+  club.chat.push({
+    id: `river-${Date.now()}`,
+    from: 'River Race',
+    text: `${loadPlayerName().trim() || 'You'} paddled +${gain} race points for the club.`,
+    at: new Date().toISOString(),
+    kind: 'system',
+  })
+  const p = loadProfile()
+  p.gold += 15
+  p.xp += 15
+  saveProfile(p)
+  saveRichClub(club)
+  return { ok: true, message: `River race +${gain} · club at ${club.chestCrowns}`, club }
+}
+
+/* ——— Season pass ——— */
+
+export function loadSeason(): SeasonState {
+  const id = currentSeasonId()
+  const raw = readJson<SeasonState | null>(SEASON_KEY, null)
+  if (!raw || raw.seasonId !== id) {
+    const fresh: SeasonState = { seasonId: id, points: 0, claimed: [] }
+    saveSeason(fresh)
+    return fresh
+  }
+  return raw
+}
+
+export function saveSeason(s: SeasonState): void {
+  localStorage.setItem(SEASON_KEY, JSON.stringify(s))
+}
+
+export function addSeasonPoints(n: number): void {
+  const s = loadSeason()
+  s.points += n
+  saveSeason(s)
+}
+
+export function claimSeasonReward(index: number): { ok: boolean; message: string } {
+  const s = loadSeason()
+  const reward = SEASON_FREE_TRACK[index]
+  if (!reward) return { ok: false, message: 'Invalid tier' }
+  if (s.claimed.includes(index)) return { ok: false, message: 'Already claimed' }
+  if (s.points < reward.points) return { ok: false, message: `Need ${reward.points} season points` }
+  const profile = loadProfile()
+  const progress = loadCardProgress()
+  const bits: string[] = []
+  if (reward.gold) {
+    profile.gold += reward.gold
+    bits.push(`+${reward.gold}g`)
+  }
+  if (reward.gems) {
+    profile.gems += reward.gems
+    bits.push(`+${reward.gems} gems`)
+  }
+  if (reward.chest) {
+    const r = addChest(reward.chest)
+    bits.push(r.ok ? CHEST_META[reward.chest].label : 'chest slots full')
+  }
+  if (reward.copies) {
+    const pool = CHARACTERS.filter((c) => c.rarity === reward.copies!.rarity)
+    const pick = pool[Math.floor(Math.random() * pool.length)]
+    if (pick) {
+      progress.copies[pick.id] = (progress.copies[pick.id] ?? 0) + reward.copies.amount
+      if (!progress.unlocked.includes(pick.id)) progress.unlocked.push(pick.id)
+      bits.push(`${reward.copies.amount}× ${pick.name}`)
+    }
+  }
+  s.claimed.push(index)
+  saveSeason(s)
+  saveProfile(profile)
+  saveCardProgress(progress)
+  return { ok: true, message: bits.join(' · ') || 'Claimed' }
+}
+
+export function kingInfo() {
+  return kingLevelFromXp(loadProfile().xp)
+}
+
+/* ——— Events ——— */
+
+export function loadEvents(): EventsState {
+  const day = todayKey()
+  const raw = readJson<EventsState | null>(EVENTS_KEY, null)
+  if (!raw || raw.day !== day) {
+    const fresh: EventsState = {
+      day,
+      classicWins: 0,
+      classicClaimed: false,
+      suddenWins: 0,
+      suddenClaimed: false,
+      friendlyWins: 0,
+    }
+    saveEvents(fresh)
+    return fresh
+  }
+  return raw
+}
+
+export function saveEvents(e: EventsState): void {
+  localStorage.setItem(EVENTS_KEY, JSON.stringify(e))
+}
+
+export function noteEventWin(kind: 'ladder' | 'classic' | 'sudden' | 'friendly'): void {
+  const e = loadEvents()
+  if (kind === 'classic') e.classicWins += 1
+  else if (kind === 'sudden') e.suddenWins += 1
+  else if (kind === 'friendly') e.friendlyWins += 1
+  saveEvents(e)
+}
+
+export function claimEventReward(
+  kind: 'classic' | 'sudden',
+): { ok: boolean; message: string } {
+  const e = loadEvents()
+  const profile = loadProfile()
+  if (kind === 'classic') {
+    if (e.classicClaimed) return { ok: false, message: 'Already claimed' }
+    if (e.classicWins < 3) return { ok: false, message: 'Win 3 classic battles' }
+    profile.gold += 200
+    profile.gems += 5
+    e.classicClaimed = true
+    saveEvents(e)
+    saveProfile(profile)
+    addChest('rare')
+    return { ok: true, message: '+200g · +5 gems · Rare Chest' }
+  }
+  if (e.suddenClaimed) return { ok: false, message: 'Already claimed' }
+  if (e.suddenWins < 2) return { ok: false, message: 'Win 2 sudden-death battles' }
+  profile.gold += 150
+  e.suddenClaimed = true
+  saveEvents(e)
+  saveProfile(profile)
+  addChest('common')
+  return { ok: true, message: '+150g · Common Chest' }
+}
+
+export function weekLabel(): string {
+  return weekKey()
 }

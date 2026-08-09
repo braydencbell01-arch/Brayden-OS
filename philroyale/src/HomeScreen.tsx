@@ -22,12 +22,15 @@ import {
   claimDailyQuest,
   countUnclaimedRoadRewards,
   friendInviteUrl,
+  kingInfo,
   loadChests,
   loadDaily,
   loadDeck,
   loadFriends,
   loadPlayerName,
   loadProfile,
+  loadRichClub,
+  loadSeason,
   openChestNow,
   questLabel,
   savePlayerName,
@@ -43,6 +46,8 @@ type Props = {
   onPlay: (opponentName?: string | null) => void
   onRequestBattle: (friendName: string) => Promise<void>
   onOpenRoad: () => void
+  onOpenEvents: () => void
+  onOpenClub: () => void
 }
 
 function formatRemain(ms: number): string {
@@ -52,9 +57,18 @@ function formatRemain(ms: number): string {
   return m > 0 ? `${m}:${String(r).padStart(2, '0')}` : `${r}s`
 }
 
-export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
+export function HomeScreen({
+  onPlay,
+  onRequestBattle,
+  onOpenRoad,
+  onOpenEvents,
+  onOpenClub,
+}: Props) {
   const friends = useMemo(() => loadFriends(), [])
   const deck = useMemo(() => loadDeck(), [])
+  const club = useMemo(() => loadRichClub(), [])
+  const season = useMemo(() => loadSeason(), [])
+  const king = useMemo(() => kingInfo(), [])
   const [inviteOpen, setInviteOpen] = useState(false)
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile())
@@ -207,9 +221,49 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
             <StatChip label="Streak" value={`${profile.winStreak}W`} />
           </div>
           <p className="mt-2 text-center text-xs font-extrabold uppercase tracking-wide text-white/70">
-            {arenaTitle(profile.trophies)} · {profile.wins}W / {profile.losses}L
+            King Lv {king.level} · {king.into}/{king.need} XP · {arenaTitle(profile.trophies)}
           </p>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/40">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.round((king.into / Math.max(1, king.need)) * 100)}%`,
+                background: 'linear-gradient(90deg,#7dff9a,#4a9eff)',
+              }}
+            />
+          </div>
         </section>
+
+        <div className="mt-3 grid w-full max-w-md grid-cols-2 gap-2 self-center">
+          <motion.button
+            type="button"
+            onClick={onOpenEvents}
+            whileTap={{ scale: 0.98 }}
+            className="rounded-xl px-3 py-2.5 text-left"
+            style={{ background: 'linear-gradient(180deg,#5a3a9a,#2a1848)' }}
+          >
+            <p className="font-[family-name:var(--font-display)] text-lg text-[#f5d76e]">
+              Events
+            </p>
+            <p className="text-[0.65rem] font-bold text-white/80">
+              Season {season.seasonId} · {season.points} pts
+            </p>
+          </motion.button>
+          <motion.button
+            type="button"
+            onClick={onOpenClub}
+            whileTap={{ scale: 0.98 }}
+            className="rounded-xl px-3 py-2.5 text-left"
+            style={{ background: 'linear-gradient(180deg,#2f6fbf,#1d4a86)' }}
+          >
+            <p className="font-[family-name:var(--font-display)] text-lg text-[#f5d76e]">
+              Club
+            </p>
+            <p className="text-[0.65rem] font-bold text-white/80">
+              {club ? `${club.name} · ${club.chestCrowns} crowns` : 'Join or create'}
+            </p>
+          </motion.button>
+        </div>
 
         {/* Big clickable Trophy Road entry — CR style */}
         <motion.button

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BattleScreen } from './BattleScreen'
 import { CharactersScreen } from './CharactersScreen'
+import { EventsScreen } from './EventsScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
 import { ShopScreen } from './ShopScreen'
@@ -34,13 +35,14 @@ import {
   type BattleChannelMessage,
 } from './storage'
 
-type TabId = 'home' | 'road' | 'characters' | 'shop' | 'friends'
+type TabId = 'home' | 'road' | 'characters' | 'shop' | 'events' | 'friends'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'home', label: 'Battle' },
   { id: 'road', label: 'Road' },
   { id: 'characters', label: 'Cards' },
   { id: 'shop', label: 'Shop' },
+  { id: 'events', label: 'Events' },
   { id: 'friends', label: 'Social' },
 ]
 
@@ -321,10 +323,13 @@ export default function App() {
                   setShowRoad(true)
                   setTab('road')
                 }}
+                onOpenEvents={() => setTab('events')}
+                onOpenClub={() => setTab('friends')}
               />
             ) : null}
             {tab === 'characters' ? <CharactersScreen /> : null}
             {tab === 'shop' ? <ShopScreen /> : null}
+            {tab === 'events' ? <EventsScreen onPlay={startMatch} /> : null}
             {tab === 'friends' ? (
               <FriendsScreen
                 onBattle={startMatch}
