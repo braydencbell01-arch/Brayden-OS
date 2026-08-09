@@ -87,9 +87,17 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
           boxShadow: 'inset 0 1px 0 #ffffff33',
         }}
       >
-        <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden px-0.5 pt-1">
+        <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden">
           <div
-            className={`${next ? 'h-[85%] w-[90%]' : collection ? 'h-[88%] w-[92%]' : 'h-[86%] w-[90%]'} relative`}
+            className={`${
+              character.id === 'phil'
+                ? 'absolute inset-0'
+                : next
+                  ? 'relative h-[85%] w-[90%]'
+                  : collection
+                    ? 'relative h-[88%] w-[92%]'
+                    : 'relative h-[86%] w-[90%]'
+            }`}
           >
             <CharacterModel
               charId={character.id}

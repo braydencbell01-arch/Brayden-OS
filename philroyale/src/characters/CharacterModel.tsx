@@ -1,4 +1,5 @@
 import type { AttackId } from '../characters'
+import { CrUnitModel } from './CrUnitModel'
 import { PhilModel, type CharacterAnim } from './PhilModel'
 
 type Props = {
@@ -7,61 +8,113 @@ type Props = {
   facing: number
   attackId?: AttackId | null
   portrait?: boolean
-  /** Fallback hue for non-Phil placeholders. */
   hue?: number
   initial?: string
   enraged?: boolean
 }
 
-/** Routes to per-character 2.5D models; others use a clean placeholder until photos arrive. */
+/** Routes to Clash Royale–style toy-3D character models. */
 export function CharacterModel({
   charId,
   anim,
   facing,
   attackId,
   portrait,
-  hue = 200,
-  initial = '?',
   enraged,
 }: Props) {
   if (charId === 'phil') {
     return <PhilModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   }
 
-  const flip = Math.cos(facing) < -0.15 ? -1 : 1
-  const art = enraged ? 'hsl(285 70% 42%)' : `hsl(${hue} 60% 42%)`
-  const walking = anim === 'walk'
+  if (charId === 'pete') {
+    return (
+      <CrUnitModel
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        build="hulk"
+        shirt="#e07030"
+        shirtDark="#8a3010"
+        pants="#3a3a48"
+        pantsDark="#1a1a22"
+        accent="#f5d76e"
+        hair="#3a2818"
+        hat="bandana"
+      />
+    )
+  }
+
+  if (charId === 'beans') {
+    return (
+      <CrUnitModel
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        build="small"
+        shirt="#c89050"
+        shirtDark="#6a4020"
+        pants="#5a7a3a"
+        pantsDark="#2a4018"
+        accent="#8bc34a"
+        hair="#5a3a20"
+        hat="none"
+        prop="drool"
+      />
+    )
+  }
+
+  if (charId === 'finley') {
+    return (
+      <CrUnitModel
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        enraged={enraged}
+        build="speedy"
+        shirt="#2ab8a0"
+        shirtDark="#0a6858"
+        pants="#2a3a58"
+        pantsDark="#121828"
+        accent="#a040ff"
+        hair="#1a2a40"
+        hat="visor"
+        prop="fangs"
+      />
+    )
+  }
+
+  if (charId === 'jeremy') {
+    return (
+      <CrUnitModel
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        build="shooter"
+        shirt="#5aaa40"
+        shirtDark="#2a6018"
+        pants="#4a4a58"
+        pantsDark="#22222a"
+        accent="#c9a227"
+        hair="#c8b090"
+        hat="cap"
+        prop="gun"
+      />
+    )
+  }
 
   return (
-    <div
-      className="relative h-full w-full"
-      style={{ transform: `scaleX(${flip})`, transformOrigin: '50% 100%' }}
-    >
-      {!portrait ? (
-        <div
-          className="absolute bottom-0 left-1/2 h-[12%] w-[65%] -translate-x-1/2 rounded-[50%]"
-          style={{ background: 'radial-gradient(ellipse, #00000066 0%, transparent 70%)' }}
-        />
-      ) : null}
-      <div
-        className="absolute bottom-[8%] left-1/2 flex w-[78%] -translate-x-1/2 flex-col items-center"
-        style={{
-          aspectRatio: '3 / 5',
-          animation: walking ? 'phil-bob 0.35s ease-in-out infinite' : 'phil-idle 1.1s ease-in-out infinite',
-        }}
-      >
-        <div
-          className="mb-[6%] aspect-square w-[72%] rounded-full border border-black/20"
-          style={{ background: art, boxShadow: 'inset 0 2px 0 #ffffff33' }}
-        />
-        <div
-          className="flex flex-1 w-full items-center justify-center rounded-t-[40%] rounded-b-[18%] border border-black/25 font-[family-name:var(--font-display)] text-[0.9rem] text-white"
-          style={{ background: art, boxShadow: 'inset 0 2px 0 #ffffff22, 1px 2px 0 #00000044' }}
-        >
-          {initial}
-        </div>
-      </div>
-    </div>
+    <CrUnitModel
+      anim={anim}
+      facing={facing}
+      portrait={portrait}
+      build="speedy"
+      shirt="#5a8ab0"
+      shirtDark="#1a3a58"
+      pants="#3a3a48"
+      pantsDark="#1a1a22"
+      accent="#f5d76e"
+      hair="#4a3a28"
+    />
   )
 }
 
