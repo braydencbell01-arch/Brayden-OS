@@ -6,7 +6,6 @@ import {
   SEASON_FREE_TRACK,
   clubChestTier,
   currentSeasonId,
-  generateClubMembers,
   kingLevelFromXp,
   randomDonateCharId,
   seedClubChat,
@@ -148,6 +147,12 @@ export function loadFriends(): Friend[] {
 
 export function saveFriends(friends: Friend[]): void {
   localStorage.setItem(FRIENDS_KEY, JSON.stringify(friends))
+}
+
+export function removeFriendByPlayerId(playerId: string): void {
+  const id = playerId.trim()
+  if (!id) return
+  saveFriends(loadFriends().filter((f) => f.playerId !== id && f.id !== id))
 }
 
 export function loadMyClub(): Club | null {
@@ -1128,28 +1133,54 @@ export function grantBattleChest(result: 'victory' | 'defeat' | 'draw'): void {
 /* ——— Rich clubs ——— */
 
 function emptyRichFromLegacy(club: Club): RichClub {
-  const you = loadPlayerName().trim() || 'You'
   const trophies = loadProfile().trophies
+  const fakeName = /^Club [A-Z0-9]{4,8}$/i.test(club.name)
   return {
     id: club.id,
-    name: club.name,
+    name: fakeName ? 'Joining…' : club.name,
     tag: club.tag,
-    description: club.description,
+    description: fakeName
+      ? 'Connecting to club… keep Phil Royale open.'
+      : club.description,
     code: club.code,
     badge: club.code.charCodeAt(0) % 12,
     access: 'invite',
     minTrophies: 0,
-    trophies: trophies + 1200,
+    trophies,
     weeklyDonations: 0,
     chestCrowns: 0,
     chestClaimed: false,
-    members: generateClubMembers(you, club.code, trophies),
-    chat: seedClubChat(club.name),
+    // Never seed bot members — real roster syncs over the club channel.
+    members: [makeYouMember('leader')],
+    chat: seedClubChat(fakeName ? 'Club' : club.name),
     donateRequests: [],
     warStars: 0,
     warDay: 1,
     createdAt: new Date().toISOString(),
   }
+}
+
+/** Wipe leftover “Club XXXXXX” / empty joins that never synced to a real club. */
+export function repairBrokenLocalClub(): RichClub | null {
+  const club = readJson<RichClub | null>(RICH_CLUB_KEY, null)
+  if (!club) return null
+  const placeholder =
+    club.name.startsWith('Joining') || /^Club [A-Z0-9]{4,8}$/i.test(club.name.trim())
+  const realOthers = club.members.filter(
+    (m) => !m.isYou && m.playerId && m.playerId.length >= 6,
+  )
+  if (placeholder && realOthers.length === 0) {
+    localStorage.removeItem(RICH_CLUB_KEY)
+    saveMyClub(null)
+    return null
+  }
+  if (placeholder && realOthers.length > 0) {
+    // Have peers but never got the real name — keep waiting via sync.
+    club.name = 'Joining…'
+    club.description = 'Syncing club name… keep Phil Royale open.'
+    saveRichClub(club)
+  }
+  return pruneFakeClubMembers()
 }
 
 export function loadRichClub(): RichClub | null {

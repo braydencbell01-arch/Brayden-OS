@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ClubScreen } from './ClubScreen'
+import { joinClubVerified } from './clubSync'
 import {
   PRESENCE_ONLINE_MS,
   type FriendPresenceInfo,
 } from './socialHub'
 import {
   formatAccountCode,
-  joinRichClubByCode,
   loadAccountCode,
   loadFriendMeta,
   loadFriends,
@@ -83,11 +83,14 @@ export function FriendsScreen({
     const params = new URLSearchParams(window.location.search)
     const clubCode = params.get('club')
     if (clubCode) {
-      joinRichClubByCode(clubCode)
       setSection('clubs')
       const url = new URL(window.location.href)
       url.searchParams.delete('club')
       window.history.replaceState({}, '', url.toString())
+      void joinClubVerified(clubCode).then((res) => {
+        setAddMsg(res.message)
+        window.dispatchEvent(new Event('philroyale-club-changed'))
+      })
     }
     setFriends(loadFriends())
     const onFriends = () => setFriends(loadFriends())
@@ -121,11 +124,6 @@ export function FriendsScreen({
   async function sendInvite(friend: Friend, mode: GameMode) {
     if (!friend.playerId) {
       setAddMsg('Add them with their account code before inviting.')
-      setInviteTarget(null)
-      return
-    }
-    if (!isOnline(friend, friendPresence, Date.now())) {
-      setAddMsg(`${friend.name} is offline. They need Phil Royale open to get invites.`)
       setInviteTarget(null)
       return
     }
@@ -252,7 +250,7 @@ export function FriendsScreen({
         </h1>
         <p className="text-sm font-semibold text-white/70">
           Share your <span className="text-[#f5d76e]">8-character account code</span>. Add
-          friends by theirs (not a club code) — then Invite when they&apos;re online for Accept /
+          friends by theirs (not a club code) — then open their profile → Invite for Accept /
           Decline.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
@@ -359,15 +357,15 @@ export function FriendsScreen({
                 const last = meta.lastBattled[f.id]
                 const pinned = !!meta.pinned[f.id]
                 const note = meta.notes[f.id] ?? ''
-                const canInvite = Boolean(f.playerId) && online && !battling && !isWaiting
+                const canInvite = Boolean(f.playerId) && !battling && !isWaiting
                 const statusColor = battling ? '#ffb020' : online ? '#3ecf6a' : '#6a5a50'
                 const statusLabel = !f.playerId
                   ? 'Missing account code'
                   : battling
                     ? `In battle${presence?.opponentName ? ` vs ${presence.opponentName}` : ''}`
                     : online
-                      ? 'Online — ready for invites'
-                      : 'Offline — open Phil Royale to play'
+                      ? 'Online — tap Invite for Accept / Decline'
+                      : 'Keep Phil Royale open on both phones to battle'
                 return (
                   <li
                     key={f.id}
@@ -681,7 +679,7 @@ function FriendProfileModal({
           ) : (
             <button
               type="button"
-              disabled={!online || battling || !friend.playerId}
+              disabled={battling || !friend.playerId}
               onClick={onInvite}
               className="w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
               style={{ background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)' }}

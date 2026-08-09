@@ -7,28 +7,21 @@ import {
   roleRank,
   type ClubMember,
 } from './clubMeta'
-import {
-  CLUB_HEARTBEAT_MS,
-  normalizeClubCode,
-  publishClub,
-  subscribeClub,
-} from './clubHub'
+import { normalizeClubCode, publishClub } from './clubHub'
+import { joinClubVerified } from './clubSync'
 import { formatWarRemain, phaseLabel } from './clubWar'
 import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
 import {
   CLUB_SHOP_OFFERS,
   advanceRiverRace,
-  applyRemoteClubState,
   beginWarAttack,
   buyClubShopOffer,
   claimClubChest,
   claimWarRewards,
   clubMemberCount,
-  clubMembersForSync,
   contributeWarCollection,
   createRichClub,
   fulfillDonation,
-  joinRichClubByCode,
   loadCardProgress,
   loadClubWar,
   loadPlayerId,
@@ -37,14 +30,13 @@ import {
   loadRichClub,
   postClubChat,
   pruneFakeClubMembers,
-  removeClubMember,
+  repairBrokenLocalClub,
   requestClubDonation,
   saveRichClub,
   shareText,
   simWarAttack,
   startClubWar,
   clubInviteUrl,
-  upsertClubMember,
   upsertFriend,
   type ClubWarState,
   type GameMode,
@@ -66,6 +58,7 @@ export function ClubScreen({
   friendPresence = {},
 }: Props) {
   const [club, setClub] = useState<RichClub | null>(() => {
+    repairBrokenLocalClub()
     pruneFakeClubMembers()
     return loadRichClub()
   })
@@ -78,6 +71,7 @@ export function ClubScreen({
   const [createDesc, setCreateDesc] = useState('')
   const [badge, setBadge] = useState(0)
   const [joinCode, setJoinCode] = useState('')
+  const [joining, setJoining] = useState(false)
   const [donateChar, setDonateChar] = useState('finley')
   const [profile, setProfile] = useState(() => loadProfile())
   const [war, setWar] = useState<ClubWarState>(() => loadClubWar())
@@ -99,112 +93,12 @@ export function ClubScreen({
     return () => window.clearInterval(id)
   }, [tab])
 
-  // Live club roster sync — both creator and joiners must keep Phil Royale open.
+  // Refresh UI when App-level club sync updates the roster.
   useEffect(() => {
-    if (!club?.code) return
-    const code = club.code
-    pruneFakeClubMembers()
-
-    const publishState = () => {
-      const me = loadPlayerName().trim() || 'You'
-      const myId = loadPlayerId()
-      const cur = loadRichClub()
-      if (!cur || cur.code !== code) return
-      upsertClubMember({
-        playerId: myId,
-        name: me,
-        trophies: loadProfile().trophies,
-        online: true,
-        role: cur.members.find((m) => m.isYou || m.playerId === myId)?.role,
-      })
-      const latest = loadRichClub()
-      if (!latest) return
-      void publishClub(code, {
-        type: 'club_join',
-        code,
-        fromPlayerId: myId,
-        fromName: me,
-        trophies: loadProfile().trophies,
-        at: new Date().toISOString(),
-      })
-      // Don't broadcast "Joining…" as the club name — wait for the leader's state.
-      if (!latest.name.startsWith('Joining')) {
-        void publishClub(code, {
-          type: 'club_state',
-          code,
-          name: latest.name,
-          description: latest.description,
-          badge: latest.badge,
-          members: clubMembersForSync(),
-          fromPlayerId: myId,
-          at: new Date().toISOString(),
-        })
-      }
-      setClub(loadRichClub())
-    }
-
-    const unsub = subscribeClub(code, (msg) => {
-      if (msg.type === 'club_join') {
-        if (msg.fromPlayerId === loadPlayerId()) return
-        upsertClubMember({
-          playerId: msg.fromPlayerId,
-          name: msg.fromName,
-          trophies: msg.trophies,
-          online: true,
-          role: 'member',
-        })
-        upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
-        window.dispatchEvent(new Event('philroyale-friends-changed'))
-        // Reply with full state so the joiner learns the real club name.
-        const cur = loadRichClub()
-        if (cur) {
-          void publishClub(code, {
-            type: 'club_state',
-            code,
-            name: cur.name.startsWith('Joining') ? cur.name : cur.name,
-            description: cur.description,
-            badge: cur.badge,
-            members: clubMembersForSync(),
-            fromPlayerId: loadPlayerId(),
-            at: new Date().toISOString(),
-          })
-        }
-        setClub(loadRichClub())
-        return
-      }
-      if (msg.type === 'club_state') {
-        if (msg.fromPlayerId === loadPlayerId()) return
-        if (!msg.name || msg.name.startsWith('Joining')) return
-        applyRemoteClubState({
-          code: msg.code,
-          name: msg.name,
-          description: msg.description,
-          badge: msg.badge,
-          members: msg.members,
-        })
-        for (const m of msg.members) {
-          if (m.playerId !== loadPlayerId()) {
-            upsertFriend({ name: m.name, playerId: m.playerId })
-          }
-        }
-        window.dispatchEvent(new Event('philroyale-friends-changed'))
-        setClub(loadRichClub())
-        return
-      }
-      if (msg.type === 'club_leave') {
-        if (msg.fromPlayerId === loadPlayerId()) return
-        removeClubMember(msg.fromPlayerId)
-        setClub(loadRichClub())
-      }
-    })
-
-    publishState()
-    const beat = window.setInterval(publishState, CLUB_HEARTBEAT_MS)
-    return () => {
-      unsub()
-      window.clearInterval(beat)
-    }
-  }, [club?.code])
+    const onClub = () => setClub(loadRichClub())
+    window.addEventListener('philroyale-club-changed', onClub)
+    return () => window.removeEventListener('philroyale-club-changed', onClub)
+  }, [])
 
   const unlockedCards = useMemo(
     () =>
@@ -285,7 +179,8 @@ export function ClubScreen({
                 }
                 const c = createRichClub(createName, createDesc, badge)
                 setClub(c)
-                flash(`${c.name} founded!`)
+                window.dispatchEvent(new Event('philroyale-club-changed'))
+                flash(`${c.name} founded! Share code ${c.code}`)
               }}
               className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
               style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
@@ -301,7 +196,8 @@ export function ClubScreen({
               Join with club invite code (6 letters)
             </p>
             <p className="mt-1 text-[0.7rem] font-semibold text-white/50">
-              Not an account code — those are 8 characters under Friends.
+              Not an account code (those are 8 chars under Friends). Brother must keep Phil Royale
+              open while you join.
             </p>
             <div className="mt-2 flex gap-2">
               <input
@@ -309,28 +205,38 @@ export function ClubScreen({
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                 placeholder="e.g. 4W69RP"
                 maxLength={8}
-                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold uppercase text-white outline-none ring-1 ring-white/15"
+                disabled={joining}
+                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold uppercase text-white outline-none ring-1 ring-white/15 disabled:opacity-50"
               />
               <button
                 type="button"
+                disabled={joining}
                 onClick={() => {
                   const c = normalizeClubCode(joinCode)
-                  if (c.length < 6) {
-                    flash('Club codes are 6 characters')
+                  if (c.length !== 6) {
+                    flash(
+                      c.length === 8
+                        ? 'That is an account code — use Friends → Add friend'
+                        : 'Club codes are exactly 6 characters',
+                    )
                     return
                   }
-                  if (c.length >= 8) {
-                    flash('That looks like an account code — use Friends → Add friend')
-                    return
-                  }
-                  const joined = joinRichClubByCode(c)
-                  setClub(joined)
-                  flash(`Joining ${c}… keep the app open so members sync`)
+                  setJoining(true)
+                  flash(`Looking up club ${c}…`)
+                  void joinClubVerified(c).then((res) => {
+                    setJoining(false)
+                    setClub(res.club)
+                    flash(res.message)
+                    if (res.ok) {
+                      setJoinCode('')
+                      window.dispatchEvent(new Event('philroyale-club-changed'))
+                    }
+                  })
                 }}
-                className="rounded-lg px-3 py-2 text-sm font-extrabold text-white"
+                className="rounded-lg px-3 py-2 text-sm font-extrabold text-white disabled:opacity-50"
                 style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
               >
-                Join
+                {joining ? '…' : 'Join'}
               </button>
             </div>
           </section>
@@ -483,6 +389,7 @@ export function ClubScreen({
                 }
                 saveRichClub(null)
                 setClub(null)
+                window.dispatchEvent(new Event('philroyale-club-changed'))
                 flash('Left club')
               }}
               className="w-full rounded-lg bg-[#2a1a12] py-2 text-xs font-extrabold text-[#ff8a7a]"

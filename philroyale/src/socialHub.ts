@@ -125,6 +125,44 @@ function parsePayload(raw: string): SocialMessage | null {
   }
 }
 
+type SocialWaiter = {
+  filter: (msg: SocialMessage) => boolean
+  resolve: (msg: SocialMessage | null) => void
+  timer: number
+}
+
+const socialWaiters: SocialWaiter[] = []
+
+/** Used by App when a social message arrives — also resolves waitForSocial. */
+export function notifySocialWaiters(msg: SocialMessage): void {
+  for (let i = socialWaiters.length - 1; i >= 0; i--) {
+    const w = socialWaiters[i]!
+    if (!w.filter(msg)) continue
+    window.clearTimeout(w.timer)
+    socialWaiters.splice(i, 1)
+    w.resolve(msg)
+  }
+}
+
+/** Wait until a matching inbound social message (or timeout → null). */
+export function waitForSocial(
+  filter: (msg: SocialMessage) => boolean,
+  timeoutMs = 15_000,
+): Promise<SocialMessage | null> {
+  return new Promise((resolve) => {
+    const waiter: SocialWaiter = {
+      filter,
+      resolve,
+      timer: window.setTimeout(() => {
+        const idx = socialWaiters.indexOf(waiter)
+        if (idx >= 0) socialWaiters.splice(idx, 1)
+        resolve(null)
+      }, timeoutMs),
+    }
+    socialWaiters.push(waiter)
+  })
+}
+
 /** Subscribe to inbound social messages (SSE + poll fallback). */
 export function subscribeSocial(
   playerId: string,
@@ -146,7 +184,10 @@ export function subscribeSocial(
       }
     }
     const msg = parsePayload(raw)
-    if (msg) onMessage(msg)
+    if (msg) {
+      notifySocialWaiters(msg)
+      onMessage(msg)
+    }
   }
 
   let es: EventSource | null = null

@@ -10,11 +10,13 @@ import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
 import type { BattleNet } from './battleSync'
+import { joinClubVerified, startClubSync } from './clubSync'
 import {
   PRESENCE_HEARTBEAT_MS,
   PRESENCE_ONLINE_MS,
   publishSocial,
   subscribeSocial,
+  waitForSocial,
   type FriendPresenceInfo,
   type SocialMessage,
 } from './socialHub'
@@ -32,7 +34,6 @@ import {
   createBattleChallenge,
   formatAccountCode,
   isChallengeForMe,
-  joinRichClubByCode,
   loadBattleAccepted,
   loadCardProgress,
   loadFriends,
@@ -49,6 +50,8 @@ import {
   parseBattleChallengeFromUrl,
   parseFriendInviteFromUrl,
   postBattleMessage,
+  removeFriendByPlayerId,
+  repairBrokenLocalClub,
   saveBattleAccepted,
   saveIncomingChallenge,
   saveIncomingClubInvite,
@@ -272,15 +275,12 @@ export default function App() {
         flashFriend('Add this friend with their account code first.')
         return
       }
-      const lastSeen = friendPresence[toPlayerId]?.at
-      if (!lastSeen || Date.now() - lastSeen >= PRESENCE_ONLINE_MS) {
-        flashFriend(`${friendName} is offline. They need Phil Royale open to get invites.`)
-        return
-      }
       if (friendPresence[toPlayerId]?.inBattle) {
         flashFriend(`${friendName} is already in a battle — spectate from their profile.`)
         return
       }
+      const lastSeen = friendPresence[toPlayerId]?.at
+      const looksOnline = !!lastSeen && Date.now() - lastSeen < PRESENCE_ONLINE_MS
       const challenge = createBattleChallenge(friendName, {
         mode,
         toPlayerId,
@@ -303,7 +303,11 @@ export default function App() {
         flashFriend('Invite failed — check your connection.')
         return
       }
-      flashFriend(`Invite sent to ${friendName}. Waiting for Accept…`)
+      flashFriend(
+        looksOnline
+          ? `Invite sent to ${friendName}. Waiting for Accept / Decline…`
+          : `Invite sent to ${friendName}. They need Phil Royale open to see Accept / Decline.`,
+      )
     },
     [flashFriend, friendPresence],
   )
@@ -320,31 +324,59 @@ export default function App() {
           message:
             code.length === 6
               ? 'That looks like a club code — use Club → Join instead.'
-              : 'Account codes are exactly 8 characters.',
+              : 'Account codes are exactly 8 characters (example ABCD-EFGH).',
         }
       }
       if (code === myId) return { ok: false, message: "That's your own code." }
-      upsertFriend({ name: 'New friend', playerId: code })
+
+      // Pending row only — removed if nobody with that code answers.
+      upsertFriend({ name: 'Adding…', playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
-      const ok = await publishSocial(code, {
+
+      const published = await publishSocial(code, {
         type: 'friend_request',
         fromPlayerId: myId,
         fromName: me,
         toPlayerId: code,
         at: new Date().toISOString(),
       })
-      // Also say hello so they get our name even if they added us first.
       void publishSocial(code, {
         type: 'friend_hello',
         fromPlayerId: myId,
         fromName: me,
         at: new Date().toISOString(),
       })
+
+      if (!published) {
+        removeFriendByPlayerId(code)
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        return { ok: false, message: 'Could not reach the network. Try again.' }
+      }
+
+      const reply = await waitForSocial(
+        (msg) =>
+          (msg.type === 'friend_hello' || msg.type === 'friend_request' || msg.type === 'presence') &&
+          msg.fromPlayerId === code,
+        16_000,
+      )
+
+      if (!reply) {
+        removeFriendByPlayerId(code)
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        return {
+          ok: false,
+          message:
+            'Nobody online with that account code. Copy their 8-character code under Friends (not the club code), and keep Phil Royale open on both phones.',
+        }
+      }
+
+      const realName =
+        'fromName' in reply && reply.fromName ? reply.fromName : formatAccountCode(code)
+      upsertFriend({ name: realName, playerId: code })
+      window.dispatchEvent(new Event('philroyale-friends-changed'))
       return {
         ok: true,
-        message: ok
-          ? `Friend request sent to ${formatAccountCode(code)}. Their name appears when they're online.`
-          : `Saved ${formatAccountCode(code)}. Open Phil Royale on both phones so names sync.`,
+        message: `Added ${realName}. Open their profile → Invite — they get Accept / Decline on their screen.`,
       }
     },
     [],
@@ -388,6 +420,7 @@ export default function App() {
 
   useEffect(() => {
     loadPlayerId()
+    repairBrokenLocalClub()
     const friendLink = parseFriendInviteFromUrl()
     if (friendLink) {
       clearUrlParams(['addFriend', 'friendName', 'friend'])
@@ -395,12 +428,28 @@ export default function App() {
     }
     const clubCode = new URLSearchParams(window.location.search).get('club')
     if (clubCode) {
-      joinRichClubByCode(clubCode)
       clearUrlParams(['club'])
-      flashFriend('Joined club from invite link!')
       setTab('friends')
+      void joinClubVerified(clubCode).then((res) => {
+        flashFriend(res.message)
+        window.dispatchEvent(new Event('philroyale-club-changed'))
+      })
     }
   }, [completeFriendLink, flashFriend])
+
+  // Club roster sync on every screen so joins work even if Social isn't open.
+  const [clubSyncKey, setClubSyncKey] = useState(0)
+  useEffect(() => {
+    const bump = () => setClubSyncKey((k) => k + 1)
+    window.addEventListener('philroyale-club-changed', bump)
+    return () => window.removeEventListener('philroyale-club-changed', bump)
+  }, [])
+  useEffect(() => {
+    repairBrokenLocalClub()
+    return startClubSync(() => {
+      window.dispatchEvent(new Event('philroyale-club-changed'))
+    })
+  }, [clubSyncKey, playerName])
 
   useEffect(() => {
     const fromUrl = parseBattleChallengeFromUrl()
@@ -758,11 +807,15 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => {
-                  joinRichClubByCode(clubInvite.clubCode)
+                  const invite = clubInvite
                   saveIncomingClubInvite(null)
                   setClubInvite(null)
-                  flashFriend(`Joined ${clubInvite.clubName}!`)
                   setTab('friends')
+                  flashFriend(`Joining ${invite.clubName}…`)
+                  void joinClubVerified(invite.clubCode).then((res) => {
+                    flashFriend(res.message)
+                    window.dispatchEvent(new Event('philroyale-club-changed'))
+                  })
                 }}
                 className="flex-1 rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
                 style={{
