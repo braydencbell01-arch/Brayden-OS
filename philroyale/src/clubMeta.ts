@@ -11,6 +11,8 @@ export type ClubMember = {
   donations: number
   online: boolean
   isYou?: boolean
+  /** Live account code — used for friend invite / profile. */
+  playerId?: string
 }
 
 export type ClubChatMsg = {

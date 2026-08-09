@@ -148,8 +148,12 @@ export function FriendsScreen({
 
   async function addFriendByCode() {
     const code = normalizeAccountCode(friendCode)
-    if (!code || code.length < 6) {
-      setAddMsg('Enter a valid account code (6–10 characters).')
+    if (!code || code.length !== 8) {
+      setAddMsg(
+        code.length === 6
+          ? 'That looks like a club code — use Club → Join. Account codes are 8 characters.'
+          : 'Enter their 8-character account code (e.g. ABCD-EFGH).',
+      )
       return
     }
     if (code === loadPlayerId()) {
@@ -230,7 +234,11 @@ export function FriendsScreen({
           </div>
         </div>
         <div className="min-h-0 flex-1">
-          <ClubScreen onBattleBot={(name) => _onBattle(name ?? 'Club Bot')} />
+          <ClubScreen
+            onBattleBot={(name) => _onBattle(name ?? 'Club Bot')}
+            onRequestBattle={onRequestBattle}
+            friendPresence={friendPresence}
+          />
         </div>
       </div>
     )
@@ -243,7 +251,9 @@ export function FriendsScreen({
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Share your account code. Add friends by theirs — then Invite when they&apos;re online.
+          Share your <span className="text-[#f5d76e]">8-character account code</span>. Add
+          friends by theirs (not a club code) — then Invite when they&apos;re online for Accept /
+          Decline.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
           Your name
@@ -305,7 +315,7 @@ export function FriendsScreen({
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Add friend by account code
+              Add friend by account code (8 chars)
             </p>
             <div className="flex gap-2">
               <input

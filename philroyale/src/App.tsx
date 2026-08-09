@@ -314,7 +314,15 @@ export default function App() {
       const me = loadPlayerName().trim()
       const myId = loadPlayerId()
       if (!me) return { ok: false, message: 'Set your name first.' }
-      if (code.length < 6) return { ok: false, message: 'Enter a valid account code.' }
+      if (code.length !== 8) {
+        return {
+          ok: false,
+          message:
+            code.length === 6
+              ? 'That looks like a club code — use Club → Join instead.'
+              : 'Account codes are exactly 8 characters.',
+        }
+      }
       if (code === myId) return { ok: false, message: "That's your own code." }
       upsertFriend({ name: 'New friend', playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))

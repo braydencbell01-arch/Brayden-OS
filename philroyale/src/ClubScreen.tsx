@@ -5,42 +5,70 @@ import {
   CLUB_CHEST_GOAL,
   roleLabel,
   roleRank,
+  type ClubMember,
 } from './clubMeta'
+import {
+  CLUB_HEARTBEAT_MS,
+  normalizeClubCode,
+  publishClub,
+  subscribeClub,
+} from './clubHub'
 import { formatWarRemain, phaseLabel } from './clubWar'
+import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
 import {
   CLUB_SHOP_OFFERS,
   advanceRiverRace,
+  applyRemoteClubState,
   beginWarAttack,
   buyClubShopOffer,
   claimClubChest,
   claimWarRewards,
   clubMemberCount,
+  clubMembersForSync,
   contributeWarCollection,
   createRichClub,
   fulfillDonation,
   joinRichClubByCode,
   loadCardProgress,
   loadClubWar,
+  loadPlayerId,
   loadPlayerName,
   loadProfile,
   loadRichClub,
   postClubChat,
+  pruneFakeClubMembers,
+  removeClubMember,
   requestClubDonation,
   saveRichClub,
   shareText,
   simWarAttack,
   startClubWar,
   clubInviteUrl,
+  upsertClubMember,
+  upsertFriend,
   type ClubWarState,
+  type GameMode,
   type RichClub,
 } from './storage'
 
 type Props = {
   onBattleBot: (opponentName?: string) => void
+  onRequestBattle?: (
+    friendName: string,
+    opts?: { mode?: GameMode; playerId?: string },
+  ) => Promise<void>
+  friendPresence?: Record<string, FriendPresenceInfo>
 }
 
-export function ClubScreen({ onBattleBot }: Props) {
-  const [club, setClub] = useState<RichClub | null>(() => loadRichClub())
+export function ClubScreen({
+  onBattleBot,
+  onRequestBattle,
+  friendPresence = {},
+}: Props) {
+  const [club, setClub] = useState<RichClub | null>(() => {
+    pruneFakeClubMembers()
+    return loadRichClub()
+  })
   const [tab, setTab] = useState<'home' | 'chat' | 'members' | 'donate' | 'war' | 'shop'>(
     'home',
   )
@@ -53,8 +81,14 @@ export function ClubScreen({ onBattleBot }: Props) {
   const [donateChar, setDonateChar] = useState('finley')
   const [profile, setProfile] = useState(() => loadProfile())
   const [war, setWar] = useState<ClubWarState>(() => loadClubWar())
+  const [memberProfile, setMemberProfile] = useState<ClubMember | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const progress = loadCardProgress()
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 5000)
+    return () => window.clearInterval(id)
+  }, [])
 
   useEffect(() => {
     if (tab !== 'war') return
@@ -64,6 +98,113 @@ export function ClubScreen({ onBattleBot }: Props) {
     }, 15000)
     return () => window.clearInterval(id)
   }, [tab])
+
+  // Live club roster sync — both creator and joiners must keep Phil Royale open.
+  useEffect(() => {
+    if (!club?.code) return
+    const code = club.code
+    pruneFakeClubMembers()
+
+    const publishState = () => {
+      const me = loadPlayerName().trim() || 'You'
+      const myId = loadPlayerId()
+      const cur = loadRichClub()
+      if (!cur || cur.code !== code) return
+      upsertClubMember({
+        playerId: myId,
+        name: me,
+        trophies: loadProfile().trophies,
+        online: true,
+        role: cur.members.find((m) => m.isYou || m.playerId === myId)?.role,
+      })
+      const latest = loadRichClub()
+      if (!latest) return
+      void publishClub(code, {
+        type: 'club_join',
+        code,
+        fromPlayerId: myId,
+        fromName: me,
+        trophies: loadProfile().trophies,
+        at: new Date().toISOString(),
+      })
+      // Don't broadcast "Joining…" as the club name — wait for the leader's state.
+      if (!latest.name.startsWith('Joining')) {
+        void publishClub(code, {
+          type: 'club_state',
+          code,
+          name: latest.name,
+          description: latest.description,
+          badge: latest.badge,
+          members: clubMembersForSync(),
+          fromPlayerId: myId,
+          at: new Date().toISOString(),
+        })
+      }
+      setClub(loadRichClub())
+    }
+
+    const unsub = subscribeClub(code, (msg) => {
+      if (msg.type === 'club_join') {
+        if (msg.fromPlayerId === loadPlayerId()) return
+        upsertClubMember({
+          playerId: msg.fromPlayerId,
+          name: msg.fromName,
+          trophies: msg.trophies,
+          online: true,
+          role: 'member',
+        })
+        upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        // Reply with full state so the joiner learns the real club name.
+        const cur = loadRichClub()
+        if (cur) {
+          void publishClub(code, {
+            type: 'club_state',
+            code,
+            name: cur.name.startsWith('Joining') ? cur.name : cur.name,
+            description: cur.description,
+            badge: cur.badge,
+            members: clubMembersForSync(),
+            fromPlayerId: loadPlayerId(),
+            at: new Date().toISOString(),
+          })
+        }
+        setClub(loadRichClub())
+        return
+      }
+      if (msg.type === 'club_state') {
+        if (msg.fromPlayerId === loadPlayerId()) return
+        if (!msg.name || msg.name.startsWith('Joining')) return
+        applyRemoteClubState({
+          code: msg.code,
+          name: msg.name,
+          description: msg.description,
+          badge: msg.badge,
+          members: msg.members,
+        })
+        for (const m of msg.members) {
+          if (m.playerId !== loadPlayerId()) {
+            upsertFriend({ name: m.name, playerId: m.playerId })
+          }
+        }
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        setClub(loadRichClub())
+        return
+      }
+      if (msg.type === 'club_leave') {
+        if (msg.fromPlayerId === loadPlayerId()) return
+        removeClubMember(msg.fromPlayerId)
+        setClub(loadRichClub())
+      }
+    })
+
+    publishState()
+    const beat = window.setInterval(publishState, CLUB_HEARTBEAT_MS)
+    return () => {
+      unsub()
+      window.clearInterval(beat)
+    }
+  }, [club?.code])
 
   const unlockedCards = useMemo(
     () =>
@@ -157,25 +298,34 @@ export function ClubScreen({ onBattleBot }: Props) {
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Join with invite code
+              Join with club invite code (6 letters)
+            </p>
+            <p className="mt-1 text-[0.7rem] font-semibold text-white/50">
+              Not an account code — those are 8 characters under Friends.
             </p>
             <div className="mt-2 flex gap-2">
               <input
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="CODE"
+                placeholder="e.g. 4W69RP"
+                maxLength={8}
                 className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold uppercase text-white outline-none ring-1 ring-white/15"
               />
               <button
                 type="button"
                 onClick={() => {
-                  if (joinCode.trim().length < 4) {
-                    flash('Enter a valid code')
+                  const c = normalizeClubCode(joinCode)
+                  if (c.length < 6) {
+                    flash('Club codes are 6 characters')
                     return
                   }
-                  const c = joinRichClubByCode(joinCode)
-                  setClub(c)
-                  flash(`Joined ${c.name}`)
+                  if (c.length >= 8) {
+                    flash('That looks like an account code — use Friends → Add friend')
+                    return
+                  }
+                  const joined = joinRichClubByCode(c)
+                  setClub(joined)
+                  flash(`Joining ${c}… keep the app open so members sync`)
                 }}
                 className="rounded-lg px-3 py-2 text-sm font-extrabold text-white"
                 style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
@@ -321,6 +471,16 @@ export function ClubScreen({ onBattleBot }: Props) {
             <button
               type="button"
               onClick={() => {
+                const cur = loadRichClub()
+                if (cur) {
+                  void publishClub(cur.code, {
+                    type: 'club_leave',
+                    code: cur.code,
+                    fromPlayerId: loadPlayerId(),
+                    fromName: loadPlayerName().trim() || 'Player',
+                    at: new Date().toISOString(),
+                  })
+                }
                 saveRichClub(null)
                 setClub(null)
                 flash('Left club')
@@ -393,28 +553,41 @@ export function ClubScreen({ onBattleBot }: Props) {
 
         {tab === 'members' ? (
           <ul className="space-y-1.5">
-            {sortedMembers.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between rounded-lg bg-[#221610] px-3 py-2 ring-1 ring-white/10"
-              >
-                <div>
-                  <p className="font-bold text-white">
-                    {m.isYou ? '★ ' : ''}
-                    {m.name}
-                    {m.online ? (
-                      <span className="ml-1 text-[0.6rem] font-extrabold text-[#7dff9a]">
-                        ONLINE
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="text-[0.65rem] font-semibold text-white/55">
-                    {roleLabel(m.role)} · {m.donations} donations
-                  </p>
-                </div>
-                <p className="text-sm font-extrabold text-[#f5d76e]">{m.trophies}</p>
-              </li>
-            ))}
+            {sortedMembers.map((m) => {
+              const online =
+                m.isYou ||
+                (!!m.playerId &&
+                  !!friendPresence[m.playerId] &&
+                  now - friendPresence[m.playerId]!.at < PRESENCE_ONLINE_MS)
+              return (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    disabled={!!m.isYou}
+                    onClick={() => setMemberProfile(m)}
+                    className="flex w-full items-center justify-between rounded-lg bg-[#221610] px-3 py-2 text-left ring-1 ring-white/10 disabled:opacity-90"
+                  >
+                    <div>
+                      <p className="font-bold text-white">
+                        {m.isYou ? '★ ' : ''}
+                        {m.name}
+                        {online ? (
+                          <span className="ml-1 text-[0.6rem] font-extrabold text-[#7dff9a]">
+                            ONLINE
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-[0.65rem] font-semibold text-white/55">
+                        {roleLabel(m.role)}
+                        {m.playerId ? ` · ${m.playerId.slice(0, 4)}…` : ''}
+                        {m.isYou ? '' : ' · Tap profile'}
+                      </p>
+                    </div>
+                    <p className="text-sm font-extrabold text-[#f5d76e]">{m.trophies}</p>
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         ) : null}
 
@@ -537,6 +710,62 @@ export function ClubScreen({ onBattleBot }: Props) {
           </div>
         ) : null}
       </div>
+
+      {memberProfile && !memberProfile.isYou ? (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl p-5"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: '0 12px 40px #00000088',
+            }}
+          >
+            <h2 className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
+              {memberProfile.name}
+            </h2>
+            <p className="mt-1 text-sm font-semibold text-white/70">
+              {roleLabel(memberProfile.role)} · {memberProfile.trophies} trophies
+            </p>
+            {memberProfile.playerId ? (
+              <p className="mt-1 text-xs font-bold tracking-wider text-white/50">
+                Code {memberProfile.playerId.slice(0, 4)}-{memberProfile.playerId.slice(4)}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={!memberProfile.playerId || !onRequestBattle}
+              onClick={() => {
+                const m = memberProfile
+                if (!m.playerId || !onRequestBattle) return
+                upsertFriend({ name: m.name, playerId: m.playerId })
+                window.dispatchEvent(new Event('philroyale-friends-changed'))
+                setMemberProfile(null)
+                void onRequestBattle(m.name, { mode: 'classic', playerId: m.playerId })
+                flash(`Invite sent to ${m.name}`)
+              }}
+              className="mt-4 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
+              style={{ background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)' }}
+            >
+              Invite to battle
+            </button>
+            <p className="mt-2 text-center text-[0.7rem] font-semibold text-white/45">
+              They must be online — Accept / Decline pops up on their screen.
+            </p>
+            <button
+              type="button"
+              onClick={() => setMemberProfile(null)}
+              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-white/70 ring-1 ring-white/15"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {toast ? <Toast text={toast} /> : null}
     </div>
   )

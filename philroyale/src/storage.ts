@@ -13,6 +13,8 @@ import {
   weekKey,
   type ClubChatMsg,
   type ClubDonateRequest,
+  type ClubMember,
+  type ClubRole,
   type RichClub,
 } from './clubMeta'
 import {
@@ -1184,12 +1186,38 @@ export function saveRichClub(club: RichClub | null): void {
   })
 }
 
+function makeYouMember(role: ClubRole): ClubMember {
+  const you = loadPlayerName().trim() || 'You'
+  const trophies = loadProfile().trophies
+  const playerId = loadPlayerId()
+  return {
+    id: playerId,
+    name: you,
+    role,
+    trophies,
+    donations: 0,
+    online: true,
+    isYou: true,
+    playerId,
+  }
+}
+
 export function createRichClub(name: string, description: string, badge: number): RichClub {
-  const code = Math.random().toString(36).slice(2, 8).toUpperCase()
+  // 6-char club codes (distinct from 8-char account codes).
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  const bytes =
+    typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? crypto.getRandomValues(new Uint8Array(6))
+      : null
+  for (let i = 0; i < 6; i++) {
+    const n = bytes ? bytes[i]! : Math.floor(Math.random() * alphabet.length)
+    code += alphabet[n % alphabet.length]!
+  }
   const you = loadPlayerName().trim() || 'You'
   const trophies = loadProfile().trophies
   const club: RichClub = {
-    id: `c-${Date.now()}`,
+    id: `c-${code}`,
     name: name.trim(),
     tag: `#${code}`,
     description: description.trim() || 'A Phil Royale club. Donate, chat, war.',
@@ -1197,12 +1225,20 @@ export function createRichClub(name: string, description: string, badge: number)
     badge: Math.max(0, Math.min(11, badge)),
     access: 'invite',
     minTrophies: 0,
-    trophies: trophies + 800,
+    trophies,
     weeklyDonations: 0,
     chestCrowns: 0,
     chestClaimed: false,
-    members: generateClubMembers(you, code, trophies),
-    chat: seedClubChat(name.trim()),
+    members: [makeYouMember('leader')],
+    chat: [
+      {
+        id: `sys-${Date.now()}`,
+        from: 'System',
+        text: `Welcome to ${name.trim()}! Share code ${code} so friends can join.`,
+        at: new Date().toISOString(),
+        kind: 'system',
+      },
+    ],
     donateRequests: [],
     warStars: 0,
     warDay: 1,
@@ -1219,51 +1255,197 @@ export function createRichClub(name: string, description: string, badge: number)
   return club
 }
 
+/** Join a live club by invite code — real members sync over the club channel (no bots). */
 export function joinRichClubByCode(code: string): RichClub {
-  const c = code.trim().toUpperCase()
+  const c = code
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 8)
   const you = loadPlayerName().trim() || 'You'
   const trophies = loadProfile().trophies
+  const existing = loadRichClub()
+  // Re-joining the same code keeps your roster; refresh "you".
+  if (existing && existing.code === c) {
+    const others = existing.members.filter((m) => !m.isYou && m.playerId !== loadPlayerId())
+    existing.members = [makeYouMember('member'), ...others]
+    saveRichClub(existing)
+    return existing
+  }
   const club: RichClub = {
     id: `joined-${c}`,
-    name: `Club ${c}`,
+    name: 'Joining…',
     tag: `#${c}`,
-    description: 'Joined with an invite code.',
+    description: 'Connecting to club… keep Phil Royale open.',
     code: c,
     badge: c.charCodeAt(0) % 12,
     access: 'invite',
     minTrophies: 0,
-    trophies: trophies + 1500,
-    weeklyDonations: 40,
-    chestCrowns: 12,
+    trophies,
+    weeklyDonations: 0,
+    chestCrowns: 0,
     chestClaimed: false,
-    members: generateClubMembers(you, c, trophies).map((m) =>
-      m.isYou ? { ...m, role: 'member' as const } : m,
-    ),
-    chat: seedClubChat(`Club ${c}`),
-    donateRequests: [
+    members: [makeYouMember('member')],
+    chat: [
       {
-        id: 'dr0',
-        from: 'BeansBoss3',
-        charId: 'finley',
-        need: 4,
-        have: 1,
-        createdAt: new Date().toISOString(),
+        id: `sys-${Date.now()}`,
+        from: 'System',
+        text: `Joining club ${c}… the leader must have Phil Royale open.`,
+        at: new Date().toISOString(),
+        kind: 'system',
       },
     ],
-    warStars: 4,
-    warDay: 2,
+    donateRequests: [],
+    warStars: 0,
+    warDay: 1,
     createdAt: new Date().toISOString(),
   }
-  // Ensure you aren't leader when joining
-  const leader = club.members.find((m) => !m.isYou)
-  if (leader) leader.role = 'leader'
   club.chat.push({
     id: `join-${Date.now()}`,
     from: 'System',
-    text: `${you} joined the club.`,
+    text: `${you} joined.`,
     at: new Date().toISOString(),
     kind: 'join',
   })
+  saveRichClub(club)
+  return club
+}
+
+/** Merge a remote club member into the local roster (by account code). */
+export function upsertClubMember(member: {
+  playerId: string
+  name: string
+  role?: ClubRole
+  trophies?: number
+  online?: boolean
+}): RichClub | null {
+  const club = loadRichClub()
+  if (!club) return null
+  const myId = loadPlayerId()
+  const playerId = member.playerId.trim()
+  if (!playerId) return club
+  const isYou = playerId === myId
+  const idx = club.members.findIndex(
+    (m) => m.playerId === playerId || (isYou && m.isYou) || m.id === playerId,
+  )
+  if (idx >= 0) {
+    const prev = club.members[idx]!
+    club.members[idx] = {
+      ...prev,
+      id: playerId,
+      playerId,
+      name: member.name.trim() || prev.name,
+      role: member.role ?? prev.role,
+      trophies: member.trophies ?? prev.trophies,
+      online: member.online ?? prev.online,
+      isYou: isYou || prev.isYou,
+    }
+  } else {
+    club.members.push({
+      id: playerId,
+      playerId,
+      name: member.name.trim() || 'Member',
+      role: member.role ?? 'member',
+      trophies: member.trophies ?? 0,
+      donations: 0,
+      online: member.online ?? true,
+      isYou,
+    })
+  }
+  // One "you" row only.
+  if (isYou) {
+    club.members = club.members.filter((m) => m.playerId === myId || !m.isYou)
+  }
+  club.trophies = club.members.reduce((s, m) => s + m.trophies, 0)
+  saveRichClub(club)
+  return club
+}
+
+export function applyRemoteClubState(state: {
+  code: string
+  name: string
+  description: string
+  badge: number
+  members: { playerId: string; name: string; role: ClubRole; trophies: number }[]
+}): RichClub | null {
+  const club = loadRichClub()
+  if (!club || club.code !== state.code) return null
+  const myId = loadPlayerId()
+  const you = makeYouMember(
+    club.members.find((m) => m.isYou || m.playerId === myId)?.role ?? 'member',
+  )
+  const remote = state.members
+    .filter((m) => m.playerId && m.playerId !== myId)
+    .map((m) => ({
+      id: m.playerId,
+      playerId: m.playerId,
+      name: m.name,
+      role: m.role,
+      trophies: m.trophies,
+      donations: 0,
+      online: true,
+    }))
+  // Preserve leader role from remote if they claim it.
+  const hasLeader = remote.some((m) => m.role === 'leader') || you.role === 'leader'
+  if (!hasLeader && remote[0]) remote[0]!.role = 'leader'
+  club.name = state.name || club.name
+  club.description = state.description || club.description
+  club.badge = state.badge
+  club.tag = `#${state.code}`
+  club.members = [you, ...remote]
+  club.trophies = club.members.reduce((s, m) => s + m.trophies, 0)
+  saveRichClub(club)
+  return club
+}
+
+export function removeClubMember(playerId: string): RichClub | null {
+  const club = loadRichClub()
+  if (!club) return null
+  club.members = club.members.filter((m) => m.playerId !== playerId && m.id !== playerId)
+  club.trophies = club.members.reduce((s, m) => s + m.trophies, 0)
+  saveRichClub(club)
+  return club
+}
+
+export function clubMembersForSync(): {
+  playerId: string
+  name: string
+  role: ClubRole
+  trophies: number
+}[] {
+  const club = loadRichClub()
+  if (!club) return []
+  return club.members
+    .filter((m) => m.playerId || m.isYou)
+    .map((m) => ({
+      playerId: m.playerId || (m.isYou ? loadPlayerId() : m.id),
+      name: m.name,
+      role: m.role,
+      trophies: m.trophies,
+    }))
+}
+
+/** Drop seeded bot members (no account code) so only real players remain. */
+export function pruneFakeClubMembers(): RichClub | null {
+  const club = loadRichClub()
+  if (!club) return null
+  const myId = loadPlayerId()
+  const real = club.members.filter((m) => m.isYou || (m.playerId && m.playerId.length >= 6))
+  const hasYou = real.some((m) => m.isYou || m.playerId === myId)
+  if (!hasYou) real.unshift(makeYouMember(real.some((m) => m.role === 'leader') ? 'member' : 'leader'))
+  // Ensure you have playerId.
+  for (const m of real) {
+    if (m.isYou) {
+      m.playerId = myId
+      m.id = myId
+      m.name = loadPlayerName().trim() || m.name
+    }
+  }
+  if (real.length === club.members.length && real.every((m, i) => m.id === club.members[i]?.id)) {
+    return club
+  }
+  club.members = real
+  club.trophies = club.members.reduce((s, m) => s + m.trophies, 0)
   saveRichClub(club)
   return club
 }
