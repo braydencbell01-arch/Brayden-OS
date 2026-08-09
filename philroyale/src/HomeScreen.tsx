@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { BattleCard } from './BattleCard'
+import {
+  ChestArt,
+  ChestInspectModal,
+  ChestRevealSequence,
+  type ChestLoot,
+} from './ChestOpen'
 import { getCharacter } from './characters'
 import {
   ARENA_COLORS,
   CHEST_META,
   botNameForTrophies,
   nextRoadStep,
+  type ChestRarity,
 } from './progression'
 import {
   arenaTitle,
@@ -55,6 +62,10 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
   const [chests, setChests] = useState<OwnedChest[]>(() => loadChests())
   const [now, setNow] = useState(() => Date.now())
   const [toast, setToast] = useState<string | null>(null)
+  const [inspectId, setInspectId] = useState<string | null>(null)
+  const [reveal, setReveal] = useState<{ rarity: ChestRarity; loot: ChestLoot } | null>(
+    null,
+  )
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000)
@@ -124,24 +135,25 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
   }
 
   function onChestTap(chest: OwnedChest) {
-    const ready = chest.readyAt != null && chest.readyAt <= now
-    if (ready) {
-      const res = openChestNow(chest.id, false)
+    // CR: tap slot → inspect modal (never instant-open from the dock)
+    setInspectId(chest.id)
+  }
+
+  function runOpen(chestId: string, payGold: boolean) {
+    const res = openChestNow(chestId, payGold)
+    if (!res.ok || res.rarity == null || res.gold == null || !res.cards) {
       flash(res.message)
-      refresh()
       return
     }
-    if (chest.unlockingStartedAt == null) {
-      const res = startChestUnlock(chest.id)
-      flash(res.message)
-      refresh()
-      return
-    }
-    const res = openChestNow(chest.id, true)
-    flash(res.message)
+    setInspectId(null)
+    setReveal({
+      rarity: res.rarity,
+      loot: { gold: res.gold, cards: res.cards },
+    })
     refresh()
   }
 
+  const inspectChest = inspectId ? chests.find((c) => c.id === inspectId) ?? null : null
   const slots = Array.from({ length: 4 }, (_, i) => chests[i] ?? null)
 
   return (
@@ -238,18 +250,24 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
           </p>
         </motion.button>
 
-        {/* Chest slots */}
+        {/* Chest slots — CR dock */}
         <section className="mt-3 w-full max-w-md self-center">
           <p className="mb-1.5 text-center text-[0.65rem] font-extrabold uppercase tracking-wide text-white/80">
-            Chest slots
+            Chest slots · tap a chest
           </p>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div
+            className="grid grid-cols-4 gap-1.5 rounded-2xl p-2"
+            style={{
+              background: 'linear-gradient(180deg,#2a1a12,#140e0a)',
+              boxShadow: 'inset 0 1px 0 #c9a22733, 0 4px 12px #00000055',
+            }}
+          >
             {slots.map((chest, i) => {
               if (!chest) {
                 return (
                   <div
                     key={`empty-${i}`}
-                    className="flex aspect-square flex-col items-center justify-center rounded-xl bg-black/25 text-[0.6rem] font-bold text-white/40 ring-1 ring-white/10"
+                    className="flex aspect-[3/4] flex-col items-center justify-center rounded-xl bg-black/30 text-[0.6rem] font-bold text-white/35 ring-1 ring-dashed ring-white/15"
                   >
                     Empty
                   </div>
@@ -259,32 +277,39 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
               const ready = chest.readyAt != null && chest.readyAt <= now
               const unlocking = chest.unlockingStartedAt != null && !ready
               return (
-                <button
+                <motion.button
                   key={chest.id}
                   type="button"
                   onClick={() => onChestTap(chest)}
-                  className="flex aspect-square flex-col items-center justify-center rounded-xl px-1 text-center"
+                  whileTap={{ scale: 0.94 }}
+                  animate={ready ? { y: [0, -3, 0] } : undefined}
+                  transition={ready ? { duration: 0.7, repeat: Infinity } : undefined}
+                  className="relative flex aspect-[3/4] flex-col items-center justify-end rounded-xl px-1 pb-1.5 pt-1 ring-1 ring-white/10"
                   style={{
-                    background: `linear-gradient(180deg, ${meta.color}, #2a1a12)`,
-                    boxShadow: '0 3px 0 #00000055',
+                    background: ready
+                      ? `linear-gradient(180deg, ${meta.color}88, #1a100c)`
+                      : '#1a120e',
+                    boxShadow: ready
+                      ? `0 0 14px ${meta.color}99, 0 3px 0 #00000066`
+                      : '0 3px 0 #00000055',
+                    outline: unlocking ? `2px solid ${meta.color}` : undefined,
                   }}
                 >
-                  <span className="text-[0.55rem] font-extrabold uppercase leading-tight text-[#1a1410]">
+                  <ChestArt rarity={chest.rarity} size="sm" bounce={ready} />
+                  <span
+                    className="mt-0.5 text-[0.55rem] font-extrabold uppercase leading-tight"
+                    style={{ color: meta.color }}
+                  >
                     {chest.rarity}
                   </span>
-                  <span className="mt-0.5 text-[0.6rem] font-bold text-white">
+                  <span className="text-[0.58rem] font-bold text-white">
                     {ready
                       ? 'Open!'
                       : unlocking
                         ? formatRemain((chest.readyAt ?? 0) - now)
-                        : 'Start'}
+                        : 'Locked'}
                   </span>
-                  {unlocking ? (
-                    <span className="text-[0.5rem] font-bold text-white/80">
-                      or {meta.openNowGold}g
-                    </span>
-                  ) : null}
-                </button>
+                </motion.button>
               )
             })}
           </div>
@@ -439,6 +464,36 @@ export function HomeScreen({ onPlay, onRequestBattle, onOpenRoad }: Props) {
             {toast}
           </p>
         </div>
+      ) : null}
+
+      <AnimatePresence>
+        {inspectChest ? (
+          <ChestInspectModal
+            chest={inspectChest}
+            now={now}
+            gold={profile.gold}
+            onClose={() => setInspectId(null)}
+            onStartUnlock={() => {
+              const res = startChestUnlock(inspectChest.id)
+              flash(res.message)
+              refresh()
+              if (res.ok) setInspectId(null)
+            }}
+            onOpenNow={() => runOpen(inspectChest.id, true)}
+            onOpenReady={() => runOpen(inspectChest.id, false)}
+          />
+        ) : null}
+      </AnimatePresence>
+
+      {reveal ? (
+        <ChestRevealSequence
+          rarity={reveal.rarity}
+          loot={reveal.loot}
+          onDone={() => {
+            setReveal(null)
+            refresh()
+          }}
+        />
       ) : null}
     </div>
   )

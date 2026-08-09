@@ -499,18 +499,11 @@ export function saveDaily(daily: DailyState): void {
 export function claimDailyChest(): { ok: boolean; gold: number; message: string } {
   const daily = loadDaily()
   if (daily.chestClaimed) return { ok: false, gold: 0, message: 'Already claimed today' }
-  const gold = 80 + Math.floor(Math.random() * 41)
-  const profile = loadProfile()
-  profile.gold += gold
-  // Small chance of a random card copy
-  const progress = loadCardProgress()
-  const pick = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)]!
-  progress.copies[pick.id] = (progress.copies[pick.id] ?? 0) + 1
-  saveCardProgress(progress)
-  saveProfile(profile)
+  const added = addChest('common')
+  if (!added.ok) return { ok: false, gold: 0, message: added.message }
   daily.chestClaimed = true
   saveDaily(daily)
-  return { ok: true, gold, message: `+${gold} gold · +1 ${pick.name}` }
+  return { ok: true, gold: 0, message: 'Free Common Chest added — tap a slot to unlock' }
 }
 
 export function questLabel(id: DailyState['questId']): string {
@@ -610,6 +603,7 @@ export function openChestNow(
 ): {
   ok: boolean
   message: string
+  rarity?: ChestRarity
   gold?: number
   cards?: { charId: string; copies: number }[]
 } {
@@ -636,6 +630,7 @@ export function openChestNow(
   }
   saveCardProgress(progress)
   saveProfile(profile)
+  const rarity = chest.rarity
   chests.splice(idx, 1)
   saveChests(chests)
   const names = loot.cards
@@ -647,6 +642,7 @@ export function openChestNow(
   return {
     ok: true,
     message: `+${loot.gold} gold · ${names}`,
+    rarity,
     gold: loot.gold,
     cards: loot.cards,
   }
