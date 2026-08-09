@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BattleScreen } from './BattleScreen'
 import { CharactersScreen } from './CharactersScreen'
+import { CurrencyBar } from './CurrencyBar'
 import { EventsScreen } from './EventsScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
@@ -234,16 +235,19 @@ export default function App() {
     const trophies = loadProfile().trophies
     const levels = loadCardProgress().levels
     return (
-      <BattleScreen
-        opponentName={opponent}
-        allyLevels={levels}
-        botLevel={botLevelForTrophies(trophies)}
-        onExit={() => {
-          setBattle(false)
-          setOpponent(null)
-          setTab('home')
-        }}
-      />
+      <div className="relative flex h-full min-h-0 flex-col">
+        <CurrencyBar />
+        <BattleScreen
+          opponentName={opponent}
+          allyLevels={levels}
+          botLevel={botLevelForTrophies(trophies)}
+          onExit={() => {
+            setBattle(false)
+            setOpponent(null)
+            setTab('home')
+          }}
+        />
+      </div>
     )
   }
 
@@ -252,7 +256,8 @@ export default function App() {
 
   if (openRoad) {
     return (
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="relative flex h-full min-h-0 flex-col">
+        <CurrencyBar />
         <div className="min-h-0 flex-1">
           <TrophyRoadScreen
             onBack={() => {
@@ -304,7 +309,8 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="relative flex h-full min-h-0 flex-col">
+      <CurrencyBar />
       <div className="min-h-0 flex-1">
         <AnimatePresence mode="wait">
           <motion.div

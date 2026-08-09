@@ -62,58 +62,30 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
   }
 
   const frame = RARITY_FRAME[character.rarity]
-  const legendary = character.rarity === 'legendary'
   const afford =
     elixir == null ? 1 : Math.max(0, Math.min(1, elixir / Math.max(1, character.elixir)))
   const greyPct = (1 - afford) * 100
 
   return (
     <div
-      className={`relative overflow-hidden ${box} ${selected ? 'scale-[1.04]' : ''}`}
+      className={`relative overflow-hidden ${box} rounded-[0.4rem] ${selected ? 'scale-[1.04]' : ''}`}
       style={{
-        borderRadius: legendary ? '0.5rem' : '0.4rem',
-        background: legendary
-          ? `linear-gradient(145deg, ${frame.top}, #ffe08a 35%, ${frame.border} 55%, ${frame.bottom})`
-          : `linear-gradient(180deg, ${frame.top}, ${frame.border} 40%, ${frame.bottom})`,
+        background: `linear-gradient(180deg, ${frame.top}, ${frame.border} 40%, ${frame.bottom})`,
         boxShadow: selected
           ? `0 0 0 2px #fff, 0 3px 0 ${frame.glow}, 0 6px 12px #00000066`
           : `0 2px 0 ${frame.glow}, 0 4px 8px #00000055`,
-        clipPath: legendary
-          ? 'polygon(8% 0, 92% 0, 100% 10%, 100% 90%, 92% 100%, 8% 100%, 0 90%, 0 10%)'
-          : undefined,
       }}
     >
       <div
-        className="absolute inset-[3px] flex flex-col overflow-hidden"
+        className="absolute inset-[3px] flex flex-col overflow-hidden rounded-[0.4rem]"
         style={{
-          borderRadius: legendary ? '0.45rem' : '0.4rem',
-          /* Match card art: clean Clash-style blue portrait field */
           background:
             'radial-gradient(ellipse 85% 70% at 50% 42%, #2a8fd4 0%, #0a5cb0 55%, #003e8a 100%)',
           boxShadow: 'inset 0 1px 0 #ffffff33',
         }}
       >
         <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden">
-          <div
-            className={`${
-              character.id === 'phil' ||
-              character.id === 'kathie' ||
-              character.id === 'todd' ||
-              character.id === 'mike' ||
-              character.id === 'lynne' ||
-              character.id === 'dan' ||
-              character.id === 'finley' ||
-              character.id === 'jeremy' ||
-              character.id === 'pete' ||
-              character.id === 'beans'
-                ? 'absolute inset-0'
-                : next
-                  ? 'relative h-[85%] w-[90%]'
-                  : collection
-                    ? 'relative h-[88%] w-[92%]'
-                    : 'relative h-[86%] w-[90%]'
-            }`}
-          >
+          <div className="absolute inset-0">
             <CharacterModel
               charId={character.id}
               anim="idle"

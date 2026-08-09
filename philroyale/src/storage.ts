@@ -569,7 +569,7 @@ export function tryUpgradeCard(charId: string): { ok: boolean; message: string; 
   saveProfile(profile)
   return {
     ok: true,
-    message: `${char.name} → Lv ${level + 1} (+5% HP & dmg)`,
+    message: `${char.name} → Lv ${level + 1} (+5% HP & DM)`,
     progress: loadCardProgress(),
   }
 }

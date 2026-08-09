@@ -8,7 +8,7 @@ import {
   type CharacterDef,
   type Rarity,
 } from './characters'
-import { LEVEL_STAT_STEP, MAX_CARD_LEVEL, scaledStat } from './progression'
+import { MAX_CARD_LEVEL, scaledStat } from './progression'
 import {
   copiesToUpgrade,
   goldToUpgrade,
@@ -22,7 +22,17 @@ import {
 } from './storage'
 import { BattleCard } from './BattleCard'
 
-type SortMode = 'name' | 'rarity' | 'elixir' | 'level'
+/** Sort keys + rarity/fav filters live in one Sort control. */
+type SortMode =
+  | 'name'
+  | 'rarity'
+  | 'elixir'
+  | 'level'
+  | 'common'
+  | 'rare'
+  | 'epic'
+  | 'legendary'
+  | 'favorites'
 
 const RARITY_PILL: Record<Rarity, string> = {
   common: '#b8c0cc',
@@ -30,6 +40,8 @@ const RARITY_PILL: Record<Rarity, string> = {
   epic: '#b14fd6',
   legendary: '#f5d76e',
 }
+
+const RARITY_FILTERS: Rarity[] = ['common', 'rare', 'epic', 'legendary']
 
 export function CharactersScreen() {
   const [deck, setDeck] = useState<string[]>(() => loadDeck())
@@ -39,8 +51,6 @@ export function CharactersScreen() {
   const [toast, setToast] = useState<string | null>(null)
   const [sortMode, setSortMode] = useState<SortMode>('rarity')
   const [query, setQuery] = useState('')
-  const [rarityFilter, setRarityFilter] = useState<Rarity | 'all'>('all')
-  const [favoritesOnly, setFavoritesOnly] = useState(false)
 
   const profile = profileId ? getCharacter(profileId) : null
 
@@ -48,8 +58,11 @@ export function CharactersScreen() {
     let list = [...CHARACTERS]
     const q = query.trim().toLowerCase()
     if (q) list = list.filter((c) => c.name.toLowerCase().includes(q))
-    if (rarityFilter !== 'all') list = list.filter((c) => c.rarity === rarityFilter)
-    if (favoritesOnly) list = list.filter((c) => progress.favorites.includes(c.id))
+    if (RARITY_FILTERS.includes(sortMode as Rarity)) {
+      list = list.filter((c) => c.rarity === sortMode)
+    } else if (sortMode === 'favorites') {
+      list = list.filter((c) => progress.favorites.includes(c.id))
+    }
     if (sortMode === 'name') {
       list.sort((a, b) => a.name.localeCompare(b.name))
     } else if (sortMode === 'elixir') {
@@ -67,7 +80,7 @@ export function CharactersScreen() {
       )
     }
     return list
-  }, [sortMode, query, rarityFilter, favoritesOnly, progress])
+  }, [sortMode, query, progress])
 
   const collectionPct = useMemo(() => {
     const unlocked = progress.unlocked.length
@@ -192,7 +205,7 @@ export function CharactersScreen() {
           Cards
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          +5% HP & dmg per level (max {MAX_CARD_LEVEL}) · {collectionPct}% · {gold}g
+          +5% HP & DM per level (max {MAX_CARD_LEVEL}) · {collectionPct}% collected
         </p>
       </header>
 
@@ -260,39 +273,21 @@ export function CharactersScreen() {
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               className="rounded bg-[#221610] px-1.5 py-0.5 text-[0.65rem] font-extrabold text-white outline-none ring-1 ring-white/15"
             >
-              <option value="rarity">Rarity</option>
-              <option value="level">Level</option>
-              <option value="elixir">Elixir</option>
-              <option value="name">Name</option>
+              <optgroup label="Sort by">
+                <option value="rarity">All · Rarity</option>
+                <option value="level">All · Level</option>
+                <option value="elixir">All · Elixir</option>
+                <option value="name">All · Name</option>
+              </optgroup>
+              <optgroup label="Show">
+                <option value="common">Common</option>
+                <option value="rare">Rare</option>
+                <option value="epic">Epic</option>
+                <option value="legendary">Legendary</option>
+                <option value="favorites">★ Favorites</option>
+              </optgroup>
             </select>
           </label>
-        </div>
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          {(['all', 'common', 'rare', 'epic', 'legendary'] as const).map((r) => (
-            <button
-              key={r}
-              type="button"
-              onClick={() => setRarityFilter(r)}
-              className="rounded-md px-2 py-1 text-[0.6rem] font-extrabold uppercase tracking-wide"
-              style={{
-                background: rarityFilter === r ? '#f5d76e' : '#221610',
-                color: rarityFilter === r ? '#1a1410' : '#fff6e8',
-              }}
-            >
-              {r === 'all' ? 'All' : RARITY_LABEL[r]}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setFavoritesOnly((v) => !v)}
-            className="rounded-md px-2 py-1 text-[0.6rem] font-extrabold uppercase tracking-wide"
-            style={{
-              background: favoritesOnly ? '#f5d76e' : '#221610',
-              color: favoritesOnly ? '#1a1410' : '#fff6e8',
-            }}
-          >
-            ★ Favs
-          </button>
         </div>
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {sorted.map((c) => {
@@ -369,7 +364,8 @@ function CardProfile({
   const cost = upgradeCost
   const maxed = level >= MAX_CARD_LEVEL
   const hpNow = scaledStat(character.hp, level)
-  const dmgBonus = Math.round((level - 1) * LEVEL_STAT_STEP * 100)
+  const pronounTag =
+    character.pronoun === 'she' ? '(she)' : character.pronoun === 'he' ? '(he)' : `(${character.pronoun})`
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -398,38 +394,26 @@ function CardProfile({
             <BattleCard character={character} size="collection" />
           </div>
           <h2 className="mt-3 text-center font-[family-name:var(--font-display)] text-3xl text-[#f5d76e]">
-            {character.name}
+            {character.name}{' '}
+            <span className="text-xl font-semibold text-[#f5d76e]/85">{pronounTag}</span>
           </h2>
           <p
             className="mt-1 text-center text-sm font-extrabold uppercase tracking-wide"
             style={{ color: RARITY_PILL[character.rarity] }}
           >
-            {RARITY_LABEL[character.rarity]} · Level {level}
+            {RARITY_LABEL[character.rarity]}
           </p>
-          <p className="mt-1 text-center text-sm font-semibold text-white/80">{character.blurb}</p>
+          <p className="mt-1 text-center text-sm font-extrabold text-white/45">Level {level}</p>
+          <p className="mt-2 text-center text-sm font-semibold text-white/80">{character.blurb}</p>
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            <Stat label="Pronoun" value={character.pronoun} />
-            <Stat label="Height" value={character.height} />
-            <Stat label="Rarity" value={RARITY_LABEL[character.rarity]} />
-            <Stat label="Elixir" value={String(character.elixir)} />
-            <Stat label="Health" value={`${hpNow} (base ${character.hp})`} />
-            <Stat label="Level bonus" value={`+${dmgBonus}% HP & dmg`} />
+            <Stat label="Health" value={String(hpNow)} />
             <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
             <Stat
-              label="Attack CD"
+              label="Attack cooldown"
               value={character.attacks.length === 0 ? '—' : `${character.attackDelaySec}s`}
             />
-            <Stat label="Copies" value={`${copies}${maxed ? '' : ` / ${need}`}`} />
-            {character.rageAfterSec != null ? (
-              <Stat
-                label="Rage"
-                value={`${character.rageAfterSec}s → ×${character.rageDamageMult ?? 1} dmg / ×${character.rageMoveMult ?? 1} speed`}
-              />
-            ) : null}
-            {character.dropsRageHeart ? (
-              <Stat label="Death" value="Rage heart 3s" />
-            ) : null}
+            <Stat label="Height" value={character.height} />
           </dl>
 
           <p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
@@ -454,7 +438,7 @@ function CardProfile({
               >
                 <p className="font-extrabold text-white">{a.name}</p>
                 <p className="text-xs font-semibold text-white/65">
-                  {scaledStat(a.damage, level)} dmg (base {a.damage}) · {a.range} block range
+                  {scaledStat(a.damage, level)} DM (base {a.damage}) · {a.range} block range
                   {a.rootWhileAttacking ? ' · stops to attack' : ' · can move while attacking'}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
                   {a.splashRadius != null ? ` · ${a.splashRadius} block splash` : ''}
@@ -503,7 +487,7 @@ function CardProfile({
           </div>
           {!maxed ? (
             <p className="mt-1 text-center text-[0.7rem] font-semibold text-white/55">
-              {copies}/{need} copies · {gold} gold · +5% HP & dmg per level
+              {copies}/{need} copies · {gold} gold · +5% HP & DM per level
             </p>
           ) : null}
 
