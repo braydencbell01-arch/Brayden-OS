@@ -22,6 +22,8 @@ import { spawnSync } from 'node:child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT = join(__dirname, '../public/listings.json')
+const SOLD_OUT_PATH = join(__dirname, '../public/sold-out.json')
+const EXCEPTIONS_PATH = join(__dirname, '../public/reconcile-exceptions.json')
 const ENV = (process.env.SQUARE_ENVIRONMENT || 'production').toLowerCase()
 const HOST =
   ENV === 'sandbox' ? 'https://connect.squareupsandbox.com' : 'https://connect.squareup.com'
@@ -274,6 +276,27 @@ const inv = await inventoryByVariation(variationIds)
 const seller = await merchantName()
 const listings = []
 
+/** Never republish confirmed sold kits (incl. catalog duplicates). */
+const soldVariationIds = new Set()
+const soldEbayIds = new Set()
+try {
+  if (existsSync(SOLD_OUT_PATH)) {
+    const soldOut = JSON.parse(readFileSync(SOLD_OUT_PATH, 'utf8'))
+    for (const item of soldOut.items || []) {
+      if (item.variationId) soldVariationIds.add(String(item.variationId))
+      if (item.ebayId) soldEbayIds.add(String(item.ebayId))
+      const m = String(item.sku || '').match(/^ebay:(\d+)/i)
+      if (m) soldEbayIds.add(m[1])
+    }
+  }
+  if (existsSync(EXCEPTIONS_PATH)) {
+    const ex = JSON.parse(readFileSync(EXCEPTIONS_PATH, 'utf8'))
+    for (const id of ex.confirmedSoldVariationIds || []) soldVariationIds.add(String(id))
+  }
+} catch {
+  /* ignore */
+}
+
 for (const item of items) {
   const data = item.item_data || {}
   if (data.is_archived) continue
@@ -294,6 +317,9 @@ for (const item of items) {
     if (variation.is_deleted) continue
     const vdata = variation.item_variation_data || {}
     if (vdata.sellable === false) continue
+    if (soldVariationIds.has(variation.id)) continue
+    const ebayFromSku = String(vdata.sku || '').match(/^ebay:(\d+)/i)?.[1]
+    if (ebayFromSku && soldEbayIds.has(ebayFromSku)) continue
 
     const qty = inv.has(variation.id) ? inv.get(variation.id) : null
     if (!INCLUDE_ZERO && qty != null && qty <= 0) continue
@@ -352,6 +378,34 @@ for (const item of items) {
       ...(descriptionBody ? { description: descriptionBody } : {}),
     })
   }
+}
+
+// Catalog often has duplicate ITEMs for the same kit — keep one row per title,
+// preferring the newest ebay:{id} SKU (post-relist) when present.
+const deduped = []
+{
+  const groups = new Map()
+  for (const row of listings) {
+    const key = String(row.title || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row)
+  }
+  for (const rows of groups.values()) {
+    rows.sort((x, y) => {
+      const ex = Number((String(x.sku || '').match(/ebay:(\d+)/i) || [])[1] || 0)
+      const ey = Number((String(y.sku || '').match(/ebay:(\d+)/i) || [])[1] || 0)
+      return ey - ex
+    })
+    deduped.push(rows[0])
+  }
+  if (deduped.length < listings.length) {
+    console.log(`Deduped catalog titles ${listings.length} → ${deduped.length}`)
+  }
+  listings.length = 0
+  listings.push(...deduped)
 }
 
 listings.sort((a, b) => {

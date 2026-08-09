@@ -1,33 +1,11 @@
 {
-  "syncedAt": "2026-08-09T14:39:53Z",
+  "syncedAt": "2026-08-09T14:59:33Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 77,
+  "count": 63,
   "links": [
-    {
-      "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
-      "variationId": "NK4QWAQHIVIST5HLZRY7DWRH",
-      "title": "Inter Miami 22/23 Home Jersey — Messi #10 (Adidas) · XL",
-      "sku": "ebay:389366013067",
-      "paymentLinkId": "VF4I4RTBCIPLPUMY",
-      "url": "https://square.link/u/JpgYzk3t",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/EbgGt54njJGGuae1J8lP9UkZhpWZY",
-      "discountPaymentLinkId": "MN6MHOZRT6NUYQ6U",
-      "discountUrl": "https://square.link/u/IXChODiV",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/47LedKBB7iYUEEXtuJlC9ZKhVlJZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "ODYCQWI7KR7ACDL7C7K4EXFS",
-      "variationId": "5IGOAAVG5N3HVSBTOXMQ6AH7",
-      "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · XL",
-      "sku": "ebay:800059395254",
-      "paymentLinkId": "Z57MC4E7WXM3Z257",
-      "url": "https://square.link/u/GyPPoxm1",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ecOgXIs9Zf9R6wGR5nRMzuFIlFHZY"
-    },
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
       "variationId": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -185,15 +163,6 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
-      "itemId": "FW6CHQFW7YHRGVIVWL3UKBOC",
-      "variationId": "IICEPL6TBH6ZVJPRURFJ4HBU",
-      "title": "Tottenham Hotspur 23/24 Pre-Match Jersey (Nike) · M",
-      "sku": "ebay:389131856395",
-      "paymentLinkId": "QZOEYMAHJ4HUXAA2",
-      "url": "https://square.link/u/bKgg30yM",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cVrqyhgxYx1MpkGsmAuNIs1IA7fZY"
-    },
-    {
       "itemId": "FFGES2GD3B3I4G3CTO2KT6JZ",
       "variationId": "VUWLFJKHDOIHTL3U3K3R36E7",
       "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · M",
@@ -227,15 +196,6 @@
       "discountUrl": "https://square.link/u/TmBmtEjn",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ARa9VH0qKzbhw8Ol2znmZbT1NVVZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "2ZTU4ECRADCTFCSQP3KGKDEB",
-      "variationId": "BIXIXRBNFCUCYEXEX7SFU4R2",
-      "title": "Inter Miami 23/24 Away Jersey (Adidas) · Youth XL",
-      "sku": "ebay:389366069056",
-      "paymentLinkId": "63GESYY77QGBLQRD",
-      "url": "https://square.link/u/OK4tCeD9",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6MvYf2nspiDtN9zYMjI99RhEuocZY"
     },
     {
       "itemId": "A52ARHAZ6DFRB3IEGELRU3AZ",
@@ -381,15 +341,6 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
-      "itemId": "PMJBVHVEQEP5HBPMPYV6PCML",
-      "variationId": "NWSMDPZORSCBZ5KWSG3L46SO",
-      "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
-      "sku": "ebay:800403694830",
-      "paymentLinkId": "YYNYM532BVIXVKY3",
-      "url": "https://square.link/u/jifM4Ums",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/APpp7H9EfOC8uC1OyQ8PoYqMoB8YY"
-    },
-    {
       "itemId": "KL5J6BT3HLBFTOVJMCUZRG7S",
       "variationId": "PPVWVZKJYRLSFX33RN4XQDOV",
       "title": "Syracuse Soccer Rally Towels (2-Pack)",
@@ -401,15 +352,6 @@
       "discountUrl": "https://square.link/u/Srne1pBU",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ScFUEi704n7bV1SdmYNzRjc9iqSZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "YB3RYUU4FJL7WEQGGQ7YYVVZ",
-      "variationId": "6DXVTBZHQXRZQ7Q5G23SYRWL",
-      "title": "Inter Miami 23/24 Away Jersey (adidas) · Youth XL",
-      "sku": "ebay:800407206007",
-      "paymentLinkId": "C432LFK7MKWNL77F",
-      "url": "https://square.link/u/QdHe9ki4",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0rG18uCjJe4gC5Z3x2nKvAYVETZZY"
     },
     {
       "itemId": "MESUKSIHUJYM6FHJIBSGKZ4Q",
@@ -449,69 +391,6 @@
       "discountUrl": "https://square.link/u/6orjWQYi",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/62WjoOpPD5EhF9VvnLvDjx5Ew0ZZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "YADWORMUYICFV3TKSCYFG5S5",
-      "variationId": "3J2OXHY3PHBWVK264JTYPLBD",
-      "title": "Inter Miami 24/25 Home Jersey (adidas) · Youth XL",
-      "sku": "ebay:800407292943",
-      "paymentLinkId": "TJ7DBDVMQ2QEE5WZ",
-      "url": "https://square.link/u/XepylSms",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/01BGdpspjaEHKv9OtRN3f5eBip9YY"
-    },
-    {
-      "itemId": "2XQEA724GIQ5Y6KNEU4ORRMP",
-      "variationId": "LOZJTBWZQOMQHZNL2RDVIC7I",
-      "title": "Crystal Palace “South London And Proud” Authentic Scarf | 2 Sided | 148cm-18cm |",
-      "sku": "ebay:800359862342",
-      "paymentLinkId": "FLKE7WTDFLQFG2LV",
-      "url": "https://square.link/u/nNFhc1P8",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YfD9ftaLZUAc1y01QwpwQiWUvf9YY"
-    },
-    {
-      "itemId": "OD6YIUBCUHYJ2AO6NYGFFGUA",
-      "variationId": "D64QTOZEGBEVILNL7Z56KCXZ",
-      "title": "Nike Home Jersey · XL",
-      "sku": "ebay:389482595662",
-      "paymentLinkId": "N4262HC6ZLOVLWGO",
-      "url": "https://square.link/u/GqGOTAn0",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KsfQOUMs9cGYHK8wsi5FNIg5odbZY"
-    },
-    {
-      "itemId": "SBAVTLJB6ZVZYIXLIGQFHNBF",
-      "variationId": "THLDKRIEWM4TJP4DHLAIC7C5",
-      "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · L",
-      "sku": "ebay:389482553724",
-      "paymentLinkId": "ISAFVP2SBFV6RSN5",
-      "url": "https://square.link/u/MuV5oX2O",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2CfK5XohuK3KSS4yrSt9Zqrvr6PZY"
-    },
-    {
-      "itemId": "M53N7TDUII4HBUAFOYNHUQ5J",
-      "variationId": "4GJCJOMTUO2XTLHDGFL2W6Y3",
-      "title": "Inter Miami 22/23 Home Jersey (Adidas) · M",
-      "sku": "ebay:389367191599",
-      "paymentLinkId": "QXGLI7PBZREAUA2R",
-      "url": "https://square.link/u/QajteGUT",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6sXayUwiPIGUs93v6koUInac3c7YY"
-    },
-    {
-      "itemId": "2STRESTWOXQ5WRDMX7QOXMYM",
-      "variationId": "VW5JS2QK6DEVPFE7WUCXJNMK",
-      "title": "Manchester City 25/26 Third Jersey (Puma) · Youth L",
-      "sku": "ebay:800189791714",
-      "paymentLinkId": "GTOSLPVQOFV5QSXU",
-      "url": "https://square.link/u/fWdv6lLo",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/iklK5HjJf2fpmRVHbFSHPnWq0zZZY"
-    },
-    {
-      "itemId": "KSQAQS5FD2JUDR2OSVTR2CKN",
-      "variationId": "BITTO3N42GF6UMBOTP6VFEU6",
-      "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
-      "sku": "ebay:800366857184",
-      "paymentLinkId": "567D27GR6FLXGLAJ",
-      "url": "https://square.link/u/Yod1Uef8",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SWuayrIEPF4YdjiicqFlf1XB2SaZY"
     },
     {
       "itemId": "OX7AAG6BBHIQYZ4OEW4GUWFM",
@@ -786,15 +665,6 @@
       "discountUrl": "https://square.link/u/UqPLcmJA",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/akj24vdHCjhMUqOlqRFtD9TkQh6YY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "IMENLCIPQF2NARGPZH7TN6OJ",
-      "variationId": "M4HDCO7DHEXMS4SXW2S2QYOL",
-      "title": "Maroon Under Armour Long Sleeve Waffle Crew S Small",
-      "sku": "ebay:800468004717",
-      "paymentLinkId": "VV4COCBI2XMFZGGV",
-      "url": "https://square.link/u/HEbsp48E",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2GrnZBIZ0ZzT4fsEGqFpVi6pLv5YY"
     },
     {
       "itemId": "6OWM243QJBQTIAHD2ZENZS7Y",

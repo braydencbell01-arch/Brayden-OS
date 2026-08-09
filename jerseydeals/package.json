@@ -14,6 +14,7 @@
     "sync:inventory": "node scripts/sync-inventory.mjs",
     "sync:cross-platform": "node scripts/sync-cross-platform-listings.mjs",
     "relist:ebay": "node scripts/relist-ended-ebay.mjs",
+    "remove:sold": "node scripts/remove-confirmed-sold.mjs",
     "reconcile:sold": "node scripts/reconcile-sold-inventory.mjs",
     "ensure:square-webhook": "node scripts/ensure-square-sold-webhook.mjs",
     "sync:ebay-details": "node scripts/sync-ebay-listing-details.mjs",

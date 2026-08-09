@@ -726,6 +726,7 @@ async function main() {
     fetchEbaySoldIds(60),
   ])
   const soldOutEbayIds = new Set(ebaySoldIds)
+  const confirmedSoldVariationIds = new Set()
   if (existsSync(SOLD_OUT_PATH)) {
     try {
       const soldOut = JSON.parse(readFileSync(SOLD_OUT_PATH, 'utf8'))
@@ -733,6 +734,18 @@ async function main() {
         if (item.ebayId) soldOutEbayIds.add(String(item.ebayId))
         const fromSku = ebayIdFromSku(item.sku)
         if (fromSku) soldOutEbayIds.add(fromSku)
+        if (item.variationId) confirmedSoldVariationIds.add(String(item.variationId))
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  const exceptionsPath = join(__dirname, '../public/reconcile-exceptions.json')
+  if (existsSync(exceptionsPath)) {
+    try {
+      const ex = JSON.parse(readFileSync(exceptionsPath, 'utf8'))
+      for (const id of ex.confirmedSoldVariationIds || []) {
+        confirmedSoldVariationIds.add(String(id))
       }
     } catch {
       /* ignore */
@@ -799,6 +812,7 @@ async function main() {
   for (const row of squareRowsAfter) {
     // Skip zero-qty — sold reconcile owns those
     if ((row.quantity ?? 0) <= 0) continue
+    if (confirmedSoldVariationIds.has(row.variationId)) continue
 
     if (row.ebayId) {
       if (!ebayActiveIds.has(row.ebayId)) {
