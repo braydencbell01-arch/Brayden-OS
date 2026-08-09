@@ -8,6 +8,7 @@ import {
   closestPointOnTower,
   distToTowerEdge,
   distUnitTileToTower,
+  towerFrontAimPoint,
   towerFrontEngagePoint,
   isInsideTower,
   isRiverTile,
@@ -75,6 +76,8 @@ export type TowerHp = {
   /** When the king may begin firing (after 3s wake delay). */
   fireReadyAt: number
   nextShotAt: number
+  /** Clash-style lock on a unit id until dead or out of range. */
+  lockUnitId: string | null
 }
 
 function towerMaxHp(kind: 'king' | 'princess'): number {
@@ -245,6 +248,7 @@ function makeBattleUnit(
     spawnedAt: t,
     enraged: false,
     movingUntil: 0,
+    lockKey: null,
   }
 }
 
@@ -492,6 +496,7 @@ export function useBattle(opts?: {
         activated: t.kind === 'princess',
         fireReadyAt: 0,
         nextShotAt: 0,
+        lockUnitId: null,
       }
     }),
   )
@@ -714,36 +719,83 @@ export function useBattle(opts?: {
           rangeD: number
         }
 
-        // Start with the nearest tower so troops always advance the match objective.
-        let best: Target | null = null
-        for (const tw of foeTowers) {
-          const slot = towerSlot(tw.id)
-          if (!slot) continue
-          // Range from the unit tile to the nearest tower edge / front — not the center.
-          // Standing on the tile right in front counts as in melee range.
-          const edge = distUnitTileToTower(u.col, u.row, slot)
-          const aim = towerFrontEngagePoint(me.col, me.row, slot)
-          const path = pathCostTo(me.col, me.row, aim.col, aim.row)
-          if (!best || path < best.d) {
-            best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d: path, rangeD: edge }
-          }
-        }
-        // Nearby enemy troops can distract a unit, but distant troops cannot make it
-        // chase forever across Trophy Road instead of pushing a tower.
-        for (const f of foes) {
-          const c = unitCenter(f)
-          const edge = dist(me.col, me.row, c.col, c.row)
-          if (edge > unitAggroRange) continue
-          const path = pathCostTo(me.col, me.row, c.col, c.row)
-          if (!best || path < best.d) {
-            best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
-          }
-        }
-
         const rooted = t < u.rootedUntil
         const noAttack = def.attacks.length === 0
+        const attackRange = noAttack
+          ? 2
+          : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
+
+        // Clash Royale: once attacking a target, keep it until death or out of range.
+        let best: Target | null = null
+        if (u.lockKey) {
+          const [kind, id] = u.lockKey.split(':') as ['unit' | 'tower', string]
+          if (kind === 'unit') {
+            const f = foes.find((x) => x.id === id)
+            if (f) {
+              const c = unitCenter(f)
+              const edge = dist(me.col, me.row, c.col, c.row)
+              if (edge <= attackRange) {
+                best = {
+                  kind: 'unit',
+                  id: f.id,
+                  col: c.col,
+                  row: c.row,
+                  d: pathCostTo(me.col, me.row, c.col, c.row),
+                  rangeD: edge,
+                }
+              }
+            }
+          } else if (kind === 'tower') {
+            const tw = foeTowers.find((x) => x.id === id)
+            const slot = tw ? towerSlot(tw.id) : null
+            if (tw && slot) {
+              const edge = distUnitTileToTower(u.col, u.row, slot)
+              if (edge <= attackRange) {
+                const aim = towerFrontEngagePoint(me.col, me.row, slot)
+                best = {
+                  kind: 'tower',
+                  id: tw.id,
+                  col: aim.col,
+                  row: aim.row,
+                  d: pathCostTo(me.col, me.row, aim.col, aim.row),
+                  rangeD: edge,
+                }
+              }
+            }
+          }
+          if (!best) {
+            u.lockKey = null
+            unitsChanged = true
+          }
+        }
 
         if (!best) {
+          for (const tw of foeTowers) {
+            const slot = towerSlot(tw.id)
+            if (!slot) continue
+            const edge = distUnitTileToTower(u.col, u.row, slot)
+            const aim = towerFrontEngagePoint(me.col, me.row, slot)
+            const path = pathCostTo(me.col, me.row, aim.col, aim.row)
+            if (!best || path < best.d) {
+              best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d: path, rangeD: edge }
+            }
+          }
+          for (const f of foes) {
+            const c = unitCenter(f)
+            const edge = dist(me.col, me.row, c.col, c.row)
+            if (edge > unitAggroRange) continue
+            const path = pathCostTo(me.col, me.row, c.col, c.row)
+            if (!best || path < best.d) {
+              best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
+            }
+          }
+        }
+
+        if (!best) {
+          if (u.lockKey) {
+            u.lockKey = null
+            unitsChanged = true
+          }
           if (u.burstShot === 0 && u.nextAttackAt !== 0) {
             u.nextAttackAt = 0
             unitsChanged = true
@@ -778,13 +830,8 @@ export function useBattle(opts?: {
         }
 
         // Shields (Dan) walk into contact then idle as a meat wall — never attack.
-        // Global floor: nothing engages/attacks under 2 blocks.
-        const attackRange = noAttack
-          ? 2
-          : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
         if (best.rangeD > attackRange) {
-          // Out of range: attack interval does not tick. First hit on re-entry is immediate
-          // (unless mid-burst, so Jeremy's dual shots stay linked).
+          // Out of range: not locked yet / lock already cleared above. Walk to objective.
           if (u.burstShot === 0 && u.nextAttackAt !== 0) {
             u.nextAttackAt = 0
             unitsChanged = true
@@ -810,12 +857,26 @@ export function useBattle(opts?: {
           continue
         }
 
+        // In range — lock onto this target (CR: no retarget until dead / out of range).
+        const nextLock = `${best.kind}:${best.id}`
+        if (u.lockKey !== nextLock) {
+          u.lockKey = nextLock
+          unitsChanged = true
+        }
+
         if (noAttack) continue
 
         if (t < u.nextAttackAt) continue
 
         const attack = def.attacks[u.attackIndex % def.attacks.length]!
         const damage = attack.damage * dmgMult * cardLevelMult(u.level)
+        const shotAim =
+          best.kind === 'tower'
+            ? (() => {
+                const slot = towerSlot(best.id)
+                return slot ? towerFrontAimPoint(slot) : { col: best.col, row: best.row }
+              })()
+            : { col: best.col, row: best.row }
         const burstShots = attack.burstShots ?? 1
         const burstGapSec = attack.burstGapSec ?? 0
         const nextBurst = u.burstShot + 1
@@ -859,8 +920,8 @@ export function useBattle(opts?: {
             kind: attack.kind,
             fromCol: me.col,
             fromRow: me.row,
-            toCol: best.col,
-            toRow: best.row,
+            toCol: shotAim.col,
+            toRow: shotAim.row,
             damage,
             targetId: best.kind === 'unit' ? best.id : null,
             targetTowerId: best.kind === 'tower' ? best.id : null,
@@ -886,8 +947,8 @@ export function useBattle(opts?: {
             nextUnits,
             nextTowers,
             u.side,
-            best.col,
-            best.row,
+            shotAim.col,
+            shotAim.row,
             attack.splashRadius,
             damage,
             t,
@@ -954,14 +1015,29 @@ export function useBattle(opts?: {
         const cd = tw.kind === 'king' ? KING_CD_MS : PRINCESS_CD_MS
 
         let best: { id: string; col: number; row: number; d: number } | null = null
-        for (const f of foes) {
-          const c = unitCenter(f)
-          const d = distToTowerEdge(c.col, c.row, slot)
-          if (d > range) continue
-          if (!best || d < best.d) best = { id: f.id, col: c.col, row: c.row, d }
+        if (tw.lockUnitId) {
+          const f = foes.find((x) => x.id === tw.lockUnitId)
+          if (f) {
+            const c = unitCenter(f)
+            const d = distToTowerEdge(c.col, c.row, slot)
+            if (d <= range) best = { id: f.id, col: c.col, row: c.row, d }
+          }
+          if (!best) {
+            tw.lockUnitId = null
+            towersChanged = true
+          }
+        }
+        if (!best) {
+          for (const f of foes) {
+            const c = unitCenter(f)
+            const d = distToTowerEdge(c.col, c.row, slot)
+            if (d > range) continue
+            if (!best || d < best.d) best = { id: f.id, col: c.col, row: c.row, d }
+          }
         }
         if (!best) continue
 
+        tw.lockUnitId = best.id
         tw.nextShotAt = t + cd
         towersChanged = true
         nextProjectiles.push({

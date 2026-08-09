@@ -98,9 +98,9 @@ export function closestPointOnTower(
 }
 
 /**
- * Walk-to / stand-in-front point on the tower's river-facing front.
+ * Walk-to / stand-in-front point just OUTSIDE the tower's river-facing front.
  * Ally attacks enemy towers from the south face; enemy attacks ally towers from the north face.
- * Keeps short-range troops from sliding past to a side corner.
+ * Kept outside the footprint so pathing + eject never shove troops to the back.
  */
 export function towerFrontEngagePoint(
   fromCol: number,
@@ -108,9 +108,21 @@ export function towerFrontEngagePoint(
   t: TowerSlot,
 ): { col: number; row: number } {
   const { left, right, top, bottom } = towerAabb(t)
-  const faceCol = Math.max(left, Math.min(right, fromCol))
-  const frontRow = t.side === 'enemy' ? bottom : top
-  return { col: faceCol, row: frontRow }
+  const faceCol = Math.max(left + 0.5, Math.min(right - 0.5, fromCol))
+  // Sit a half-tile outside the front edge (never on/inside the pad).
+  if (t.side === 'enemy') {
+    return { col: faceCol, row: bottom + 0.55 }
+  }
+  return { col: faceCol, row: top - 0.55 }
+}
+
+/** Projectile aim point on the river-facing front face (visual impact). */
+export function towerFrontAimPoint(t: TowerSlot): { col: number; row: number } {
+  const { left, right, top, bottom } = towerAabb(t)
+  return {
+    col: (left + right) / 2,
+    row: t.side === 'enemy' ? bottom : top,
+  }
 }
 
 /**

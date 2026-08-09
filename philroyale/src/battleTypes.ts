@@ -26,6 +26,11 @@ export type BattleUnit = {
   enraged: boolean
   /** Walk anim while recently relocated. */
   movingUntil: number
+  /**
+   * Clash-style lock: keep attacking this target until it dies or leaves range.
+   * `unit:<id>` or `tower:<id>`.
+   */
+  lockKey: string | null
 }
 
 export type Projectile = {

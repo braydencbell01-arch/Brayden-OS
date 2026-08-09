@@ -199,7 +199,7 @@ export function HomeScreen({
 
         {/* King banner */}
         <section
-          className="mt-3 w-full max-w-md self-center rounded-xl p-3"
+          className="mt-3 w-full max-w-md shrink-0 self-center rounded-xl p-3"
           style={{
             background: 'linear-gradient(180deg,#3a2418,#1a100c)',
             boxShadow: 'inset 0 1px 0 #c9a22744, 0 8px 20px #00000055',
@@ -234,7 +234,7 @@ export function HomeScreen({
           </div>
         </section>
 
-        <div className="mt-3 grid w-full max-w-md grid-cols-2 gap-2 self-center">
+        <div className="mt-3 grid w-full max-w-md shrink-0 grid-cols-2 gap-2 self-center">
           <motion.button
             type="button"
             onClick={onOpenEvents}
@@ -265,15 +265,16 @@ export function HomeScreen({
           </motion.button>
         </div>
 
-        {/* Big clickable Trophy Road entry — CR style */}
+        {/* Big clickable Trophy Road entry — CR style (opens full road; no Road tab) */}
         <motion.button
           type="button"
           onClick={onOpenRoad}
           whileTap={{ scale: 0.98 }}
-          className="relative mt-3 w-full max-w-md self-center overflow-hidden rounded-2xl px-3 py-3 text-left"
+          className="relative mt-3 w-full max-w-md shrink-0 self-center overflow-hidden rounded-2xl px-3 py-3.5 text-left"
           style={{
             background: `linear-gradient(135deg, ${arenaColors.sky}, ${arenaColors.ground})`,
             boxShadow: '0 6px 0 #00000055, inset 0 1px 0 #ffffff33',
+            minHeight: '5.5rem',
           }}
         >
           {unclaimed > 0 ? (
@@ -285,9 +286,9 @@ export function HomeScreen({
             Trophy Road
           </p>
           <p className="text-xs font-bold text-white/90">
-            Tap to scroll the path · claim chests, gold & cards
+            Tap to open · claim chests, gold & cards
           </p>
-          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-black/35 ring-1 ring-white/20">
+          <div className="mt-2 h-2.5 shrink-0 overflow-hidden rounded-full bg-black/35 ring-1 ring-white/20">
             <div
               className="h-full rounded-full"
               style={{

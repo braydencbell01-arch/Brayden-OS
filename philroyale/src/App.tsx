@@ -36,11 +36,10 @@ import {
   type BattleChannelMessage,
 } from './storage'
 
-type TabId = 'home' | 'road' | 'characters' | 'shop' | 'events' | 'friends'
+type TabId = 'home' | 'characters' | 'shop' | 'events' | 'friends'
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'home', label: 'Battle' },
-  { id: 'road', label: 'Road' },
   { id: 'characters', label: 'Cards' },
   { id: 'shop', label: 'Shop' },
   { id: 'events', label: 'Events' },
@@ -251,10 +250,9 @@ export default function App() {
     )
   }
 
-  const openRoad = showRoad || tab === 'road'
   const roadBadge = countUnclaimedRoadRewards()
 
-  if (openRoad) {
+  if (showRoad) {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
         <CurrencyBar />
@@ -274,7 +272,7 @@ export default function App() {
         >
           <ul className="mx-auto flex max-w-md gap-0.5">
             {TABS.map((t) => {
-              const active = t.id === 'road'
+              const active = t.id === 'home'
               return (
                 <li key={t.id} className="relative flex-1">
                   <button
@@ -294,11 +292,6 @@ export default function App() {
                   >
                     {t.label}
                   </button>
-                  {t.id === 'road' && roadBadge > 0 ? (
-                    <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3b3b] px-1 text-[0.55rem] font-black text-white">
-                      {roadBadge}
-                    </span>
-                  ) : null}
                 </li>
               )
             })}
@@ -325,10 +318,7 @@ export default function App() {
               <HomeScreen
                 onPlay={startMatch}
                 onRequestBattle={requestBattle}
-                onOpenRoad={() => {
-                  setShowRoad(true)
-                  setTab('road')
-                }}
+                onOpenRoad={() => setShowRoad(true)}
                 onOpenEvents={() => setTab('events')}
                 onOpenClub={() => setTab('friends')}
               />
@@ -371,7 +361,7 @@ export default function App() {
                 >
                   {t.label}
                 </button>
-                {t.id === 'road' && roadBadge > 0 ? (
+                {t.id === 'home' && roadBadge > 0 ? (
                   <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3b3b] px-1 text-[0.55rem] font-black text-white">
                     {roadBadge}
                   </span>
