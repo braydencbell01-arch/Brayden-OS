@@ -71,10 +71,7 @@ export function distToTowerEdge(col: number, row: number, t: TowerSlot): number 
   return Math.hypot(col - closestCol, row - closestRow)
 }
 
-/**
- * Gap between a 1×1 unit tile [col,col+1]×[row,row+1] and the tower AABB.
- * 0 when touching or overlapping — melee can hit from the tile right in front.
- */
+/** Gap between a 1×1 unit tile and the tower's river-facing front segment. */
 export function distUnitTileToTower(col: number, row: number, t: TowerSlot): number {
   const { left, right, top, bottom } = towerAabb(t)
   const uLeft = col
@@ -82,7 +79,8 @@ export function distUnitTileToTower(col: number, row: number, t: TowerSlot): num
   const uTop = row
   const uBottom = row + 1
   const dx = Math.max(0, Math.max(left - uRight, uLeft - right))
-  const dy = Math.max(0, Math.max(top - uBottom, uTop - bottom))
+  const frontRow = t.side === 'enemy' ? bottom : top
+  const dy = Math.max(0, Math.max(frontRow - uBottom, uTop - frontRow))
   return Math.hypot(dx, dy)
 }
 
@@ -106,18 +104,13 @@ export function closestPointOnTower(
  */
 export function towerFrontEngagePoint(
   fromCol: number,
-  fromRow: number,
+  _fromRow: number,
   t: TowerSlot,
 ): { col: number; row: number } {
   const { left, right, top, bottom } = towerAabb(t)
-  const midY = (top + bottom) / 2
-  // Stay lined up with the front face (not a side corner) so melee doesn't path past.
-  const faceCol = Math.max(left + 0.2, Math.min(right - 0.2, fromCol))
-  // Approach from below (ally → enemy) → south face; from above → north face.
-  if (fromRow >= midY) {
-    return { col: faceCol, row: bottom }
-  }
-  return { col: faceCol, row: top }
+  const faceCol = Math.max(left, Math.min(right, fromCol))
+  const frontRow = t.side === 'enemy' ? bottom : top
+  return { col: faceCol, row: frontRow }
 }
 
 /**
@@ -285,6 +278,14 @@ export function steerTowardGoal(
   let blockerDist = Infinity
   for (const t of TOWERS) {
     if (liveTowerIds && !liveTowerIds.has(t.id)) continue
+    const targetIsOnTower =
+      targetCol >= t.col &&
+      targetCol <= t.col + t.w &&
+      targetRow >= t.row &&
+      targetRow <= t.row + t.h
+    const approachesFront =
+      t.side === 'enemy' ? row + 0.5 >= t.row + t.h : row + 0.5 <= t.row
+    if (targetIsOnTower && approachesFront) continue
     if (!segmentHitsTower(col + 0.5, row + 0.5, targetCol, targetRow, t)) continue
     const d = distToTowerEdge(col + 0.5, row + 0.5, t)
     if (d < blockerDist) {
