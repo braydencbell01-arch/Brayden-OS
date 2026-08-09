@@ -149,7 +149,7 @@ function nid(prefix: string): string {
   return `${prefix}-${seq}`
 }
 
-export function useBattle() {
+export function useBattle(opts?: { paused?: boolean }) {
   const [elixir, setElixir] = useState(5)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
@@ -171,6 +171,8 @@ export function useBattle() {
   )
   const [selectedCharId, setSelectedCharId] = useState<string | null>('phil')
   const [now, setNow] = useState(() => performance.now())
+  const pausedRef = useRef(!!opts?.paused)
+  pausedRef.current = !!opts?.paused
 
   const unitsRef = useRef(units)
   const towersRef = useRef(towers)
@@ -185,6 +187,7 @@ export function useBattle() {
 
   const deploy = useCallback(
     (char: CharacterDef, col: number, row: number, side: Side = 'ally') => {
+      if (pausedRef.current) return false
       if (elixirRef.current < char.elixir) return false
       const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
       const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
@@ -231,6 +234,10 @@ export function useBattle() {
       const dt = Math.min(0.05, (t - last) / 1000)
       last = t
       setNow(t)
+      if (pausedRef.current) {
+        raf = requestAnimationFrame(tick)
+        return
+      }
       setElixir((e) => Math.min(ELIXIR_MAX, e + ELIXIR_PER_SEC * dt))
 
       let nextProjectiles = projectilesRef.current.slice()

@@ -3,9 +3,8 @@
  * Lane mids match bridge cols 23 & 77; path width matches bridge footprint.
  */
 export function ClashMap() {
-  const fieldX = 28
-  const fieldW = 304
-  // Bridge mids: col 23 → ~70.5% wait: (23/100)*304 + 28 = 97.92; (77/100)*304+28 = 262.08
+  const fieldX = 0
+  const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
   const rightLane = fieldX + (77 / 100) * fieldW
   const pathW = (11 / 100) * fieldW // matches bridge col span 18–28 / 72–82
@@ -28,9 +27,9 @@ export function ClashMap() {
           <stop offset="100%" stopColor="#5ec864" />
         </linearGradient>
         <linearGradient id="depthFog" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1a3a20" stopOpacity="0.35" />
-          <stop offset="45%" stopColor="#1a3a20" stopOpacity="0.08" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
+          <stop offset="0%" stopColor="#1a3a20" stopOpacity="0.28" />
+          <stop offset="45%" stopColor="#1a3a20" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.05" />
         </linearGradient>
         <linearGradient id="dirt" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#7a4a22" />
@@ -75,14 +74,6 @@ export function ClashMap() {
           <stop offset="0%" stopColor="#7a8598" />
           <stop offset="100%" stopColor="#1a2030" />
         </linearGradient>
-        <linearGradient id="standStone" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8a8680" />
-          <stop offset="100%" stopColor="#3a3834" />
-        </linearGradient>
-        <linearGradient id="standStep" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#b0aaa0" />
-          <stop offset="100%" stopColor="#5a564e" />
-        </linearGradient>
         <filter id="softShadow" x="-35%" y="-35%" width="170%" height="170%">
           <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.4" />
         </filter>
@@ -91,32 +82,30 @@ export function ClashMap() {
         </filter>
       </defs>
 
-      <rect width="360" height="640" fill="#2a2218" />
-
-      <Stands x={0} w={fieldX} side="left" />
-      <Stands x={fieldX + fieldW} w={360 - fieldX - fieldW} side="right" />
-
-      <rect x={fieldX} y="14" width={fieldW} height="612" rx="3" fill="url(#grassGrad)" />
-      <rect x={fieldX} y="14" width={fieldW} height="612" rx="3" fill="url(#depthFog)" />
+      <rect width="360" height="640" fill="url(#grassGrad)" />
+      <rect width="360" height="640" fill="url(#depthFog)" />
       {Array.from({ length: 16 }, (_, i) => (
         <rect
           key={i}
           x={fieldX}
-          y={18 + i * 38}
+          y={i * 40}
           width={fieldW}
-          height="16"
+          height="18"
           fill="#ffffff"
           opacity={i % 2 === 0 ? 0.04 + i * 0.002 : 0.015}
         />
       ))}
+      {/* Soft side vignette instead of bleachers */}
+      <rect width="18" height="640" fill="#000000" opacity="0.12" />
+      <rect x="342" width="18" height="640" fill="#000000" opacity="0.12" />
       {/* Near-edge ground lip for 3/4 depth */}
       <ellipse
         cx={180}
-        cy={620}
-        rx={fieldW * 0.55}
-        ry="28"
+        cy={628}
+        rx={fieldW * 0.52}
+        ry="22"
         fill="#000000"
-        opacity="0.18"
+        opacity="0.14"
       />
 
       {/* Twin dirt lanes — CR placement / width */}
@@ -185,15 +174,15 @@ export function ClashMap() {
       <CrownTower x={rightLane} y={516} king={false} enemy={false} />
 
       <rect
-        x={fieldX - 1}
-        y="13"
-        width={fieldW + 2}
-        height="614"
-        rx="3"
+        x="1"
+        y="1"
+        width="358"
+        height="638"
+        rx="2"
         fill="none"
         stroke="#c9a227"
-        strokeWidth="1.8"
-        opacity="0.35"
+        strokeWidth="1.4"
+        opacity="0.22"
       />
     </svg>
   )
@@ -232,75 +221,6 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
         stroke="#5a3418"
         strokeWidth="1.2"
         opacity="0.35"
-      />
-    </g>
-  )
-}
-
-/** Tiered stone stands with crowd — Clash-like arenas. */
-function Stands({ x, w, side }: { x: number; w: number; side: 'left' | 'right' }) {
-  const tiers = 18
-  const tierH = 33
-  return (
-    <g>
-      <rect x={x} y="10" width={w} height="620" fill="#2c2824" />
-      {Array.from({ length: tiers }, (_, i) => {
-        const y = 14 + i * tierH
-        const inset = side === 'left' ? i * 0.35 : 0
-        const topHalf = i < tiers / 2
-        const crowd = topHalf ? '#c45c4a' : '#5a8ecc'
-        const crowdDark = topHalf ? '#8a3028' : '#2a5080'
-        return (
-          <g key={i}>
-            {/* stone riser */}
-            <rect
-              x={x + 1 + inset}
-              y={y}
-              width={w - 2 - inset}
-              height={tierH - 3}
-              fill="url(#standStep)"
-              stroke="#2a2824"
-              strokeWidth="0.8"
-            />
-            <rect
-              x={x + 1 + inset}
-              y={y}
-              width={w - 2 - inset}
-              height="4"
-              fill="#d0ccc4"
-              opacity="0.35"
-            />
-            {/* seat lip */}
-            <rect
-              x={x + 2 + inset}
-              y={y + tierH - 10}
-              width={w - 4 - inset}
-              height="5"
-              rx="1"
-              fill="url(#standStone)"
-            />
-            {/* crowd blobs */}
-            {Array.from({ length: 3 }, (_, c) => {
-              const cx = x + 5 + inset + c * ((w - 10 - inset) / 2.2)
-              return (
-                <g key={c}>
-                  <ellipse cx={cx} cy={y + 12} rx="3.2" ry="2.6" fill={crowd} />
-                  <circle cx={cx} cy={y + 8} r="2.2" fill="#f0d0b0" />
-                  <ellipse cx={cx} cy={y + 15} rx="3.6" ry="2.2" fill={crowdDark} />
-                </g>
-              )
-            })}
-          </g>
-        )
-      })}
-      {/* outer wall face */}
-      <rect
-        x={side === 'left' ? x + w - 3 : x}
-        y="12"
-        width="3"
-        height="616"
-        fill="#1a1814"
-        opacity="0.65"
       />
     </g>
   )

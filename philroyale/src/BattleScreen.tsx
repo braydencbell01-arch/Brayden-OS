@@ -23,7 +23,27 @@ type DragState = {
   valid: boolean
 }
 
-const EMOTES = ['👍', '😂', '😤', '😱', '🎉', '👋']
+type MatchResult = 'victory' | 'defeat' | 'draw'
+
+type EmoteOption =
+  | { id: string; kind: 'phil' }
+  | { id: string; kind: 'emoji'; emoji: string }
+
+const PHIL_EMOTE_SRC = `${import.meta.env.BASE_URL}characters/phil.png`
+
+const EMOTE_OPTIONS: EmoteOption[] = [
+  { id: 'phil', kind: 'phil' },
+  { id: 'thumbs', kind: 'emoji', emoji: '👍' },
+  { id: 'laugh', kind: 'emoji', emoji: '😂' },
+  { id: 'mad', kind: 'emoji', emoji: '😤' },
+  { id: 'wow', kind: 'emoji', emoji: '😱' },
+  { id: 'party', kind: 'emoji', emoji: '🎉' },
+  { id: 'wave', kind: 'emoji', emoji: '👋' },
+  { id: 'cry', kind: 'emoji', emoji: '😢' },
+  { id: 'fire', kind: 'emoji', emoji: '🔥' },
+]
+
+type ActiveEmote = { key: number; option: EmoteOption }
 
 function FlyingShot({
   fromCol,
@@ -79,12 +99,15 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   const [seconds, setSeconds] = useState(180)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [draggingActive, setDraggingActive] = useState(false)
-  const [emote, setEmote] = useState<string | null>(null)
-  const [emoteIdx, setEmoteIdx] = useState(0)
+  const [emotePickerOpen, setEmotePickerOpen] = useState(false)
+  const [activeEmote, setActiveEmote] = useState<ActiveEmote | null>(null)
+  const [emoteKey, setEmoteKey] = useState(0)
+  const [result, setResult] = useState<MatchResult | null>(null)
   const arenaRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<DragState | null>(null)
   const dragOriginRef = useRef<{ x: number; y: number } | null>(null)
   const movedRef = useRef(false)
+  const ended = result != null
   const {
     elixir,
     elixirMax,
@@ -96,7 +119,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     setSelectedCharId,
     deploy,
     now,
-  } = useBattle()
+  } = useBattle({ paused: ended })
 
   useEffect(() => {
     const pile = [...deckIds].sort(() => Math.random() - 0.5)
@@ -108,9 +131,31 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   }, [deckIds, setSelectedCharId])
 
   useEffect(() => {
+    if (ended) return
     const id = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
     return () => window.clearInterval(id)
-  }, [])
+  }, [ended])
+
+  useEffect(() => {
+    if (result) return
+    const allyKing = towers.find((t) => t.id === 'ally-king')
+    const enemyKing = towers.find((t) => t.id === 'enemy-king')
+    if (enemyKing && enemyKing.hp <= 0) {
+      setResult('victory')
+      setEmotePickerOpen(false)
+      return
+    }
+    if (allyKing && allyKing.hp <= 0) {
+      setResult('defeat')
+      setEmotePickerOpen(false)
+      return
+    }
+    if (seconds > 0) return
+    const allyLeft = towers.filter((t) => t.side === 'ally' && t.hp > 0).length
+    const enemyLeft = towers.filter((t) => t.side === 'enemy' && t.hp > 0).length
+    setResult(allyLeft > enemyLeft ? 'victory' : enemyLeft > allyLeft ? 'defeat' : 'draw')
+    setEmotePickerOpen(false)
+  }, [towers, seconds, result])
 
   function cycleAfterDeploy(playedId: string) {
     const incoming = nextId
@@ -138,7 +183,9 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   }
 
   function onArenaPointer(col: number, row: number) {
+    if (ended) return
     if (dragRef.current) return
+    setEmotePickerOpen(false)
     if (!selectedCharId) return
     const card = getCharacter(selectedCharId)
     if (!card || elixir < card.elixir) return
@@ -174,6 +221,8 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   }
 
   function onCardPointerDown(e: React.PointerEvent, charId: string) {
+    if (ended) return
+    setEmotePickerOpen(false)
     const card = getCharacter(charId)
     if (!card || elixir < card.elixir) {
       setSelectedCharId(charId)
@@ -239,11 +288,14 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     if (ok) cycleAfterDeploy(card.id)
   }
 
-  function sendEmote() {
-    const e = EMOTES[emoteIdx % EMOTES.length]!
-    setEmoteIdx((i) => i + 1)
-    setEmote(e)
-    window.setTimeout(() => setEmote(null), 1600)
+  function pickEmote(option: EmoteOption) {
+    const key = emoteKey + 1
+    setEmoteKey(key)
+    setActiveEmote({ key, option })
+    setEmotePickerOpen(false)
+    window.setTimeout(() => {
+      setActiveEmote((cur) => (cur?.key === key ? null : cur))
+    }, 2200)
   }
 
   const mm = String(Math.floor(seconds / 60))
@@ -251,14 +303,17 @@ export function BattleScreen({ onExit, opponentName }: Props) {
   const elixirDisplay = Math.floor(elixir)
   const dragChar = drag ? getCharacter(drag.charId) : null
   const foeName = opponentName?.trim() || 'Trainer'
+  const resultCopy =
+    result === 'victory' ? 'Victory!' : result === 'defeat' ? 'Defeat' : result === 'draw' ? 'Draw' : null
+
   return (
-    <div className="relative h-full min-h-0 overflow-hidden bg-[#1a100c]">
-      <div className="absolute inset-0 bottom-[7.1rem]">
+    <div className="relative h-full min-h-0 overflow-hidden bg-[#1a3a22]">
+      <div className="absolute inset-0">
         <Arena
           ref={arenaRef}
           towers={towers}
-          onArenaPointerDown={onArenaPointer}
-          showBlockedOverlay={draggingActive}
+          onArenaPointerDown={ended ? undefined : onArenaPointer}
+          showBlockedOverlay={draggingActive && !ended}
           overlaySide="ally"
         >
           <AnimatePresence>
@@ -399,39 +454,138 @@ export function BattleScreen({ onExit, opponentName }: Props) {
       </header>
 
       <AnimatePresence>
-        {emote ? (
+        {activeEmote ? (
           <motion.div
-            key={emote + emoteIdx}
-            initial={{ opacity: 0, y: 12, scale: 0.8 }}
+            key={activeEmote.key}
+            initial={{ opacity: 0, y: 16, scale: 0.75 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="pointer-events-none absolute bottom-36 left-4 z-30 text-4xl"
+            exit={{ opacity: 0, y: -10 }}
+            className="pointer-events-none absolute bottom-[8.6rem] left-3 z-40"
           >
-            {emote}
+            <div
+              className="relative rounded-2xl bg-white px-2.5 py-2 shadow-[0_4px_14px_#00000055]"
+              style={{ border: '2px solid #e8e4dc' }}
+            >
+              {activeEmote.option.kind === 'phil' ? (
+                <img
+                  src={PHIL_EMOTE_SRC}
+                  alt="Phil"
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+              ) : (
+                <span className="block text-4xl leading-none">{activeEmote.option.emoji}</span>
+              )}
+              <div
+                className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 bg-white"
+                style={{ borderRight: '2px solid #e8e4dc', borderBottom: '2px solid #e8e4dc' }}
+              />
+            </div>
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {resultCopy ? (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 px-4">
+          <div
+            className="w-full max-w-[16rem] rounded-xl px-5 py-5 text-center"
+            style={{
+              background: 'linear-gradient(180deg,#fff8e8,#e8d0a0)',
+              boxShadow: '0 8px 28px #00000088, inset 0 1px 0 #ffffffaa',
+              border: '3px solid #c9a227',
+            }}
+          >
+            <p
+              className="font-[family-name:var(--font-display)] text-3xl tracking-wide"
+              style={{
+                color:
+                  result === 'victory' ? '#1b7a34' : result === 'defeat' ? '#b71c1c' : '#5a4a20',
+              }}
+            >
+              {resultCopy}
+            </p>
+            <p className="mt-1 text-xs font-bold text-[#5a4a20]/85">
+              {result === 'victory'
+                ? 'Enemy king tower destroyed — or more towers left.'
+                : result === 'defeat'
+                  ? 'Your king tower fell — or fewer towers left.'
+                  : 'Same towers left when time ran out.'}
+            </p>
+            <button
+              type="button"
+              onClick={onExit}
+              className="mt-4 w-full rounded-lg py-2.5 text-sm font-extrabold uppercase tracking-wide text-[#1a1410]"
+              style={{
+                background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+                boxShadow: '0 3px 0 #8a6a12',
+              }}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.15rem,env(safe-area-inset-bottom))]">
         <div
           className="px-1.5 pb-1 pt-1"
           style={{
             background:
-              'linear-gradient(180deg,#6b4424 0%,#4a2e18 28%,#2e1a10 70%,#1a100c 100%)',
-            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -8px 20px #00000088',
+              'linear-gradient(180deg,#6b4424cc 0%,#4a2e18dd 28%,#2e1a10ee 70%,#1a100cff 100%)',
+            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -8px 20px #00000066',
           }}
         >
           <div className="mx-auto flex max-w-[34rem] items-end gap-1.5">
-            <div className="flex w-12 shrink-0 flex-col items-center gap-0.5">
+            <div className="relative flex w-12 shrink-0 flex-col items-center gap-0.5">
+              <AnimatePresence>
+                {emotePickerOpen ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                    className="absolute bottom-[calc(100%+0.35rem)] left-0 z-40 w-[11.5rem] rounded-2xl bg-white p-2 shadow-[0_6px_20px_#00000055]"
+                    style={{ border: '2px solid #e8e4dc' }}
+                  >
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {EMOTE_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => pickEmote(opt)}
+                          className="flex h-11 w-full items-center justify-center rounded-xl bg-[#f4f1ea] transition active:scale-95"
+                          aria-label={opt.kind === 'phil' ? 'Phil emote' : opt.emoji}
+                        >
+                          {opt.kind === 'phil' ? (
+                            <img
+                              src={PHIL_EMOTE_SRC}
+                              alt=""
+                              className="h-9 w-9 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-2xl leading-none">{opt.emoji}</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div
+                      className="absolute -bottom-1.5 left-4 h-3 w-3 rotate-45 bg-white"
+                      style={{ borderRight: '2px solid #e8e4dc', borderBottom: '2px solid #e8e4dc' }}
+                    />
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
               <button
                 type="button"
-                onClick={sendEmote}
+                onClick={() => {
+                  if (ended) return
+                  setEmotePickerOpen((o) => !o)
+                }}
                 className="flex h-7 w-7 items-center justify-center rounded-full"
                 style={{
                   background: 'linear-gradient(180deg,#5a8fd6,#2a4a8a)',
                   boxShadow: '0 2px 0 #1a3060, inset 0 1px 0 #ffffff44',
                 }}
                 aria-label="Emote"
+                aria-expanded={emotePickerOpen}
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white" aria-hidden>
                   <path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H10l-4 4v-4H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 5a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 7 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 12 9zm5 0a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 17 9z" />

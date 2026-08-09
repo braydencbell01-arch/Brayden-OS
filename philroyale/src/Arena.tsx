@@ -12,11 +12,11 @@ import { ClashMap } from './ClashMap'
 
 export type TowerHpView = { id: string; hp: number; maxHp: number }
 
-/** ClashMap playable field inset (viewBox 360×640). */
-export const PAD_X = 28 / 360
-export const PAD_Y = 14 / 640
-export const FIELD_W = 304 / 360
-export const FIELD_H = 612 / 640
+/** ClashMap playable field — full board (viewBox 360×640), no side stands. */
+export const PAD_X = 0
+export const PAD_Y = 0
+export const FIELD_W = 1
+export const FIELD_H = 1
 
 type Props = {
   towers?: TowerHpView[]
@@ -152,13 +152,13 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
   return (
     <div
       className="relative h-full w-full overflow-hidden"
-      style={{ perspective: `${ARENA_PERSPECTIVE_PX}px`, perspectiveOrigin: '50% 72%' }}
+      style={{ perspective: `${ARENA_PERSPECTIVE_PX}px`, perspectiveOrigin: '50% 88%' }}
     >
       <div
         ref={ref}
         className={`relative h-full w-full origin-bottom ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
         style={{
-          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.12, 1.18)`,
+          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.06, 1.1)`,
           transformStyle: 'preserve-3d',
         }}
         role={onArenaPointerDown ? 'application' : 'img'}

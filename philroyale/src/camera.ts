@@ -1,6 +1,7 @@
-/** Clash-style camera: look “into” the board from the near (ally) edge. */
-export const ARENA_PERSPECTIVE_PX = 920
-export const ARENA_TILT_DEG = 52
+/** Clash-style camera: mild look “into” the board from the near (ally) edge. */
+export const ARENA_PERSPECTIVE_PX = 1600
+/** Keep a CR-like angle without crushing the board into a black void. */
+export const ARENA_TILT_DEG = 26
 
 /**
  * Screen Y → plane Y compensation for rotateX foreshortening.
@@ -8,11 +9,11 @@ export const ARENA_TILT_DEG = 52
  */
 export function screenYToPlaneY(ny: number): number {
   const t = Math.max(0, Math.min(1, ny))
-  // Empiric inverse matching rotateX(~52°) + perspective(~920) on a portrait board.
-  return Math.pow(t, 0.78)
+  // Milder inverse for ~26° tilt + long perspective.
+  return Math.pow(t, 0.9)
 }
 
 export function planeYToScreenY(py: number): number {
   const t = Math.max(0, Math.min(1, py))
-  return Math.pow(t, 1 / 0.78)
+  return Math.pow(t, 1 / 0.9)
 }
