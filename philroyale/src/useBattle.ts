@@ -21,11 +21,14 @@ import type { BattleUnit, Projectile, SplatFx } from './battleTypes'
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
 const PROJECTILE_MS = 480
+/** Jeremy dual-pistol rounds — very fast. */
+const SHOOT_PROJECTILE_MS = 140
 const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const WHIP_VFX_MS = 780
 const RANGED_VFX_MS = 380
 const SPLAT_MS = 520
+const BOOM_MS = 380
 
 const PRINCESS_RANGE = 12.5
 const PRINCESS_DAMAGE = 100
@@ -332,7 +335,10 @@ export function useBattle(opts?: { paused?: boolean }) {
       setElixir((e) => Math.min(ELIXIR_MAX, e + ELIXIR_PER_SEC * dt))
 
       let nextProjectiles = projectilesRef.current.slice()
-      let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < SPLAT_MS)
+      let nextSplats = splatsRef.current.filter((s) => {
+        const life = s.kind === 'boom' ? BOOM_MS : SPLAT_MS
+        return t - s.bornAt < life
+      })
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
       let nextTowers = towersRef.current.map((tw) => ({ ...tw }))
       let unitsChanged = false
@@ -348,7 +354,22 @@ export function useBattle(opts?: { paused?: boolean }) {
         }
         projectilesChanged = true
         if (p.kind === 'sundae') {
-          nextSplats.push({ id: nid('splat'), col: p.toCol, row: p.toRow, bornAt: t })
+          nextSplats.push({
+            id: nid('splat'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'sundae',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'shoot') {
+          nextSplats.push({
+            id: nid('boom'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'boom',
+          })
           splatsChanged = true
         }
         if (p.targetId) {
@@ -522,7 +543,7 @@ export function useBattle(opts?: { paused?: boolean }) {
             targetId: best.kind === 'unit' ? best.id : null,
             targetTowerId: best.kind === 'tower' ? best.id : null,
             bornAt: t,
-            arriveAt: t + PROJECTILE_MS,
+            arriveAt: t + (attack.kind === 'shoot' ? SHOOT_PROJECTILE_MS : PROJECTILE_MS),
           })
           projectilesChanged = true
           continue

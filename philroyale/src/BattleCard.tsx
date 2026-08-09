@@ -96,7 +96,7 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
         <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden">
           <div
             className={`${
-              character.id === 'phil' || character.id === 'finley'
+              character.id === 'phil' || character.id === 'finley' || character.id === 'jeremy'
                 ? 'absolute inset-0'
                 : next
                   ? 'relative h-[85%] w-[90%]'

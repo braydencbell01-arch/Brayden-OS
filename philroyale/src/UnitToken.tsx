@@ -43,7 +43,10 @@ export function UnitToken({
     >
       <div
         className="relative w-full"
-        style={{ aspectRatio: charId === 'finley' ? '5 / 4' : '3 / 4.4' }}
+        style={{
+          aspectRatio:
+            charId === 'finley' ? '5 / 4' : charId === 'jeremy' ? '3 / 5.4' : '3 / 4.4',
+        }}
       >
         <CharacterModel
           charId={charId}
@@ -136,12 +139,40 @@ export function SlobberDot() {
 export function ShootDot() {
   return (
     <div
-      className="h-1.5 w-1.5 rounded-[1px]"
+      className="h-1 w-2.5 rounded-full"
       style={{
-        background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
-        boxShadow: '0 0 4px #ffd54f99',
+        background: 'linear-gradient(90deg,#fff6c8,#ffe08a 40%,#c9a227)',
+        boxShadow: '0 0 5px #ffd54fcc',
       }}
       aria-hidden
     />
+  )
+}
+
+/** Small muzzle/impact explosion for Jeremy's bullets. */
+export function BulletBoom({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 320)
+  const scale = 0.5 + p * 1.4
+  const opacity = 1 - p
+  return (
+    <div
+      className="relative h-5 w-5"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #fff6c8 0%, #ff9800 40%, #e5393533 70%, transparent 75%)',
+        }}
+      />
+      {[0, 60, 120, 180, 240, 300].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-1 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffcc80]"
+          style={{ transform: `rotate(${deg}deg) translateY(-${3 + p * 5}px)` }}
+        />
+      ))}
+    </div>
   )
 }

@@ -233,6 +233,7 @@ function CardProfile({
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <Stat label="Pronoun" value={character.pronoun} />
+            <Stat label="Height" value={character.height} />
             <Stat label="Rarity" value={RARITY_LABEL[character.rarity]} />
             <Stat label="Elixir" value={String(character.elixir)} />
             <Stat label="Health" value={String(character.hp)} />

@@ -40,12 +40,13 @@ export type Projectile = {
   arriveAt: number
 }
 
-/** Sundae Huck impact splat. */
+/** Impact FX — sundae splat or bullet boom. */
 export type SplatFx = {
   id: string
   col: number
   row: number
   bornAt: number
+  kind: 'sundae' | 'boom'
 }
 
 export type HandCard = {

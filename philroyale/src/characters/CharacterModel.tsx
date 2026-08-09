@@ -1,6 +1,7 @@
 import type { AttackId } from '../characters'
 import { CrUnitModel } from './CrUnitModel'
 import { FinleyModel } from './FinleyModel'
+import { JeremyModel } from './JeremyModel'
 import { PhilModel, type CharacterAnim } from './PhilModel'
 
 type Props = {
@@ -71,22 +72,7 @@ export function CharacterModel({
   }
 
   if (charId === 'jeremy') {
-    return (
-      <CrUnitModel
-        anim={anim}
-        facing={facing}
-        portrait={portrait}
-        build="shooter"
-        shirt="#5aaa40"
-        shirtDark="#2a6018"
-        pants="#4a4a58"
-        pantsDark="#22222a"
-        accent="#c9a227"
-        hair="#c8b090"
-        hat="cap"
-        prop="gun"
-      />
-    )
+    return <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   }
 
   return (

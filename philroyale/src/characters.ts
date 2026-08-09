@@ -46,6 +46,8 @@ export type CharacterDef = {
   initial: string
   /** Pronoun shown on card profile, e.g. he / she / they. */
   pronoun: string
+  /** Display height, e.g. 6'3". */
+  height: string
   rarity: Rarity
   elixir: number
   hp: number
@@ -68,6 +70,7 @@ export const PHIL: CharacterDef = {
   name: 'Phil',
   initial: 'P',
   pronoun: 'he',
+  height: "5'7\"",
   rarity: 'legendary',
   elixir: 4,
   hp: 500,
@@ -100,6 +103,7 @@ export const PETE: CharacterDef = {
   name: 'Pete',
   initial: 'Pe',
   pronoun: 'he',
+  height: "5'8\"",
   rarity: 'epic',
   elixir: 7,
   hp: 1000,
@@ -125,6 +129,7 @@ export const BEANS: CharacterDef = {
   name: 'Beans',
   initial: 'B',
   pronoun: 'he',
+  height: "1'3\"",
   rarity: 'common',
   elixir: 2,
   hp: 150,
@@ -149,6 +154,7 @@ export const FINLEY: CharacterDef = {
   name: 'Finley',
   initial: 'F',
   pronoun: 'he',
+  height: "2'2\"",
   rarity: 'common',
   elixir: 3,
   hp: 150,
@@ -176,20 +182,21 @@ export const JEREMY: CharacterDef = {
   name: 'Jeremy',
   initial: 'J',
   pronoun: 'he',
+  height: "6'3\"",
   rarity: 'rare',
   elixir: 5,
   hp: 500,
   moveSpeed: 5,
   attackDelaySec: 2.5,
-  hue: 95,
-  blurb: 'Shoot fires two 100-dmg shots 0.5s apart, then a 2.5s reload.',
+  hue: 220,
+  blurb: 'Tallest on the field. Dual pistols — two fast shots 0.5s apart, then a 2.5s reload.',
   attacks: [
     {
       id: 'shoot',
       name: 'Shoot',
       range: 25,
       damage: 100,
-      rootWhileAttacking: false,
+      rootWhileAttacking: true,
       burstShots: 2,
       burstGapSec: 0.5,
       kind: 'shoot',
