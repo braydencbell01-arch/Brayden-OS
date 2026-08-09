@@ -38,6 +38,10 @@ export type Projectile = {
   targetTowerId: string | null
   bornAt: number
   arriveAt: number
+  /** Attacker side — used for splash so allies are never hit. */
+  ownerSide?: Side
+  /** Splash radius in blocks around the impact point. */
+  splashRadius?: number
 }
 
 /** Impact FX — sundae splat, slobber explode, or bullet boom. */

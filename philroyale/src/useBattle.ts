@@ -109,6 +109,39 @@ function applyTowerDamage(tw: TowerHp, damage: number, now: number) {
   if (before > 0 && damage > 0) wakeKing(tw, now)
 }
 
+/** Damage every opposite-side unit (and tower) within radius of an impact point. */
+function applySplashAt(
+  units: BattleUnit[],
+  towers: TowerHp[],
+  ownerSide: Side,
+  col: number,
+  row: number,
+  radius: number,
+  damage: number,
+  now: number,
+): { unitsChanged: boolean; towersChanged: boolean } {
+  let unitsChanged = false
+  let towersChanged = false
+  for (const u of units) {
+    if (u.hp <= 0 || u.side === ownerSide) continue
+    const c = unitCenter(u)
+    if (dist(c.col, c.row, col, row) <= radius) {
+      u.hp -= damage
+      unitsChanged = true
+    }
+  }
+  for (const tw of towers) {
+    if (tw.hp <= 0 || tw.side === ownerSide) continue
+    const slot = towerSlot(tw.id)
+    if (!slot) continue
+    if (distToTowerEdge(col, row, slot) <= radius) {
+      applyTowerDamage(tw, damage, now)
+      towersChanged = true
+    }
+  }
+  return { unitsChanged, towersChanged }
+}
+
 function lerpAngle(from: number, to: number, t: number): number {
   const diff = Math.atan2(Math.sin(to - from), Math.cos(to - from))
   return from + diff * t
@@ -567,7 +600,20 @@ export function useBattle(opts?: { paused?: boolean }) {
           })
           splatsChanged = true
         }
-        if (p.targetId) {
+        if (p.splashRadius != null && p.ownerSide != null) {
+          const splash = applySplashAt(
+            nextUnits,
+            nextTowers,
+            p.ownerSide,
+            p.toCol,
+            p.toRow,
+            p.splashRadius,
+            p.damage,
+            t,
+          )
+          if (splash.unitsChanged) unitsChanged = true
+          if (splash.towersChanged) towersChanged = true
+        } else if (p.targetId) {
           const target = nextUnits.find((u) => u.id === p.targetId)
           if (target) {
             target.hp -= p.damage
@@ -793,8 +839,26 @@ export function useBattle(opts?: { paused?: boolean }) {
                   : attack.kind === 'dumbbell'
                     ? DUMBBELL_PROJECTILE_MS
                     : PROJECTILE_MS),
+            ownerSide: u.side,
+            splashRadius: attack.splashRadius,
           })
           projectilesChanged = true
+          continue
+        }
+
+        if (attack.splashRadius != null) {
+          const splash = applySplashAt(
+            nextUnits,
+            nextTowers,
+            u.side,
+            best.col,
+            best.row,
+            attack.splashRadius,
+            damage,
+            t,
+          )
+          if (splash.unitsChanged) unitsChanged = true
+          if (splash.towersChanged) towersChanged = true
           continue
         }
 

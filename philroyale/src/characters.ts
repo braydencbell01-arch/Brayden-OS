@@ -23,6 +23,8 @@ export type AttackDef = {
   burstShots?: number
   /** Seconds between shots inside a burst. */
   burstGapSec?: number
+  /** If set, hit every opponent within this many blocks of the impact point. */
+  splashRadius?: number
   kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick' | 'dumbbell' | 'headbutt'
 }
 
@@ -166,7 +168,7 @@ export const BEANS: CharacterDef = {
   moveSpeed: 7.5,
   attackDelaySec: 1.5,
   hue: 35,
-  blurb: 'Yellow dog, tongue always out. Spits a slow slobber that explodes on impact.',
+  blurb: 'Yellow dog, tongue always out. Spits a slow slobber that explodes — 5-block splash.',
   attacks: [
     {
       id: 'slobber',
@@ -174,6 +176,7 @@ export const BEANS: CharacterDef = {
       range: 20,
       damage: 150,
       rootWhileAttacking: true,
+      splashRadius: 5,
       kind: 'slobber',
     },
   ],
@@ -246,7 +249,7 @@ export const TODD: CharacterDef = {
   moveSpeed: 5,
   attackDelaySec: 2,
   hue: 0,
-  blurb: 'Sprints in, then jumps into a Flying Kick — 400 damage up close.',
+  blurb: 'Sprints in, then Flying Kick — 400 damage with 5-block splash.',
   attacks: [
     {
       id: 'flyingKick',
@@ -254,6 +257,7 @@ export const TODD: CharacterDef = {
       range: 3,
       damage: 400,
       rootWhileAttacking: true,
+      splashRadius: 5,
       kind: 'kick',
     },
   ],

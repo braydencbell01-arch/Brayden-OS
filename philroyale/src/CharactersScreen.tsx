@@ -279,6 +279,7 @@ function CardProfile({
                   {a.damage} dmg · {a.range} block range
                   {a.rootWhileAttacking ? ' · stops to attack' : ' · can move while attacking'}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
+                  {a.splashRadius != null ? ` · ${a.splashRadius} block splash` : ''}
                   {a.burstShots != null && a.burstShots > 1
                     ? ` · ${a.burstShots} shots ${a.burstGapSec ?? 0}s apart`
                     : ''}
