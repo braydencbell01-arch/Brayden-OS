@@ -7,6 +7,8 @@ import {
   canDeployEnemyAt,
   closestPointOnTower,
   distToTowerEdge,
+  distUnitTileToTower,
+  towerFrontEngagePoint,
   isInsideTower,
   isRiverTile,
   isWalkableTile,
@@ -583,8 +585,10 @@ export function useBattle(opts?: { paused?: boolean }) {
         for (const tw of foeTowers) {
           const slot = towerSlot(tw.id)
           if (!slot) continue
-          const edge = distToTowerEdge(me.col, me.row, slot)
-          const aim = closestPointOnTower(me.col, me.row, slot)
+          // Range from the unit tile to the nearest tower edge / front — not the center.
+          // Standing on the tile right in front counts as in melee range.
+          const edge = distUnitTileToTower(u.col, u.row, slot)
+          const aim = towerFrontEngagePoint(me.col, me.row, slot)
           const path = pathCostTo(me.col, me.row, aim.col, aim.row)
           if (!best || path < best.d) {
             best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d: path, rangeD: edge }

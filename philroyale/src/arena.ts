@@ -50,11 +50,40 @@ export function isInsideTower(col: number, row: number, t: TowerSlot): boolean {
   return c >= t.col && c < t.col + t.w && r >= t.row && r < t.row + t.h
 }
 
+/**
+ * Tower footprint in continuous space: tiles [col, col+w) × [row, row+h)
+ * occupy the AABB [col, col+w] × [row, row+h] (far edges are the front/sides).
+ */
+function towerAabb(t: TowerSlot) {
+  return {
+    left: t.col,
+    right: t.col + t.w,
+    top: t.row,
+    bottom: t.row + t.h,
+  }
+}
+
 /** Distance from a point to the nearest edge of a tower footprint (0 if inside). */
 export function distToTowerEdge(col: number, row: number, t: TowerSlot): number {
-  const closestCol = Math.max(t.col, Math.min(col, t.col + t.w))
-  const closestRow = Math.max(t.row, Math.min(row, t.row + t.h))
+  const { left, right, top, bottom } = towerAabb(t)
+  const closestCol = Math.max(left, Math.min(col, right))
+  const closestRow = Math.max(top, Math.min(row, bottom))
   return Math.hypot(col - closestCol, row - closestRow)
+}
+
+/**
+ * Gap between a 1×1 unit tile [col,col+1]×[row,row+1] and the tower AABB.
+ * 0 when touching or overlapping — melee can hit from the tile right in front.
+ */
+export function distUnitTileToTower(col: number, row: number, t: TowerSlot): number {
+  const { left, right, top, bottom } = towerAabb(t)
+  const uLeft = col
+  const uRight = col + 1
+  const uTop = row
+  const uBottom = row + 1
+  const dx = Math.max(0, Math.max(left - uRight, uLeft - right))
+  const dy = Math.max(0, Math.max(top - uBottom, uTop - bottom))
+  return Math.hypot(dx, dy)
 }
 
 /** Closest point on the tower footprint boundary/interior to a point. */
@@ -63,10 +92,32 @@ export function closestPointOnTower(
   row: number,
   t: TowerSlot,
 ): { col: number; row: number } {
+  const { left, right, top, bottom } = towerAabb(t)
   return {
-    col: Math.max(t.col, Math.min(col, t.col + t.w)),
-    row: Math.max(t.row, Math.min(row, t.row + t.h)),
+    col: Math.max(left, Math.min(col, right)),
+    row: Math.max(top, Math.min(row, bottom)),
   }
+}
+
+/**
+ * Walk-to / stand-in-front point on the tower's river-facing front.
+ * Ally attacks enemy towers from the south face; enemy attacks ally towers from the north face.
+ * Keeps short-range troops from sliding past to a side corner.
+ */
+export function towerFrontEngagePoint(
+  fromCol: number,
+  fromRow: number,
+  t: TowerSlot,
+): { col: number; row: number } {
+  const { left, right, top, bottom } = towerAabb(t)
+  const midY = (top + bottom) / 2
+  // Stay lined up with the front face (not a side corner) so melee doesn't path past.
+  const faceCol = Math.max(left + 0.2, Math.min(right - 0.2, fromCol))
+  // Approach from below (ally → enemy) → south face; from above → north face.
+  if (fromRow >= midY) {
+    return { col: faceCol, row: bottom }
+  }
+  return { col: faceCol, row: top }
 }
 
 /**
