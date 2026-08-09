@@ -729,6 +729,8 @@ export function useBattle(opts?: {
   const deploy = useCallback(
     (char: CharacterDef, col: number, row: number) => {
       if (pausedRef.current) return false
+      const n0 = netRef.current
+      if (n0?.role === 'spectator') return false
       if (elixirRef.current < char.elixir) return false
       const live = liveTowerIdSet(towersRef.current)
       const spell = isSpellCard(char)
@@ -820,13 +822,18 @@ export function useBattle(opts?: {
         return
       }
 
-      if (msg.type === 'battle_state' && net.role === 'guest') {
+      if (
+        msg.type === 'battle_state' &&
+        (net.role === 'guest' || net.role === 'spectator')
+      ) {
         if (msg.seq <= lastRemoteSeqRef.current) return
         lastRemoteSeqRef.current = msg.seq
         lastRemoteAtRef.current = Date.now()
         const t = performance.now()
+        const flip =
+          net.role === 'guest' || (net.role === 'spectator' && net.viewAs === 'guest')
         const nextTowers = towersRef.current.map((tw) => {
-          const remoteId = flipTowerId(tw.id)
+          const remoteId = flip ? flipTowerId(tw.id) : tw.id
           const remote = msg.towers.find((x) => x.id === remoteId)
           if (!remote) return tw
           return {
@@ -837,8 +844,8 @@ export function useBattle(opts?: {
           }
         })
         const nextUnits: BattleUnit[] = msg.units.map((u) => {
-          const pos = flipForGuestView(u.col, u.row)
-          const side = flipSide(u.side)
+          const pos = flip ? flipForGuestView(u.col, u.row) : { col: u.col, row: u.row }
+          const side = flip ? flipSide(u.side) : u.side
           return {
             id: u.id,
             charId: u.charId,
@@ -853,7 +860,7 @@ export function useBattle(opts?: {
             nextAttackAt: 0,
             vfx: u.vfx,
             vfxUntil: u.vfx ? t + 400 : 0,
-            facing: u.facing + Math.PI,
+            facing: flip ? u.facing + Math.PI : u.facing,
             rootedUntil: 0,
             spawnedAt: t,
             enraged: u.enraged,
@@ -863,29 +870,39 @@ export function useBattle(opts?: {
         })
         setTowers(nextTowers)
         setUnits(nextUnits)
-        // Guest elixir = host's guestElixir; enemy bar = host's hostElixir
-        setElixir(msg.guestElixir)
-        setEnemyElixir(msg.hostElixir)
+        if (flip) {
+          // Guest / friend-as-guest camera: bottom bar is guest elixir.
+          setElixir(msg.guestElixir)
+          setEnemyElixir(msg.hostElixir)
+        } else {
+          setElixir(msg.hostElixir)
+          setEnemyElixir(msg.guestElixir)
+        }
         if (typeof msg.allyScore === 'number') {
-          // Scores are host-perspective; flip for guest view.
-          allyScoreRef.current = msg.enemyScore ?? 0
-          enemyScoreRef.current = msg.allyScore
+          if (flip) {
+            allyScoreRef.current = msg.enemyScore ?? 0
+            enemyScoreRef.current = msg.allyScore
+          } else {
+            allyScoreRef.current = msg.allyScore
+            enemyScoreRef.current = msg.enemyScore ?? 0
+          }
           setAllyScore(allyScoreRef.current)
           setEnemyScore(enemyScoreRef.current)
         }
         setSyncReady(true)
-        // Guest does not simulate projectiles — clear local leftovers.
         setProjectiles([])
       }
     })
 
-    void publishBattle(net.challengeId, {
-      type: 'battle_ready',
-      challengeId: net.challengeId,
-      role: net.role,
-      name: net.role,
-      at: new Date().toISOString(),
-    })
+    if (net.role === 'host' || net.role === 'guest') {
+      void publishBattle(net.challengeId, {
+        type: 'battle_ready',
+        challengeId: net.challengeId,
+        role: net.role,
+        name: net.role,
+        at: new Date().toISOString(),
+      })
+    }
     if (net.role === 'host') {
       setSyncReady(true)
       publishHostState(true)
@@ -909,7 +926,7 @@ export function useBattle(opts?: {
       else lagStreakRef.current = Math.max(0, lagStreakRef.current - 1)
       let syncLag = false
       const n = netRef.current
-      if (n?.role === 'guest') {
+      if (n?.role === 'guest' || n?.role === 'spectator') {
         syncLag = Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS
       } else if (n?.role === 'host') {
         // Host: no recent guest traffic and we are publishing — treat stale deploy channel as lag.
@@ -926,9 +943,12 @@ export function useBattle(opts?: {
         return
       }
 
-      // Guest only mirrors host state — do not run a second local sim.
+      // Guest / spectator only mirrors host state — do not run a second local sim.
       // Still advance local spell VFX (sundae throw) so casts feel responsive.
-      if (netRef.current?.role === 'guest') {
+      if (
+        netRef.current?.role === 'guest' ||
+        netRef.current?.role === 'spectator'
+      ) {
         let nextProjectiles = projectilesRef.current.slice()
         let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < 900)
         let projectilesChanged = false

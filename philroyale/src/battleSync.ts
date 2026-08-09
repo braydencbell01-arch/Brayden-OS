@@ -6,7 +6,7 @@
 import { ARENA_ROWS } from './arena'
 import type { AttackId } from './characters'
 
-export type BattleRole = 'host' | 'guest'
+export type BattleRole = 'host' | 'guest' | 'spectator'
 
 export type SyncUnit = {
   id: string
@@ -64,6 +64,8 @@ export type BattleNet = {
   challengeId: string
   role: BattleRole
   peerPlayerId?: string
+  /** Spectator only: match the friend's camera (guest flips the board). */
+  viewAs?: 'host' | 'guest'
 }
 
 const TOPIC_PREFIX = 'philroyale-battle-v1-'

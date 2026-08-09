@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ClubScreen } from './ClubScreen'
-import { PRESENCE_ONLINE_MS } from './socialHub'
+import {
+  PRESENCE_ONLINE_MS,
+  type FriendPresenceInfo,
+} from './socialHub'
 import {
   formatAccountCode,
   joinRichClubByCode,
@@ -29,9 +32,10 @@ type Props = {
   ) => Promise<void>
   onInviteClub: (friendName: string, playerId?: string) => Promise<void>
   waitingForFriend?: string | null
-  /** playerId → last presence timestamp (ms) */
-  friendPresence?: Record<string, number>
+  /** playerId → latest presence snapshot */
+  friendPresence?: Record<string, FriendPresenceInfo>
   onAddByCode?: (code: string) => Promise<{ ok: boolean; message: string }>
+  onSpectate?: (friendName: string, info: FriendPresenceInfo) => void
 }
 
 export function FriendsScreen({
@@ -41,6 +45,7 @@ export function FriendsScreen({
   waitingForFriend,
   friendPresence = {},
   onAddByCode,
+  onSpectate,
 }: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
   const [meta, setMeta] = useState<FriendMeta>(() => loadFriendMeta())
@@ -53,6 +58,7 @@ export function FriendsScreen({
   const [pendingBattleFriend, setPendingBattleFriend] = useState<string | null>(null)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<Friend | null>(null)
+  const [profileFriend, setProfileFriend] = useState<Friend | null>(null)
   const [copied, setCopied] = useState(false)
   const [now, setNow] = useState(() => Date.now())
 
@@ -123,7 +129,13 @@ export function FriendsScreen({
       setInviteTarget(null)
       return
     }
+    if (inBattle(friend, friendPresence, Date.now())) {
+      setAddMsg(`${friend.name} is in a battle — open their profile to spectate.`)
+      setInviteTarget(null)
+      return
+    }
     setInviteTarget(null)
+    setProfileFriend(null)
     setPendingBattleFriend(friend.name)
     try {
       markFriendBattled(friend.id)
@@ -329,54 +341,86 @@ export function FriendsScreen({
             <ul className="flex flex-col gap-2">
               {sortedFriends.map((f) => {
                 const online = isOnline(f, friendPresence, now)
+                const battling = inBattle(f, friendPresence, now)
+                const presence = f.playerId ? friendPresence[f.playerId] : undefined
                 const isWaiting =
                   waitingName === f.name.toLowerCase() ||
                   pendingBattleFriend?.toLowerCase() === f.name.toLowerCase()
                 const last = meta.lastBattled[f.id]
                 const pinned = !!meta.pinned[f.id]
                 const note = meta.notes[f.id] ?? ''
-                const canInvite = Boolean(f.playerId) && online && !isWaiting
+                const canInvite = Boolean(f.playerId) && online && !battling && !isWaiting
+                const statusColor = battling ? '#ffb020' : online ? '#3ecf6a' : '#6a5a50'
+                const statusLabel = !f.playerId
+                  ? 'Missing account code'
+                  : battling
+                    ? `In battle${presence?.opponentName ? ` vs ${presence.opponentName}` : ''}`
+                    : online
+                      ? 'Online — ready for invites'
+                      : 'Offline — open Phil Royale to play'
                 return (
                   <li
                     key={f.id}
                     className="rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => setProfileFriend(f)}
+                        className="min-w-0 flex-1 text-left"
+                      >
                         <p className="font-bold text-white">
                           {pinned ? '★ ' : ''}
                           {f.name}
                           <span
                             className="ml-2 inline-block h-2 w-2 rounded-full"
                             style={{
-                              background: online ? '#3ecf6a' : '#6a5a50',
-                              boxShadow: online ? '0 0 6px #3ecf6a' : 'none',
+                              background: statusColor,
+                              boxShadow: online || battling ? `0 0 6px ${statusColor}` : 'none',
                             }}
-                            title={online ? 'Online' : 'Offline'}
+                            title={battling ? 'In battle' : online ? 'Online' : 'Offline'}
                           />
+                          {battling ? (
+                            <span className="ml-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#ffb020]">
+                              In battle
+                            </span>
+                          ) : null}
                         </p>
                         <p className="text-[0.65rem] font-semibold text-white/50">
-                          {f.playerId
-                            ? online
-                              ? 'Online — ready for invites'
-                              : 'Offline — open Phil Royale to play'
-                            : 'Missing account code'}
+                          {statusLabel}
                           {f.playerId ? ` · ${formatAccountCode(f.playerId)}` : ''}
                           {last ? ` · Last play ${new Date(last).toLocaleDateString()}` : ''}
                         </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={!canInvite}
-                        onClick={() => setInviteTarget(f)}
-                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-extrabold text-[#1a1410] disabled:opacity-45"
-                        style={{
-                          background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
-                          boxShadow: '0 2px 0 #1a7a3a',
-                        }}
-                      >
-                        {isWaiting ? 'Waiting…' : 'Invite'}
+                        <p className="mt-0.5 text-[0.6rem] font-extrabold uppercase tracking-wide text-[#7ec8ff]/80">
+                          Tap for profile
+                        </p>
                       </button>
+                      {battling && presence?.challengeId && onSpectate ? (
+                        <button
+                          type="button"
+                          onClick={() => onSpectate(f.name, presence)}
+                          className="shrink-0 rounded-lg px-3 py-2 text-xs font-extrabold text-[#1a1410]"
+                          style={{
+                            background: 'linear-gradient(180deg,#ffd08a,#e8a020)',
+                            boxShadow: '0 2px 0 #8a5a10',
+                          }}
+                        >
+                          Spectate
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!canInvite}
+                          onClick={() => setInviteTarget(f)}
+                          className="shrink-0 rounded-lg px-3 py-2 text-xs font-extrabold text-[#1a1410] disabled:opacity-45"
+                          style={{
+                            background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
+                            boxShadow: '0 2px 0 #1a7a3a',
+                          }}
+                        >
+                          {isWaiting ? 'Waiting…' : 'Invite'}
+                        </button>
+                      )}
                     </div>
                     {editingNoteId === f.id ? (
                       <input
@@ -427,6 +471,38 @@ export function FriendsScreen({
           )}
         </div>
       </div>
+
+      {profileFriend ? (
+        <FriendProfileModal
+          friend={profileFriend}
+          presence={
+            profileFriend.playerId ? friendPresence[profileFriend.playerId] : undefined
+          }
+          now={now}
+          note={meta.notes[profileFriend.id] ?? ''}
+          pinned={!!meta.pinned[profileFriend.id]}
+          onClose={() => setProfileFriend(null)}
+          onInvite={() => {
+            setInviteTarget(profileFriend)
+          }}
+          onSpectate={
+            onSpectate
+              ? () => {
+                  const p = profileFriend.playerId
+                    ? friendPresence[profileFriend.playerId]
+                    : undefined
+                  if (p) onSpectate(profileFriend.name, p)
+                }
+              : undefined
+          }
+          onTogglePin={() => togglePin(profileFriend.id)}
+          onRemove={() => {
+            removeFriend(profileFriend.id)
+            setProfileFriend(null)
+          }}
+          onInviteClub={() => void onInviteClub(profileFriend.name, profileFriend.playerId)}
+        />
+      ) : null}
 
       {inviteTarget ? (
         <div
@@ -479,12 +555,162 @@ export function FriendsScreen({
 
 function isOnline(
   friend: Friend,
-  presence: Record<string, number>,
+  presence: Record<string, FriendPresenceInfo>,
   now: number,
 ): boolean {
   const id = friend.playerId
   if (!id) return false
-  const at = presence[id]
+  const at = presence[id]?.at
   if (!at) return false
   return now - at < PRESENCE_ONLINE_MS
+}
+
+function inBattle(
+  friend: Friend,
+  presence: Record<string, FriendPresenceInfo>,
+  now: number,
+): boolean {
+  const id = friend.playerId
+  if (!id) return false
+  const info = presence[id]
+  if (!info?.inBattle || !info.challengeId) return false
+  return now - info.at < PRESENCE_ONLINE_MS
+}
+
+function FriendProfileModal({
+  friend,
+  presence,
+  now,
+  note,
+  pinned,
+  onClose,
+  onInvite,
+  onSpectate,
+  onTogglePin,
+  onRemove,
+  onInviteClub,
+}: {
+  friend: Friend
+  presence?: FriendPresenceInfo
+  now: number
+  note: string
+  pinned: boolean
+  onClose: () => void
+  onInvite: () => void
+  onSpectate?: () => void
+  onTogglePin: () => void
+  onRemove: () => void
+  onInviteClub: () => void
+}) {
+  const online = !!presence && now - presence.at < PRESENCE_ONLINE_MS
+  const battling = online && !!presence?.inBattle && !!presence.challengeId
+  const status = !friend.playerId
+    ? 'No account code'
+    : battling
+      ? 'In battle'
+      : online
+        ? 'Online'
+        : 'Offline'
+
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="friend-profile-title"
+    >
+      <div
+        className="w-full max-w-sm rounded-xl p-5"
+        style={{
+          background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+          boxShadow: '0 12px 40px #00000088',
+        }}
+      >
+        <h2
+          id="friend-profile-title"
+          className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]"
+        >
+          {pinned ? '★ ' : ''}
+          {friend.name}
+        </h2>
+        <p className="mt-1 text-sm font-extrabold uppercase tracking-wide text-white/55">
+          {status}
+          {battling && presence?.opponentName ? ` · vs ${presence.opponentName}` : ''}
+        </p>
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">
+              Code
+            </dt>
+            <dd className="font-bold tracking-wider text-white">
+              {friend.playerId ? formatAccountCode(friend.playerId) : '—'}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">
+              Trophies
+            </dt>
+            <dd className="font-bold text-[#f5d76e]">
+              {presence?.trophies != null ? presence.trophies.toLocaleString() : '—'}
+            </dd>
+          </div>
+        </dl>
+        {note ? (
+          <p className="mt-2 text-xs font-semibold text-white/55">{note}</p>
+        ) : null}
+        <div className="mt-4 flex flex-col gap-2">
+          {battling && onSpectate ? (
+            <button
+              type="button"
+              onClick={onSpectate}
+              className="w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{ background: 'linear-gradient(180deg,#ffd08a,#e8a020)' }}
+            >
+              Spectate battle
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={!online || battling || !friend.playerId}
+              onClick={onInvite}
+              className="w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
+              style={{ background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)' }}
+            >
+              Invite to battle
+            </button>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onTogglePin}
+              className="flex-1 rounded-lg bg-[#2a1a12] py-2.5 text-xs font-extrabold text-[#f5d76e] ring-1 ring-white/15"
+            >
+              {pinned ? 'Unpin' : 'Pin'}
+            </button>
+            <button
+              type="button"
+              onClick={onInviteClub}
+              className="flex-1 rounded-lg bg-[#2a1a12] py-2.5 text-xs font-extrabold text-[#7ec8ff] ring-1 ring-white/15"
+            >
+              Club
+            </button>
+            <button
+              type="button"
+              onClick={onRemove}
+              className="flex-1 rounded-lg bg-[#2a1a12] py-2.5 text-xs font-extrabold text-[#ff8a7a] ring-1 ring-white/15"
+            >
+              Remove
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-white/70 ring-1 ring-white/15"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }

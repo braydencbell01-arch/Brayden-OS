@@ -15,6 +15,7 @@ import {
   PRESENCE_ONLINE_MS,
   publishSocial,
   subscribeSocial,
+  type FriendPresenceInfo,
   type SocialMessage,
 } from './socialHub'
 import {
@@ -102,7 +103,10 @@ export default function App() {
   const [clubInvite, setClubInvite] = useState<ClubInviteIncoming | null>(() =>
     loadIncomingClubInvite(),
   )
-  const [friendPresence, setFriendPresence] = useState<Record<string, number>>({})
+  const [friendPresence, setFriendPresence] = useState<Record<string, FriendPresenceInfo>>(
+    {},
+  )
+  const [spectating, setSpectating] = useState(false)
   const needsName = !playerName.trim()
 
   const flashFriend = useCallback((msg: string) => {
@@ -115,7 +119,15 @@ export default function App() {
       const trophies = loadProfile().trophies
       setOpponent(name ?? botNameForTrophies(trophies))
       setBattleMode(mode)
-      setBattleNet(net)
+      // Always host a spectate room so friends can watch bot + friend battles.
+      const room: BattleNet =
+        net ??
+        ({
+          challengeId: `s-${loadPlayerId().slice(0, 8)}-${Date.now().toString(36)}`,
+          role: 'host',
+        } satisfies BattleNet)
+      setBattleNet(room)
+      setSpectating(false)
       setShowRoad(false)
       if (mode === 'touchdown') {
         setDraftingTouchdown(true)
@@ -128,6 +140,29 @@ export default function App() {
       setBattle(true)
     },
     [],
+  )
+
+  const startSpectate = useCallback(
+    (friendName: string, info: FriendPresenceInfo) => {
+      if (!info.challengeId || !info.inBattle) {
+        flashFriend(`${friendName} is not in a battle right now.`)
+        return
+      }
+      setOpponent(friendName)
+      setBattleMode(info.mode ?? 'classic')
+      setBattleNet({
+        challengeId: info.challengeId,
+        role: 'spectator',
+        viewAs: info.battleRole === 'guest' ? 'guest' : 'host',
+      })
+      setSpectating(true)
+      setDraftingTouchdown(false)
+      setTouchdownDeck(null)
+      setShowRoad(false)
+      setBattle(true)
+      flashFriend(`Spectating ${friendName}…`)
+    },
+    [flashFriend],
   )
 
   const completeFriendLink = useCallback(
@@ -237,9 +272,13 @@ export default function App() {
         flashFriend('Add this friend with their account code first.')
         return
       }
-      const lastSeen = friendPresence[toPlayerId]
+      const lastSeen = friendPresence[toPlayerId]?.at
       if (!lastSeen || Date.now() - lastSeen >= PRESENCE_ONLINE_MS) {
         flashFriend(`${friendName} is offline. They need Phil Royale open to get invites.`)
+        return
+      }
+      if (friendPresence[toPlayerId]?.inBattle) {
+        flashFriend(`${friendName} is already in a battle — spectate from their profile.`)
         return
       }
       const challenge = createBattleChallenge(friendName, {
@@ -478,7 +517,21 @@ export default function App() {
       if (msg.type === 'presence') {
         if (msg.fromPlayerId === myId) return
         const at = Date.parse(msg.at) || Date.now()
-        setFriendPresence((prev) => ({ ...prev, [msg.fromPlayerId]: at }))
+        setFriendPresence((prev) => ({
+          ...prev,
+          [msg.fromPlayerId]: {
+            at,
+            inBattle: !!msg.inBattle,
+            challengeId: msg.challengeId,
+            mode: msg.mode,
+            opponentName: msg.opponentName,
+            battleRole: msg.battleRole,
+            trophies: msg.trophies,
+          },
+        }))
+        if (msg.fromName) {
+          upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
+        }
         return
       }
       if (msg.type === 'friend_request') {
@@ -562,13 +615,16 @@ export default function App() {
     }
   }, [flashFriend, showIncoming, startMatch])
 
-  // Heartbeat so friends can see you're online (and receive invites).
+  // Heartbeat so friends can see you're online / in battle (and receive invites).
   useEffect(() => {
     if (needsName) return
     const beat = () => {
       const me = loadPlayerName().trim() || 'Player'
       const myId = loadPlayerId()
       const at = new Date().toISOString()
+      const inMatch = battle && !!battleNet && !spectating
+      const role =
+        battleNet?.role === 'guest' ? 'guest' : battleNet?.role === 'host' ? 'host' : undefined
       for (const f of loadFriends()) {
         if (!f.playerId || f.playerId === myId) continue
         void publishSocial(f.playerId, {
@@ -576,13 +632,19 @@ export default function App() {
           fromPlayerId: myId,
           fromName: me,
           at,
+          trophies: loadProfile().trophies,
+          inBattle: inMatch,
+          challengeId: inMatch ? battleNet?.challengeId : undefined,
+          mode: inMatch ? battleMode : undefined,
+          opponentName: inMatch ? opponent ?? undefined : undefined,
+          battleRole: inMatch ? role : undefined,
         })
       }
     }
     beat()
     const id = window.setInterval(beat, PRESENCE_HEARTBEAT_MS)
     return () => window.clearInterval(id)
-  }, [needsName, playerName])
+  }, [needsName, playerName, battle, battleNet, battleMode, opponent, spectating])
 
   const socialOverlays = (
     <>
@@ -820,13 +882,16 @@ export default function App() {
           mode={battleMode}
           deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
           net={battleNet}
+          spectating={spectating}
           onExit={() => {
+            const wasSpec = spectating
             setBattle(false)
             setOpponent(null)
             setBattleNet(null)
             setTouchdownDeck(null)
             setBattleMode('classic')
-            setTab('home')
+            setSpectating(false)
+            setTab(wasSpec ? 'friends' : 'home')
           }}
         />
         {socialOverlays}
@@ -923,6 +988,7 @@ export default function App() {
                 waitingForFriend={outgoingChallenge?.toName ?? null}
                 friendPresence={friendPresence}
                 onAddByCode={addFriendByCode}
+                onSpectate={startSpectate}
               />
             ) : null}
           </motion.div>

@@ -50,6 +50,8 @@ type Props = {
   deckIds?: string[]
   /** Shared friend-battle room (host authoritative). */
   net?: BattleNet | null
+  /** Watching a friend's match — no deploys / trophy changes. */
+  spectating?: boolean
 }
 
 type DragState = {
@@ -176,7 +178,9 @@ export function BattleScreen({
   mode = 'classic',
   deckIds: deckOverride,
   net = null,
+  spectating = false,
 }: Props) {
+  const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
@@ -230,10 +234,10 @@ export function BattleScreen({
   }, [deckIds, setSelectedCharId])
 
   useEffect(() => {
-    if (ended) return
+    if (ended || isSpectating) return
     const id = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
     return () => window.clearInterval(id)
-  }, [ended])
+  }, [ended, isSpectating])
 
   useEffect(() => {
     if (result) return
@@ -248,7 +252,7 @@ export function BattleScreen({
         setEmotePickerOpen(false)
         return
       }
-      if (seconds > 0) return
+      if (isSpectating || seconds > 0) return
       setResult(
         allyScore > enemyScore ? 'victory' : enemyScore > allyScore ? 'defeat' : 'draw',
       )
@@ -267,20 +271,20 @@ export function BattleScreen({
       setEmotePickerOpen(false)
       return
     }
-    if (seconds > 0) return
+    if (isSpectating || seconds > 0) return
     const allyLeft = towers.filter((t) => t.side === 'ally' && t.hp > 0).length
     const enemyLeft = towers.filter((t) => t.side === 'enemy' && t.hp > 0).length
     setResult(allyLeft > enemyLeft ? 'victory' : enemyLeft > allyLeft ? 'defeat' : 'draw')
     setEmotePickerOpen(false)
-  }, [towers, seconds, result, mode, allyScore, enemyScore, touchdownWinScore])
+  }, [towers, seconds, result, mode, allyScore, enemyScore, touchdownWinScore, isSpectating])
 
   useEffect(() => {
-    if (!result) return
+    if (!result || isSpectating) return
     const enemyDead = towers.filter((t) => t.side === 'enemy' && t.hp <= 0).length
     const crowns = result === 'victory' ? Math.max(1, Math.min(3, enemyDead)) : result === 'draw' ? 1 : 0
     recordMatchResult(result, { crowns })
     grantBattleChest(result)
-  }, [result, towers])
+  }, [result, towers, isSpectating])
 
   function cycleAfterDeploy(playedId: string) {
     const incoming = nextId
@@ -455,18 +459,24 @@ export function BattleScreen({
       {net && !syncReady ? (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 px-6 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl text-white">
-            {netRole === 'guest' ? 'Linking battle…' : 'Waiting for opponent…'}
+            {isSpectating
+              ? 'Joining spectate…'
+              : netRole === 'guest'
+                ? 'Linking battle…'
+                : 'Waiting for opponent…'}
           </p>
         </div>
       ) : null}
       {lagging ? <LagBadge /> : null}
       {/* Map sits above the solid CR blue dock so all six towers stay visible. */}
-      <div className="absolute inset-x-0 top-0 bottom-[6.85rem]">
+      <div
+        className={`absolute inset-x-0 top-0 ${isSpectating ? 'bottom-[4.25rem]' : 'bottom-[6.85rem]'}`}
+      >
         <Arena
           ref={arenaRef}
           towers={towers}
-          onArenaPointerDown={ended ? undefined : onArenaPointer}
-          showBlockedOverlay={draggingActive && !ended}
+          onArenaPointerDown={ended || isSpectating ? undefined : onArenaPointer}
+          showBlockedOverlay={draggingActive && !ended && !isSpectating}
           overlaySide="ally"
         >
           {[...units]
@@ -728,11 +738,13 @@ export function BattleScreen({
               {resultCopy}
             </p>
             <p className="mt-1 text-xs font-bold text-[#5a4a20]/85">
-              {result === 'victory'
-                ? '+30 trophies · +50 gold · chest chance'
-                : result === 'defeat'
-                  ? '−20 trophies · +15 gold'
-                  : '+5 trophies · +25 gold'}
+              {isSpectating
+                ? 'Spectating — no trophies for you'
+                : result === 'victory'
+                  ? '+30 trophies · +50 gold · chest chance'
+                  : result === 'defeat'
+                    ? '−20 trophies · +15 gold'
+                    : '+5 trophies · +25 gold'}
             </p>
             <button
               type="button"
@@ -749,7 +761,7 @@ export function BattleScreen({
         </div>
       ) : null}
 
-      {/* CR-style solid blue card dock */}
+      {/* CR-style solid blue card dock (or spectate bar) */}
       <div
         className="absolute inset-x-0 bottom-0 z-20 pb-[max(0.15rem,env(safe-area-inset-bottom))]"
         style={{
@@ -757,6 +769,26 @@ export function BattleScreen({
           boxShadow: '0 -3px 12px #00000055, inset 0 1px 0 #4a7dd055',
         }}
       >
+        {isSpectating ? (
+          <div className="mx-auto flex max-w-[24rem] items-center justify-between gap-2 px-3 py-2.5">
+            <div>
+              <p className="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
+                Spectating
+              </p>
+              <p className="text-sm font-bold text-white">
+                {foeName}
+                {clanLine ? ` · ${clanLine}` : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onExit}
+              className="rounded-lg bg-[#1a3060] px-3 py-2 text-xs font-extrabold text-white ring-1 ring-white/25"
+            >
+              Leave
+            </button>
+          </div>
+        ) : (
         <div className="mx-auto max-w-[24rem] px-1.5 pb-1 pt-1.5">
           <div className="flex items-end justify-center gap-1.5">
             <div className="relative flex w-10 shrink-0 flex-col items-center gap-0.5">
@@ -873,6 +905,7 @@ export function BattleScreen({
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

@@ -24,6 +24,15 @@ export type SocialMessage =
       fromPlayerId: string
       fromName: string
       at: string
+      /** True while this player is in an active match (bot or friend). */
+      inBattle?: boolean
+      /** Battle room id friends can subscribe to for spectate. */
+      challengeId?: string
+      mode?: GameMode
+      opponentName?: string
+      /** Friend's camera in that room — spectator mirrors this view. */
+      battleRole?: 'host' | 'guest'
+      trophies?: number
     }
   | {
       type: 'battle_invite'
@@ -58,6 +67,17 @@ export type SocialMessage =
       clubName: string
       at: string
     }
+
+/** Latest presence snapshot for a friend (from heartbeats). */
+export type FriendPresenceInfo = {
+  at: number
+  inBattle?: boolean
+  challengeId?: string
+  mode?: GameMode
+  opponentName?: string
+  battleRole?: 'host' | 'guest'
+  trophies?: number
+}
 
 /** How recently a presence ping counts as "online". */
 export const PRESENCE_ONLINE_MS = 45_000

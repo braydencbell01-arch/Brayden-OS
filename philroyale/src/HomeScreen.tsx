@@ -15,7 +15,7 @@ import {
   nextRoadStep,
   type ChestRarity,
 } from './progression'
-import { PRESENCE_ONLINE_MS } from './socialHub'
+import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
 import {
   arenaTitle,
   claimCrownChest,
@@ -54,8 +54,8 @@ type Props = {
   onOpenRoad: () => void
   onOpenEvents: () => void
   onOpenClub: () => void
-  /** playerId → last presence timestamp (ms) */
-  friendPresence?: Record<string, number>
+  /** playerId → latest presence snapshot */
+  friendPresence?: Record<string, FriendPresenceInfo>
 }
 
 function formatRemain(ms: number): string {
@@ -105,7 +105,7 @@ export function HomeScreen({
 
   function friendOnline(f: Friend): boolean {
     if (!f.playerId) return false
-    const at = friendPresence[f.playerId]
+    const at = friendPresence[f.playerId]?.at
     return typeof at === 'number' && now - at < PRESENCE_ONLINE_MS
   }
 
