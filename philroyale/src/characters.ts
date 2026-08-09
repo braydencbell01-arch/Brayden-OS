@@ -6,6 +6,7 @@ export type AttackId =
   | 'bite'
   | 'shoot'
   | 'flyingKick'
+  | 'dumbbellHuck'
 
 export type AttackDef = {
   id: AttackId
@@ -21,7 +22,7 @@ export type AttackDef = {
   burstShots?: number
   /** Seconds between shots inside a burst. */
   burstGapSec?: number
-  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick'
+  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick' | 'dumbbell'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -236,7 +237,7 @@ export const TODD: CharacterDef = {
   initial: 'T',
   pronoun: 'he',
   height: "5'7\"",
-  rarity: 'epic',
+  rarity: 'rare',
   elixir: 6,
   hp: 750,
   moveSpeed: 5,
@@ -255,7 +256,32 @@ export const TODD: CharacterDef = {
   ],
 }
 
-export const CHARACTERS: CharacterDef[] = [PHIL, KATHIE, TODD, PETE, BEANS, FINLEY, JEREMY]
+export const MIKE: CharacterDef = {
+  id: 'mike',
+  name: 'Mike',
+  initial: 'M',
+  pronoun: 'he',
+  height: "6'0\"",
+  rarity: 'epic',
+  elixir: 3,
+  hp: 650,
+  moveSpeed: 7,
+  attackDelaySec: 5,
+  hue: 30,
+  blurb: 'Stiff curls on the move — then an overhead Dumbbell Huck for 200.',
+  attacks: [
+    {
+      id: 'dumbbellHuck',
+      name: 'Dumbbell Huck',
+      range: 20,
+      damage: 200,
+      rootWhileAttacking: false,
+      kind: 'dumbbell',
+    },
+  ],
+}
+
+export const CHARACTERS: CharacterDef[] = [PHIL, KATHIE, TODD, MIKE, PETE, BEANS, FINLEY, JEREMY]
 
 export const DECK_SIZE = 8
 
@@ -264,7 +290,7 @@ export const DEFAULT_DECK = [
   PHIL.id,
   KATHIE.id,
   TODD.id,
-  BEANS.id,
+  MIKE.id,
   FINLEY.id,
   JEREMY.id,
   PETE.id,

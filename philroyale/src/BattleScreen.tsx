@@ -6,6 +6,8 @@ import { BattleCard } from './BattleCard'
 import {
   BulletBoom,
   CannonBall,
+  DumbbellDot,
+  DumbbellSplat,
   ShootDot,
   SlobberDot,
   SlobberSplat,
@@ -74,7 +76,7 @@ function FlyingShot({
   bornAt: number
   arriveAt: number
   now: number
-  kind: 'sundae' | 'slobber' | 'shoot' | 'arrow' | 'cannon'
+  kind: 'sundae' | 'slobber' | 'shoot' | 'dumbbell' | 'arrow' | 'cannon'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
@@ -85,7 +87,8 @@ function FlyingShot({
       ? Math.sin(p * Math.PI) * 2.2
       : kind === 'cannon'
         ? Math.sin(p * Math.PI) * 1.6
-        : Math.sin(p * Math.PI) * (kind === 'shoot' ? 0.6 : kind === 'slobber' ? 5.5 : 4)
+        : Math.sin(p * Math.PI) *
+          (kind === 'shoot' ? 0.6 : kind === 'dumbbell' ? 7.5 : kind === 'slobber' ? 5.5 : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
   const travelAngle =
     (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
@@ -95,6 +98,7 @@ function FlyingShot({
       {kind === 'sundae' ? <SundaeDot /> : null}
       {kind === 'slobber' ? <SlobberDot /> : null}
       {kind === 'shoot' ? <ShootDot /> : null}
+      {kind === 'dumbbell' ? <DumbbellDot /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={travelAngle} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
@@ -361,6 +365,7 @@ export function BattleScreen({
             p.kind === 'sundae' ||
             p.kind === 'slobber' ||
             p.kind === 'shoot' ||
+            p.kind === 'dumbbell' ||
             p.kind === 'arrow' ||
             p.kind === 'cannon' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
@@ -378,6 +383,8 @@ export function BattleScreen({
             >
               {s.kind === 'boom' ? (
                 <BulletBoom ageMs={now - s.bornAt} />
+              ) : s.kind === 'dumbbell' ? (
+                <DumbbellSplat ageMs={now - s.bornAt} />
               ) : s.kind === 'slobber' ? (
                 <SlobberSplat ageMs={now - s.bornAt} />
               ) : (

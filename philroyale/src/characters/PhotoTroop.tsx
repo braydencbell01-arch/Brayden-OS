@@ -13,8 +13,10 @@ type Props = {
   portrait?: boolean
   objectPos?: string
   enraged?: boolean
-  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint'
-  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'slobber' | 'kick' | 'none'
+  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'stiff'
+  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'slobber' | 'kick' | 'dumbbell' | 'none'
+  /** Persistent hand prop (Mike curls a dumbbell until he throws it). */
+  carry?: 'dumbbell' | 'none'
   /** Pants / fur color for running leg overlays */
   legColor?: string
   shoeColor?: string
@@ -36,6 +38,7 @@ export function PhotoTroop({
   enraged,
   gait = 'run',
   attack = 'none',
+  carry = 'none',
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
 }: Props) {
@@ -63,11 +66,13 @@ export function PhotoTroop({
       ? 0.28
       : gait === 'sprint'
         ? 0.26
-        : gait === 'limp'
-          ? 0.72
-          : gait === 'jog'
-            ? 0.36
-            : 0.4
+        : gait === 'stiff'
+          ? 0.48
+          : gait === 'limp'
+            ? 0.72
+            : gait === 'jog'
+              ? 0.36
+              : 0.4
 
   if (portrait) {
     return (
@@ -118,7 +123,14 @@ export function PhotoTroop({
                               rotate: [0, -8, -25, 12, 0],
                               scaleY: [1, 0.9, 1.08, 1.02, 1],
                             }
-                          : { y: [0, -3, 0] }
+                          : attack === 'dumbbell'
+                            ? {
+                                // Plant → press overhead → huck forward → settle
+                                y: [0, -2, -10, -4, 0],
+                                rotate: [0, -4, -10, 8, 0],
+                                scaleY: [1, 0.98, 1.04, 1, 1],
+                              }
+                            : { y: [0, -3, 0] }
             : walking
               ? gait === 'limp'
                 ? {
@@ -135,7 +147,14 @@ export function PhotoTroop({
                       scaleY: [1, 0.9, 1, 0.88, 1],
                       x: [0, 1, 0, -1, 0],
                     }
-                  : {
+                  : gait === 'stiff'
+                    ? {
+                        // Rigid gym-bro march — almost no bounce
+                        y: [0, -1.5, 0, -1.5, 0],
+                        rotate: [0, 1, 0, -1, 0],
+                        scaleY: [1, 0.995, 1, 0.995, 1],
+                      }
+                    : {
                       // Running stride: bounce only (no left/right rotate — that looked two-way)
                       y: [0, -6, -1, -7, 0],
                       scaleY: [1, 0.94, 1, 0.93, 1],
@@ -148,12 +167,17 @@ export function PhotoTroop({
                 duration:
                   attack === 'kick'
                     ? 0.65
-                    : attack === 'whip' || attack === 'hug'
-                      ? 0.72
-                      : attack === 'slobber' || attack === 'sundae'
-                        ? 0.55
-                        : 0.36,
-                times: attack === 'kick' ? [0, 0.15, 0.4, 0.7, 1] : undefined,
+                    : attack === 'dumbbell'
+                      ? 0.55
+                      : attack === 'whip' || attack === 'hug'
+                        ? 0.72
+                        : attack === 'slobber' || attack === 'sundae'
+                          ? 0.55
+                          : 0.36,
+                times:
+                  attack === 'kick' || attack === 'dumbbell'
+                    ? [0, 0.15, 0.4, 0.7, 1]
+                    : undefined,
               }
             : walking
               ? { duration, repeat: Infinity, ease: 'easeInOut' }
@@ -188,6 +212,8 @@ export function PhotoTroop({
         {attacking && attack === 'hug' ? <HugOverlay /> : null}
         {attacking && attack === 'slobber' ? <SlobberSpitOverlay /> : null}
         {attacking && attack === 'kick' ? <FlyingKickOverlay /> : null}
+        {attacking && attack === 'dumbbell' ? <DumbbellHuckOverlay /> : null}
+        {!attacking && carry === 'dumbbell' ? <DumbbellCurlOverlay walking={walking} /> : null}
 
         {enraged ? (
           <div
@@ -210,7 +236,7 @@ function RunLegs({
   legColor,
   shoeColor,
 }: {
-  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint'
+  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'stiff'
   walking: boolean
   legColor: string
   shoeColor: string
@@ -221,14 +247,17 @@ function RunLegs({
       ? 0.28
       : gait === 'sprint'
         ? 0.26
-        : gait === 'limp'
-          ? 0.72
-          : gait === 'jog'
-            ? 0.36
-            : 0.4
+        : gait === 'stiff'
+          ? 0.48
+          : gait === 'limp'
+            ? 0.72
+            : gait === 'jog'
+              ? 0.36
+              : 0.4
   const dog = gait === 'dog'
   const limp = gait === 'limp'
   const sprint = gait === 'sprint'
+  const stiff = gait === 'stiff'
   const color = legColor
   const accent = shoeColor
 
@@ -273,7 +302,9 @@ function RunLegs({
               ? { rotate: [8, -6, 8, -18, 8], y: [0, 0, 0, 3, 0] }
               : sprint
                 ? { rotate: [38, -42, 38] }
-                : { rotate: [28, -32, 28] }
+                : stiff
+                  ? { rotate: [10, -12, 10] }
+                  : { rotate: [28, -32, 28] }
             : { rotate: 6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -289,7 +320,9 @@ function RunLegs({
               ? { rotate: [-6, 10, -6, 22, -6], y: [0, 1, 0, 0, 0] }
               : sprint
                 ? { rotate: [-42, 38, -42] }
-                : { rotate: [-32, 28, -32] }
+                : stiff
+                  ? { rotate: [-12, 10, -12] }
+                  : { rotate: [-32, 28, -32] }
             : { rotate: -6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -586,6 +619,63 @@ function FlyingKickOverlay() {
             strokeLinecap="round"
           />
         ))}
+      </motion.g>
+    </svg>
+  )
+}
+
+function HexDumbbell({ x, y }: { x: number; y: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <rect x="-9" y="-3.5" width="6" height="7" rx="1" fill="#1a1a20" stroke="#0a0a0c" strokeWidth="0.6" />
+      <rect x="3" y="-3.5" width="6" height="7" rx="1" fill="#1a1a20" stroke="#0a0a0c" strokeWidth="0.6" />
+      <rect x="-4" y="-1.4" width="8" height="2.8" rx="1" fill="#8a8a96" />
+      <rect x="-8.2" y="-2.6" width="2" height="5.2" fill="#2e2e36" />
+      <rect x="6.2" y="-2.6" width="2" height="5.2" fill="#2e2e36" />
+    </g>
+  )
+}
+
+/** Continuous curls while Mike walks / idles — new bell after each huck. */
+function DumbbellCurlOverlay({ walking }: { walking: boolean }) {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+      <motion.g
+        animate={{ rotate: walking ? [18, -55, 18] : [12, -48, 12] }}
+        transition={{
+          duration: walking ? 0.55 : 0.85,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+        style={{ transformOrigin: '54px 58px' }}
+      >
+        <path d="M52 56 Q58 62 56 78" stroke="#c48a5a" strokeWidth="5" strokeLinecap="round" fill="none" />
+        <HexDumbbell x={56} y={82} />
+      </motion.g>
+    </svg>
+  )
+}
+
+/** Overhead press then release — projectile takes the bell mid-flight. */
+function DumbbellHuckOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+      <motion.g
+        initial={{ rotate: 20, opacity: 1 }}
+        animate={{ rotate: [20, -100, -120], y: [0, -18, -28], opacity: [1, 1, 0] }}
+        transition={{ duration: 0.55, times: [0, 0.45, 1], ease: 'easeOut' }}
+        style={{ transformOrigin: '48px 52px' }}
+      >
+        <path d="M48 52 Q52 40 50 28" stroke="#c48a5a" strokeWidth="5.5" strokeLinecap="round" fill="none" />
+        <HexDumbbell x={50} y={24} />
+      </motion.g>
+      <motion.g
+        initial={{ opacity: 0, scale: 0.4 }}
+        animate={{ opacity: [0, 1, 0], scale: [0.4, 1.2, 1] }}
+        transition={{ duration: 0.55, times: [0.35, 0.55, 1] }}
+        style={{ transformOrigin: '50px 22px' }}
+      >
+        <circle cx="50" cy="22" r="7" fill="#ffe08a44" />
       </motion.g>
     </svg>
   )

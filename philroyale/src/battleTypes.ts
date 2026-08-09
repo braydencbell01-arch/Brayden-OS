@@ -28,7 +28,7 @@ export type BattleUnit = {
 
 export type Projectile = {
   id: string
-  kind: 'sundae' | 'hug' | 'slobber' | 'shoot' | 'arrow' | 'cannon'
+  kind: 'sundae' | 'hug' | 'slobber' | 'shoot' | 'dumbbell' | 'arrow' | 'cannon'
   fromCol: number
   fromRow: number
   toCol: number
@@ -46,7 +46,7 @@ export type SplatFx = {
   col: number
   row: number
   bornAt: number
-  kind: 'sundae' | 'slobber' | 'boom'
+  kind: 'sundae' | 'slobber' | 'boom' | 'dumbbell'
 }
 
 export type HandCard = {

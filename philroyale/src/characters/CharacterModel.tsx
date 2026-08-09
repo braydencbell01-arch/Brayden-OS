@@ -6,6 +6,7 @@ import { JeremyModel } from './JeremyModel'
 import { KathieModel } from './KathieModel'
 import { PeteModel } from './PeteModel'
 import { PhilModel, type CharacterAnim } from './PhilModel'
+import { MikeModel } from './MikeModel'
 import { ToddModel } from './ToddModel'
 
 type Props = {
@@ -38,6 +39,10 @@ export function CharacterModel({
 
   if (charId === 'todd') {
     return <ToddModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  }
+
+  if (charId === 'mike') {
+    return <MikeModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   }
 
   if (charId === 'pete') {

@@ -99,6 +99,7 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
               character.id === 'phil' ||
               character.id === 'kathie' ||
               character.id === 'todd' ||
+              character.id === 'mike' ||
               character.id === 'finley' ||
               character.id === 'jeremy' ||
               character.id === 'pete' ||

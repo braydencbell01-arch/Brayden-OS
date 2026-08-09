@@ -55,7 +55,9 @@ export function UnitToken({
                     ? '3 / 4.0'
                     : charId === 'todd'
                       ? '3 / 4.3'
-                      : '3 / 4.4',
+                      : charId === 'mike'
+                        ? '3 / 5.0'
+                        : '3 / 4.4',
         }}
       >
         <CharacterModel
@@ -201,6 +203,42 @@ export function ShootDot() {
       }}
       aria-hidden
     />
+  )
+}
+
+export function DumbbellDot() {
+  return (
+    <div className="relative h-3.5 w-5" aria-hidden>
+      <div className="absolute left-0 top-0.5 h-2.5 w-1.5 rounded-[2px] bg-[#1a1a20] ring-1 ring-black/50" />
+      <div className="absolute right-0 top-0.5 h-2.5 w-1.5 rounded-[2px] bg-[#1a1a20] ring-1 ring-black/50" />
+      <div
+        className="absolute left-1/2 top-[7px] h-1 w-3 -translate-x-1/2 -translate-y-1/2 rounded-sm"
+        style={{ background: 'linear-gradient(180deg,#c0c0c8,#6a6a74)' }}
+      />
+    </div>
+  )
+}
+
+export function DumbbellSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 480)
+  const scale = 0.5 + p * 1.2
+  const opacity = 1 - p
+  return (
+    <div
+      className="relative h-6 w-6"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-1 rounded-full"
+        style={{ background: 'radial-gradient(circle,#ffecb366 0%,#8a8a9633 45%,transparent 70%)' }}
+      />
+      <div className="absolute left-1/2 top-1/2 h-2 w-3.5 -translate-x-1/2 -translate-y-1/2 rotate-12">
+        <div className="absolute left-0 top-0 h-2 w-1 rounded-[1px] bg-[#1a1a20]" />
+        <div className="absolute right-0 top-0 h-2 w-1 rounded-[1px] bg-[#1a1a20]" />
+        <div className="absolute left-1/2 top-1/2 h-0.5 w-2 -translate-x-1/2 -translate-y-1/2 bg-[#9a9aa4]" />
+      </div>
+    </div>
   )
 }
 

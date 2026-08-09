@@ -27,15 +27,19 @@ const PROJECTILE_MS = 480
 const SLOBBER_PROJECTILE_MS = 1100
 /** Jeremy dual-pistol rounds — very fast. */
 const SHOOT_PROJECTILE_MS = 140
+/** Mike overhead dumbbell lob — long hang time. */
+const DUMBBELL_PROJECTILE_MS = 920
 const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const HUG_VFX_MS = 780
 const WHIP_VFX_MS = 780
 const KICK_VFX_MS = 680
+const DUMBBELL_VFX_MS = 520
 const RANGED_VFX_MS = 380
 const SPLAT_MS = 520
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 380
+const DUMBBELL_SPLAT_MS = 480
 
 const PRINCESS_RANGE = 30
 const PRINCESS_DAMAGE = 100
@@ -451,7 +455,13 @@ export function useBattle(opts?: { paused?: boolean }) {
       let nextProjectiles = projectilesRef.current.slice()
       let nextSplats = splatsRef.current.filter((s) => {
         const life =
-          s.kind === 'boom' ? BOOM_MS : s.kind === 'slobber' ? SLOBBER_SPLAT_MS : SPLAT_MS
+          s.kind === 'boom'
+            ? BOOM_MS
+            : s.kind === 'dumbbell'
+              ? DUMBBELL_SPLAT_MS
+              : s.kind === 'slobber'
+                ? SLOBBER_SPLAT_MS
+                : SPLAT_MS
         return t - s.bornAt < life
       })
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
@@ -493,6 +503,15 @@ export function useBattle(opts?: { paused?: boolean }) {
             row: p.toRow,
             bornAt: t,
             kind: 'boom',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'dumbbell') {
+          nextSplats.push({
+            id: nid('db'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'dumbbell',
           })
           splatsChanged = true
         }
@@ -667,11 +686,13 @@ export function useBattle(opts?: { paused?: boolean }) {
             ? WHIP_VFX_MS
             : attack.id === 'flyingKick'
               ? KICK_VFX_MS
-              : attack.id === 'deathHug'
-                ? HUG_VFX_MS
-                : attack.rootWhileAttacking
-                  ? ROOT_VFX_MS
-                  : RANGED_VFX_MS
+              : attack.id === 'dumbbellHuck'
+                ? DUMBBELL_VFX_MS
+                : attack.id === 'deathHug'
+                  ? HUG_VFX_MS
+                  : attack.rootWhileAttacking
+                    ? ROOT_VFX_MS
+                    : RANGED_VFX_MS
         u.vfx = attack.id
         u.vfxUntil = t + vfxMs
         u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
@@ -685,7 +706,12 @@ export function useBattle(opts?: { paused?: boolean }) {
           u.rootedUntil = t + vfxMs
         }
 
-        if (attack.kind === 'sundae' || attack.kind === 'slobber' || attack.kind === 'shoot') {
+        if (
+          attack.kind === 'sundae' ||
+          attack.kind === 'slobber' ||
+          attack.kind === 'shoot' ||
+          attack.kind === 'dumbbell'
+        ) {
           nextProjectiles.push({
             id: nid('p'),
             kind: attack.kind,
@@ -703,7 +729,9 @@ export function useBattle(opts?: { paused?: boolean }) {
                 ? SHOOT_PROJECTILE_MS
                 : attack.kind === 'slobber'
                   ? SLOBBER_PROJECTILE_MS
-                  : PROJECTILE_MS),
+                  : attack.kind === 'dumbbell'
+                    ? DUMBBELL_PROJECTILE_MS
+                    : PROJECTILE_MS),
           })
           projectilesChanged = true
           continue
