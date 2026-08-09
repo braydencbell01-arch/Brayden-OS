@@ -1356,6 +1356,18 @@ export function useBattle(opts?: {
             unitsChanged = true
           }
           if (!rooted) {
+            // If somehow north of an enemy tower (or south of an ally tower), snap to front.
+            if (best.kind === 'tower') {
+              const slot = towerSlot(best.id)
+              if (slot && !isOnTowerFrontSide(u.col, u.row, slot)) {
+                const aim = towerFrontEngagePoint(me.col, me.row, slot)
+                u.col = Math.max(0, Math.min(ARENA_COLS - 1, aim.col - 0.5))
+                u.row = Math.max(0, Math.min(ARENA_ROWS - 1, aim.row - 0.5))
+                u.movingUntil = t + 140
+                unitsChanged = true
+                continue
+              }
+            }
             const step = moveSpeed * dt
             const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds, u.side)
             const dCol = steer.dCol * step

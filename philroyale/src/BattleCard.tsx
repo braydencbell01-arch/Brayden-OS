@@ -85,7 +85,7 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
         }}
       >
         <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden">
-          <div className="absolute inset-0">
+          <div className="absolute inset-x-0 top-0 bottom-[12%]">
             <CharacterModel
               charId={character.id}
               anim="idle"

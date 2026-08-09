@@ -42,31 +42,33 @@ export function UnitToken({
       }}
     >
       <div
-        className="relative w-full"
+        className="relative w-full overflow-visible"
         style={{
-          // Taller aspect ≈ taller silhouette; dogs stay squat, Jeremy/Dan stretch up.
+          // Taller boxes so full-body sprites (feet/paws) are never cropped.
           aspectRatio:
             charId === 'dogHut'
               ? '5 / 4.6'
               : charId === 'iceCream'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
-              ? '5 / 4'
+              ? '4 / 4.35'
               : charId === 'jeremy'
-                ? '3 / 5.85'
+                ? '3 / 6.1'
                 : charId === 'dan'
-                  ? '3 / 5.55'
+                  ? '3 / 5.8'
                   : charId === 'mike'
-                    ? '3 / 5.15'
+                    ? '3 / 5.45'
                     : charId === 'pete'
-                      ? '3 / 4.35'
+                      ? '3 / 4.65'
                       : charId === 'kathie'
-                        ? '3 / 3.95'
+                        ? '3 / 4.25'
                         : charId === 'todd'
-                          ? '3 / 4.35'
+                          ? '3 / 4.65'
                           : charId === 'lynne'
-                            ? '3 / 4.4'
-                            : '3 / 4.4',
+                            ? '3 / 4.7'
+                            : charId === 'phil'
+                              ? '3 / 4.7'
+                              : '3 / 4.7',
         }}
       >
         <CharacterModel

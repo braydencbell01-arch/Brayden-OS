@@ -43,14 +43,14 @@ type Props = {
  * No CSS drop-shadow (that caused a ghost “second troop” while moving).
  */
 export function PhotoTroop({
-  cardSrc: _cardSrc,
+  cardSrc,
   troopSrc,
   troopBackSrc,
   alt,
   anim,
   facing,
   portrait,
-  objectPos: _objectPos = '50% 20%',
+  objectPos = '50% 20%',
   enraged,
   gait = 'run',
   attack = 'none',
@@ -94,7 +94,7 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Battlefield troop on clean blue — no pedestal composite (avoids ghost legs).
+    // Full card / troop art — never clip feet or paws.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
@@ -104,10 +104,10 @@ export function PhotoTroop({
         }}
       >
         <img
-          src={troopSrc}
+          src={cardSrc || troopSrc}
           alt={alt}
-          className="h-full w-full object-contain px-[5%] pb-[4%] pt-[4%]"
-          style={{ clipPath: 'inset(0 0 6% 0)' }}
+          className="h-full w-full object-contain px-[4%] pb-[10%] pt-[6%]"
+          style={{ objectPosition: objectPos }}
           draggable={false}
         />
       </div>
@@ -261,10 +261,11 @@ export function PhotoTroop({
       >
         {/* Full-body photo troops keep real legs; others clip for SVG runners underneath */}
         <div
-          className="absolute inset-0 overflow-hidden"
+          className="absolute inset-0 overflow-visible"
           style={{
             clipPath:
-              spriteLegs || !(walking || attacking) ? 'inset(0)' : 'inset(0 0 18% 0)',
+              spriteLegs || !(walking || attacking) ? undefined : 'inset(0 0 18% 0)',
+            overflow: spriteLegs || !(walking || attacking) ? 'visible' : 'hidden',
           }}
         >
           <img
@@ -275,6 +276,7 @@ export function PhotoTroop({
             aria-hidden
             className="h-full w-full object-contain object-bottom"
             style={{
+              objectPosition: objectPos.includes('%') ? `${objectPos.split(' ')[0]} 100%` : '50% 100%',
               filter: enraged
                 ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
                 : undefined,

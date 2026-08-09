@@ -30,14 +30,18 @@ export type TowerSlot = {
   h: number
 }
 
-/** King towers 5×5, princess towers 3×3. */
+/**
+ * King 5×5 / princess 3×3 footprints aligned to ClashMap tower art (viewBox 360×640).
+ * Front edges match the drawn base (enemy) / river face (ally) so melee stands in front
+ * of what you see — not on the old pads that sat behind the sprites.
+ */
 export const TOWERS: TowerSlot[] = [
-  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 48, row: 5, w: 5, h: 5 },
-  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 22, row: 17, w: 3, h: 3 },
-  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 76, row: 17, w: 3, h: 3 },
-  { id: 'ally-king', side: 'ally', kind: 'king', col: 48, row: 135, w: 5, h: 5 },
-  { id: 'ally-left', side: 'ally', kind: 'princess', col: 22, row: 125, w: 3, h: 3 },
-  { id: 'ally-right', side: 'ally', kind: 'princess', col: 76, row: 125, w: 3, h: 3 },
+  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 48, row: 17, w: 5, h: 5 },
+  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 22, row: 31, w: 3, h: 3 },
+  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 76, row: 31, w: 3, h: 3 },
+  { id: 'ally-king', side: 'ally', kind: 'king', col: 48, row: 126, w: 5, h: 5 },
+  { id: 'ally-left', side: 'ally', kind: 'princess', col: 22, row: 116, w: 3, h: 3 },
+  { id: 'ally-right', side: 'ally', kind: 'princess', col: 76, row: 116, w: 3, h: 3 },
 ]
 
 export function isRiverTile(row: number, col: number): boolean {
@@ -95,9 +99,9 @@ export function distUnitTileToTower(col: number, row: number, t: TowerSlot): num
 export function isOnTowerFrontSide(_col: number, row: number, t: TowerSlot): boolean {
   const { top, bottom } = towerAabb(t)
   const cy = row + 0.5
-  // Small slop so troops standing on the front corners still count.
-  if (t.side === 'enemy') return cy >= bottom - 0.85
-  return cy <= top + 0.85
+  // Must be past the front face (slight slop for corners) — never count the back half.
+  if (t.side === 'enemy') return cy >= bottom - 0.25
+  return cy <= top + 0.25
 }
 
 /** Closest point on the tower footprint boundary/interior to a point. */
@@ -125,11 +129,11 @@ export function towerFrontEngagePoint(
 ): { col: number; row: number } {
   const { left, right, top, bottom } = towerAabb(t)
   const faceCol = Math.max(left + 0.35, Math.min(right - 0.35, fromCol))
-  // Stand clearly in front of the pad (melee can hit from here).
+  // Stand clearly south (enemy towers) / north (ally towers) of the front face.
   if (t.side === 'enemy') {
-    return { col: faceCol, row: bottom + 0.35 }
+    return { col: faceCol, row: bottom + 1.15 }
   }
-  return { col: faceCol, row: top - 1.35 }
+  return { col: faceCol, row: top - 2.0 }
 }
 
 /** Projectile aim point on the river-facing front face (visual impact). */
@@ -253,17 +257,15 @@ function towerDetourPoint(
   bridgeBiasCol?: number,
 ): { col: number; row: number } {
   const pad = 1.6
-  // Prefer river-facing (front) side corners so melee never routes to the back.
+  // Front-face waypoints only — never route troops behind the tower.
   const frontRow = t.side === 'enemy' ? t.row + t.h + pad : t.row - pad
-  const backRow = t.side === 'enemy' ? t.row - pad : t.row + t.h + pad
+  const midFront = t.side === 'enemy' ? t.row + t.h + pad * 0.55 : t.row - pad * 0.55
   const corners = [
     { col: t.col - pad, row: frontRow },
     { col: t.col + t.w + pad, row: frontRow },
     { col: t.col + t.w / 2, row: frontRow },
-    { col: t.col - pad, row: t.row + t.h / 2 },
-    { col: t.col + t.w + pad, row: t.row + t.h / 2 },
-    { col: t.col - pad, row: backRow },
-    { col: t.col + t.w + pad, row: backRow },
+    { col: t.col - pad, row: midFront },
+    { col: t.col + t.w + pad, row: midFront },
   ]
   let best = corners[0]!
   let bestCost = Infinity
