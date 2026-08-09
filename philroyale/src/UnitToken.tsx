@@ -51,24 +51,24 @@ export function UnitToken({
               : charId === 'iceCream'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
-              ? '4 / 4.35'
+              ? '4 / 4.85'
               : charId === 'jeremy'
                 ? '3 / 6.1'
                 : charId === 'pete'
-                  ? '3 / 5.8'
+                  ? '3 / 5.9'
                   : charId === 'mike'
-                    ? '3 / 5.45'
+                    ? '3 / 5.55'
                     : charId === 'dan'
-                      ? '3 / 4.65'
+                      ? '3 / 4.85'
                       : charId === 'kathie'
-                        ? '3 / 4.25'
+                        ? '3 / 4.45'
                         : charId === 'todd'
-                          ? '3 / 4.65'
+                          ? '3 / 4.85'
                           : charId === 'lynne'
-                            ? '3 / 4.7'
+                            ? '3 / 4.9'
                             : charId === 'phil'
-                              ? '3 / 4.7'
-                              : '3 / 4.7',
+                              ? '3 / 4.9'
+                              : '3 / 4.9',
         }}
       >
         <CharacterModel

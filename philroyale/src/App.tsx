@@ -316,7 +316,7 @@ export default function App() {
       if (!me) return { ok: false, message: 'Set your name first.' }
       if (code.length < 6) return { ok: false, message: 'Enter a valid account code.' }
       if (code === myId) return { ok: false, message: "That's your own code." }
-      upsertFriend({ name: `Player ${code.slice(0, 4)}`, playerId: code })
+      upsertFriend({ name: 'New friend', playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
       const ok = await publishSocial(code, {
         type: 'friend_request',
@@ -325,11 +325,18 @@ export default function App() {
         toPlayerId: code,
         at: new Date().toISOString(),
       })
+      // Also say hello so they get our name even if they added us first.
+      void publishSocial(code, {
+        type: 'friend_hello',
+        fromPlayerId: myId,
+        fromName: me,
+        at: new Date().toISOString(),
+      })
       return {
         ok: true,
         message: ok
-          ? `Added ${formatAccountCode(code)}. They'll see you when Phil Royale is open.`
-          : `Saved ${formatAccountCode(code)}. Couldn't reach them yet — try again when they're online.`,
+          ? `Friend request sent to ${formatAccountCode(code)}. Their name appears when they're online.`
+          : `Saved ${formatAccountCode(code)}. Open Phil Royale on both phones so names sync.`,
       }
     },
     [],
@@ -530,7 +537,11 @@ export default function App() {
           },
         }))
         if (msg.fromName) {
+          const prev = loadFriends().find((f) => f.playerId === msg.fromPlayerId)?.name
           upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
+          if (prev !== msg.fromName) {
+            window.dispatchEvent(new Event('philroyale-friends-changed'))
+          }
         }
         return
       }

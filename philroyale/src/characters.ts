@@ -155,7 +155,7 @@ export const KATHIE: CharacterDef = {
   ],
 }
 
-/** Chuck — human shield (kit swapped with Pete; keeps 7 elixir). */
+/** Chuck — human shield (kit swapped with Pete). */
 export const PETE: CharacterDef = {
   id: 'pete',
   name: 'Chuck',
@@ -163,8 +163,8 @@ export const PETE: CharacterDef = {
   pronoun: 'he',
   height: "6'2\"",
   rarity: 'epic',
-  elixir: 7,
-  hp: 3000,
+  elixir: 6,
+  hp: 3250,
   moveSpeed: 4,
   attackDelaySec: 0,
   hue: 220,
@@ -337,7 +337,7 @@ export const LYNNE: CharacterDef = {
   pronoun: 'she',
   height: "5'5\"",
   rarity: 'common',
-  elixir: 4,
+  elixir: 5,
   hp: 650,
   moveSpeed: 12,
   attackDelaySec: 0.5,

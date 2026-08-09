@@ -51,7 +51,7 @@ export function PhotoTroop({
   anim,
   facing,
   portrait,
-  objectPos = '50% 20%',
+  objectPos: _objectPos = '50% 20%',
   enraged,
   gait = 'run',
   attack = 'none',
@@ -95,7 +95,7 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Troop cutout on the shared blue — same bg for every card.
+    // Troop cutout on solid blue — full body, no white studio glow from card PNGs.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
@@ -104,8 +104,8 @@ export function PhotoTroop({
         <img
           src={troopSrc || cardSrc}
           alt={alt}
-          className="h-full w-full object-contain px-[4%] pb-[10%] pt-[6%]"
-          style={{ objectPosition: objectPos }}
+          className="h-full w-full object-contain px-[8%] pb-[14%] pt-[10%]"
+          style={{ objectPosition: '50% 100%' }}
           draggable={false}
         />
       </div>
@@ -259,7 +259,7 @@ export function PhotoTroop({
       >
         {/* Full-body photo troops keep real legs; others clip for SVG runners underneath */}
         <div
-          className="absolute inset-0 overflow-visible"
+          className="absolute inset-[-6%_-2%_0]"
           style={{
             clipPath:
               spriteLegs || !(walking || attacking) ? undefined : 'inset(0 0 18% 0)',
@@ -274,7 +274,10 @@ export function PhotoTroop({
             aria-hidden
             className="h-full w-full object-contain object-bottom"
             style={{
-              objectPosition: objectPos.includes('%') ? `${objectPos.split(' ')[0]} 100%` : '50% 100%',
+              objectPosition: '50% 100%',
+              // Slight scale-down so ears/paws aren't cropped by the token box.
+              transform: 'scale(0.92)',
+              transformOrigin: '50% 100%',
               filter: enraged
                 ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
                 : undefined,

@@ -1198,6 +1198,13 @@ export function useBattle(opts?: {
 
         // Buildings: stationary spawners — no pathing / attacks.
         if (isBuildingCard(def)) {
+          // Dog Hut (and buildings) bleed 25 HP / sec while standing.
+          const drain = 25 * dt
+          if (drain > 0 && u.hp > 0) {
+            u.hp = Math.max(0, u.hp - drain)
+            unitsChanged = true
+          }
+          if (u.hp <= 0) continue
           const every = (def.spawnEverySec ?? 10) * 1000
           if (u.nextSpawnAt == null) u.nextSpawnAt = t + every
           if (t >= u.nextSpawnAt) {

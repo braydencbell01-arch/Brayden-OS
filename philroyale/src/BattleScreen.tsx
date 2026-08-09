@@ -453,6 +453,14 @@ export function BattleScreen({
   const clanLine = opponentClanName?.trim() || null
   const resultCopy =
     result === 'victory' ? 'Victory!' : result === 'defeat' ? 'Defeat' : result === 'draw' ? 'Draw' : null
+  const dragIsSpell = !!(dragChar && isSpellCard(dragChar))
+  const selectedIsSpell = !!(selectedCharId && isSpellCard(getCharacter(selectedCharId)))
+  const showSpellZone =
+    !ended &&
+    !isSpectating &&
+    ((draggingActive && dragIsSpell) || (!draggingActive && selectedIsSpell))
+  const showTroopBlock =
+    draggingActive && !ended && !isSpectating && !dragIsSpell
 
   return (
     <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
@@ -476,7 +484,8 @@ export function BattleScreen({
           ref={arenaRef}
           towers={towers}
           onArenaPointerDown={ended || isSpectating ? undefined : onArenaPointer}
-          showBlockedOverlay={draggingActive && !ended && !isSpectating}
+          showBlockedOverlay={showTroopBlock}
+          spellDeployOverlay={showSpellZone}
           overlaySide="ally"
         >
           {[...units]

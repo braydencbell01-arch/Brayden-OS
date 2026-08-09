@@ -239,6 +239,14 @@ export function loadLegacyPlayerIds(): string[] {
   return [legacy]
 }
 
+function isPlaceholderFriendName(name: string): boolean {
+  const n = name.trim()
+  if (!n) return true
+  if (/^player(\s|-)/i.test(n)) return true
+  if (n === 'Friend' || n === 'New friend' || n === 'Adding…') return true
+  return false
+}
+
 export function upsertFriend(friend: {
   name: string
   playerId?: string
@@ -251,14 +259,25 @@ export function upsertFriend(friend: {
   }
   const existingIdx = friends.findIndex((f) => {
     if (playerId && f.playerId && f.playerId === playerId) return true
-    if (name && f.name.toLowerCase() === name.toLowerCase()) return true
+    if (
+      name &&
+      !isPlaceholderFriendName(name) &&
+      f.name.toLowerCase() === name.toLowerCase()
+    ) {
+      return true
+    }
     return false
   })
   if (existingIdx >= 0) {
     const prev = friends[existingIdx]!
+    // Never let a placeholder wipe a real display name.
+    const nextName =
+      name && !(isPlaceholderFriendName(name) && !isPlaceholderFriendName(prev.name))
+        ? name
+        : prev.name
     const next: Friend = {
       ...prev,
-      name: name || prev.name,
+      name: nextName,
       playerId: playerId || prev.playerId,
     }
     friends[existingIdx] = next
@@ -267,7 +286,7 @@ export function upsertFriend(friend: {
   }
   const created: Friend = {
     id: playerId || `f-${Date.now()}`,
-    name: name || 'Friend',
+    name: name || 'New friend',
     playerId,
     addedAt: new Date().toISOString(),
   }

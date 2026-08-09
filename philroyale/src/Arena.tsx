@@ -23,6 +23,8 @@ type Props = {
   children?: ReactNode
   onArenaPointerDown?: (col: number, row: number) => void
   showBlockedOverlay?: boolean
+  /** Spell drag — place-anywhere hint (no troop red zone). */
+  spellDeployOverlay?: boolean
   overlaySide?: 'ally' | 'enemy'
 }
 
@@ -144,7 +146,14 @@ function DeployBlockOverlay({
 }
 
 export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
-  { towers = [], children, onArenaPointerDown, showBlockedOverlay, overlaySide = 'ally' },
+  {
+    towers = [],
+    children,
+    onArenaPointerDown,
+    showBlockedOverlay,
+    spellDeployOverlay,
+    overlaySide = 'ally',
+  },
   ref,
 ) {
   const hpMap = new Map(towers.map((t) => [t.id, t]))
@@ -243,6 +252,17 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         })}
 
         {showBlockedOverlay ? <DeployBlockOverlay towers={towers} side={overlaySide} /> : null}
+        {spellDeployOverlay ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[6]"
+            style={{
+              background:
+                'radial-gradient(ellipse 80% 70% at 50% 50%, #2a9ad844 0%, #0d5a9a22 55%, transparent 75%)',
+              boxShadow: 'inset 0 0 0 2px #4a9eff66',
+            }}
+            aria-hidden
+          />
+        ) : null}
 
         <div
           className="pointer-events-none absolute z-[2] border-t border-dashed border-white/15 bg-gradient-to-t from-[#2f6fbf18] to-transparent"

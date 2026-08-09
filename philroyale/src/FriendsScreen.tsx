@@ -165,10 +165,10 @@ export function FriendsScreen({
       }
       return
     }
-    upsertFriend({ name: `Player ${code.slice(0, 4)}`, playerId: code })
+    upsertFriend({ name: 'New friend', playerId: code })
     refreshFriends()
     setFriendCode('')
-    setAddMsg('Friend added — waiting for them to come online.')
+    setAddMsg('Friend saved — their name syncs when both of you are online.')
   }
 
   function togglePin(id: string) {
