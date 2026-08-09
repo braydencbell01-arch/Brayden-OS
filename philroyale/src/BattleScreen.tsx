@@ -8,6 +8,7 @@ import {
   CannonBall,
   DumbbellDot,
   DumbbellSplat,
+  RageHeartPickup,
   ShootDot,
   SlobberDot,
   SlobberSplat,
@@ -133,6 +134,7 @@ export function BattleScreen({
     units,
     projectiles,
     splats,
+    hearts,
     towers,
     selectedCharId,
     setSelectedCharId,
@@ -390,6 +392,20 @@ export function BattleScreen({
               ) : (
                 <SundaeSplat ageMs={now - s.bornAt} />
               )}
+            </div>
+          ))}
+          {hearts.map((h) => (
+            <div
+              key={h.id}
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                ...unitStyle(h.col, h.row),
+                zIndex: 28 + Math.round(h.row),
+                transform: `translate(-50%, -50%) rotateX(${-ARENA_TILT_DEG}deg)`,
+              }}
+              aria-hidden
+            >
+              <RageHeartPickup ageMs={now - h.bornAt} />
             </div>
           ))}
           {drag && drag.overArena && dragChar ? (

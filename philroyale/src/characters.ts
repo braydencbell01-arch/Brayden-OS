@@ -66,6 +66,8 @@ export type CharacterDef = {
   rageAfterSec?: number
   rageMoveMult?: number
   rageDamageMult?: number
+  /** On death, drop a heart that grants Finley-style rage (Dan). */
+  dropsRageHeart?: boolean
 }
 
 export const PHIL: CharacterDef = {
@@ -307,12 +309,30 @@ export const LYNNE: CharacterDef = {
   ],
 }
 
+export const DAN: CharacterDef = {
+  id: 'dan',
+  name: 'Dan',
+  initial: 'D',
+  pronoun: 'he',
+  height: "6'2\"",
+  rarity: 'epic',
+  elixir: 5,
+  hp: 1500,
+  moveSpeed: 4,
+  attackDelaySec: 0,
+  hue: 220,
+  blurb: 'Human shield — no attack. On death, drops a rage heart for 3s.',
+  attacks: [],
+  dropsRageHeart: true,
+}
+
 export const CHARACTERS: CharacterDef[] = [
   PHIL,
   KATHIE,
   TODD,
   MIKE,
   LYNNE,
+  DAN,
   PETE,
   BEANS,
   FINLEY,
@@ -328,7 +348,7 @@ export const DEFAULT_DECK = [
   TODD.id,
   MIKE.id,
   LYNNE.id,
-  JEREMY.id,
+  DAN.id,
   PETE.id,
   BEANS.id,
 ]

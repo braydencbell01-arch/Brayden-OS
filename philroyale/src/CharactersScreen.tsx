@@ -238,7 +238,10 @@ function CardProfile({
             <Stat label="Elixir" value={String(character.elixir)} />
             <Stat label="Health" value={String(character.hp)} />
             <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
-            <Stat label="Attack CD" value={`${character.attackDelaySec}s`} />
+            <Stat
+              label="Attack CD"
+              value={character.attacks.length === 0 ? '—' : `${character.attackDelaySec}s`}
+            />
             <Stat label="Size" value="1 block" />
             {character.rageAfterSec != null ? (
               <Stat
@@ -246,12 +249,26 @@ function CardProfile({
                 value={`${character.rageAfterSec}s → ×${character.rageDamageMult ?? 1} dmg / ×${character.rageMoveMult ?? 1} speed`}
               />
             ) : null}
+            {character.dropsRageHeart ? (
+              <Stat label="Death" value="Rage heart 3s" />
+            ) : null}
           </dl>
 
           <p className="mt-4 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
             Attacks
           </p>
           <ul className="mt-2 flex flex-col gap-2">
+            {character.attacks.length === 0 ? (
+              <li className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
+                <p className="font-extrabold text-white">None</p>
+                <p className="text-xs font-semibold text-white/65">
+                  Human shield — no attack
+                  {character.dropsRageHeart
+                    ? ' · drops a rage heart on death (any troop, 3s)'
+                    : ''}
+                </p>
+              </li>
+            ) : null}
             {character.attacks.map((a) => (
               <li
                 key={a.id}

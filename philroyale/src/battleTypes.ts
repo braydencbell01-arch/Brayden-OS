@@ -49,6 +49,14 @@ export type SplatFx = {
   kind: 'sundae' | 'slobber' | 'boom' | 'dumbbell'
 }
 
+/** Dan death heart — any troop can pick up for Finley-style rage. */
+export type RageHeart = {
+  id: string
+  col: number
+  row: number
+  bornAt: number
+}
+
 export type HandCard = {
   char: CharacterDef
   slot: number

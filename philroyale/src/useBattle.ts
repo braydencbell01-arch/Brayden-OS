@@ -18,7 +18,7 @@ import {
   type Side,
 } from './arena'
 import { getCharacter, DEFAULT_DECK, type CharacterDef } from './characters'
-import type { BattleUnit, Projectile, SplatFx } from './battleTypes'
+import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
 
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
@@ -42,6 +42,12 @@ const SPLAT_MS = 520
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 380
 const DUMBBELL_SPLAT_MS = 480
+/** Dan rage heart lifetime on the ground. */
+const RAGE_HEART_MS = 3000
+const RAGE_HEART_PICKUP = 1.35
+/** Default Finley-style rage multipliers when a unit is enraged. */
+const RAGE_MOVE_MULT = 2
+const RAGE_DAMAGE_MULT = 2
 
 const PRINCESS_RANGE = 30
 const PRINCESS_DAMAGE = 100
@@ -389,6 +395,7 @@ export function useBattle(opts?: { paused?: boolean }) {
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
   const [splats, setSplats] = useState<SplatFx[]>([])
+  const [hearts, setHearts] = useState<RageHeart[]>([])
   const [towers, setTowers] = useState<TowerHp[]>(() =>
     TOWERS.map((t) => {
       const maxHp = towerMaxHp(t.kind)
@@ -413,6 +420,7 @@ export function useBattle(opts?: { paused?: boolean }) {
   const towersRef = useRef(towers)
   const projectilesRef = useRef(projectiles)
   const splatsRef = useRef(splats)
+  const heartsRef = useRef(hearts)
   const elixirRef = useRef(elixir)
   const enemyElixirRef = useRef(enemyElixir)
   const aiDeckIndexRef = useRef(0)
@@ -421,6 +429,7 @@ export function useBattle(opts?: { paused?: boolean }) {
   towersRef.current = towers
   projectilesRef.current = projectiles
   splatsRef.current = splats
+  heartsRef.current = hearts
   elixirRef.current = elixir
   enemyElixirRef.current = enemyElixir
 
@@ -468,9 +477,11 @@ export function useBattle(opts?: { paused?: boolean }) {
       })
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
       let nextTowers = towersRef.current.map((tw) => ({ ...tw }))
+      let nextHearts = heartsRef.current.filter((h) => t - h.bornAt < RAGE_HEART_MS)
       let unitsChanged = false
       let towersChanged = false
       let projectilesChanged = false
+      let heartsChanged = nextHearts.length !== heartsRef.current.length
       let splatsChanged = nextSplats.length !== splatsRef.current.length
 
       const stillFlying: Projectile[] = []
@@ -564,7 +575,7 @@ export function useBattle(opts?: { paused?: boolean }) {
         }
 
         const def = getCharacter(u.charId)
-        if (!def || def.attacks.length === 0) continue
+        if (!def) continue
 
         if (
           def.rageAfterSec != null &&
@@ -576,8 +587,9 @@ export function useBattle(opts?: { paused?: boolean }) {
         }
 
         const moveSpeed =
-          def.moveSpeed * (u.enraged && def.rageMoveMult != null ? def.rageMoveMult : 1)
-        const dmgMult = u.enraged && def.rageDamageMult != null ? def.rageDamageMult : 1
+          def.moveSpeed *
+          (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1)
+        const dmgMult = u.enraged ? (def.rageDamageMult ?? RAGE_DAMAGE_MULT) : 1
 
         const me = unitCenter(u)
         const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
@@ -617,9 +629,8 @@ export function useBattle(opts?: { paused?: boolean }) {
           }
         }
 
-        const attack = def.attacks[u.attackIndex % def.attacks.length]!
         const rooted = t < u.rootedUntil
-        const damage = attack.damage * dmgMult
+        const noAttack = def.attacks.length === 0
 
         if (!best) {
           if (!rooted) {
@@ -651,9 +662,10 @@ export function useBattle(opts?: { paused?: boolean }) {
           unitsChanged = true
         }
 
-        // Move along nearest legal path until in attack range of the target.
-        // Never allow attack range below 1 tile.
-        const attackRange = Math.max(1, attack.range)
+        // Shields (Dan) walk into contact then idle as a meat wall — never attack.
+        const attackRange = noAttack
+          ? 1
+          : Math.max(1, def.attacks[u.attackIndex % def.attacks.length]!.range)
         if (best.rangeD > attackRange) {
           if (!rooted) {
             const step = moveSpeed * dt
@@ -676,8 +688,12 @@ export function useBattle(opts?: { paused?: boolean }) {
           continue
         }
 
+        if (noAttack) continue
+
         if (t < u.nextAttackAt) continue
 
+        const attack = def.attacks[u.attackIndex % def.attacks.length]!
+        const damage = attack.damage * dmgMult
         const burstShots = attack.burstShots ?? 1
         const burstGapSec = attack.burstGapSec ?? 0
         const nextBurst = u.burstShot + 1
@@ -833,13 +849,55 @@ export function useBattle(opts?: { paused?: boolean }) {
           (u) => {
             const def = getCharacter(u.charId)
             if (!def) return 0
-            return def.moveSpeed * (u.enraged && def.rageMoveMult != null ? def.rageMoveMult : 1)
+            return def.moveSpeed * (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1)
           },
           liveIds,
           t,
         )
       ) {
         unitsChanged = true
+      }
+
+      // Dan death hearts — spawn at death tile, then any living troop can claim rage.
+      for (const u of nextUnits) {
+        if (u.hp > 0) continue
+        const deadDef = getCharacter(u.charId)
+        if (!deadDef?.dropsRageHeart) continue
+        nextHearts.push({
+          id: nid('heart'),
+          col: u.col,
+          row: u.row,
+          bornAt: t,
+        })
+        heartsChanged = true
+      }
+
+      if (nextHearts.length > 0) {
+        const kept: RageHeart[] = []
+        for (const h of nextHearts) {
+          let claimed = false
+          let bestId: string | null = null
+          let bestD = Infinity
+          for (const u of nextUnits) {
+            if (u.hp <= 0) continue
+            const d = Math.hypot(u.col - h.col, u.row - h.row)
+            if (d <= RAGE_HEART_PICKUP && d < bestD) {
+              bestD = d
+              bestId = u.id
+            }
+          }
+          if (bestId) {
+            const getter = nextUnits.find((x) => x.id === bestId)
+            if (getter) {
+              getter.enraged = true
+              unitsChanged = true
+            }
+            claimed = true
+            heartsChanged = true
+          }
+          if (!claimed) kept.push(h)
+        }
+        nextHearts = kept
       }
 
       const filteredUnits = nextUnits.filter((u) => u.hp > 0)
@@ -849,6 +907,7 @@ export function useBattle(opts?: { paused?: boolean }) {
       if (towersChanged) setTowers(nextTowers)
       if (projectilesChanged) setProjectiles(nextProjectiles)
       if (splatsChanged) setSplats(nextSplats)
+      if (heartsChanged) setHearts(nextHearts)
       if (enemyElixirChanged) {
         enemyElixirRef.current = nextEnemyElixir
         setEnemyElixir(nextEnemyElixir)
@@ -868,6 +927,7 @@ export function useBattle(opts?: { paused?: boolean }) {
     units,
     projectiles,
     splats,
+    hearts,
     towers,
     selectedCharId,
     setSelectedCharId,

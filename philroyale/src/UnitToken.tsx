@@ -59,7 +59,9 @@ export function UnitToken({
                         ? '3 / 5.0'
                         : charId === 'lynne'
                           ? '3 / 4.5'
-                          : '3 / 4.4',
+                          : charId === 'dan'
+                            ? '3 / 5.1'
+                            : '3 / 4.4',
         }}
       >
         <CharacterModel
@@ -240,6 +242,40 @@ export function DumbbellSplat({ ageMs }: { ageMs: number }) {
         <div className="absolute right-0 top-0 h-2 w-1 rounded-[1px] bg-[#1a1a20]" />
         <div className="absolute left-1/2 top-1/2 h-0.5 w-2 -translate-x-1/2 -translate-y-1/2 bg-[#9a9aa4]" />
       </div>
+    </div>
+  )
+}
+
+/** Dan death heart — pulses until claimed or 3s expire. */
+export function RageHeartPickup({ ageMs }: { ageMs: number }) {
+  const life = Math.min(1, ageMs / 3000)
+  const pulse = 0.92 + Math.sin(ageMs / 120) * 0.1
+  const opacity = life > 0.75 ? 1 - (life - 0.75) / 0.25 : 1
+  return (
+    <div
+      className="relative h-7 w-7"
+      style={{ transform: `scale(${pulse})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{ background: 'radial-gradient(circle,#ff60ff55 0%,transparent 70%)' }}
+      />
+      <svg viewBox="0 0 32 32" className="absolute inset-0 h-full w-full drop-shadow">
+        <path
+          d="M16 28 C16 28 4 20 4 12 C4 7.5 7.5 5 11 5 C13.5 5 15.2 6.4 16 8 C16.8 6.4 18.5 5 21 5 C24.5 5 28 7.5 28 12 C28 20 16 28 16 28 Z"
+          fill="#e53935"
+          stroke="#ff80ab"
+          strokeWidth="1.2"
+        />
+        <path
+          d="M11 9 C12.5 8.2 14 9.2 14.5 11"
+          fill="none"
+          stroke="#ffcdd2"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+      </svg>
     </div>
   )
 }

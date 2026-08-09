@@ -1,13 +1,15 @@
+import type { ReactNode } from 'react'
 import type { AttackId } from '../characters'
 import { BeansModel } from './BeansModel'
 import { CrUnitModel } from './CrUnitModel'
+import { DanModel } from './DanModel'
 import { FinleyModel } from './FinleyModel'
 import { JeremyModel } from './JeremyModel'
 import { KathieModel } from './KathieModel'
-import { PeteModel } from './PeteModel'
-import { PhilModel, type CharacterAnim } from './PhilModel'
 import { LynneModel } from './LynneModel'
 import { MikeModel } from './MikeModel'
+import { PeteModel } from './PeteModel'
+import { PhilModel, type CharacterAnim } from './PhilModel'
 import { ToddModel } from './ToddModel'
 
 type Props = {
@@ -30,57 +32,58 @@ export function CharacterModel({
   portrait,
   enraged,
 }: Props) {
+  let model: ReactNode
   if (charId === 'phil') {
-    return <PhilModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'kathie') {
-    return <KathieModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'todd') {
-    return <ToddModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'mike') {
-    return <MikeModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'lynne') {
-    return <LynneModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'pete') {
-    return <PeteModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'beans') {
-    return <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
-  if (charId === 'finley') {
-    return (
-      <FinleyModel anim={anim} facing={facing} portrait={portrait} enraged={enraged} />
+    model = <PhilModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'kathie') {
+    model = <KathieModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'todd') {
+    model = <ToddModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'mike') {
+    model = <MikeModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'lynne') {
+    model = <LynneModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'dan') {
+    model = <DanModel anim={anim} facing={facing} portrait={portrait} enraged={enraged} />
+  } else if (charId === 'pete') {
+    model = <PeteModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'beans') {
+    model = <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'finley') {
+    model = <FinleyModel anim={anim} facing={facing} portrait={portrait} enraged={enraged} />
+  } else if (charId === 'jeremy') {
+    model = <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else {
+    model = (
+      <CrUnitModel
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        build="speedy"
+        shirt="#5a8ab0"
+        shirtDark="#1a3a58"
+        pants="#3a3a48"
+        pantsDark="#1a1a22"
+        accent="#f5d76e"
+        hair="#4a3a28"
+      />
     )
   }
 
-  if (charId === 'jeremy') {
-    return <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
-  }
-
+  // Finley/Dan PhotoTroop already tint when enraged; others get a shared aura from heart rage.
+  if (!enraged || charId === 'finley' || charId === 'dan') return model
   return (
-    <CrUnitModel
-      anim={anim}
-      facing={facing}
-      portrait={portrait}
-      build="speedy"
-      shirt="#5a8ab0"
-      shirtDark="#1a3a58"
-      pants="#3a3a48"
-      pantsDark="#1a1a22"
-      accent="#f5d76e"
-      hair="#4a3a28"
-    />
+    <div className="relative h-full w-full">
+      {model}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: 'radial-gradient(circle at 50% 45%, #a040ff55 0%, transparent 62%)',
+          mixBlendMode: 'screen',
+        }}
+        aria-hidden
+      />
+    </div>
   )
 }
 
