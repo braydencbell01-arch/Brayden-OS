@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Kathie — same jog + Chicken Whip overlays as Phil. */
+/** Kathie — grandma cool pose; jog + Chicken Whip. */
 export function KathieModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,12 +24,12 @@ export function KathieModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 16%"
+      objectPos="50% 100%"
       gait="jog"
       attack={anim === 'attack' && attackId === 'chickenWhip' ? 'whip' : 'none'}
       spriteLegs
-      legColor="#d8c8a8"
-      shoeColor="#3a2410"
+      legColor="#6a3a7a"
+      shoeColor="#2a1a30"
     />
   )
 }
