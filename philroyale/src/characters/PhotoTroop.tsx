@@ -13,8 +13,18 @@ type Props = {
   portrait?: boolean
   objectPos?: string
   enraged?: boolean
-  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'stiff'
-  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'slobber' | 'kick' | 'dumbbell' | 'none'
+  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff'
+  attack?:
+    | 'whip'
+    | 'sundae'
+    | 'shoot'
+    | 'bite'
+    | 'hug'
+    | 'slobber'
+    | 'kick'
+    | 'dumbbell'
+    | 'headbutt'
+    | 'none'
   /** Persistent hand prop (Mike curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
   /** Pants / fur color for running leg overlays */
@@ -64,15 +74,17 @@ export function PhotoTroop({
   const duration =
     gait === 'dog'
       ? 0.28
-      : gait === 'sprint'
-        ? 0.26
-        : gait === 'stiff'
-          ? 0.48
-          : gait === 'limp'
-            ? 0.72
-            : gait === 'jog'
-              ? 0.36
-              : 0.4
+      : gait === 'blitz'
+        ? 0.18
+        : gait === 'sprint'
+          ? 0.26
+          : gait === 'stiff'
+            ? 0.48
+            : gait === 'limp'
+              ? 0.72
+              : gait === 'jog'
+                ? 0.36
+                : 0.4
 
   if (portrait) {
     return (
@@ -130,7 +142,15 @@ export function PhotoTroop({
                                 rotate: [0, -4, -10, 8, 0],
                                 scaleY: [1, 0.98, 1.04, 1, 1],
                               }
-                            : { y: [0, -3, 0] }
+                            : attack === 'headbutt'
+                              ? {
+                                  // Plant → lean in → snap head forward → reset
+                                  y: [0, 2, -2, 1, 0],
+                                  x: [0, 0, 14, 10, 0],
+                                  rotate: [0, 8, 22, 10, 0],
+                                  scaleY: [1, 0.96, 1.05, 1, 1],
+                                }
+                              : { y: [0, -3, 0] }
             : walking
               ? gait === 'limp'
                 ? {
@@ -140,25 +160,32 @@ export function PhotoTroop({
                     x: [0, 1, 0, -2, 0],
                     scaleY: [1, 0.98, 1, 0.94, 1],
                   }
-                : gait === 'sprint'
+                : gait === 'blitz'
                   ? {
-                      // Fast sprint bounce — bigger stride, quicker cadence
-                      y: [0, -8, -1, -9, 0],
-                      scaleY: [1, 0.9, 1, 0.88, 1],
-                      x: [0, 1, 0, -1, 0],
+                      // Ultra-fast dash — tiny furious bounce
+                      y: [0, -5, 0, -6, 0],
+                      scaleY: [1, 0.92, 1, 0.9, 1],
+                      x: [0, 0.5, 0, -0.5, 0],
                     }
-                  : gait === 'stiff'
+                  : gait === 'sprint'
                     ? {
-                        // Rigid gym-bro march — almost no bounce
-                        y: [0, -1.5, 0, -1.5, 0],
-                        rotate: [0, 1, 0, -1, 0],
-                        scaleY: [1, 0.995, 1, 0.995, 1],
+                        // Fast sprint bounce — bigger stride, quicker cadence
+                        y: [0, -8, -1, -9, 0],
+                        scaleY: [1, 0.9, 1, 0.88, 1],
+                        x: [0, 1, 0, -1, 0],
                       }
-                    : {
-                      // Running stride: bounce only (no left/right rotate — that looked two-way)
-                      y: [0, -6, -1, -7, 0],
-                      scaleY: [1, 0.94, 1, 0.93, 1],
-                    }
+                    : gait === 'stiff'
+                      ? {
+                          // Rigid gym-bro march — almost no bounce
+                          y: [0, -1.5, 0, -1.5, 0],
+                          rotate: [0, 1, 0, -1, 0],
+                          scaleY: [1, 0.995, 1, 0.995, 1],
+                        }
+                      : {
+                          // Running stride: bounce only (no left/right rotate — that looked two-way)
+                          y: [0, -6, -1, -7, 0],
+                          scaleY: [1, 0.94, 1, 0.93, 1],
+                        }
               : { y: [0, -1.5, 0] }
         }
         transition={
@@ -169,13 +196,15 @@ export function PhotoTroop({
                     ? 0.65
                     : attack === 'dumbbell'
                       ? 0.55
-                      : attack === 'whip' || attack === 'hug'
-                        ? 0.72
-                        : attack === 'slobber' || attack === 'sundae'
-                          ? 0.55
-                          : 0.36,
+                      : attack === 'headbutt'
+                        ? 0.4
+                        : attack === 'whip' || attack === 'hug'
+                          ? 0.72
+                          : attack === 'slobber' || attack === 'sundae'
+                            ? 0.55
+                            : 0.36,
                 times:
-                  attack === 'kick' || attack === 'dumbbell'
+                  attack === 'kick' || attack === 'dumbbell' || attack === 'headbutt'
                     ? [0, 0.15, 0.4, 0.7, 1]
                     : undefined,
               }
@@ -213,6 +242,7 @@ export function PhotoTroop({
         {attacking && attack === 'slobber' ? <SlobberSpitOverlay /> : null}
         {attacking && attack === 'kick' ? <FlyingKickOverlay /> : null}
         {attacking && attack === 'dumbbell' ? <DumbbellHuckOverlay /> : null}
+        {attacking && attack === 'headbutt' ? <HeadButtOverlay /> : null}
         {!attacking && carry === 'dumbbell' ? <DumbbellCurlOverlay walking={walking} /> : null}
 
         {enraged ? (
@@ -236,7 +266,7 @@ function RunLegs({
   legColor,
   shoeColor,
 }: {
-  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'stiff'
+  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff'
   walking: boolean
   legColor: string
   shoeColor: string
@@ -245,18 +275,21 @@ function RunLegs({
   const dur =
     gait === 'dog'
       ? 0.28
-      : gait === 'sprint'
-        ? 0.26
-        : gait === 'stiff'
-          ? 0.48
-          : gait === 'limp'
-            ? 0.72
-            : gait === 'jog'
-              ? 0.36
-              : 0.4
+      : gait === 'blitz'
+        ? 0.18
+        : gait === 'sprint'
+          ? 0.26
+          : gait === 'stiff'
+            ? 0.48
+            : gait === 'limp'
+              ? 0.72
+              : gait === 'jog'
+                ? 0.36
+                : 0.4
   const dog = gait === 'dog'
   const limp = gait === 'limp'
   const sprint = gait === 'sprint'
+  const blitz = gait === 'blitz'
   const stiff = gait === 'stiff'
   const color = legColor
   const accent = shoeColor
@@ -300,11 +333,13 @@ function RunLegs({
           walking
             ? limp
               ? { rotate: [8, -6, 8, -18, 8], y: [0, 0, 0, 3, 0] }
-              : sprint
-                ? { rotate: [38, -42, 38] }
-                : stiff
-                  ? { rotate: [10, -12, 10] }
-                  : { rotate: [28, -32, 28] }
+              : blitz
+                ? { rotate: [48, -52, 48] }
+                : sprint
+                  ? { rotate: [38, -42, 38] }
+                  : stiff
+                    ? { rotate: [10, -12, 10] }
+                    : { rotate: [28, -32, 28] }
             : { rotate: 6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -318,11 +353,13 @@ function RunLegs({
           walking
             ? limp
               ? { rotate: [-6, 10, -6, 22, -6], y: [0, 1, 0, 0, 0] }
-              : sprint
-                ? { rotate: [-42, 38, -42] }
-                : stiff
-                  ? { rotate: [-12, 10, -12] }
-                  : { rotate: [-32, 28, -32] }
+              : blitz
+                ? { rotate: [-52, 48, -52] }
+                : sprint
+                  ? { rotate: [-42, 38, -42] }
+                  : stiff
+                    ? { rotate: [-12, 10, -12] }
+                    : { rotate: [-32, 28, -32] }
             : { rotate: -6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -676,6 +713,42 @@ function DumbbellHuckOverlay() {
         style={{ transformOrigin: '50px 22px' }}
       >
         <circle cx="50" cy="22" r="7" fill="#ffe08a44" />
+      </motion.g>
+    </svg>
+  )
+}
+
+/** Cap/head snap into the opponent. */
+function HeadButtOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+      <motion.g
+        initial={{ x: 0, opacity: 0 }}
+        animate={{ x: [0, 10, 16, 0], opacity: [0, 0.85, 1, 0] }}
+        transition={{ duration: 0.4, times: [0, 0.35, 0.65, 1] }}
+      >
+        <ellipse cx="58" cy="36" rx="11" ry="9" fill="#7eb6e855" stroke="#cfe8ff" strokeWidth="1.2" />
+        <path d="M48 34 H68" stroke="#fff6e8" strokeWidth="1.4" strokeLinecap="round" opacity="0.7" />
+      </motion.g>
+      <motion.g
+        initial={{ scale: 0.2, opacity: 0 }}
+        animate={{ scale: [0.2, 1.3, 1], opacity: [0, 1, 0] }}
+        transition={{ duration: 0.4, times: [0.3, 0.55, 1] }}
+        style={{ transformOrigin: '70px 40px' }}
+      >
+        <circle cx="70" cy="40" r="7" fill="#ffe08a55" />
+        {[0, 60, 120, 180, 240, 300].map((deg) => (
+          <line
+            key={deg}
+            x1="70"
+            y1="40"
+            x2={70 + Math.cos((deg * Math.PI) / 180) * 12}
+            y2={40 + Math.sin((deg * Math.PI) / 180) * 12}
+            stroke="#fff6e8"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+          />
+        ))}
       </motion.g>
     </svg>
   )

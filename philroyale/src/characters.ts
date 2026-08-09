@@ -7,6 +7,7 @@ export type AttackId =
   | 'shoot'
   | 'flyingKick'
   | 'dumbbellHuck'
+  | 'headButt'
 
 export type AttackDef = {
   id: AttackId
@@ -22,7 +23,7 @@ export type AttackDef = {
   burstShots?: number
   /** Seconds between shots inside a burst. */
   burstGapSec?: number
-  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick' | 'dumbbell'
+  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick' | 'dumbbell' | 'headbutt'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -281,7 +282,42 @@ export const MIKE: CharacterDef = {
   ],
 }
 
-export const CHARACTERS: CharacterDef[] = [PHIL, KATHIE, TODD, MIKE, PETE, BEANS, FINLEY, JEREMY]
+export const LYNNE: CharacterDef = {
+  id: 'lynne',
+  name: 'Lynne',
+  initial: 'L',
+  pronoun: 'she',
+  height: "5'5\"",
+  rarity: 'common',
+  elixir: 4,
+  hp: 325,
+  moveSpeed: 12,
+  attackDelaySec: 0.5,
+  hue: 200,
+  blurb: 'Blazes in at 12, then Head Butts for 125 every half-second.',
+  attacks: [
+    {
+      id: 'headButt',
+      name: 'Head Butt',
+      range: 1,
+      damage: 125,
+      rootWhileAttacking: true,
+      kind: 'headbutt',
+    },
+  ],
+}
+
+export const CHARACTERS: CharacterDef[] = [
+  PHIL,
+  KATHIE,
+  TODD,
+  MIKE,
+  LYNNE,
+  PETE,
+  BEANS,
+  FINLEY,
+  JEREMY,
+]
 
 export const DECK_SIZE = 8
 
@@ -291,7 +327,7 @@ export const DEFAULT_DECK = [
   KATHIE.id,
   TODD.id,
   MIKE.id,
-  FINLEY.id,
+  LYNNE.id,
   JEREMY.id,
   PETE.id,
   BEANS.id,
