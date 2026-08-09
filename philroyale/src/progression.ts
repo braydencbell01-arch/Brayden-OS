@@ -98,6 +98,8 @@ export const STARTER_UNLOCKS = [
   'todd',
   'dan',
   'pete',
+  'dogHut',
+  'iceCream',
 ]
 
 export function cardLevelMult(level: number): number {

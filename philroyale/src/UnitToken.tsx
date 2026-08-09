@@ -46,7 +46,11 @@ export function UnitToken({
         style={{
           // Taller aspect ≈ taller silhouette; dogs stay squat, Jeremy/Dan stretch up.
           aspectRatio:
-            charId === 'finley' || charId === 'beans' || charId === 'shay'
+            charId === 'dogHut'
+              ? '5 / 4.6'
+              : charId === 'iceCream'
+                ? '3 / 4'
+              : charId === 'finley' || charId === 'beans' || charId === 'shay'
               ? '5 / 4'
               : charId === 'jeremy'
                 ? '3 / 5.85'
@@ -516,6 +520,38 @@ export function CannonBall() {
       aria-hidden
     >
       <div className="absolute left-[22%] top-[18%] h-1 w-1 rounded-full bg-white/35" />
+    </div>
+  )
+}
+
+/** Ice Cream spell impact — creamy splash across the blast radius. */
+export function IceCreamSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 900)
+  const scale = 0.4 + p * 2.8
+  const opacity = 1 - p * 0.92
+  return (
+    <div
+      className="relative h-16 w-16"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #fff8f0 0%, #ffd1e0 35%, #f5a8c8aa 55%, transparent 70%)',
+        }}
+      />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: deg % 90 === 0 ? '#fff6e8' : '#ff9eb8',
+            transform: `rotate(${deg}deg) translateY(-${6 + p * 10}px)`,
+          }}
+        />
+      ))}
     </div>
   )
 }

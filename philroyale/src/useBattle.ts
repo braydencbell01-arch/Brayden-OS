@@ -23,7 +23,14 @@ import {
   type Side,
 } from './arena'
 import type { GameMode } from './storage'
-import { getCharacter, DEFAULT_DECK, type CharacterDef } from './characters'
+import {
+  getCharacter,
+  DEFAULT_DECK,
+  isBuildingCard,
+  isSpellCard,
+  pickSpawnFromPool,
+  type CharacterDef,
+} from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
 import { cardLevelMult, scaledStat } from './progression'
 import {
@@ -48,6 +55,10 @@ const SLOBBER_PROJECTILE_MS = 1100
 const SHOOT_PROJECTILE_MS = 140
 /** Mike overhead dumbbell lob — long hang time. */
 const DUMBBELL_PROJECTILE_MS = 920
+/** Ice Cream spell — thrown from king tower, lands with a splat. */
+const ICE_CREAM_PROJECTILE_MS = 980
+const LAG_FRAME_DT = 0.22
+const LAG_SYNC_MS = 1400
 /** Shay Love heart — drifts slowly toward the target. */
 const LOVE_PROJECTILE_MS = 1600
 const TOWER_PROJECTILE_MS = 320
@@ -255,7 +266,8 @@ function makeBattleUnit(
 ): BattleUnit {
   const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
   const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
-  const hp = scaledStat(char.hp, level)
+  const hp = Math.max(1, scaledStat(Math.max(1, char.hp), level))
+  const everySec = char.spawnEverySec ?? 0
   return {
     id: nid('u'),
     charId: char.id,
@@ -277,7 +289,70 @@ function makeBattleUnit(
     enraged: false,
     movingUntil: 0,
     lockKey: null,
+    nextSpawnAt: isBuildingCard(char) && everySec > 0 ? t + everySec * 1000 : undefined,
   }
+}
+
+function spawnOffsetNear(col: number, row: number, side: Side): { col: number; row: number } {
+  const forward = side === 'ally' ? -1 : 1
+  return {
+    col: Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col))),
+    row: Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row + forward * 2))),
+  }
+}
+
+function spawnDogFromBuilding(
+  hut: BattleUnit,
+  t: number,
+  into: BattleUnit[],
+): BattleUnit | null {
+  const hutDef = getCharacter(hut.charId)
+  const dogId = pickSpawnFromPool(hutDef?.spawnPool)
+  if (!dogId) return null
+  const dog = getCharacter(dogId)
+  if (!dog) return null
+  const pos = spawnOffsetNear(hut.col, hut.row, hut.side)
+  const pup = makeBattleUnit(dog, pos.col, pos.row, hut.side, t, hut.level)
+  into.push(pup)
+  return pup
+}
+
+function kingThrowPoint(side: Side): { col: number; row: number } {
+  const id = side === 'ally' ? 'ally-king' : 'enemy-king'
+  const king = TOWERS.find((tw) => tw.id === id) ?? TOWERS[0]!
+  return { col: king.col + king.w / 2, row: king.row + king.h / 2 }
+}
+
+function castSpellProjectile(
+  char: CharacterDef,
+  side: Side,
+  col: number,
+  row: number,
+  t: number,
+  level: number,
+  into: Projectile[],
+): boolean {
+  if (!isSpellCard(char)) return false
+  const damage = scaledStat(char.spellDamage ?? 0, level)
+  const radius = char.spellRadius ?? 0
+  if (damage <= 0 || radius <= 0) return false
+  const from = kingThrowPoint(side)
+  into.push({
+    id: nid('spell'),
+    kind: 'iceCream',
+    fromCol: from.col,
+    fromRow: from.row,
+    toCol: Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col))),
+    toRow: Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row))),
+    damage,
+    targetId: null,
+    targetTowerId: null,
+    bornAt: t,
+    arriveAt: t + ICE_CREAM_PROJECTILE_MS,
+    ownerSide: side,
+    splashRadius: radius,
+  })
+  return true
 }
 
 function canSpawnAt(
@@ -334,6 +409,8 @@ function tryEnemyAiDeploy(
     deckIndex = (deckIndex + 1) % deck.length
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
+    // AI places troops/buildings in its half; spells are cast in the loop below.
+    if (isSpellCard(char)) continue
 
     for (let tileTry = 0; tileTry < 6; tileTry++) {
       const col = colBase + Math.floor(Math.random() * colSpan)
@@ -544,6 +621,7 @@ export function useBattle(opts?: {
   const net = opts?.net ?? null
   const [elixir, setElixir] = useState(5)
   const [enemyElixir, setEnemyElixir] = useState(5)
+  const [lagging, setLagging] = useState(false)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
   const [splats, setSplats] = useState<SplatFx[]>([])
@@ -587,6 +665,8 @@ export function useBattle(opts?: {
   const syncSeqRef = useRef(0)
   const lastSyncAtRef = useRef(0)
   const lastRemoteSeqRef = useRef(0)
+  const lastRemoteAtRef = useRef(Date.now())
+  const lagStreakRef = useRef(0)
   const pendingGuestDeploysRef = useRef<
     { charId: string; col: number; row: number; at: number }[]
   >([])
@@ -651,12 +731,34 @@ export function useBattle(opts?: {
       if (pausedRef.current) return false
       if (elixirRef.current < char.elixir) return false
       const live = liveTowerIdSet(towersRef.current)
-      if (!canSpawnAt(col, row, 'ally', towersRef.current, live, modeRef.current)) return false
+      const spell = isSpellCard(char)
+      if (
+        !spell &&
+        !canSpawnAt(col, row, 'ally', towersRef.current, live, modeRef.current)
+      ) {
+        return false
+      }
+      if (
+        spell &&
+        (col < 0 || col >= ARENA_COLS || row < 0 || row >= ARENA_ROWS)
+      ) {
+        return false
+      }
 
       const n = netRef.current
       if (n?.role === 'guest') {
         // Optimistic elixir; host confirms via mirrored state.
         setElixir((e) => Math.max(0, e - char.elixir))
+        if (spell) {
+          // Local VFX only — host applies the real splash damage.
+          const spawnT = performance.now()
+          const level = allyLevelsRef.current[char.id] ?? 1
+          setProjectiles((prev) => {
+            const next = prev.slice()
+            castSpellProjectile(char, 'ally', col, row, spawnT, level, next)
+            return next
+          })
+        }
         void publishBattle(n.challengeId, {
           type: 'battle_deploy',
           challengeId: n.challengeId,
@@ -671,7 +773,23 @@ export function useBattle(opts?: {
       const spawnT = performance.now()
       const level = allyLevelsRef.current[char.id] ?? 1
       setElixir((e) => e - char.elixir)
-      setUnits((prev) => [...prev, makeBattleUnit(char, col, row, 'ally', spawnT, level)])
+      if (spell) {
+        setProjectiles((prev) => {
+          const next = prev.slice()
+          castSpellProjectile(char, 'ally', col, row, spawnT, level, next)
+          return next
+        })
+      } else {
+        setUnits((prev) => {
+          const next = [...prev]
+          const hut = makeBattleUnit(char, col, row, 'ally', spawnT, level)
+          next.push(hut)
+          if (isBuildingCard(char) && char.spawnPool?.length) {
+            spawnDogFromBuilding(hut, spawnT, next)
+          }
+          return next
+        })
+      }
       if (n?.role === 'host') {
         // Push immediately so guest sees the troop without waiting for the tick.
         queueMicrotask(() => publishHostState(true))
@@ -686,11 +804,13 @@ export function useBattle(opts?: {
     if (!net) return
     const unsub = subscribeBattle(net.challengeId, (msg) => {
       if (msg.type === 'battle_ready') {
+        lastRemoteAtRef.current = Date.now()
         if (net.role === 'host') publishHostState(true)
         return
       }
 
       if (msg.type === 'battle_deploy' && net.role === 'host') {
+        lastRemoteAtRef.current = Date.now()
         pendingGuestDeploysRef.current.push({
           charId: msg.charId,
           col: msg.col,
@@ -703,6 +823,7 @@ export function useBattle(opts?: {
       if (msg.type === 'battle_state' && net.role === 'guest') {
         if (msg.seq <= lastRemoteSeqRef.current) return
         lastRemoteSeqRef.current = msg.seq
+        lastRemoteAtRef.current = Date.now()
         const t = performance.now()
         const nextTowers = towersRef.current.map((tw) => {
           const remoteId = flipTowerId(tw.id)
@@ -778,16 +899,61 @@ export function useBattle(opts?: {
     let last = performance.now()
 
     const tick = (t: number) => {
-      const dt = Math.min(0.05, (t - last) / 1000)
+      const rawDt = (t - last) / 1000
+      const dt = Math.min(0.05, rawDt)
       last = t
       setNow(t)
+
+      // Lag indicator: long frames, or friend-battle sync going quiet.
+      if (rawDt > LAG_FRAME_DT) lagStreakRef.current = Math.min(12, lagStreakRef.current + 2)
+      else lagStreakRef.current = Math.max(0, lagStreakRef.current - 1)
+      let syncLag = false
+      const n = netRef.current
+      if (n?.role === 'guest') {
+        syncLag = Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS
+      } else if (n?.role === 'host') {
+        // Host: no recent guest traffic and we are publishing — treat stale deploy channel as lag.
+        syncLag =
+          pendingGuestDeploysRef.current.length > 2 ||
+          (Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS * 2 &&
+            lastRemoteSeqRef.current > 0)
+      }
+      const nextLag = lagStreakRef.current >= 4 || syncLag
+      setLagging((prev) => (prev === nextLag ? prev : nextLag))
+
       if (pausedRef.current) {
         raf = requestAnimationFrame(tick)
         return
       }
 
       // Guest only mirrors host state — do not run a second local sim.
+      // Still advance local spell VFX (ice cream throw) so casts feel responsive.
       if (netRef.current?.role === 'guest') {
+        let nextProjectiles = projectilesRef.current.slice()
+        let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < 900)
+        let projectilesChanged = false
+        let splatsChanged = nextSplats.length !== splatsRef.current.length
+        const stillFlying: Projectile[] = []
+        for (const p of nextProjectiles) {
+          if (t < p.arriveAt) {
+            stillFlying.push(p)
+            continue
+          }
+          projectilesChanged = true
+          if (p.kind === 'iceCream') {
+            nextSplats.push({
+              id: nid('ic'),
+              col: p.toCol,
+              row: p.toRow,
+              bornAt: t,
+              kind: 'iceCream',
+            })
+            splatsChanged = true
+          }
+        }
+        nextProjectiles = stillFlying
+        if (projectilesChanged) setProjectiles(nextProjectiles)
+        if (splatsChanged) setSplats(nextSplats)
         raf = requestAnimationFrame(tick)
         return
       }
@@ -810,6 +976,8 @@ export function useBattle(opts?: {
                 ? SLOBBER_SPLAT_MS
                 : s.kind === 'love'
                   ? LOVE_SPLAT_MS
+                  : s.kind === 'iceCream'
+                    ? 900
                   : s.kind === 'melee' ||
                       s.kind === 'whip' ||
                       s.kind === 'bite' ||
@@ -880,6 +1048,15 @@ export function useBattle(opts?: {
             kind: 'love',
           })
           splatsChanged = true
+        } else if (p.kind === 'iceCream') {
+          nextSplats.push({
+            id: nid('ic'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'iceCream',
+          })
+          splatsChanged = true
         }
         if (p.splashRadius != null && p.ownerSide != null) {
           const splash = applySplashAt(
@@ -913,7 +1090,7 @@ export function useBattle(opts?: {
       const liveTowers = nextTowers.filter((tw) => tw.hp > 0)
       const liveIds = liveTowerIdSet(nextTowers)
 
-      // Apply guest deploys (friend battle) as enemy units on the host.
+      // Apply guest deploys (friend battle) as enemy units / spells on the host.
       if (netRef.current?.role === 'host' && pendingGuestDeploysRef.current.length) {
         const pending = pendingGuestDeploysRef.current
         pendingGuestDeploysRef.current = []
@@ -921,12 +1098,39 @@ export function useBattle(opts?: {
           const char = getCharacter(d.charId)
           if (!char || nextEnemyElixir < char.elixir) continue
           const hostPos = guestDeployToHostEnemy(d.col, d.row)
+          if (isSpellCard(char)) {
+            if (
+              castSpellProjectile(
+                char,
+                'enemy',
+                hostPos.col,
+                hostPos.row,
+                t,
+                botLevelRef.current,
+                nextProjectiles,
+              )
+            ) {
+              nextEnemyElixir -= char.elixir
+              enemyElixirChanged = true
+              projectilesChanged = true
+            }
+            continue
+          }
           if (!canSpawnAt(hostPos.col, hostPos.row, 'enemy', nextTowers, liveIds, modeRef.current)) {
             continue
           }
-          nextUnits.push(
-            makeBattleUnit(char, hostPos.col, hostPos.row, 'enemy', t, botLevelRef.current),
+          const hut = makeBattleUnit(
+            char,
+            hostPos.col,
+            hostPos.row,
+            'enemy',
+            t,
+            botLevelRef.current,
           )
+          nextUnits.push(hut)
+          if (isBuildingCard(char) && char.spawnPool?.length) {
+            spawnDogFromBuilding(hut, t, nextUnits)
+          }
           nextEnemyElixir -= char.elixir
           enemyElixirChanged = true
           unitsChanged = true
@@ -950,7 +1154,12 @@ export function useBattle(opts?: {
         )
         aiDeckIndexRef.current = ai.deckIndex
         if (ai.unit) {
-          nextUnits.push(ai.unit)
+          const hut = ai.unit
+          nextUnits.push(hut)
+          const hutDef = getCharacter(hut.charId)
+          if (isBuildingCard(hutDef) && hutDef?.spawnPool?.length) {
+            spawnDogFromBuilding(hut, t, nextUnits)
+          }
           nextEnemyElixir = ai.elixir
           enemyElixirChanged = true
           unitsChanged = true
@@ -966,6 +1175,18 @@ export function useBattle(opts?: {
 
         const def = getCharacter(u.charId)
         if (!def) continue
+
+        // Buildings: stationary spawners — no pathing / attacks.
+        if (isBuildingCard(def)) {
+          const every = (def.spawnEverySec ?? 10) * 1000
+          if (u.nextSpawnAt == null) u.nextSpawnAt = t + every
+          if (t >= u.nextSpawnAt) {
+            spawnDogFromBuilding(u, t, nextUnits)
+            u.nextSpawnAt = t + every
+            unitsChanged = true
+          }
+          continue
+        }
 
         // Rage is permanent for the unit's life (timer or Dan heart) — never cleared.
         if (
@@ -1430,10 +1651,14 @@ export function useBattle(opts?: {
         unitsChanged = true
       }
 
-      // Dan death hearts — spawn at death tile, then any living troop can claim rage.
+      // Building death spawn + Dan death hearts.
       for (const u of nextUnits) {
         if (u.hp > 0) continue
         const deadDef = getCharacter(u.charId)
+        if (isBuildingCard(deadDef) && deadDef?.spawnOnDeath) {
+          spawnDogFromBuilding(u, t, nextUnits)
+          unitsChanged = true
+        }
         if (!deadDef?.dropsRageHeart) continue
         nextHearts.push({
           id: nid('heart'),
@@ -1541,5 +1766,6 @@ export function useBattle(opts?: {
     touchdownWinScore: TOUCHDOWN_WIN_SCORE,
     syncReady,
     netRole: net?.role ?? null,
+    lagging,
   }
 }

@@ -55,6 +55,8 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   legendary: 'Legendary',
 }
 
+export type CardKind = 'troop' | 'building' | 'spell'
+
 export type CharacterDef = {
   id: string
   name: string
@@ -75,12 +77,24 @@ export type CharacterDef = {
   attacks: AttackDef[]
   hue: number
   blurb: string
+  /** Clash-style card role. Default troop. */
+  cardKind?: CardKind
   /** Seconds after deploy before rage (Finley). */
   rageAfterSec?: number
   rageMoveMult?: number
   rageDamageMult?: number
   /** On death, drop a heart that grants Finley-style rage (Dan). */
   dropsRageHeart?: boolean
+  /** Building: spawn these troop ids on a timer (and often on death). */
+  spawnPool?: string[]
+  /** Building: seconds between spawns (first spawn is on place). */
+  spawnEverySec?: number
+  /** Building: also spawn one from the pool when the building dies. */
+  spawnOnDeath?: boolean
+  /** Spell: damage dealt to enemies in radius. */
+  spellDamage?: number
+  /** Spell: radius in blocks (hits anything within this distance). */
+  spellRadius?: number
 }
 
 export const PHIL: CharacterDef = {
@@ -366,6 +380,47 @@ export const DAN: CharacterDef = {
   dropsRageHeart: true,
 }
 
+/** Spawns Shay / Beans / Finley on place, every 10s, and on death. */
+export const DOG_HUT: CharacterDef = {
+  id: 'dogHut',
+  name: 'Dog Hut',
+  initial: 'H',
+  pronoun: 'it',
+  height: "4'0\"",
+  rarity: 'rare',
+  elixir: 6,
+  hp: 1250,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 25,
+  cardKind: 'building',
+  blurb: 'Building — drops a random dog on place, every 10s, and when it falls.',
+  spawnPool: ['shay', 'beans', 'finley'],
+  spawnEverySec: 10,
+  spawnOnDeath: true,
+  attacks: [],
+}
+
+/** First spell — ice cream cone from your king, splat AoE. */
+export const ICE_CREAM: CharacterDef = {
+  id: 'iceCream',
+  name: 'Ice Cream',
+  initial: 'I',
+  pronoun: 'it',
+  height: "1'0\"",
+  rarity: 'common',
+  elixir: 3,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 330,
+  cardKind: 'spell',
+  blurb: 'Spell — throw an ice cream cone anywhere. 325 damage in a 10-block radius.',
+  spellDamage: 325,
+  spellRadius: 10,
+  attacks: [],
+}
+
 export const CHARACTERS: CharacterDef[] = [
   PHIL,
   KATHIE,
@@ -378,6 +433,8 @@ export const CHARACTERS: CharacterDef[] = [
   FINLEY,
   SHAY,
   JEREMY,
+  DOG_HUT,
+  ICE_CREAM,
 ]
 
 export const DECK_SIZE = 8
@@ -388,11 +445,24 @@ export const DEFAULT_DECK = [
   KATHIE.id,
   TODD.id,
   MIKE.id,
-  LYNNE.id,
-  DAN.id,
-  PETE.id,
+  DOG_HUT.id,
+  ICE_CREAM.id,
   BEANS.id,
+  FINLEY.id,
 ]
+
+export function isBuildingCard(c: CharacterDef | undefined): boolean {
+  return c?.cardKind === 'building'
+}
+
+export function isSpellCard(c: CharacterDef | undefined): boolean {
+  return c?.cardKind === 'spell'
+}
+
+export function pickSpawnFromPool(pool: string[] | undefined): string | null {
+  if (!pool?.length) return null
+  return pool[Math.floor(Math.random() * pool.length)] ?? null
+}
 
 export function getCharacter(id: string): CharacterDef | undefined {
   return CHARACTERS.find((c) => c.id === id)

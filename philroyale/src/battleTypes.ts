@@ -31,11 +31,22 @@ export type BattleUnit = {
    * `unit:<id>` or `tower:<id>`.
    */
   lockKey: string | null
+  /** Building spawn timer (performance.now ms). */
+  nextSpawnAt?: number
 }
 
 export type Projectile = {
   id: string
-  kind: 'sundae' | 'hug' | 'slobber' | 'shoot' | 'dumbbell' | 'love' | 'arrow' | 'cannon'
+  kind:
+    | 'sundae'
+    | 'hug'
+    | 'slobber'
+    | 'shoot'
+    | 'dumbbell'
+    | 'love'
+    | 'arrow'
+    | 'cannon'
+    | 'iceCream'
   fromCol: number
   fromRow: number
   toCol: number
@@ -68,6 +79,7 @@ export type SplatFx = {
     | 'bite'
     | 'kick'
     | 'hug'
+    | 'iceCream'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

@@ -9,6 +9,7 @@ import {
   CannonBall,
   DumbbellDot,
   DumbbellSplat,
+  IceCreamSplat,
   MeleeHitFx,
   LoveDot,
   LoveSplat,
@@ -22,7 +23,12 @@ import {
   UnitToken,
 } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
-import { battlefieldScaleForHeight, getCharacter } from './characters'
+import {
+  battlefieldScaleForHeight,
+  getCharacter,
+  isSpellCard,
+} from './characters'
+import { ARENA_COLS, ARENA_ROWS } from './arena'
 import {
   grantBattleChest,
   loadDeck,
@@ -94,7 +100,7 @@ function FlyingShot({
   bornAt: number
   arriveAt: number
   now: number
-  kind: 'sundae' | 'slobber' | 'shoot' | 'dumbbell' | 'love' | 'arrow' | 'cannon'
+  kind: 'sundae' | 'slobber' | 'shoot' | 'dumbbell' | 'love' | 'arrow' | 'cannon' | 'iceCream'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
@@ -114,20 +120,48 @@ function FlyingShot({
                 ? 5.5
                 : kind === 'love'
                   ? 2.4
-                  : 4)
+                  : kind === 'iceCream'
+                    ? 9
+                    : 4)
   const style = unitStyle(col - 0.5, row - 0.5 - arc)
   const travelAngle =
     (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
 
   return (
     <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={style} aria-hidden>
-      {kind === 'sundae' ? <SundaeDot /> : null}
+      {kind === 'sundae' || kind === 'iceCream' ? <SundaeDot /> : null}
       {kind === 'slobber' ? <SlobberDot /> : null}
       {kind === 'shoot' ? <ShootDot /> : null}
       {kind === 'dumbbell' ? <DumbbellDot /> : null}
       {kind === 'love' ? <LoveDot /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={travelAngle} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
+    </div>
+  )
+}
+
+/** Clash-style lag / high ping indicator. */
+function LagBadge() {
+  return (
+    <div
+      className="pointer-events-none absolute left-1/2 top-3 z-[60] flex -translate-x-1/2 items-center gap-1.5 rounded-full px-2.5 py-1"
+      style={{
+        background: 'linear-gradient(180deg,#2a2018ee,#120e0acc)',
+        boxShadow: '0 2px 8px #0008, inset 0 0 0 1px #ff6b4a88',
+      }}
+      role="status"
+      aria-label="Lagging"
+    >
+      <svg width="22" height="18" viewBox="0 0 22 18" aria-hidden>
+        <rect x="2" y="12" width="3" height="4" rx="0.5" fill="#ff8a70" />
+        <rect x="7" y="9" width="3" height="7" rx="0.5" fill="#ff8a70" />
+        <rect x="12" y="5" width="3" height="11" rx="0.5" fill="#ff8a7044" />
+        <rect x="17" y="2" width="3" height="14" rx="0.5" fill="#ff8a7022" />
+        <line x1="1" y1="2" x2="21" y2="16" stroke="#ff3b30" strokeWidth="2.2" />
+      </svg>
+      <span className="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#ffb4a4]">
+        Lag
+      </span>
     </div>
   )
 }
@@ -176,6 +210,7 @@ export function BattleScreen({
     touchdownWinScore,
     syncReady,
     netRole,
+    lagging,
   } = useBattle({
     paused: ended,
     allyLevels,
@@ -268,11 +303,20 @@ export function BattleScreen({
     return new Set(towers.filter((t) => t.hp > 0).map((t) => t.id))
   }
 
-  function canPlace(col: number, row: number): boolean {
+  function canPlace(col: number, row: number, charId?: string | null): boolean {
+    const c = Math.floor(col)
+    const r = Math.floor(row)
+    if (c < 0 || c >= ARENA_COLS || r < 0 || r >= ARENA_ROWS) return false
+    const def = charId
+      ? getCharacter(charId)
+      : selectedCharId
+        ? getCharacter(selectedCharId)
+        : undefined
+    if (isSpellCard(def)) return true
     if (mode === 'touchdown') {
-      return canDeployTouchdownAt(col, row, 'ally', liveTowerIds())
+      return canDeployTouchdownAt(c, r, 'ally', liveTowerIds())
     }
-    return canDeployAllyAt(col, row, towers, liveTowerIds())
+    return canDeployAllyAt(c, r, towers, liveTowerIds())
   }
 
   function onArenaPointer(col: number, row: number) {
@@ -304,7 +348,7 @@ export function BattleScreen({
       setDrag(next)
       return
     }
-    const valid = canPlace(tile.col, tile.row)
+    const valid = canPlace(tile.col, tile.row, base.charId)
     const next = {
       ...base,
       overArena: true,
@@ -415,6 +459,7 @@ export function BattleScreen({
           </p>
         </div>
       ) : null}
+      {lagging ? <LagBadge /> : null}
       {/* Map sits above the solid CR blue dock so all six towers stay visible. */}
       <div className="absolute inset-x-0 top-0 bottom-[6.85rem]">
         <Arena
@@ -459,7 +504,8 @@ export function BattleScreen({
             p.kind === 'dumbbell' ||
             p.kind === 'love' ||
             p.kind === 'arrow' ||
-            p.kind === 'cannon' ? (
+            p.kind === 'cannon' ||
+            p.kind === 'iceCream' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -481,6 +527,8 @@ export function BattleScreen({
                 <SlobberSplat ageMs={now - s.bornAt} />
               ) : s.kind === 'love' ? (
                 <LoveSplat ageMs={now - s.bornAt} />
+              ) : s.kind === 'iceCream' ? (
+                <IceCreamSplat ageMs={now - s.bornAt} />
               ) : s.kind === 'melee' ||
                 s.kind === 'whip' ||
                 s.kind === 'bite' ||
@@ -506,6 +554,25 @@ export function BattleScreen({
               <RageHeartPickup ageMs={now - h.bornAt} />
             </div>
           ))}
+          {drag && drag.overArena && dragChar && isSpellCard(dragChar) ? (
+            <div
+              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{
+                ...unitStyle(drag.col, drag.row),
+                width: `${((dragChar.spellRadius ?? 10) * 2 * 100) / ARENA_COLS}%`,
+                aspectRatio: '1',
+                zIndex: 39,
+                background: drag.valid
+                  ? 'radial-gradient(circle, #7ec8ff55 0%, #3a9fd844 55%, transparent 72%)'
+                  : 'radial-gradient(circle, #ff6b4a44 0%, transparent 70%)',
+                boxShadow: drag.valid
+                  ? 'inset 0 0 0 2px #9ad8ffaa'
+                  : 'inset 0 0 0 2px #ff8a70aa',
+                transform: `translate(-50%, -50%) rotateX(${-ARENA_TILT_DEG}deg)`,
+              }}
+              aria-hidden
+            />
+          ) : null}
           {drag && drag.overArena && dragChar ? (
             <div
               className="absolute -translate-x-1/2 -translate-y-[92%]"
@@ -521,8 +588,8 @@ export function BattleScreen({
               <UnitToken
                 charId={dragChar.id}
                 side="ally"
-                hp={dragChar.hp}
-                maxHp={dragChar.hp}
+                hp={Math.max(1, dragChar.hp)}
+                maxHp={Math.max(1, dragChar.hp)}
                 vfx={null}
                 facing={-Math.PI / 2}
               />
