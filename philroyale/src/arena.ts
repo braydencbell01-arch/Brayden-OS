@@ -2,6 +2,12 @@
 export const ARENA_COLS = 100
 export const ARENA_ROWS = 150
 
+/** Touchdown: place only in your third; score in the far end zone. */
+export const TOUCHDOWN_ALLY_MIN_ROW = Math.floor((ARENA_ROWS * 2) / 3)
+export const TOUCHDOWN_ENEMY_MAX_ROW = Math.floor(ARENA_ROWS / 3)
+export const TOUCHDOWN_ZONE_ROWS = 12
+export const TOUCHDOWN_WIN_SCORE = 3
+
 /** River band near the midline. */
 export const RIVER_ROWS = [74, 75] as const
 
@@ -426,4 +432,20 @@ export function canDeployEnemyAt(
   if (!leftAlive && leftHalf) return true
   if (!rightAlive && !leftHalf) return true
   return false
+}
+
+/** Touchdown mode: place only in your own third of the field. */
+export function canDeployTouchdownAt(
+  col: number,
+  row: number,
+  side: Side,
+  liveTowerIds?: ReadonlySet<string>,
+): boolean {
+  const c = Math.floor(col)
+  const r = Math.floor(row)
+  if (c < 0 || c >= ARENA_COLS || r < 0 || r >= ARENA_ROWS) return false
+  if (r >= RIVER_MIN && r <= RIVER_MAX) return false
+  if (!isWalkableTile(c, r, liveTowerIds)) return false
+  if (side === 'ally') return r >= TOUCHDOWN_ALLY_MIN_ROW
+  return r <= TOUCHDOWN_ENEMY_MAX_ROW
 }

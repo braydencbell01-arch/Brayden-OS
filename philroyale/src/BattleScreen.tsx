@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { canDeployAllyAt } from './arena'
+import { canDeployAllyAt, canDeployTouchdownAt } from './arena'
 import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct } from './Arena'
+import type { GameMode } from './storage'
 import { BattleCard } from './BattleCard'
 import {
   BulletBoom,
@@ -34,6 +35,9 @@ type Props = {
   opponentTrophies?: number
   allyLevels?: Record<string, number>
   botLevel?: number
+  mode?: GameMode
+  /** Override battle deck (touchdown draft). */
+  deckIds?: string[]
 }
 
 type DragState = {
@@ -120,12 +124,14 @@ export function BattleScreen({
   opponentTrophies = 3200,
   allyLevels,
   botLevel = 1,
+  mode = 'classic',
+  deckIds: deckOverride,
 }: Props) {
-  const deckIds = useMemo(() => loadDeck(), [])
+  const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
-  const [seconds, setSeconds] = useState(180)
+  const [seconds, setSeconds] = useState(mode === 'touchdown' ? 150 : 180)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [draggingActive, setDraggingActive] = useState(false)
   const [emotePickerOpen, setEmotePickerOpen] = useState(false)
@@ -149,7 +155,16 @@ export function BattleScreen({
     setSelectedCharId,
     deploy,
     now,
-  } = useBattle({ paused: ended, allyLevels, botLevel })
+    allyScore,
+    enemyScore,
+    touchdownWinScore,
+  } = useBattle({
+    paused: ended,
+    allyLevels,
+    botLevel,
+    mode,
+    enemyDeckIds: deckIds,
+  })
 
   useEffect(() => {
     const pile = [...deckIds].sort(() => Math.random() - 0.5)
@@ -168,6 +183,24 @@ export function BattleScreen({
 
   useEffect(() => {
     if (result) return
+    if (mode === 'touchdown') {
+      if (allyScore >= touchdownWinScore) {
+        setResult('victory')
+        setEmotePickerOpen(false)
+        return
+      }
+      if (enemyScore >= touchdownWinScore) {
+        setResult('defeat')
+        setEmotePickerOpen(false)
+        return
+      }
+      if (seconds > 0) return
+      setResult(
+        allyScore > enemyScore ? 'victory' : enemyScore > allyScore ? 'defeat' : 'draw',
+      )
+      setEmotePickerOpen(false)
+      return
+    }
     const allyKing = towers.find((t) => t.id === 'ally-king')
     const enemyKing = towers.find((t) => t.id === 'enemy-king')
     if (enemyKing && enemyKing.hp <= 0) {
@@ -185,7 +218,7 @@ export function BattleScreen({
     const enemyLeft = towers.filter((t) => t.side === 'enemy' && t.hp > 0).length
     setResult(allyLeft > enemyLeft ? 'victory' : enemyLeft > allyLeft ? 'defeat' : 'draw')
     setEmotePickerOpen(false)
-  }, [towers, seconds, result])
+  }, [towers, seconds, result, mode, allyScore, enemyScore, touchdownWinScore])
 
   useEffect(() => {
     if (!result) return
@@ -217,6 +250,9 @@ export function BattleScreen({
   }
 
   function canPlace(col: number, row: number): boolean {
+    if (mode === 'touchdown') {
+      return canDeployTouchdownAt(col, row, 'ally', liveTowerIds())
+    }
     return canDeployAllyAt(col, row, towers, liveTowerIds())
   }
 
@@ -503,6 +539,19 @@ export function BattleScreen({
         </div>
 
         <div className="pointer-events-auto flex items-start gap-1">
+          {mode === 'touchdown' ? (
+            <div
+              className="rounded-md px-2 py-0.5 text-center leading-none"
+              style={{ background: 'rgba(12,12,18,0.72)', boxShadow: '0 2px 6px #00000066' }}
+            >
+              <p className="text-[0.38rem] font-extrabold uppercase tracking-[0.12em] text-[#f5d76e]">
+                TD
+              </p>
+              <p className="font-[family-name:var(--font-display)] text-[1.05rem] tracking-wide text-white">
+                {allyScore}-{enemyScore}
+              </p>
+            </div>
+          ) : null}
           <div
             className="rounded-md px-2 py-0.5 text-right leading-none"
             style={{ background: 'rgba(12,12,18,0.72)', boxShadow: '0 2px 6px #00000066' }}

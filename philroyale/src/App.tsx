@@ -7,7 +7,9 @@ import { EventsScreen } from './EventsScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
 import { ShopScreen } from './ShopScreen'
+import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
+import { publishSocial, subscribeSocial, type SocialMessage } from './socialHub'
 import {
   botLevelForTrophies,
   botNameForTrophies,
@@ -18,22 +20,35 @@ import {
   clearBattleAccepted,
   clearIncomingChallenge,
   clearOutgoingChallenge,
+  clubInviteUrl,
   countUnclaimedRoadRewards,
   createBattleChallenge,
   isChallengeForMe,
+  joinRichClubByCode,
   loadBattleAccepted,
   loadCardProgress,
   loadIncomingChallenge,
+  loadIncomingClubInvite,
   loadOutgoingChallenge,
+  loadPendingFriendLink,
+  loadPlayerId,
   loadPlayerName,
   loadProfile,
+  loadRichClub,
   parseBattleChallengeFromUrl,
+  parseFriendInviteFromUrl,
   postBattleMessage,
   saveBattleAccepted,
   saveIncomingChallenge,
+  saveIncomingClubInvite,
+  savePendingFriendLink,
+  savePlayerName,
   shareText,
+  upsertFriend,
   type BattleChallenge,
   type BattleChannelMessage,
+  type ClubInviteIncoming,
+  type GameMode,
 } from './storage'
 
 type TabId = 'home' | 'characters' | 'shop' | 'events' | 'friends'
@@ -46,68 +61,141 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'friends', label: 'Social' },
 ]
 
-function clearBattleUrlParams(): void {
+function clearUrlParams(keys: string[]): void {
   const url = new URL(window.location.href)
-  if (
-    !url.searchParams.has('battleFrom') &&
-    !url.searchParams.has('battleTo') &&
-    !url.searchParams.has('challenge')
-  ) {
-    return
+  let changed = false
+  for (const key of keys) {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key)
+      changed = true
+    }
   }
-  url.searchParams.delete('battleFrom')
-  url.searchParams.delete('battleTo')
-  url.searchParams.delete('challenge')
-  window.history.replaceState({}, '', url.toString())
+  if (changed) window.history.replaceState({}, '', url.toString())
 }
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('home')
+  const [playerName, setPlayerName] = useState(() => loadPlayerName())
+  const [nameDraft, setNameDraft] = useState(() => loadPlayerName())
+  const [friendToast, setFriendToast] = useState<string | null>(null)
   const [battle, setBattle] = useState(false)
+  const [battleMode, setBattleMode] = useState<GameMode>('classic')
+  const [draftingTouchdown, setDraftingTouchdown] = useState(false)
+  const [touchdownDeck, setTouchdownDeck] = useState<string[] | null>(null)
   const [opponent, setOpponent] = useState<string | null>(null)
   const [showRoad, setShowRoad] = useState(false)
   const [incomingChallenge, setIncomingChallenge] = useState<BattleChallenge | null>(null)
   const [outgoingChallenge, setOutgoingChallenge] = useState<BattleChallenge | null>(() =>
     loadOutgoingChallenge(),
   )
+  const [clubInvite, setClubInvite] = useState<ClubInviteIncoming | null>(() =>
+    loadIncomingClubInvite(),
+  )
+  const needsName = !playerName.trim()
 
-  const startMatch = useCallback((name?: string | null) => {
+  const flashFriend = useCallback((msg: string) => {
+    setFriendToast(msg)
+    window.setTimeout(() => setFriendToast(null), 2800)
+  }, [])
+
+  const startMatch = useCallback((name?: string | null, mode: GameMode = 'classic') => {
     const trophies = loadProfile().trophies
     setOpponent(name ?? botNameForTrophies(trophies))
+    setBattleMode(mode)
     setShowRoad(false)
+    if (mode === 'touchdown') {
+      setDraftingTouchdown(true)
+      setTouchdownDeck(null)
+      setBattle(false)
+      return
+    }
+    setDraftingTouchdown(false)
+    setTouchdownDeck(null)
     setBattle(true)
   }, [])
+
+  const completeFriendLink = useCallback(
+    async (link: { playerId: string; name: string }) => {
+      const me = loadPlayerName().trim()
+      const myId = loadPlayerId()
+      if (!me) {
+        savePendingFriendLink(link)
+        return
+      }
+      if (link.playerId === myId) return
+      const realId = link.playerId.startsWith('name:') ? undefined : link.playerId
+      upsertFriend({ name: link.name, playerId: realId })
+      window.dispatchEvent(new Event('philroyale-friends-changed'))
+      if (realId) {
+        await publishSocial(realId, {
+          type: 'friend_hello',
+          fromPlayerId: myId,
+          fromName: me,
+          at: new Date().toISOString(),
+        })
+      }
+      savePendingFriendLink(null)
+      flashFriend(`You're now friends with ${link.name}!`)
+      setTab('friends')
+    },
+    [flashFriend],
+  )
 
   const showIncoming = useCallback((challenge: BattleChallenge) => {
     if (!isChallengeForMe(challenge)) return
     const outgoing = loadOutgoingChallenge()
     if (outgoing && outgoing.challengeId === challenge.challengeId) return
+    if (challenge.fromPlayerId || challenge.fromName) {
+      upsertFriend({
+        name: challenge.fromName,
+        playerId: challenge.fromPlayerId,
+      })
+    }
     saveIncomingChallenge(challenge)
     setIncomingChallenge(challenge)
   }, [])
 
   const handleAcceptChallenge = useCallback(() => {
     if (!incomingChallenge) return
-    const { challengeId, fromName } = incomingChallenge
+    const { challengeId, fromName, mode, fromPlayerId } = incomingChallenge
     const acceptedBy = loadPlayerName().trim() || incomingChallenge.toName
     saveBattleAccepted({
       challengeId,
       acceptedBy,
       acceptedAt: new Date().toISOString(),
     })
-    postBattleMessage({ type: 'accept', challengeId, acceptedBy })
+    postBattleMessage({ type: 'accept', challengeId, acceptedBy, mode })
+    if (fromPlayerId) {
+      void publishSocial(fromPlayerId, {
+        type: 'battle_accept',
+        challengeId,
+        fromPlayerId: loadPlayerId(),
+        fromName: acceptedBy,
+        mode: mode ?? 'classic',
+        at: new Date().toISOString(),
+      })
+    }
     clearIncomingChallenge()
     setIncomingChallenge(null)
-    clearBattleUrlParams()
-    startMatch(fromName)
+    clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
+    startMatch(fromName, mode ?? 'classic')
   }, [incomingChallenge, startMatch])
 
   const handleDeclineChallenge = useCallback(() => {
     if (!incomingChallenge) return
     postBattleMessage({ type: 'decline', challengeId: incomingChallenge.challengeId })
+    if (incomingChallenge.fromPlayerId) {
+      void publishSocial(incomingChallenge.fromPlayerId, {
+        type: 'battle_decline',
+        challengeId: incomingChallenge.challengeId,
+        fromPlayerId: loadPlayerId(),
+        fromName: loadPlayerName().trim() || 'Player',
+        at: new Date().toISOString(),
+      })
+    }
     clearIncomingChallenge()
     setIncomingChallenge(null)
-    clearBattleUrlParams()
+    clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
   }, [incomingChallenge])
 
   const cancelOutgoingChallenge = useCallback(() => {
@@ -115,22 +203,101 @@ export default function App() {
     setOutgoingChallenge(null)
   }, [])
 
-  const requestBattle = useCallback(async (friendName: string) => {
-    const challenge = createBattleChallenge(friendName)
-    setOutgoingChallenge(challenge)
-    postBattleMessage({ type: 'challenge', challenge })
+  const requestBattle = useCallback(
+    async (friendName: string, opts?: { mode?: GameMode; playerId?: string }) => {
+      const mode = opts?.mode ?? 'classic'
+      const challenge = createBattleChallenge(friendName, {
+        mode,
+        toPlayerId: opts?.playerId,
+      })
+      setOutgoingChallenge(challenge)
+      postBattleMessage({ type: 'challenge', challenge })
+      if (opts?.playerId) {
+        void publishSocial(opts.playerId, {
+          type: 'battle_invite',
+          challengeId: challenge.challengeId,
+          fromPlayerId: loadPlayerId(),
+          fromName: challenge.fromName,
+          toPlayerId: opts.playerId,
+          toName: friendName,
+          mode,
+          at: challenge.createdAt,
+        })
+      }
+      const url = battleInviteUrl(
+        challenge.fromName,
+        challenge.toName,
+        challenge.challengeId,
+        mode,
+        challenge.fromPlayerId,
+        challenge.toPlayerId,
+      )
+      await shareText(
+        'Phil Royale battle',
+        `${challenge.fromName} challenges you to ${mode === 'touchdown' ? 'Touchdown' : 'a battle'} — open to Accept or Decline:`,
+        url,
+      )
+    },
+    [],
+  )
+
+  const inviteToClub = useCallback(async (friendName: string, playerId?: string) => {
+    const club = loadRichClub()
+    if (!club) {
+      flashFriend('Join or create a club first.')
+      setTab('friends')
+      return
+    }
+    const me = loadPlayerName().trim() || 'Player'
+    if (playerId) {
+      await publishSocial(playerId, {
+        type: 'club_invite',
+        fromPlayerId: loadPlayerId(),
+        fromName: me,
+        clubCode: club.code,
+        clubName: club.name,
+        at: new Date().toISOString(),
+      })
+    }
     await shareText(
-      'Phil Royale battle',
-      `${challenge.fromName} challenges you to a Phil Royale battle — tap to accept:`,
-      battleInviteUrl(challenge.fromName, challenge.toName, challenge.challengeId),
+      'Phil Royale club',
+      `${me} invited you to join club ${club.name}:`,
+      clubInviteUrl(club.code),
     )
-  }, [])
+    flashFriend(`Club invite sent to ${friendName}`)
+  }, [flashFriend])
+
+  function commitName() {
+    const name = nameDraft.trim()
+    if (name.length < 2) return
+    savePlayerName(name)
+    loadPlayerId()
+    setPlayerName(name)
+    const pending = loadPendingFriendLink()
+    if (pending) void completeFriendLink(pending)
+  }
+
+  useEffect(() => {
+    loadPlayerId()
+    const friendLink = parseFriendInviteFromUrl()
+    if (friendLink) {
+      clearUrlParams(['addFriend', 'friendName', 'friend'])
+      void completeFriendLink(friendLink)
+    }
+    const clubCode = new URLSearchParams(window.location.search).get('club')
+    if (clubCode) {
+      joinRichClubByCode(clubCode)
+      clearUrlParams(['club'])
+      flashFriend('Joined club from invite link!')
+      setTab('friends')
+    }
+  }, [completeFriendLink, flashFriend])
 
   useEffect(() => {
     const fromUrl = parseBattleChallengeFromUrl()
     if (fromUrl) {
       showIncoming(fromUrl)
-      clearBattleUrlParams()
+      clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
     } else {
       const stored = loadIncomingChallenge()
       if (stored && isChallengeForMe(stored)) {
@@ -157,10 +324,11 @@ export default function App() {
         const outgoingNow = loadOutgoingChallenge()
         if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
           const opponentName = outgoingNow.toName
+          const mode = msg.mode ?? outgoingNow.mode ?? 'classic'
           clearOutgoingChallenge()
           clearBattleAccepted()
           setOutgoingChallenge(null)
-          startMatch(opponentName)
+          startMatch(opponentName, mode)
         }
         return
       }
@@ -191,7 +359,7 @@ export default function App() {
             clearOutgoingChallenge()
             clearBattleAccepted()
             setOutgoingChallenge(null)
-            startMatch(opponentName)
+            startMatch(opponentName, outgoingNow.mode ?? 'classic')
           }
         } catch {
           /* ignore */
@@ -223,12 +391,133 @@ export default function App() {
         clearOutgoingChallenge()
         clearBattleAccepted()
         setOutgoingChallenge(null)
-        startMatch(opponentName)
+        startMatch(opponentName, outgoingChallenge.mode ?? 'classic')
       }
     }, 800)
 
     return () => window.clearInterval(interval)
   }, [outgoingChallenge, startMatch])
+
+  useEffect(() => {
+    const myId = loadPlayerId()
+    return subscribeSocial(myId, (msg: SocialMessage) => {
+      if (msg.type === 'friend_hello') {
+        if (msg.fromPlayerId === myId) return
+        upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        flashFriend(`${msg.fromName} is now your friend!`)
+        return
+      }
+      if (msg.type === 'battle_invite') {
+        showIncoming({
+          challengeId: msg.challengeId,
+          fromName: msg.fromName,
+          toName: msg.toName,
+          fromPlayerId: msg.fromPlayerId,
+          toPlayerId: msg.toPlayerId,
+          mode: msg.mode,
+          createdAt: msg.at,
+        })
+        return
+      }
+      if (msg.type === 'battle_accept') {
+        const outgoingNow = loadOutgoingChallenge()
+        if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
+          clearOutgoingChallenge()
+          clearBattleAccepted()
+          setOutgoingChallenge(null)
+          startMatch(msg.fromName || outgoingNow.toName, msg.mode ?? outgoingNow.mode)
+        }
+        return
+      }
+      if (msg.type === 'battle_decline') {
+        const outgoingNow = loadOutgoingChallenge()
+        if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
+          clearOutgoingChallenge()
+          setOutgoingChallenge(null)
+          flashFriend(`${msg.fromName} declined.`)
+        }
+        return
+      }
+      if (msg.type === 'club_invite') {
+        const invite: ClubInviteIncoming = {
+          fromPlayerId: msg.fromPlayerId,
+          fromName: msg.fromName,
+          clubCode: msg.clubCode,
+          clubName: msg.clubName,
+          at: msg.at,
+        }
+        saveIncomingClubInvite(invite)
+        setClubInvite(invite)
+      }
+    })
+  }, [flashFriend, showIncoming, startMatch])
+
+  if (needsName) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col items-center justify-center bg-[#140e0a] px-4">
+        <div
+          className="w-full max-w-sm rounded-xl p-5"
+          style={{
+            background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+            boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
+          }}
+        >
+          <h1 className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
+            Welcome to Phil Royale
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-white/80">
+            Pick a name friends will see. Sharing your invite link will friend you both
+            automatically.
+          </p>
+          <input
+            autoFocus
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitName()
+            }}
+            placeholder="Your name"
+            maxLength={20}
+            className="mt-4 w-full rounded-lg bg-[#221610] px-3 py-3 text-base font-semibold text-white outline-none ring-1 ring-white/20 placeholder:text-white/35"
+          />
+          <button
+            type="button"
+            disabled={nameDraft.trim().length < 2}
+            onClick={commitName}
+            className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+              boxShadow: '0 3px 0 #8a6a12',
+            }}
+          >
+            Let&apos;s go
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (draftingTouchdown) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <CurrencyBar />
+        <div className="min-h-0 flex-1">
+          <TouchdownDraft
+            onCancel={() => {
+              setDraftingTouchdown(false)
+              setOpponent(null)
+            }}
+            onReady={(ids) => {
+              setTouchdownDeck(ids)
+              setDraftingTouchdown(false)
+              setBattle(true)
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
 
   if (battle) {
     const trophies = loadProfile().trophies
@@ -240,9 +529,13 @@ export default function App() {
           opponentName={opponent}
           allyLevels={levels}
           botLevel={botLevelForTrophies(trophies)}
+          mode={battleMode}
+          deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
           onExit={() => {
             setBattle(false)
             setOpponent(null)
+            setTouchdownDeck(null)
+            setBattleMode('classic')
             setTab('home')
           }}
         />
@@ -316,7 +609,8 @@ export default function App() {
           >
             {tab === 'home' ? (
               <HomeScreen
-                onPlay={startMatch}
+                onPlay={(name) => startMatch(name, 'classic')}
+                onPlayTouchdown={() => startMatch(null, 'touchdown')}
                 onRequestBattle={requestBattle}
                 onOpenRoad={() => setShowRoad(true)}
                 onOpenEvents={() => setTab('events')}
@@ -325,11 +619,14 @@ export default function App() {
             ) : null}
             {tab === 'characters' ? <CharactersScreen /> : null}
             {tab === 'shop' ? <ShopScreen /> : null}
-            {tab === 'events' ? <EventsScreen onPlay={startMatch} /> : null}
+            {tab === 'events' ? (
+              <EventsScreen onPlay={(name) => startMatch(name, 'classic')} />
+            ) : null}
             {tab === 'friends' ? (
               <FriendsScreen
-                onBattle={startMatch}
+                onBattle={(name, mode) => startMatch(name, mode ?? 'classic')}
                 onRequestBattle={requestBattle}
+                onInviteClub={inviteToClub}
                 waitingForFriend={outgoingChallenge?.toName ?? null}
               />
             ) : null}
@@ -372,6 +669,14 @@ export default function App() {
         </ul>
       </nav>
 
+      {friendToast ? (
+        <div className="pointer-events-none fixed inset-x-0 top-[max(3.5rem,env(safe-area-inset-top))] z-[60] flex justify-center px-4">
+          <p className="rounded-lg bg-[#1a7a3a] px-4 py-2 text-sm font-extrabold text-white shadow-lg">
+            {friendToast}
+          </p>
+        </div>
+      ) : null}
+
       {incomingChallenge ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -390,11 +695,12 @@ export default function App() {
               id="battle-challenge-title"
               className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]"
             >
-              Battle challenge
+              {incomingChallenge.mode === 'touchdown' ? 'Touchdown invite' : 'Battle invite'}
             </h2>
             <p className="mt-2 text-sm font-semibold text-white/85">
               <span className="font-extrabold text-white">{incomingChallenge.fromName}</span>{' '}
-              challenges you to a battle.
+              invited you to{' '}
+              {incomingChallenge.mode === 'touchdown' ? 'Touchdown' : 'Classic battle'}.
             </p>
             <div className="mt-4 flex gap-2">
               <button
@@ -407,6 +713,59 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleAcceptChallenge}
+                className="flex-1 rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
+                style={{
+                  background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
+                  boxShadow: '0 3px 0 #1a7a3a',
+                }}
+              >
+                Accept
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {clubInvite ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl p-5"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
+            }}
+          >
+            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+              Club invite
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-white/85">
+              <span className="font-extrabold text-white">{clubInvite.fromName}</span> invited you
+              to join <span className="font-extrabold text-white">{clubInvite.clubName}</span>.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  saveIncomingClubInvite(null)
+                  setClubInvite(null)
+                }}
+                className="flex-1 rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#ff8a7a] ring-1 ring-white/15"
+              >
+                Decline
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  joinRichClubByCode(clubInvite.clubCode)
+                  saveIncomingClubInvite(null)
+                  setClubInvite(null)
+                  flashFriend(`Joined ${clubInvite.clubName}!`)
+                  setTab('friends')
+                }}
                 className="flex-1 rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
                 style={{
                   background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
@@ -442,28 +801,56 @@ export default function App() {
             </h2>
             <p className="mt-2 text-sm font-semibold text-white/85">
               Waiting for{' '}
-              <span className="font-extrabold text-white">{outgoingChallenge.toName}</span>…
+              <span className="font-extrabold text-white">{outgoingChallenge.toName}</span> to
+              accept{' '}
+              {outgoingChallenge.mode === 'touchdown' ? 'Touchdown' : 'Classic'}…
             </p>
             <p className="mt-1 text-xs font-semibold text-white/50">
-              Share the battle link by text, or keep this tab open on the same device.
+              They get an Accept / Decline popup if Phil Royale is open — or they can tap your
+              invite link.
             </p>
             <button
               type="button"
               onClick={() =>
                 void shareText(
                   'Phil Royale battle',
-                  `${outgoingChallenge.fromName} challenges you to a Phil Royale battle:`,
+                  `${outgoingChallenge.fromName} challenges you:`,
                   battleInviteUrl(
                     outgoingChallenge.fromName,
                     outgoingChallenge.toName,
                     outgoingChallenge.challengeId,
+                    outgoingChallenge.mode ?? 'classic',
+                    outgoingChallenge.fromPlayerId,
+                    outgoingChallenge.toPlayerId,
                   ),
                 )
               }
               className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
               style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
             >
-              Share battle link again
+              Share invite link again
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                const url = battleInviteUrl(
+                  outgoingChallenge.fromName,
+                  outgoingChallenge.toName,
+                  outgoingChallenge.challengeId,
+                  outgoingChallenge.mode ?? 'classic',
+                  outgoingChallenge.fromPlayerId,
+                  outgoingChallenge.toPlayerId,
+                )
+                try {
+                  await navigator.clipboard.writeText(url)
+                  flashFriend('Invite link copied!')
+                } catch {
+                  flashFriend(url)
+                }
+              }}
+              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
+            >
+              Copy invite link
             </button>
             <button
               type="button"
@@ -475,6 +862,7 @@ export default function App() {
           </div>
         </div>
       ) : null}
+
     </div>
   )
 }

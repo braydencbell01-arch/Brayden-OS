@@ -27,6 +27,7 @@ import {
   loadDaily,
   loadDeck,
   loadFriends,
+  loadPlayerId,
   loadPlayerName,
   loadProfile,
   loadRichClub,
@@ -38,13 +39,18 @@ import {
   startChestUnlock,
   type DailyState,
   type Friend,
+  type GameMode,
   type OwnedChest,
   type PlayerProfile,
 } from './storage'
 
 type Props = {
   onPlay: (opponentName?: string | null) => void
-  onRequestBattle: (friendName: string) => Promise<void>
+  onPlayTouchdown: () => void
+  onRequestBattle: (
+    friendName: string,
+    opts?: { mode?: GameMode; playerId?: string },
+  ) => Promise<void>
   onOpenRoad: () => void
   onOpenEvents: () => void
   onOpenClub: () => void
@@ -59,6 +65,7 @@ function formatRemain(ms: number): string {
 
 export function HomeScreen({
   onPlay,
+  onPlayTouchdown,
   onRequestBattle,
   onOpenRoad,
   onOpenEvents,
@@ -70,6 +77,7 @@ export function HomeScreen({
   const season = useMemo(() => loadSeason(), [])
   const king = useMemo(() => kingInfo(), [])
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteFriend, setInviteFriend] = useState<Friend | null>(null)
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile())
   const [daily, setDaily] = useState<DailyState>(() => loadDaily())
@@ -115,14 +123,15 @@ export function HomeScreen({
   async function textInvite() {
     await shareText(
       'Phil Royale',
-      'Play Phil Royale with me — open this link to friend me, then we can battle:',
-      friendInviteUrl(playerName.trim() || 'friend'),
+      'Play Phil Royale with me — open this link and we become friends automatically:',
+      friendInviteUrl(playerName.trim() || 'friend', loadPlayerId()),
     )
   }
 
-  async function battleFriend(friend: Friend) {
+  async function battleFriend(friend: Friend, mode: GameMode) {
+    setInviteFriend(null)
     setInviteOpen(false)
-    await onRequestBattle(friend.name)
+    await onRequestBattle(friend.name, { mode, playerId: friend.playerId })
   }
 
   function persistName(name: string) {
@@ -458,19 +467,31 @@ export function HomeScreen({
           Battle
         </motion.button>
         <p className="mt-1 text-center text-xs font-bold text-white/75">
-          1v1 vs bot · {botName}
+          Classic 1v1 vs bot · {botName}
         </p>
 
         <button
           type="button"
-          onClick={() => setInviteOpen((v) => !v)}
-          className="mt-3 self-center rounded-lg px-5 py-2.5 text-sm font-extrabold text-white"
+          onClick={onPlayTouchdown}
+          className="mt-2 self-center rounded-lg px-6 py-2.5 text-sm font-extrabold text-white"
           style={{
             background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
             boxShadow: '0 4px 0 #1d4a86',
           }}
         >
-          Invite friend to match
+          Touchdown mode
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setInviteOpen((v) => !v)}
+          className="mt-3 self-center rounded-lg px-5 py-2.5 text-sm font-extrabold text-[#1a1410]"
+          style={{
+            background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
+            boxShadow: '0 4px 0 #1a7a3a',
+          }}
+        >
+          Invite a friend
         </button>
 
         {inviteOpen ? (
@@ -487,11 +508,11 @@ export function HomeScreen({
               className="mb-2 w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
               style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
             >
-              Text invite link
+              Share friend link
             </button>
             {friends.length === 0 ? (
               <p className="text-center text-sm font-semibold text-white/60">
-                No friends yet — send a text invite first.
+                No friends yet — share your friend link first.
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
@@ -499,11 +520,11 @@ export function HomeScreen({
                   <li key={f.id}>
                     <button
                       type="button"
-                      onClick={() => void battleFriend(f)}
+                      onClick={() => setInviteFriend(f)}
                       className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2 text-left ring-1 ring-white/10"
                     >
                       <span className="font-bold text-white">{f.name}</span>
-                      <span className="text-xs font-extrabold text-[#7dff9a]">Battle</span>
+                      <span className="text-xs font-extrabold text-[#7dff9a]">Invite</span>
                     </button>
                   </li>
                 ))}
@@ -512,6 +533,50 @@ export function HomeScreen({
           </div>
         ) : null}
       </main>
+
+      {inviteFriend ? (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl p-5"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: '0 12px 40px #00000088',
+            }}
+          >
+            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+              Invite {inviteFriend.name}
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-white/80">Pick a mode:</p>
+            <button
+              type="button"
+              onClick={() => void battleFriend(inviteFriend, 'classic')}
+              className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+            >
+              Classic battle
+            </button>
+            <button
+              type="button"
+              onClick={() => void battleFriend(inviteFriend, 'touchdown')}
+              className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
+              style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
+            >
+              Touchdown
+            </button>
+            <button
+              type="button"
+              onClick={() => setInviteFriend(null)}
+              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-white/70 ring-1 ring-white/15"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {toast ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">

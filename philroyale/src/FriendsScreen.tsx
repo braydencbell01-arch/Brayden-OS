@@ -5,6 +5,7 @@ import {
   joinRichClubByCode,
   loadFriendMeta,
   loadFriends,
+  loadPlayerId,
   loadPlayerName,
   loadRichClub,
   markFriendBattled,
@@ -12,17 +13,28 @@ import {
   saveFriends,
   savePlayerName,
   shareText,
+  upsertFriend,
   type Friend,
   type FriendMeta,
+  type GameMode,
 } from './storage'
 
 type Props = {
-  onBattle: (opponentName: string) => void
-  onRequestBattle: (friendName: string) => Promise<void>
+  onBattle: (opponentName: string, mode?: GameMode) => void
+  onRequestBattle: (
+    friendName: string,
+    opts?: { mode?: GameMode; playerId?: string },
+  ) => Promise<void>
+  onInviteClub: (friendName: string, playerId?: string) => Promise<void>
   waitingForFriend?: string | null
 }
 
-export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: Props) {
+export function FriendsScreen({
+  onBattle,
+  onRequestBattle,
+  onInviteClub,
+  waitingForFriend,
+}: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
   const [meta, setMeta] = useState<FriendMeta>(() => loadFriendMeta())
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
@@ -32,6 +44,8 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
   )
   const [pendingBattleFriend, setPendingBattleFriend] = useState<string | null>(null)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [inviteTarget, setInviteTarget] = useState<Friend | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const sortedFriends = useMemo(() => {
     return [...friends].sort((a, b) => {
@@ -48,32 +62,17 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const clubCode = params.get('club')
-    const friendFrom = params.get('friend')
     if (clubCode) {
       joinRichClubByCode(clubCode)
       setSection('clubs')
-    }
-    if (friendFrom) {
-      const name = friendFrom.trim()
-      if (name) {
-        setFriends((prev) => {
-          if (prev.some((f) => f.name.toLowerCase() === name.toLowerCase())) return prev
-          const next = [
-            ...prev,
-            { id: `f-${Date.now()}`, name, addedAt: new Date().toISOString() },
-          ]
-          saveFriends(next)
-          return next
-        })
-        setSection('friends')
-      }
-    }
-    if (clubCode || friendFrom) {
       const url = new URL(window.location.href)
-      if (clubCode) url.searchParams.delete('club')
-      if (friendFrom) url.searchParams.delete('friend')
+      url.searchParams.delete('club')
       window.history.replaceState({}, '', url.toString())
     }
+    setFriends(loadFriends())
+    const onFriends = () => setFriends(loadFriends())
+    window.addEventListener('philroyale-friends-changed', onFriends)
+    return () => window.removeEventListener('philroyale-friends-changed', onFriends)
   }, [])
 
   function persistName(name: string) {
@@ -81,44 +80,49 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
     savePlayerName(name)
   }
 
+  function refreshFriends() {
+    setFriends(loadFriends())
+  }
+
   async function inviteFriendSms() {
     const me = playerName.trim() || 'me'
+    const url = friendInviteUrl(me, loadPlayerId())
     await shareText(
       'Phil Royale',
-      `Add me on Phil Royale — open this link to friend ${me} and play:`,
-      friendInviteUrl(me),
+      `Add me on Phil Royale — open this link and we become friends automatically:`,
+      url,
     )
   }
 
-  async function requestBattle(friend: Friend) {
+  async function copyFriendLink() {
+    const me = playerName.trim() || 'me'
+    const url = friendInviteUrl(me, loadPlayerId())
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      await shareText('Phil Royale friend link', 'Add me on Phil Royale:', url)
+    }
+  }
+
+  async function sendInvite(friend: Friend, mode: GameMode) {
+    setInviteTarget(null)
     setPendingBattleFriend(friend.name)
     try {
       markFriendBattled(friend.id)
       setMeta(loadFriendMeta())
-      await onRequestBattle(friend.name)
+      await onRequestBattle(friend.name, { mode, playerId: friend.playerId })
     } finally {
       setPendingBattleFriend(null)
     }
   }
 
-  async function shareBattleLink(friend: Friend) {
-    markFriendBattled(friend.id)
-    setMeta(loadFriendMeta())
-    await onRequestBattle(friend.name)
-  }
-
   function addFriendManual() {
     const name = manualName.trim()
     if (!name) return
-    setFriends((prev) => {
-      if (prev.some((f) => f.name.toLowerCase() === name.toLowerCase())) return prev
-      const next = [
-        ...prev,
-        { id: `f-${Date.now()}`, name, addedAt: new Date().toISOString() },
-      ]
-      saveFriends(next)
-      return next
-    })
+    upsertFriend({ name })
+    refreshFriends()
     setManualName('')
   }
 
@@ -194,7 +198,7 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Invite real friends by text. Clubs live next door.
+          Share your link — they tap it, you&apos;re both friends. Then Invite to pick a mode.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
           Your name
@@ -241,10 +245,17 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
               boxShadow: '0 4px 0 #1d4a86',
             }}
           >
-            Text invite to a friend
+            Share friend link
+          </button>
+          <button
+            type="button"
+            onClick={() => void copyFriendLink()}
+            className="w-full rounded-xl bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
+          >
+            {copied ? 'Copied!' : 'Copy friend link'}
           </button>
           <p className="text-center text-xs font-semibold text-white/50">
-            Opens Messages / share — they tap your link to appear here.
+            When they open your link (after entering their name), you both become friends.
           </p>
           <div
             className="rounded-xl p-3"
@@ -272,7 +283,7 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
           </div>
           {sortedFriends.length === 0 ? (
             <p className="rounded-lg bg-[#221610] px-3 py-4 text-center text-sm font-semibold text-white/55 ring-1 ring-white/10">
-              No friends yet. Send a text invite or add a name.
+              No friends yet. Share your friend link — it&apos;s the easy way.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
@@ -288,27 +299,30 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
                     key={f.id}
                     className="rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
                   >
-                    <button
-                      type="button"
-                      onClick={() => void requestBattle(f)}
-                      disabled={isWaiting}
-                      className="flex w-full items-center justify-between text-left disabled:opacity-70"
-                    >
-                      <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
                         <p className="font-bold text-white">
                           {pinned ? '★ ' : ''}
                           {f.name}
                         </p>
                         <p className="text-[0.65rem] font-semibold text-white/50">
-                          {last
-                            ? `Last battle ${new Date(last).toLocaleDateString()}`
-                            : 'No battles yet'}
+                          {f.playerId ? 'Online invites ready' : 'Name-only (send them your link)'}
+                          {last ? ` · Last play ${new Date(last).toLocaleDateString()}` : ''}
                         </p>
                       </div>
-                      <span className="text-xs font-extrabold text-[#7dff9a]">
-                        {isWaiting ? 'Requesting…' : 'Battle'}
-                      </span>
-                    </button>
+                      <button
+                        type="button"
+                        disabled={isWaiting}
+                        onClick={() => setInviteTarget(f)}
+                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-extrabold text-[#1a1410] disabled:opacity-60"
+                        style={{
+                          background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
+                          boxShadow: '0 2px 0 #1a7a3a',
+                        }}
+                      >
+                        {isWaiting ? 'Waiting…' : 'Invite'}
+                      </button>
+                    </div>
                     {editingNoteId === f.id ? (
                       <input
                         autoFocus
@@ -338,21 +352,21 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
                       </button>
                       <button
                         type="button"
-                        onClick={() => void shareBattleLink(f)}
+                        onClick={() => void onInviteClub(f.name, f.playerId)}
                         className="text-[10px] font-extrabold uppercase tracking-wide text-[#4a9eff]"
                       >
-                        Share link
+                        Club invite
                       </button>
                       <button
                         type="button"
                         onClick={() => {
                           markFriendBattled(f.id)
                           setMeta(loadFriendMeta())
-                          onBattle(f.name)
+                          onBattle(f.name, 'classic')
                         }}
                         className="text-[10px] font-extrabold uppercase tracking-wide text-white/45"
                       >
-                        Play now
+                        Practice
                       </button>
                       <button
                         type="button"
@@ -369,6 +383,58 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
           )}
         </div>
       </div>
+
+      {inviteTarget ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl p-5"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
+            }}
+          >
+            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+              Invite {inviteTarget.name}
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-white/80">
+              Choose a game mode. They&apos;ll get Accept / Decline on their screen.
+            </p>
+            <button
+              type="button"
+              onClick={() => void sendInvite(inviteTarget, 'classic')}
+              className="mt-4 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{
+                background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+                boxShadow: '0 3px 0 #8a6a12',
+              }}
+            >
+              Classic battle
+            </button>
+            <button
+              type="button"
+              onClick={() => void sendInvite(inviteTarget, 'touchdown')}
+              className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
+              style={{
+                background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
+                boxShadow: '0 3px 0 #1d4a86',
+              }}
+            >
+              Touchdown
+            </button>
+            <button
+              type="button"
+              onClick={() => setInviteTarget(null)}
+              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-white/70 ring-1 ring-white/15"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

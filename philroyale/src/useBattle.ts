@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ARENA_COLS,
   ARENA_ROWS,
+  TOUCHDOWN_ZONE_ROWS,
+  TOUCHDOWN_WIN_SCORE,
   TOWERS,
   canDeployAllyAt,
   canDeployEnemyAt,
+  canDeployTouchdownAt,
   closestPointOnTower,
   distToTowerEdge,
   distUnitTileToTower,
@@ -18,6 +21,7 @@ import {
   steerTowardGoal,
   type Side,
 } from './arena'
+import type { GameMode } from './storage'
 import { getCharacter, DEFAULT_DECK, type CharacterDef } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
 import { cardLevelMult, scaledStat } from './progression'
@@ -258,9 +262,13 @@ function canSpawnAt(
   side: Side,
   towers: TowerHp[],
   live: ReadonlySet<string>,
+  mode: GameMode = 'classic',
 ): boolean {
   const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
   const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+  if (mode === 'touchdown') {
+    return canDeployTouchdownAt(clampedCol, clampedRow, side, live)
+  }
   return side === 'ally'
     ? canDeployAllyAt(clampedCol, clampedRow, towers, live)
     : canDeployEnemyAt(clampedCol, clampedRow, towers, live)
@@ -287,23 +295,26 @@ function tryEnemyAiDeploy(
   deckIndex: number,
   t: number,
   botLevel: number,
+  mode: GameMode = 'classic',
+  deckIds: string[] = DEFAULT_DECK,
 ): { unit: BattleUnit | null; elixir: number; deckIndex: number } {
   const lane = pickAiLane(units)
   const colBase = lane === 'left' ? 20 : 72
   const colSpan = 9
-  const rowBase = 8
-  const rowSpan = 21
+  const rowBase = mode === 'touchdown' ? 6 : 8
+  const rowSpan = mode === 'touchdown' ? 36 : 21
+  const deck = deckIds.length ? deckIds : DEFAULT_DECK
 
-  for (let attempt = 0; attempt < DEFAULT_DECK.length * 3; attempt++) {
-    const charId = DEFAULT_DECK[deckIndex % DEFAULT_DECK.length]!
-    deckIndex = (deckIndex + 1) % DEFAULT_DECK.length
+  for (let attempt = 0; attempt < deck.length * 3; attempt++) {
+    const charId = deck[deckIndex % deck.length]!
+    deckIndex = (deckIndex + 1) % deck.length
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
 
     for (let tileTry = 0; tileTry < 6; tileTry++) {
       const col = colBase + Math.floor(Math.random() * colSpan)
       const row = rowBase + Math.floor(Math.random() * rowSpan)
-      if (!canSpawnAt(col, row, 'enemy', towers, live)) continue
+      if (!canSpawnAt(col, row, 'enemy', towers, live, mode)) continue
       return {
         unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
@@ -477,19 +488,26 @@ export function useBattle(opts?: {
   allyLevels?: Record<string, number>
   /** Enemy bot card level (all units) */
   botLevel?: number
+  mode?: GameMode
+  /** Cards the AI may play (touchdown draft). */
+  enemyDeckIds?: string[]
 }) {
+  const mode = opts?.mode ?? 'classic'
   const [elixir, setElixir] = useState(5)
   const [enemyElixir, setEnemyElixir] = useState(5)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
   const [splats, setSplats] = useState<SplatFx[]>([])
   const [hearts, setHearts] = useState<RageHeart[]>([])
+  const [allyScore, setAllyScore] = useState(0)
+  const [enemyScore, setEnemyScore] = useState(0)
   const [towers, setTowers] = useState<TowerHp[]>(() =>
     TOWERS.map((t) => {
       const maxHp = towerMaxHp(t.kind)
+      const dead = mode === 'touchdown'
       return {
         id: t.id,
-        hp: maxHp,
+        hp: dead ? 0 : maxHp,
         maxHp,
         side: t.side,
         kind: t.kind,
@@ -508,6 +526,12 @@ export function useBattle(opts?: {
   allyLevelsRef.current = opts?.allyLevels ?? {}
   const botLevelRef = useRef(opts?.botLevel ?? 1)
   botLevelRef.current = opts?.botLevel ?? 1
+  const modeRef = useRef<GameMode>(mode)
+  modeRef.current = mode
+  const enemyDeckRef = useRef(opts?.enemyDeckIds ?? DEFAULT_DECK)
+  enemyDeckRef.current = opts?.enemyDeckIds ?? DEFAULT_DECK
+  const allyScoreRef = useRef(0)
+  const enemyScoreRef = useRef(0)
 
   const unitsRef = useRef(units)
   const towersRef = useRef(towers)
@@ -530,7 +554,7 @@ export function useBattle(opts?: {
     if (pausedRef.current) return false
     if (elixirRef.current < char.elixir) return false
     const live = liveTowerIdSet(towersRef.current)
-    if (!canSpawnAt(col, row, 'ally', towersRef.current, live)) return false
+    if (!canSpawnAt(col, row, 'ally', towersRef.current, live, modeRef.current)) return false
     const spawnT = performance.now()
     const level = allyLevelsRef.current[char.id] ?? 1
     setElixir((e) => e - char.elixir)
@@ -665,6 +689,8 @@ export function useBattle(opts?: {
           aiDeckIndexRef.current,
           t,
           botLevelRef.current,
+          modeRef.current,
+          enemyDeckRef.current,
         )
         aiDeckIndexRef.current = ai.deckIndex
         if (ai.unit) {
@@ -1116,6 +1142,28 @@ export function useBattle(opts?: {
         nextHearts = kept
       }
 
+      // Touchdown scoring — unit reaches the far end zone.
+      if (modeRef.current === 'touchdown') {
+        const keptTd: BattleUnit[] = []
+        for (const u of nextUnits) {
+          if (u.hp <= 0) continue
+          if (u.side === 'ally' && u.row < TOUCHDOWN_ZONE_ROWS) {
+            allyScoreRef.current += 1
+            setAllyScore(allyScoreRef.current)
+            unitsChanged = true
+            continue
+          }
+          if (u.side === 'enemy' && u.row > ARENA_ROWS - 1 - TOUCHDOWN_ZONE_ROWS) {
+            enemyScoreRef.current += 1
+            setEnemyScore(enemyScoreRef.current)
+            unitsChanged = true
+            continue
+          }
+          keptTd.push(u)
+        }
+        nextUnits = keptTd
+      }
+
       const filteredUnits = nextUnits.filter((u) => u.hp > 0)
       if (filteredUnits.length !== nextUnits.length) unitsChanged = true
 
@@ -1149,5 +1197,9 @@ export function useBattle(opts?: {
     setSelectedCharId,
     deploy,
     now,
+    mode,
+    allyScore,
+    enemyScore,
+    touchdownWinScore: TOUCHDOWN_WIN_SCORE,
   }
 }

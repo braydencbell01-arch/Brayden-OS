@@ -44,17 +44,38 @@ const FRIENDS_KEY = 'philroyale.friends'
 const MY_CLUB_KEY = 'philroyale.myClub'
 const MY_CLUB_META_KEY = 'philroyale.myClubMeta'
 const PLAYER_NAME_KEY = 'philroyale.playerName'
+const PLAYER_ID_KEY = 'philroyale.playerId.v1'
 const BATTLE_CHALLENGE_KEY = 'philroyale.battleChallenge'
 const BATTLE_INCOMING_KEY = 'philroyale.battleIncoming'
 const BATTLE_ACCEPTED_KEY = 'philroyale.battleAccepted'
+const PENDING_FRIEND_KEY = 'philroyale.pendingFriendLink'
+const INCOMING_CLUB_INVITE_KEY = 'philroyale.incomingClubInvite'
 
 export const BATTLE_CHANNEL_NAME = 'philroyale-battle'
+
+export type GameMode = 'classic' | 'touchdown'
 
 export type BattleChallenge = {
   challengeId: string
   fromName: string
   toName: string
+  fromPlayerId?: string
+  toPlayerId?: string
+  mode: GameMode
   createdAt: string
+}
+
+export type PendingFriendLink = {
+  playerId: string
+  name: string
+}
+
+export type ClubInviteIncoming = {
+  fromPlayerId: string
+  fromName: string
+  clubCode: string
+  clubName: string
+  at: string
 }
 
 export type BattleAccepted = {
@@ -65,12 +86,14 @@ export type BattleAccepted = {
 
 export type BattleChannelMessage =
   | { type: 'challenge'; challenge: BattleChallenge }
-  | { type: 'accept'; challengeId: string; acceptedBy: string }
+  | { type: 'accept'; challengeId: string; acceptedBy: string; mode?: GameMode }
   | { type: 'decline'; challengeId: string }
 
 export type Friend = {
   id: string
   name: string
+  /** Remote player id for cross-device invites (ntfy topic). */
+  playerId?: string
   /** When they joined via your invite link */
   addedAt: string
 }
@@ -145,6 +168,79 @@ export function savePlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim())
 }
 
+export function loadPlayerId(): string {
+  let id = localStorage.getItem(PLAYER_ID_KEY) || ''
+  if (!id) {
+    id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID().replace(/-/g, '')
+        : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`
+    localStorage.setItem(PLAYER_ID_KEY, id)
+  }
+  return id
+}
+
+export function upsertFriend(friend: {
+  name: string
+  playerId?: string
+}): Friend {
+  const friends = loadFriends()
+  const name = friend.name.trim()
+  const playerId = friend.playerId?.trim() || undefined
+  if (!name && !playerId) {
+    throw new Error('Friend needs a name or id')
+  }
+  const existingIdx = friends.findIndex((f) => {
+    if (playerId && f.playerId && f.playerId === playerId) return true
+    if (name && f.name.toLowerCase() === name.toLowerCase()) return true
+    return false
+  })
+  if (existingIdx >= 0) {
+    const prev = friends[existingIdx]!
+    const next: Friend = {
+      ...prev,
+      name: name || prev.name,
+      playerId: playerId || prev.playerId,
+    }
+    friends[existingIdx] = next
+    saveFriends(friends)
+    return next
+  }
+  const created: Friend = {
+    id: playerId || `f-${Date.now()}`,
+    name: name || 'Friend',
+    playerId,
+    addedAt: new Date().toISOString(),
+  }
+  friends.push(created)
+  saveFriends(friends)
+  return created
+}
+
+export function savePendingFriendLink(link: PendingFriendLink | null): void {
+  if (!link) {
+    localStorage.removeItem(PENDING_FRIEND_KEY)
+    return
+  }
+  localStorage.setItem(PENDING_FRIEND_KEY, JSON.stringify(link))
+}
+
+export function loadPendingFriendLink(): PendingFriendLink | null {
+  return readJson<PendingFriendLink | null>(PENDING_FRIEND_KEY, null)
+}
+
+export function saveIncomingClubInvite(invite: ClubInviteIncoming | null): void {
+  if (!invite) {
+    localStorage.removeItem(INCOMING_CLUB_INVITE_KEY)
+    return
+  }
+  localStorage.setItem(INCOMING_CLUB_INVITE_KEY, JSON.stringify(invite))
+}
+
+export function loadIncomingClubInvite(): ClubInviteIncoming | null {
+  return readJson<ClubInviteIncoming | null>(INCOMING_CLUB_INVITE_KEY, null)
+}
+
 export function siteOrigin(): string {
   if (typeof window === 'undefined') return 'https://braydencbell01-arch.github.io/Brayden-OS/philroyale/'
   const { origin, pathname } = window.location
@@ -161,10 +257,26 @@ export function clubInviteUrl(code: string): string {
   return u.toString()
 }
 
-export function friendInviteUrl(fromName: string): string {
+export function friendInviteUrl(fromName: string, fromPlayerId?: string): string {
   const u = new URL(siteOrigin())
-  u.searchParams.set('friend', fromName || 'PhilRoyale')
+  const name = fromName || 'PhilRoyale'
+  const id = fromPlayerId || loadPlayerId()
+  u.searchParams.set('addFriend', id)
+  u.searchParams.set('friendName', name)
+  // Legacy param still accepted
+  u.searchParams.set('friend', name)
   return u.toString()
+}
+
+export function parseFriendInviteFromUrl(
+  search = typeof window !== 'undefined' ? window.location.search : '',
+): PendingFriendLink | null {
+  const params = new URLSearchParams(search)
+  const playerId = (params.get('addFriend') || '').trim()
+  const name = (params.get('friendName') || params.get('friend') || '').trim()
+  if (!playerId && !name) return null
+  if (playerId && playerId === loadPlayerId()) return null
+  return { playerId: playerId || `name:${name.toLowerCase()}`, name: name || 'Friend' }
 }
 
 export function generateChallengeId(): string {
@@ -175,11 +287,17 @@ export function battleInviteUrl(
   fromName: string,
   toName: string,
   challengeId: string,
+  mode: GameMode = 'classic',
+  fromPlayerId?: string,
+  toPlayerId?: string,
 ): string {
   const u = new URL(siteOrigin())
   u.searchParams.set('battleFrom', fromName || 'Player')
   u.searchParams.set('battleTo', toName || 'Friend')
   u.searchParams.set('challenge', challengeId)
+  u.searchParams.set('mode', mode)
+  if (fromPlayerId) u.searchParams.set('fromId', fromPlayerId)
+  if (toPlayerId) u.searchParams.set('toId', toPlayerId)
   return u.toString()
 }
 
@@ -191,16 +309,29 @@ export function parseBattleChallengeFromUrl(
   const toName = params.get('battleTo')?.trim()
   const challengeId = params.get('challenge')?.trim()
   if (!fromName || !toName || !challengeId) return null
+  const modeRaw = params.get('mode')?.trim()
+  const mode: GameMode = modeRaw === 'touchdown' ? 'touchdown' : 'classic'
   return {
     challengeId,
     fromName,
     toName,
+    fromPlayerId: params.get('fromId')?.trim() || undefined,
+    toPlayerId: params.get('toId')?.trim() || undefined,
+    mode,
     createdAt: new Date().toISOString(),
   }
 }
 
+function normalizeChallenge(raw: BattleChallenge | null): BattleChallenge | null {
+  if (!raw) return null
+  return {
+    ...raw,
+    mode: raw.mode === 'touchdown' ? 'touchdown' : 'classic',
+  }
+}
+
 export function loadOutgoingChallenge(): BattleChallenge | null {
-  return readJson<BattleChallenge | null>(BATTLE_CHALLENGE_KEY, null)
+  return normalizeChallenge(readJson<BattleChallenge | null>(BATTLE_CHALLENGE_KEY, null))
 }
 
 export function saveOutgoingChallenge(challenge: BattleChallenge): void {
@@ -212,7 +343,7 @@ export function clearOutgoingChallenge(): void {
 }
 
 export function loadIncomingChallenge(): BattleChallenge | null {
-  return readJson<BattleChallenge | null>(BATTLE_INCOMING_KEY, null)
+  return normalizeChallenge(readJson<BattleChallenge | null>(BATTLE_INCOMING_KEY, null))
 }
 
 export function saveIncomingChallenge(challenge: BattleChallenge): void {
@@ -239,21 +370,30 @@ export function namesMatch(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase()
 }
 
-export function isChallengeForMe(challenge: BattleChallenge): boolean {
-  const me = loadPlayerName().trim()
-  if (!me) return false
-  return namesMatch(challenge.toName, me) && !namesMatch(challenge.fromName, me)
-}
-
-export function createBattleChallenge(toName: string): BattleChallenge {
+export function createBattleChallenge(
+  toName: string,
+  opts?: { mode?: GameMode; toPlayerId?: string },
+): BattleChallenge {
   const challenge: BattleChallenge = {
     challengeId: generateChallengeId(),
     fromName: loadPlayerName().trim() || 'Player',
     toName: toName.trim(),
+    fromPlayerId: loadPlayerId(),
+    toPlayerId: opts?.toPlayerId,
+    mode: opts?.mode ?? 'classic',
     createdAt: new Date().toISOString(),
   }
   saveOutgoingChallenge(challenge)
   return challenge
+}
+
+export function isChallengeForMe(challenge: BattleChallenge): boolean {
+  const me = loadPlayerName().trim()
+  const myId = loadPlayerId()
+  if (challenge.fromPlayerId && challenge.fromPlayerId === myId) return false
+  if (challenge.toPlayerId && challenge.toPlayerId === myId) return true
+  if (!me) return false
+  return namesMatch(challenge.toName, me) && !namesMatch(challenge.fromName, me)
 }
 
 export function postBattleMessage(message: BattleChannelMessage): void {
