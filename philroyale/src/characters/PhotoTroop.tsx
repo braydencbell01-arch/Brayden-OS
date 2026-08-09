@@ -445,43 +445,62 @@ function HugOverlay() {
 }
 
 function GunOverlay() {
+  // Both barrels aim local +X (same way). PhotoTroop scaleX-flips with facing,
+  // so after flip they both point at the enemy — not at each other.
   return (
     <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
-      {/* Dual pistols raised */}
+      {/* Left-hand pistol — barrel forward */}
       <motion.g
-        initial={{ rotate: 20, y: 8 }}
-        animate={{ rotate: [-8, -12, -8], y: [0, -1, 0] }}
+        initial={{ rotate: -6, y: 6 }}
+        animate={{ rotate: [-16, -20, -16], y: [0, -1, 0] }}
         transition={{ duration: 0.35 }}
-        style={{ transformOrigin: '22px 52px' }}
+        style={{ transformOrigin: '16px 56px' }}
       >
-        <rect x="8" y="48" width="16" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
-        <rect x="20" y="46" width="10" height="4" rx="1" fill="#4a4a52" />
-        <rect x="6" y="52" width="5" height="8" rx="1" fill="#1a1a20" />
+        <rect x="8" y="52" width="18" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
+        <rect x="22" y="50.5" width="12" height="4" rx="1" fill="#4a4a52" />
+        <rect x="6" y="56" width="5" height="9" rx="1" fill="#1a1a20" />
         <motion.circle
-          cx="32"
-          cy="48"
-          r="3"
+          cx="36"
+          cy="52.5"
+          r="3.2"
           fill="#ffe08a"
-          animate={{ opacity: [0, 1, 0], scale: [0.4, 1.3, 0.2] }}
+          animate={{ opacity: [0, 1, 0], scale: [0.35, 1.35, 0.2] }}
           transition={{ duration: 0.28, times: [0, 0.2, 1] }}
         />
-      </motion.g>
-      <motion.g
-        initial={{ rotate: -20, y: 8 }}
-        animate={{ rotate: [8, 12, 8], y: [0, -1, 0] }}
-        transition={{ duration: 0.35, delay: 0.12 }}
-        style={{ transformOrigin: '58px 52px' }}
-      >
-        <rect x="56" y="48" width="16" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
-        <rect x="50" y="46" width="10" height="4" rx="1" fill="#4a4a52" />
-        <rect x="69" y="52" width="5" height="8" rx="1" fill="#1a1a20" />
         <motion.circle
-          cx="48"
-          cy="48"
-          r="3"
+          cx="40"
+          cy="52"
+          r="1.6"
+          fill="#fff6c8"
+          animate={{ opacity: [0, 0.9, 0], scale: [0.3, 1.6, 0.2] }}
+          transition={{ duration: 0.28, times: [0, 0.18, 1] }}
+        />
+      </motion.g>
+      {/* Right-hand pistol — same aim direction, staggered second shot */}
+      <motion.g
+        initial={{ rotate: -4, y: 6 }}
+        animate={{ rotate: [-14, -18, -14], y: [0, -1, 0] }}
+        transition={{ duration: 0.35, delay: 0.12 }}
+        style={{ transformOrigin: '44px 56px' }}
+      >
+        <rect x="36" y="52" width="18" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
+        <rect x="50" y="50.5" width="12" height="4" rx="1" fill="#4a4a52" />
+        <rect x="34" y="56" width="5" height="9" rx="1" fill="#1a1a20" />
+        <motion.circle
+          cx="64"
+          cy="52.5"
+          r="3.2"
           fill="#ffe08a"
-          animate={{ opacity: [0, 0, 1, 0], scale: [0.4, 0.4, 1.3, 0.2] }}
-          transition={{ duration: 0.4, times: [0, 0.35, 0.5, 1] }}
+          animate={{ opacity: [0, 0, 1, 0], scale: [0.35, 0.35, 1.35, 0.2] }}
+          transition={{ duration: 0.42, times: [0, 0.32, 0.5, 1] }}
+        />
+        <motion.circle
+          cx="68"
+          cy="52"
+          r="1.6"
+          fill="#fff6c8"
+          animate={{ opacity: [0, 0, 0.9, 0], scale: [0.3, 0.3, 1.6, 0.2] }}
+          transition={{ duration: 0.42, times: [0, 0.32, 0.48, 1] }}
         />
       </motion.g>
     </svg>
