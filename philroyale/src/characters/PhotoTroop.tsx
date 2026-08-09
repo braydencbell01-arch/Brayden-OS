@@ -12,8 +12,8 @@ type Props = {
   portrait?: boolean
   objectPos?: string
   enraged?: boolean
-  gait?: 'jog' | 'run' | 'dog'
-  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'none'
+  gait?: 'jog' | 'run' | 'dog' | 'limp'
+  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'none'
   /** Pants / fur color for running leg overlays */
   legColor?: string
   shoeColor?: string
@@ -48,7 +48,8 @@ export function PhotoTroop({
 
   const walking = anim === 'walk'
   const attacking = anim === 'attack'
-  const duration = gait === 'dog' ? 0.28 : gait === 'jog' ? 0.36 : 0.4
+  const duration =
+    gait === 'dog' ? 0.28 : gait === 'limp' ? 0.72 : gait === 'jog' ? 0.36 : 0.4
 
   if (portrait) {
     return (
@@ -87,19 +88,36 @@ export function PhotoTroop({
                   ? { y: [0, -2, 0], rotate: [0, -2, 2, 0] }
                   : attack === 'bite'
                     ? { x: [0, 12, 16, 0], y: [0, -5, 2, 0], rotate: [0, -4, 8, 0] }
-                    : { y: [0, -3, 0] }
+                    : attack === 'hug'
+                      ? { y: [0, -2, 0], scale: [1, 1.04, 1] }
+                      : { y: [0, -3, 0] }
             : walking
-              ? {
-                  // Running stride: bounce + lean (no scaleX — that looked like a twin)
-                  y: [0, -6, -1, -7, 0],
-                  rotate: [0, 5, 0, -5, 0],
-                  scaleY: [1, 0.94, 1, 0.93, 1],
-                }
+              ? gait === 'limp'
+                ? {
+                    // Heavy old limp — dip on the bad leg, slow rock
+                    y: [0, -2, 0, -5, 0],
+                    rotate: [0, 3, 0, -7, 0],
+                    x: [0, 1, 0, -2, 0],
+                    scaleY: [1, 0.98, 1, 0.94, 1],
+                  }
+                : {
+                    // Running stride: bounce + lean (no scaleX — that looked like a twin)
+                    y: [0, -6, -1, -7, 0],
+                    rotate: [0, 5, 0, -5, 0],
+                    scaleY: [1, 0.94, 1, 0.93, 1],
+                  }
               : { y: [0, -1.5, 0] }
         }
         transition={
           attacking
-            ? { duration: attack === 'whip' ? 0.72 : attack === 'sundae' ? 0.55 : 0.36 }
+            ? {
+                duration:
+                  attack === 'whip' || attack === 'hug'
+                    ? 0.72
+                    : attack === 'sundae'
+                      ? 0.55
+                      : 0.36,
+              }
             : walking
               ? { duration, repeat: Infinity, ease: 'easeInOut' }
               : { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
@@ -130,6 +148,7 @@ export function PhotoTroop({
         {attacking && attack === 'whip' ? <WhipOverlay /> : null}
         {attacking && attack === 'sundae' ? <SundaeThrowOverlay /> : null}
         {attacking && attack === 'bite' ? <BiteOverlay enraged={enraged} /> : null}
+        {attacking && attack === 'hug' ? <HugOverlay /> : null}
 
         {enraged ? (
           <div
@@ -152,14 +171,15 @@ function RunLegs({
   legColor,
   shoeColor,
 }: {
-  gait: 'jog' | 'run' | 'dog'
+  gait: 'jog' | 'run' | 'dog' | 'limp'
   walking: boolean
   legColor: string
   shoeColor: string
 }) {
   if (!walking) return null
-  const dur = gait === 'dog' ? 0.28 : gait === 'jog' ? 0.36 : 0.4
+  const dur = gait === 'dog' ? 0.28 : gait === 'limp' ? 0.72 : gait === 'jog' ? 0.36 : 0.4
   const dog = gait === 'dog'
+  const limp = gait === 'limp'
   const color = legColor
   const accent = shoeColor
 
@@ -198,7 +218,13 @@ function RunLegs({
   return (
     <svg viewBox="0 0 80 48" className="absolute bottom-0 left-1/2 h-[32%] w-[70%] -translate-x-1/2" aria-hidden>
       <motion.g
-        animate={walking ? { rotate: [28, -32, 28] } : { rotate: 6 }}
+        animate={
+          walking
+            ? limp
+              ? { rotate: [8, -6, 8, -18, 8], y: [0, 0, 0, 3, 0] }
+              : { rotate: [28, -32, 28] }
+            : { rotate: 6 }
+        }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
         style={{ transformOrigin: '30px 6px' }}
       >
@@ -206,13 +232,78 @@ function RunLegs({
         <ellipse cx="31" cy="38" rx="7" ry="3" fill={accent} />
       </motion.g>
       <motion.g
-        animate={walking ? { rotate: [-32, 28, -32] } : { rotate: -6 }}
+        animate={
+          walking
+            ? limp
+              ? { rotate: [-6, 10, -6, 22, -6], y: [0, 1, 0, 0, 0] }
+              : { rotate: [-32, 28, -32] }
+            : { rotate: -6 }
+        }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
         style={{ transformOrigin: '46px 6px' }}
       >
         <path d="M42 4 Q44 22 43 36 L51 36 Q52 20 50 4 Z" fill={color} />
         <ellipse cx="47" cy="38" rx="7" ry="3" fill={accent} />
       </motion.g>
+    </svg>
+  )
+}
+
+function HugOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+      {/* Giant grab arms grow out and clamp inward */}
+      <motion.g
+        initial={{ scale: 0.4, opacity: 0.2 }}
+        animate={{ scale: [0.5, 1.55, 1.35], opacity: [0.4, 1, 1], x: [0, -6, 2] }}
+        transition={{ duration: 0.72, times: [0, 0.45, 1] }}
+        style={{ transformOrigin: '18px 56px' }}
+      >
+        <path
+          d="M22 48 Q6 52 2 70 Q4 82 16 78 Q22 66 26 54 Z"
+          fill="#e8b888"
+          stroke="#a86838"
+          strokeWidth="1"
+        />
+        <path d="M20 50 Q12 48 8 56" fill="none" stroke="#2a3a6a" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="6" cy="74" rx="7" ry="5" fill="#e8b888" stroke="#a86838" strokeWidth="0.8" />
+      </motion.g>
+      <motion.g
+        initial={{ scale: 0.4, opacity: 0.2 }}
+        animate={{ scale: [0.5, 1.55, 1.35], opacity: [0.4, 1, 1], x: [0, 6, -2] }}
+        transition={{ duration: 0.72, times: [0, 0.45, 1] }}
+        style={{ transformOrigin: '62px 56px' }}
+      >
+        <path
+          d="M58 48 Q74 52 78 70 Q76 82 64 78 Q58 66 54 54 Z"
+          fill="#e8b888"
+          stroke="#a86838"
+          strokeWidth="1"
+        />
+        <path d="M60 50 Q68 48 72 56" fill="none" stroke="#2a3a6a" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="74" cy="74" rx="7" ry="5" fill="#e8b888" stroke="#a86838" strokeWidth="0.8" />
+      </motion.g>
+      {/* Hearts float up during the hug */}
+      {[
+        { x: 28, delay: 0 },
+        { x: 40, delay: 0.12 },
+        { x: 52, delay: 0.22 },
+        { x: 34, delay: 0.32 },
+      ].map((h, i) => (
+        <motion.g
+          key={i}
+          initial={{ x: h.x, y: 58, opacity: 0, scale: 0.4 }}
+          animate={{ y: [58, 28, 8], opacity: [0, 1, 0], scale: [0.4, 1.1, 0.8] }}
+          transition={{ duration: 0.7, delay: h.delay, ease: 'easeOut' }}
+        >
+          <path
+            d="M0 3 C0 0 4 0 5 3 C6 0 10 0 10 3 C10 6 5 10 5 10 C5 10 0 6 0 3 Z"
+            fill="#ff4d6d"
+            stroke="#c9184a"
+            strokeWidth="0.5"
+          />
+        </motion.g>
+      ))}
     </svg>
   )
 }

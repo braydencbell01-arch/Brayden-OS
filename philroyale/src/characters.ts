@@ -110,7 +110,7 @@ export const PETE: CharacterDef = {
   moveSpeed: 1.5,
   attackDelaySec: 3,
   hue: 25,
-  blurb: 'Death Hug pulls enemies in close for big damage.',
+  blurb: 'Very old — limps into range, then Death Hug: giant arms yank foes in close.',
   attacks: [
     {
       id: 'deathHug',

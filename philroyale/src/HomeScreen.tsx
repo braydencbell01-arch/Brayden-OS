@@ -49,7 +49,7 @@ export function HomeScreen({ onPlay }: Props) {
             Phil Royale
           </h1>
           <p className="mt-3 max-w-[17rem] text-sm font-bold leading-snug text-white/85">
-            Clash-style arena. Cards: Phil and Pete — more coming.
+            Clash-style arena. Phil, Pete, Finley, Jeremy, and more.
           </p>
         </motion.div>
 

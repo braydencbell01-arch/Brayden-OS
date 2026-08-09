@@ -45,7 +45,13 @@ export function UnitToken({
         className="relative w-full"
         style={{
           aspectRatio:
-            charId === 'finley' ? '5 / 4' : charId === 'jeremy' ? '3 / 5.4' : '3 / 4.4',
+            charId === 'finley'
+              ? '5 / 4'
+              : charId === 'jeremy'
+                ? '3 / 5.4'
+                : charId === 'pete'
+                  ? '3 / 4.2'
+                  : '3 / 4.4',
         }}
       >
         <CharacterModel

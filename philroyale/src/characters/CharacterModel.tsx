@@ -2,6 +2,7 @@ import type { AttackId } from '../characters'
 import { CrUnitModel } from './CrUnitModel'
 import { FinleyModel } from './FinleyModel'
 import { JeremyModel } from './JeremyModel'
+import { PeteModel } from './PeteModel'
 import { PhilModel, type CharacterAnim } from './PhilModel'
 
 type Props = {
@@ -29,21 +30,7 @@ export function CharacterModel({
   }
 
   if (charId === 'pete') {
-    return (
-      <CrUnitModel
-        anim={anim}
-        facing={facing}
-        portrait={portrait}
-        build="hulk"
-        shirt="#e07030"
-        shirtDark="#8a3010"
-        pants="#3a3a48"
-        pantsDark="#1a1a22"
-        accent="#f5d76e"
-        hair="#3a2818"
-        hat="bandana"
-      />
-    )
+    return <PeteModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   }
 
   if (charId === 'beans') {
