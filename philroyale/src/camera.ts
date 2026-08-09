@@ -1,6 +1,6 @@
 /** Mild CR look-in — keep the board filling the screen. */
-export const ARENA_PERSPECTIVE_PX = 1800
-export const ARENA_TILT_DEG = 18
+export const ARENA_PERSPECTIVE_PX = 2000
+export const ARENA_TILT_DEG = 16
 
 /**
  * Screen Y → plane Y compensation for rotateX foreshortening.

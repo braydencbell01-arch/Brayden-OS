@@ -7,7 +7,8 @@ export function ClashMap() {
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
   const rightLane = fieldX + (77 / 100) * fieldW
-  const pathW = (11 / 100) * fieldW // matches bridge col span 18–28 / 72–82
+  /** Full-length lane thickness — matches the thick near-king dirt. */
+  const pathW = (17 / 100) * fieldW
   const riverY = 312
   const riverH = 26
 
@@ -157,9 +158,9 @@ export function ClashMap() {
       <Bridge3D cx={leftLane} w={pathW} riverY={riverY} riverH={riverH} />
       <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
-      <CrownTower x={180} y={48} king enemy />
-      <CrownTower x={leftLane} y={118} king={false} enemy />
-      <CrownTower x={rightLane} y={118} king={false} enemy />
+      <CrownTower x={180} y={62} king enemy />
+      <CrownTower x={leftLane} y={128} king={false} enemy />
+      <CrownTower x={rightLane} y={128} king={false} enemy />
       <CrownTower x={180} y={548} king enemy={false} />
       <CrownTower x={leftLane} y={498} king={false} enemy={false} />
       <CrownTower x={rightLane} y={498} king={false} enemy={false} />

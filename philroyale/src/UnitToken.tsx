@@ -41,21 +41,10 @@ export function UnitToken({
         transformOrigin: '50% 100%',
       }}
     >
-      <div className="relative mb-0.5 h-[0.55rem] w-[85%] overflow-hidden rounded-[2px] bg-black/70 ring-1 ring-black/40">
-        <div
-          className="h-full"
-          style={{
-            width: `${pct * 100}%`,
-            background: enemy
-              ? 'linear-gradient(180deg,#ff8a7a,#d63c2e)'
-              : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
-          }}
-        />
-        <span className="absolute inset-0 flex items-center justify-center text-[0.4rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
-          {Math.max(0, Math.round(hp))}
-        </span>
-      </div>
-      <div className="relative w-full" style={{ aspectRatio: '3 / 4.6' }}>
+      <div
+        className="relative w-full"
+        style={{ aspectRatio: charId === 'finley' ? '5 / 4' : '3 / 4.4' }}
+      >
         <CharacterModel
           charId={charId}
           anim={anim}
@@ -65,6 +54,21 @@ export function UnitToken({
           initial={def.initial}
           enraged={enraged}
         />
+      </div>
+      {/* Unit HP at feet — CR-style */}
+      <div className="relative mt-0.5 h-[0.5rem] w-[85%] overflow-hidden rounded-[2px] bg-black/70 ring-1 ring-black/40">
+        <div
+          className="h-full"
+          style={{
+            width: `${pct * 100}%`,
+            background: enemy
+              ? 'linear-gradient(180deg,#ff8a7a,#d63c2e)'
+              : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
+          }}
+        />
+        <span className="absolute inset-0 flex items-center justify-center text-[0.38rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+          {Math.max(0, Math.round(hp))}
+        </span>
       </div>
     </div>
   )

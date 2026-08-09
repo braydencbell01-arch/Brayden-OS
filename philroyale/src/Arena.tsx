@@ -158,8 +158,8 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         ref={ref}
         className={`relative h-full w-full origin-bottom ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
         style={{
-          // Scale past foreshortening so the grass fills the HUD→dock frame.
-          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.14, 1.32)`,
+          // Extra scale + lift so the far edge (enemy king) isn't clipped to body black.
+          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.22, 1.48) translateY(2%)`,
           transformStyle: 'preserve-3d',
         }}
         role={onArenaPointerDown ? 'application' : 'img'}
@@ -212,14 +212,22 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
               style={{ ...style, zIndex: 5 + z }}
             >
               <div
-                className="absolute left-1/2 w-[170%] max-w-[5rem] -translate-x-1/2"
+                className="absolute left-1/2 w-[175%] max-w-[5.25rem] -translate-x-1/2"
                 style={{
-                  top: t.kind === 'king' ? '-55%' : '-70%',
+                  // All tower HP bars sit on the tower base (like ally king).
+                  bottom: t.kind === 'king' ? '-8%' : '-18%',
                   transform: `rotateX(${-ARENA_TILT_DEG}deg)`,
                   transformOrigin: '50% 100%',
                 }}
               >
-                <div className="relative h-[0.6rem] overflow-hidden rounded-[2px] bg-black/75 ring-1 ring-black/50">
+                <div
+                  className="relative h-[0.55rem] overflow-hidden rounded-[2px] bg-black/75"
+                  style={{
+                    boxShadow: enemy
+                      ? '0 0 0 1px #8a2018, 0 1px 3px #0008'
+                      : '0 0 0 1.5px #c9a227, 0 1px 3px #0008',
+                  }}
+                >
                   <div
                     className="h-full"
                     style={{
@@ -229,7 +237,7 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
                         : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
                     }}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center text-[0.42rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+                  <span className="absolute inset-0 flex items-center justify-center text-[0.4rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
                     {Math.round(th.hp)}
                   </span>
                 </div>

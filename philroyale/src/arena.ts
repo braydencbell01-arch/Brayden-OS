@@ -26,9 +26,9 @@ export type TowerSlot = {
 
 /** King towers 5×5, princess towers 3×3. */
 export const TOWERS: TowerSlot[] = [
-  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 48, row: 2, w: 5, h: 5 },
-  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 22, row: 15, w: 3, h: 3 },
-  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 76, row: 15, w: 3, h: 3 },
+  { id: 'enemy-king', side: 'enemy', kind: 'king', col: 48, row: 5, w: 5, h: 5 },
+  { id: 'enemy-left', side: 'enemy', kind: 'princess', col: 22, row: 17, w: 3, h: 3 },
+  { id: 'enemy-right', side: 'enemy', kind: 'princess', col: 76, row: 17, w: 3, h: 3 },
   /** Ally king nudged up so the full tower clears the compact card dock. */
   { id: 'ally-king', side: 'ally', kind: 'king', col: 48, row: 134, w: 5, h: 5 },
   { id: 'ally-left', side: 'ally', kind: 'princess', col: 22, row: 124, w: 3, h: 3 },

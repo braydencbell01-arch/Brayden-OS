@@ -306,8 +306,8 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     result === 'victory' ? 'Victory!' : result === 'defeat' ? 'Defeat' : result === 'draw' ? 'Draw' : null
 
   return (
-    <div className="relative h-full min-h-0 overflow-hidden bg-[#2a6e34]">
-      {/* Full-bleed map — HUD / cards overlay on top of the grass. */}
+    <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
+      {/* Full-bleed map — grass fills any tilt gaps so body black never shows. */}
       <div className="absolute inset-0">
         <Arena
           ref={arenaRef}
@@ -395,61 +395,48 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </Arena>
       </div>
 
-      {/* Profile + timer float on the map (no opaque bar / no map crop). */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-1.5 pt-[max(0.2rem,env(safe-area-inset-top))]">
-        <div className="pointer-events-auto flex items-start gap-1">
-          <button
-            type="button"
-            onClick={onExit}
-            className="mt-0.5 rounded bg-black/45 px-1 py-px text-[0.55rem] font-extrabold text-white/80 drop-shadow-[0_1px_2px_#000]"
-          >
-            ✕
-          </button>
+      {/* HUD overlays grass — profile hugging the left edge, exit beside the timer. */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between pt-[max(0.15rem,env(safe-area-inset-top))]">
+        <div
+          className="pointer-events-auto flex items-center gap-1 rounded-r-sm py-0.5 pl-0.5 pr-1.5"
+          style={{
+            background: 'linear-gradient(180deg,#4a3424bb,#241810bb)',
+            boxShadow: '0 2px 6px #00000066, inset 0 1px 0 #c9a22733',
+          }}
+        >
           <div
-            className="flex items-center gap-1 rounded-sm py-0.5 pl-0.5 pr-1.5"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white"
             style={{
-              background: 'linear-gradient(180deg,#4a3424cc,#241810cc)',
-              boxShadow: '0 2px 6px #00000077, inset 0 1px 0 #c9a22733',
+              background: 'linear-gradient(160deg,#ff9a7a,#c63c2e)',
+              boxShadow: '0 0 0 2px #f5d76e, 0 0 0 3px #8a2018',
             }}
           >
-            <div className="relative">
-              <div
-                className="flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white"
-                style={{
-                  background: 'linear-gradient(160deg,#ff9a7a,#c63c2e)',
-                  boxShadow: '0 0 0 2px #f5d76e, 0 0 0 3px #8a2018',
-                }}
-              >
-                {foeName.slice(0, 1).toUpperCase()}
-              </div>
-              <div
-                className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full"
-                style={{
-                  background: 'linear-gradient(180deg,#7ec8ff,#2f6fbf)',
-                  boxShadow: '0 0 0 1px #1a3a6a',
-                }}
-                title="League"
-              />
-            </div>
-            <div className="min-w-0 leading-none">
-              <p className="max-w-[6rem] truncate text-[0.65rem] font-extrabold text-white drop-shadow-[0_1px_1px_#000]">
-                {foeName}
-              </p>
-              <p className="mt-0.5 text-[0.45rem] font-bold text-[#f5d76e]/90">
-                <span className="inline-block h-1.5 w-1.5 rounded-sm bg-[#f5d76e] align-middle" />{' '}
-                —
-              </p>
-            </div>
+            {foeName.slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0 leading-none">
+            <p className="max-w-[4.5rem] truncate text-[0.6rem] font-extrabold text-white drop-shadow-[0_1px_1px_#000]">
+              {foeName}
+            </p>
           </div>
         </div>
 
-        <div className="rounded-sm bg-black/35 px-1.5 py-0.5 text-right leading-none backdrop-blur-[2px]">
-          <p className="text-[0.45rem] font-extrabold uppercase tracking-wide text-white/80 drop-shadow-[0_1px_1px_#000]">
-            Time left
-          </p>
-          <p className="font-[family-name:var(--font-display)] text-[1.05rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
-            {mm}:{ss}
-          </p>
+        <div className="pointer-events-auto mr-1 flex items-start gap-1">
+          <div className="rounded-sm bg-black/40 px-1.5 py-0.5 text-right leading-none backdrop-blur-[2px]">
+            <p className="text-[0.45rem] font-extrabold uppercase tracking-wide text-white/80 drop-shadow-[0_1px_1px_#000]">
+              Time left
+            </p>
+            <p className="font-[family-name:var(--font-display)] text-[1.05rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
+              {mm}:{ss}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onExit}
+            className="mt-0.5 rounded-sm bg-black/50 px-1.5 py-1 text-[0.65rem] font-extrabold text-white/85 drop-shadow-[0_1px_2px_#000]"
+            aria-label="Leave battle"
+          >
+            ✕
+          </button>
         </div>
       </header>
 
