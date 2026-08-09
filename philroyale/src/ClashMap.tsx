@@ -95,7 +95,7 @@ export function ClashMap({ destroyedIds }: Props) {
           <stop offset="100%" stopColor="#2a2820" />
         </linearGradient>
 
-        {/* ——— Terrain textures ——— */}
+        {/* ——— Terrain textures (layout-neutral — visual only) ——— */}
         <filter id="grassNoise" x="0%" y="0%" width="100%" height="100%">
           <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n" />
           <feColorMatrix
@@ -108,6 +108,43 @@ export function ClashMap({ destroyedIds }: Props) {
             result="tint"
           />
         </filter>
+        <filter id="grassBump" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" seed="11" result="bump" />
+          <feDiffuseLighting in="bump" lightingColor="#d8ffc8" surfaceScale="2.4" result="lit">
+            <feDistantLight azimuth="225" elevation="48" />
+          </feDiffuseLighting>
+          <feComposite in="lit" in2="SourceGraphic" operator="in" result="clip" />
+          <feBlend in="SourceGraphic" in2="clip" mode="soft-light" />
+        </filter>
+        <filter id="coarseTerrain" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="19" result="c" />
+          <feColorMatrix
+            in="c"
+            type="matrix"
+            values="0 0 0 0 0.12
+                    0 0 0 0 0.38
+                    0 0 0 0 0.14
+                    0 0 0 0.42 0"
+          />
+        </filter>
+        <linearGradient id="groundBevel" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#0a2010" stopOpacity="0.35" />
+          <stop offset="18%" stopColor="#0a2010" stopOpacity="0.08" />
+          <stop offset="55%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="82%" stopColor="#ffffff" stopOpacity="0.07" />
+          <stop offset="100%" stopColor="#fff8d0" stopOpacity="0.14" />
+        </linearGradient>
+        <linearGradient id="sideLight" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#000000" stopOpacity="0.22" />
+          <stop offset="22%" stopColor="#000000" stopOpacity="0.04" />
+          <stop offset="78%" stopColor="#fff6c8" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0.18" />
+        </linearGradient>
+        <radialGradient id="sunPool" cx="32%" cy="22%" r="58%">
+          <stop offset="0%" stopColor="#fff6a8" stopOpacity="0.16" />
+          <stop offset="45%" stopColor="#c8e878" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+        </radialGradient>
         <pattern id="grassBlades" width="18" height="14" patternUnits="userSpaceOnUse">
           <path d="M2 14 Q3 6 2 2" fill="none" stroke="#2e7d32" strokeWidth="0.7" opacity="0.35" />
           <path d="M6 14 Q8 5 7 1" fill="none" stroke="#66bb6a" strokeWidth="0.65" opacity="0.3" />
@@ -121,6 +158,24 @@ export function ClashMap({ destroyedIds }: Props) {
           <ellipse cx="34" cy="10" rx="9" ry="5" fill="#1b5e20" opacity="0.1" />
           <ellipse cx="28" cy="30" rx="11" ry="5" fill="#66bb6a" opacity="0.08" />
         </pattern>
+        <pattern id="clodScatter" width="56" height="48" patternUnits="userSpaceOnUse">
+          <ellipse cx="10" cy="14" rx="5" ry="2.4" fill="#5a3a18" opacity="0.07" />
+          <ellipse cx="38" cy="28" rx="6" ry="2.8" fill="#1b5e20" opacity="0.09" />
+          <ellipse cx="24" cy="40" rx="4" ry="1.8" fill="#8a6a30" opacity="0.06" />
+          <circle cx="44" cy="10" r="1.1" fill="#c9a227" opacity="0.1" />
+          <circle cx="16" cy="32" r="0.8" fill="#fff8e0" opacity="0.08" />
+        </pattern>
+        <linearGradient id="plankBevel" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#3a2010" stopOpacity="0.55" />
+          <stop offset="18%" stopColor="#ffffff" stopOpacity="0.14" />
+          <stop offset="55%" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="100%" stopColor="#1a0c04" stopOpacity="0.45" />
+        </linearGradient>
+        <linearGradient id="riverSpecular" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.38" />
+          <stop offset="35%" stopColor="#b8e8ff" stopOpacity="0.12" />
+          <stop offset="100%" stopColor="#041828" stopOpacity="0.2" />
+        </linearGradient>
         <pattern id="woodGrain" width="8" height="22" patternUnits="userSpaceOnUse">
           <rect width="8" height="22" fill="#a07038" opacity="0" />
           <path d="M1 0 Q3 8 1.5 14 T2 22" fill="none" stroke="#5a3418" strokeWidth="0.55" opacity="0.35" />
@@ -168,32 +223,50 @@ export function ClashMap({ destroyedIds }: Props) {
         </filter>
       </defs>
 
-      {/* Grass base + texture layers */}
+      {/* Grass base + richer 3D texture layers (no layout shift) */}
       <rect width="360" height="640" fill="url(#grassGrad)" />
-      <rect width="360" height="640" filter="url(#grassNoise)" opacity="0.55" />
+      <rect width="360" height="640" filter="url(#coarseTerrain)" opacity="0.7" />
+      <rect width="360" height="640" filter="url(#grassBump)" opacity="0.85" />
+      <rect width="360" height="640" filter="url(#grassNoise)" opacity="0.5" />
       <rect width="360" height="640" fill="url(#turfPatches)" />
+      <rect width="360" height="640" fill="url(#clodScatter)" />
       <rect width="360" height="640" fill="url(#grassBlades)" />
+      {/* Soft terrain mounds — decorative volume only */}
+      <ellipse cx="70" cy="180" rx="58" ry="28" fill="#1b5e20" opacity="0.1" />
+      <ellipse cx="290" cy="210" rx="64" ry="30" fill="#2e7d32" opacity="0.09" />
+      <ellipse cx="100" cy="470" rx="70" ry="34" fill="#66bb6a" opacity="0.08" />
+      <ellipse cx="270" cy="500" rx="62" ry="30" fill="#1b5e20" opacity="0.1" />
+      <ellipse cx="180" cy="390" rx="90" ry="22" fill="#0a2810" opacity="0.08" />
+      <rect width="360" height="640" fill="url(#sunPool)" />
+      <rect width="360" height="640" fill="url(#groundBevel)" />
+      <rect width="360" height="640" fill="url(#sideLight)" />
       <rect width="360" height="640" fill="url(#depthFog)" />
-      {Array.from({ length: 16 }, (_, i) => (
-        <rect
-          key={i}
-          x={fieldX}
-          y={i * 40}
-          width={fieldW}
-          height="18"
-          fill="#ffffff"
-          opacity={i % 2 === 0 ? 0.035 + i * 0.0015 : 0.012}
-        />
-      ))}
-      <rect width="18" height="640" fill="#000000" opacity="0.12" />
-      <rect x="342" width="18" height="640" fill="#000000" opacity="0.12" />
+      {/* Perspective ground bands — denser toward camera for foreshortening feel */}
+      {Array.from({ length: 28 }, (_, i) => {
+        const y = i * (640 / 28)
+        const h = 6 + i * 0.35
+        const lit = i % 2 === 0
+        return (
+          <rect
+            key={`band-${i}`}
+            x={fieldX}
+            y={y}
+            width={fieldW}
+            height={h}
+            fill={lit ? '#ffffff' : '#0a2010'}
+            opacity={lit ? 0.028 + i * 0.0012 : 0.04 + i * 0.001}
+          />
+        )
+      })}
+      <rect width="22" height="640" fill="#000000" opacity="0.16" />
+      <rect x="338" width="22" height="640" fill="#000000" opacity="0.16" />
       <ellipse
         cx={180}
         cy={628}
         rx={fieldW * 0.52}
-        ry="22"
+        ry="26"
         fill="#000000"
-        opacity="0.14"
+        opacity="0.2"
       />
 
       <DirtLane cx={leftLane} w={pathW} />
@@ -217,10 +290,20 @@ export function ClashMap({ destroyedIds }: Props) {
         opacity="0.55"
       />
 
-      {/* River with water texture */}
+      {/* River with deeper water / bank volume (same Y/H footprint) */}
       <g>
-        <rect x={fieldX} y={riverY - 5} width={fieldW} height="6" fill="url(#bankTop)" />
-        <rect x={fieldX} y={riverY - 5} width={fieldW} height="2" fill="#a8e070" opacity="0.4" />
+        {/* Ambient occlusion in the river trench */}
+        <ellipse
+          cx={180}
+          cy={riverY + riverH * 0.5}
+          rx={fieldW * 0.52}
+          ry={riverH * 0.85}
+          fill="#041828"
+          opacity="0.28"
+        />
+        <rect x={fieldX} y={riverY - 7} width={fieldW} height="8" fill="url(#bankTop)" />
+        <rect x={fieldX} y={riverY - 7} width={fieldW} height="2.5" fill="#c8f090" opacity="0.35" />
+        <rect x={fieldX} y={riverY - 2} width={fieldW} height="3" fill="#1a3a10" opacity="0.35" />
         <rect x={fieldX} y={riverY} width={fieldW} height={riverH} fill="url(#riverBase)" />
         <rect
           x={fieldX}
@@ -228,7 +311,7 @@ export function ClashMap({ destroyedIds }: Props) {
           width={fieldW}
           height={riverH}
           filter="url(#waterNoise)"
-          opacity="0.65"
+          opacity="0.72"
         />
         <rect
           x={fieldX}
@@ -236,12 +319,21 @@ export function ClashMap({ destroyedIds }: Props) {
           width={fieldW}
           height={riverH}
           fill="url(#waterRipple)"
+          opacity="0.6"
+        />
+        <rect
+          x={fieldX}
+          y={riverY}
+          width={fieldW}
+          height={riverH}
+          fill="url(#riverSpecular)"
           opacity="0.55"
         />
-        <rect x={fieldX} y={riverY} width={fieldW} height="6" fill="#ffffff28" />
-        <rect x={fieldX} y={riverY + riverH - 5} width={fieldW} height="5" fill="#04182866" />
-        <rect x={fieldX} y={riverY + riverH} width={fieldW} height="7" fill="#2a5018" />
-        <rect x={fieldX} y={riverY + riverH} width={fieldW} height="3" fill="#5a9a30" opacity="0.45" />
+        <rect x={fieldX} y={riverY} width={fieldW} height="5" fill="#ffffff33" />
+        <rect x={fieldX} y={riverY + riverH - 6} width={fieldW} height="6" fill="#04182877" />
+        <rect x={fieldX} y={riverY + riverH} width={fieldW} height="8" fill="#2a5018" />
+        <rect x={fieldX} y={riverY + riverH} width={fieldW} height="3" fill="#7ec84a" opacity="0.4" />
+        <rect x={fieldX} y={riverY + riverH + 3} width={fieldW} height="4" fill="#0a2010" opacity="0.25" />
         {[0, 1, 2].map((i) => (
           <path
             key={i}
@@ -249,7 +341,7 @@ export function ClashMap({ destroyedIds }: Props) {
             fill="none"
             stroke="#e8f6ff"
             strokeWidth="1.2"
-            opacity="0.45"
+            opacity="0.5"
           >
             <animate
               attributeName="d"
@@ -315,24 +407,45 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
   const plankN = Math.max(18, Math.round(h / 14))
   return (
     <g>
+      {/* Ground contact shadow — same lane footprint */}
+      <rect
+        x={x - 1.5}
+        y={top + 2}
+        width={w + 3}
+        height={h}
+        rx="1.5"
+        fill="#0a0804"
+        opacity="0.28"
+      />
       <rect x={x} y={top} width={w} height={h} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="0.8" />
-      <rect x={x} y={top} width={w} height={h} fill="url(#woodGrain)" opacity="0.55" />
-      <rect x={x} y={top} width={w} height={h} fill="url(#plankWear)" opacity="0.7" />
-      <rect x={x + w * 0.36} y={top} width={w * 0.28} height={h} fill="#fff6d0" opacity="0.12" />
+      <rect x={x} y={top} width={w} height={h} fill="url(#woodGrain)" opacity="0.6" />
+      <rect x={x} y={top} width={w} height={h} fill="url(#plankWear)" opacity="0.75" />
+      <rect x={x} y={top} width={w} height={h} fill="url(#plankBevel)" opacity="0.85" />
+      <rect x={x + w * 0.36} y={top} width={w * 0.28} height={h} fill="#fff6d0" opacity="0.14" />
       {Array.from({ length: plankN }, (_, i) => (
-        <line
-          key={i}
-          x1={x + 1}
-          x2={x + w - 1}
-          y1={top + 2 + i * (h / plankN)}
-          y2={top + 2 + i * (h / plankN)}
-          stroke="#3a2010"
-          strokeWidth="0.7"
-          opacity="0.4"
-        />
+        <g key={i}>
+          <line
+            x1={x + 1}
+            x2={x + w - 1}
+            y1={top + 2 + i * (h / plankN)}
+            y2={top + 2 + i * (h / plankN)}
+            stroke="#3a2010"
+            strokeWidth="0.7"
+            opacity="0.42"
+          />
+          <line
+            x1={x + 1}
+            x2={x + w - 1}
+            y1={top + 2.7 + i * (h / plankN)}
+            y2={top + 2.7 + i * (h / plankN)}
+            stroke="#fff6d0"
+            strokeWidth="0.45"
+            opacity="0.12"
+          />
+        </g>
       ))}
-      <rect x={x} y={top} width="1.5" height={h} fill="#5a3418" opacity="0.4" />
-      <rect x={x + w - 1.5} y={top} width="1.5" height={h} fill="#5a3418" opacity="0.4" />
+      <rect x={x} y={top} width="2" height={h} fill="#5a3418" opacity="0.5" />
+      <rect x={x + w - 2} y={top} width="2" height={h} fill="#2a1408" opacity="0.45" />
     </g>
   )
 }

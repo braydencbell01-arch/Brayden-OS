@@ -183,6 +183,19 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         }
       >
         <ClashMap destroyedIds={destroyedIds} />
+        {/* Lighting / AO wash — visual only; does not change hitboxes or layout */}
+        <div
+          className="pointer-events-none absolute inset-0 z-[1]"
+          style={{
+            background: `
+              linear-gradient(180deg, rgba(8,24,12,0.28) 0%, transparent 22%, transparent 72%, rgba(255,248,200,0.1) 100%),
+              linear-gradient(90deg, rgba(0,0,0,0.18) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.16) 100%),
+              radial-gradient(ellipse 70% 45% at 30% 18%, rgba(255,246,168,0.12), transparent 60%)
+            `,
+            mixBlendMode: 'soft-light',
+          }}
+          aria-hidden
+        />
 
         {TOWERS.map((t) => {
           const th = hpMap.get(t.id)
