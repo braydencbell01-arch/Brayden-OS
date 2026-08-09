@@ -98,6 +98,31 @@ export const PHIL: CharacterDef = {
   ],
 }
 
+export const KATHIE: CharacterDef = {
+  id: 'kathie',
+  name: 'Kathie',
+  initial: 'K',
+  pronoun: 'she',
+  height: "5'2\"",
+  rarity: 'rare',
+  elixir: 4,
+  hp: 500,
+  moveSpeed: 3,
+  attackDelaySec: 1,
+  hue: 200,
+  blurb: 'Stops to Chicken Whip — same crack as Phil, 1s cooldown.',
+  attacks: [
+    {
+      id: 'chickenWhip',
+      name: 'Chicken Whip',
+      range: 5,
+      damage: 150,
+      rootWhileAttacking: true,
+      kind: 'whip',
+    },
+  ],
+}
+
 export const PETE: CharacterDef = {
   id: 'pete',
   name: 'Pete',
@@ -204,20 +229,20 @@ export const JEREMY: CharacterDef = {
   ],
 }
 
-export const CHARACTERS: CharacterDef[] = [PHIL, PETE, BEANS, FINLEY, JEREMY]
+export const CHARACTERS: CharacterDef[] = [PHIL, KATHIE, PETE, BEANS, FINLEY, JEREMY]
 
 export const DECK_SIZE = 8
 
 /** Default 8-card mix across the roster (duplicates allowed). */
 export const DEFAULT_DECK = [
   PHIL.id,
+  KATHIE.id,
   BEANS.id,
   FINLEY.id,
   JEREMY.id,
   PETE.id,
   BEANS.id,
   FINLEY.id,
-  PHIL.id,
 ]
 
 export function getCharacter(id: string): CharacterDef | undefined {

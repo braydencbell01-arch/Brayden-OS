@@ -3,6 +3,7 @@ import { BeansModel } from './BeansModel'
 import { CrUnitModel } from './CrUnitModel'
 import { FinleyModel } from './FinleyModel'
 import { JeremyModel } from './JeremyModel'
+import { KathieModel } from './KathieModel'
 import { PeteModel } from './PeteModel'
 import { PhilModel, type CharacterAnim } from './PhilModel'
 
@@ -28,6 +29,10 @@ export function CharacterModel({
 }: Props) {
   if (charId === 'phil') {
     return <PhilModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  }
+
+  if (charId === 'kathie') {
+    return <KathieModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   }
 
   if (charId === 'pete') {

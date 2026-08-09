@@ -51,7 +51,9 @@ export function UnitToken({
                 ? '3 / 5.4'
                 : charId === 'pete'
                   ? '3 / 4.2'
-                  : '3 / 4.4',
+                  : charId === 'kathie'
+                    ? '3 / 4.0'
+                    : '3 / 4.4',
         }}
       >
         <CharacterModel
