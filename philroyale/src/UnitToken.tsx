@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion'
 import type { AttackId } from './characters'
 import { getCharacter } from './characters'
+import { CharacterModel, type CharacterAnim } from './characters/CharacterModel'
+import { ARENA_TILT_DEG } from './camera'
 
 type Props = {
   charId: string
@@ -9,19 +10,38 @@ type Props = {
   maxHp: number
   vfx: AttackId | null
   enraged?: boolean
+  facing?: number
+  moving?: boolean
 }
 
-/** 1-block troop with always-on CR-style HP bar + number. */
-export function UnitToken({ charId, side, hp, maxHp, vfx, enraged }: Props) {
+/** Large 2.5D troop; gameplay footprint remains 1 tile. */
+export function UnitToken({
+  charId,
+  side,
+  hp,
+  maxHp,
+  vfx,
+  enraged,
+  facing,
+  moving,
+}: Props) {
   const def = getCharacter(charId)
   if (!def) return null
   const enemy = side === 'enemy'
-  const art = enraged ? 'hsl(285 70% 42%)' : `hsl(${def.hue} 60% 42%)`
   const pct = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0
+  const anim: CharacterAnim = vfx ? 'attack' : moving ? 'walk' : 'idle'
+  const face =
+    facing ?? (side === 'ally' ? -Math.PI / 2 : Math.PI / 2)
 
   return (
-    <div className="relative flex w-full flex-col items-center">
-      <div className="relative mb-px h-[0.45rem] w-[140%] max-w-[2.2rem] overflow-hidden rounded-[1px] bg-black/70 ring-1 ring-black/40">
+    <div
+      className="relative flex w-full flex-col items-center"
+      style={{
+        transform: `rotateX(${-ARENA_TILT_DEG}deg)`,
+        transformOrigin: '50% 100%',
+      }}
+    >
+      <div className="relative mb-0.5 h-[0.55rem] w-[85%] overflow-hidden rounded-[2px] bg-black/70 ring-1 ring-black/40">
         <div
           className="h-full"
           style={{
@@ -31,33 +51,21 @@ export function UnitToken({ charId, side, hp, maxHp, vfx, enraged }: Props) {
               : 'linear-gradient(180deg,#8ad0ff,#2f6fbf)',
           }}
         />
-        <span className="absolute inset-0 flex items-center justify-center text-[0.38rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
+        <span className="absolute inset-0 flex items-center justify-center text-[0.4rem] font-extrabold leading-none text-white drop-shadow-[0_1px_0_#000]">
           {Math.max(0, Math.round(hp))}
         </span>
       </div>
-      <motion.div
-        className="flex aspect-square w-full items-center justify-center rounded-[2px] border border-[#f5d76e] font-[family-name:var(--font-display)] text-[0.45rem] leading-none text-white"
-        style={{
-          background: art,
-          boxShadow: enraged
-            ? '0 0 6px #c44dff88, 1px 1px 0 #00000066'
-            : '1px 1px 0 #00000066',
-        }}
-        animate={
-          vfx === 'chickenWhip' || vfx === 'deathHug' || vfx === 'bite'
-            ? { scale: [1, 1.2, 1], rotate: [0, -10, 10, 0] }
-            : vfx === 'sundaeThrow' || vfx === 'slobber' || vfx === 'shoot'
-              ? { y: [0, -2, 0] }
-              : { y: [0, -0.5, 0] }
-        }
-        transition={
-          vfx
-            ? { duration: 0.35 }
-            : { duration: 0.7, repeat: Infinity, ease: 'easeInOut' }
-        }
-      >
-        {def.initial}
-      </motion.div>
+      <div className="relative w-full" style={{ aspectRatio: '3 / 4.6' }}>
+        <CharacterModel
+          charId={charId}
+          anim={anim}
+          facing={face}
+          attackId={vfx}
+          hue={def.hue}
+          initial={def.initial}
+          enraged={enraged}
+        />
+      </div>
     </div>
   )
 }

@@ -132,16 +132,64 @@ export function bridgeSteerDir(
   targetRow: number,
 ): { dCol: number; dRow: number } | null {
   if (!needsRiverCrossing(row, targetRow)) return null
-  const mid = nearestBridgeMidCol(col)
+  // Pick the bridge that yields the shortest overall path to the target.
+  const mid = bestBridgeMidForPath(col, row, _targetCol, targetRow)
   if (!isOnBridgeLane(col)) {
     const dx = mid - col
     if (Math.abs(dx) > 0.15) return { dCol: Math.sign(dx), dRow: 0 }
   }
-  // On / near bridge lane — advance vertically toward the far side, keep centered on bridge.
   const dy = Math.sign(targetRow - row) || (row > RIVER_MAX ? -1 : 1)
   const dx = Math.sign(mid - col) * 0.35
   const len = Math.hypot(dx, dy) || 1
   return { dCol: dx / len, dRow: dy / len }
+}
+
+/** Shortest bridge-aware path length to a point (straight-line if no river crossing). */
+export function pathCostTo(
+  fromCol: number,
+  fromRow: number,
+  toCol: number,
+  toRow: number,
+): number {
+  if (!needsRiverCrossing(fromRow, toRow)) {
+    return Math.hypot(toCol - fromCol, toRow - fromRow)
+  }
+  let best = Infinity
+  for (const b of BRIDGES) {
+    const mid = (b.colStart + b.colEnd) / 2
+    const ownEdge = fromRow > RIVER_MAX ? RIVER_MAX : RIVER_MIN
+    const farEdge = fromRow > RIVER_MAX ? RIVER_MIN : RIVER_MAX
+    const cost =
+      Math.hypot(mid - fromCol, ownEdge - fromRow) +
+      Math.abs(farEdge - ownEdge) +
+      Math.hypot(toCol - mid, toRow - farEdge)
+    if (cost < best) best = cost
+  }
+  return best
+}
+
+function bestBridgeMidForPath(
+  fromCol: number,
+  fromRow: number,
+  toCol: number,
+  toRow: number,
+): number {
+  let bestMid = nearestBridgeMidCol(fromCol)
+  let best = Infinity
+  for (const b of BRIDGES) {
+    const mid = (b.colStart + b.colEnd) / 2
+    const ownEdge = fromRow > RIVER_MAX ? RIVER_MAX : RIVER_MIN
+    const farEdge = fromRow > RIVER_MAX ? RIVER_MIN : RIVER_MAX
+    const cost =
+      Math.hypot(mid - fromCol, ownEdge - fromRow) +
+      Math.abs(farEdge - ownEdge) +
+      Math.hypot(toCol - mid, toRow - farEdge)
+    if (cost < best) {
+      best = cost
+      bestMid = mid
+    }
+  }
+  return bestMid
 }
 
 type TowerHpLite = { id: string; hp: number }

@@ -97,3 +97,23 @@
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35);
   animation: elixir-pulse 1.6s ease-in-out infinite;
 }
+
+@keyframes phil-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes phil-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}

@@ -12,6 +12,7 @@ import {
   isRiverTile,
   isWalkableTile,
   nearestBridgeMidCol,
+  pathCostTo,
   type Side,
 } from './arena'
 import { getCharacter, type CharacterDef } from './characters'
@@ -209,6 +210,7 @@ export function useBattle() {
           rootedUntil: 0,
           spawnedAt: t,
           enraged: false,
+          movingUntil: 0,
         },
       ])
       return true
@@ -291,22 +293,30 @@ export function useBattle() {
           id: string
           col: number
           row: number
+          /** Bridge-aware path cost for choosing nearest foe. */
           d: number
+          /** Straight / edge distance for attack range checks. */
+          rangeD: number
         }
 
+        // Prefer nearest foe by bridge-aware path cost; attack range still uses edge/center dist.
         let best: Target | null = null
         for (const f of foes) {
           const c = unitCenter(f)
-          const d = dist(me.col, me.row, c.col, c.row)
-          if (!best || d < best.d) best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d }
+          const edge = dist(me.col, me.row, c.col, c.row)
+          const path = pathCostTo(me.col, me.row, c.col, c.row)
+          if (!best || path < best.d) {
+            best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
+          }
         }
         for (const tw of foeTowers) {
           const slot = towerSlot(tw.id)
           if (!slot) continue
-          const d = distToTowerEdge(me.col, me.row, slot)
+          const edge = distToTowerEdge(me.col, me.row, slot)
           const aim = closestPointOnTower(me.col, me.row, slot)
-          if (!best || d < best.d) {
-            best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d }
+          const path = pathCostTo(me.col, me.row, aim.col, aim.row)
+          if (!best || path < best.d) {
+            best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d: path, rangeD: edge }
           }
         }
 
@@ -322,11 +332,16 @@ export function useBattle() {
             const steer = bridgeSteerDir(u.col, u.row, u.col, goalRow)
             const dCol = steer ? steer.dCol * step : 0
             const dRow = steer ? steer.dRow * step : dir * step
+            const prevCol = u.col
+            const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
             u.facing = Math.atan2(dRow || dir, dCol)
+            if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
+              u.movingUntil = t + 140
+            }
             unitsChanged = true
           }
           continue
@@ -338,19 +353,25 @@ export function useBattle() {
           unitsChanged = true
         }
 
-        if (best.d > attack.range) {
+        // Move along nearest legal path until in attack range of the target.
+        if (best.rangeD > attack.range) {
           if (!rooted) {
             const step = moveSpeed * dt
             const steer = bridgeSteerDir(u.col, u.row, best.col, best.row)
-            const dCol = steer ? steer.dCol * step : Math.cos(u.facing) * step
-            const dRow = steer ? steer.dRow * step : Math.sin(u.facing) * step
+            const dCol = steer ? steer.dCol * step : Math.cos(face) * step
+            const dRow = steer ? steer.dRow * step : Math.sin(face) * step
             if (steer) {
               u.facing = Math.atan2(steer.dRow, steer.dCol)
             }
+            const prevCol = u.col
+            const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
+            if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
+              u.movingUntil = t + 140
+            }
             unitsChanged = true
           }
           continue

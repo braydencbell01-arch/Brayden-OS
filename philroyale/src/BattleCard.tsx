@@ -1,10 +1,10 @@
 import type { CharacterDef, Rarity } from './characters'
 import { RARITY_LABEL } from './characters'
+import { CharacterModel } from './characters/CharacterModel'
 
 type Props = {
   character: CharacterDef | null
   size?: 'hand' | 'next' | 'collection'
-  /** Current elixir — drives Clash-style grey afford overlay on hand cards. */
   elixir?: number
   selected?: boolean
 }
@@ -87,24 +87,26 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
           boxShadow: 'inset 0 1px 0 #ffffff33',
         }}
       >
-        <div className="relative flex min-h-0 flex-1 items-center justify-center">
+        <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden px-0.5 pt-1">
           <div
-            className={`${next ? 'h-6 w-6 text-xs' : collection ? 'h-14 w-14 text-2xl' : 'h-9 w-9 text-base'} flex items-center justify-center rounded-md font-[family-name:var(--font-display)] text-white`}
-            style={{
-              background: `linear-gradient(160deg, ${artLit}, ${art})`,
-              boxShadow: 'inset 0 1px 0 #ffffff44, 0 2px 4px #00000066',
-            }}
+            className={`${next ? 'h-[85%] w-[90%]' : collection ? 'h-[88%] w-[92%]' : 'h-[86%] w-[90%]'} relative`}
           >
-            {character.initial}
+            <CharacterModel
+              charId={character.id}
+              anim="idle"
+              facing={-Math.PI / 2}
+              portrait
+              hue={character.hue}
+              initial={character.initial}
+            />
           </div>
           {!next ? (
-            <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/75 to-transparent px-0.5 pb-0.5 pt-2 text-center text-[0.55rem] font-extrabold leading-tight text-white">
+            <span className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-0.5 pb-0.5 pt-3 text-center text-[0.55rem] font-extrabold leading-tight text-white">
               {character.name}
             </span>
           ) : null}
         </div>
 
-        {/* Elixir droplet — top-left like Clash Royale */}
         <div
           className={`absolute ${next ? 'left-0.5 top-0.5 h-3.5 w-3.5 text-[0.55rem]' : 'left-1 top-1 h-[1.15rem] w-[1.15rem] text-[0.7rem]'} z-[2] flex items-center justify-center font-extrabold text-white`}
           style={{
@@ -116,7 +118,6 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
           {character.elixir}
         </div>
 
-        {/* Grey afford veil: unaffordable fraction from the top */}
         {elixir != null && greyPct > 0.5 ? (
           <div
             className="pointer-events-none absolute inset-x-0 top-0 z-[3] bg-[#1a1410]/62"

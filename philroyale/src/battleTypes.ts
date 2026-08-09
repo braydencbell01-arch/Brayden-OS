@@ -22,6 +22,8 @@ export type BattleUnit = {
   rootedUntil: number
   spawnedAt: number
   enraged: boolean
+  /** Walk anim while recently relocated. */
+  movingUntil: number
 }
 
 export type Projectile = {

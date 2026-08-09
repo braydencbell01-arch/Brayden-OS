@@ -21,9 +21,16 @@ export function ClashMap() {
     >
       <defs>
         <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4cb356" />
-          <stop offset="45%" stopColor="#3a9a45" />
-          <stop offset="100%" stopColor="#2d7a36" />
+          {/* Far (top) darker / cooler; near (bottom) brighter — reads under tilt */}
+          <stop offset="0%" stopColor="#2a6e34" />
+          <stop offset="35%" stopColor="#3a9a45" />
+          <stop offset="70%" stopColor="#4cb356" />
+          <stop offset="100%" stopColor="#5ec864" />
+        </linearGradient>
+        <linearGradient id="depthFog" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a3a20" stopOpacity="0.35" />
+          <stop offset="45%" stopColor="#1a3a20" stopOpacity="0.08" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
         </linearGradient>
         <linearGradient id="dirt" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#7a4a22" />
@@ -90,6 +97,7 @@ export function ClashMap() {
       <Stands x={fieldX + fieldW} w={360 - fieldX - fieldW} side="right" />
 
       <rect x={fieldX} y="14" width={fieldW} height="612" rx="3" fill="url(#grassGrad)" />
+      <rect x={fieldX} y="14" width={fieldW} height="612" rx="3" fill="url(#depthFog)" />
       {Array.from({ length: 16 }, (_, i) => (
         <rect
           key={i}
@@ -98,9 +106,18 @@ export function ClashMap() {
           width={fieldW}
           height="16"
           fill="#ffffff"
-          opacity={i % 2 === 0 ? 0.035 : 0.015}
+          opacity={i % 2 === 0 ? 0.04 + i * 0.002 : 0.015}
         />
       ))}
+      {/* Near-edge ground lip for 3/4 depth */}
+      <ellipse
+        cx={180}
+        cy={620}
+        rx={fieldW * 0.55}
+        ry="28"
+        fill="#000000"
+        opacity="0.18"
+      />
 
       {/* Twin dirt lanes — CR placement / width */}
       <DirtLane cx={leftLane} w={pathW} />

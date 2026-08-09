@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { canDeployAllyAt } from './arena'
-import { Arena, clientToArenaTile, oneTileWidthPct, unitStyle } from './Arena'
+import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct } from './Arena'
 import { BattleCard } from './BattleCard'
 import { ShootDot, SlobberDot, SundaeDot, UnitToken } from './UnitToken'
 import { getCharacter } from './characters'
@@ -260,22 +260,30 @@ export function BattleScreen({ onExit, opponentName }: Props) {
           overlaySide="ally"
         >
           <AnimatePresence>
-            {units.map((u) => (
-              <div
-                key={u.id}
-                className="absolute z-10 -translate-x-1/2 -translate-y-[85%]"
-                style={{ ...unitStyle(u.col, u.row), width: oneTileWidthPct() }}
-              >
-                <UnitToken
-                  charId={u.charId}
-                  side={u.side}
-                  hp={u.hp}
-                  maxHp={u.maxHp}
-                  vfx={u.vfx}
-                  enraged={u.enraged}
-                />
-              </div>
-            ))}
+            {[...units]
+              .sort((a, b) => a.row - b.row)
+              .map((u) => (
+                <div
+                  key={u.id}
+                  className="absolute -translate-x-1/2 -translate-y-[92%]"
+                  style={{
+                    ...unitStyle(u.col, u.row),
+                    width: unitVisualWidthPct(),
+                    zIndex: 10 + Math.round(u.row),
+                  }}
+                >
+                  <UnitToken
+                    charId={u.charId}
+                    side={u.side}
+                    hp={u.hp}
+                    maxHp={u.maxHp}
+                    vfx={u.vfx}
+                    enraged={u.enraged}
+                    facing={u.facing}
+                    moving={now < u.movingUntil}
+                  />
+                </div>
+              ))}
           </AnimatePresence>
           {projectiles.map((p) =>
             p.kind === 'sundae' ||
@@ -288,10 +296,11 @@ export function BattleScreen({ onExit, opponentName }: Props) {
           )}
           {drag && drag.overArena && dragChar ? (
             <div
-              className="absolute z-30 -translate-x-1/2 -translate-y-[85%]"
+              className="absolute -translate-x-1/2 -translate-y-[92%]"
               style={{
                 ...unitStyle(drag.col, drag.row),
-                width: oneTileWidthPct(),
+                width: unitVisualWidthPct(),
+                zIndex: 40,
                 opacity: drag.valid ? 0.9 : 0.45,
                 filter: drag.valid ? undefined : 'grayscale(1)',
               }}
@@ -303,9 +312,10 @@ export function BattleScreen({ onExit, opponentName }: Props) {
                 hp={dragChar.hp}
                 maxHp={dragChar.hp}
                 vfx={null}
+                facing={-Math.PI / 2}
               />
               <div
-                className="absolute inset-0 rounded-sm"
+                className="pointer-events-none absolute bottom-0 left-1/2 h-2 w-2/3 -translate-x-1/2 rounded-full"
                 style={{
                   boxShadow: drag.valid ? '0 0 0 2px #7CFF9A' : '0 0 0 2px #FF6B6B',
                 }}
