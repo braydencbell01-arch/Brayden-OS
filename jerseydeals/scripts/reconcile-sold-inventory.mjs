@@ -1024,11 +1024,25 @@ async function main() {
       sku: info.sku || listing?.sku || link?.sku || '',
       itemId: info.itemId || listing?.itemId || link?.itemId || '',
     }
+    // ebay-ended / ebay-unsold alone must NOT wipe Square stock — eBay listings
+    // end for many non-sale reasons (ended early, API glitches, renewals).
+    // Only real sales (SoldList / Square orders) or confirmed Square qty-0/unsellable
+    // should force a full delist.
     const forceRemoval =
       info.fromInventoryZero ||
-      info.fromEbayEnded ||
-      info.fromEbayUnsold ||
-      info.fromSquareUnsellable
+      info.fromSquareUnsellable ||
+      (info.fromEbayEnded && (info.fromEbaySold || info.fromSquareOrder)) ||
+      (info.fromEbayUnsold && (info.fromEbaySold || info.fromSquareOrder))
+    // Skip ended/unsold eBay noise with no confirmed sale — never wipe Square for these.
+    if (
+      (info.fromEbayEnded || info.fromEbayUnsold) &&
+      !info.fromEbaySold &&
+      !info.fromSquareOrder &&
+      !info.fromInventoryZero &&
+      !info.fromSquareUnsellable
+    ) {
+      continue
+    }
     // eBay SoldList while listing still active (multi-qty) is NOT a full delist —
     // Square unit sales / inventory alignment handle remaining stock.
 
