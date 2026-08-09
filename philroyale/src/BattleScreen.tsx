@@ -307,8 +307,9 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     result === 'victory' ? 'Victory!' : result === 'defeat' ? 'Defeat' : result === 'draw' ? 'Draw' : null
 
   return (
-    <div className="relative h-full min-h-0 overflow-hidden bg-[#1a3a22]">
-      <div className="absolute inset-0">
+    <div className="relative h-full min-h-0 overflow-hidden bg-[#2a6e34]">
+      {/* Map fills nearly the whole screen; top HUD sits on the grass edge. */}
+      <div className="absolute inset-x-0 bottom-0 top-[2.55rem]">
         <Arena
           ref={arenaRef}
           towers={towers}
@@ -395,8 +396,8 @@ export function BattleScreen({ onExit, opponentName }: Props) {
         </Arena>
       </div>
 
-      {/* Compact CR HUD — tucked into the top edge */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-1.5 pt-[max(0.05rem,env(safe-area-inset-top))]">
+      {/* Compact CR HUD — profile + timer only; map runs right up to them */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex h-[2.55rem] items-start justify-between px-1.5 pt-[max(0.05rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto flex items-start gap-1">
           <button
             type="button"
@@ -530,8 +531,8 @@ export function BattleScreen({ onExit, opponentName }: Props) {
           className="px-1.5 pb-1 pt-1"
           style={{
             background:
-              'linear-gradient(180deg,#6b4424cc 0%,#4a2e18dd 28%,#2e1a10ee 70%,#1a100cff 100%)',
-            boxShadow: 'inset 0 2px 0 #c9a22755, 0 -8px 20px #00000066',
+              'linear-gradient(180deg,#6b442488 0%,#4a2e18bb 35%,#2e1a10ee 75%,#1a100cff 100%)',
+            boxShadow: 'inset 0 2px 0 #c9a22744, 0 -6px 16px #00000055',
           }}
         >
           <div className="mx-auto flex max-w-[34rem] items-end gap-1.5">

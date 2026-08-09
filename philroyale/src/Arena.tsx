@@ -152,13 +152,14 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
   return (
     <div
       className="relative h-full w-full overflow-hidden"
-      style={{ perspective: `${ARENA_PERSPECTIVE_PX}px`, perspectiveOrigin: '50% 88%' }}
+      style={{ perspective: `${ARENA_PERSPECTIVE_PX}px`, perspectiveOrigin: '50% 100%' }}
     >
       <div
         ref={ref}
         className={`relative h-full w-full origin-bottom ${onArenaPointerDown ? 'cursor-crosshair' : ''}`}
         style={{
-          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.06, 1.1)`,
+          // Scale past foreshortening so the grass fills the HUD→dock frame.
+          transform: `rotateX(${ARENA_TILT_DEG}deg) scale(1.14, 1.32)`,
           transformStyle: 'preserve-3d',
         }}
         role={onArenaPointerDown ? 'application' : 'img'}
