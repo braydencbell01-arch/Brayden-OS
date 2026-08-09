@@ -44,13 +44,13 @@ export function CharacterModel({
   } else if (charId === 'lynne') {
     model = <LynneModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dan') {
-    model = <DanModel anim={anim} facing={facing} portrait={portrait} enraged={enraged} />
+    model = <DanModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'pete') {
     model = <PeteModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'beans') {
     model = <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'finley') {
-    model = <FinleyModel anim={anim} facing={facing} portrait={portrait} enraged={enraged} />
+    model = <FinleyModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'jeremy') {
     model = <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else {
@@ -70,15 +70,21 @@ export function CharacterModel({
     )
   }
 
-  // Finley/Dan PhotoTroop already tint when enraged; others get a shared aura from heart rage.
-  if (!enraged || charId === 'finley' || charId === 'dan') return model
+  // Rage lasts until death. Every troop turns clearly purple while enraged.
+  if (!enraged) return model
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative h-full w-full"
+      style={{
+        filter: 'hue-rotate(270deg) saturate(1.9) brightness(1.08) contrast(1.1)',
+      }}
+    >
       {model}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at 50% 45%, #a040ff55 0%, transparent 62%)',
+          background:
+            'radial-gradient(circle at 50% 40%, #d080ff88 0%, #9020ff44 45%, transparent 72%)',
           mixBlendMode: 'screen',
         }}
         aria-hidden
