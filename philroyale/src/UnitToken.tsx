@@ -46,7 +46,7 @@ export function UnitToken({
         style={{
           // Taller aspect ≈ taller silhouette; dogs stay squat, Jeremy/Dan stretch up.
           aspectRatio:
-            charId === 'finley' || charId === 'beans'
+            charId === 'finley' || charId === 'beans' || charId === 'shay'
               ? '5 / 4'
               : charId === 'jeremy'
                 ? '3 / 5.85'
@@ -373,6 +373,67 @@ export function DumbbellSplat({ ageMs }: { ageMs: number }) {
         <div className="absolute right-0 top-0 h-2 w-1 rounded-[1px] bg-[#1a1a20]" />
         <div className="absolute left-1/2 top-1/2 h-0.5 w-2 -translate-x-1/2 -translate-y-1/2 bg-[#9a9aa4]" />
       </div>
+    </div>
+  )
+}
+
+/** Shay Love projectile — soft red heart drifting to the target. */
+export function LoveDot() {
+  return (
+    <div className="relative h-6 w-6" aria-hidden>
+      <div
+        className="absolute inset-[-2px] rounded-full"
+        style={{ background: 'radial-gradient(circle,#ff8a9a66 0%,transparent 70%)' }}
+      />
+      <svg viewBox="0 0 32 32" className="absolute inset-0 h-full w-full drop-shadow">
+        <path
+          d="M16 28 C16 28 4 20 4 12 C4 7.5 7.5 5 11 5 C13.5 5 15.2 6.4 16 8 C16.8 6.4 18.5 5 21 5 C24.5 5 28 7.5 28 12 C28 20 16 28 16 28 Z"
+          fill="#e53935"
+          stroke="#ffb3c1"
+          strokeWidth="1.1"
+        />
+        <path
+          d="M11 9 C12.5 8.2 14 9.2 14.5 11"
+          fill="none"
+          stroke="#ffe0e6"
+          strokeWidth="1.3"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  )
+}
+
+/** Love heart impact — soft burst of pink hearts. */
+export function LoveSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 720)
+  const scale = 0.55 + p * 1.35
+  const opacity = 1 - p * 0.95
+  return (
+    <div
+      className="relative h-9 w-9"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle,#ff8a9a88 0%,#e5393533 50%,transparent 72%)',
+        }}
+      />
+      {[0, 72, 144, 216, 288].map((deg) => (
+        <svg
+          key={deg}
+          viewBox="0 0 32 32"
+          className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2"
+          style={{ transform: `rotate(${deg}deg) translateY(-${4 + p * 8}px)` }}
+        >
+          <path
+            d="M16 28 C16 28 4 20 4 12 C4 7.5 7.5 5 11 5 C13.5 5 15.2 6.4 16 8 C16.8 6.4 18.5 5 21 5 C24.5 5 28 7.5 28 12 C28 20 16 28 16 28 Z"
+            fill="#ff6b81"
+          />
+        </svg>
+      ))}
     </div>
   )
 }

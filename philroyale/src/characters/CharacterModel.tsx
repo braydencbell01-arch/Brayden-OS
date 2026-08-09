@@ -10,6 +10,7 @@ import { LynneModel } from './LynneModel'
 import { MikeModel } from './MikeModel'
 import { PeteModel } from './PeteModel'
 import { PhilModel, type CharacterAnim } from './PhilModel'
+import { ShayModel } from './ShayModel'
 import { ToddModel } from './ToddModel'
 
 type Props = {
@@ -51,6 +52,8 @@ export function CharacterModel({
     model = <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'finley') {
     model = <FinleyModel anim={anim} facing={facing} portrait={portrait} />
+  } else if (charId === 'shay') {
+    model = <ShayModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'jeremy') {
     model = <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else {

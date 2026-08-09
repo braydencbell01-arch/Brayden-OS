@@ -48,6 +48,8 @@ const SLOBBER_PROJECTILE_MS = 1100
 const SHOOT_PROJECTILE_MS = 140
 /** Mike overhead dumbbell lob — long hang time. */
 const DUMBBELL_PROJECTILE_MS = 920
+/** Shay Love heart — drifts slowly toward the target. */
+const LOVE_PROJECTILE_MS = 1600
 const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const HUG_VFX_MS = 780
@@ -56,11 +58,13 @@ const KICK_VFX_MS = 780
 const DUMBBELL_VFX_MS = 620
 /** Lynne head butt — short so 0.5s cadence feels constant. */
 const HEADBUTT_VFX_MS = 480
+const LOVE_VFX_MS = 700
 const RANGED_VFX_MS = 520
 const SPLAT_MS = 820
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 420
 const DUMBBELL_SPLAT_MS = 520
+const LOVE_SPLAT_MS = 720
 const MELEE_HIT_MS = 420
 /** Dan rage heart lifetime on the ground. */
 const RAGE_HEART_MS = 3000
@@ -804,13 +808,15 @@ export function useBattle(opts?: {
               ? DUMBBELL_SPLAT_MS
               : s.kind === 'slobber'
                 ? SLOBBER_SPLAT_MS
-                : s.kind === 'melee' ||
-                    s.kind === 'whip' ||
-                    s.kind === 'bite' ||
-                    s.kind === 'kick' ||
-                    s.kind === 'hug'
-                  ? MELEE_HIT_MS
-                  : SPLAT_MS
+                : s.kind === 'love'
+                  ? LOVE_SPLAT_MS
+                  : s.kind === 'melee' ||
+                      s.kind === 'whip' ||
+                      s.kind === 'bite' ||
+                      s.kind === 'kick' ||
+                      s.kind === 'hug'
+                    ? MELEE_HIT_MS
+                    : SPLAT_MS
         return t - s.bornAt < life
       })
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
@@ -863,6 +869,15 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'dumbbell',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'love') {
+          nextSplats.push({
+            id: nid('love'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'love',
           })
           splatsChanged = true
         }
@@ -1176,9 +1191,11 @@ export function useBattle(opts?: {
                   ? HEADBUTT_VFX_MS
                   : attack.id === 'deathHug'
                     ? HUG_VFX_MS
-                    : attack.rootWhileAttacking
-                      ? ROOT_VFX_MS
-                      : RANGED_VFX_MS
+                    : attack.id === 'love'
+                      ? LOVE_VFX_MS
+                      : attack.rootWhileAttacking
+                        ? ROOT_VFX_MS
+                        : RANGED_VFX_MS
         u.vfx = attack.id
         u.vfxUntil = t + vfxMs
         u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
@@ -1196,7 +1213,8 @@ export function useBattle(opts?: {
           attack.kind === 'sundae' ||
           attack.kind === 'slobber' ||
           attack.kind === 'shoot' ||
-          attack.kind === 'dumbbell'
+          attack.kind === 'dumbbell' ||
+          attack.kind === 'love'
         ) {
           nextProjectiles.push({
             id: nid('p'),
@@ -1217,7 +1235,9 @@ export function useBattle(opts?: {
                   ? SLOBBER_PROJECTILE_MS
                   : attack.kind === 'dumbbell'
                     ? DUMBBELL_PROJECTILE_MS
-                    : PROJECTILE_MS),
+                    : attack.kind === 'love'
+                      ? LOVE_PROJECTILE_MS
+                      : PROJECTILE_MS),
             ownerSide: u.side,
             splashRadius: attack.splashRadius,
           })

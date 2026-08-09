@@ -24,6 +24,7 @@ type Props = {
     | 'kick'
     | 'dumbbell'
     | 'headbutt'
+    | 'love'
     | 'none'
   /** Persistent hand prop (Mike curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
@@ -295,6 +296,7 @@ export function PhotoTroop({
         {attacking && attack === 'kick' ? <FlyingKickOverlay /> : null}
         {attacking && attack === 'dumbbell' ? <DumbbellHuckOverlay /> : null}
         {attacking && attack === 'headbutt' ? <HeadButtOverlay /> : null}
+        {attacking && attack === 'love' ? <LoveOverlay /> : null}
         {!attacking && carry === 'dumbbell' ? <DumbbellCurlOverlay walking={walking} /> : null}
 
         {enraged ? (
@@ -625,6 +627,45 @@ function SundaeThrowOverlay() {
       >
         <path d="M40 46 Q34 54 36 64 L44 64 Q44 52 46 46 Z" fill="#e8b888" />
       </motion.g>
+    </svg>
+  )
+}
+
+function LoveOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.g
+        initial={{ scale: 0.2, opacity: 0, y: 8 }}
+        animate={{ scale: [0.2, 1.15, 1], opacity: [0, 1, 0.85], y: [8, -2, -18] }}
+        transition={{ duration: 0.65 }}
+        style={{ transformOrigin: '40px 40px' }}
+      >
+        <path
+          d="M40 58 C40 58 22 46 22 34 C22 28 27 24 32 24 C35.5 24 38 26 40 29 C42 26 44.5 24 48 24 C53 24 58 28 58 34 C58 46 40 58 40 58 Z"
+          fill="#e53935"
+          stroke="#ffb3c1"
+          strokeWidth="1.4"
+        />
+        <path
+          d="M30 30 C32 28.5 35 30 36 33"
+          fill="none"
+          stroke="#ffe0e6"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+      </motion.g>
+      <motion.circle
+        cx="40"
+        cy="42"
+        r="16"
+        fill="none"
+        stroke="#ff8a9a66"
+        strokeWidth="2"
+        initial={{ scale: 0.4, opacity: 0.8 }}
+        animate={{ scale: [0.4, 1.4], opacity: [0.7, 0] }}
+        transition={{ duration: 0.65 }}
+        style={{ transformOrigin: '40px 42px' }}
+      />
     </svg>
   )
 }

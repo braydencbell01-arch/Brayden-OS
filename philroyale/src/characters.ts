@@ -8,6 +8,7 @@ export type AttackId =
   | 'flyingKick'
   | 'dumbbellHuck'
   | 'headButt'
+  | 'love'
 
 export type AttackDef = {
   id: AttackId
@@ -25,7 +26,17 @@ export type AttackDef = {
   burstGapSec?: number
   /** If set, hit every opponent within this many blocks of the impact point. */
   splashRadius?: number
-  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick' | 'dumbbell' | 'headbutt'
+  kind:
+    | 'sundae'
+    | 'whip'
+    | 'hug'
+    | 'slobber'
+    | 'bite'
+    | 'shoot'
+    | 'kick'
+    | 'dumbbell'
+    | 'headbutt'
+    | 'love'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -189,7 +200,7 @@ export const FINLEY: CharacterDef = {
   pronoun: 'he',
   height: "2'2\"",
   rarity: 'common',
-  elixir: 3,
+  elixir: 2,
   hp: 300,
   moveSpeed: 7.5,
   attackDelaySec: 2,
@@ -206,6 +217,31 @@ export const FINLEY: CharacterDef = {
       damage: 225,
       rootWhileAttacking: false,
       kind: 'bite',
+    },
+  ],
+}
+
+export const SHAY: CharacterDef = {
+  id: 'shay',
+  name: 'Shay',
+  initial: 'S',
+  pronoun: 'he',
+  height: "2'0\"",
+  rarity: 'common',
+  elixir: 2,
+  hp: 325,
+  moveSpeed: 5.5,
+  attackDelaySec: 1.75,
+  hue: 40,
+  blurb: 'Older, wiser black border collie. Stops and sends a slow Love heart — 125 damage at range 22.',
+  attacks: [
+    {
+      id: 'love',
+      name: 'Love',
+      range: 22,
+      damage: 125,
+      rootWhileAttacking: true,
+      kind: 'love',
     },
   ],
 }
@@ -340,6 +376,7 @@ export const CHARACTERS: CharacterDef[] = [
   PETE,
   BEANS,
   FINLEY,
+  SHAY,
   JEREMY,
 ]
 

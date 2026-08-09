@@ -35,7 +35,7 @@ export type BattleUnit = {
 
 export type Projectile = {
   id: string
-  kind: 'sundae' | 'hug' | 'slobber' | 'shoot' | 'dumbbell' | 'arrow' | 'cannon'
+  kind: 'sundae' | 'hug' | 'slobber' | 'shoot' | 'dumbbell' | 'love' | 'arrow' | 'cannon'
   fromCol: number
   fromRow: number
   toCol: number
@@ -57,7 +57,17 @@ export type SplatFx = {
   col: number
   row: number
   bornAt: number
-  kind: 'sundae' | 'slobber' | 'boom' | 'dumbbell' | 'melee' | 'whip' | 'bite' | 'kick' | 'hug'
+  kind:
+    | 'sundae'
+    | 'slobber'
+    | 'boom'
+    | 'dumbbell'
+    | 'love'
+    | 'melee'
+    | 'whip'
+    | 'bite'
+    | 'kick'
+    | 'hug'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

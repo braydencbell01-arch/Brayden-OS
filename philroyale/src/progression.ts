@@ -31,8 +31,8 @@ export const CHEST_META: Record<
 export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 0, arena: 'Goblin Boot', label: 'Journey begins', gold: 50, unlockCard: 'finley' },
   { trophies: 25, arena: 'Goblin Boot', label: 'Gold pouch', gold: 30 },
-  { trophies: 50, arena: 'Goblin Boot', label: 'Common Chest', chest: 'common', gold: 25 },
-  { trophies: 75, arena: 'Goblin Boot', label: 'Gold pouch', gold: 40 },
+  { trophies: 50, arena: 'Goblin Boot', label: 'Unlock Shay', unlockCard: 'shay', gold: 40 },
+  { trophies: 75, arena: 'Goblin Boot', label: 'Common Chest', chest: 'common', gold: 25 },
   { trophies: 100, arena: 'Goblin Boot', label: 'Unlock Beans', unlockCard: 'beans', gold: 50 },
   { trophies: 125, arena: 'Goblin Boot', label: 'Common Chest', chest: 'common' },
   { trophies: 150, arena: 'Goblin Boot', label: 'Rare Chest', chest: 'rare', gold: 35 },
@@ -88,7 +88,17 @@ export const ARENA_COLORS: Record<string, { sky: string; ground: string; accent:
   'Phil Peak': { sky: '#c9a227', ground: '#6a4a10', accent: '#ffe08a' },
 }
 
-export const STARTER_UNLOCKS = ['finley', 'beans', 'lynne', 'mike', 'kathie', 'todd', 'dan', 'pete']
+export const STARTER_UNLOCKS = [
+  'finley',
+  'shay',
+  'beans',
+  'lynne',
+  'mike',
+  'kathie',
+  'todd',
+  'dan',
+  'pete',
+]
 
 export function cardLevelMult(level: number): number {
   const lv = Math.max(1, Math.min(MAX_CARD_LEVEL, Math.floor(level)))
