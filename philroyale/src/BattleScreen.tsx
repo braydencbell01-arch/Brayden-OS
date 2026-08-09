@@ -317,8 +317,8 @@ export function BattleScreen({
 
   return (
     <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
-      {/* Full-bleed map — grass fills any tilt gaps so body black never shows. */}
-      <div className="absolute inset-0">
+      {/* Map sits above the solid CR blue dock so all six towers stay visible. */}
+      <div className="absolute inset-x-0 top-0 bottom-[6.85rem]">
         <Arena
           ref={arenaRef}
           towers={towers}
@@ -433,10 +433,13 @@ export function BattleScreen({
                 {clanLine}
               </p>
             ) : null}
-            <p className="flex items-center gap-0.5 text-[0.5rem] font-extrabold leading-none text-[#f5d76e] drop-shadow-[0_1px_1px_#000]">
-              <span aria-hidden className="text-[0.55rem]">
-                🏆
-              </span>
+            <p className="mt-0.5 flex items-center gap-0.5 text-[0.5rem] font-extrabold leading-none text-[#f5d76e] drop-shadow-[0_1px_1px_#000]">
+              <svg viewBox="0 0 16 16" className="h-2.5 w-2.5 shrink-0" aria-hidden>
+                <path
+                  fill="#f5d76e"
+                  d="M3 2h10v2c0 2.2-1.4 4-3.5 4.7V10h2v1.5H4.5V10h2V8.7C4.4 8 3 6.2 3 4V2zm1.2 1.2V4c0 1.5.9 2.8 2.3 3.3h.6c1.4-.5 2.3-1.8 2.3-3.3V3.2H4.2zM6 13h4v1.2H6V13z"
+                />
+              </svg>
               {opponentTrophies.toLocaleString()}
             </p>
           </div>
@@ -447,8 +450,8 @@ export function BattleScreen({
             className="rounded-md px-2 py-0.5 text-right leading-none"
             style={{ background: 'rgba(12,12,18,0.72)', boxShadow: '0 2px 6px #00000066' }}
           >
-            <p className="text-[0.38rem] font-extrabold uppercase tracking-[0.08em] text-white/75">
-              Time left
+            <p className="text-[0.38rem] font-extrabold uppercase tracking-[0.12em] text-white/80">
+              TIME LEFT
             </p>
             <p className="font-[family-name:var(--font-display)] text-[1.15rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
               {mm}:{ss}

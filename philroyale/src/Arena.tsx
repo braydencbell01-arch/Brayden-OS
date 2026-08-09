@@ -212,16 +212,16 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
               style={{ ...style, zIndex: 5 + z }}
             >
               <div
-                className="absolute left-1/2 w-[280%] max-w-[5.5rem] -translate-x-1/2"
+                className="absolute left-1/2 w-[320%] max-w-[6.25rem] -translate-x-1/2"
                 style={{
                   // Thin HP bar at tower feet — CR style, not above crown.
-                  bottom: '-1%',
+                  bottom: '-2%',
                   transform: `rotateX(${-ARENA_TILT_DEG}deg)`,
                   transformOrigin: '50% 100%',
                 }}
               >
                 <div
-                  className="relative h-[0.32rem] overflow-hidden rounded-[1px]"
+                  className="relative h-[0.34rem] overflow-hidden rounded-[1px]"
                   style={{
                     background: '#0a0a0c',
                     boxShadow: '0 0 0 1px #000, 0 1px 2px #0006',

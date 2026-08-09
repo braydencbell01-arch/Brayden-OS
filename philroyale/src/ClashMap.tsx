@@ -7,8 +7,8 @@ export function ClashMap() {
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
   const rightLane = fieldX + (77 / 100) * fieldW
-  /** Lane + bridge share one width (CR-style dirt paths, not fat bridge slabs). */
-  const pathW = (8.5 / 100) * fieldW
+  /** Continuous wooden lanes — same width as bridges (CR plank paths). */
+  const pathW = (7.5 / 100) * fieldW
   const riverY = 312
   const riverH = 26
 
@@ -111,15 +111,15 @@ export function ClashMap() {
 
       <DirtLane cx={leftLane} w={pathW} />
       <DirtLane cx={rightLane} w={pathW} />
-      {/* Short cross-links into king pads only */}
+      {/* Short cross-links into king pads — same wood as lanes */}
       <path
         d={`M${leftLane} 70 H${rightLane}
             M${leftLane} 560 H${rightLane}`}
         fill="none"
-        stroke="url(#dirt)"
+        stroke="url(#wood)"
         strokeWidth={pathW * 0.45}
         strokeLinecap="round"
-        opacity="0.75"
+        opacity="0.9"
       />
 
       {/* Thin 3D river */}
@@ -184,19 +184,27 @@ function DirtLane({ cx, w }: { cx: number; w: number }) {
   const x = cx - w / 2
   const top = 62
   const bot = 568
-  const riverTop = 312 - 2
-  const riverBot = 312 + 26 + 2
-  const overlap = 2
+  const h = bot - top
+  const plankN = Math.max(18, Math.round(h / 14))
   return (
     <g>
-      {/* Filled strips — same width as bridges end-to-end */}
-      <rect x={x} y={top} width={w} height={riverTop - top + overlap} fill="url(#dirt)" />
-      <rect x={x} y={riverBot - overlap} width={w} height={bot - riverBot + overlap} fill="url(#dirt)" />
-      {/* Bridge-gap filler so lane reads continuous through the river */}
-      <rect x={x} y={riverTop - overlap} width={w} height={riverBot - riverTop + overlap * 2} fill="url(#dirt)" opacity="0.92" />
-      <rect x={x + w * 0.38} y={top} width={w * 0.24} height={bot - top} fill="#fff6d0" opacity="0.18" />
-      <rect x={x} y={top} width="1.2" height={bot - top} fill="#5a3418" opacity="0.3" />
-      <rect x={x + w - 1.2} y={top} width="1.2" height={bot - top} fill="#5a3418" opacity="0.3" />
+      {/* Full-length wooden plank lane — same look + width as the bridge */}
+      <rect x={x} y={top} width={w} height={h} rx="1" fill="url(#wood)" stroke="#3d2410" strokeWidth="0.8" />
+      <rect x={x + w * 0.36} y={top} width={w * 0.28} height={h} fill="#fff6d0" opacity="0.14" />
+      {Array.from({ length: plankN }, (_, i) => (
+        <line
+          key={i}
+          x1={x + 1}
+          x2={x + w - 1}
+          y1={top + 2 + i * (h / plankN)}
+          y2={top + 2 + i * (h / plankN)}
+          stroke="#3a2010"
+          strokeWidth="0.7"
+          opacity="0.35"
+        />
+      ))}
+      <rect x={x} y={top} width="1.5" height={h} fill="#5a3418" opacity="0.4" />
+      <rect x={x + w - 1.5} y={top} width="1.5" height={h} fill="#5a3418" opacity="0.4" />
     </g>
   )
 }
