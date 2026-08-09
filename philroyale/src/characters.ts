@@ -79,7 +79,7 @@ export const PHIL: CharacterDef = {
     {
       id: 'sundaeHuck',
       name: 'Sundae Huck',
-      range: 30,
+      range: 15,
       damage: 100,
       rootWhileAttacking: false,
       kind: 'sundae',
@@ -87,7 +87,7 @@ export const PHIL: CharacterDef = {
     {
       id: 'chickenWhip',
       name: 'Chicken Whip',
-      range: 10,
+      range: 5,
       damage: 150,
       rootWhileAttacking: true,
       kind: 'whip',
@@ -111,7 +111,7 @@ export const PETE: CharacterDef = {
     {
       id: 'deathHug',
       name: 'Death Hug',
-      range: 10,
+      range: 5,
       damage: 250,
       rootWhileAttacking: true,
       pullToRange: 1,
@@ -136,7 +136,7 @@ export const BEANS: CharacterDef = {
     {
       id: 'slobber',
       name: 'Slobber',
-      range: 40,
+      range: 20,
       damage: 75,
       rootWhileAttacking: true,
       kind: 'slobber',
@@ -163,7 +163,7 @@ export const FINLEY: CharacterDef = {
     {
       id: 'bite',
       name: 'Bite',
-      range: 1,
+      range: 0.5,
       damage: 100,
       rootWhileAttacking: false,
       kind: 'bite',
@@ -187,7 +187,7 @@ export const JEREMY: CharacterDef = {
     {
       id: 'shoot',
       name: 'Shoot',
-      range: 50,
+      range: 25,
       damage: 100,
       rootWhileAttacking: false,
       burstShots: 2,

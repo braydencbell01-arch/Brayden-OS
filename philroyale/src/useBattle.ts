@@ -3,7 +3,6 @@ import {
   ARENA_COLS,
   ARENA_ROWS,
   TOWERS,
-  bridgeSteerDir,
   canDeployAllyAt,
   canDeployEnemyAt,
   closestPointOnTower,
@@ -13,6 +12,7 @@ import {
   isWalkableTile,
   nearestBridgeMidCol,
   pathCostTo,
+  steerTowardGoal,
   type Side,
 } from './arena'
 import { getCharacter, type CharacterDef } from './characters'
@@ -27,14 +27,16 @@ const WHIP_VFX_MS = 780
 const RANGED_VFX_MS = 380
 const SPLAT_MS = 520
 
-const PRINCESS_RANGE = 25
+const PRINCESS_RANGE = 12.5
 const PRINCESS_DAMAGE = 100
 const PRINCESS_CD_MS = 1000
-const KING_RANGE = 40
+const KING_RANGE = 20
 const KING_DAMAGE = 150
 const KING_CD_MS = 1500
-const KING_WAKE_RANGE = 15
+const KING_WAKE_RANGE = 7.5
 const KING_WAKE_DELAY_MS = 3000
+/** Soft collision radius (tiles) for CR-style unit push / bunching. */
+const UNIT_RADIUS = 0.85
 
 export type TowerHp = {
   id: string
@@ -118,7 +120,96 @@ function stepUnit(
     }
   }
 
+  // Stuck on a tower — slide perpendicular (go around) like Clash Royale.
+  const step = Math.max(Math.abs(dCol), Math.abs(dRow), 0.05)
+  const len = Math.hypot(dCol, dRow) || 1
+  const px = (-dRow / len) * step
+  const py = (dCol / len) * step
+  for (const sign of [1, -1] as const) {
+    const sc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + px * sign))
+    const sr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + py * sign))
+    if (isWalkableTile(sc, sr, liveTowers)) {
+      return { col: sc, row: sr }
+    }
+    if (isWalkableTile(sc, u.row, liveTowers)) {
+      return { col: sc, row: u.row }
+    }
+    if (isWalkableTile(u.col, sr, liveTowers)) {
+      return { col: u.col, row: sr }
+    }
+  }
+
   return { col: u.col, row: u.row }
+}
+
+/** CR soft collision: separate overlaps; faster troops push slower ones ahead. */
+function resolveUnitPushes(
+  units: BattleUnit[],
+  dt: number,
+  speedOf: (u: BattleUnit) => number,
+  liveTowers: ReadonlySet<string>,
+  now: number,
+): boolean {
+  let changed = false
+  const n = units.length
+  for (let i = 0; i < n; i++) {
+    const a = units[i]!
+    if (a.hp <= 0) continue
+    for (let j = i + 1; j < n; j++) {
+      const b = units[j]!
+      if (b.hp <= 0) continue
+      const ac = unitCenter(a)
+      const bc = unitCenter(b)
+      let dx = bc.col - ac.col
+      let dy = bc.row - ac.row
+      let d = Math.hypot(dx, dy)
+      if (d >= UNIT_RADIUS * 2) continue
+      if (d < 1e-4) {
+        dx = 0.01
+        dy = 0
+        d = 0.01
+      }
+      const nx = dx / d
+      const ny = dy / d
+      const overlap = UNIT_RADIUS * 2 - d
+      const sep = overlap * 0.45
+      a.col -= nx * sep
+      a.row -= ny * sep
+      b.col += nx * sep
+      b.row += ny * sep
+      changed = true
+
+      if (a.side !== b.side) continue
+      const sa = speedOf(a)
+      const sb = speedOf(b)
+      // Is b ahead of a along a's facing? Faster rear unit pushes the front one.
+      const alongA = nx * Math.cos(a.facing) + ny * Math.sin(a.facing)
+      if (sa > sb + 0.05 && alongA > 0.15) {
+        const boost = (sa - sb) * dt * 0.9
+        b.col += Math.cos(a.facing) * boost
+        b.row += Math.sin(a.facing) * boost
+        b.movingUntil = Math.max(b.movingUntil, now + 120)
+        changed = true
+      } else if (sb > sa + 0.05 && alongA < -0.15) {
+        const boost = (sb - sa) * dt * 0.9
+        a.col += Math.cos(b.facing) * boost
+        a.row += Math.sin(b.facing) * boost
+        a.movingUntil = Math.max(a.movingUntil, now + 120)
+        changed = true
+      }
+    }
+  }
+
+  if (!changed) return false
+  for (const u of units) {
+    if (u.hp <= 0) continue
+    u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col))
+    u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row))
+    const ejected = ejectFromTowers(u.col, u.row, liveTowers)
+    u.col = ejected.col
+    u.row = ejected.row
+  }
+  return true
 }
 
 function ejectFromTowers(
@@ -347,16 +438,16 @@ export function useBattle(opts?: { paused?: boolean }) {
             const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
             const goalRow = dir < 0 ? 0 : ARENA_ROWS - 1
-            const steer = bridgeSteerDir(u.col, u.row, u.col, goalRow)
-            const dCol = steer ? steer.dCol * step : 0
-            const dRow = steer ? steer.dRow * step : dir * step
+            const steer = steerTowardGoal(u.col, u.row, u.col, goalRow, liveIds)
+            const dCol = steer.dCol * step
+            const dRow = steer.dRow * step
             const prevCol = u.col
             const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
             const ejected = ejectFromTowers(next.col, next.row, liveIds)
             u.col = ejected.col
             u.row = ejected.row
-            u.facing = Math.atan2(dRow || dir, dCol)
+            u.facing = Math.atan2(steer.dRow, steer.dCol)
             if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
               u.movingUntil = t + 140
             }
@@ -375,12 +466,10 @@ export function useBattle(opts?: { paused?: boolean }) {
         if (best.rangeD > attack.range) {
           if (!rooted) {
             const step = moveSpeed * dt
-            const steer = bridgeSteerDir(u.col, u.row, best.col, best.row)
-            const dCol = steer ? steer.dCol * step : Math.cos(face) * step
-            const dRow = steer ? steer.dRow * step : Math.sin(face) * step
-            if (steer) {
-              u.facing = Math.atan2(steer.dRow, steer.dCol)
-            }
+            const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds)
+            const dCol = steer.dCol * step
+            const dRow = steer.dRow * step
+            u.facing = Math.atan2(steer.dRow, steer.dCol)
             const prevCol = u.col
             const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
@@ -520,6 +609,23 @@ export function useBattle(opts?: { paused?: boolean }) {
           arriveAt: t + TOWER_PROJECTILE_MS,
         })
         projectilesChanged = true
+      }
+
+      // Clash-style bunching: faster units shove slower allies ahead when stacked.
+      if (
+        resolveUnitPushes(
+          nextUnits,
+          dt,
+          (u) => {
+            const def = getCharacter(u.charId)
+            if (!def) return 0
+            return def.moveSpeed * (u.enraged && def.rageMoveMult != null ? def.rageMoveMult : 1)
+          },
+          liveIds,
+          t,
+        )
+      ) {
+        unitsChanged = true
       }
 
       const filteredUnits = nextUnits.filter((u) => u.hp > 0)

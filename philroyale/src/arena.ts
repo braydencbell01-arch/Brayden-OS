@@ -145,6 +145,104 @@ export function bridgeSteerDir(
   return { dCol: dx / len, dRow: dy / len }
 }
 
+function segmentHitsTower(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  t: TowerSlot,
+): boolean {
+  // Expand footprint slightly so units start detouring before they jam.
+  const pad = 0.35
+  const left = t.col - pad
+  const right = t.col + t.w + pad
+  const top = t.row - pad
+  const bottom = t.row + t.h + pad
+  // Liang-Barsky-ish: sample midpoints + endpoints for the short arena steps we care about.
+  for (let i = 0; i <= 6; i++) {
+    const p = i / 6
+    const x = x0 + (x1 - x0) * p
+    const y = y0 + (y1 - y0) * p
+    if (x >= left && x <= right && y >= top && y <= bottom) return true
+  }
+  return false
+}
+
+/** Shortest corner waypoint around a tower toward a goal (Clash-style go-around). */
+function towerDetourPoint(
+  col: number,
+  row: number,
+  targetCol: number,
+  targetRow: number,
+  t: TowerSlot,
+): { col: number; row: number } {
+  const pad = 0.7
+  const corners = [
+    { col: t.col - pad, row: t.row - pad },
+    { col: t.col + t.w + pad, row: t.row - pad },
+    { col: t.col - pad, row: t.row + t.h + pad },
+    { col: t.col + t.w + pad, row: t.row + t.h + pad },
+    { col: t.col - pad, row: t.row + t.h / 2 },
+    { col: t.col + t.w + pad, row: t.row + t.h / 2 },
+    { col: t.col + t.w / 2, row: t.row - pad },
+    { col: t.col + t.w / 2, row: t.row + t.h + pad },
+  ]
+  let best = corners[0]!
+  let bestCost = Infinity
+  for (const c of corners) {
+    const cc = Math.max(0, Math.min(ARENA_COLS - 1, c.col))
+    const rr = Math.max(0, Math.min(ARENA_ROWS - 1, c.row))
+    const cost =
+      Math.hypot(cc - col, rr - row) + Math.hypot(targetCol - cc, targetRow - rr)
+    if (cost < bestCost) {
+      bestCost = cost
+      best = { col: cc, row: rr }
+    }
+  }
+  return best
+}
+
+/**
+ * Clash-style steering: bridge first when crossing the river; otherwise walk toward
+ * the goal, detouring around any living tower that blocks the direct line (own or enemy).
+ */
+export function steerTowardGoal(
+  col: number,
+  row: number,
+  targetCol: number,
+  targetRow: number,
+  liveTowerIds?: ReadonlySet<string>,
+): { dCol: number; dRow: number } {
+  const bridge = bridgeSteerDir(col, row, targetCol, targetRow)
+  if (bridge) return bridge
+
+  let aimCol = targetCol
+  let aimRow = targetRow
+
+  // If the straight path clips a tower, route via the cheapest corner.
+  let blocker: TowerSlot | null = null
+  let blockerDist = Infinity
+  for (const t of TOWERS) {
+    if (liveTowerIds && !liveTowerIds.has(t.id)) continue
+    if (!segmentHitsTower(col + 0.5, row + 0.5, targetCol, targetRow, t)) continue
+    const d = distToTowerEdge(col + 0.5, row + 0.5, t)
+    if (d < blockerDist) {
+      blockerDist = d
+      blocker = t
+    }
+  }
+  if (blocker) {
+    const wp = towerDetourPoint(col + 0.5, row + 0.5, targetCol, targetRow, blocker)
+    aimCol = wp.col
+    aimRow = wp.row
+  }
+
+  const dx = aimCol - (col + 0.5)
+  const dy = aimRow - (row + 0.5)
+  const len = Math.hypot(dx, dy) || 1
+  return { dCol: dx / len, dRow: dy / len }
+}
+
 /** Shortest bridge-aware path length to a point (straight-line if no river crossing). */
 export function pathCostTo(
   fromCol: number,
