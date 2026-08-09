@@ -8,10 +8,20 @@ import {
   type CharacterDef,
   type Rarity,
 } from './characters'
-import { loadDeck, saveDeck } from './storage'
+import {
+  copiesToUpgrade,
+  goldToUpgrade,
+  loadCardProgress,
+  loadDeck,
+  loadProfile,
+  saveCardProgress,
+  saveDeck,
+  tryUpgradeCard,
+  type CardProgress,
+} from './storage'
 import { BattleCard } from './BattleCard'
 
-type SortMode = 'name' | 'rarity' | 'elixir'
+type SortMode = 'name' | 'rarity' | 'elixir' | 'level'
 
 const RARITY_PILL: Record<Rarity, string> = {
   common: '#b8c0cc',
@@ -22,18 +32,33 @@ const RARITY_PILL: Record<Rarity, string> = {
 
 export function CharactersScreen() {
   const [deck, setDeck] = useState<string[]>(() => loadDeck())
+  const [progress, setProgress] = useState<CardProgress>(() => loadCardProgress())
+  const [gold, setGold] = useState(() => loadProfile().gold)
   const [profileId, setProfileId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [sortMode, setSortMode] = useState<SortMode>('rarity')
+  const [query, setQuery] = useState('')
+  const [rarityFilter, setRarityFilter] = useState<Rarity | 'all'>('all')
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
 
   const profile = profileId ? getCharacter(profileId) : null
 
   const sorted = useMemo(() => {
-    const list = [...CHARACTERS]
+    let list = [...CHARACTERS]
+    const q = query.trim().toLowerCase()
+    if (q) list = list.filter((c) => c.name.toLowerCase().includes(q))
+    if (rarityFilter !== 'all') list = list.filter((c) => c.rarity === rarityFilter)
+    if (favoritesOnly) list = list.filter((c) => progress.favorites.includes(c.id))
     if (sortMode === 'name') {
       list.sort((a, b) => a.name.localeCompare(b.name))
     } else if (sortMode === 'elixir') {
       list.sort((a, b) => a.elixir - b.elixir || a.name.localeCompare(b.name))
+    } else if (sortMode === 'level') {
+      list.sort(
+        (a, b) =>
+          (progress.levels[b.id] ?? 1) - (progress.levels[a.id] ?? 1) ||
+          a.name.localeCompare(b.name),
+      )
     } else {
       list.sort(
         (a, b) =>
@@ -41,7 +66,13 @@ export function CharactersScreen() {
       )
     }
     return list
-  }, [sortMode])
+  }, [sortMode, query, rarityFilter, favoritesOnly, progress])
+
+  const collectionPct = useMemo(() => {
+    const maxLevel = CHARACTERS.length * 11
+    const sum = CHARACTERS.reduce((n, c) => n + (progress.levels[c.id] ?? 1), 0)
+    return Math.round((sum / maxLevel) * 100)
+  }, [progress])
 
   function flash(msg: string) {
     setToast(msg)
@@ -71,12 +102,53 @@ export function CharactersScreen() {
     flash('Battle deck saved')
   }
 
+  function suggestDeck() {
+    const ranked = [...CHARACTERS].sort((a, b) => {
+      const af = progress.favorites.includes(a.id) ? 1 : 0
+      const bf = progress.favorites.includes(b.id) ? 1 : 0
+      if (af !== bf) return bf - af
+      return (
+        (progress.levels[b.id] ?? 1) - (progress.levels[a.id] ?? 1) ||
+        RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]
+      )
+    })
+    const pick = ranked.slice(0, DECK_SIZE).map((c) => c.id)
+    while (pick.length < DECK_SIZE) pick.push(CHARACTERS[pick.length % CHARACTERS.length]!.id)
+    setDeck(pick)
+    flash('Suggested deck filled — save to lock it in')
+  }
+
+  function toggleFavorite(id: string) {
+    setProgress((prev) => {
+      const has = prev.favorites.includes(id)
+      const favorites = has ? prev.favorites.filter((x) => x !== id) : [...prev.favorites, id]
+      const next = { ...prev, favorites }
+      saveCardProgress(next)
+      return next
+    })
+  }
+
+  function upgrade(id: string) {
+    const res = tryUpgradeCard(id)
+    flash(res.message)
+    if (res.ok) {
+      setProgress(res.progress)
+      setGold(loadProfile().gold)
+    }
+  }
+
   if (profile) {
     return (
       <CardProfile
         character={profile}
+        level={progress.levels[profile.id] ?? 1}
+        copies={progress.copies[profile.id] ?? 0}
+        favorite={progress.favorites.includes(profile.id)}
+        gold={gold}
         onBack={() => setProfileId(null)}
         onAdd={() => addToDeck(profile.id)}
+        onFavorite={() => toggleFavorite(profile.id)}
+        onUpgrade={() => upgrade(profile.id)}
       />
     )
   }
@@ -88,7 +160,7 @@ export function CharactersScreen() {
           Cards
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Tap a card for its profile. Build an 8-card battle deck ({deck.length}/{DECK_SIZE}).
+          Upgrade with gold · collection {collectionPct}% · {gold} gold
         </p>
       </header>
 
@@ -118,24 +190,37 @@ export function CharactersScreen() {
             )
           })}
         </div>
-        <button
-          type="button"
-          onClick={save}
-          className="mt-2 w-full rounded-lg py-2 text-sm font-extrabold text-[#1a1410]"
-          style={{
-            background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
-            boxShadow: '0 3px 0 #8a6a12',
-          }}
-        >
-          Save battle deck
-        </button>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={suggestDeck}
+            className="rounded-lg py-2 text-sm font-extrabold text-white"
+            style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
+          >
+            Suggest deck
+          </button>
+          <button
+            type="button"
+            onClick={save}
+            className="rounded-lg py-2 text-sm font-extrabold text-[#1a1410]"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+              boxShadow: '0 3px 0 #8a6a12',
+            }}
+          >
+            Save battle deck
+          </button>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-            Collection
-          </p>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search cards"
+            className="min-w-0 flex-1 rounded-lg bg-[#221610] px-2.5 py-1.5 text-xs font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+          />
           <label className="flex items-center gap-1 text-[0.65rem] font-bold text-white/70">
             Sort
             <select
@@ -144,33 +229,66 @@ export function CharactersScreen() {
               className="rounded bg-[#221610] px-1.5 py-0.5 text-[0.65rem] font-extrabold text-white outline-none ring-1 ring-white/15"
             >
               <option value="rarity">Rarity</option>
+              <option value="level">Level</option>
               <option value="elixir">Elixir</option>
               <option value="name">Name</option>
             </select>
           </label>
         </div>
-        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {sorted.map((c) => (
-            <li key={c.id}>
-              <button
-                type="button"
-                onClick={() => setProfileId(c.id)}
-                className="w-full rounded-lg p-1.5 ring-1 ring-white/10"
-                style={{ background: '#221610' }}
-              >
-                <BattleCard character={c} size="collection" />
-                <p className="mt-1 truncate text-center text-[0.7rem] font-extrabold text-white">
-                  {c.name}
-                </p>
-                <p
-                  className="text-center text-[0.55rem] font-extrabold uppercase tracking-wide"
-                  style={{ color: RARITY_PILL[c.rarity] }}
-                >
-                  {RARITY_LABEL[c.rarity]}
-                </p>
-              </button>
-            </li>
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {(['all', 'common', 'rare', 'epic', 'legendary'] as const).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRarityFilter(r)}
+              className="rounded-md px-2 py-1 text-[0.6rem] font-extrabold uppercase tracking-wide"
+              style={{
+                background: rarityFilter === r ? '#f5d76e' : '#221610',
+                color: rarityFilter === r ? '#1a1410' : '#fff6e8',
+              }}
+            >
+              {r === 'all' ? 'All' : RARITY_LABEL[r]}
+            </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setFavoritesOnly((v) => !v)}
+            className="rounded-md px-2 py-1 text-[0.6rem] font-extrabold uppercase tracking-wide"
+            style={{
+              background: favoritesOnly ? '#f5d76e' : '#221610',
+              color: favoritesOnly ? '#1a1410' : '#fff6e8',
+            }}
+          >
+            ★ Favs
+          </button>
+        </div>
+        <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {sorted.map((c) => {
+            const level = progress.levels[c.id] ?? 1
+            const fav = progress.favorites.includes(c.id)
+            return (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => setProfileId(c.id)}
+                  className="w-full rounded-lg p-1.5 ring-1 ring-white/10"
+                  style={{ background: '#221610' }}
+                >
+                  <BattleCard character={c} size="collection" />
+                  <p className="mt-1 truncate text-center text-[0.7rem] font-extrabold text-white">
+                    {fav ? '★ ' : ''}
+                    {c.name}
+                  </p>
+                  <p
+                    className="text-center text-[0.55rem] font-extrabold uppercase tracking-wide"
+                    style={{ color: RARITY_PILL[c.rarity] }}
+                  >
+                    Lv {level} · {RARITY_LABEL[c.rarity]}
+                  </p>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </div>
 
@@ -187,13 +305,29 @@ export function CharactersScreen() {
 
 function CardProfile({
   character,
+  level,
+  copies,
+  favorite,
+  gold,
   onBack,
   onAdd,
+  onFavorite,
+  onUpgrade,
 }: {
   character: CharacterDef
+  level: number
+  copies: number
+  favorite: boolean
+  gold: number
   onBack: () => void
   onAdd: () => void
+  onFavorite: () => void
+  onUpgrade: () => void
 }) {
+  const need = copiesToUpgrade(level, character.rarity)
+  const cost = goldToUpgrade(level)
+  const maxed = level >= 11
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
       <header className="flex shrink-0 items-center gap-3 px-3 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
@@ -227,7 +361,7 @@ function CardProfile({
             className="mt-1 text-center text-sm font-extrabold uppercase tracking-wide"
             style={{ color: RARITY_PILL[character.rarity] }}
           >
-            {RARITY_LABEL[character.rarity]}
+            {RARITY_LABEL[character.rarity]} · Level {level}
           </p>
           <p className="mt-1 text-center text-sm font-semibold text-white/80">{character.blurb}</p>
 
@@ -242,7 +376,7 @@ function CardProfile({
               label="Attack CD"
               value={character.attacks.length === 0 ? '—' : `${character.attackDelaySec}s`}
             />
-            <Stat label="Size" value="1 block" />
+            <Stat label="Copies" value={`${copies}${maxed ? '' : ` / ${need}`}`} />
             {character.rageAfterSec != null ? (
               <Stat
                 label="Rage"
@@ -288,10 +422,38 @@ function CardProfile({
             ))}
           </ul>
 
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onFavorite}
+              className="rounded-lg py-2.5 text-sm font-extrabold text-white"
+              style={{ background: favorite ? '#8a6a12' : '#2a1a12' }}
+            >
+              {favorite ? '★ Favorited' : '☆ Favorite'}
+            </button>
+            <button
+              type="button"
+              onClick={onUpgrade}
+              disabled={maxed}
+              className="rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410] disabled:opacity-50"
+              style={{
+                background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
+                color: '#fff',
+              }}
+            >
+              {maxed ? 'Max level' : `Upgrade ${cost}g`}
+            </button>
+          </div>
+          {!maxed ? (
+            <p className="mt-1 text-center text-[0.7rem] font-semibold text-white/55">
+              Need {need} copies · you have {copies} · {gold} gold
+            </p>
+          ) : null}
+
           <button
             type="button"
             onClick={onAdd}
-            className="mt-4 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
+            className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
             style={{
               background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
               boxShadow: '0 3px 0 #8a6a12',

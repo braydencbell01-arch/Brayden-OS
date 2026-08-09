@@ -19,7 +19,7 @@ import {
 } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
 import { getCharacter } from './characters'
-import { loadDeck } from './storage'
+import { loadDeck, noteCardDeployed, recordMatchResult } from './storage'
 import { useBattle } from './useBattle'
 
 type Props = {
@@ -178,6 +178,11 @@ export function BattleScreen({
     setEmotePickerOpen(false)
   }, [towers, seconds, result])
 
+  useEffect(() => {
+    if (!result) return
+    recordMatchResult(result)
+  }, [result])
+
   function cycleAfterDeploy(playedId: string) {
     const incoming = nextId
     const pile = [...drawPile]
@@ -211,7 +216,10 @@ export function BattleScreen({
     const card = getCharacter(selectedCharId)
     if (!card || elixir < card.elixir) return
     const ok = deploy(card, col, row)
-    if (ok) cycleAfterDeploy(card.id)
+    if (ok) {
+      noteCardDeployed(1)
+      cycleAfterDeploy(card.id)
+    }
   }
 
   function updateDragFromPointer(clientX: number, clientY: number, base: DragState) {
@@ -306,7 +314,10 @@ export function BattleScreen({
     const card = getCharacter(dropped.charId)
     if (!card || elixir < card.elixir || !dropped.valid) return
     const ok = deploy(card, dropped.col, dropped.row)
-    if (ok) cycleAfterDeploy(card.id)
+    if (ok) {
+      noteCardDeployed(1)
+      cycleAfterDeploy(card.id)
+    }
   }
 
   function pickEmote(option: EmoteOption) {
@@ -551,10 +562,10 @@ export function BattleScreen({
             </p>
             <p className="mt-1 text-xs font-bold text-[#5a4a20]/85">
               {result === 'victory'
-                ? 'Enemy king tower destroyed — or more towers left.'
+                ? '+30 trophies · +50 gold'
                 : result === 'defeat'
-                  ? 'Your king tower fell — or fewer towers left.'
-                  : 'Same towers left when time ran out.'}
+                  ? '−20 trophies · +15 gold'
+                  : '+5 trophies · +25 gold'}
             </p>
             <button
               type="button"

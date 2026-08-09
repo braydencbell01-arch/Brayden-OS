@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   clubInviteUrl,
   friendInviteUrl,
+  loadFriendMeta,
   loadFriends,
   loadMyClub,
   loadPlayerName,
+  markFriendBattled,
+  saveFriendMeta,
   saveFriends,
   saveMyClub,
   savePlayerName,
   shareText,
   type Club,
   type Friend,
+  type FriendMeta,
 } from './storage'
 
 function makeCode(): string {
@@ -25,12 +29,27 @@ type Props = {
 
 export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
+  const [meta, setMeta] = useState<FriendMeta>(() => loadFriendMeta())
   const [club, setClub] = useState<Club | null>(() => loadMyClub())
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [clubName, setClubName] = useState('')
   const [joinCode, setJoinCode] = useState('')
+  const [manualName, setManualName] = useState('')
   const [section, setSection] = useState<'friends' | 'clubs'>('friends')
   const [pendingBattleFriend, setPendingBattleFriend] = useState<string | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+
+  const sortedFriends = useMemo(() => {
+    return [...friends].sort((a, b) => {
+      const ap = meta.pinned[a.id] ? 1 : 0
+      const bp = meta.pinned[b.id] ? 1 : 0
+      if (ap !== bp) return bp - ap
+      const al = meta.lastBattled[a.id] ?? ''
+      const bl = meta.lastBattled[b.id] ?? ''
+      if (al !== bl) return bl.localeCompare(al)
+      return a.name.localeCompare(b.name)
+    })
+  }, [friends, meta])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -97,6 +116,8 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
   async function requestBattle(friend: Friend) {
     setPendingBattleFriend(friend.name)
     try {
+      markFriendBattled(friend.id)
+      setMeta(loadFriendMeta())
       await onRequestBattle(friend.name)
     } finally {
       setPendingBattleFriend(null)
@@ -104,7 +125,46 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
   }
 
   async function shareBattleLink(friend: Friend) {
+    markFriendBattled(friend.id)
+    setMeta(loadFriendMeta())
     await onRequestBattle(friend.name)
+  }
+
+  function addFriendManual() {
+    const name = manualName.trim()
+    if (!name) return
+    setFriends((prev) => {
+      if (prev.some((f) => f.name.toLowerCase() === name.toLowerCase())) return prev
+      const next = [
+        ...prev,
+        { id: `f-${Date.now()}`, name, addedAt: new Date().toISOString() },
+      ]
+      saveFriends(next)
+      return next
+    })
+    setManualName('')
+  }
+
+  function togglePin(id: string) {
+    setMeta((prev) => {
+      const next = {
+        ...prev,
+        pinned: { ...prev.pinned, [id]: !prev.pinned[id] },
+      }
+      saveFriendMeta(next)
+      return next
+    })
+  }
+
+  function setNote(id: string, note: string) {
+    setMeta((prev) => {
+      const next = {
+        ...prev,
+        notes: { ...prev.notes, [id]: note },
+      }
+      saveFriendMeta(next)
+      return next
+    })
   }
 
   function createClub() {
@@ -212,44 +272,108 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
             <p className="text-center text-xs font-semibold text-white/50">
               Opens Messages / share — they tap your link to appear here.
             </p>
-            {friends.length === 0 ? (
+            <div
+              className="rounded-xl p-3"
+              style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+            >
+              <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+                Add by name
+              </p>
+              <div className="flex gap-2">
+                <input
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  placeholder="Friend's name"
+                  className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+                />
+                <button
+                  type="button"
+                  onClick={addFriendManual}
+                  className="rounded-lg px-3 py-2 text-sm font-extrabold text-[#1a1410]"
+                  style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+            {sortedFriends.length === 0 ? (
               <p className="rounded-lg bg-[#221610] px-3 py-4 text-center text-sm font-semibold text-white/55 ring-1 ring-white/10">
-                No friends yet. Send a text invite.
+                No friends yet. Send a text invite or add a name.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
-                {friends.map((f) => {
+              <ul className="flex flex-col gap-2">
+                {sortedFriends.map((f) => {
                   const isWaiting =
                     waitingName === f.name.toLowerCase() ||
                     pendingBattleFriend?.toLowerCase() === f.name.toLowerCase()
+                  const last = meta.lastBattled[f.id]
+                  const pinned = !!meta.pinned[f.id]
+                  const note = meta.notes[f.id] ?? ''
                   return (
-                    <li key={f.id}>
+                    <li
+                      key={f.id}
+                      className="rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
+                    >
                       <button
                         type="button"
                         onClick={() => void requestBattle(f)}
                         disabled={isWaiting}
-                        className="flex w-full items-center justify-between rounded-lg bg-[#221610] px-3 py-2.5 text-left ring-1 ring-white/10 disabled:opacity-70"
+                        className="flex w-full items-center justify-between text-left disabled:opacity-70"
                       >
-                        <p className="font-bold text-white">{f.name}</p>
+                        <div>
+                          <p className="font-bold text-white">
+                            {pinned ? '★ ' : ''}
+                            {f.name}
+                          </p>
+                          <p className="text-[0.65rem] font-semibold text-white/50">
+                            {last
+                              ? `Last battle ${new Date(last).toLocaleDateString()}`
+                              : 'No battles yet'}
+                          </p>
+                        </div>
                         <span className="text-xs font-extrabold text-[#7dff9a]">
                           {isWaiting ? 'Requesting…' : 'Battle'}
                         </span>
                       </button>
-                      <div className="mt-1 flex justify-end gap-2 px-1">
+                      {editingNoteId === f.id ? (
+                        <input
+                          autoFocus
+                          value={note}
+                          onChange={(e) => setNote(f.id, e.target.value)}
+                          onBlur={() => setEditingNoteId(null)}
+                          placeholder="Note (clan, timezone…)"
+                          className="mt-2 w-full rounded bg-[#140e0a] px-2 py-1.5 text-xs font-semibold text-white outline-none ring-1 ring-white/15"
+                        />
+                      ) : note ? (
+                        <p className="mt-1 text-xs font-semibold text-white/55">{note}</p>
+                      ) : null}
+                      <div className="mt-1.5 flex flex-wrap justify-end gap-2">
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            void shareBattleLink(f)
-                          }}
+                          onClick={() => togglePin(f.id)}
+                          className="text-[10px] font-extrabold uppercase tracking-wide text-[#f5d76e]"
+                        >
+                          {pinned ? 'Unpin' : 'Pin'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingNoteId(f.id)}
+                          className="text-[10px] font-extrabold uppercase tracking-wide text-white/55"
+                        >
+                          Note
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void shareBattleLink(f)}
                           className="text-[10px] font-extrabold uppercase tracking-wide text-[#4a9eff]"
                         >
                           Share link
                         </button>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
+                          onClick={() => {
+                            markFriendBattled(f.id)
+                            setMeta(loadFriendMeta())
                             onBattle(f.name)
                           }}
                           className="text-[10px] font-extrabold uppercase tracking-wide text-white/45"
@@ -258,10 +382,7 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
                         </button>
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            removeFriend(f.id)
-                          }}
+                          onClick={() => removeFriend(f.id)}
                           className="text-[10px] font-extrabold uppercase tracking-wide text-[#ff8a7a]"
                         >
                           Remove

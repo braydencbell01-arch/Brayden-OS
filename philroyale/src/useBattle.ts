@@ -232,7 +232,8 @@ function makeBattleUnit(
     maxHp: char.hp,
     attackIndex: 0,
     burstShot: 0,
-    nextAttackAt: t + 300,
+    // Ready immediately — first hit fires the moment a foe enters range.
+    nextAttackAt: 0,
     vfx: null,
     vfxUntil: 0,
     facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
@@ -719,6 +720,10 @@ export function useBattle(opts?: { paused?: boolean }) {
         const noAttack = def.attacks.length === 0
 
         if (!best) {
+          if (u.burstShot === 0 && u.nextAttackAt !== 0) {
+            u.nextAttackAt = 0
+            unitsChanged = true
+          }
           if (!rooted) {
             const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
@@ -754,6 +759,12 @@ export function useBattle(opts?: { paused?: boolean }) {
           ? 2
           : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
         if (best.rangeD > attackRange) {
+          // Out of range: attack interval does not tick. First hit on re-entry is immediate
+          // (unless mid-burst, so Jeremy's dual shots stay linked).
+          if (u.burstShot === 0 && u.nextAttackAt !== 0) {
+            u.nextAttackAt = 0
+            unitsChanged = true
+          }
           if (!rooted) {
             const step = moveSpeed * dt
             const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds)
