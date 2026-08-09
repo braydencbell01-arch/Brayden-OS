@@ -78,7 +78,7 @@ export function CharactersScreen() {
 
   function flash(msg: string) {
     setToast(msg)
-    window.setTimeout(() => setToast(null), 1500)
+    window.setTimeout(() => setToast(null), 2200)
   }
 
   function addToDeck(id: string) {
@@ -147,19 +147,41 @@ export function CharactersScreen() {
   }
 
   if (profile) {
+    const level = progress.levels[profile.id] ?? 1
+    const copies = progress.copies[profile.id] ?? 0
+    const need = copiesToUpgrade(level, profile.rarity)
+    const cost = goldToUpgrade(level)
+    const canUpgrade =
+      progress.unlocked.includes(profile.id) &&
+      level < MAX_CARD_LEVEL &&
+      copies >= need &&
+      gold >= cost
+
     return (
-      <CardProfile
-        character={profile}
-        level={progress.levels[profile.id] ?? 1}
-        copies={progress.copies[profile.id] ?? 0}
-        favorite={progress.favorites.includes(profile.id)}
-        unlocked={progress.unlocked.includes(profile.id)}
-        gold={gold}
-        onBack={() => setProfileId(null)}
-        onAdd={() => addToDeck(profile.id)}
-        onFavorite={() => toggleFavorite(profile.id)}
-        onUpgrade={() => upgrade(profile.id)}
-      />
+      <div className="relative h-full min-h-0">
+        <CardProfile
+          character={profile}
+          level={level}
+          copies={copies}
+          favorite={progress.favorites.includes(profile.id)}
+          unlocked={progress.unlocked.includes(profile.id)}
+          gold={gold}
+          canUpgrade={canUpgrade}
+          needCopies={need}
+          upgradeCost={cost}
+          onBack={() => setProfileId(null)}
+          onAdd={() => addToDeck(profile.id)}
+          onFavorite={() => toggleFavorite(profile.id)}
+          onUpgrade={() => upgrade(profile.id)}
+        />
+        {toast ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-6 z-30 flex justify-center px-4">
+            <p className="rounded-lg bg-black/90 px-3 py-2.5 text-center text-sm font-bold text-white ring-1 ring-[#f5d76e]/50">
+              {toast}
+            </p>
+          </div>
+        ) : null}
+      </div>
     )
   }
 
@@ -321,6 +343,9 @@ function CardProfile({
   favorite,
   unlocked,
   gold,
+  canUpgrade,
+  needCopies,
+  upgradeCost,
   onBack,
   onAdd,
   onFavorite,
@@ -332,13 +357,16 @@ function CardProfile({
   favorite: boolean
   unlocked: boolean
   gold: number
+  canUpgrade: boolean
+  needCopies: number
+  upgradeCost: number
   onBack: () => void
   onAdd: () => void
   onFavorite: () => void
   onUpgrade: () => void
 }) {
-  const need = copiesToUpgrade(level, character.rarity)
-  const cost = goldToUpgrade(level)
+  const need = needCopies
+  const cost = upgradeCost
   const maxed = level >= MAX_CARD_LEVEL
   const hpNow = scaledStat(character.hp, level)
   const dmgBonus = Math.round((level - 1) * LEVEL_STAT_STEP * 100)
@@ -450,19 +478,32 @@ function CardProfile({
             <button
               type="button"
               onClick={onUpgrade}
-              disabled={maxed}
-              className="rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410] disabled:opacity-50"
+              disabled={maxed || !unlocked}
+              className="rounded-lg py-2.5 text-sm font-extrabold disabled:opacity-50"
               style={{
-                background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
+                background: canUpgrade
+                  ? 'linear-gradient(180deg,#4a9eff,#2f6fbf)'
+                  : maxed
+                    ? '#2a1a12'
+                    : 'linear-gradient(180deg,#4a9eff88,#2f6fbf88)',
                 color: '#fff',
+                boxShadow: canUpgrade ? '0 3px 0 #1d4a86' : 'none',
               }}
             >
-              {maxed ? 'Max level 10' : `Upgrade ${cost}g (+5%)`}
+              {maxed
+                ? 'Max level 10'
+                : !unlocked
+                  ? 'Locked'
+                  : canUpgrade
+                    ? `Upgrade ${cost}g (+5%)`
+                    : copies < need
+                      ? `Need ${need - copies} more copies`
+                      : `Need ${cost}g`}
             </button>
           </div>
           {!maxed ? (
             <p className="mt-1 text-center text-[0.7rem] font-semibold text-white/55">
-              Need {need} copies · you have {copies} · {gold} gold
+              {copies}/{need} copies · {gold} gold · +5% HP & dmg per level
             </p>
           ) : null}
 
