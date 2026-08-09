@@ -5,7 +5,8 @@
  * - New / updated eBay actives → create or update Square (SKU ebay:{itemId})
  * - Linked Square items → revise eBay price / qty when Square drifts (qty up or down)
  * - New Square-only sellable items → create eBay FixedPrice listing, write back SKU
- * - Linked but ended on eBay → leave for reconcile:sold (ends Square + site)
+ * - Linked but ended on eBay + Square still has stock → RelistFixedPriceItem
+ *   (new ItemID written back to Square SKU). Confirmed sold / sold-out skipped.
  * - Removals / sold are owned by reconcile-sold-inventory.mjs
  * - Qty SoT is Square after create: never bump Square stock up from eBay (that undid
  *   Payment Link sales when eBay still showed the pre-sale qty). Decreases from eBay OK.
@@ -619,6 +620,27 @@ function shippingXml() {
   </ReturnPolicy>`
 }
 
+/** Relist an ended/completed FixedPrice item; returns new ItemID when eBay issues one. */
+async function relistEbayFixedPrice(ebayId, quantity) {
+  if (DRY) return { ok: true, dry: true, ebayId }
+  const qty = Math.max(1, Number(quantity) || 1)
+  const xml = await ebayCall(
+    'RelistFixedPriceItem',
+    `<Item>
+    <ItemID>${ebayId}</ItemID>
+    <Quantity>${qty}</Quantity>
+  </Item>`,
+  )
+  if (!/<Ack>(Success|Warning)<\/Ack>/i.test(xml)) {
+    const short = (xml.match(/<ShortMessage>([^<]+)/i) || [])[1] || ''
+    const long = (xml.match(/<LongMessage>([^<]+)/i) || [])[1] || xml.slice(0, 240)
+    return { ok: false, message: short || long }
+  }
+  const newId = xmlText(xml, 'ItemID')
+  if (!newId) return { ok: false, message: 'no ItemID returned' }
+  return { ok: true, ebayId: newId }
+}
+
 async function createEbayFromSquare(row) {
   const pics = (row.imageUrls || []).slice(0, 12)
   if (!pics.length) return { ok: false, message: 'no images' }
@@ -770,6 +792,7 @@ async function main() {
 
   let squareToEbayRevised = 0
   let squareToEbayCreated = 0
+  let squareToEbayRelisted = 0
   let squareToEbayFailed = 0
 
   console.log('→ Square → eBay')
@@ -779,8 +802,55 @@ async function main() {
 
     if (row.ebayId) {
       if (!ebayActiveIds.has(row.ebayId)) {
-        // Linked but not active on eBay (ended/sold/removed) — reconcile:sold clears Square + site.
-        console.log(`  · eBay ended ${row.ebayId} — defer to reconcile:sold (${row.title.slice(0, 40)})`)
+        // Still in stock on Square but ended/completed on eBay → put it back.
+        // Skip only explicit sold-out / recent SoldList ids (confirmed sell-through).
+        if (soldOutEbayIds.has(row.ebayId)) {
+          console.log(
+            `  · eBay sold ${row.ebayId} — skip relist (${row.title.slice(0, 40)})`,
+          )
+          continue
+        }
+        try {
+          const relisted = await relistEbayFixedPrice(row.ebayId, row.quantity)
+          if (!relisted.ok) {
+            // Duplicate Listing usually means an equivalent active already exists —
+            // bind Square SKU to that active instead of leaving the kit off eBay.
+            const dup = /duplicate listing/i.test(relisted.message || '')
+            const match = dup
+              ? ebayActives.find(
+                  (e) =>
+                    normalizeTitle(e.title).toLowerCase() ===
+                    normalizeTitle(row.title).toLowerCase(),
+                )
+              : null
+            if (match) {
+              await setSquareSku(row.variationId, `ebay:${match.ebayId}`)
+              squareToEbayRelisted += 1
+              console.log(
+                `  ↺ eBay bind duplicate ${row.ebayId} → ${match.ebayId} (${row.title.slice(0, 40)})`,
+              )
+              continue
+            }
+            squareToEbayFailed += 1
+            console.warn(
+              `  ✗ eBay relist ${row.ebayId}: ${relisted.message} (${row.title.slice(0, 40)})`,
+            )
+            continue
+          }
+          if (relisted.ebayId !== row.ebayId) {
+            await setSquareSku(row.variationId, `ebay:${relisted.ebayId}`)
+            ebayActiveIds.add(relisted.ebayId)
+          } else {
+            ebayActiveIds.add(row.ebayId)
+          }
+          squareToEbayRelisted += 1
+          console.log(
+            `  ↺ eBay relist ${row.ebayId} → ${relisted.ebayId} (${row.title.slice(0, 40)})`,
+          )
+        } catch (err) {
+          squareToEbayFailed += 1
+          console.warn(`  ✗ eBay relist ${row.ebayId}: ${err.message}`)
+        }
         continue
       }
       const ebay = ebayActives.find((e) => e.ebayId === row.ebayId)
@@ -833,7 +903,7 @@ async function main() {
     `Done. eBay→Square created=${ebayToSquareCreated} updated=${ebayToSquareUpdated} unchanged=${ebayToSquareUnchanged} failed=${ebayToSquareFailed}`,
   )
   console.log(
-    `      Square→eBay created=${squareToEbayCreated} revised=${squareToEbayRevised} failed=${squareToEbayFailed}`,
+    `      Square→eBay created=${squareToEbayCreated} revised=${squareToEbayRevised} relisted=${squareToEbayRelisted} failed=${squareToEbayFailed}`,
   )
   console.log(`Next: sync:square → sync:ebay-details → square:buyable-checkout (for new Payment Links).`)
 }
