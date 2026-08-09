@@ -13,6 +13,19 @@ export type SocialMessage =
       at: string
     }
   | {
+      type: 'friend_request'
+      fromPlayerId: string
+      fromName: string
+      toPlayerId: string
+      at: string
+    }
+  | {
+      type: 'presence'
+      fromPlayerId: string
+      fromName: string
+      at: string
+    }
+  | {
       type: 'battle_invite'
       challengeId: string
       fromPlayerId: string
@@ -45,6 +58,10 @@ export type SocialMessage =
       clubName: string
       at: string
     }
+
+/** How recently a presence ping counts as "online". */
+export const PRESENCE_ONLINE_MS = 45_000
+export const PRESENCE_HEARTBEAT_MS = 15_000
 
 const TOPIC_PREFIX = 'philroyale-v2-'
 

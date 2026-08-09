@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ClubScreen } from './ClubScreen'
+import { PRESENCE_ONLINE_MS } from './socialHub'
 import {
-  friendInviteUrl,
+  formatAccountCode,
   joinRichClubByCode,
+  loadAccountCode,
   loadFriendMeta,
   loadFriends,
   loadPlayerId,
   loadPlayerName,
   loadRichClub,
   markFriendBattled,
+  normalizeAccountCode,
   saveFriendMeta,
   saveFriends,
   savePlayerName,
-  shareText,
   upsertFriend,
   type Friend,
   type FriendMeta,
@@ -27,18 +29,24 @@ type Props = {
   ) => Promise<void>
   onInviteClub: (friendName: string, playerId?: string) => Promise<void>
   waitingForFriend?: string | null
+  /** playerId → last presence timestamp (ms) */
+  friendPresence?: Record<string, number>
+  onAddByCode?: (code: string) => Promise<{ ok: boolean; message: string }>
 }
 
 export function FriendsScreen({
-  onBattle,
+  onBattle: _onBattle,
   onRequestBattle,
   onInviteClub,
   waitingForFriend,
+  friendPresence = {},
+  onAddByCode,
 }: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
   const [meta, setMeta] = useState<FriendMeta>(() => loadFriendMeta())
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
-  const [manualName, setManualName] = useState('')
+  const [friendCode, setFriendCode] = useState('')
+  const [addMsg, setAddMsg] = useState<string | null>(null)
   const [section, setSection] = useState<'friends' | 'clubs'>(() =>
     loadRichClub() ? 'clubs' : 'friends',
   )
@@ -46,18 +54,24 @@ export function FriendsScreen({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<Friend | null>(null)
   const [copied, setCopied] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+
+  const myCode = useMemo(() => loadAccountCode(), [])
 
   const sortedFriends = useMemo(() => {
     return [...friends].sort((a, b) => {
       const ap = meta.pinned[a.id] ? 1 : 0
       const bp = meta.pinned[b.id] ? 1 : 0
       if (ap !== bp) return bp - ap
+      const aOnline = isOnline(a, friendPresence, now) ? 1 : 0
+      const bOnline = isOnline(b, friendPresence, now) ? 1 : 0
+      if (aOnline !== bOnline) return bOnline - aOnline
       const al = meta.lastBattled[a.id] ?? ''
       const bl = meta.lastBattled[b.id] ?? ''
       if (al !== bl) return bl.localeCompare(al)
       return a.name.localeCompare(b.name)
     })
-  }, [friends, meta])
+  }, [friends, meta, friendPresence, now])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -72,7 +86,11 @@ export function FriendsScreen({
     setFriends(loadFriends())
     const onFriends = () => setFriends(loadFriends())
     window.addEventListener('philroyale-friends-changed', onFriends)
-    return () => window.removeEventListener('philroyale-friends-changed', onFriends)
+    const tick = window.setInterval(() => setNow(Date.now()), 5000)
+    return () => {
+      window.removeEventListener('philroyale-friends-changed', onFriends)
+      window.clearInterval(tick)
+    }
   }, [])
 
   function persistName(name: string) {
@@ -84,29 +102,27 @@ export function FriendsScreen({
     setFriends(loadFriends())
   }
 
-  async function inviteFriendSms() {
-    const me = playerName.trim() || 'me'
-    const url = friendInviteUrl(me, loadPlayerId())
-    await shareText(
-      'Phil Royale',
-      `Add me on Phil Royale — open this link and we become friends automatically:`,
-      url,
-    )
-  }
-
-  async function copyFriendLink() {
-    const me = playerName.trim() || 'me'
-    const url = friendInviteUrl(me, loadPlayerId())
+  async function copyAccountCode() {
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(formatAccountCode(myCode))
       setCopied(true)
       window.setTimeout(() => setCopied(false), 2000)
     } catch {
-      await shareText('Phil Royale friend link', 'Add me on Phil Royale:', url)
+      setAddMsg(`Your code: ${formatAccountCode(myCode)}`)
     }
   }
 
   async function sendInvite(friend: Friend, mode: GameMode) {
+    if (!friend.playerId) {
+      setAddMsg('Add them with their account code before inviting.')
+      setInviteTarget(null)
+      return
+    }
+    if (!isOnline(friend, friendPresence, Date.now())) {
+      setAddMsg(`${friend.name} is offline. They need Phil Royale open to get invites.`)
+      setInviteTarget(null)
+      return
+    }
     setInviteTarget(null)
     setPendingBattleFriend(friend.name)
     try {
@@ -118,12 +134,29 @@ export function FriendsScreen({
     }
   }
 
-  function addFriendManual() {
-    const name = manualName.trim()
-    if (!name) return
-    upsertFriend({ name })
+  async function addFriendByCode() {
+    const code = normalizeAccountCode(friendCode)
+    if (!code || code.length < 6) {
+      setAddMsg('Enter a valid account code (6–10 characters).')
+      return
+    }
+    if (code === loadPlayerId()) {
+      setAddMsg("That's your own code.")
+      return
+    }
+    if (onAddByCode) {
+      const res = await onAddByCode(code)
+      setAddMsg(res.message)
+      if (res.ok) {
+        setFriendCode('')
+        refreshFriends()
+      }
+      return
+    }
+    upsertFriend({ name: `Player ${code.slice(0, 4)}`, playerId: code })
     refreshFriends()
-    setManualName('')
+    setFriendCode('')
+    setAddMsg('Friend added — waiting for them to come online.')
   }
 
   function togglePin(id: string) {
@@ -185,7 +218,7 @@ export function FriendsScreen({
           </div>
         </div>
         <div className="min-h-0 flex-1">
-          <ClubScreen onBattleBot={(name) => onBattle(name ?? 'Club Bot')} />
+          <ClubScreen onBattleBot={(name) => _onBattle(name ?? 'Club Bot')} />
         </div>
       </div>
     )
@@ -198,7 +231,7 @@ export function FriendsScreen({
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Share your link — they tap it, you&apos;re both friends. Then Invite to pick a mode.
+          Share your account code. Add friends by theirs — then Invite when they&apos;re online.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
           Your name
@@ -236,64 +269,73 @@ export function FriendsScreen({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
         <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => void inviteFriendSms()}
-            className="w-full rounded-xl py-3 text-sm font-extrabold text-white"
-            style={{
-              background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
-              boxShadow: '0 4px 0 #1d4a86',
-            }}
+          <div
+            className="rounded-xl p-3"
+            style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
-            Share friend link
-          </button>
-          <button
-            type="button"
-            onClick={() => void copyFriendLink()}
-            className="w-full rounded-xl bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
-          >
-            {copied ? 'Copied!' : 'Copy friend link'}
-          </button>
-          <p className="text-center text-xs font-semibold text-white/50">
-            When they open your link (after entering their name), you both become friends.
-          </p>
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+              Your account code
+            </p>
+            <p className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-[0.12em] text-white">
+              {formatAccountCode(myCode)}
+            </p>
+            <button
+              type="button"
+              onClick={() => void copyAccountCode()}
+              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
+            >
+              {copied ? 'Copied!' : 'Copy account code'}
+            </button>
+          </div>
+
           <div
             className="rounded-xl p-3"
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Add by name
+              Add friend by account code
             </p>
             <div className="flex gap-2">
               <input
-                value={manualName}
-                onChange={(e) => setManualName(e.target.value)}
-                placeholder="Friend's name"
-                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+                value={friendCode}
+                onChange={(e) => setFriendCode(e.target.value.toUpperCase())}
+                placeholder="e.g. ABCD-EFGH"
+                maxLength={12}
+                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold tracking-wider text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
               />
               <button
                 type="button"
-                onClick={addFriendManual}
+                onClick={() => void addFriendByCode()}
                 className="rounded-lg px-3 py-2 text-sm font-extrabold text-[#1a1410]"
                 style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
               >
                 Add
               </button>
             </div>
+            {addMsg ? (
+              <p className="mt-2 text-xs font-semibold text-[#7dff9a]">{addMsg}</p>
+            ) : (
+              <p className="mt-2 text-xs font-semibold text-white/45">
+                They must have Phil Royale open to accept invites to battle.
+              </p>
+            )}
           </div>
+
           {sortedFriends.length === 0 ? (
             <p className="rounded-lg bg-[#221610] px-3 py-4 text-center text-sm font-semibold text-white/55 ring-1 ring-white/10">
-              No friends yet. Share your friend link — it&apos;s the easy way.
+              No friends yet. Copy your code and have a friend enter it under Add friend.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
               {sortedFriends.map((f) => {
+                const online = isOnline(f, friendPresence, now)
                 const isWaiting =
                   waitingName === f.name.toLowerCase() ||
                   pendingBattleFriend?.toLowerCase() === f.name.toLowerCase()
                 const last = meta.lastBattled[f.id]
                 const pinned = !!meta.pinned[f.id]
                 const note = meta.notes[f.id] ?? ''
+                const canInvite = Boolean(f.playerId) && online && !isWaiting
                 return (
                   <li
                     key={f.id}
@@ -304,17 +346,30 @@ export function FriendsScreen({
                         <p className="font-bold text-white">
                           {pinned ? '★ ' : ''}
                           {f.name}
+                          <span
+                            className="ml-2 inline-block h-2 w-2 rounded-full"
+                            style={{
+                              background: online ? '#3ecf6a' : '#6a5a50',
+                              boxShadow: online ? '0 0 6px #3ecf6a' : 'none',
+                            }}
+                            title={online ? 'Online' : 'Offline'}
+                          />
                         </p>
                         <p className="text-[0.65rem] font-semibold text-white/50">
-                          {f.playerId ? 'Online invites ready' : 'Name-only (send them your link)'}
+                          {f.playerId
+                            ? online
+                              ? 'Online — ready for invites'
+                              : 'Offline — open Phil Royale to play'
+                            : 'Missing account code'}
+                          {f.playerId ? ` · ${formatAccountCode(f.playerId)}` : ''}
                           {last ? ` · Last play ${new Date(last).toLocaleDateString()}` : ''}
                         </p>
                       </div>
                       <button
                         type="button"
-                        disabled={isWaiting}
+                        disabled={!canInvite}
                         onClick={() => setInviteTarget(f)}
-                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-extrabold text-[#1a1410] disabled:opacity-60"
+                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-extrabold text-[#1a1410] disabled:opacity-45"
                         style={{
                           background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
                           boxShadow: '0 2px 0 #1a7a3a',
@@ -353,20 +408,9 @@ export function FriendsScreen({
                       <button
                         type="button"
                         onClick={() => void onInviteClub(f.name, f.playerId)}
-                        className="text-[10px] font-extrabold uppercase tracking-wide text-[#4a9eff]"
+                        className="text-[10px] font-extrabold uppercase tracking-wide text-[#7ec8ff]"
                       >
-                        Club invite
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          markFriendBattled(f.id)
-                          setMeta(loadFriendMeta())
-                          onBattle(f.name, 'classic')
-                        }}
-                        className="text-[10px] font-extrabold uppercase tracking-wide text-white/45"
-                      >
-                        Practice
+                        Club
                       </button>
                       <button
                         type="button"
@@ -386,7 +430,7 @@ export function FriendsScreen({
 
       {inviteTarget ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
           role="dialog"
           aria-modal="true"
         >
@@ -394,23 +438,20 @@ export function FriendsScreen({
             className="w-full max-w-sm rounded-xl p-5"
             style={{
               background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-              boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
+              boxShadow: '0 12px 40px #00000088',
             }}
           >
             <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
               Invite {inviteTarget.name}
             </h2>
             <p className="mt-2 text-sm font-semibold text-white/80">
-              Choose a game mode. They&apos;ll get Accept / Decline on their screen.
+              They&apos;ll get an Accept / Decline popup instantly (no link).
             </p>
             <button
               type="button"
               onClick={() => void sendInvite(inviteTarget, 'classic')}
-              className="mt-4 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
-              style={{
-                background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
-                boxShadow: '0 3px 0 #8a6a12',
-              }}
+              className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
             >
               Classic battle
             </button>
@@ -418,10 +459,7 @@ export function FriendsScreen({
               type="button"
               onClick={() => void sendInvite(inviteTarget, 'touchdown')}
               className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
-              style={{
-                background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
-                boxShadow: '0 3px 0 #1d4a86',
-              }}
+              style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
             >
               Touchdown
             </button>
@@ -437,4 +475,16 @@ export function FriendsScreen({
       ) : null}
     </div>
   )
+}
+
+function isOnline(
+  friend: Friend,
+  presence: Record<string, number>,
+  now: number,
+): boolean {
+  const id = friend.playerId
+  if (!id) return false
+  const at = presence[id]
+  if (!at) return false
+  return now - at < PRESENCE_ONLINE_MS
 }

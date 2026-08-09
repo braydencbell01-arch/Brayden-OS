@@ -15,19 +15,20 @@ import {
   nextRoadStep,
   type ChestRarity,
 } from './progression'
+import { PRESENCE_ONLINE_MS } from './socialHub'
 import {
   arenaTitle,
   claimCrownChest,
   claimDailyChest,
   claimDailyQuest,
   countUnclaimedRoadRewards,
-  friendInviteUrl,
+  formatAccountCode,
   kingInfo,
+  loadAccountCode,
   loadChests,
   loadDaily,
   loadDeck,
   loadFriends,
-  loadPlayerId,
   loadPlayerName,
   loadProfile,
   loadRichClub,
@@ -35,7 +36,6 @@ import {
   openChestNow,
   questLabel,
   savePlayerName,
-  shareText,
   startChestUnlock,
   type DailyState,
   type Friend,
@@ -54,6 +54,8 @@ type Props = {
   onOpenRoad: () => void
   onOpenEvents: () => void
   onOpenClub: () => void
+  /** playerId → last presence timestamp (ms) */
+  friendPresence?: Record<string, number>
 }
 
 function formatRemain(ms: number): string {
@@ -70,12 +72,14 @@ export function HomeScreen({
   onOpenRoad,
   onOpenEvents,
   onOpenClub,
+  friendPresence = {},
 }: Props) {
-  const friends = useMemo(() => loadFriends(), [])
+  const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
   const deck = useMemo(() => loadDeck(), [])
   const club = useMemo(() => loadRichClub(), [])
   const season = useMemo(() => loadSeason(), [])
   const king = useMemo(() => kingInfo(), [])
+  const myCode = useMemo(() => loadAccountCode(), [])
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteFriend, setInviteFriend] = useState<Friend | null>(null)
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
@@ -91,8 +95,19 @@ export function HomeScreen({
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(id)
+    const onFriends = () => setFriends(loadFriends())
+    window.addEventListener('philroyale-friends-changed', onFriends)
+    return () => {
+      window.clearInterval(id)
+      window.removeEventListener('philroyale-friends-changed', onFriends)
+    }
   }, [])
+
+  function friendOnline(f: Friend): boolean {
+    if (!f.playerId) return false
+    const at = friendPresence[f.playerId]
+    return typeof at === 'number' && now - at < PRESENCE_ONLINE_MS
+  }
 
   const nextStep = nextRoadStep(profile.trophies)
   const botName = botNameForTrophies(profile.trophies)
@@ -120,15 +135,17 @@ export function HomeScreen({
     setDaily(loadDaily())
   }
 
-  async function textInvite() {
-    await shareText(
-      'Phil Royale',
-      'Play Phil Royale with me — open this link and we become friends automatically:',
-      friendInviteUrl(playerName.trim() || 'friend', loadPlayerId()),
-    )
-  }
-
   async function battleFriend(friend: Friend, mode: GameMode) {
+    if (!friend.playerId) {
+      flash('Add them with their account code on Social first.')
+      setInviteFriend(null)
+      return
+    }
+    if (!friendOnline(friend)) {
+      flash(`${friend.name} is offline — they need the app open.`)
+      setInviteFriend(null)
+      return
+    }
     setInviteFriend(null)
     setInviteOpen(false)
     await onRequestBattle(friend.name, { mode, playerId: friend.playerId })
@@ -502,32 +519,50 @@ export function HomeScreen({
               boxShadow: 'inset 0 1px 0 #c9a22744, 0 8px 20px #00000066',
             }}
           >
-            <button
-              type="button"
-              onClick={() => void textInvite()}
-              className="mb-2 w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
-              style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
-            >
-              Share friend link
-            </button>
+            <p className="mb-2 text-center text-xs font-semibold text-white/55">
+              Your code{' '}
+              <span className="font-extrabold text-[#f5d76e]">
+                {formatAccountCode(myCode)}
+              </span>
+              {' · '}
+              invite only works when they&apos;re online (no link).
+            </p>
             {friends.length === 0 ? (
               <p className="text-center text-sm font-semibold text-white/60">
-                No friends yet — share your friend link first.
+                No friends yet — add someone by account code on Social.
               </p>
             ) : (
               <ul className="flex flex-col gap-1.5">
-                {friends.map((f) => (
-                  <li key={f.id}>
-                    <button
-                      type="button"
-                      onClick={() => setInviteFriend(f)}
-                      className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2 text-left ring-1 ring-white/10"
-                    >
-                      <span className="font-bold text-white">{f.name}</span>
-                      <span className="text-xs font-extrabold text-[#7dff9a]">Invite</span>
-                    </button>
-                  </li>
-                ))}
+                {friends.map((f) => {
+                  const online = friendOnline(f)
+                  return (
+                    <li key={f.id}>
+                      <button
+                        type="button"
+                        disabled={!online}
+                        onClick={() => setInviteFriend(f)}
+                        className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2 text-left ring-1 ring-white/10 disabled:opacity-45"
+                      >
+                        <span className="flex items-center gap-2 font-bold text-white">
+                          <span
+                            className={`inline-block h-2 w-2 rounded-full ${
+                              online ? 'bg-[#7dff9a]' : 'bg-white/25'
+                            }`}
+                            aria-hidden
+                          />
+                          {f.name}
+                        </span>
+                        <span
+                          className={`text-xs font-extrabold ${
+                            online ? 'text-[#7dff9a]' : 'text-white/40'
+                          }`}
+                        >
+                          {online ? 'Invite' : 'Offline'}
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>

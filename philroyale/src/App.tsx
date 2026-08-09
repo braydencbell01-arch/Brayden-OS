@@ -10,32 +10,41 @@ import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
 import type { BattleNet } from './battleSync'
-import { publishSocial, subscribeSocial, type SocialMessage } from './socialHub'
+import {
+  PRESENCE_HEARTBEAT_MS,
+  PRESENCE_ONLINE_MS,
+  publishSocial,
+  subscribeSocial,
+  type SocialMessage,
+} from './socialHub'
 import {
   botLevelForTrophies,
   botNameForTrophies,
 } from './progression'
 import {
   BATTLE_CHANNEL_NAME,
-  battleInviteUrl,
   clearBattleAccepted,
   clearIncomingChallenge,
   clearOutgoingChallenge,
   clubInviteUrl,
   countUnclaimedRoadRewards,
   createBattleChallenge,
+  formatAccountCode,
   isChallengeForMe,
   joinRichClubByCode,
   loadBattleAccepted,
   loadCardProgress,
+  loadFriends,
   loadIncomingChallenge,
   loadIncomingClubInvite,
+  loadLegacyPlayerIds,
   loadOutgoingChallenge,
   loadPendingFriendLink,
   loadPlayerId,
   loadPlayerName,
   loadProfile,
   loadRichClub,
+  normalizeAccountCode,
   parseBattleChallengeFromUrl,
   parseFriendInviteFromUrl,
   postBattleMessage,
@@ -93,6 +102,7 @@ export default function App() {
   const [clubInvite, setClubInvite] = useState<ClubInviteIncoming | null>(() =>
     loadIncomingClubInvite(),
   )
+  const [friendPresence, setFriendPresence] = useState<Record<string, number>>({})
   const needsName = !playerName.trim()
 
   const flashFriend = useCallback((msg: string) => {
@@ -184,6 +194,11 @@ export default function App() {
     clearIncomingChallenge()
     setIncomingChallenge(null)
     clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
+    // Drop any current match/draft so Accept works from every screen.
+    setBattle(false)
+    setDraftingTouchdown(false)
+    setTouchdownDeck(null)
+    setShowRoad(false)
     // Accepter is guest; challenger (fromPlayerId) hosts the shared sim.
     startMatch(fromName, mode ?? 'classic', {
       challengeId,
@@ -217,37 +232,66 @@ export default function App() {
   const requestBattle = useCallback(
     async (friendName: string, opts?: { mode?: GameMode; playerId?: string }) => {
       const mode = opts?.mode ?? 'classic'
+      const toPlayerId = opts?.playerId?.trim()
+      if (!toPlayerId) {
+        flashFriend('Add this friend with their account code first.')
+        return
+      }
+      const lastSeen = friendPresence[toPlayerId]
+      if (!lastSeen || Date.now() - lastSeen >= PRESENCE_ONLINE_MS) {
+        flashFriend(`${friendName} is offline. They need Phil Royale open to get invites.`)
+        return
+      }
       const challenge = createBattleChallenge(friendName, {
         mode,
-        toPlayerId: opts?.playerId,
+        toPlayerId,
       })
       setOutgoingChallenge(challenge)
       postBattleMessage({ type: 'challenge', challenge })
-      if (opts?.playerId) {
-        void publishSocial(opts.playerId, {
-          type: 'battle_invite',
-          challengeId: challenge.challengeId,
-          fromPlayerId: loadPlayerId(),
-          fromName: challenge.fromName,
-          toPlayerId: opts.playerId,
-          toName: friendName,
-          mode,
-          at: challenge.createdAt,
-        })
-      }
-      const url = battleInviteUrl(
-        challenge.fromName,
-        challenge.toName,
-        challenge.challengeId,
+      const ok = await publishSocial(toPlayerId, {
+        type: 'battle_invite',
+        challengeId: challenge.challengeId,
+        fromPlayerId: loadPlayerId(),
+        fromName: challenge.fromName,
+        toPlayerId,
+        toName: friendName,
         mode,
-        challenge.fromPlayerId,
-        challenge.toPlayerId,
-      )
-      await shareText(
-        'Phil Royale battle',
-        `${challenge.fromName} challenges you to ${mode === 'touchdown' ? 'Touchdown' : 'a battle'} — open to Accept or Decline:`,
-        url,
-      )
+        at: challenge.createdAt,
+      })
+      if (!ok) {
+        clearOutgoingChallenge()
+        setOutgoingChallenge(null)
+        flashFriend('Invite failed — check your connection.')
+        return
+      }
+      flashFriend(`Invite sent to ${friendName}. Waiting for Accept…`)
+    },
+    [flashFriend, friendPresence],
+  )
+
+  const addFriendByCode = useCallback(
+    async (rawCode: string) => {
+      const code = normalizeAccountCode(rawCode)
+      const me = loadPlayerName().trim()
+      const myId = loadPlayerId()
+      if (!me) return { ok: false, message: 'Set your name first.' }
+      if (code.length < 6) return { ok: false, message: 'Enter a valid account code.' }
+      if (code === myId) return { ok: false, message: "That's your own code." }
+      upsertFriend({ name: `Player ${code.slice(0, 4)}`, playerId: code })
+      window.dispatchEvent(new Event('philroyale-friends-changed'))
+      const ok = await publishSocial(code, {
+        type: 'friend_request',
+        fromPlayerId: myId,
+        fromName: me,
+        toPlayerId: code,
+        at: new Date().toISOString(),
+      })
+      return {
+        ok: true,
+        message: ok
+          ? `Added ${formatAccountCode(code)}. They'll see you when Phil Royale is open.`
+          : `Saved ${formatAccountCode(code)}. Couldn't reach them yet — try again when they're online.`,
+      }
     },
     [],
   )
@@ -428,7 +472,29 @@ export default function App() {
 
   useEffect(() => {
     const myId = loadPlayerId()
-    return subscribeSocial(myId, (msg: SocialMessage) => {
+    const inboxIds = [myId, ...loadLegacyPlayerIds()]
+
+    const onSocial = (msg: SocialMessage) => {
+      if (msg.type === 'presence') {
+        if (msg.fromPlayerId === myId) return
+        const at = Date.parse(msg.at) || Date.now()
+        setFriendPresence((prev) => ({ ...prev, [msg.fromPlayerId]: at }))
+        return
+      }
+      if (msg.type === 'friend_request') {
+        if (msg.fromPlayerId === myId) return
+        upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        const me = loadPlayerName().trim() || 'Player'
+        void publishSocial(msg.fromPlayerId, {
+          type: 'friend_hello',
+          fromPlayerId: myId,
+          fromName: me,
+          at: new Date().toISOString(),
+        })
+        flashFriend(`${msg.fromName} added you as a friend!`)
+        return
+      }
       if (msg.type === 'friend_hello') {
         if (msg.fromPlayerId === myId) return
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
@@ -456,6 +522,10 @@ export default function App() {
           clearOutgoingChallenge()
           clearBattleAccepted()
           setOutgoingChallenge(null)
+          setBattle(false)
+          setDraftingTouchdown(false)
+          setTouchdownDeck(null)
+          setShowRoad(false)
           startMatch(msg.fromName || outgoingNow.toName, mode, {
             challengeId,
             role: 'host',
@@ -484,228 +554,38 @@ export default function App() {
         saveIncomingClubInvite(invite)
         setClubInvite(invite)
       }
-    })
+    }
+
+    const unsubs = inboxIds.map((id) => subscribeSocial(id, onSocial))
+    return () => {
+      for (const u of unsubs) u()
+    }
   }, [flashFriend, showIncoming, startMatch])
 
-  if (needsName) {
-    return (
-      <div className="relative flex h-full min-h-0 flex-col items-center justify-center bg-[#140e0a] px-4">
-        <div
-          className="w-full max-w-sm rounded-xl p-5"
-          style={{
-            background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-            boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
-          }}
-        >
-          <h1 className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
-            Welcome to Phil Royale
-          </h1>
-          <p className="mt-2 text-sm font-semibold text-white/80">
-            Pick a name friends will see. Sharing your invite link will friend you both
-            automatically.
-          </p>
-          <input
-            autoFocus
-            value={nameDraft}
-            onChange={(e) => setNameDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitName()
-            }}
-            placeholder="Your name"
-            maxLength={20}
-            className="mt-4 w-full rounded-lg bg-[#221610] px-3 py-3 text-base font-semibold text-white outline-none ring-1 ring-white/20 placeholder:text-white/35"
-          />
-          <button
-            type="button"
-            disabled={nameDraft.trim().length < 2}
-            onClick={commitName}
-            className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
-            style={{
-              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
-              boxShadow: '0 3px 0 #8a6a12',
-            }}
-          >
-            Let&apos;s go
-          </button>
-        </div>
-      </div>
-    )
-  }
+  // Heartbeat so friends can see you're online (and receive invites).
+  useEffect(() => {
+    if (needsName) return
+    const beat = () => {
+      const me = loadPlayerName().trim() || 'Player'
+      const myId = loadPlayerId()
+      const at = new Date().toISOString()
+      for (const f of loadFriends()) {
+        if (!f.playerId || f.playerId === myId) continue
+        void publishSocial(f.playerId, {
+          type: 'presence',
+          fromPlayerId: myId,
+          fromName: me,
+          at,
+        })
+      }
+    }
+    beat()
+    const id = window.setInterval(beat, PRESENCE_HEARTBEAT_MS)
+    return () => window.clearInterval(id)
+  }, [needsName, playerName])
 
-  if (draftingTouchdown) {
-    return (
-      <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
-        <div className="min-h-0 flex-1">
-          <TouchdownDraft
-            onCancel={() => {
-              setDraftingTouchdown(false)
-              setOpponent(null)
-              setBattleNet(null)
-            }}
-            onReady={(ids) => {
-              setTouchdownDeck(ids)
-              setDraftingTouchdown(false)
-              setBattle(true)
-            }}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  if (battle) {
-    const trophies = loadProfile().trophies
-    const levels = loadCardProgress().levels
-    return (
-      <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
-        <BattleScreen
-          opponentName={opponent}
-          allyLevels={levels}
-          botLevel={botLevelForTrophies(trophies)}
-          mode={battleMode}
-          deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
-          net={battleNet}
-          onExit={() => {
-            setBattle(false)
-            setOpponent(null)
-            setBattleNet(null)
-            setTouchdownDeck(null)
-            setBattleMode('classic')
-            setTab('home')
-          }}
-        />
-      </div>
-    )
-  }
-
-  const roadBadge = countUnclaimedRoadRewards()
-
-  if (showRoad) {
-    return (
-      <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
-        <div className="min-h-0 flex-1">
-          <TrophyRoadScreen
-            onBack={() => {
-              setShowRoad(false)
-              setTab('home')
-            }}
-            onPlayBot={() => startMatch(null)}
-          />
-        </div>
-        <nav
-          className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
-          style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
-          aria-label="Main"
-        >
-          <ul className="mx-auto flex max-w-md gap-0.5">
-            {TABS.map((t) => {
-              const active = t.id === 'home'
-              return (
-                <li key={t.id} className="relative flex-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowRoad(false)
-                      setTab(t.id)
-                    }}
-                    className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
-                    style={{
-                      background: active
-                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
-                        : 'transparent',
-                      color: active ? '#1a1410' : '#f5d76e',
-                      boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
-                    }}
-                  >
-                    {t.label}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative flex h-full min-h-0 flex-col">
-      <CurrencyBar />
-      <div className="min-h-0 flex-1">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            className="h-full"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.18 }}
-          >
-            {tab === 'home' ? (
-              <HomeScreen
-                onPlay={(name) => startMatch(name, 'classic')}
-                onPlayTouchdown={() => startMatch(null, 'touchdown')}
-                onRequestBattle={requestBattle}
-                onOpenRoad={() => setShowRoad(true)}
-                onOpenEvents={() => setTab('events')}
-                onOpenClub={() => setTab('friends')}
-              />
-            ) : null}
-            {tab === 'characters' ? <CharactersScreen /> : null}
-            {tab === 'shop' ? <ShopScreen /> : null}
-            {tab === 'events' ? (
-              <EventsScreen onPlay={(name) => startMatch(name, 'classic')} />
-            ) : null}
-            {tab === 'friends' ? (
-              <FriendsScreen
-                onBattle={(name, mode) => startMatch(name, mode ?? 'classic')}
-                onRequestBattle={requestBattle}
-                onInviteClub={inviteToClub}
-                waitingForFriend={outgoingChallenge?.toName ?? null}
-              />
-            ) : null}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      <nav
-        className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
-        style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
-        aria-label="Main"
-      >
-        <ul className="mx-auto flex max-w-md gap-0.5">
-          {TABS.map((t) => {
-            const active = tab === t.id
-            return (
-              <li key={t.id} className="relative flex-1">
-                <button
-                  type="button"
-                  onClick={() => setTab(t.id)}
-                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
-                  style={{
-                    background: active
-                      ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
-                      : 'transparent',
-                    color: active ? '#1a1410' : '#f5d76e',
-                    boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
-                  }}
-                >
-                  {t.label}
-                </button>
-                {t.id === 'home' && roadBadge > 0 ? (
-                  <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3b3b] px-1 text-[0.55rem] font-black text-white">
-                    {roadBadge}
-                  </span>
-                ) : null}
-              </li>
-            )
-          })}
-        </ul>
-      </nav>
-
+  const socialOverlays = (
+    <>
       {friendToast ? (
         <div className="pointer-events-none fixed inset-x-0 top-[max(3.5rem,env(safe-area-inset-top))] z-[60] flex justify-center px-4">
           <p className="rounded-lg bg-[#1a7a3a] px-4 py-2 text-sm font-extrabold text-white shadow-lg">
@@ -716,7 +596,7 @@ export default function App() {
 
       {incomingChallenge ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="battle-challenge-title"
@@ -765,7 +645,7 @@ export default function App() {
 
       {clubInvite ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
           role="dialog"
           aria-modal="true"
         >
@@ -818,7 +698,7 @@ export default function App() {
 
       {outgoingChallenge ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="battle-waiting-title"
@@ -843,63 +723,249 @@ export default function App() {
               {outgoingChallenge.mode === 'touchdown' ? 'Touchdown' : 'Classic'}…
             </p>
             <p className="mt-1 text-xs font-semibold text-white/50">
-              They get an Accept / Decline popup if Phil Royale is open — or they can tap your
-              invite link.
+              No link — they must have Phil Royale open. They&apos;ll see Accept / Decline on any
+              screen.
             </p>
             <button
               type="button"
-              onClick={() =>
-                void shareText(
-                  'Phil Royale battle',
-                  `${outgoingChallenge.fromName} challenges you:`,
-                  battleInviteUrl(
-                    outgoingChallenge.fromName,
-                    outgoingChallenge.toName,
-                    outgoingChallenge.challengeId,
-                    outgoingChallenge.mode ?? 'classic',
-                    outgoingChallenge.fromPlayerId,
-                    outgoingChallenge.toPlayerId,
-                  ),
-                )
-              }
-              className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
-              style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
-            >
-              Share invite link again
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                const url = battleInviteUrl(
-                  outgoingChallenge.fromName,
-                  outgoingChallenge.toName,
-                  outgoingChallenge.challengeId,
-                  outgoingChallenge.mode ?? 'classic',
-                  outgoingChallenge.fromPlayerId,
-                  outgoingChallenge.toPlayerId,
-                )
-                try {
-                  await navigator.clipboard.writeText(url)
-                  flashFriend('Invite link copied!')
-                } catch {
-                  flashFriend(url)
-                }
-              }}
-              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
-            >
-              Copy invite link
-            </button>
-            <button
-              type="button"
               onClick={cancelOutgoingChallenge}
-              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#ff8a7a] ring-1 ring-white/15"
+              className="mt-4 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#ff8a7a] ring-1 ring-white/15"
             >
               Cancel
             </button>
           </div>
         </div>
       ) : null}
+    </>
+  )
 
+  if (needsName) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col items-center justify-center bg-[#140e0a] px-4">
+        <div
+          className="w-full max-w-sm rounded-xl p-5"
+          style={{
+            background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+            boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
+          }}
+        >
+          <h1 className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
+            Welcome to Phil Royale
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-white/80">
+            Pick a name friends will see. You&apos;ll get an account code to add friends — battle
+            invites only work when they&apos;re online.
+          </p>
+          <input
+            autoFocus
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitName()
+            }}
+            placeholder="Your name"
+            maxLength={20}
+            className="mt-4 w-full rounded-lg bg-[#221610] px-3 py-3 text-base font-semibold text-white outline-none ring-1 ring-white/20 placeholder:text-white/35"
+          />
+          <button
+            type="button"
+            disabled={nameDraft.trim().length < 2}
+            onClick={commitName}
+            className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+              boxShadow: '0 3px 0 #8a6a12',
+            }}
+          >
+            Let&apos;s go
+          </button>
+        </div>
+        {socialOverlays}
+      </div>
+    )
+  }
+
+  if (draftingTouchdown) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <CurrencyBar />
+        <div className="min-h-0 flex-1">
+          <TouchdownDraft
+            onCancel={() => {
+              setDraftingTouchdown(false)
+              setOpponent(null)
+              setBattleNet(null)
+            }}
+            onReady={(ids) => {
+              setTouchdownDeck(ids)
+              setDraftingTouchdown(false)
+              setBattle(true)
+            }}
+          />
+        </div>
+        {socialOverlays}
+      </div>
+    )
+  }
+
+  if (battle) {
+    const trophies = loadProfile().trophies
+    const levels = loadCardProgress().levels
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <CurrencyBar />
+        <BattleScreen
+          opponentName={opponent}
+          allyLevels={levels}
+          botLevel={botLevelForTrophies(trophies)}
+          mode={battleMode}
+          deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
+          net={battleNet}
+          onExit={() => {
+            setBattle(false)
+            setOpponent(null)
+            setBattleNet(null)
+            setTouchdownDeck(null)
+            setBattleMode('classic')
+            setTab('home')
+          }}
+        />
+        {socialOverlays}
+      </div>
+    )
+  }
+
+  const roadBadge = countUnclaimedRoadRewards()
+
+  if (showRoad) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <CurrencyBar />
+        <div className="min-h-0 flex-1">
+          <TrophyRoadScreen
+            onBack={() => {
+              setShowRoad(false)
+              setTab('home')
+            }}
+            onPlayBot={() => startMatch(null)}
+          />
+        </div>
+        <nav
+          className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+          style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
+          aria-label="Main"
+        >
+          <ul className="mx-auto flex max-w-md gap-0.5">
+            {TABS.map((t) => {
+              const active = t.id === 'home'
+              return (
+                <li key={t.id} className="relative flex-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRoad(false)
+                      setTab(t.id)
+                    }}
+                    className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                    style={{
+                      background: active
+                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                        : 'transparent',
+                      color: active ? '#1a1410' : '#f5d76e',
+                      boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
+        {socialOverlays}
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative flex h-full min-h-0 flex-col">
+      <CurrencyBar />
+      <div className="min-h-0 flex-1">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            className="h-full"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+          >
+            {tab === 'home' ? (
+              <HomeScreen
+                onPlay={(name) => startMatch(name, 'classic')}
+                onPlayTouchdown={() => startMatch(null, 'touchdown')}
+                onRequestBattle={requestBattle}
+                onOpenRoad={() => setShowRoad(true)}
+                onOpenEvents={() => setTab('events')}
+                onOpenClub={() => setTab('friends')}
+                friendPresence={friendPresence}
+              />
+            ) : null}
+            {tab === 'characters' ? <CharactersScreen /> : null}
+            {tab === 'shop' ? <ShopScreen /> : null}
+            {tab === 'events' ? (
+              <EventsScreen onPlay={(name) => startMatch(name, 'classic')} />
+            ) : null}
+            {tab === 'friends' ? (
+              <FriendsScreen
+                onBattle={(name, mode) => startMatch(name, mode ?? 'classic')}
+                onRequestBattle={requestBattle}
+                onInviteClub={inviteToClub}
+                waitingForFriend={outgoingChallenge?.toName ?? null}
+                friendPresence={friendPresence}
+                onAddByCode={addFriendByCode}
+              />
+            ) : null}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <nav
+        className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+        style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
+        aria-label="Main"
+      >
+        <ul className="mx-auto flex max-w-md gap-0.5">
+          {TABS.map((t) => {
+            const active = tab === t.id
+            return (
+              <li key={t.id} className="relative flex-1">
+                <button
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                  style={{
+                    background: active
+                      ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                      : 'transparent',
+                    color: active ? '#1a1410' : '#f5d76e',
+                    boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
+                  }}
+                >
+                  {t.label}
+                </button>
+                {t.id === 'home' && roadBadge > 0 ? (
+                  <span className="absolute right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff3b3b] px-1 text-[0.55rem] font-black text-white">
+                    {roadBadge}
+                  </span>
+                ) : null}
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
+
+      {socialOverlays}
     </div>
   )
 }

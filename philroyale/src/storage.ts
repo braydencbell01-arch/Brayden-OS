@@ -45,6 +45,8 @@ const MY_CLUB_KEY = 'philroyale.myClub'
 const MY_CLUB_META_KEY = 'philroyale.myClubMeta'
 const PLAYER_NAME_KEY = 'philroyale.playerName'
 const PLAYER_ID_KEY = 'philroyale.playerId.v1'
+const ACCOUNT_CODE_KEY = 'philroyale.accountCode.v1'
+const LEGACY_PLAYER_ID_KEY = 'philroyale.legacyPlayerId.v1'
 const BATTLE_CHALLENGE_KEY = 'philroyale.battleChallenge'
 const BATTLE_INCOMING_KEY = 'philroyale.battleIncoming'
 const BATTLE_ACCEPTED_KEY = 'philroyale.battleAccepted'
@@ -168,16 +170,73 @@ export function savePlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim())
 }
 
-export function loadPlayerId(): string {
-  let id = localStorage.getItem(PLAYER_ID_KEY) || ''
-  if (!id) {
-    id =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID().replace(/-/g, '')
-        : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`
-    localStorage.setItem(PLAYER_ID_KEY, id)
+/** Short shareable account code (also used as the live social player id). */
+export function generateAccountCode(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let out = ''
+  const bytes =
+    typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? crypto.getRandomValues(new Uint8Array(8))
+      : null
+  for (let i = 0; i < 8; i++) {
+    const n = bytes ? bytes[i]! : Math.floor(Math.random() * alphabet.length)
+    out += alphabet[n % alphabet.length]!
   }
-  return id
+  return out
+}
+
+export function normalizeAccountCode(raw: string): string {
+  return String(raw || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 10)
+}
+
+export function formatAccountCode(code: string): string {
+  const c = normalizeAccountCode(code)
+  if (c.length <= 4) return c
+  return `${c.slice(0, 4)}-${c.slice(4)}`
+}
+
+/**
+ * Canonical online id = short account code.
+ * Migrates older UUID-style ids to a new code while keeping the legacy id for inbox.
+ */
+export function loadPlayerId(): string {
+  const existing = localStorage.getItem(PLAYER_ID_KEY) || ''
+  let code = localStorage.getItem(ACCOUNT_CODE_KEY) || ''
+
+  if (!code) {
+    const normalized = normalizeAccountCode(existing)
+    if (normalized.length >= 6 && normalized.length <= 10 && /^[A-Z0-9]+$/.test(normalized)) {
+      code = normalized
+    } else {
+      if (existing) localStorage.setItem(LEGACY_PLAYER_ID_KEY, existing)
+      code = generateAccountCode()
+    }
+    localStorage.setItem(ACCOUNT_CODE_KEY, code)
+  }
+
+  if (existing && existing !== code && !localStorage.getItem(LEGACY_PLAYER_ID_KEY)) {
+    // Existing long id — keep receiving on it after cutover.
+    if (existing.length > 12) localStorage.setItem(LEGACY_PLAYER_ID_KEY, existing)
+  }
+
+  localStorage.setItem(PLAYER_ID_KEY, code)
+  return code
+}
+
+/** Display / copy form of the player's account code. */
+export function loadAccountCode(): string {
+  return loadPlayerId()
+}
+
+/** Older inbox ids still subscribed so pre-migration friends can reach you. */
+export function loadLegacyPlayerIds(): string[] {
+  const legacy = localStorage.getItem(LEGACY_PLAYER_ID_KEY)?.trim()
+  const current = localStorage.getItem(ACCOUNT_CODE_KEY) || localStorage.getItem(PLAYER_ID_KEY) || ''
+  if (!legacy || legacy === current) return []
+  return [legacy]
 }
 
 export function upsertFriend(friend: {
