@@ -12,7 +12,7 @@ type Props = {
   enraged?: boolean
 }
 
-/** Finley — card art; front/back 3D dog with bite + running legs. */
+/** Finley — black-and-white border collie; bite + running legs. */
 export function FinleyModel({ anim, facing, portrait, enraged }: Props) {
   return (
     <PhotoTroop

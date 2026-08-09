@@ -11,7 +11,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Shay — older black border collie; Love heart attack. */
+/** Shay — border collie × black lab mix; Love heart attack. */
 export function ShayModel({ anim, facing, portrait }: Props) {
   return (
     <PhotoTroop

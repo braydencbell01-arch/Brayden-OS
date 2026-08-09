@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Beans — yellow dog, tongue always out; dog run; slobber spit. */
+/** Beans — apricot miniature poodle; tongue out; dog run; slobber spit. */
 export function BeansModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -28,8 +28,8 @@ export function BeansModel({ anim, facing, attackId, portrait }: Props) {
       gait="dog"
       attack={anim === 'attack' && attackId === 'slobber' ? 'slobber' : 'none'}
       spriteLegs
-      legColor="#c9a227"
-      shoeColor="#8a6a12"
+      legColor="#c4783a"
+      shoeColor="#8a4a18"
     />
   )
 }

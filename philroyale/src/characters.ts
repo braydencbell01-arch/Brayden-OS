@@ -185,7 +185,7 @@ export const BEANS: CharacterDef = {
   moveSpeed: 7.5,
   attackDelaySec: 1.5,
   hue: 35,
-  blurb: 'Yellow dog, tongue always out. Spits a slow slobber that explodes — 5-block splash.',
+  blurb: 'Apricot miniature poodle, tongue always out. Spits a slow slobber that explodes — 5-block splash.',
   attacks: [
     {
       id: 'slobber',
@@ -211,7 +211,7 @@ export const FINLEY: CharacterDef = {
   moveSpeed: 7.5,
   attackDelaySec: 2,
   hue: 280,
-  blurb: 'Dog bite up close. After 7s he rages purple until death — snarls, claws, double damage and speed.',
+  blurb: 'Border collie bite up close. After 7s he rages purple until death — snarls, claws, double damage and speed.',
   rageAfterSec: 7,
   rageMoveMult: 2,
   rageDamageMult: 2,
@@ -239,7 +239,7 @@ export const SHAY: CharacterDef = {
   moveSpeed: 5.5,
   attackDelaySec: 1.75,
   hue: 40,
-  blurb: 'Older, wiser black border collie. Stops and sends a slow Love heart — 125 damage at range 22.',
+  blurb: 'Border collie × black lab mix. Stops and sends a slow Love heart — 125 damage at range 22.',
   attacks: [
     {
       id: 'love',
@@ -368,7 +368,7 @@ export const DAN: CharacterDef = {
   moveSpeed: 1.5,
   attackDelaySec: 3,
   hue: 25,
-  blurb: 'Very old — limps into range, then Death Hug: giant arms yank foes in close.',
+  blurb: 'Very old with white hair — limps into range, then Death Hug: giant arms yank foes in close.',
   attacks: [
     {
       id: 'deathHug',
