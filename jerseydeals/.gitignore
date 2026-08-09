@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .ebay-listings.tmp.json
+.ebay-relist-map.json
 .sold-reconcile-state.json
 
 # Editor directories and files

@@ -1,15 +1,15 @@
 {
-  "syncedAt": "2026-08-09T14:05:21Z",
+  "syncedAt": "2026-08-09T14:09:11Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 77,
+  "count": 85,
   "listings": [
     {
       "id": "NK4QWAQHIVIST5HLZRY7DWRH",
       "itemId": "3YO53INJJBS2AJ5UMBTHZQ2L",
-      "sku": "ebay:389366013067",
+      "sku": "ebay:800482140182",
       "title": "Inter Miami 22/23 Home Jersey — Messi #10 (Adidas) · XL",
       "price": 59.99,
       "currency": "USD",
@@ -37,8 +37,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "Match Jerseys",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/JpgYzk3t",
       "checkoutUrlDiscounted": "https://square.link/u/IXChODiV"
@@ -46,11 +44,11 @@
     {
       "id": "D64QTOZEGBEVILNL7Z56KCXZ",
       "itemId": "OD6YIUBCUHYJ2AO6NYGFFGUA",
-      "sku": "ebay:389482595662",
-      "title": "Nike Home Jersey · XL",
+      "sku": "ebay:800482140842",
+      "title": "Atletico Madrid 22/23 Home Jersey (Nike) · XL",
       "price": 50,
       "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/nike-home-jersey-xl/OD6YIUBCUHYJ2AO6NYGFFGUA",
+      "url": "https://jerseydealsofficial.square.site/product/atletico-madrid-22-23-home-jersey-nike-xl/OD6YIUBCUHYJ2AO6NYGFFGUA",
       "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TfEAAeSwknRpY~TE/$_57.JPG?set_id=8800005007",
       "images": [
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TfEAAeSwknRpY~TE/$_57.JPG?set_id=8800005007",
@@ -71,15 +69,13 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Jersey is new with tag and authentic. Message me if you have questions.",
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/GqGOTAn0"
     },
     {
       "id": "GKCKDASTXCN4AG4LUMQHNL4X",
       "itemId": "RU6YUCSSG45RIET3W57VMESG",
-      "sku": "ebay:389383931536",
+      "sku": "ebay:800482155268",
       "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · M",
       "price": 49.99,
       "currency": "USD",
@@ -106,8 +102,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ZUI54mkR",
       "checkoutUrlDiscounted": "https://square.link/u/lps0JqAq"
@@ -115,7 +109,7 @@
     {
       "id": "QJEOSSVEYGYCNA5553L7NMLW",
       "itemId": "INNG5MMAKEJF4HYN2LRBVD56",
-      "sku": "ebay:389383967457",
+      "sku": "ebay:800482155437",
       "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · M",
       "price": 49.99,
       "currency": "USD",
@@ -145,8 +139,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/zYOpRuRo",
       "checkoutUrlDiscounted": "https://square.link/u/HwA2dK3w"
@@ -154,7 +146,7 @@
     {
       "id": "N6UZIJJ7VXPDHKXZOXA7SRYB",
       "itemId": "5Z25E2DPSKA7DV7ZAWI55UCL",
-      "sku": "ebay:800058609903",
+      "sku": "ebay:800482156065",
       "title": "AC Milan 25/26 Training Jersey (Puma) · M",
       "price": 49.99,
       "currency": "USD",
@@ -182,8 +174,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/BjbUosnN",
       "checkoutUrlDiscounted": "https://square.link/u/Z50zQDhA"
@@ -191,7 +181,7 @@
     {
       "id": "3J2OXHY3PHBWVK264JTYPLBD",
       "itemId": "YADWORMUYICFV3TKSCYFG5S5",
-      "sku": "ebay:800407292943",
+      "sku": "ebay:800482165516",
       "title": "Inter Miami 24/25 Home Jersey (adidas) · Youth XL",
       "price": 49.99,
       "currency": "USD",
@@ -221,15 +211,13 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/XepylSms"
     },
     {
       "id": "NPGYT7TP5A4DA25PU5TQNYQI",
       "itemId": "MESUKSIHUJYM6FHJIBSGKZ4Q",
-      "sku": "ebay:800407234121",
+      "sku": "ebay:800482164787",
       "title": "Inter Milan 23/24 Home Jersey (Nike) · S",
       "price": 49.99,
       "currency": "USD",
@@ -257,8 +245,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ttOwwmqC",
       "checkoutUrlDiscounted": "https://square.link/u/ewyKlCET"
@@ -266,7 +252,7 @@
     {
       "id": "PCRQSQ7AQOFTR2CKD3ZX4JR4",
       "itemId": "LGLVQYXDNLPGWAZV63HOLV3D",
-      "sku": "ebay:800407752194",
+      "sku": "ebay:800482168239",
       "title": "Inter Milan 23/24 Home Jersey (Nike) · Youth XL",
       "price": 49.99,
       "currency": "USD",
@@ -294,8 +280,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/iW5gIxep",
       "checkoutUrlDiscounted": "https://square.link/u/nqGtSSk9"
@@ -303,7 +287,7 @@
     {
       "id": "5TQZU3FKRKF2HAZQIYA23ZCQ",
       "itemId": "ZUWTVQYMYMIC4RXTPUJDIYCJ",
-      "sku": "ebay:800058757741",
+      "sku": "ebay:800482157112",
       "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · L",
       "price": 49.99,
       "currency": "USD",
@@ -330,8 +314,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/IeSsVEvQ",
       "checkoutUrlDiscounted": "https://square.link/u/FsqOg9ra"
@@ -339,7 +321,7 @@
     {
       "id": "5IGOAAVG5N3HVSBTOXMQ6AH7",
       "itemId": "ODYCQWI7KR7ACDL7C7K4EXFS",
-      "sku": "ebay:800059395254",
+      "sku": "ebay:800482152025",
       "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · XL",
       "price": 49.99,
       "currency": "USD",
@@ -363,15 +345,13 @@
       "brand": "Puma",
       "source": "square",
       "category": "Training",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/GyPPoxm1"
     },
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
-      "sku": "ebay:389350090839",
+      "sku": "ebay:800482154422",
       "title": "Manchester United 23/24 Training Jersey (Adidas) · S",
       "price": 49.99,
       "currency": "USD",
@@ -397,8 +377,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/HXKYa0Dr",
       "checkoutUrlDiscounted": "https://square.link/u/vn8q2ZVK"
@@ -406,7 +384,7 @@
     {
       "id": "HF5D4QEYD2CSREEN75LHME7Y",
       "itemId": "AHXYNZF2JKQ35R6VIZHVFZIB",
-      "sku": "ebay:800407244493",
+      "sku": "ebay:800482164938",
       "title": "Tottenham Hotspur 24/25 Home Jersey (Nike) · Youth XL",
       "price": 49.99,
       "currency": "USD",
@@ -437,8 +415,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/dwTWs1LD",
       "checkoutUrlDiscounted": "https://square.link/u/F8D7Zh26"
@@ -446,7 +422,7 @@
     {
       "id": "6DXVTBZHQXRZQ7Q5G23SYRWL",
       "itemId": "YB3RYUU4FJL7WEQGGQ7YYVVZ",
-      "sku": "ebay:800407206007",
+      "sku": "ebay:800482164580",
       "title": "Inter Miami 23/24 Away Jersey (adidas) · Youth XL",
       "price": 47.99,
       "currency": "USD",
@@ -476,15 +452,13 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/QdHe9ki4"
     },
     {
       "id": "MXVXOENXOALOOAT44NW5IR32",
       "itemId": "YVMFPPDX6N3EFXYN3CITMVFG",
-      "sku": "ebay:389383911874",
+      "sku": "ebay:800482155729",
       "title": "Paris Saint-Germain 23/24 Pre-Match Jersey (Nike) · Youth XL",
       "price": 47.99,
       "currency": "USD",
@@ -510,8 +484,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/zKAPwbHN",
       "checkoutUrlDiscounted": "https://square.link/u/yMl6Fc6F"
@@ -519,7 +491,7 @@
     {
       "id": "F2D2CZHZSJV52P4ANCZ3O4F4",
       "itemId": "OZPTLBOYRTJ5Q5DIMC3ROCS4",
-      "sku": "ebay:800058630043",
+      "sku": "ebay:800482161636",
       "title": "Manchester City 25/26 Pre-Match Jersey (Puma) · S",
       "price": 46.99,
       "currency": "USD",
@@ -546,8 +518,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/jJH6CcdF",
       "checkoutUrlDiscounted": "https://square.link/u/5Tx3vuP8"
@@ -555,7 +525,7 @@
     {
       "id": "U6N3EI2MXKOTR5ASQSFWGW2U",
       "itemId": "UBR6QUCA7LP5WAY476FB43J7",
-      "sku": "ebay:800058807470",
+      "sku": "ebay:800482157564",
       "title": "Manchester City 25/26 Training Jersey (Puma) · L",
       "price": 46.99,
       "currency": "USD",
@@ -582,8 +552,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/gOt4R6CN",
       "checkoutUrlDiscounted": "https://square.link/u/98fppkSJ"
@@ -591,7 +559,7 @@
     {
       "id": "THLDKRIEWM4TJP4DHLAIC7C5",
       "itemId": "SBAVTLJB6ZVZYIXLIGQFHNBF",
-      "sku": "ebay:389482553724",
+      "sku": "ebay:800482166053",
       "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · L",
       "price": 45,
       "currency": "USD",
@@ -616,15 +584,13 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Jersey is new with tag and authentic. Message me if you have questions.",
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/MuV5oX2O"
     },
     {
       "id": "4GJCJOMTUO2XTLHDGFL2W6Y3",
       "itemId": "M53N7TDUII4HBUAFOYNHUQ5J",
-      "sku": "ebay:389367191599",
+      "sku": "ebay:800482166602",
       "title": "Inter Miami 22/23 Home Jersey (Adidas) · M",
       "price": 45,
       "currency": "USD",
@@ -648,15 +614,13 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Jersey is new with tag and authentic. Message me if you have questions.",
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/QajteGUT"
     },
     {
       "id": "MCEIHY77J3ER5UHJJGLCSLYN",
       "itemId": "NLP3C7KACU2IIIRIEL4DUZUD",
-      "sku": "ebay:800058538346",
+      "sku": "ebay:800482156328",
       "title": "Borussia Dortmund 25/26 Pre-Match Jersey (Puma) · L",
       "price": 44.99,
       "currency": "USD",
@@ -683,8 +647,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/2n4lqIi2",
       "checkoutUrlDiscounted": "https://square.link/u/riJwaBai"
@@ -692,7 +654,7 @@
     {
       "id": "KRHP6YJO5KRMODFKNAYBKK6S",
       "itemId": "D2UU2DA3XDMHDSHEHQFFP2D3",
-      "sku": "ebay:800058554457",
+      "sku": "ebay:800482156692",
       "title": "Borussia Dortmund 25/26 Pre-Match Jersey (Puma) · S",
       "price": 44.99,
       "currency": "USD",
@@ -719,8 +681,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/UC5VK1Eg",
       "checkoutUrlDiscounted": "https://square.link/u/DnXiQ4j6"
@@ -728,7 +688,7 @@
     {
       "id": "HELNG4NELK57GRBIGQUMIFKZ",
       "itemId": "DJ3DNTNYKI4YJMCNPUMKG6MX",
-      "sku": "ebay:389350084218",
+      "sku": "ebay:800482160177",
       "title": "Manchester City 23/24 Pre-Match Jersey (Puma) · M",
       "price": 44.99,
       "currency": "USD",
@@ -755,8 +715,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/cN7wbRzO",
       "checkoutUrlDiscounted": "https://square.link/u/11TEkU5a"
@@ -764,7 +722,7 @@
     {
       "id": "TVAE6QTZ6YQL7326JAIX2I7C",
       "itemId": "K2MVDBOYRK7AH5HTPLYYU6VT",
-      "sku": "ebay:800407272493",
+      "sku": "ebay:800482165273",
       "title": "Paris Saint-Germain 23/24 Away Jersey (Nike) · Youth XL",
       "price": 44.99,
       "currency": "USD",
@@ -795,8 +753,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yHZesRZ9",
       "checkoutUrlDiscounted": "https://square.link/u/6orjWQYi"
@@ -804,7 +760,7 @@
     {
       "id": "7J6DO636MD5CSSILRBUXTMQB",
       "itemId": "XQENLPF2YKZMKNCX2UZICT3C",
-      "sku": "ebay:389350079937",
+      "sku": "ebay:800482160452",
       "title": "Manchester City 23/24 Training Jersey (Puma) · L",
       "price": 42.99,
       "currency": "USD",
@@ -832,8 +788,6 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/1tEGS1UH",
       "checkoutUrlDiscounted": "https://square.link/u/TmBmtEjn"
@@ -841,7 +795,7 @@
     {
       "id": "XS7BTRL6MGQUPHSRU3ZEP3IN",
       "itemId": "WA7QDAZ2WFEUGXFGZMSXB6SB",
-      "sku": "ebay:800407734184",
+      "sku": "ebay:800482167880",
       "title": "Newcastle United 24/25 Home Jersey (adidas) · Youth L",
       "price": 42.99,
       "currency": "USD",
@@ -872,8 +826,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/JqxujS6q",
       "checkoutUrlDiscounted": "https://square.link/u/tFmNrYGQ"
@@ -881,7 +833,7 @@
     {
       "id": "VUWLFJKHDOIHTL3U3K3R36E7",
       "itemId": "FFGES2GD3B3I4G3CTO2KT6JZ",
-      "sku": "ebay:389980979451",
+      "sku": "ebay:800482159852",
       "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · M",
       "price": 40,
       "currency": "USD",
@@ -907,15 +859,13 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Jersey is new with tag and authentic. Message me if you have questions.",
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/3DLsrUBk"
     },
     {
       "id": "BIXIXRBNFCUCYEXEX7SFU4R2",
       "itemId": "2ZTU4ECRADCTFCSQP3KGKDEB",
-      "sku": "ebay:389366069056",
+      "sku": "ebay:800482160955",
       "title": "Inter Miami 23/24 Away Jersey (Adidas) · Youth XL",
       "price": 40,
       "currency": "USD",
@@ -939,15 +889,13 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Jersey is new with tag and authentic. Message me if you have questions.",
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/OK4tCeD9"
     },
     {
       "id": "VW5JS2QK6DEVPFE7WUCXJNMK",
       "itemId": "2STRESTWOXQ5WRDMX7QOXMYM",
-      "sku": "ebay:800189791714",
+      "sku": "ebay:800482166977",
       "title": "Manchester City 25/26 Third Jersey (Puma) · Youth L",
       "price": 40,
       "currency": "USD",
@@ -975,15 +923,13 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Message me with any questions.",
       "checkoutUrl": "https://square.link/u/fWdv6lLo"
     },
     {
       "id": "IICEPL6TBH6ZVJPRURFJ4HBU",
       "itemId": "FW6CHQFW7YHRGVIVWL3UKBOC",
-      "sku": "ebay:389131856395",
+      "sku": "ebay:800482159348",
       "title": "Tottenham Hotspur 23/24 Pre-Match Jersey (Nike) · M",
       "price": 40,
       "currency": "USD",
@@ -1008,15 +954,13 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Jersey is new with tag and authentic. Message me if you have questions.",
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/bKgg30yM"
     },
     {
       "id": "NNVRQNJQSHXIRQC5GCJB4ES4",
       "itemId": "AI7MS2BI5EIGYGWYMCAHVF3Z",
-      "sku": "ebay:389131863371",
+      "sku": "ebay:800482158873",
       "title": "Liverpool 23/24 Training Jersey (Nike) · M",
       "price": 39.99,
       "currency": "USD",
@@ -1043,8 +987,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ElmhWmhx",
       "checkoutUrlDiscounted": "https://square.link/u/s4Wnhdrq"
@@ -1052,7 +994,7 @@
     {
       "id": "SGQ7YT6PMDHO63KLDU6E637Y",
       "itemId": "5UJTISW5ZU3VENBDVTJWBJRO",
-      "sku": "ebay:800407780713",
+      "sku": "ebay:800482168591",
       "title": "Manchester United 24/25 Third Jersey (adidas) · Youth XL",
       "price": 39.99,
       "currency": "USD",
@@ -1091,7 +1033,7 @@
     {
       "id": "LOZJTBWZQOMQHZNL2RDVIC7I",
       "itemId": "2XQEA724GIQ5Y6KNEU4ORRMP",
-      "sku": "ebay:800359862342",
+      "sku": "ebay:800482165738",
       "title": "Crystal Palace “South London And Proud” Authentic Scarf | 2 Sided | 148cm-18cm | — Standard",
       "price": 35,
       "currency": "USD",
@@ -1112,15 +1054,13 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Scarf is new and authentic. Message me if you have any questions.",
+      "description": "Scarf is new and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/nNFhc1P8"
     },
     {
       "id": "4536BCCPRWZHQSXIC2Z4HAMX",
       "itemId": "E5E46BOX5Z5YC33IAF4GZI2D",
-      "sku": "ebay:388851790862",
+      "sku": "ebay:800482157996",
       "title": "Tottenham Hotspur 22/23 Training Jersey (Nike) · S",
       "price": 34.99,
       "currency": "USD",
@@ -1145,8 +1085,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/LioYy6ME",
       "checkoutUrlDiscounted": "https://square.link/u/N5hWNfD8"
@@ -1154,7 +1092,7 @@
     {
       "id": "Z3DE6BQ55K4EBWVLD3JZY6JP",
       "itemId": "A52ARHAZ6DFRB3IEGELRU3AZ",
-      "sku": "ebay:389366085848",
+      "sku": "ebay:800482161336",
       "title": "Tottenham Hotspur 23/24 Strike Top (Nike) · Youth L",
       "price": 34.99,
       "currency": "USD",
@@ -1180,8 +1118,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/eonL5G05",
       "checkoutUrlDiscounted": "https://square.link/u/hSZZyx9V"
@@ -1189,7 +1125,7 @@
     {
       "id": "5ZMO6NV7TPNCYMUREA6QBZCH",
       "itemId": "CRPQ6OS5FV6RHBJTZ54C6XHO",
-      "sku": "ebay:800339659105",
+      "sku": "ebay:800482158420",
       "title": "Germany 22/23 Home Jersey (Adidas) · Youth XL",
       "price": 32.99,
       "currency": "USD",
@@ -1217,8 +1153,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "WORLD CUP SALE. Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/3wlOLNMx",
       "checkoutUrlDiscounted": "https://square.link/u/4Sj4d8mC"
@@ -1226,7 +1160,7 @@
     {
       "id": "ZPVVMODVRJMOICVJBS5DS4WU",
       "itemId": "4NT3VHQTA66R54HFBO2AH5HH",
-      "sku": "ebay:389985124171",
+      "sku": "ebay:800482162028",
       "title": "Real Madrid 16/17 Training Jersey (Adidas) · Youth XL",
       "price": 32.99,
       "currency": "USD",
@@ -1252,8 +1186,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/NiYzTeE6",
       "checkoutUrlDiscounted": "https://square.link/u/5OloRg3q"
@@ -1261,11 +1193,11 @@
     {
       "id": "UQWJCMVXI44M4BYKG5ZXMUFO",
       "itemId": "OX7AAG6BBHIQYZ4OEW4GUWFM",
-      "sku": "ebay:800359830155",
-      "title": "Ajax Amsterdam Authentic Red And White Scarf | 2 Sided | 173cm-20cm | — Standard",
+      "sku": "ebay:800482167587",
+      "title": "Ajax Kit — Standard",
       "price": 32,
       "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/ajax-amsterdam-authentic-red-and-white-scarf-2-sided-173cm-20cm/OX7AAG6BBHIQYZ4OEW4GUWFM",
+      "url": "https://jerseydealsofficial.square.site/product/ajax-kit/OX7AAG6BBHIQYZ4OEW4GUWFM",
       "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
       "images": [
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
@@ -1277,21 +1209,19 @@
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3rwAAeSwsIxqWlYm/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
-      "tag": "Apparel",
+      "tag": "Jerseys",
       "note": "See listing",
       "size": "Other",
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
-      "description": "Scarf is new and authentic. Message me if you have any questions.",
+      "description": "Scarf is new and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yOGIj9ZM"
     },
     {
       "id": "F5DEPH7PNZQPAO4J5U7TTMOU",
       "itemId": "3OQZ6ETJMRZRSOEVDJYL7QTW",
-      "sku": "ebay:800366775190",
+      "sku": "ebay:800482162460",
       "title": "Chelsea 16/17 Home Jersey (adidas) · Youth L",
       "price": 29.99,
       "currency": "USD",
@@ -1315,8 +1245,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in great condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/a7FEvLYN",
       "checkoutUrlDiscounted": "https://square.link/u/r2mgPDkx"
@@ -1324,7 +1252,7 @@
     {
       "id": "WSZKEVL3YZH5CD73UCGFDP7K",
       "itemId": "6FT2DIWVL2DMVGUTETE23BJF",
-      "sku": "ebay:800433372360",
+      "sku": "ebay:800482162853",
       "title": "Chelsea 12/13 Home Jersey — Torres #9 (Adidas) · Youth XL",
       "price": 24.99,
       "currency": "USD",
@@ -1351,8 +1279,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in pretty good condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/Lpx6Dxsl",
       "checkoutUrlDiscounted": "https://square.link/u/NvbrJnra"
@@ -1360,7 +1286,7 @@
     {
       "id": "DXPUBUMNL6SDIUGZDOTDVCRS",
       "itemId": "ODTYBGQ7HFX4BUZR2ZGIXUYF",
-      "sku": "ebay:389985026255",
+      "sku": "ebay:800482162853",
       "title": "Chelsea 12/13 Home Jersey — Torres #9 (Adidas) · Youth XL",
       "price": 24.99,
       "currency": "USD",
@@ -1393,7 +1319,7 @@
     {
       "id": "2R5BPPFCVBMJLBOKNX5PT6AF",
       "itemId": "7QEXEFKYLJ5UXCPCFJKJCZPU",
-      "sku": "ebay:800058667436",
+      "sku": "ebay:800482163144",
       "title": "Chelsea 16/17 Home Jersey (Adidas) · Youth XL",
       "price": 24.99,
       "currency": "USD",
@@ -1417,8 +1343,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/7TAVcV4J",
       "checkoutUrlDiscounted": "https://square.link/u/omAIumHV"
@@ -1426,7 +1350,7 @@
     {
       "id": "K67ZXTGTIJP6MJJNY2JIQ4SL",
       "itemId": "NMR35X7JWVZVRPGCSXISFFRE",
-      "sku": "ebay:800468185328",
+      "sku": "ebay:800482178431",
       "title": "Portugal Crest T-Shirt (Puma) · L",
       "price": 24.99,
       "currency": "USD",
@@ -1456,7 +1380,7 @@
     {
       "id": "QQOILPX4ZTJXJI6PENOFLGJV",
       "itemId": "OKGE4WCZMXFR6HKJEQRDGW44",
-      "sku": "ebay:800468154282",
+      "sku": "ebay:800482178060",
       "title": "Portugal Crest T-Shirt (Puma) · M",
       "price": 24.99,
       "currency": "USD",
@@ -1486,7 +1410,7 @@
     {
       "id": "OEWI7BCXE3NX2MXMIBQ3H34N",
       "itemId": "TIMP4GBQS5DGX2MNUF5F72C4",
-      "sku": "ebay:800468193301",
+      "sku": "ebay:800482178798",
       "title": "Portugal Crest T-Shirt (Puma) · XL",
       "price": 24.99,
       "currency": "USD",
@@ -1516,7 +1440,7 @@
     {
       "id": "BMSH3PUXUNEI53EKDA6KZFL7",
       "itemId": "HUWLFC7KPIIUS4ZVXXRII5XA",
-      "sku": "ebay:800468097775",
+      "sku": "ebay:800482177582",
       "title": "Red Puma Canada National Team Fanpack Graphic T-Shirt L Large",
       "price": 24.99,
       "currency": "USD",
@@ -1546,7 +1470,7 @@
     {
       "id": "AZKGNCLOMSL2O3MVFNLSBK3X",
       "itemId": "4CSC2D2DVJFRIRSU66RTDPQY",
-      "sku": "ebay:800468202505",
+      "sku": "ebay:800482179258",
       "title": "USA Crest T-Shirt (Puma) · M",
       "price": 24.99,
       "currency": "USD",
@@ -1576,7 +1500,7 @@
     {
       "id": "KTKQNRLKNTODXGSMZKP5U575",
       "itemId": "BYDEPKAKMGLLL4YUUJTRKIBB",
-      "sku": "ebay:800465963114",
+      "sku": "ebay:800482174529",
       "title": "Beige Columbia Colorful Logo T-Shirt L Large",
       "price": 22.99,
       "currency": "USD",
@@ -1607,7 +1531,7 @@
     {
       "id": "MBIUG2X725JY6IIS7RERAWLH",
       "itemId": "FW74IW4WQWNJREQUGPN4MIZG",
-      "sku": "ebay:800465940813",
+      "sku": "ebay:800482173966",
       "title": "Navy Columbia Mountain Graphic T-Shirt M Medium",
       "price": 22.99,
       "currency": "USD",
@@ -1638,7 +1562,7 @@
     {
       "id": "5WUKS2WBNN6QAABUKJFFXZLD",
       "itemId": "LJJON57P6UCY5YEXFW5K2H43",
-      "sku": "ebay:800462563793",
+      "sku": "ebay:800482172252",
       "title": "Black adidas Camo T-Shirt With Logo On Back M Medium",
       "price": 19.99,
       "currency": "USD",
@@ -1668,7 +1592,7 @@
     {
       "id": "OIA4I5P56QLWOI2QXTE34NOV",
       "itemId": "S42HWCM5SFBZLAEB65LJV4UF",
-      "sku": "ebay:800462377603",
+      "sku": "ebay:800482169401",
       "title": "Black adidas Originals Logo Graphic T-Shirt L Large",
       "price": 19.99,
       "currency": "USD",
@@ -1697,7 +1621,7 @@
     {
       "id": "GBNCKYZWXZBIUZMM37VNTGBY",
       "itemId": "FJ5YN3P4QU2UWDVG2RVARQBE",
-      "sku": "ebay:800462345009",
+      "sku": "ebay:800482173340",
       "title": "Black adidas Originals T-Shirt L Large",
       "price": 19.99,
       "currency": "USD",
@@ -1723,7 +1647,7 @@
     {
       "id": "7UZU655PFBCCNWLGIEFZUZXU",
       "itemId": "G2D5ATA2JOS7KZCZUZTH5357",
-      "sku": "ebay:800462453992",
+      "sku": "ebay:800482170788",
       "title": "Black adidas Sportswear Graphic T-Shirt XL Extra Large",
       "price": 19.99,
       "currency": "USD",
@@ -1753,7 +1677,7 @@
     {
       "id": "2NB7RWXBYDTV6MXXV53PXAL3",
       "itemId": "RV4XL6ML5WIA4EO3UD2OY7JA",
-      "sku": "ebay:800462574868",
+      "sku": "ebay:800482172840",
       "title": "Blue adidas Logo Graphic T-Shirt M Medium",
       "price": 19.99,
       "currency": "USD",
@@ -1783,7 +1707,7 @@
     {
       "id": "HQTRPUGYSAZHSTPFYC4LJHWO",
       "itemId": "XZALDSNOXXKZNQPY4ML5WI5M",
-      "sku": "ebay:800462390203",
+      "sku": "ebay:800482170211",
       "title": "Blue adidas Logo Graphic T-Shirt S Small",
       "price": 19.99,
       "currency": "USD",
@@ -1812,7 +1736,7 @@
     {
       "id": "SEQEMDAMQGUWPILJW7HEUWZO",
       "itemId": "IGV5HZ64I2IDIIKCLDRL6EA6",
-      "sku": "ebay:800058655528",
+      "sku": "ebay:800482163484",
       "title": "Chelsea 17/18 Home Jersey (Nike) · Youth L",
       "price": 19.99,
       "currency": "USD",
@@ -1836,8 +1760,6 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yaAWVC5W",
       "checkoutUrlDiscounted": "https://square.link/u/MVqgUz25"
@@ -1845,7 +1767,7 @@
     {
       "id": "Q5U6CE4YFROKNHEJ75DRAE7W",
       "itemId": "IIPRTHBFFASDGQLT7XSZXT4C",
-      "sku": "ebay:389383993536",
+      "sku": "ebay:800482163689",
       "title": "FC Barcelona Crest T-Shirt — Navy · M",
       "price": 19.99,
       "currency": "USD",
@@ -1869,8 +1791,6 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Product is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/HmJj8SgP",
       "checkoutUrlDiscounted": "https://square.link/u/XnOQYpHm"
@@ -1878,7 +1798,7 @@
     {
       "id": "ZNFNJDQEXT24M2USPO63GIIT",
       "itemId": "BCG7CYGMENMJHX2UA7Z5IRGP",
-      "sku": "ebay:800462523810",
+      "sku": "ebay:800482171966",
       "title": "Green adidas Logo Graphic T-Shirt L Large",
       "price": 19.99,
       "currency": "USD",
@@ -1908,7 +1828,7 @@
     {
       "id": "QNLA5JXCMPQWWKXBKA2637XG",
       "itemId": "5E2TPWBWINZ6LOXVWBSJYGDZ",
-      "sku": "ebay:800462507225",
+      "sku": "ebay:800482171113",
       "title": "Green adidas T-Shirt With Multicolor Worldwide Graphic On Back M Medium",
       "price": 19.99,
       "currency": "USD",
@@ -1940,7 +1860,7 @@
     {
       "id": "PFDGWERV4SLJPIHLMYDGJHOQ",
       "itemId": "4I5XKVJADKB2PVFJUQC6SWDM",
-      "sku": "ebay:800462381790",
+      "sku": "ebay:800482169797",
       "title": "Grey adidas Originals Logo Graphic T-Shirt L Large",
       "price": 19.99,
       "currency": "USD",
@@ -1969,7 +1889,7 @@
     {
       "id": "XDF6VB47D6ALWBLMWSNUTEM6",
       "itemId": "VQSG23BLZT77FFNWGXRN4XYO",
-      "sku": "ebay:389980721258",
+      "sku": "ebay:800482163372",
       "title": "Manchester United 16/17 Away Jersey — Pogba #6 (Adidas) · Youth XL",
       "price": 19.99,
       "currency": "USD",
@@ -1995,8 +1915,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in great condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/CYpYakwK",
       "checkoutUrlDiscounted": "https://square.link/u/Mr5B0z8N"
@@ -2004,7 +1922,7 @@
     {
       "id": "CCMYBBETJ6AIUOEWPTA74G6H",
       "itemId": "HCDARA2BPIJ57MRWACHALL3H",
-      "sku": "ebay:800462375521",
+      "sku": "ebay:800482169162",
       "title": "White adidas Originals Logo Graphic T-Shirt L Large",
       "price": 19.99,
       "currency": "USD",
@@ -2033,7 +1951,7 @@
     {
       "id": "QQM2QDUTLHJEHCTCQZYMXHAU",
       "itemId": "OGTAERFQYGGLQHQJX6NMFV7M",
-      "sku": "ebay:800462443547",
+      "sku": "ebay:800482170500",
       "title": "White adidas T-Shirt With Blue Logo Graphic On Back L Large",
       "price": 19.99,
       "currency": "USD",
@@ -2064,7 +1982,7 @@
     {
       "id": "QTD4DUQRLVOBZ4TZC7XFYCDL",
       "itemId": "IVTURGEOIWMKKMWKSMS4L3VZ",
-      "sku": "ebay:800468266323",
+      "sku": "ebay:800482179923",
       "title": "Blue Puma 1948 Athletics Graphic T-Shirt XXL Extra Extra Large · s",
       "price": 17.99,
       "currency": "USD",
@@ -2096,7 +2014,7 @@
     {
       "id": "THX7VFJO2ALZ7ZGRFAEPER2G",
       "itemId": "DVKHCBD4VVWMDM7SPTNMLMVS",
-      "sku": "ebay:800466048195",
+      "sku": "ebay:800482175794",
       "title": "USA Crest T-Shirt (Under Armour) · Youth L",
       "price": 17.99,
       "currency": "USD",
@@ -2128,7 +2046,7 @@
     {
       "id": "H4MRADR5XPZCLS5JNIBEEIVH",
       "itemId": "UZSRPC5LNCZISTUHGJMV65CC",
-      "sku": "ebay:800466571858",
+      "sku": "ebay:800482176285",
       "title": "USA Crest T-Shirt (Under Armour) · Youth XL",
       "price": 17.99,
       "currency": "USD",
@@ -2160,7 +2078,7 @@
     {
       "id": "HBIW7YGGOPFZ3C47TL7FSEUP",
       "itemId": "CVPNKFZPXTXYY64PTNWQSTUB",
-      "sku": "ebay:800468241867",
+      "sku": "ebay:800482179704",
       "title": "Yellow Puma Logo Graphic T-Shirt S Small",
       "price": 17.99,
       "currency": "USD",
@@ -2190,7 +2108,7 @@
     {
       "id": "TNLLMZ7CSS72HGOHXAYNALLP",
       "itemId": "XQKZH5QRW3YTTKSM2NAZTHNH",
-      "sku": "ebay:388882596658",
+      "sku": "ebay:800482163886",
       "title": "Syracuse Orange Football Jersey #12 · 9-12 YRS",
       "price": 16.99,
       "currency": "USD",
@@ -2211,8 +2129,6 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/9Zu2iWHb",
       "checkoutUrlDiscounted": "https://square.link/u/VaUy67i9"
@@ -2220,7 +2136,7 @@
     {
       "id": "XUWT5HYLPACVFYKWR43Q2OEA",
       "itemId": "3PWLEWS7DBQDAXVP2LHEWEWH",
-      "sku": "ebay:800468279747",
+      "sku": "ebay:800482180199",
       "title": "Black Puma Soccer Stadium Graphic T-Shirt M Medium",
       "price": 14.99,
       "currency": "USD",
@@ -2249,9 +2165,36 @@
       "checkoutUrlDiscounted": "https://square.link/u/bgeEdRZ8"
     },
     {
+      "id": "W42D4EFCQNCJHTSY6WQI3R4Q",
+      "itemId": "XWOEJQU7B3MZSRUAPI6NAGQS",
+      "sku": "ebay:800482089662",
+      "title": "Black Puma Soccer Stadium Graphic T-Shirt M Medium",
+      "price": 14.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/black-puma-soccer-stadium-graphic-t-shirt-m-medium/XWOEJQU7B3MZSRUAPI6NAGQS",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/llgAAeSwFuJqc91i/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/llgAAeSwFuJqc91i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aO4AAeSw7dlqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bbEAAeSwo4Nqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6FoAAeSwIoZqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1CYAAeSwzmFqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5VgAAeSwraVqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/he4AAeSwVDJqc91k/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags. Please message us if you have any questions."
+    },
+    {
       "id": "FPACGK626CQ3PF4CRARJHXLW",
       "itemId": "U4MZV6JN663KJQXOXVX4EAVU",
-      "sku": "ebay:389985059720",
+      "sku": "ebay:800482087139",
       "title": "Chelsea 14/15 Home Jersey (Adidas) · Youth M",
       "price": 14.99,
       "currency": "USD",
@@ -2281,9 +2224,37 @@
       "checkoutUrlDiscounted": "https://square.link/u/p9Is3goT"
     },
     {
+      "id": "RWTZJY5T6AAGQ65IPXJXJYYJ",
+      "itemId": "ZDGRVW4TFXNCLAWSY4VQR7GC",
+      "sku": "ebay:800482087139",
+      "title": "Chelsea 14/15 Home Jersey (Adidas) · Youth M",
+      "price": 14.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/chelsea-14-15-home-jersey-adidas-youth-m/ZDGRVW4TFXNCLAWSY4VQR7GC",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UyMAAeSwZqJp-7Kh/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UyMAAeSwZqJp-7Kh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WVEAAeSwZLVp-7Km/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Y-UAAeSwJyRp-7Kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CIkAAeSwAKZp-7Kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ctUAAeSwrclp-7Kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/U4AAAeSw0Plp-7Ki/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wR4AAeSwnxZp-7Kl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2nUAAeSwisJp-7Km/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Youth",
+      "note": "Youth M",
+      "size": "Youth M",
+      "brand": "Adidas",
+      "source": "square",
+      "category": "",
+      "description": "Jersey is in pretty good condition there are no stains just a tiny bit of peeling as you can see. Please message us if you have any questions."
+    },
+    {
       "id": "DMGN4WRW6ZIQXZVAE3DKDVVM",
       "itemId": "QNT36BNMBU56Z2GUPSVAC2BR",
-      "sku": "ebay:800465986815",
+      "sku": "ebay:800482085409",
       "title": "Green Under Armour Red One Graphic T-Shirt S Small",
       "price": 14.99,
       "currency": "USD",
@@ -2312,9 +2283,36 @@
       "checkoutUrlDiscounted": "https://square.link/u/IVl31SFW"
     },
     {
+      "id": "USYL5OBWIRYCZFGWOLGG3T2Q",
+      "itemId": "3CBR3SOJDNNTPKXMTFJFXOEB",
+      "sku": "ebay:800482085409",
+      "title": "Green Under Armour Red One Graphic T-Shirt S Small",
+      "price": 14.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/green-under-armour-red-one-graphic-t-shirt-s-small/3CBR3SOJDNNTPKXMTFJFXOEB",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ABIAAeSwh~xqczl1/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ABIAAeSwh~xqczl1/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QNsAAeSwDCFqczl3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2AMAAeSwWXRqczl3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/v7sAAeSwn2Jqczl2/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6EsAAeSw-ABqczl2/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zVkAAeSw8fBqczl3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ypQAAeSwUr5qczl4/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size S",
+      "size": "S",
+      "brand": "Under Armour",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags. Please message us if you have any questions."
+    },
+    {
       "id": "XNHNL2WTQEIFBDPIAMDP4AVH",
       "itemId": "DH3ECCJONSTXEWEEZOUZZM6I",
-      "sku": "ebay:800466004978",
+      "sku": "ebay:800482084611",
       "title": "Red Under Armour Red One Graphic T-Shirt S Small",
       "price": 14.99,
       "currency": "USD",
@@ -2344,9 +2342,37 @@
       "checkoutUrlDiscounted": "https://square.link/u/XAkrQjhn"
     },
     {
+      "id": "QMT2SY66SHPBNQ4RSVKTRD5Q",
+      "itemId": "LB5UNAD75TYN7A22MUTTFEOU",
+      "sku": "ebay:800482084611",
+      "title": "Red Under Armour Red One Graphic T-Shirt S Small",
+      "price": 14.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/red-under-armour-red-one-graphic-t-shirt-s-small/LB5UNAD75TYN7A22MUTTFEOU",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ac4AAeSwOk1qczsg/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ac4AAeSwOk1qczsg/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZkcAAeSwfRBqczsj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/R-gAAeSwQ7dqczsj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/N1oAAeSw0-xqczsh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wvoAAeSwNRxqczsi/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/afIAAeSwOk1qczsj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/exgAAeSwS0Bqczsi/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/V~YAAeSwHjVqczsj/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size S",
+      "size": "S",
+      "brand": "Under Armour",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags. Please message us if you have any questions."
+    },
+    {
       "id": "IOMKHE7C2ESYQ4XYI3M564FU",
       "itemId": "6OWM243QJBQTIAHD2ZENZS7Y",
-      "sku": "ebay:800468035455",
+      "sku": "ebay:800482084110",
       "title": "Maroon Under Armour Long Sleeve Waffle Crew M Medium",
       "price": 13.99,
       "currency": "USD",
@@ -2375,9 +2401,36 @@
       "checkoutUrlDiscounted": "https://square.link/u/EeqwOBLN"
     },
     {
+      "id": "KWTTP72SWK7RWL32IBTB22GW",
+      "itemId": "IPBMPX3SZCMLECMUPHGIIVSK",
+      "sku": "ebay:800482084110",
+      "title": "Maroon Under Armour Long Sleeve Waffle Crew M Medium",
+      "price": 13.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/maroon-under-armour-long-sleeve-waffle-crew-m-medium/IPBMPX3SZCMLECMUPHGIIVSK",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HPwAAeSwWEBqc88E/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HPwAAeSwWEBqc88E/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/udIAAeSwXRFqc88v/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9q4AAeSwUIlqc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3LkAAeSwUr5qc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/G~EAAeSwSFFqc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BeUAAeSwFJVqc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YN8AAeSwsIxqc88v/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size M",
+      "size": "M",
+      "brand": "Under Armour",
+      "source": "square",
+      "category": "",
+      "description": "Waffle Crew is new with tags. Please message us if you have any questions."
+    },
+    {
       "id": "M4HDCO7DHEXMS4SXW2S2QYOL",
       "itemId": "IMENLCIPQF2NARGPZH7TN6OJ",
-      "sku": "ebay:800468004717",
+      "sku": "ebay:800482176740",
       "title": "Maroon Under Armour Long Sleeve Waffle Crew S Small",
       "price": 12.99,
       "currency": "USD",
@@ -2407,7 +2460,7 @@
     {
       "id": "X4IFRN5JDBNFHCN7ZPXBTGA5",
       "itemId": "IKDFJA2RXTRWIT4WHRRNXPCN",
-      "sku": "ebay:800468332407",
+      "sku": "ebay:800482083411",
       "title": "Black Puma Soccer Pictures Graphic T-Shirt M Medium",
       "price": 11.99,
       "currency": "USD",
@@ -2435,9 +2488,35 @@
       "checkoutUrlDiscounted": "https://square.link/u/kn2WQelK"
     },
     {
+      "id": "OK5CR6PJC7TNSEOMVMJAP4LK",
+      "itemId": "S2FPHN2KKKF2K5D27E2CTCF5",
+      "sku": "ebay:800482083411",
+      "title": "Black Puma Soccer Pictures Graphic T-Shirt M Medium",
+      "price": 11.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/black-puma-soccer-pictures-graphic-t-shirt-m-medium/S2FPHN2KKKF2K5D27E2CTCF5",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gFYAAeSwtxVqc98Q/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gFYAAeSwtxVqc98Q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cNkAAeSwfCxqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hS8AAeSwFJVqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0dIAAeSwDCFqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/taIAAeSw~Lpqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aewAAeSwgMtqc98S/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size M",
+      "size": "M",
+      "brand": "Puma",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags. Please message us if you have any questions."
+    },
+    {
       "id": "NWSMDPZORSCBZ5KWSG3L46SO",
       "itemId": "PMJBVHVEQEP5HBPMPYV6PCML",
-      "sku": "ebay:800403694830",
+      "sku": "ebay:800482164227",
       "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
       "price": 10,
       "currency": "USD",
@@ -2461,15 +2540,13 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in not great condition. Pretty dirty but a great item to hang up or try to clean and then wear for a very low price. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/jifM4Ums"
     },
     {
       "id": "BITTO3N42GF6UMBOTP6VFEU6",
       "itemId": "KSQAQS5FD2JUDR2OSVTR2CKN",
-      "sku": "ebay:800366857184",
+      "sku": "ebay:800482164227",
       "title": "Manchester City 17/18 Home Jersey (Nike) · Youth L",
       "price": 10,
       "currency": "USD",
@@ -2501,7 +2578,7 @@
     {
       "id": "4PCPQEYN4SLI7XMOOHTPIL7P",
       "itemId": "D5W5GS55U2TKYXXLQOAEOJR3",
-      "sku": "ebay:800468218649",
+      "sku": "ebay:800482082639",
       "title": "Grey Puma Logo Vote Graphic T-Shirt L Large",
       "price": 9.99,
       "currency": "USD",
@@ -2531,9 +2608,37 @@
       "checkoutUrlDiscounted": "https://square.link/u/qut2yXiM"
     },
     {
+      "id": "THNFKHLRL6H4NQSOUD2SJ5Z7",
+      "itemId": "H27SPBOVAQX55TXHCDGCVI5B",
+      "sku": "ebay:800482082639",
+      "title": "Grey Puma Logo Vote Graphic T-Shirt L Large",
+      "price": 9.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/grey-puma-logo-vote-graphic-t-shirt-l-large/H27SPBOVAQX55TXHCDGCVI5B",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0ugAAeSwpfRqc9l~/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0ugAAeSwpfRqc9l~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XvwAAeSwB-dqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Jm8AAeSwQtRqc9mB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/giIAAeSw~Lpqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d6QAAeSwBFtqc9mB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Nz0AAeSwPGtqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tpEAAeSw6Ppqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Qu4AAeSw6JVqc9mD/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size L",
+      "size": "L",
+      "brand": "Puma",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags. Please message us if you have any questions."
+    },
+    {
       "id": "PPVWVZKJYRLSFX33RN4XQDOV",
       "itemId": "KL5J6BT3HLBFTOVJMCUZRG7S",
-      "sku": "ebay:800359738314",
+      "sku": "ebay:800482081491",
       "title": "Syracuse Soccer Rally Towels (2-Pack) — Standard",
       "price": 7.99,
       "currency": "USD",
@@ -2556,6 +2661,29 @@
       "description": "Rally Towel is in perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ZEOOvMjO",
       "checkoutUrlDiscounted": "https://square.link/u/Srne1pBU"
+    },
+    {
+      "id": "QNKVJDEICTMPNUJCOZYCMU7G",
+      "itemId": "BLP4IRRKWZX7ZQT6KVJHW7TR",
+      "sku": "ebay:800482081491",
+      "title": "Syracuse Soccer Rally Towels (2-Pack) — Standard",
+      "price": 7.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/syracuse-soccer-rally-towels-2-pack/BLP4IRRKWZX7ZQT6KVJHW7TR",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zfIAAeSwQBhqWlB4/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zfIAAeSwQBhqWlB4/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tsgAAeSwiBtqWlB6/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3IYAAeSwNm9qWlB6/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "See listing",
+      "size": "Other",
+      "brand": "",
+      "source": "square",
+      "category": "",
+      "description": "Rally Towel is in perfect condition. Please message us if you have any questions."
     }
   ],
   "checkoutMode": "square-online-cart+payment-links"
