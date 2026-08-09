@@ -131,39 +131,69 @@ export function PhotoTroop({
         animate={
           attacking
             ? attack === 'whip'
-              ? { y: [0, -2, -4, 1, 0], rotate: [0, -8, -14, 16, 0] }
+              ? {
+                  // Wind-up → crack whip forward
+                  y: [0, 2, -6, -2, 0],
+                  x: [0, -4, 14, 8, 0],
+                  rotate: [0, -18, 28, 10, 0],
+                  scale: [1, 0.96, 1.08, 1.02, 1],
+                }
               : attack === 'sundae'
-                ? { y: [0, -5, -9, 0], rotate: [0, -5, 6, 0] }
+                ? {
+                    y: [0, -4, -12, -6, 0],
+                    x: [0, -2, 8, 4, 0],
+                    rotate: [0, -12, 8, 4, 0],
+                    scale: [1, 0.98, 1.06, 1, 1],
+                  }
                 : attack === 'shoot'
-                  ? { y: [0, -2, 0], rotate: [0, -2, 2, 0] }
+                  ? {
+                      y: [0, -1, 0, -1, 0],
+                      x: [0, -3, 2, -2, 0],
+                      rotate: [0, -4, 3, -2, 0],
+                      scale: [1, 0.97, 1.03, 0.99, 1],
+                    }
                   : attack === 'bite'
-                    ? { x: [0, 12, 16, 0], y: [0, -5, 2, 0], rotate: [0, -4, 8, 0] }
+                    ? {
+                        x: [0, -2, 18, 10, 0],
+                        y: [0, 3, -6, 1, 0],
+                        rotate: [0, -6, 14, 4, 0],
+                        scale: [1, 0.94, 1.12, 1.04, 1],
+                      }
                     : attack === 'hug'
-                      ? { y: [0, -2, 0], scale: [1, 1.04, 1] }
+                      ? {
+                          y: [0, 2, -4, 0],
+                          x: [0, -2, 10, 0],
+                          scale: [1, 0.95, 1.14, 1],
+                          rotate: [0, -4, 6, 0],
+                        }
                       : attack === 'slobber'
-                        ? { y: [0, -3, -1, 0], rotate: [0, -6, 4, 0], scaleY: [1, 0.96, 1.02, 1] }
+                        ? {
+                            y: [0, 3, -5, -1, 0],
+                            x: [0, -3, 6, 2, 0],
+                            rotate: [0, -10, 8, 2, 0],
+                            scaleY: [1, 0.92, 1.06, 1.02, 1],
+                          }
                         : attack === 'kick'
                           ? {
-                              // Crouch → launch high → flying kick forward → land
-                              y: [0, 4, -22, -16, 0],
-                              x: [0, 0, 10, 18, 0],
-                              rotate: [0, -8, -25, 12, 0],
-                              scaleY: [1, 0.9, 1.08, 1.02, 1],
+                              // Crouch → launch → flying kick → land
+                              y: [0, 6, -28, -18, 0],
+                              x: [0, -2, 16, 22, 0],
+                              rotate: [0, -12, -32, 18, 0],
+                              scaleY: [1, 0.88, 1.12, 1.04, 1],
                             }
                           : attack === 'dumbbell'
                             ? {
-                                // Plant → press overhead → huck forward → settle
-                                y: [0, -2, -10, -4, 0],
-                                rotate: [0, -4, -10, 8, 0],
-                                scaleY: [1, 0.98, 1.04, 1, 1],
+                                y: [0, 2, -14, -4, 0],
+                                x: [0, -3, 10, 4, 0],
+                                rotate: [0, -8, -16, 12, 0],
+                                scaleY: [1, 0.94, 1.08, 1, 1],
                               }
                             : attack === 'headbutt'
                               ? {
-                                  // Plant → lean in → snap head forward → reset
-                                  y: [0, 2, -2, 1, 0],
-                                  x: [0, 0, 14, 10, 0],
-                                  rotate: [0, 8, 22, 10, 0],
-                                  scaleY: [1, 0.96, 1.05, 1, 1],
+                                  y: [0, 4, -4, 2, 0],
+                                  x: [0, -4, 18, 10, 0],
+                                  rotate: [0, 12, 28, 8, 0],
+                                  scaleY: [1, 0.92, 1.1, 1, 1],
                                 }
                               : { y: [0, -3, 0] }
             : walking
@@ -518,32 +548,52 @@ function GunOverlay() {
 
 function WhipOverlay() {
   return (
-    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+    <svg
+      viewBox="0 0 80 118"
+      className="pointer-events-none absolute inset-[-12%] h-[124%] w-[124%]"
+      aria-hidden
+    >
       <motion.g
-        initial={{ rotate: -40 }}
-        animate={{ rotate: [-50, -60, 55, 20] }}
-        transition={{ duration: 0.72, times: [0, 0.35, 0.55, 1] }}
-        style={{ transformOrigin: '48px 50px' }}
+        initial={{ rotate: -50 }}
+        animate={{ rotate: [-55, -70, 70, 25] }}
+        transition={{ duration: 0.78, times: [0, 0.32, 0.55, 1] }}
+        style={{ transformOrigin: '42px 52px' }}
       >
         <path
-          d="M48 50 Q70 40 78 22"
+          d="M42 52 Q62 36 78 14 Q84 8 88 6"
           fill="none"
-          stroke="#6a3a18"
-          strokeWidth="2.4"
+          stroke="#5a2a10"
+          strokeWidth="3.2"
           strokeLinecap="round"
         />
         <path
-          d="M48 50 Q70 40 78 22"
+          d="M42 52 Q62 36 78 14 Q84 8 88 6"
           fill="none"
-          stroke="#c9a227"
-          strokeWidth="1"
+          stroke="#f5d76e"
+          strokeWidth="1.4"
           strokeLinecap="round"
-          opacity="0.7"
+          opacity="0.85"
         />
-        <circle cx="78" cy="20" r="2.2" fill="#8a2018" />
+        <motion.circle
+          cx="90"
+          cy="5"
+          r="4"
+          fill="#ff3b3b"
+          animate={{ scale: [0.6, 1.4, 0.8], opacity: [0.5, 1, 0.7] }}
+          transition={{ duration: 0.78 }}
+        />
+        <motion.path
+          d="M78 18 Q92 10 98 22"
+          fill="none"
+          stroke="#ffe08a"
+          strokeWidth="2"
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: [0, 0, 1, 0], opacity: [0, 0, 1, 0] }}
+          transition={{ duration: 0.78, times: [0, 0.4, 0.55, 1] }}
+        />
       </motion.g>
-      {/* Grip hand cue */}
-      <circle cx="48" cy="52" r="4" fill="#e8b888" stroke="#a86838" strokeWidth="0.6" />
+      <circle cx="42" cy="54" r="5" fill="#e8b888" stroke="#a86838" strokeWidth="0.8" />
     </svg>
   )
 }

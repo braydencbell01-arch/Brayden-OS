@@ -77,17 +77,27 @@ export function distToTowerEdge(col: number, row: number, t: TowerSlot): number 
   return Math.hypot(col - closestCol, row - closestRow)
 }
 
-/** Gap between a 1×1 unit tile and the tower's river-facing front segment. */
+/**
+ * Distance from a unit tile to the tower's river-facing FRONT edge segment.
+ * Short-range troops measure range to this face (what you see as the front),
+ * not the back/far corner of the pad.
+ */
 export function distUnitTileToTower(col: number, row: number, t: TowerSlot): number {
   const { left, right, top, bottom } = towerAabb(t)
-  const uLeft = col
-  const uRight = col + 1
-  const uTop = row
-  const uBottom = row + 1
-  const dx = Math.max(0, Math.max(left - uRight, uLeft - right))
+  const cx = col + 0.5
+  const cy = row + 0.5
+  const faceCol = Math.max(left, Math.min(right, cx))
   const frontRow = t.side === 'enemy' ? bottom : top
-  const dy = Math.max(0, Math.max(frontRow - uBottom, uTop - frontRow))
-  return Math.hypot(dx, dy)
+  return Math.hypot(cx - faceCol, cy - frontRow)
+}
+
+/** True when the unit is on the river-facing side of the tower (not tucked behind it). */
+export function isOnTowerFrontSide(_col: number, row: number, t: TowerSlot): boolean {
+  const { top, bottom } = towerAabb(t)
+  const cy = row + 0.5
+  // Small slop so troops standing on the front corners still count.
+  if (t.side === 'enemy') return cy >= bottom - 0.85
+  return cy <= top + 0.85
 }
 
 /** Closest point on the tower footprint boundary/interior to a point. */
@@ -114,12 +124,12 @@ export function towerFrontEngagePoint(
   t: TowerSlot,
 ): { col: number; row: number } {
   const { left, right, top, bottom } = towerAabb(t)
-  const faceCol = Math.max(left + 0.5, Math.min(right - 0.5, fromCol))
-  // Sit a half-tile outside the front edge (never on/inside the pad).
+  const faceCol = Math.max(left + 0.35, Math.min(right - 0.35, fromCol))
+  // Stand clearly in front of the pad (melee can hit from here).
   if (t.side === 'enemy') {
-    return { col: faceCol, row: bottom + 0.55 }
+    return { col: faceCol, row: bottom + 0.35 }
   }
-  return { col: faceCol, row: top - 0.55 }
+  return { col: faceCol, row: top - 1.35 }
 }
 
 /** Projectile aim point on the river-facing front face (visual impact). */
@@ -127,23 +137,27 @@ export function towerFrontAimPoint(t: TowerSlot): { col: number; row: number } {
   const { left, right, top, bottom } = towerAabb(t)
   return {
     col: (left + right) / 2,
-    row: t.side === 'enemy' ? bottom : top,
+    row: t.side === 'enemy' ? bottom - 0.15 : top + 0.15,
   }
 }
 
 /**
  * Walkable land: not river water, and not inside a living tower footprint.
  * Pass liveTowerIds (towers with hp > 0); omit to block all tower footprints.
+ * When `forSide` is set, that side's own towers are passable (Clash Royale style) —
+ * troops never get stuck behind their own king/princess pads.
  */
 export function isWalkableTile(
   col: number,
   row: number,
   liveTowerIds?: ReadonlySet<string>,
+  forSide?: Side,
 ): boolean {
   const c = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
   const r = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
   if (isRiverTile(r, c)) return false
   for (const t of TOWERS) {
+    if (forSide && t.side === forSide) continue
     if (liveTowerIds && !liveTowerIds.has(t.id)) continue
     if (isInsideTower(c, r, t)) return false
   }
@@ -239,15 +253,17 @@ function towerDetourPoint(
   bridgeBiasCol?: number,
 ): { col: number; row: number } {
   const pad = 1.6
+  // Prefer river-facing (front) side corners so melee never routes to the back.
+  const frontRow = t.side === 'enemy' ? t.row + t.h + pad : t.row - pad
+  const backRow = t.side === 'enemy' ? t.row - pad : t.row + t.h + pad
   const corners = [
-    { col: t.col - pad, row: t.row - pad },
-    { col: t.col + t.w + pad, row: t.row - pad },
-    { col: t.col - pad, row: t.row + t.h + pad },
-    { col: t.col + t.w + pad, row: t.row + t.h + pad },
+    { col: t.col - pad, row: frontRow },
+    { col: t.col + t.w + pad, row: frontRow },
+    { col: t.col + t.w / 2, row: frontRow },
     { col: t.col - pad, row: t.row + t.h / 2 },
     { col: t.col + t.w + pad, row: t.row + t.h / 2 },
-    { col: t.col + t.w / 2, row: t.row - pad },
-    { col: t.col + t.w / 2, row: t.row + t.h + pad },
+    { col: t.col - pad, row: backRow },
+    { col: t.col + t.w + pad, row: backRow },
   ]
   let best = corners[0]!
   let bestCost = Infinity
@@ -259,8 +275,10 @@ function towerDetourPoint(
     if (bridgeBiasCol != null) {
       cost += Math.abs(cc - bridgeBiasCol) * 0.35
     }
-    // Heavy penalty for detouring deeper "behind" a tower (away from the goal row).
-    // Stops allies from picking south corners when they need to go north past their own base.
+    // Prefer the front face heavily.
+    const onFront =
+      t.side === 'enemy' ? rr >= t.row + t.h - 0.2 : rr <= t.row + 0.2
+    if (!onFront) cost += 18
     const goingNorth = targetRow < row
     const goingSouth = targetRow > row
     if ((goingNorth && rr > row + 0.4) || (goingSouth && rr < row - 0.4)) {
@@ -276,7 +294,7 @@ function towerDetourPoint(
 
 /**
  * Clash-style steering: bridge first when crossing the river; otherwise walk toward
- * the goal, detouring around any living tower that blocks the direct line (own or enemy).
+ * the goal, detouring around enemy towers only (own towers are passable).
  */
 export function steerTowardGoal(
   col: number,
@@ -284,6 +302,7 @@ export function steerTowardGoal(
   targetCol: number,
   targetRow: number,
   liveTowerIds?: ReadonlySet<string>,
+  forSide?: Side,
 ): { dCol: number; dRow: number } {
   const bridge = bridgeSteerDir(col, row, targetCol, targetRow)
   if (bridge) return bridge
@@ -291,10 +310,11 @@ export function steerTowardGoal(
   let aimCol = targetCol
   let aimRow = targetRow
 
-  // If the straight path clips a tower, route via the cheapest corner.
+  // If the straight path clips an enemy tower, route via the cheapest front-side corner.
   let blocker: TowerSlot | null = null
   let blockerDist = Infinity
   for (const t of TOWERS) {
+    if (forSide && t.side === forSide) continue
     if (liveTowerIds && !liveTowerIds.has(t.id)) continue
     const targetIsOnTower =
       targetCol >= t.col &&

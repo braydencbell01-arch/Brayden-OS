@@ -51,13 +51,13 @@ export type Projectile = {
   splashRadius?: number
 }
 
-/** Impact FX — sundae splat, slobber explode, or bullet boom. */
+/** Impact FX — sundae splat, slobber explode, bullet boom, or melee strike. */
 export type SplatFx = {
   id: string
   col: number
   row: number
   bornAt: number
-  kind: 'sundae' | 'slobber' | 'boom' | 'dumbbell'
+  kind: 'sundae' | 'slobber' | 'boom' | 'dumbbell' | 'melee' | 'whip' | 'bite' | 'kick' | 'hug'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

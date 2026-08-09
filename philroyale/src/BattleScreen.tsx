@@ -9,6 +9,7 @@ import {
   CannonBall,
   DumbbellDot,
   DumbbellSplat,
+  MeleeHitFx,
   RageHeartPickup,
   ShootDot,
   SlobberDot,
@@ -452,6 +453,12 @@ export function BattleScreen({
                 <DumbbellSplat ageMs={now - s.bornAt} />
               ) : s.kind === 'slobber' ? (
                 <SlobberSplat ageMs={now - s.bornAt} />
+              ) : s.kind === 'melee' ||
+                s.kind === 'whip' ||
+                s.kind === 'bite' ||
+                s.kind === 'kick' ||
+                s.kind === 'hug' ? (
+                <MeleeHitFx ageMs={now - s.bornAt} kind={s.kind} />
               ) : (
                 <SundaeSplat ageMs={now - s.bornAt} />
               )}

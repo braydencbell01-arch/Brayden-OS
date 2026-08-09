@@ -14,6 +14,7 @@ import {
   towerFrontAimPoint,
   towerFrontEngagePoint,
   isInsideTower,
+  isOnTowerFrontSide,
   isRiverTile,
   isWalkableTile,
   nearestBridgeMidCol,
@@ -38,16 +39,17 @@ const DUMBBELL_PROJECTILE_MS = 920
 const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const HUG_VFX_MS = 780
-const WHIP_VFX_MS = 780
-const KICK_VFX_MS = 680
-const DUMBBELL_VFX_MS = 520
+const WHIP_VFX_MS = 860
+const KICK_VFX_MS = 780
+const DUMBBELL_VFX_MS = 620
 /** Lynne head butt — short so 0.5s cadence feels constant. */
-const HEADBUTT_VFX_MS = 420
-const RANGED_VFX_MS = 380
+const HEADBUTT_VFX_MS = 480
+const RANGED_VFX_MS = 520
 const SPLAT_MS = 820
 const SLOBBER_SPLAT_MS = 780
-const BOOM_MS = 380
-const DUMBBELL_SPLAT_MS = 480
+const BOOM_MS = 420
+const DUMBBELL_SPLAT_MS = 520
+const MELEE_HIT_MS = 420
 /** Dan rage heart lifetime on the ground. */
 const RAGE_HEART_MS = 3000
 const RAGE_HEART_PICKUP = 1.35
@@ -166,10 +168,10 @@ function updateFacingFromMove(u: BattleUnit, prevCol: number, prevRow: number): 
 }
 
 /**
- * When a step fails (usually jammed on own tower), slide sideways hard —
- * try bridge side first, then opposite, then around the nearest tower face.
+ * When a step fails (blocked by enemy tower / clutter), slide sideways until clear.
+ * Own towers are passable — this is a backup for river edges and enemy pads.
  */
-function nudgeTowardBridgeIfStuck(
+function nudgeSidewaysIfStuck(
   u: BattleUnit,
   prevCol: number,
   prevRow: number,
@@ -179,27 +181,29 @@ function nudgeTowardBridgeIfStuck(
 ): void {
   if (Math.hypot(u.col - prevCol, u.row - prevRow) >= 0.002) return
   const prefer = preferCol ?? nearestBridgeMidCol(u.col)
-  const primary = Math.sign(prefer - (u.col + 0.5)) || 1
+  const primary = Math.sign(prefer - (u.col + 0.5)) || (Math.random() < 0.5 ? 1 : -1)
   const forward = u.side === 'ally' ? -1 : 1
   const tryMove = (dCol: number, dRow: number) => {
     const ncol = Math.max(0, Math.min(ARENA_COLS - 1, u.col + dCol))
     const nrow = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dRow))
-    if (!isWalkableTile(ncol, nrow, liveTowers)) return false
+    if (!isWalkableTile(ncol, nrow, liveTowers, u.side)) return false
     u.col = ncol
     u.row = nrow
     return true
   }
+  // Sweep sideways in increasing steps until we actually move.
   for (const dir of [primary, -primary]) {
-    for (const mult of [1.4, 2.6, 4.2]) {
-      if (tryMove(dir * step * mult, 0)) return
-      if (tryMove(dir * step * mult, forward * step * 0.6)) return
-      if (tryMove(dir * step * mult, -forward * step * 0.35)) return
+    for (const mult of [1.2, 2.2, 3.5, 5.5, 8]) {
+      if (tryMove(dir * Math.max(step, 0.08) * mult, 0)) return
+      if (tryMove(dir * Math.max(step, 0.08) * mult, forward * step * 0.75)) return
+      if (tryMove(dir * Math.max(step, 0.08) * mult, forward * step * 1.4)) return
     }
   }
-  // Last resort: jump to the nearer clear side of the closest living tower.
+  // Jump clear of the nearest opposing tower's front corner.
   let nearest: (typeof TOWERS)[number] | null = null
   let nearestD = Infinity
   for (const t of TOWERS) {
+    if (t.side === u.side) continue
     if (!liveTowers.has(t.id)) continue
     const d = distToTowerEdge(u.col + 0.5, u.row + 0.5, t)
     if (d < nearestD) {
@@ -207,17 +211,21 @@ function nudgeTowardBridgeIfStuck(
       nearest = t
     }
   }
-  if (!nearest || nearestD > 3.5) return
-  const left = nearest.col - 1.8
-  const right = nearest.col + nearest.w + 1.8
+  if (!nearest || nearestD > 5) return
+  const engage = towerFrontEngagePoint(u.col + 0.5, u.row + 0.5, nearest)
+  const left = nearest.col - 2.2
+  const right = nearest.col + nearest.w + 2.2
   const sideCol = Math.abs(u.col - left) <= Math.abs(u.col - right) ? left : right
-  const sideRow = Math.max(
-    0,
-    Math.min(ARENA_ROWS - 1, nearest.row + nearest.h / 2 + forward * 0.2),
-  )
-  if (isWalkableTile(sideCol, sideRow, liveTowers)) {
-    u.col = Math.max(0, Math.min(ARENA_COLS - 1, sideCol))
-    u.row = sideRow
+  for (const candidate of [
+    { col: engage.col, row: engage.row },
+    { col: sideCol, row: engage.row },
+    { col: sideCol, row: u.row + forward * 2 },
+  ]) {
+    if (isWalkableTile(candidate.col, candidate.row, liveTowers, u.side)) {
+      u.col = Math.max(0, Math.min(ARENA_COLS - 1, candidate.col))
+      u.row = Math.max(0, Math.min(ARENA_ROWS - 1, candidate.row))
+      return
+    }
   }
 }
 
@@ -326,24 +334,26 @@ function tryEnemyAiDeploy(
   return { unit: null, elixir: enemyElixir, deckIndex }
 }
 
-/** Move with river + living-tower collision — units cannot enter tower footprints. */
+/** Move with river + enemy-tower collision — own towers are passable. */
 function stepUnit(
-  u: { col: number; row: number },
+  u: { col: number; row: number; side: Side },
   dCol: number,
   dRow: number,
   liveTowers: ReadonlySet<string>,
 ): { col: number; row: number } {
+  const walk = (c: number, r: number) => isWalkableTile(c, r, liveTowers, u.side)
   let nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + dCol))
   let nr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dRow))
 
-  if (isWalkableTile(nc, nr, liveTowers)) {
+  if (walk(nc, nr)) {
     return { col: nc, row: nr }
   }
 
-  if (isWalkableTile(nc, u.row, liveTowers)) {
+  // Prefer sideways slide when forward is blocked (never sit jammed on a pad).
+  if (walk(nc, u.row)) {
     return { col: nc, row: u.row }
   }
-  if (isWalkableTile(u.col, nr, liveTowers)) {
+  if (walk(u.col, nr)) {
     return { col: u.col, row: nr }
   }
 
@@ -352,32 +362,36 @@ function stepUnit(
   if (isRiverTile(midR, midC) || isRiverTile(Math.floor(u.row), midC) || isRiverTile(midR, Math.floor(u.col))) {
     const bridgeCol = nearestBridgeMidCol(u.col)
     const towardBridge = Math.sign(bridgeCol - u.col) || (dCol >= 0 ? 1 : -1)
-    const sideStep = Math.max(Math.abs(dCol), Math.abs(dRow))
-    nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + towardBridge * sideStep))
-    if (isWalkableTile(nc, u.row, liveTowers)) {
-      return { col: nc, row: u.row }
-    }
-    if (isWalkableTile(u.col, nr, liveTowers)) {
-      return { col: u.col, row: nr }
+    const sideStep = Math.max(Math.abs(dCol), Math.abs(dRow), 0.12)
+    for (const mult of [1, 2, 3.5, 5]) {
+      nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + towardBridge * sideStep * mult))
+      if (walk(nc, u.row)) {
+        return { col: nc, row: u.row }
+      }
+      if (walk(nc, nr)) {
+        return { col: nc, row: nr }
+      }
     }
   }
 
-  // Stuck on a tower — slide perpendicular (go around) like Clash Royale.
-  const step = Math.max(Math.abs(dCol), Math.abs(dRow), 0.05)
+  // Stuck — slide perpendicular until free.
+  const step = Math.max(Math.abs(dCol), Math.abs(dRow), 0.08)
   const len = Math.hypot(dCol, dRow) || 1
   const px = (-dRow / len) * step
   const py = (dCol / len) * step
   for (const sign of [1, -1] as const) {
-    const sc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + px * sign))
-    const sr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + py * sign))
-    if (isWalkableTile(sc, sr, liveTowers)) {
-      return { col: sc, row: sr }
-    }
-    if (isWalkableTile(sc, u.row, liveTowers)) {
-      return { col: sc, row: u.row }
-    }
-    if (isWalkableTile(u.col, sr, liveTowers)) {
-      return { col: u.col, row: sr }
+    for (const mult of [1, 2, 3.5, 5.5]) {
+      const sc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + px * sign * mult))
+      const sr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + py * sign * mult))
+      if (walk(sc, sr)) {
+        return { col: sc, row: sr }
+      }
+      if (walk(sc, u.row)) {
+        return { col: sc, row: u.row }
+      }
+      if (walk(u.col, sr)) {
+        return { col: u.col, row: sr }
+      }
     }
   }
 
@@ -447,21 +461,32 @@ function resolveUnitPushes(
     if (u.hp <= 0) continue
     u.col = Math.max(0, Math.min(ARENA_COLS - 1, u.col))
     u.row = Math.max(0, Math.min(ARENA_ROWS - 1, u.row))
-    const ejected = ejectFromTowers(u.col, u.row, liveTowers)
+    const ejected = ejectFromTowers(u.col, u.row, liveTowers, u.side)
     u.col = ejected.col
     u.row = ejected.row
   }
   return true
 }
 
+/** Only eject from enemy towers — own pads are passable. Prefer river-facing front. */
 function ejectFromTowers(
   col: number,
   row: number,
   liveTowers: ReadonlySet<string>,
+  side: Side,
 ): { col: number; row: number } {
   for (const t of TOWERS) {
+    if (t.side === side) continue
     if (!liveTowers.has(t.id)) continue
     if (!isInsideTower(col, row, t) && !isInsideTower(col + 0.5, row + 0.5, t)) continue
+    // Push out toward the front face so melee stays in front of the tower.
+    const engage = towerFrontEngagePoint(col + 0.5, row + 0.5, t)
+    if (isWalkableTile(engage.col, engage.row, liveTowers, side)) {
+      return {
+        col: Math.max(0, Math.min(ARENA_COLS - 1, engage.col)),
+        row: Math.max(0, Math.min(ARENA_ROWS - 1, engage.row)),
+      }
+    }
     const cx = t.col + t.w / 2
     const cy = t.row + t.h / 2
     const ox = col + 0.5 - cx
@@ -469,11 +494,16 @@ function ejectFromTowers(
     const ol = Math.hypot(ox, oy) || 1
     const edge = closestPointOnTower(col + 0.5, row + 0.5, t)
     return {
-      col: Math.max(0, Math.min(ARENA_COLS - 1, edge.col + (ox / ol) * 0.55 - 0.5)),
-      row: Math.max(0, Math.min(ARENA_ROWS - 1, edge.row + (oy / ol) * 0.55 - 0.5)),
+      col: Math.max(0, Math.min(ARENA_COLS - 1, edge.col + (ox / ol) * 0.7 - 0.5)),
+      row: Math.max(0, Math.min(ARENA_ROWS - 1, edge.row + (oy / ol) * 0.7 - 0.5)),
     }
   }
   return { col, row }
+}
+
+function towerInMeleeRange(col: number, row: number, slot: (typeof TOWERS)[number], range: number): boolean {
+  if (!isOnTowerFrontSide(col, row, slot)) return false
+  return distUnitTileToTower(col, row, slot) <= range + 0.35
 }
 
 let seq = 0
@@ -590,7 +620,13 @@ export function useBattle(opts?: {
               ? DUMBBELL_SPLAT_MS
               : s.kind === 'slobber'
                 ? SLOBBER_SPLAT_MS
-                : SPLAT_MS
+                : s.kind === 'melee' ||
+                    s.kind === 'whip' ||
+                    s.kind === 'bite' ||
+                    s.kind === 'kick' ||
+                    s.kind === 'hug'
+                  ? MELEE_HIT_MS
+                  : SPLAT_MS
         return t - s.bornAt < life
       })
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
@@ -774,18 +810,16 @@ export function useBattle(opts?: {
           } else if (kind === 'tower') {
             const tw = foeTowers.find((x) => x.id === id)
             const slot = tw ? towerSlot(tw.id) : null
-            if (tw && slot) {
+            if (tw && slot && towerInMeleeRange(u.col, u.row, slot, attackRange)) {
               const edge = distUnitTileToTower(u.col, u.row, slot)
-              if (edge <= attackRange) {
-                const aim = towerFrontEngagePoint(me.col, me.row, slot)
-                best = {
-                  kind: 'tower',
-                  id: tw.id,
-                  col: aim.col,
-                  row: aim.row,
-                  d: pathCostTo(me.col, me.row, aim.col, aim.row),
-                  rangeD: edge,
-                }
+              const aim = towerFrontEngagePoint(me.col, me.row, slot)
+              best = {
+                kind: 'tower',
+                id: tw.id,
+                col: aim.col,
+                row: aim.row,
+                d: pathCostTo(me.col, me.row, aim.col, aim.row),
+                rangeD: edge,
               }
             }
           }
@@ -802,8 +836,18 @@ export function useBattle(opts?: {
             const edge = distUnitTileToTower(u.col, u.row, slot)
             const aim = towerFrontEngagePoint(me.col, me.row, slot)
             const path = pathCostTo(me.col, me.row, aim.col, aim.row)
-            if (!best || path < best.d) {
-              best = { kind: 'tower', id: tw.id, col: aim.col, row: aim.row, d: path, rangeD: edge }
+            // Prefer towers we can already hit from the front.
+            const inFront = towerInMeleeRange(u.col, u.row, slot, attackRange)
+            const score = inFront ? path - 40 : path
+            if (!best || score < best.d) {
+              best = {
+                kind: 'tower',
+                id: tw.id,
+                col: aim.col,
+                row: aim.row,
+                d: score,
+                rangeD: edge,
+              }
             }
           }
           for (const f of foes) {
@@ -830,16 +874,16 @@ export function useBattle(opts?: {
             const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
             const goalRow = dir < 0 ? 0 : ARENA_ROWS - 1
-            const steer = steerTowardGoal(u.col, u.row, u.col, goalRow, liveIds)
+            const steer = steerTowardGoal(u.col, u.row, u.col, goalRow, liveIds, u.side)
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
             const prevCol = u.col
             const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
-            const ejected = ejectFromTowers(next.col, next.row, liveIds)
+            const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
             u.col = ejected.col
             u.row = ejected.row
-            nudgeTowardBridgeIfStuck(u, prevCol, prevRow, step, liveIds)
+            nudgeSidewaysIfStuck(u, prevCol, prevRow, step, liveIds)
             updateFacingFromMove(u, prevCol, prevRow)
             if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
               u.movingUntil = t + 140
@@ -855,25 +899,33 @@ export function useBattle(opts?: {
           unitsChanged = true
         }
 
+        const inRange =
+          best.kind === 'tower'
+            ? (() => {
+                const slot = towerSlot(best.id)
+                return slot ? towerInMeleeRange(u.col, u.row, slot, attackRange) : false
+              })()
+            : best.rangeD <= attackRange
+
         // Shields (Dan) walk into contact then idle as a meat wall — never attack.
-        if (best.rangeD > attackRange) {
-          // Out of range: not locked yet / lock already cleared above. Walk to objective.
+        if (!inRange) {
+          // Out of range: walk to the FRONT engage point (never the back).
           if (u.burstShot === 0 && u.nextAttackAt !== 0) {
             u.nextAttackAt = 0
             unitsChanged = true
           }
           if (!rooted) {
             const step = moveSpeed * dt
-            const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds)
+            const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds, u.side)
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
             const prevCol = u.col
             const prevRow = u.row
             const next = stepUnit(u, dCol, dRow, liveIds)
-            const ejected = ejectFromTowers(next.col, next.row, liveIds)
+            const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
             u.col = ejected.col
             u.row = ejected.row
-            nudgeTowardBridgeIfStuck(u, prevCol, prevRow, step, liveIds, best.col)
+            nudgeSidewaysIfStuck(u, prevCol, prevRow, step, liveIds, best.col)
             updateFacingFromMove(u, prevCol, prevRow)
             if (Math.hypot(u.col - prevCol, u.row - prevRow) > 0.001) {
               u.movingUntil = t + 140
@@ -981,6 +1033,19 @@ export function useBattle(opts?: {
           )
           if (splash.unitsChanged) unitsChanged = true
           if (splash.towersChanged) towersChanged = true
+          nextSplats.push({
+            id: nid('hit'),
+            col: shotAim.col,
+            row: shotAim.row,
+            bornAt: t,
+            kind:
+              attack.kind === 'kick'
+                ? 'kick'
+                : attack.kind === 'whip'
+                  ? 'whip'
+                  : 'melee',
+          })
+          splatsChanged = true
           continue
         }
 
@@ -998,7 +1063,7 @@ export function useBattle(opts?: {
                 0,
                 Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * attack.pullToRange),
               )
-              const ejected = ejectFromTowers(pc, pr, liveIds)
+              const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
               target.col = ejected.col
               target.row = ejected.row
             }
@@ -1010,6 +1075,46 @@ export function useBattle(opts?: {
             applyTowerDamage(tw, damage, t)
             towersChanged = true
           }
+        }
+
+        // Melee lunge + impact FX so the strike reads as a real attack.
+        if (
+          attack.kind === 'whip' ||
+          attack.kind === 'kick' ||
+          attack.kind === 'bite' ||
+          attack.kind === 'headbutt' ||
+          attack.kind === 'hug'
+        ) {
+          const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
+          const lunge = attack.kind === 'kick' ? 1.25 : attack.kind === 'hug' ? 0.85 : 0.65
+          const next = stepUnit(
+            u,
+            Math.cos(ang) * lunge,
+            Math.sin(ang) * lunge,
+            liveIds,
+          )
+          const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
+          u.col = ejected.col
+          u.row = ejected.row
+          u.facing = ang
+          unitsChanged = true
+          nextSplats.push({
+            id: nid('hit'),
+            col: shotAim.col,
+            row: shotAim.row,
+            bornAt: t,
+            kind:
+              attack.kind === 'whip'
+                ? 'whip'
+                : attack.kind === 'bite'
+                  ? 'bite'
+                  : attack.kind === 'kick'
+                    ? 'kick'
+                    : attack.kind === 'hug'
+                      ? 'hug'
+                      : 'melee',
+          })
+          splatsChanged = true
         }
       }
 

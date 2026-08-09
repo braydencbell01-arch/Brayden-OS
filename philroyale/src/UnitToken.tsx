@@ -277,14 +277,67 @@ export function SlobberSplat({ ageMs }: { ageMs: number }) {
 
 export function ShootDot() {
   return (
+    <div className="relative h-2 w-5" aria-hidden>
+      <div
+        className="absolute inset-y-[3px] left-0 right-0 rounded-full"
+        style={{
+          background: 'linear-gradient(90deg,#fffef5,#ffe08a 35%,#ff9800)',
+          boxShadow: '0 0 8px #ffd54fee, 0 0 14px #ff980088',
+        }}
+      />
+      <div
+        className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
+        style={{ background: 'radial-gradient(circle,#fff,#ffe08a 60%,transparent)', opacity: 0.9 }}
+      />
+    </div>
+  )
+}
+
+/** Melee impact flash at the strike point. */
+export function MeleeHitFx({
+  ageMs,
+  kind = 'melee',
+}: {
+  ageMs: number
+  kind?: 'melee' | 'whip' | 'bite' | 'kick' | 'hug'
+}) {
+  const p = Math.min(1, ageMs / 420)
+  const scale = 0.55 + p * 1.6
+  const opacity = 1 - p * 0.95
+  const color =
+    kind === 'whip'
+      ? '#f5d76e'
+      : kind === 'bite'
+        ? '#ff6b9a'
+        : kind === 'kick'
+          ? '#ffffff'
+          : kind === 'hug'
+            ? '#ff4d6d'
+            : '#ffe08a'
+  return (
     <div
-      className="h-1 w-2.5 rounded-full"
-      style={{
-        background: 'linear-gradient(90deg,#fff6c8,#ffe08a 40%,#c9a227)',
-        boxShadow: '0 0 5px #ffd54fcc',
-      }}
+      className="relative h-10 w-10"
+      style={{ transform: `scale(${scale})`, opacity }}
       aria-hidden
-    />
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background: `radial-gradient(circle, ${color}ee 0%, ${color}66 40%, transparent 70%)`,
+        }}
+      />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-1 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: color,
+            transform: `rotate(${deg}deg) translateX(${6 + p * 10}px)`,
+            boxShadow: `0 0 4px ${color}`,
+          }}
+        />
+      ))}
+    </div>
   )
 }
 
