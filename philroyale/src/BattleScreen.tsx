@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { canDeployAllyAt } from './arena'
 import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct } from './Arena'
 import { BattleCard } from './BattleCard'
-import { ShootDot, SlobberDot, SundaeDot, UnitToken } from './UnitToken'
+import { ShootDot, SlobberDot, SundaeDot, SundaeSplat, UnitToken } from './UnitToken'
+import { ARENA_TILT_DEG } from './camera'
 import { getCharacter } from './characters'
 import { loadDeck, loadPlayerName } from './storage'
 import { useBattle } from './useBattle'
@@ -89,6 +90,7 @@ export function BattleScreen({ onExit, opponentName }: Props) {
     elixirMax,
     units,
     projectiles,
+    splats,
     towers,
     selectedCharId,
     setSelectedCharId,
@@ -294,6 +296,19 @@ export function BattleScreen({ onExit, opponentName }: Props) {
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
+          {splats.map((s) => (
+            <div
+              key={s.id}
+              className="absolute -translate-x-1/2 -translate-y-1/2"
+              style={{
+                ...unitStyle(s.col - 0.5, s.row - 0.5),
+                zIndex: 25 + Math.round(s.row),
+                transform: `translate(-50%, -50%) rotateX(${-ARENA_TILT_DEG}deg)`,
+              }}
+            >
+              <SundaeSplat ageMs={now - s.bornAt} />
+            </div>
+          ))}
           {drag && drag.overArena && dragChar ? (
             <div
               className="absolute -translate-x-1/2 -translate-y-[92%]"

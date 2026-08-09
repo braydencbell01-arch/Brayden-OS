@@ -70,15 +70,48 @@ export function UnitToken({
   )
 }
 
+/** Flying sundae for Sundae Huck. */
 export function SundaeDot() {
   return (
-    <div className="relative h-2.5 w-2" aria-hidden>
-      <div className="absolute left-1/2 top-0 h-1 w-1 -translate-x-1/2 rounded-full bg-[#d62828]" />
-      <div className="absolute left-0 top-0.5 h-1.5 w-1.5 rounded-full bg-[#fff6e8]" />
+    <div className="relative h-4 w-3.5" aria-hidden>
+      <div className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#d62828] shadow-sm" />
       <div
-        className="absolute bottom-0 left-1/2 h-1.5 w-1.5 -translate-x-1/2 bg-[#e8eef8]"
-        style={{ clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0 100%)' }}
+        className="absolute left-1/2 top-1 h-2 w-2.5 -translate-x-1/2 rounded-full bg-[#fffaf0]"
+        style={{ boxShadow: 'inset 0 1px 0 #ffffff88' }}
       />
+      <div
+        className="absolute bottom-0 left-1/2 h-2 w-3 -translate-x-1/2 bg-[#fff6e8]"
+        style={{
+          clipPath: 'polygon(10% 0, 90% 0, 100% 100%, 0 100%)',
+          boxShadow: '0 1px 1px #0004',
+        }}
+      />
+    </div>
+  )
+}
+
+export function SundaeSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 520)
+  const scale = 0.4 + p * 1.4
+  const opacity = 1 - p
+  return (
+    <div
+      className="relative h-6 w-6"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-1.5 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: deg % 90 === 0 ? '#fff6e8' : '#d62828',
+            transform: `rotate(${deg}deg) translateY(-${4 + p * 6}px)`,
+          }}
+        />
+      ))}
+      <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#fff6e8] opacity-90" />
+      <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d62828]" />
     </div>
   )
 }

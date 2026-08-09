@@ -40,6 +40,14 @@ export type Projectile = {
   arriveAt: number
 }
 
+/** Sundae Huck impact splat. */
+export type SplatFx = {
+  id: string
+  col: number
+  row: number
+  bornAt: number
+}
+
 export type HandCard = {
   char: CharacterDef
   slot: number

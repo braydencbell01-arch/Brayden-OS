@@ -1,5 +1,5 @@
 export type AttackId =
-  | 'sundaeThrow'
+  | 'sundaeHuck'
   | 'chickenWhip'
   | 'deathHug'
   | 'slobber'
@@ -74,11 +74,11 @@ export const PHIL: CharacterDef = {
   moveSpeed: 8,
   attackDelaySec: 1,
   hue: 210,
-  blurb: 'Sundae Throw at range, then Chicken Whip up close.',
+  blurb: 'Sundae Huck at range, then Chicken Whip up close.',
   attacks: [
     {
-      id: 'sundaeThrow',
-      name: 'Sundae Throw',
+      id: 'sundaeHuck',
+      name: 'Sundae Huck',
       range: 30,
       damage: 100,
       rootWhileAttacking: false,
