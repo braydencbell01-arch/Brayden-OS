@@ -616,6 +616,7 @@ export function useBattle(opts?: { paused?: boolean }) {
         const def = getCharacter(u.charId)
         if (!def) continue
 
+        // Rage is permanent for the unit's life (timer or Dan heart) — never cleared.
         if (
           def.rageAfterSec != null &&
           !u.enraged &&

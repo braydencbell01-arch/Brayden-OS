@@ -321,7 +321,7 @@ export const DAN: CharacterDef = {
   moveSpeed: 4,
   attackDelaySec: 0,
   hue: 220,
-  blurb: 'Human shield — no attack. On death, drops a rage heart for 3s.',
+  blurb: 'Human shield — no attack. On death, drops a purple rage heart for 3s.',
   attacks: [],
   dropsRageHeart: true,
 }
