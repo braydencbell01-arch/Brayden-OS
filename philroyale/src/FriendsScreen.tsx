@@ -162,11 +162,15 @@ export function FriendsScreen({
     }
     setAddMsg('Looking for that code… keep both apps open.')
     if (onAddByCode) {
-      const res = await onAddByCode(code)
-      setAddMsg(res.message)
-      if (res.ok) {
-        setFriendCode('')
-        refreshFriends()
+      try {
+        const res = await onAddByCode(code)
+        setAddMsg(res.message)
+        if (res.ok) {
+          setFriendCode('')
+          refreshFriends()
+        }
+      } catch (error) {
+        setAddMsg('Unable to add friend. Try again.')
       }
       return
     }

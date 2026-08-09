@@ -345,6 +345,15 @@ export default function App() {
       await pollDirectory()
       let foundName = lookupDirectory(code)
 
+      const replyPromise = waitForSocial(
+        (msg) =>
+          (msg.type === 'dir_ping' ||
+            msg.type === 'friend_hello' ||
+            msg.type === 'friend_request') &&
+          msg.fromPlayerId === code,
+        20_000,
+      )
+
       const published = await publishSocial(code, {
         type: 'friend_request',
         fromPlayerId: myId,
@@ -359,30 +368,29 @@ export default function App() {
         at: new Date().toISOString(),
       })
 
-      if (!published && !foundName) {
-        removeFriendByPlayerId(code)
-        window.dispatchEvent(new Event('philroyale-friends-changed'))
-        return { ok: false, message: 'Could not reach the network. Try again.' }
+      const checkExistingFriendName = () => {
+        const existing = loadFriends().find((f) => f.playerId === code)
+        return existing && existing.name !== 'Adding…' ? existing.name : null
       }
 
       if (!foundName) {
-        const reply = await waitForSocial(
-          (msg) =>
-            (msg.type === 'dir_ping' ||
-              msg.type === 'friend_hello' ||
-              msg.type === 'friend_request') &&
-            msg.fromPlayerId === code,
-          20_000,
-        )
+        const reply = await replyPromise
         if (reply && 'fromName' in reply && reply.fromName) {
           foundName = reply.fromName
-        } else {
-          await pollDirectory()
-          foundName = lookupDirectory(code)
         }
       }
 
       if (!foundName) {
+        await pollDirectory()
+        foundName = lookupDirectory(code) || checkExistingFriendName()
+      }
+
+      if (!foundName) {
+        if (!published) {
+          removeFriendByPlayerId(code)
+          window.dispatchEvent(new Event('philroyale-friends-changed'))
+          return { ok: false, message: 'Could not reach the network. Try again.' }
+        }
         removeFriendByPlayerId(code)
         window.dispatchEvent(new Event('philroyale-friends-changed'))
         return {
