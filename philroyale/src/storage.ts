@@ -16,6 +16,18 @@ import {
   type RichClub,
 } from './clubMeta'
 import {
+  WAR_ATTACKS_PER_DAY,
+  WAR_BATTLE_MS,
+  WAR_BOAT_COUNT,
+  WAR_COLLECTION_MS,
+  crownsToWarStars,
+  emptyWar,
+  makeEnemyBoats,
+  pickEnemyClub,
+  warRewardForResult,
+  type ClubWarState,
+} from './clubWar'
+import {
   CHEST_META,
   MAX_CARD_LEVEL,
   STARTER_UNLOCKS,
@@ -358,6 +370,11 @@ const DEFAULT_PROFILE: PlayerProfile = {
 const RICH_CLUB_KEY = 'philroyale.richClub.v1'
 const SEASON_KEY = 'philroyale.season.v1'
 const EVENTS_KEY = 'philroyale.events.v1'
+const CLUB_WAR_KEY = 'philroyale.clubWar.v1'
+const PENDING_WAR_KEY = 'philroyale.pendingWarAttack.v1'
+
+export type { ClubWarState }
+export type PendingWarAttack = { boatId: string; startedAt: number }
 
 export type SeasonState = {
   seasonId: string
@@ -432,6 +449,12 @@ export function recordMatchResult(
   addSeasonPoints(result === 'victory' ? 25 : result === 'draw' ? 10 : 5)
   addClubCrowns(result === 'victory' ? 3 : result === 'draw' ? 1 : 0)
   if (result === 'victory') noteEventWin('ladder')
+
+  const pendingWar = loadPendingWarAttack()
+  if (pendingWar) {
+    resolveWarAttack(pendingWar.boatId, crowns, result === 'victory')
+    clearPendingWarAttack()
+  }
 
   const daily = loadDaily()
   if (!daily.questClaimed) {
@@ -1140,35 +1163,308 @@ export function claimClubChest(): { ok: boolean; message: string } {
   return { ok: true, message: `${tier.label} added to your slots!` }
 }
 
-export function playClubWarBattle(): { ok: boolean; message: string; club: RichClub | null } {
+function syncClubWarStars(war: ClubWarState): void {
   const club = loadRichClub()
-  if (!club) return { ok: false, message: 'Join a club first', club: null }
-  const win = Math.random() < 0.55
-  const stars = win ? 1 + Math.floor(Math.random() * 3) : 0
-  club.warStars += stars
-  club.warDay = Math.min(7, club.warDay)
+  if (!club) return
+  club.warStars = war.ourStars
+  club.warDay = war.phase === 'battle' ? 4 : war.phase === 'collection' ? 2 : war.phase === 'ended' ? 7 : 1
+  saveRichClub(club)
+}
+
+export function loadClubWar(): ClubWarState {
+  const id = weekKey()
+  const raw = readJson<ClubWarState | null>(CLUB_WAR_KEY, null)
+  if (!raw || raw.weekId !== id) {
+    const fresh = emptyWar(id)
+    saveClubWar(fresh)
+    return fresh
+  }
+  return advanceClubWar(raw)
+}
+
+export function saveClubWar(war: ClubWarState): void {
+  localStorage.setItem(CLUB_WAR_KEY, JSON.stringify(war))
+}
+
+/** Advance phases by timer + enemy AI ticks. */
+export function advanceClubWar(war: ClubWarState = loadClubWar()): ClubWarState {
+  const now = Date.now()
+  let next = { ...war, boats: war.boats.map((b) => ({ ...b })) }
+
+  if (next.phase === 'collection' && next.phaseEndsAt > 0 && now >= next.phaseEndsAt) {
+    next.phase = 'battle'
+    next.phaseEndsAt = now + WAR_BATTLE_MS
+    next.attacksLeft = WAR_ATTACKS_PER_DAY
+    next.lastEnemyTick = now
+    const club = loadRichClub()
+    if (club) {
+      club.chat.push({
+        id: `war-day-${now}`,
+        from: 'War',
+        text: `War Day vs ${next.enemyName}! Attack enemy boats for stars.`,
+        at: new Date().toISOString(),
+        kind: 'war',
+      })
+      saveRichClub(club)
+    }
+  }
+
+  if (next.phase === 'battle' && next.phaseEndsAt > 0 && now >= next.phaseEndsAt) {
+    next.phase = 'ended'
+    next.phaseEndsAt = 0
+    const club = loadRichClub()
+    if (club) {
+      const outcome =
+        next.ourStars > next.theirStars
+          ? 'won'
+          : next.ourStars === next.theirStars
+            ? 'drew'
+            : 'lost'
+      club.chat.push({
+        id: `war-end-${now}`,
+        from: 'War',
+        text: `War ${outcome} vs ${next.enemyName}: ${next.ourStars}–${next.theirStars}. Claim rewards!`,
+        at: new Date().toISOString(),
+        kind: 'war',
+      })
+      saveRichClub(club)
+    }
+  }
+
+  // Enemy club slowly scores during battle day
+  if (next.phase === 'battle' && next.lastEnemyTick > 0) {
+    const elapsed = now - next.lastEnemyTick
+    const ticks = Math.floor(elapsed / (45 * 60 * 1000)) // every 45 min
+    if (ticks > 0) {
+      next.theirStars = Math.min(WAR_BOAT_COUNT * 3, next.theirStars + ticks)
+      next.lastEnemyTick += ticks * 45 * 60 * 1000
+    }
+  }
+
+  saveClubWar(next)
+  syncClubWarStars(next)
+  return next
+}
+
+export function startClubWar(): { ok: boolean; message: string; war: ClubWarState } {
+  const club = loadRichClub()
+  if (!club) return { ok: false, message: 'Join a club first', war: loadClubWar() }
+  let war = loadClubWar()
+  if (war.phase !== 'idle' && war.phase !== 'ended') {
+    return { ok: false, message: 'War already in progress', war }
+  }
+  const enemy = pickEnemyClub(`${club.code}-${war.weekId}`)
+  const now = Date.now()
+  war = {
+    ...emptyWar(war.weekId),
+    phase: 'collection',
+    phaseEndsAt: now + WAR_COLLECTION_MS,
+    enemyName: enemy.name,
+    enemyTag: enemy.tag,
+    enemyBadge: enemy.badge,
+    boats: makeEnemyBoats(`${club.code}-${enemy.tag}`, loadProfile().trophies),
+    lastEnemyTick: now,
+  }
+  // Fast-track: if collection already full from prior, still start collection
+  saveClubWar(war)
+  syncClubWarStars(war)
   club.chat.push({
-    id: `war-${Date.now()}`,
+    id: `war-start-${now}`,
     from: 'War',
-    text: win
-      ? `${loadPlayerName().trim() || 'You'} scored ${stars} war star${stars === 1 ? '' : 's'}!`
-      : `${loadPlayerName().trim() || 'You'} fought bravely (0 stars).`,
+    text: `Matched vs ${enemy.name} (${enemy.tag})! Collection Day — train for medals.`,
     at: new Date().toISOString(),
     kind: 'war',
   })
-  if (win) {
+  saveRichClub(club)
+  return { ok: true, message: `War vs ${enemy.name} — Collection Day!`, war }
+}
+
+export function contributeWarCollection(): { ok: boolean; message: string; war: ClubWarState } {
+  const war = advanceClubWar()
+  if (war.phase !== 'collection') {
+    return { ok: false, message: 'Not collection day', war }
+  }
+  if (war.collection >= war.collectionGoal) {
+    return { ok: false, message: 'Collection full — wait for War Day', war }
+  }
+  war.collection += 1
+  const p = loadProfile()
+  p.gold += 10
+  p.xp += 15
+  saveProfile(p)
+  if (war.collection >= war.collectionGoal) {
+    // Kick into battle early when club finishes collection
+    war.phase = 'battle'
+    war.phaseEndsAt = Date.now() + WAR_BATTLE_MS
+    war.attacksLeft = WAR_ATTACKS_PER_DAY
+    war.lastEnemyTick = Date.now()
+    const club = loadRichClub()
+    if (club) {
+      club.chat.push({
+        id: `war-ready-${Date.now()}`,
+        from: 'War',
+        text: 'Collection complete! War Day is live — attack now.',
+        at: new Date().toISOString(),
+        kind: 'war',
+      })
+      saveRichClub(club)
+    }
+    saveClubWar(war)
+    syncClubWarStars(war)
+    return { ok: true, message: 'Collection done — War Day started!', war }
+  }
+  saveClubWar(war)
+  return { ok: true, message: `Trained ${war.collection}/${war.collectionGoal}`, war }
+}
+
+export function loadPendingWarAttack(): PendingWarAttack | null {
+  return readJson<PendingWarAttack | null>(PENDING_WAR_KEY, null)
+}
+
+export function clearPendingWarAttack(): void {
+  localStorage.removeItem(PENDING_WAR_KEY)
+}
+
+export function beginWarAttack(
+  boatId: string,
+): { ok: boolean; message: string; opponent?: string; war: ClubWarState } {
+  const war = advanceClubWar()
+  if (war.phase !== 'battle') {
+    return { ok: false, message: 'War Day is not active', war }
+  }
+  if (war.attacksLeft <= 0) {
+    return { ok: false, message: 'No attacks left', war }
+  }
+  const boat = war.boats.find((b) => b.id === boatId)
+  if (!boat) return { ok: false, message: 'Boat not found', war }
+  if (boat.stars >= 3) return { ok: false, message: 'Boat already 3-starred', war }
+  localStorage.setItem(
+    PENDING_WAR_KEY,
+    JSON.stringify({ boatId, startedAt: Date.now() } satisfies PendingWarAttack),
+  )
+  return {
+    ok: true,
+    message: `Attacking ${boat.defenderName}…`,
+    opponent: boat.defenderName,
+    war,
+  }
+}
+
+export function resolveWarAttack(
+  boatId: string,
+  crowns: number,
+  won: boolean,
+): { ok: boolean; message: string; war: ClubWarState } {
+  const war = advanceClubWar()
+  if (war.phase !== 'battle') {
+    return { ok: false, message: 'War not in battle phase', war }
+  }
+  const boat = war.boats.find((b) => b.id === boatId)
+  if (!boat) return { ok: false, message: 'Boat missing', war }
+
+  war.attacksLeft = Math.max(0, war.attacksLeft - 1)
+  war.battlesFought += 1
+  const stars = won ? Math.max(1, crownsToWarStars(crowns)) : crownsToWarStars(crowns)
+  const gained = Math.max(0, stars - boat.stars)
+  if (stars > boat.stars) boat.stars = stars
+  boat.attacks += 1
+  war.ourStars += gained
+
+  // Enemy counters a bit
+  if (Math.random() < 0.55) {
+    war.theirStars = Math.min(WAR_BOAT_COUNT * 3, war.theirStars + (won ? 1 : 2))
+  }
+
+  const you = loadPlayerName().trim() || 'You'
+  const club = loadRichClub()
+  if (club) {
+    club.chat.push({
+      id: `war-atk-${Date.now()}`,
+      from: 'War',
+      text:
+        gained > 0
+          ? `${you} hit ${boat.defenderName} for ${stars}★ (+${gained} club)`
+          : `${you} attacked ${boat.defenderName} — ${stars}★ (no new stars)`,
+      at: new Date().toISOString(),
+      kind: 'war',
+    })
+    saveRichClub(club)
+  }
+
+  if (won) {
     const p = loadProfile()
-    p.gold += 20
-    p.xp += 20
+    p.gold += 25 + gained * 15
+    p.xp += 25
     saveProfile(p)
     addClubCrowns(2)
   }
-  saveRichClub(club)
+
+  saveClubWar(war)
+  syncClubWarStars(war)
   return {
     ok: true,
-    message: win ? `War win · +${stars} stars` : 'War battle lost — try again',
-    club,
+    message:
+      gained > 0 ? `+${gained} war star${gained === 1 ? '' : 's'}!` : won ? 'Win — no new stars' : 'Attack failed',
+    war,
   }
+}
+
+/** Instant sim attack (no real battle) — uses crowns roll. */
+export function simWarAttack(
+  boatId: string,
+): { ok: boolean; message: string; war: ClubWarState } {
+  const start = beginWarAttack(boatId)
+  if (!start.ok) return { ok: false, message: start.message, war: start.war }
+  const crowns = Math.random() < 0.35 ? 0 : 1 + Math.floor(Math.random() * 3)
+  const won = crowns > 0
+  clearPendingWarAttack()
+  return resolveWarAttack(boatId, crowns, won)
+}
+
+export function claimWarRewards(): { ok: boolean; message: string; war: ClubWarState } {
+  const war = advanceClubWar()
+  if (war.phase !== 'ended') {
+    return { ok: false, message: 'War is not over yet', war }
+  }
+  if (war.claimed) return { ok: false, message: 'Already claimed', war }
+  const reward = warRewardForResult(war.ourStars, war.theirStars)
+  const p = loadProfile()
+  p.gold += reward.gold
+  p.gems += reward.gems
+  p.xp += reward.xp
+  saveProfile(p)
+  war.claimed = true
+  war.phase = 'idle'
+  saveClubWar(war)
+  syncClubWarStars(war)
+  addChest(war.ourStars > war.theirStars ? 'epic' : war.ourStars === war.theirStars ? 'rare' : 'common')
+  return {
+    ok: true,
+    message: `${reward.label} +${reward.gold}g · +${reward.gems} gems`,
+    war,
+  }
+}
+
+/** Legacy quick fight — starts/continues war then sims one attack. */
+export function playClubWarBattle(): { ok: boolean; message: string; club: RichClub | null } {
+  let war = loadClubWar()
+  if (war.phase === 'idle' || (war.phase === 'ended' && war.claimed)) {
+    const started = startClubWar()
+    if (!started.ok) return { ok: false, message: started.message, club: loadRichClub() }
+    war = started.war
+  }
+  if (war.phase === 'collection') {
+    const c = contributeWarCollection()
+    return { ok: c.ok, message: c.message, club: loadRichClub() }
+  }
+  if (war.phase === 'ended') {
+    const r = claimWarRewards()
+    return { ok: r.ok, message: r.message, club: loadRichClub() }
+  }
+  const target = war.boats.find((b) => b.stars < 3) ?? war.boats[0]
+  if (!target) return { ok: false, message: 'No boats', club: loadRichClub() }
+  const r = simWarAttack(target.id)
+  return { ok: r.ok, message: r.message, club: loadRichClub() }
 }
 
 export function clubMemberCount(club: RichClub): string {
@@ -1209,6 +1505,11 @@ export function buyClubShopOffer(
   if (offer.xp) profile.xp += offer.xp
   if (offer.id === 'boost') {
     club.warStars += 2
+    const war = loadClubWar()
+    if (war.phase === 'battle' || war.phase === 'collection') {
+      war.ourStars += 2
+      saveClubWar(war)
+    }
     club.chat.push({
       id: `shop-${Date.now()}`,
       from: 'Club Shop',

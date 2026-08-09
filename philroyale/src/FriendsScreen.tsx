@@ -181,7 +181,7 @@ export function FriendsScreen({ onBattle, onRequestBattle, waitingForFriend }: P
           </div>
         </div>
         <div className="min-h-0 flex-1">
-          <ClubScreen onBattleBot={() => onBattle('Club Bot')} />
+          <ClubScreen onBattleBot={(name) => onBattle(name ?? 'Club Bot')} />
         </div>
       </div>
     )

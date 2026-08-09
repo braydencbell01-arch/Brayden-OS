@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getCharacter } from './characters'
 import {
   CLUB_BADGES,
@@ -6,30 +6,37 @@ import {
   roleLabel,
   roleRank,
 } from './clubMeta'
+import { formatWarRemain, phaseLabel } from './clubWar'
 import {
   CLUB_SHOP_OFFERS,
   advanceRiverRace,
+  beginWarAttack,
   buyClubShopOffer,
   claimClubChest,
+  claimWarRewards,
   clubMemberCount,
+  contributeWarCollection,
   createRichClub,
   fulfillDonation,
   joinRichClubByCode,
   loadCardProgress,
+  loadClubWar,
   loadPlayerName,
   loadProfile,
   loadRichClub,
-  playClubWarBattle,
   postClubChat,
   requestClubDonation,
   saveRichClub,
   shareText,
+  simWarAttack,
+  startClubWar,
   clubInviteUrl,
+  type ClubWarState,
   type RichClub,
 } from './storage'
 
 type Props = {
-  onBattleBot: () => void
+  onBattleBot: (opponentName?: string) => void
 }
 
 export function ClubScreen({ onBattleBot }: Props) {
@@ -45,7 +52,18 @@ export function ClubScreen({ onBattleBot }: Props) {
   const [joinCode, setJoinCode] = useState('')
   const [donateChar, setDonateChar] = useState('finley')
   const [profile, setProfile] = useState(() => loadProfile())
+  const [war, setWar] = useState<ClubWarState>(() => loadClubWar())
+  const [now, setNow] = useState(() => Date.now())
   const progress = loadCardProgress()
+
+  useEffect(() => {
+    if (tab !== 'war') return
+    const id = window.setInterval(() => {
+      setNow(Date.now())
+      setWar(loadClubWar())
+    }, 15000)
+    return () => window.clearInterval(id)
+  }, [tab])
 
   const unlockedCards = useMemo(
     () =>
@@ -64,6 +82,7 @@ export function ClubScreen({ onBattleBot }: Props) {
   function refresh() {
     setClub(loadRichClub())
     setProfile(loadProfile())
+    setWar(loadClubWar())
   }
 
   if (!club) {
@@ -477,45 +496,14 @@ export function ClubScreen({ onBattleBot }: Props) {
         ) : null}
 
         {tab === 'war' ? (
-          <div className="space-y-3">
-            <div
-              className="rounded-xl p-3"
-              style={{ background: 'linear-gradient(180deg,#5a2a2a,#2a1010)' }}
-            >
-              <p className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
-                Club War
-              </p>
-              <p className="text-sm font-semibold text-white/80">
-                Day {club.warDay}/7 · {club.warStars} stars for {club.name}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-white/60">
-                Fight training battles for war stars (local sim). Wins also fill the club chest.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const r = playClubWarBattle()
-                  flash(r.message)
-                  if (r.club) setClub(r.club)
-                }}
-                className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
-                style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-              >
-                Fight war battle
-              </button>
-              <button
-                type="button"
-                onClick={onBattleBot}
-                className="mt-2 w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
-                style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
-              >
-                Ladder battle (earns club crowns)
-              </button>
-            </div>
-            <p className="text-center text-xs font-semibold text-white/50">
-              Signed in as {loadPlayerName().trim() || 'You'}
-            </p>
-          </div>
+          <ClubWarPanel
+            clubName={club.name}
+            war={war}
+            now={now}
+            flash={flash}
+            refresh={refresh}
+            onBattleBot={onBattleBot}
+          />
         ) : null}
 
         {tab === 'shop' ? (
@@ -568,6 +556,249 @@ function Toast({ text }: { text: string }) {
     <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 flex justify-center px-4">
       <p className="rounded-lg bg-black/90 px-3 py-2 text-center text-sm font-bold text-white ring-1 ring-[#f5d76e]/45">
         {text}
+      </p>
+    </div>
+  )
+}
+
+function ClubWarPanel({
+  clubName,
+  war,
+  now,
+  flash,
+  refresh,
+  onBattleBot,
+}: {
+  clubName: string
+  war: ClubWarState
+  now: number
+  flash: (msg: string) => void
+  refresh: () => void
+  onBattleBot: (opponentName?: string) => void
+}) {
+  const remain =
+    war.phaseEndsAt > now ? formatWarRemain(war.phaseEndsAt - now) : null
+  const badge = CLUB_BADGES[war.enemyBadge] ?? CLUB_BADGES[0]!
+
+  return (
+    <div className="space-y-3">
+      <div
+        className="rounded-xl p-3"
+        style={{ background: 'linear-gradient(180deg,#5a2a2a,#2a1010)' }}
+      >
+        <p className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+          Club Wars
+        </p>
+        <p className="text-sm font-semibold text-white/85">
+          {phaseLabel(war.phase)}
+          {remain ? ` · ${remain} left` : ''}
+        </p>
+
+        {war.phase === 'idle' ? (
+          <>
+            <p className="mt-2 text-xs font-semibold text-white/65">
+              Match your club against a rival. Collection Day → War Day → stars & loot.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                const r = startClubWar()
+                flash(r.message)
+                refresh()
+              }}
+              className="mt-3 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+            >
+              Find war match
+            </button>
+          </>
+        ) : null}
+
+        {war.phase !== 'idle' ? (
+          <div className="mt-3 grid grid-cols-3 items-center gap-2 text-center">
+            <div>
+              <p className="text-[0.6rem] font-extrabold uppercase text-white/55">Us</p>
+              <p className="truncate text-xs font-bold text-white">{clubName}</p>
+              <p className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
+                {war.ourStars}★
+              </p>
+            </div>
+            <p className="text-lg font-black text-white/40">VS</p>
+            <div>
+              <p className="text-[0.6rem] font-extrabold uppercase text-white/55">Them</p>
+              <p className="truncate text-xs font-bold text-white">{war.enemyName}</p>
+              <p className="font-[family-name:var(--font-display)] text-2xl text-[#ff8a7a]">
+                {war.theirStars}★
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      {war.phase === 'collection' ? (
+        <div
+          className="rounded-xl p-3"
+          style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+        >
+          <p className="text-xs font-extrabold uppercase text-[#f5d76e]/85">
+            Collection Day
+          </p>
+          <p className="mt-1 text-sm font-bold text-white">
+            Train for war medals · {war.collection}/{war.collectionGoal}
+          </p>
+          <div className="mt-2 h-3 overflow-hidden rounded-full bg-black/40">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.round((war.collection / war.collectionGoal) * 100)}%`,
+                background: 'linear-gradient(90deg,#4a9eff,#7dff9a)',
+              }}
+            />
+          </div>
+          <p className="mt-1 text-[0.65rem] font-semibold text-white/55">
+            Finish collection to start War Day early.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const r = contributeWarCollection()
+              flash(r.message)
+              refresh()
+            }}
+            className="mt-2 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
+            style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+          >
+            Train / contribute
+          </button>
+        </div>
+      ) : null}
+
+      {war.phase === 'battle' ? (
+        <div className="space-y-2">
+          <div
+            className="rounded-xl px-3 py-2"
+            style={{ background: 'linear-gradient(180deg,#1a3048,#101820)' }}
+          >
+            <p className="text-xs font-bold text-white/80">
+              Attacks left: {war.attacksLeft} · Battles fought: {war.battlesFought}
+            </p>
+            <p className="text-[0.65rem] font-semibold text-white/55">
+              Real battle uses your deck; quick fight sims crowns → stars.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg bg-[#221610] px-2 py-2 ring-1 ring-white/10">
+            <div
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black text-[#1a1410]"
+              style={{ background: badge.color }}
+            >
+              {badge.label.slice(0, 1)}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-extrabold text-white">{war.enemyName}</p>
+              <p className="text-[0.65rem] font-semibold text-white/55">
+                {war.enemyTag} · destroy boats for stars
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-1.5">
+            {war.boats.map((boat) => {
+              const full = boat.stars >= 3
+              return (
+                <li
+                  key={boat.id}
+                  className="rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-white">{boat.defenderName}</p>
+                      <p className="text-[0.65rem] font-semibold text-white/55">
+                        {boat.defenderTrophies} trophies ·{' '}
+                        {'★'.repeat(boat.stars)}
+                        {'☆'.repeat(3 - boat.stars)}
+                        {boat.attacks > 0 ? ` · ${boat.attacks} hits` : ''}
+                      </p>
+                    </div>
+                    {!full ? (
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button
+                          type="button"
+                          disabled={war.attacksLeft <= 0}
+                          onClick={() => {
+                            const r = beginWarAttack(boat.id)
+                            flash(r.message)
+                            if (r.ok && r.opponent) onBattleBot(r.opponent)
+                            else refresh()
+                          }}
+                          className="rounded-lg px-2.5 py-1.5 text-[0.65rem] font-extrabold text-[#1a1410] disabled:opacity-40"
+                          style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                        >
+                          Battle
+                        </button>
+                        <button
+                          type="button"
+                          disabled={war.attacksLeft <= 0}
+                          onClick={() => {
+                            const r = simWarAttack(boat.id)
+                            flash(r.message)
+                            refresh()
+                          }}
+                          className="rounded-lg bg-[#2a1a12] px-2.5 py-1.5 text-[0.65rem] font-extrabold text-white/80 disabled:opacity-40"
+                        >
+                          Quick
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-extrabold text-[#7dff9a]">3★</span>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ) : null}
+
+      {war.phase === 'ended' ? (
+        <div
+          className="rounded-xl p-3"
+          style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+        >
+          <p className="font-[family-name:var(--font-display)] text-lg text-[#f5d76e]">
+            {war.ourStars > war.theirStars
+              ? 'Victory!'
+              : war.ourStars === war.theirStars
+                ? 'Draw'
+                : 'Defeat'}
+          </p>
+          <p className="text-sm font-semibold text-white/80">
+            Final {war.ourStars}–{war.theirStars} vs {war.enemyName}
+          </p>
+          <button
+            type="button"
+            disabled={war.claimed}
+            onClick={() => {
+              const r = claimWarRewards()
+              flash(r.message)
+              refresh()
+            }}
+            className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
+            style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+          >
+            {war.claimed ? 'Claimed' : 'Claim war rewards'}
+          </button>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => onBattleBot()}
+        className="w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
+        style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
+      >
+        Ladder battle (club crowns)
+      </button>
+      <p className="text-center text-xs font-semibold text-white/50">
+        Signed in as {loadPlayerName().trim() || 'You'}
       </p>
     </div>
   )
