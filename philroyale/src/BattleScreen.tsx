@@ -19,7 +19,12 @@ import {
 } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
 import { battlefieldScaleForHeight, getCharacter } from './characters'
-import { loadDeck, noteCardDeployed, recordMatchResult } from './storage'
+import {
+  grantBattleChest,
+  loadDeck,
+  noteCardDeployed,
+  recordMatchResult,
+} from './storage'
 import { useBattle } from './useBattle'
 
 type Props = {
@@ -27,6 +32,8 @@ type Props = {
   opponentName?: string | null
   opponentClanName?: string | null
   opponentTrophies?: number
+  allyLevels?: Record<string, number>
+  botLevel?: number
 }
 
 type DragState = {
@@ -109,8 +116,10 @@ function FlyingShot({
 export function BattleScreen({
   onExit,
   opponentName,
-  opponentClanName = 'Clan',
+  opponentClanName = 'Bot Clan',
   opponentTrophies = 3200,
+  allyLevels,
+  botLevel = 1,
 }: Props) {
   const deckIds = useMemo(() => loadDeck(), [])
   const [drawPile, setDrawPile] = useState<string[]>([])
@@ -140,7 +149,7 @@ export function BattleScreen({
     setSelectedCharId,
     deploy,
     now,
-  } = useBattle({ paused: ended })
+  } = useBattle({ paused: ended, allyLevels, botLevel })
 
   useEffect(() => {
     const pile = [...deckIds].sort(() => Math.random() - 0.5)
@@ -180,8 +189,11 @@ export function BattleScreen({
 
   useEffect(() => {
     if (!result) return
-    recordMatchResult(result)
-  }, [result])
+    const enemyDead = towers.filter((t) => t.side === 'enemy' && t.hp <= 0).length
+    const crowns = result === 'victory' ? Math.max(1, Math.min(3, enemyDead)) : result === 'draw' ? 1 : 0
+    recordMatchResult(result, { crowns })
+    grantBattleChest(result)
+  }, [result, towers])
 
   function cycleAfterDeploy(playedId: string) {
     const incoming = nextId
@@ -566,7 +578,7 @@ export function BattleScreen({
             </p>
             <p className="mt-1 text-xs font-bold text-[#5a4a20]/85">
               {result === 'victory'
-                ? '+30 trophies · +50 gold'
+                ? '+30 trophies · +50 gold · chest chance'
                 : result === 'defeat'
                   ? '−20 trophies · +15 gold'
                   : '+5 trophies · +25 gold'}

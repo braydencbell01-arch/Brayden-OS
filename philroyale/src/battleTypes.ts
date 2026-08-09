@@ -11,6 +11,8 @@ export type BattleUnit = {
   row: number
   hp: number
   maxHp: number
+  /** Card level 1–10; scales HP/damage +5% per level above 1. */
+  level: number
   /** Index into character.attacks */
   attackIndex: number
   /** Shot index within the current burst (0-based). */

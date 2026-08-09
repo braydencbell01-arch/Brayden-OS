@@ -19,6 +19,7 @@ import {
 } from './arena'
 import { getCharacter, DEFAULT_DECK, type CharacterDef } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
+import { cardLevelMult, scaledStat } from './progression'
 
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
@@ -219,17 +220,20 @@ function makeBattleUnit(
   row: number,
   side: Side,
   t: number,
+  level = 1,
 ): BattleUnit {
   const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
   const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+  const hp = scaledStat(char.hp, level)
   return {
     id: nid('u'),
     charId: char.id,
     side,
     col: clampedCol,
     row: clampedRow,
-    hp: char.hp,
-    maxHp: char.hp,
+    hp,
+    maxHp: hp,
+    level,
     attackIndex: 0,
     burstShot: 0,
     // Ready immediately — first hit fires the moment a foe enters range.
@@ -278,6 +282,7 @@ function tryEnemyAiDeploy(
   enemyElixir: number,
   deckIndex: number,
   t: number,
+  botLevel: number,
 ): { unit: BattleUnit | null; elixir: number; deckIndex: number } {
   const lane = pickAiLane(units)
   const colBase = lane === 'left' ? 20 : 72
@@ -296,7 +301,7 @@ function tryEnemyAiDeploy(
       const row = rowBase + Math.floor(Math.random() * rowSpan)
       if (!canSpawnAt(col, row, 'enemy', towers, live)) continue
       return {
-        unit: makeBattleUnit(char, col, row, 'enemy', t),
+        unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
         deckIndex,
       }
@@ -462,7 +467,13 @@ function nid(prefix: string): string {
   return `${prefix}-${seq}`
 }
 
-export function useBattle(opts?: { paused?: boolean }) {
+export function useBattle(opts?: {
+  paused?: boolean
+  /** Ally card levels by charId */
+  allyLevels?: Record<string, number>
+  /** Enemy bot card level (all units) */
+  botLevel?: number
+}) {
   const [elixir, setElixir] = useState(5)
   const [enemyElixir, setEnemyElixir] = useState(5)
   const [units, setUnits] = useState<BattleUnit[]>([])
@@ -488,6 +499,10 @@ export function useBattle(opts?: { paused?: boolean }) {
   const [now, setNow] = useState(() => performance.now())
   const pausedRef = useRef(!!opts?.paused)
   pausedRef.current = !!opts?.paused
+  const allyLevelsRef = useRef(opts?.allyLevels ?? {})
+  allyLevelsRef.current = opts?.allyLevels ?? {}
+  const botLevelRef = useRef(opts?.botLevel ?? 1)
+  botLevelRef.current = opts?.botLevel ?? 1
 
   const unitsRef = useRef(units)
   const towersRef = useRef(towers)
@@ -512,8 +527,9 @@ export function useBattle(opts?: { paused?: boolean }) {
     const live = liveTowerIdSet(towersRef.current)
     if (!canSpawnAt(col, row, 'ally', towersRef.current, live)) return false
     const spawnT = performance.now()
+    const level = allyLevelsRef.current[char.id] ?? 1
     setElixir((e) => e - char.elixir)
-    setUnits((prev) => [...prev, makeBattleUnit(char, col, row, 'ally', spawnT)])
+    setUnits((prev) => [...prev, makeBattleUnit(char, col, row, 'ally', spawnT, level)])
     return true
   }, [])
 
@@ -643,6 +659,7 @@ export function useBattle(opts?: { paused?: boolean }) {
           nextEnemyElixir,
           aiDeckIndexRef.current,
           t,
+          botLevelRef.current,
         )
         aiDeckIndexRef.current = ai.deckIndex
         if (ai.unit) {
@@ -791,7 +808,7 @@ export function useBattle(opts?: { paused?: boolean }) {
         if (t < u.nextAttackAt) continue
 
         const attack = def.attacks[u.attackIndex % def.attacks.length]!
-        const damage = attack.damage * dmgMult
+        const damage = attack.damage * dmgMult * cardLevelMult(u.level)
         const burstShots = attack.burstShots ?? 1
         const burstGapSec = attack.burstGapSec ?? 0
         const nextBurst = u.burstShot + 1

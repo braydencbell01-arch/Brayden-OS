@@ -4,6 +4,12 @@ import { BattleScreen } from './BattleScreen'
 import { CharactersScreen } from './CharactersScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
+import { ShopScreen } from './ShopScreen'
+import { TrophyRoadScreen } from './TrophyRoadScreen'
+import {
+  botLevelForTrophies,
+  botNameForTrophies,
+} from './progression'
 import {
   BATTLE_CHANNEL_NAME,
   battleInviteUrl,
@@ -13,9 +19,11 @@ import {
   createBattleChallenge,
   isChallengeForMe,
   loadBattleAccepted,
+  loadCardProgress,
   loadIncomingChallenge,
   loadOutgoingChallenge,
   loadPlayerName,
+  loadProfile,
   parseBattleChallengeFromUrl,
   postBattleMessage,
   saveBattleAccepted,
@@ -25,11 +33,12 @@ import {
   type BattleChannelMessage,
 } from './storage'
 
-type TabId = 'home' | 'characters' | 'friends'
+type TabId = 'home' | 'characters' | 'shop' | 'friends'
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'home', label: 'Home' },
+  { id: 'home', label: 'Battle' },
   { id: 'characters', label: 'Cards' },
+  { id: 'shop', label: 'Shop' },
   { id: 'friends', label: 'Friends' },
 ]
 
@@ -52,13 +61,16 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('home')
   const [battle, setBattle] = useState(false)
   const [opponent, setOpponent] = useState<string | null>(null)
+  const [showRoad, setShowRoad] = useState(false)
   const [incomingChallenge, setIncomingChallenge] = useState<BattleChallenge | null>(null)
   const [outgoingChallenge, setOutgoingChallenge] = useState<BattleChallenge | null>(() =>
     loadOutgoingChallenge(),
   )
 
   const startMatch = useCallback((name?: string | null) => {
-    setOpponent(name ?? null)
+    const trophies = loadProfile().trophies
+    setOpponent(name ?? botNameForTrophies(trophies))
+    setShowRoad(false)
     setBattle(true)
   }, [])
 
@@ -215,14 +227,27 @@ export default function App() {
   }, [outgoingChallenge, startMatch])
 
   if (battle) {
+    const trophies = loadProfile().trophies
+    const levels = loadCardProgress().levels
     return (
       <BattleScreen
         opponentName={opponent}
+        allyLevels={levels}
+        botLevel={botLevelForTrophies(trophies)}
         onExit={() => {
           setBattle(false)
           setOpponent(null)
           setTab('home')
         }}
+      />
+    )
+  }
+
+  if (showRoad) {
+    return (
+      <TrophyRoadScreen
+        onBack={() => setShowRoad(false)}
+        onPlayBot={() => startMatch(null)}
       />
     )
   }
@@ -240,9 +265,14 @@ export default function App() {
             transition={{ duration: 0.18 }}
           >
             {tab === 'home' ? (
-              <HomeScreen onPlay={startMatch} onRequestBattle={requestBattle} />
+              <HomeScreen
+                onPlay={startMatch}
+                onRequestBattle={requestBattle}
+                onOpenRoad={() => setShowRoad(true)}
+              />
             ) : null}
             {tab === 'characters' ? <CharactersScreen /> : null}
+            {tab === 'shop' ? <ShopScreen /> : null}
             {tab === 'friends' ? (
               <FriendsScreen
                 onBattle={startMatch}

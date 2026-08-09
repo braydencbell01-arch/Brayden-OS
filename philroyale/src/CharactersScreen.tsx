@@ -8,6 +8,7 @@ import {
   type CharacterDef,
   type Rarity,
 } from './characters'
+import { LEVEL_STAT_STEP, MAX_CARD_LEVEL, scaledStat } from './progression'
 import {
   copiesToUpgrade,
   goldToUpgrade,
@@ -69,9 +70,10 @@ export function CharactersScreen() {
   }, [sortMode, query, rarityFilter, favoritesOnly, progress])
 
   const collectionPct = useMemo(() => {
-    const maxLevel = CHARACTERS.length * 11
+    const unlocked = progress.unlocked.length
+    const maxLevel = CHARACTERS.length * MAX_CARD_LEVEL
     const sum = CHARACTERS.reduce((n, c) => n + (progress.levels[c.id] ?? 1), 0)
-    return Math.round((sum / maxLevel) * 100)
+    return Math.round(((unlocked / CHARACTERS.length) * 0.4 + (sum / maxLevel) * 0.6) * 100)
   }, [progress])
 
   function flash(msg: string) {
@@ -80,6 +82,10 @@ export function CharactersScreen() {
   }
 
   function addToDeck(id: string) {
+    if (!progress.unlocked.includes(id)) {
+      flash('Card locked — unlock on Trophy Road or from chests')
+      return
+    }
     setDeck((prev) => {
       if (prev.length >= DECK_SIZE) {
         flash(`Deck full (${DECK_SIZE}). Remove a card first.`)
@@ -103,7 +109,8 @@ export function CharactersScreen() {
   }
 
   function suggestDeck() {
-    const ranked = [...CHARACTERS].sort((a, b) => {
+    const unlocked = CHARACTERS.filter((c) => progress.unlocked.includes(c.id))
+    const ranked = [...unlocked].sort((a, b) => {
       const af = progress.favorites.includes(a.id) ? 1 : 0
       const bf = progress.favorites.includes(b.id) ? 1 : 0
       if (af !== bf) return bf - af
@@ -113,7 +120,9 @@ export function CharactersScreen() {
       )
     })
     const pick = ranked.slice(0, DECK_SIZE).map((c) => c.id)
-    while (pick.length < DECK_SIZE) pick.push(CHARACTERS[pick.length % CHARACTERS.length]!.id)
+    while (pick.length < DECK_SIZE && unlocked.length) {
+      pick.push(unlocked[pick.length % unlocked.length]!.id)
+    }
     setDeck(pick)
     flash('Suggested deck filled — save to lock it in')
   }
@@ -144,6 +153,7 @@ export function CharactersScreen() {
         level={progress.levels[profile.id] ?? 1}
         copies={progress.copies[profile.id] ?? 0}
         favorite={progress.favorites.includes(profile.id)}
+        unlocked={progress.unlocked.includes(profile.id)}
         gold={gold}
         onBack={() => setProfileId(null)}
         onAdd={() => addToDeck(profile.id)}
@@ -160,7 +170,7 @@ export function CharactersScreen() {
           Cards
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Upgrade with gold · collection {collectionPct}% · {gold} gold
+          +5% HP & dmg per level (max {MAX_CARD_LEVEL}) · {collectionPct}% · {gold}g
         </p>
       </header>
 
@@ -266,24 +276,25 @@ export function CharactersScreen() {
           {sorted.map((c) => {
             const level = progress.levels[c.id] ?? 1
             const fav = progress.favorites.includes(c.id)
+            const locked = !progress.unlocked.includes(c.id)
             return (
               <li key={c.id}>
                 <button
                   type="button"
                   onClick={() => setProfileId(c.id)}
                   className="w-full rounded-lg p-1.5 ring-1 ring-white/10"
-                  style={{ background: '#221610' }}
+                  style={{ background: '#221610', opacity: locked ? 0.55 : 1 }}
                 >
                   <BattleCard character={c} size="collection" />
                   <p className="mt-1 truncate text-center text-[0.7rem] font-extrabold text-white">
-                    {fav ? '★ ' : ''}
+                    {locked ? '🔒 ' : fav ? '★ ' : ''}
                     {c.name}
                   </p>
                   <p
                     className="text-center text-[0.55rem] font-extrabold uppercase tracking-wide"
                     style={{ color: RARITY_PILL[c.rarity] }}
                   >
-                    Lv {level} · {RARITY_LABEL[c.rarity]}
+                    {locked ? 'Locked' : `Lv ${level} · ${RARITY_LABEL[c.rarity]}`}
                   </p>
                 </button>
               </li>
@@ -308,6 +319,7 @@ function CardProfile({
   level,
   copies,
   favorite,
+  unlocked,
   gold,
   onBack,
   onAdd,
@@ -318,6 +330,7 @@ function CardProfile({
   level: number
   copies: number
   favorite: boolean
+  unlocked: boolean
   gold: number
   onBack: () => void
   onAdd: () => void
@@ -326,7 +339,9 @@ function CardProfile({
 }) {
   const need = copiesToUpgrade(level, character.rarity)
   const cost = goldToUpgrade(level)
-  const maxed = level >= 11
+  const maxed = level >= MAX_CARD_LEVEL
+  const hpNow = scaledStat(character.hp, level)
+  const dmgBonus = Math.round((level - 1) * LEVEL_STAT_STEP * 100)
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -370,7 +385,8 @@ function CardProfile({
             <Stat label="Height" value={character.height} />
             <Stat label="Rarity" value={RARITY_LABEL[character.rarity]} />
             <Stat label="Elixir" value={String(character.elixir)} />
-            <Stat label="Health" value={String(character.hp)} />
+            <Stat label="Health" value={`${hpNow} (base ${character.hp})`} />
+            <Stat label="Level bonus" value={`+${dmgBonus}% HP & dmg`} />
             <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
             <Stat
               label="Attack CD"
@@ -410,7 +426,7 @@ function CardProfile({
               >
                 <p className="font-extrabold text-white">{a.name}</p>
                 <p className="text-xs font-semibold text-white/65">
-                  {a.damage} dmg · {a.range} block range
+                  {scaledStat(a.damage, level)} dmg (base {a.damage}) · {a.range} block range
                   {a.rootWhileAttacking ? ' · stops to attack' : ' · can move while attacking'}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
                   {a.splashRadius != null ? ` · ${a.splashRadius} block splash` : ''}
@@ -441,7 +457,7 @@ function CardProfile({
                 color: '#fff',
               }}
             >
-              {maxed ? 'Max level' : `Upgrade ${cost}g`}
+              {maxed ? 'Max level 10' : `Upgrade ${cost}g (+5%)`}
             </button>
           </div>
           {!maxed ? (
@@ -453,13 +469,14 @@ function CardProfile({
           <button
             type="button"
             onClick={onAdd}
-            className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
+            disabled={!unlocked}
+            className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410] disabled:opacity-50"
             style={{
               background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
               boxShadow: '0 3px 0 #8a6a12',
             }}
           >
-            Add to battle deck
+            {unlocked ? 'Add to battle deck' : 'Locked — Trophy Road / chests'}
           </button>
         </div>
       </div>

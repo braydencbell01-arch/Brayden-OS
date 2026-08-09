@@ -1,4 +1,15 @@
 import { CHARACTERS, DEFAULT_DECK, DECK_SIZE } from './characters'
+import {
+  CHEST_META,
+  MAX_CARD_LEVEL,
+  STARTER_UNLOCKS,
+  TROPHY_ROAD,
+  arenaForTrophies,
+  dailyShopOffers,
+  rollChestLoot,
+  type ChestRarity,
+  type ShopOffer,
+} from './progression'
 
 const DECK_KEY = 'philroyale.deck.v2'
 const FRIENDS_KEY = 'philroyale.friends'
@@ -57,9 +68,16 @@ function readJson<T>(key: string, fallback: T): T {
 
 export function loadDeck(): string[] {
   const ids = readJson<string[]>(DECK_KEY, DEFAULT_DECK)
-  const valid = ids.filter((id) => CHARACTERS.some((c) => c.id === id))
+  const unlocked = new Set(loadCardProgress().unlocked)
+  const valid = ids.filter(
+    (id) => CHARACTERS.some((c) => c.id === id) && unlocked.has(id),
+  )
   if (valid.length === DECK_SIZE) return valid
-  return DEFAULT_DECK
+  const fallback = DEFAULT_DECK.filter((id) => unlocked.has(id))
+  while (fallback.length < DECK_SIZE && STARTER_UNLOCKS.length) {
+    fallback.push(STARTER_UNLOCKS[fallback.length % STARTER_UNLOCKS.length]!)
+  }
+  return fallback.slice(0, DECK_SIZE)
 }
 
 export function saveDeck(ids: string[]): void {
@@ -234,28 +252,48 @@ export async function shareText(title: string, text: string, url?: string): Prom
 
 /* ——— Home / progression (local) ——— */
 
-const PROFILE_KEY = 'philroyale.profile.v1'
-const CARD_PROGRESS_KEY = 'philroyale.cardProgress.v1'
+const PROFILE_KEY = 'philroyale.profile.v2'
+const CARD_PROGRESS_KEY = 'philroyale.cardProgress.v2'
 const DAILY_KEY = 'philroyale.daily.v1'
 const FRIEND_META_KEY = 'philroyale.friendMeta.v1'
+const CHESTS_KEY = 'philroyale.chests.v1'
+const ROAD_KEY = 'philroyale.trophyRoad.v1'
+const SHOP_BOUGHT_KEY = 'philroyale.shopBought.v1'
 
 export type PlayerProfile = {
   trophies: number
   gold: number
+  gems: number
   wins: number
   losses: number
   draws: number
   winStreak: number
   bestWinStreak: number
   battlesPlayed: number
+  /** Crown chest progress 0–10 */
+  crownChest: number
 }
 
 export type CardProgress = {
-  /** charId → level (1–11) */
+  /** charId → level (1–10) */
   levels: Record<string, number>
   /** charId → owned copies */
   copies: Record<string, number>
   favorites: string[]
+  unlocked: string[]
+}
+
+export type OwnedChest = {
+  id: string
+  rarity: ChestRarity
+  /** When unlock started; null = waiting in slot */
+  unlockingStartedAt: number | null
+  /** Ready timestamp when unlocking */
+  readyAt: number | null
+}
+
+export type TrophyRoadState = {
+  claimed: number[]
 }
 
 export type DailyState = {
@@ -280,12 +318,14 @@ export type FriendMeta = {
 const DEFAULT_PROFILE: PlayerProfile = {
   trophies: 0,
   gold: 500,
+  gems: 20,
   wins: 0,
   losses: 0,
   draws: 0,
   winStreak: 0,
   bestWinStreak: 0,
   battlesPlayed: 0,
+  crownChest: 0,
 }
 
 function todayKey(): string {
@@ -294,25 +334,27 @@ function todayKey(): string {
 }
 
 export function arenaTitle(trophies: number): string {
-  if (trophies >= 4000) return 'Phil Peak'
-  if (trophies >= 3000) return 'Royal Yard'
-  if (trophies >= 2000) return 'Bone Bridge'
-  if (trophies >= 1000) return 'Sundae Strip'
-  if (trophies >= 400) return 'Training Camp'
-  return 'Goblin Boot'
+  return arenaForTrophies(trophies)
 }
 
 export function loadProfile(): PlayerProfile {
-  return { ...DEFAULT_PROFILE, ...readJson<Partial<PlayerProfile>>(PROFILE_KEY, {}) }
+  const legacy = readJson<Partial<PlayerProfile>>('philroyale.profile.v1', {})
+  const cur = readJson<Partial<PlayerProfile>>(PROFILE_KEY, {})
+  return { ...DEFAULT_PROFILE, ...legacy, ...cur }
 }
 
 export function saveProfile(profile: PlayerProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
 }
 
-export function recordMatchResult(result: 'victory' | 'defeat' | 'draw'): PlayerProfile {
+export function recordMatchResult(
+  result: 'victory' | 'defeat' | 'draw',
+  opts?: { crowns?: number },
+): PlayerProfile {
   const p = loadProfile()
   p.battlesPlayed += 1
+  const crowns = Math.max(0, Math.min(3, opts?.crowns ?? (result === 'victory' ? 3 : result === 'draw' ? 1 : 0)))
+  p.crownChest = Math.min(10, p.crownChest + crowns)
   if (result === 'victory') {
     p.wins += 1
     p.winStreak += 1
@@ -341,26 +383,46 @@ export function recordMatchResult(result: 'victory' | 'defeat' | 'draw'): Player
     }
     saveDaily(daily)
   }
-  return p
+
+  // Auto-claim trophy road steps the player has reached
+  claimAvailableRoadRewards()
+  return loadProfile()
 }
 
 export function loadCardProgress(): CardProgress {
-  const raw = readJson<Partial<CardProgress>>(CARD_PROGRESS_KEY, {})
+  const legacy = readJson<Partial<CardProgress>>('philroyale.cardProgress.v1', {})
+  const raw = { ...legacy, ...readJson<Partial<CardProgress>>(CARD_PROGRESS_KEY, {}) }
   const levels: Record<string, number> = {}
   const copies: Record<string, number> = {}
+  const unlockedSet = new Set([
+    ...STARTER_UNLOCKS,
+    ...(raw.unlocked ?? []),
+    ...DEFAULT_DECK,
+  ])
+  // Apply any already-claimed road unlocks
+  const road = loadTrophyRoad()
+  for (const idx of road.claimed) {
+    const step = TROPHY_ROAD[idx]
+    if (step?.unlockCard) unlockedSet.add(step.unlockCard)
+  }
   for (const c of CHARACTERS) {
-    levels[c.id] = Math.max(1, Math.min(11, raw.levels?.[c.id] ?? 1))
+    levels[c.id] = Math.max(1, Math.min(MAX_CARD_LEVEL, raw.levels?.[c.id] ?? 1))
     copies[c.id] = Math.max(0, raw.copies?.[c.id] ?? (c.rarity === 'common' ? 4 : 1))
   }
   return {
     levels,
     copies,
     favorites: (raw.favorites ?? []).filter((id) => CHARACTERS.some((c) => c.id === id)),
+    unlocked: [...unlockedSet],
   }
 }
 
 export function saveCardProgress(progress: CardProgress): void {
   localStorage.setItem(CARD_PROGRESS_KEY, JSON.stringify(progress))
+}
+
+export function isCardUnlocked(charId: string): boolean {
+  return loadCardProgress().unlocked.includes(charId)
 }
 
 export function copiesToUpgrade(level: number, rarity: string): number {
@@ -376,8 +438,11 @@ export function tryUpgradeCard(charId: string): { ok: boolean; message: string; 
   const char = CHARACTERS.find((c) => c.id === charId)
   const progress = loadCardProgress()
   if (!char) return { ok: false, message: 'Unknown card', progress }
+  if (!progress.unlocked.includes(charId)) {
+    return { ok: false, message: 'Card locked — unlock on Trophy Road', progress }
+  }
   const level = progress.levels[charId] ?? 1
-  if (level >= 11) return { ok: false, message: 'Max level', progress }
+  if (level >= MAX_CARD_LEVEL) return { ok: false, message: 'Max level 10', progress }
   const need = copiesToUpgrade(level, char.rarity)
   const have = progress.copies[charId] ?? 0
   const cost = goldToUpgrade(level)
@@ -389,7 +454,11 @@ export function tryUpgradeCard(charId: string): { ok: boolean; message: string; 
   profile.gold -= cost
   saveCardProgress(progress)
   saveProfile(profile)
-  return { ok: true, message: `${char.name} → Lv ${level + 1}`, progress }
+  return {
+    ok: true,
+    message: `${char.name} → Lv ${level + 1} (+5% HP & dmg)`,
+    progress,
+  }
 }
 
 function pickQuest(day: string): DailyState['questId'] {
@@ -489,4 +558,201 @@ export function markFriendBattled(friendId: string): void {
   const meta = loadFriendMeta()
   meta.lastBattled[friendId] = new Date().toISOString()
   saveFriendMeta(meta)
+}
+
+/* ——— Chests ——— */
+
+const MAX_CHEST_SLOTS = 4
+
+export function loadChests(): OwnedChest[] {
+  return readJson<OwnedChest[]>(CHESTS_KEY, [])
+}
+
+export function saveChests(chests: OwnedChest[]): void {
+  localStorage.setItem(CHESTS_KEY, JSON.stringify(chests.slice(0, MAX_CHEST_SLOTS)))
+}
+
+export function addChest(rarity: ChestRarity): { ok: boolean; message: string } {
+  const chests = loadChests()
+  if (chests.length >= MAX_CHEST_SLOTS) {
+    return { ok: false, message: 'Chest slots full (4). Open one first.' }
+  }
+  chests.push({
+    id: `chest-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    rarity,
+    unlockingStartedAt: null,
+    readyAt: null,
+  })
+  saveChests(chests)
+  return { ok: true, message: `${CHEST_META[rarity].label} added` }
+}
+
+export function startChestUnlock(chestId: string): { ok: boolean; message: string } {
+  const chests = loadChests()
+  if (chests.some((c) => c.unlockingStartedAt != null && (c.readyAt ?? 0) > Date.now())) {
+    return { ok: false, message: 'Already unlocking a chest' }
+  }
+  const chest = chests.find((c) => c.id === chestId)
+  if (!chest) return { ok: false, message: 'Chest not found' }
+  if (chest.readyAt != null && chest.readyAt <= Date.now()) {
+    return { ok: false, message: 'Chest ready to open' }
+  }
+  const now = Date.now()
+  chest.unlockingStartedAt = now
+  chest.readyAt = now + CHEST_META[chest.rarity].unlockSec * 1000
+  saveChests(chests)
+  return { ok: true, message: `Unlocking ${CHEST_META[chest.rarity].label}` }
+}
+
+export function openChestNow(
+  chestId: string,
+  payGold: boolean,
+): {
+  ok: boolean
+  message: string
+  gold?: number
+  cards?: { charId: string; copies: number }[]
+} {
+  const chests = loadChests()
+  const idx = chests.findIndex((c) => c.id === chestId)
+  if (idx < 0) return { ok: false, message: 'Chest not found' }
+  const chest = chests[idx]!
+  const ready = chest.readyAt != null && chest.readyAt <= Date.now()
+  const profile = loadProfile()
+  if (!ready) {
+    if (!payGold) return { ok: false, message: 'Still unlocking' }
+    const cost = CHEST_META[chest.rarity].openNowGold
+    if (profile.gold < cost) return { ok: false, message: `Need ${cost} gold` }
+    profile.gold -= cost
+  }
+  const loot = rollChestLoot(chest.rarity)
+  profile.gold += loot.gold
+  const progress = loadCardProgress()
+  for (const drop of loot.cards) {
+    progress.copies[drop.charId] = (progress.copies[drop.charId] ?? 0) + drop.copies
+    if (!progress.unlocked.includes(drop.charId)) {
+      progress.unlocked.push(drop.charId)
+    }
+  }
+  saveCardProgress(progress)
+  saveProfile(profile)
+  chests.splice(idx, 1)
+  saveChests(chests)
+  const names = loot.cards
+    .map((d) => {
+      const c = CHARACTERS.find((x) => x.id === d.charId)
+      return `${d.copies}× ${c?.name ?? d.charId}`
+    })
+    .join(', ')
+  return {
+    ok: true,
+    message: `+${loot.gold} gold · ${names}`,
+    gold: loot.gold,
+    cards: loot.cards,
+  }
+}
+
+export function claimCrownChest(): { ok: boolean; message: string } {
+  const p = loadProfile()
+  if (p.crownChest < 10) return { ok: false, message: `Need 10 crowns (${p.crownChest}/10)` }
+  const added = addChest('rare')
+  if (!added.ok) return added
+  p.crownChest = 0
+  saveProfile(p)
+  return { ok: true, message: 'Crown Chest claimed — Rare Chest added!' }
+}
+
+/* ——— Trophy road ——— */
+
+export function loadTrophyRoad(): TrophyRoadState {
+  return readJson<TrophyRoadState>(ROAD_KEY, { claimed: [] })
+}
+
+export function saveTrophyRoad(state: TrophyRoadState): void {
+  localStorage.setItem(ROAD_KEY, JSON.stringify(state))
+}
+
+export function claimAvailableRoadRewards(): string[] {
+  const profile = loadProfile()
+  const state = loadTrophyRoad()
+  const progress = loadCardProgress()
+  const messages: string[] = []
+  TROPHY_ROAD.forEach((step, idx) => {
+    if (state.claimed.includes(idx)) return
+    if (profile.trophies < step.trophies) return
+    state.claimed.push(idx)
+    if (step.gold) {
+      profile.gold += step.gold
+      messages.push(`+${step.gold} gold`)
+    }
+    if (step.gems) {
+      profile.gems += step.gems
+      messages.push(`+${step.gems} gems`)
+    }
+    if (step.chest) {
+      const r = addChest(step.chest)
+      if (r.ok) messages.push(CHEST_META[step.chest].label)
+      else messages.push(`${CHEST_META[step.chest].label} (slots full)`)
+    }
+    if (step.unlockCard && !progress.unlocked.includes(step.unlockCard)) {
+      progress.unlocked.push(step.unlockCard)
+      const name = CHARACTERS.find((c) => c.id === step.unlockCard)?.name ?? step.unlockCard
+      messages.push(`Unlocked ${name}`)
+    }
+  })
+  saveTrophyRoad(state)
+  saveProfile(profile)
+  saveCardProgress(progress)
+  return messages
+}
+
+/* ——— Shop ——— */
+
+export function loadShopBoughtToday(): string[] {
+  const day = todayKey()
+  const raw = readJson<{ day: string; ids: string[] } | null>(SHOP_BOUGHT_KEY, null)
+  if (!raw || raw.day !== day) return []
+  return raw.ids
+}
+
+function saveShopBought(ids: string[]): void {
+  localStorage.setItem(SHOP_BOUGHT_KEY, JSON.stringify({ day: todayKey(), ids }))
+}
+
+export function getShopOffers(): ShopOffer[] {
+  return dailyShopOffers(todayKey())
+}
+
+export function buyShopOffer(offerId: string): { ok: boolean; message: string } {
+  const offer = getShopOffers().find((o) => o.id === offerId)
+  if (!offer) return { ok: false, message: 'Offer not found' }
+  const bought = loadShopBoughtToday()
+  if (bought.includes(offerId)) return { ok: false, message: 'Already bought today' }
+  const profile = loadProfile()
+  if (profile.gold < offer.priceGold) return { ok: false, message: `Need ${offer.priceGold} gold` }
+  if (offer.kind === 'chest' && offer.chest) {
+    const added = addChest(offer.chest)
+    if (!added.ok) return added
+  } else if (offer.kind === 'card' && offer.charId) {
+    const progress = loadCardProgress()
+    progress.copies[offer.charId] =
+      (progress.copies[offer.charId] ?? 0) + (offer.copies ?? 1)
+    if (!progress.unlocked.includes(offer.charId)) {
+      progress.unlocked.push(offer.charId)
+    }
+    saveCardProgress(progress)
+  }
+  profile.gold -= offer.priceGold
+  saveProfile(profile)
+  bought.push(offerId)
+  saveShopBought(bought)
+  return { ok: true, message: 'Purchased!' }
+}
+
+export function grantBattleChest(result: 'victory' | 'defeat' | 'draw'): void {
+  if (result !== 'victory') return
+  const roll = Math.random()
+  const rarity: ChestRarity =
+    roll < 0.05 ? 'legendary' : roll < 0.2 ? 'epic' : roll < 0.55 ? 'rare' : 'common'
+  addChest(rarity)
 }
