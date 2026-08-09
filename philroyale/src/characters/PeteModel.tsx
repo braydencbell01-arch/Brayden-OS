@@ -13,14 +13,14 @@ type Props = {
   portrait?: boolean
 }
 
-/** Pete — glasses + navy suit; limps; Death Hug grows arms + hearts. */
+/** Chuck — glasses + navy suit; limps; Death Hug grows arms + hearts. */
 export function PeteModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
       cardSrc={PETE_CARD}
       troopSrc={PETE_TROOP}
       troopBackSrc={PETE_BACK}
-      alt="Pete"
+      alt="Chuck"
       anim={anim}
       facing={facing}
       portrait={portrait}

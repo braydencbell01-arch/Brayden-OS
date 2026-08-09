@@ -132,8 +132,8 @@ export const KATHIE: CharacterDef = {
 
 export const PETE: CharacterDef = {
   id: 'pete',
-  name: 'Pete',
-  initial: 'Pe',
+  name: 'Chuck',
+  initial: 'C',
   pronoun: 'he',
   height: "5'8\"",
   rarity: 'epic',
@@ -315,8 +315,8 @@ export const LYNNE: CharacterDef = {
 
 export const DAN: CharacterDef = {
   id: 'dan',
-  name: 'Chuck',
-  initial: 'D',
+  name: 'Pete',
+  initial: 'Pe',
   pronoun: 'he',
   height: "6'2\"",
   rarity: 'epic',
