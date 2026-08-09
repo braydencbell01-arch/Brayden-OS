@@ -5,6 +5,7 @@ export type AttackId =
   | 'slobber'
   | 'bite'
   | 'shoot'
+  | 'flyingKick'
 
 export type AttackDef = {
   id: AttackId
@@ -20,7 +21,7 @@ export type AttackDef = {
   burstShots?: number
   /** Seconds between shots inside a burst. */
   burstGapSec?: number
-  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot'
+  kind: 'sundae' | 'whip' | 'hug' | 'slobber' | 'bite' | 'shoot' | 'kick'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -229,7 +230,32 @@ export const JEREMY: CharacterDef = {
   ],
 }
 
-export const CHARACTERS: CharacterDef[] = [PHIL, KATHIE, PETE, BEANS, FINLEY, JEREMY]
+export const TODD: CharacterDef = {
+  id: 'todd',
+  name: 'Todd',
+  initial: 'T',
+  pronoun: 'he',
+  height: "5'7\"",
+  rarity: 'epic',
+  elixir: 6,
+  hp: 750,
+  moveSpeed: 5,
+  attackDelaySec: 2,
+  hue: 0,
+  blurb: 'Sprints in, then jumps into a Flying Kick — 200 damage up close.',
+  attacks: [
+    {
+      id: 'flyingKick',
+      name: 'Flying Kick',
+      range: 3,
+      damage: 200,
+      rootWhileAttacking: true,
+      kind: 'kick',
+    },
+  ],
+}
+
+export const CHARACTERS: CharacterDef[] = [PHIL, KATHIE, TODD, PETE, BEANS, FINLEY, JEREMY]
 
 export const DECK_SIZE = 8
 
@@ -237,12 +263,12 @@ export const DECK_SIZE = 8
 export const DEFAULT_DECK = [
   PHIL.id,
   KATHIE.id,
+  TODD.id,
   BEANS.id,
   FINLEY.id,
   JEREMY.id,
   PETE.id,
   BEANS.id,
-  FINLEY.id,
 ]
 
 export function getCharacter(id: string): CharacterDef | undefined {

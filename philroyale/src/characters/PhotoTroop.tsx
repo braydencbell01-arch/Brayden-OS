@@ -13,8 +13,8 @@ type Props = {
   portrait?: boolean
   objectPos?: string
   enraged?: boolean
-  gait?: 'jog' | 'run' | 'dog' | 'limp'
-  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'slobber' | 'none'
+  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint'
+  attack?: 'whip' | 'sundae' | 'shoot' | 'bite' | 'hug' | 'slobber' | 'kick' | 'none'
   /** Pants / fur color for running leg overlays */
   legColor?: string
   shoeColor?: string
@@ -59,7 +59,15 @@ export function PhotoTroop({
   const walking = anim === 'walk'
   const attacking = anim === 'attack'
   const duration =
-    gait === 'dog' ? 0.28 : gait === 'limp' ? 0.72 : gait === 'jog' ? 0.36 : 0.4
+    gait === 'dog'
+      ? 0.28
+      : gait === 'sprint'
+        ? 0.26
+        : gait === 'limp'
+          ? 0.72
+          : gait === 'jog'
+            ? 0.36
+            : 0.4
 
   if (portrait) {
     return (
@@ -102,7 +110,15 @@ export function PhotoTroop({
                       ? { y: [0, -2, 0], scale: [1, 1.04, 1] }
                       : attack === 'slobber'
                         ? { y: [0, -3, -1, 0], rotate: [0, -6, 4, 0], scaleY: [1, 0.96, 1.02, 1] }
-                        : { y: [0, -3, 0] }
+                        : attack === 'kick'
+                          ? {
+                              // Crouch → launch high → flying kick forward → land
+                              y: [0, 4, -22, -16, 0],
+                              x: [0, 0, 10, 18, 0],
+                              rotate: [0, -8, -25, 12, 0],
+                              scaleY: [1, 0.9, 1.08, 1.02, 1],
+                            }
+                          : { y: [0, -3, 0] }
             : walking
               ? gait === 'limp'
                 ? {
@@ -112,22 +128,32 @@ export function PhotoTroop({
                     x: [0, 1, 0, -2, 0],
                     scaleY: [1, 0.98, 1, 0.94, 1],
                   }
-                : {
-                    // Running stride: bounce only (no left/right rotate — that looked two-way)
-                    y: [0, -6, -1, -7, 0],
-                    scaleY: [1, 0.94, 1, 0.93, 1],
-                  }
+                : gait === 'sprint'
+                  ? {
+                      // Fast sprint bounce — bigger stride, quicker cadence
+                      y: [0, -8, -1, -9, 0],
+                      scaleY: [1, 0.9, 1, 0.88, 1],
+                      x: [0, 1, 0, -1, 0],
+                    }
+                  : {
+                      // Running stride: bounce only (no left/right rotate — that looked two-way)
+                      y: [0, -6, -1, -7, 0],
+                      scaleY: [1, 0.94, 1, 0.93, 1],
+                    }
               : { y: [0, -1.5, 0] }
         }
         transition={
           attacking
             ? {
                 duration:
-                  attack === 'whip' || attack === 'hug'
-                    ? 0.72
-                    : attack === 'slobber' || attack === 'sundae'
-                      ? 0.55
-                      : 0.36,
+                  attack === 'kick'
+                    ? 0.65
+                    : attack === 'whip' || attack === 'hug'
+                      ? 0.72
+                      : attack === 'slobber' || attack === 'sundae'
+                        ? 0.55
+                        : 0.36,
+                times: attack === 'kick' ? [0, 0.15, 0.4, 0.7, 1] : undefined,
               }
             : walking
               ? { duration, repeat: Infinity, ease: 'easeInOut' }
@@ -161,6 +187,7 @@ export function PhotoTroop({
         {attacking && attack === 'bite' ? <BiteOverlay enraged={enraged} /> : null}
         {attacking && attack === 'hug' ? <HugOverlay /> : null}
         {attacking && attack === 'slobber' ? <SlobberSpitOverlay /> : null}
+        {attacking && attack === 'kick' ? <FlyingKickOverlay /> : null}
 
         {enraged ? (
           <div
@@ -183,15 +210,25 @@ function RunLegs({
   legColor,
   shoeColor,
 }: {
-  gait: 'jog' | 'run' | 'dog' | 'limp'
+  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint'
   walking: boolean
   legColor: string
   shoeColor: string
 }) {
   if (!walking) return null
-  const dur = gait === 'dog' ? 0.28 : gait === 'limp' ? 0.72 : gait === 'jog' ? 0.36 : 0.4
+  const dur =
+    gait === 'dog'
+      ? 0.28
+      : gait === 'sprint'
+        ? 0.26
+        : gait === 'limp'
+          ? 0.72
+          : gait === 'jog'
+            ? 0.36
+            : 0.4
   const dog = gait === 'dog'
   const limp = gait === 'limp'
+  const sprint = gait === 'sprint'
   const color = legColor
   const accent = shoeColor
 
@@ -234,7 +271,9 @@ function RunLegs({
           walking
             ? limp
               ? { rotate: [8, -6, 8, -18, 8], y: [0, 0, 0, 3, 0] }
-              : { rotate: [28, -32, 28] }
+              : sprint
+                ? { rotate: [38, -42, 38] }
+                : { rotate: [28, -32, 28] }
             : { rotate: 6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -248,7 +287,9 @@ function RunLegs({
           walking
             ? limp
               ? { rotate: [-6, 10, -6, 22, -6], y: [0, 1, 0, 0, 0] }
-              : { rotate: [-32, 28, -32] }
+              : sprint
+                ? { rotate: [-42, 38, -42] }
+                : { rotate: [-32, 28, -32] }
             : { rotate: -6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -500,4 +541,52 @@ function SpitOverlay() {
 
 function SlobberSpitOverlay() {
   return <SpitOverlay />
+}
+
+function FlyingKickOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+      {/* Speed lines on launch */}
+      <motion.g
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0.9, 0] }}
+        transition={{ duration: 0.65, times: [0, 0.35, 1] }}
+      >
+        <path d="M8 70 H28" stroke="#fff6e8" strokeWidth="1.6" strokeLinecap="round" opacity="0.7" />
+        <path d="M6 78 H24" stroke="#ffe08a" strokeWidth="1.2" strokeLinecap="round" opacity="0.55" />
+        <path d="M10 62 H26" stroke="#fff6e8" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+      </motion.g>
+      {/* Extended kicking leg flash */}
+      <motion.g
+        initial={{ rotate: 20, opacity: 0 }}
+        animate={{ rotate: [-10, -40, 15], opacity: [0, 1, 0.8, 0] }}
+        transition={{ duration: 0.65, times: [0, 0.35, 0.7, 1] }}
+        style={{ transformOrigin: '42px 72px' }}
+      >
+        <path d="M40 70 Q58 58 72 48 L76 52 Q60 64 44 76 Z" fill="#2a2a32" />
+        <ellipse cx="74" cy="48" rx="6" ry="3.5" fill="#0a0a0c" transform="rotate(-35 74 48)" />
+      </motion.g>
+      {/* Impact burst at contact */}
+      <motion.g
+        initial={{ scale: 0.2, opacity: 0 }}
+        animate={{ scale: [0.2, 1.4, 1], opacity: [0, 1, 0] }}
+        transition={{ duration: 0.65, times: [0, 0.55, 1] }}
+        style={{ transformOrigin: '70px 50px' }}
+      >
+        <circle cx="70" cy="50" r="8" fill="#ffe08a55" />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+          <line
+            key={deg}
+            x1="70"
+            y1="50"
+            x2={70 + Math.cos((deg * Math.PI) / 180) * 14}
+            y2={50 + Math.sin((deg * Math.PI) / 180) * 14}
+            stroke="#fff6e8"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
+        ))}
+      </motion.g>
+    </svg>
+  )
 }

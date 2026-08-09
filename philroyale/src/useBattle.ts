@@ -31,6 +31,7 @@ const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const HUG_VFX_MS = 780
 const WHIP_VFX_MS = 780
+const KICK_VFX_MS = 680
 const RANGED_VFX_MS = 380
 const SPLAT_MS = 520
 const SLOBBER_SPLAT_MS = 780
@@ -664,11 +665,13 @@ export function useBattle(opts?: { paused?: boolean }) {
         const vfxMs =
           attack.id === 'chickenWhip'
             ? WHIP_VFX_MS
-            : attack.id === 'deathHug'
-              ? HUG_VFX_MS
-              : attack.rootWhileAttacking
-                ? ROOT_VFX_MS
-                : RANGED_VFX_MS
+            : attack.id === 'flyingKick'
+              ? KICK_VFX_MS
+              : attack.id === 'deathHug'
+                ? HUG_VFX_MS
+                : attack.rootWhileAttacking
+                  ? ROOT_VFX_MS
+                  : RANGED_VFX_MS
         u.vfx = attack.id
         u.vfxUntil = t + vfxMs
         u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
