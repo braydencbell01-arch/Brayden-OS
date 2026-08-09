@@ -34,6 +34,7 @@ export function PhilModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 18%"
       gait="jog"
       attack={attack}
+      spriteLegs
       legColor="#c4a06a"
       shoeColor="#1e3a6e"
     />

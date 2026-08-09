@@ -42,7 +42,7 @@ type Props = {
  * No CSS drop-shadow (that caused a ghost “second troop” while moving).
  */
 export function PhotoTroop({
-  cardSrc,
+  cardSrc: _cardSrc,
   troopSrc,
   troopBackSrc,
   alt,
@@ -54,7 +54,7 @@ export function PhotoTroop({
   gait = 'run',
   attack = 'none',
   carry = 'none',
-  spriteLegs = false,
+  spriteLegs = true,
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
 }: Props) {
@@ -93,19 +93,23 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Card art is battlefield troop on blue + tower pedestal — show most of the body.
+    // Battlefield troop on clean blue — no pedestal composite (avoids ghost legs).
     return (
-      <img
-        src={cardSrc}
-        alt={alt}
-        className="h-full w-full object-cover"
+      <div
+        className="relative h-full w-full overflow-hidden"
         style={{
-          objectPosition: '50% 42%',
-          transform: 'scale(1.08)',
-          transformOrigin: '50% 42%',
+          background:
+            'radial-gradient(ellipse 85% 70% at 50% 42%, #2a8fd4 0%, #0a5cb0 55%, #003e8a 100%)',
         }}
-        draggable={false}
-      />
+      >
+        <img
+          src={troopSrc}
+          alt={alt}
+          className="h-full w-full object-contain px-[5%] pb-[2%] pt-[4%]"
+          style={{ clipPath: 'inset(0 0 3% 0)' }}
+          draggable={false}
+        />
+      </div>
     )
   }
 

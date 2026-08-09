@@ -27,6 +27,7 @@ export function BeansModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 42%"
       gait="dog"
       attack={anim === 'attack' && attackId === 'slobber' ? 'slobber' : 'none'}
+      spriteLegs
       legColor="#c9a227"
       shoeColor="#8a6a12"
     />

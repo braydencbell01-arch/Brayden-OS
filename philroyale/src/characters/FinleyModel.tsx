@@ -27,6 +27,7 @@ export function FinleyModel({ anim, facing, portrait, enraged }: Props) {
       enraged={enraged}
       gait="dog"
       attack={anim === 'attack' ? 'bite' : 'none'}
+      spriteLegs
       legColor="#0a0a0c"
       shoeColor="#050508"
     />

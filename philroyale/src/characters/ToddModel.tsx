@@ -27,6 +27,7 @@ export function ToddModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 14%"
       gait="sprint"
       attack={anim === 'attack' && attackId === 'flyingKick' ? 'kick' : 'none'}
+      spriteLegs
       legColor="#2a2a32"
       shoeColor="#0a0a0c"
     />

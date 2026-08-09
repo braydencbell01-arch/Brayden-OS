@@ -27,6 +27,7 @@ export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 12%"
       gait="run"
       attack={anim === 'attack' && attackId === 'shoot' ? 'shoot' : 'none'}
+      spriteLegs
       legColor="#2a2a32"
       shoeColor="#0a0a0c"
     />

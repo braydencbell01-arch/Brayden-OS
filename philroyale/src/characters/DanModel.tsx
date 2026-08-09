@@ -19,7 +19,7 @@ export function DanModel({ anim, facing, portrait, enraged }: Props) {
       cardSrc={DAN_CARD}
       troopSrc={DAN_TROOP}
       troopBackSrc={DAN_BACK}
-      alt="Pete"
+      alt="Dan"
       anim={anim}
       facing={facing}
       portrait={portrait}
@@ -27,6 +27,7 @@ export function DanModel({ anim, facing, portrait, enraged }: Props) {
       gait="jog"
       attack="none"
       enraged={enraged}
+      spriteLegs
       legColor="#2a2a36"
       shoeColor="#0a0a0c"
     />

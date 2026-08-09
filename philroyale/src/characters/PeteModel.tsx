@@ -27,6 +27,7 @@ export function PeteModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 14%"
       gait="limp"
       attack={anim === 'attack' && attackId === 'deathHug' ? 'hug' : 'none'}
+      spriteLegs
       legColor="#1e2a4a"
       shoeColor="#3a2410"
     />
