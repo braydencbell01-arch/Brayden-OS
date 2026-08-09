@@ -1,8 +1,10 @@
+import { motion } from 'framer-motion'
+
 /**
  * Clash Royale–style outdoor arena (grass, dirt lanes, 3D river/bridges/towers/stands).
  * Lane mids match bridge cols 23 & 77; path width matches bridge footprint.
  */
-export function ClashMap() {
+export function ClashMap({ destroyedTowerIds = new Set<string>() }: { destroyedTowerIds?: ReadonlySet<string> }) {
   const fieldX = 0
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
@@ -158,12 +160,12 @@ export function ClashMap() {
       <Bridge3D cx={rightLane} w={pathW} riverY={riverY} riverH={riverH} />
 
       {/* Pull enemy king slightly in so both kings stay fully on-screen */}
-      <CrownTower x={180} y={62} king enemy />
-      <CrownTower x={leftLane} y={128} king={false} enemy />
-      <CrownTower x={rightLane} y={128} king={false} enemy />
-      <CrownTower x={180} y={555} king enemy={false} />
-      <CrownTower x={leftLane} y={508} king={false} enemy={false} />
-      <CrownTower x={rightLane} y={508} king={false} enemy={false} />
+      <CrownTower x={180} y={62} king enemy destroyed={destroyedTowerIds.has('enemy-king')} />
+      <CrownTower x={leftLane} y={128} king={false} enemy destroyed={destroyedTowerIds.has('enemy-left')} />
+      <CrownTower x={rightLane} y={128} king={false} enemy destroyed={destroyedTowerIds.has('enemy-right')} />
+      <CrownTower x={180} y={555} king enemy={false} destroyed={destroyedTowerIds.has('ally-king')} />
+      <CrownTower x={leftLane} y={508} king={false} enemy={false} destroyed={destroyedTowerIds.has('ally-left')} />
+      <CrownTower x={rightLane} y={508} king={false} enemy={false} destroyed={destroyedTowerIds.has('ally-right')} />
 
       <rect
         x="1"
@@ -253,18 +255,63 @@ function CrownTower({
   y,
   king,
   enemy,
+  destroyed,
 }: {
   x: number
   y: number
   king: boolean
   enemy: boolean
+  destroyed: boolean
 }) {
   const s = king ? 0.78 : 0.52
   const banner = enemy ? '#e53935' : '#1e88e5'
   const bannerDark = enemy ? '#8e1a1a' : '#0d47a1'
 
   return (
-    <g transform={`translate(${x} ${y}) scale(${s})`} filter="url(#towerShade)">
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      {/* Low rubble remains part of the ground, so troops visibly walk over it. */}
+      <motion.g
+        initial={false}
+        animate={{ opacity: destroyed ? 1 : 0, scale: destroyed ? 1 : 0.65 }}
+        transition={{ duration: 0.35, delay: destroyed ? 0.28 : 0 }}
+        style={{ transformOrigin: '0px 34px' }}
+      >
+        <ellipse cx="0" cy="39" rx="38" ry="10" fill="#16151488" />
+        {[
+          [-27, 31, -13],
+          [-17, 36, 9],
+          [-6, 30, -5],
+          [8, 35, 14],
+          [20, 29, -10],
+          [29, 37, 7],
+        ].map(([rx, ry, rotate], i) => (
+          <rect
+            key={i}
+            x={rx - 7}
+            y={ry - 4}
+            width="14"
+            height="8"
+            rx="2"
+            fill={i % 2 ? '#777166' : '#9a9386'}
+            stroke="#4a463f"
+            strokeWidth="1"
+            transform={`rotate(${rotate} ${rx} ${ry})`}
+          />
+        ))}
+        <path d="M-31 38 Q-14 28 0 36 T31 37" fill="none" stroke="#b1a99a" strokeWidth="3" opacity="0.45" />
+      </motion.g>
+
+      <motion.g
+        filter="url(#towerShade)"
+        initial={false}
+        animate={
+          destroyed
+            ? { opacity: 0, y: 29, scaleY: 0.08, rotate: enemy ? -7 : 7 }
+            : { opacity: 1, y: 0, scaleY: 1, rotate: 0 }
+        }
+        transition={{ duration: 0.58, ease: [0.4, 0, 0.2, 1] }}
+        style={{ transformOrigin: '0px 40px' }}
+      >
       <ellipse cx="0" cy="40" rx="34" ry="10" fill="#00000055" />
       <ellipse cx="0" cy="32" rx="32" ry="11" fill="#1a1a1e" stroke="#0a0a0c" strokeWidth="1.2" />
       <path d="M-30 30 L-24 8 L24 8 L30 30 Z" fill="url(#baseDark)" stroke="#0a0a0c" strokeWidth="1.2" />
@@ -334,6 +381,7 @@ function CrownTower({
           </g>
         </g>
       )}
+      </motion.g>
     </g>
   )
 }

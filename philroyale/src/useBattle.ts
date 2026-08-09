@@ -214,6 +214,85 @@ function nudgeTowardBridgeIfStuck(
   }
 }
 
+const PATH_PROBE_MS = 550
+const PATH_PROGRESS_EPSILON = 0.18
+const DETOUR_MS = 6000
+
+/**
+ * Detect sustained lack of progress, including side-to-side motion, and hold one
+ * recovery waypoint long enough to clear the blocker instead of changing sides.
+ */
+function steerUnitWithRecovery(
+  u: BattleUnit,
+  targetKey: string,
+  targetCol: number,
+  targetRow: number,
+  now: number,
+  liveTowers: ReadonlySet<string>,
+): { dCol: number; dRow: number } {
+  const currentDistance = pathCostTo(u.col + 0.5, u.row + 0.5, targetCol, targetRow)
+  if (u.pathTargetKey !== targetKey) {
+    u.pathTargetKey = targetKey
+    u.pathProbeAt = now
+    u.pathProbeDistance = currentDistance
+    u.detourUntil = 0
+  } else if (now - u.pathProbeAt >= PATH_PROBE_MS) {
+    const progress = u.pathProbeDistance - currentDistance
+    if (progress < PATH_PROGRESS_EPSILON && now >= u.detourUntil) {
+      let nearest: (typeof TOWERS)[number] | null = null
+      let nearestDistance = Infinity
+      for (const tower of TOWERS) {
+        if (!liveTowers.has(tower.id)) continue
+        const distance = distToTowerEdge(u.col + 0.5, u.row + 0.5, tower)
+        if (distance < nearestDistance) {
+          nearest = tower
+          nearestDistance = distance
+        }
+      }
+
+      const forward = Math.sign(targetRow - (u.row + 0.5)) || (u.side === 'ally' ? -1 : 1)
+      let side = u.detourSide === 1 ? -1 : 1
+      if (nearest && nearestDistance <= 5) {
+        const leftCol = nearest.col - 1.8
+        const rightCol = nearest.col + nearest.w + 1.8
+        const clearRow =
+          forward < 0 ? nearest.row - 1.8 : nearest.row + nearest.h + 1.8
+        const leftCost =
+          Math.hypot(leftCol - (u.col + 0.5), clearRow - (u.row + 0.5)) +
+          Math.hypot(targetCol - leftCol, targetRow - clearRow)
+        const rightCost =
+          Math.hypot(rightCol - (u.col + 0.5), clearRow - (u.row + 0.5)) +
+          Math.hypot(targetCol - rightCol, targetRow - clearRow)
+        side = leftCost === rightCost ? side : leftCost < rightCost ? -1 : 1
+        u.detourCol = side < 0 ? leftCol : rightCol
+        u.detourRow = clearRow
+      } else {
+        u.detourCol = u.col + 0.5 + side * 4
+        u.detourRow = u.row + 0.5 + forward * 4
+      }
+      u.detourCol = Math.max(0, Math.min(ARENA_COLS - 1, u.detourCol))
+      u.detourRow = Math.max(0, Math.min(ARENA_ROWS - 1, u.detourRow))
+      u.detourSide = side
+      u.detourUntil = now + DETOUR_MS
+    }
+    u.pathProbeAt = now
+    u.pathProbeDistance = currentDistance
+  }
+
+  if (now < u.detourUntil) {
+    const dx = u.detourCol - (u.col + 0.5)
+    const dy = u.detourRow - (u.row + 0.5)
+    if (Math.hypot(dx, dy) > 0.7) {
+      const len = Math.hypot(dx, dy) || 1
+      return { dCol: dx / len, dRow: dy / len }
+    }
+    u.detourUntil = 0
+    u.pathProbeAt = now
+    u.pathProbeDistance = currentDistance
+  }
+  return steerTowardGoal(u.col, u.row, targetCol, targetRow, liveTowers)
+}
+
 function makeBattleUnit(
   char: CharacterDef,
   col: number,
@@ -245,6 +324,13 @@ function makeBattleUnit(
     spawnedAt: t,
     enraged: false,
     movingUntil: 0,
+    pathProbeAt: t,
+    pathProbeDistance: Infinity,
+    pathTargetKey: '',
+    detourUntil: 0,
+    detourCol: clampedCol + 0.5,
+    detourRow: clampedRow + 0.5,
+    detourSide: 0,
   }
 }
 
@@ -752,7 +838,14 @@ export function useBattle(opts?: {
             const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
             const goalRow = dir < 0 ? 0 : ARENA_ROWS - 1
-            const steer = steerTowardGoal(u.col, u.row, u.col, goalRow, liveIds)
+            const steer = steerUnitWithRecovery(
+              u,
+              `advance:${u.side}`,
+              u.col + 0.5,
+              goalRow,
+              t,
+              liveIds,
+            )
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
             const prevCol = u.col
@@ -791,7 +884,14 @@ export function useBattle(opts?: {
           }
           if (!rooted) {
             const step = moveSpeed * dt
-            const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds)
+            const steer = steerUnitWithRecovery(
+              u,
+              `${best.kind}:${best.id}`,
+              best.col,
+              best.row,
+              t,
+              liveIds,
+            )
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
             const prevCol = u.col
