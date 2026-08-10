@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-10T00:04:15Z",
+  "syncedAt": "2026-08-10T05:13:00Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -1214,11 +1214,11 @@
       "brand": "Columbia",
       "source": "square",
       "category": "",
+      "condition": "New",
+      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yFlLaI1L",
       "checkoutUrlDiscounted": "https://square.link/u/OiVF0WCs",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "conditionId": "1000"
     },
     {
@@ -2114,5 +2114,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-09T23:08:04Z"
+  "ebayDetailsSyncedAt": "2026-08-10T05:13:00Z"
 }
