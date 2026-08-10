@@ -332,23 +332,22 @@ function kingThrowPoint(side: Side): { col: number; row: number } {
   return { col: king.col + king.w / 2, row: king.row + king.h / 2 }
 }
 
-function castSpellProjectile(
+function makeSpellProjectile(
   char: CharacterDef,
   side: Side,
   col: number,
   row: number,
   t: number,
   level: number,
-  into: Projectile[],
-): boolean {
-  if (!isSpellCard(char)) return false
+): Projectile | null {
+  if (!isSpellCard(char)) return null
   const damage = scaledStat(char.spellDamage ?? 0, level)
   const radius = char.spellRadius ?? 0
-  if (damage <= 0 || radius <= 0) return false
+  if (damage <= 0 || radius <= 0) return null
   const from = kingThrowPoint(side)
   const travel = char.spellTravelMs ?? ICE_CREAM_PROJECTILE_MS
   const kind = char.id === 'footballHuck' ? 'football' : 'iceCream'
-  into.push({
+  return {
     id: nid('spell'),
     kind,
     fromCol: from.col,
@@ -362,8 +361,54 @@ function castSpellProjectile(
     arriveAt: t + travel,
     ownerSide: side,
     splashRadius: radius,
-  })
+  }
+}
+
+function castSpellProjectile(
+  char: CharacterDef,
+  side: Side,
+  col: number,
+  row: number,
+  t: number,
+  level: number,
+  into: Projectile[],
+): boolean {
+  const projectile = makeSpellProjectile(char, side, col, row, t, level)
+  if (!projectile) return false
+  into.push(projectile)
   return true
+}
+
+function pickAiSpellTarget(
+  units: BattleUnit[],
+  towers: TowerHp[],
+  side: Side,
+): { col: number; row: number } | null {
+  const targetSide: Side = side === 'enemy' ? 'ally' : 'enemy'
+  const foes = units.filter((u) => u.side === targetSide && u.hp > 0)
+  if (foes.length > 0) {
+    const avg = foes.reduce(
+      (acc, u) => ({ col: acc.col + u.col, row: acc.row + u.row }),
+      { col: 0, row: 0 },
+    )
+    return {
+      col: Math.max(0, Math.min(ARENA_COLS - 1, avg.col / foes.length)),
+      row: Math.max(0, Math.min(ARENA_ROWS - 1, avg.row / foes.length)),
+    }
+  }
+
+  const tower = towers.find((tw) => tw.side === targetSide && tw.hp > 0)
+  if (tower) {
+    const slot = towerSlot(tower.id)
+    if (slot) {
+      return { col: slot.col + slot.w / 2, row: slot.row + slot.h / 2 }
+    }
+  }
+
+  return {
+    col: ARENA_COLS / 2,
+    row: side === 'enemy' ? 10 : ARENA_ROWS - 10,
+  }
 }
 
 function canSpawnAt(
@@ -407,7 +452,7 @@ function tryEnemyAiDeploy(
   botLevel: number,
   mode: GameMode = 'classic',
   deckIds: string[] = DEFAULT_DECK,
-): { unit: BattleUnit | null; elixir: number; deckIndex: number } {
+): { unit: BattleUnit | null; elixir: number; deckIndex: number; projectile?: Projectile | null } {
   const lane = pickAiLane(units)
   const colBase = lane === 'left' ? 20 : 72
   const colSpan = 9
@@ -420,8 +465,19 @@ function tryEnemyAiDeploy(
     deckIndex = (deckIndex + 1) % deck.length
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
-    // AI places troops/buildings in its half; spells are cast in the loop below.
-    if (isSpellCard(char)) continue
+
+    if (isSpellCard(char)) {
+      const target = pickAiSpellTarget(units, towers, 'enemy')
+      if (!target) continue
+      const projectile = makeSpellProjectile(char, 'enemy', target.col, target.row, t, botLevel)
+      if (!projectile) continue
+      return {
+        unit: null,
+        projectile,
+        elixir: enemyElixir - char.elixir,
+        deckIndex,
+      }
+    }
 
     for (let tileTry = 0; tileTry < 6; tileTry++) {
       const col = colBase + Math.floor(Math.random() * colSpan)
@@ -1239,6 +1295,12 @@ export function useBattle(opts?: {
           enemyDeckRef.current,
         )
         aiDeckIndexRef.current = ai.deckIndex
+        if (ai.projectile) {
+          nextProjectiles.push(ai.projectile)
+          projectilesChanged = true
+          nextEnemyElixir = ai.elixir
+          enemyElixirChanged = true
+        }
         if (ai.unit) {
           const hut = ai.unit
           nextUnits.push(hut)

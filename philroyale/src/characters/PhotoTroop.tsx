@@ -13,6 +13,7 @@ type Props = {
   facing: number
   portrait?: boolean
   objectPos?: string
+  portraitFilter?: string
   enraged?: boolean
   gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff'
   attack?:
@@ -51,6 +52,7 @@ export function PhotoTroop({
   anim,
   facing,
   portrait,
+  portraitFilter,
   objectPos: _objectPos = '50% 20%',
   enraged,
   gait = 'run',
@@ -104,8 +106,11 @@ export function PhotoTroop({
         <img
           src={cardSrc || troopSrc}
           alt={alt}
-          className="h-full w-full object-contain px-[2%] pb-[18%] pt-[2%]"
-          style={{ objectPosition: '50% 100%' }}
+          className="h-full w-full object-cover"
+          style={{
+            objectPosition: _objectPos,
+            filter: portraitFilter ?? 'brightness(1.05) saturate(1.08)',
+          }}
           draggable={false}
         />
       </div>

@@ -149,7 +149,7 @@ function FlyingShot({
                       : kind === 'football'
                         ? 14
                         : 4)
-  const style = unitStyle(col - 0.5, row - 0.5 - arc)
+  const style = unitStyle(col, row - arc)
   const travelAngle =
     (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
 
@@ -572,7 +572,7 @@ export function BattleScreen({
               key={s.id}
               className="absolute -translate-x-1/2 -translate-y-1/2"
               style={{
-                ...unitStyle(s.col - 0.5, s.row - 0.5),
+                ...unitStyle(s.col, s.row),
                 zIndex: 25 + Math.round(s.row),
                 transform: `translate(-50%, -50%) rotateX(${-ARENA_TILT_DEG}deg)`,
               }}

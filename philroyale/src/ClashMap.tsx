@@ -153,10 +153,26 @@ export function ClashMap({ destroyedIds }: Props) {
           <circle cx="4" cy="11" r="0.7" fill="#c9a227" opacity="0.12" />
           <circle cx="13" cy="9" r="0.55" fill="#fff8e0" opacity="0.1" />
         </pattern>
-        <pattern id="turfPatches" width="48" height="40" patternUnits="userSpaceOnUse">
-          <ellipse cx="12" cy="18" rx="10" ry="6" fill="#2e7d32" opacity="0.12" />
-          <ellipse cx="34" cy="10" rx="9" ry="5" fill="#1b5e20" opacity="0.1" />
-          <ellipse cx="28" cy="30" rx="11" ry="5" fill="#66bb6a" opacity="0.08" />
+        <pattern id="grassSpeckle" width="12" height="12" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="3" r="0.6" fill="#4c8a36" opacity="0.18" />
+          <circle cx="8" cy="9" r="0.4" fill="#8ad16d" opacity="0.15" />
+          <circle cx="10" cy="4" r="0.5" fill="#34702d" opacity="0.14" />
+        </pattern>
+        <pattern id="grassStreaks" width="32" height="32" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">
+          <path d="M0 12 L32 8" stroke="#ffffff" strokeWidth="0.55" opacity="0.06" />
+          <path d="M0 22 L32 18" stroke="#ffffff" strokeWidth="0.3" opacity="0.04" />
+        </pattern>
+        <pattern id="grassPebbles" width="24" height="24" patternUnits="userSpaceOnUse">
+          <circle cx="4" cy="5" r="0.8" fill="#2a4f23" opacity="0.08" />
+          <circle cx="15" cy="14" r="0.7" fill="#415c2f" opacity="0.07" />
+          <circle cx="20" cy="6" r="0.5" fill="#2a2010" opacity="0.1" />
+        </pattern>
+        <pattern id="clodScatter" width="56" height="48" patternUnits="userSpaceOnUse">
+          <ellipse cx="10" cy="14" rx="5" ry="2.4" fill="#5a3a18" opacity="0.07" />
+          <ellipse cx="38" cy="28" rx="6" ry="2.8" fill="#1b5e20" opacity="0.09" />
+          <ellipse cx="24" cy="40" rx="4" ry="1.8" fill="#8a6a30" opacity="0.06" />
+          <circle cx="44" cy="10" r="1.1" fill="#c9a227" opacity="0.1" />
+          <circle cx="16" cy="32" r="0.8" fill="#fff8e0" opacity="0.08" />
         </pattern>
         <pattern id="clodScatter" width="56" height="48" patternUnits="userSpaceOnUse">
           <ellipse cx="10" cy="14" rx="5" ry="2.4" fill="#5a3a18" opacity="0.07" />
@@ -229,9 +245,13 @@ export function ClashMap({ destroyedIds }: Props) {
       <rect width="360" height="640" filter="url(#grassBump)" opacity="0.85" />
       <rect width="360" height="640" filter="url(#grassNoise)" opacity="0.5" />
       <rect width="360" height="640" fill="url(#turfPatches)" />
+      <rect width="360" height="640" fill="url(#grassSpeckle)" opacity="0.5" />
+      <rect width="360" height="640" fill="url(#grassStreaks)" opacity="0.26" />
+      <rect width="360" height="640" fill="url(#grassPebbles)" opacity="0.3" />
       <rect width="360" height="640" fill="url(#clodScatter)" />
       <rect width="360" height="640" fill="url(#grassBlades)" />
       {/* Soft terrain mounds — decorative volume only */}
+      <rect width="360" height="640" fill="url(#grassStreaks)" opacity="0.14" />
       <ellipse cx="70" cy="180" rx="58" ry="28" fill="#1b5e20" opacity="0.1" />
       <ellipse cx="290" cy="210" rx="64" ry="30" fill="#2e7d32" opacity="0.09" />
       <ellipse cx="100" cy="470" rx="70" ry="34" fill="#66bb6a" opacity="0.08" />

@@ -10,13 +10,13 @@ type Props = {
   portrait?: boolean
 }
 
-/** Football Huck spell — Clash-style 3D football card art. */
+/** Huck spell — Clash-style 3D football card art. */
 export function FootballModel({ anim, facing, portrait }: Props) {
   return (
     <PhotoTroop
       cardSrc={CARD}
       troopSrc={TROOP}
-      alt="Football Huck"
+      alt="Huck"
       anim={anim}
       facing={facing}
       portrait={portrait}

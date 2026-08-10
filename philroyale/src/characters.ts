@@ -437,7 +437,7 @@ export const ICE_CREAM: CharacterDef = {
 /** Slow football lob — huge splash, long hang time. */
 export const FOOTBALL_HUCK: CharacterDef = {
   id: 'footballHuck',
-  name: 'Football Huck',
+  name: 'Huck',
   initial: 'Fb',
   pronoun: 'it',
   height: "1'0\"",
