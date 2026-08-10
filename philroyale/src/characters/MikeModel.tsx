@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Mike — stiff gait, curls while moving, overhead Dumbbell Huck. */
+/** Michael — stiff gait, curls while moving, overhead Dumbbell Huck. */
 export function MikeModel({ anim, facing, attackId, portrait }: Props) {
   const throwing = anim === 'attack' && attackId === 'dumbbellHuck'
   return (
@@ -21,7 +21,7 @@ export function MikeModel({ anim, facing, attackId, portrait }: Props) {
       cardSrc={MIKE_CARD}
       troopSrc={MIKE_TROOP}
       troopBackSrc={MIKE_BACK}
-      alt="Mike"
+      alt="Michael"
       anim={anim}
       facing={facing}
       portrait={portrait}

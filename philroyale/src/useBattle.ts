@@ -53,7 +53,7 @@ const PROJECTILE_MS = 480
 const SLOBBER_PROJECTILE_MS = 1100
 /** Jeremy dual-pistol rounds — very fast. */
 const SHOOT_PROJECTILE_MS = 140
-/** Mike overhead dumbbell lob — long hang time. */
+/** Michael overhead dumbbell lob — long hang time. */
 const DUMBBELL_PROJECTILE_MS = 920
 /** Default spell lob when a card omits spellTravelMs. */
 const ICE_CREAM_PROJECTILE_MS = 2000

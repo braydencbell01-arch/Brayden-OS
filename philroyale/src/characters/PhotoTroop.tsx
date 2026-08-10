@@ -28,7 +28,7 @@ type Props = {
     | 'headbutt'
     | 'love'
     | 'none'
-  /** Persistent hand prop (Mike curls a dumbbell until he throws it). */
+  /** Persistent hand prop (Michael curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
   /**
    * When true, keep the full troop sprite legs (no SVG runner overlays).
@@ -822,7 +822,7 @@ function HexDumbbell({ x, y }: { x: number; y: number }) {
   )
 }
 
-/** Continuous curls while Mike walks / idles — new bell after each huck. */
+  /** Continuous curls while Michael walks / idles — new bell after each huck. */
 function DumbbellCurlOverlay({ walking }: { walking: boolean }) {
   return (
     <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
