@@ -519,6 +519,7 @@ export function BattleScreen({
         <Arena
           ref={arenaRef}
           towers={towers}
+          mode={mode}
           onArenaPointerDown={ended || isSpectating ? undefined : onArenaPointer}
           showBlockedOverlay={showTroopBlock}
           spellDeployOverlay={showSpellZone}

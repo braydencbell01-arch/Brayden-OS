@@ -128,14 +128,9 @@ export default function App() {
       setOpponent(name ?? botNameForTrophies(trophies))
       setBattleMode(mode)
 
-      // If this is a friend/shared match the caller provides `net`.
-      // For solo bot matches (no `net` and no name passed) run the local sim with no network
-      // so the AI branch in useBattle can run. For non-solo (UI-driven) matches we host so
-      // friends can spectate.
-      const room: BattleNet | null = net ?? (name == null ? null : ({
-        challengeId: `s-${loadPlayerId().slice(0, 8)}-${Date.now().toString(36)}`,
-        role: 'host',
-      } as BattleNet))
+      // Only use a BattleNet when the caller explicitly provides one (friend/shared match).
+      // CPU / solo matches always run with net=null so the AI branch in useBattle fires.
+      const room: BattleNet | null = net ?? null
 
       setBattleNet(room)
       setSpectating(false)
