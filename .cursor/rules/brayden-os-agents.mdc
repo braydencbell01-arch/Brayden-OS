@@ -72,6 +72,10 @@ Keep usage as low as practical:
 - Skip screenshots/artifacts unless required to verify a UI change.
 - For chat/advice tasks, answer directly with zero or one lookup.
 
+## Phil Royale targeting
+
+Every attacking card (troop / building / tower) **locks on** until the target dies or leaves range. Do not add free retargeting. See `philroyale-targeting.mdc`.
+
 ## Jersey Deals promo copy
 
 For Facebook/social captions given to the user, landing link = **https://JerseyDeals.online** (not GitHub Pages). Listing line: **“new with tags and authentic”** — never “tags still on.”

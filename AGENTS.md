@@ -133,6 +133,7 @@ Non-obvious caveats:
 - Run the apps on different ports (e.g. `npm run dev -- --port 5173` at root, `--port 5174` in `jerseydeals/`, `--port 5175` in `platequest/`, `--port 5176` in `philroyale/`) since they default to 5173.
 - PlateQuest deploys with GitHub Pages under `/platequest/` (and optionally Cloudflare Pages). Never into BrayStats root or Jersey Deals.
 - Phil Royale deploys with GitHub Pages under `/philroyale/`. Never into BrayStats root, Jersey Deals, or PlateQuest.
+- **Phil Royale targeting:** every attacking card locks the acquired target until it dies or leaves range (no mid-fight retarget). See `.cursor/rules/philroyale-targeting.mdc`.
 - BrayStats fetches live data client-side from public ESPN/FotMob APIs (no keys/secrets). Data panels need outbound internet; the shell still renders offline but stays empty.
 - No automated test suite exists; `npm run lint` (oxlint) is the only check. `npm run build` runs `tsc -b` first, so it also type-checks.
 
