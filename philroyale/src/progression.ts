@@ -133,7 +133,31 @@ export function nextRoadStep(trophies: number): TrophyRoadReward | null {
 }
 
 export function botLevelForTrophies(trophies: number): number {
-  return Math.max(1, Math.min(MAX_CARD_LEVEL, 1 + Math.floor(trophies / 450)))
+  // Scales across the trophy road (~0 → Phil Peak 4000+).
+  return Math.max(1, Math.min(MAX_CARD_LEVEL, 1 + Math.floor(trophies / 400)))
+}
+
+/** AI cadence / elixir pressure — harder the further you are on trophy road. */
+export function botAiProfile(trophies: number): {
+  level: number
+  /** Min ms between deploy attempts */
+  deployMinMs: number
+  /** Max ms between deploy attempts */
+  deployMaxMs: number
+  /** Enemy elixir regen multiplier vs the player */
+  elixirMult: number
+  /** Starting enemy elixir */
+  startElixir: number
+} {
+  const t = Math.max(0, trophies)
+  const level = botLevelForTrophies(t)
+  // 0 trophies → ~2.4–3.8s; 4000+ → ~0.7–1.3s
+  const deployMinMs = Math.max(700, Math.round(2400 - t * 0.42))
+  const deployMaxMs = Math.max(deployMinMs + 400, Math.round(3800 - t * 0.6))
+  // Mild elixir edge at high trophies (1.0 → ~1.35)
+  const elixirMult = Math.min(1.35, 1 + t / 12000)
+  const startElixir = Math.min(7, 4 + Math.floor(t / 1200))
+  return { level, deployMinMs, deployMaxMs, elixirMult, startElixir }
 }
 
 export function botNameForTrophies(trophies: number): string {

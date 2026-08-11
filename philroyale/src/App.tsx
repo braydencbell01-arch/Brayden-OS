@@ -55,7 +55,6 @@ import {
   parseBattleChallengeFromUrl,
   parseFriendInviteFromUrl,
   postBattleMessage,
-  removeFriendByPlayerId,
   repairBrokenLocalClub,
   saveBattleAccepted,
   saveIncomingChallenge,
@@ -63,6 +62,7 @@ import {
   savePendingFriendLink,
   savePlayerName,
   shareText,
+  battleInviteUrl,
   upsertFriend,
   type BattleChallenge,
   type BattleChannelMessage,
@@ -306,10 +306,24 @@ export default function App() {
         flashFriend('Invite failed — check your connection.')
         return
       }
+      const link = battleInviteUrl(
+        challenge.fromName,
+        friendName,
+        challenge.challengeId,
+        mode,
+        loadPlayerId(),
+        toPlayerId,
+      )
+      // Also offer a shareable battle link (SMS / share sheet) so friending works off-directory.
+      void shareText(
+        'Phil Royale battle',
+        `${challenge.fromName} challenges you to ${mode === 'touchdown' ? 'Touchdown' : 'a battle'} on Phil Royale! Open this link while the app is open:`,
+        link,
+      )
       flashFriend(
         looksOnline
           ? `Invite sent to ${friendName}. Waiting for Accept / Decline…`
-          : `Invite sent to ${friendName}. They need Phil Royale open to see Accept / Decline.`,
+          : `Invite sent + share link ready. They need Phil Royale open (or open your link) to Accept.`,
       )
     }, [flashFriend, friendPresence],
   )
@@ -329,15 +343,15 @@ export default function App() {
           message:
             alnum.length === 6
               ? 'That looks like a club code — use Club → Join instead.'
-              : 'Friend codes are exactly 3 digits (example 247). Hard-refresh both phones first.',
+              : 'Friend codes are exactly 3 digits (example 247).',
         }
       }
       if (code === myId) return { ok: false, message: "That's your own code." }
 
-      upsertFriend({ name: 'Adding…', playerId: code })
+      // Always save by code — do not require them to be online.
+      upsertFriend({ name: `Player ${code}`, playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
 
-      // Announce ourselves + scan the live directory for their 3-digit code.
       void publishDirectory(myId, me)
       await pollDirectory()
       let foundName = lookupDirectory(code)
@@ -348,7 +362,7 @@ export default function App() {
             msg.type === 'friend_hello' ||
             msg.type === 'friend_request') &&
           msg.fromPlayerId === code,
-        20_000,
+        8_000,
       )
 
       const published = await publishSocial(code, {
@@ -365,45 +379,35 @@ export default function App() {
         at: new Date().toISOString(),
       })
 
-      const checkExistingFriendName = () => {
-        const existing = loadFriends().find((f) => f.playerId === code)
-        return existing && existing.name !== 'Adding…' ? existing.name : null
-      }
-
       if (!foundName) {
         const reply = await replyPromise
         if (reply && 'fromName' in reply && reply.fromName) {
           foundName = reply.fromName
         }
       }
-
       if (!foundName) {
         await pollDirectory()
-        foundName = lookupDirectory(code) || checkExistingFriendName()
+        foundName = lookupDirectory(code)
       }
 
-      if (!foundName) {
-        if (!published) {
-          removeFriendByPlayerId(code)
-          window.dispatchEvent(new Event('philroyale-friends-changed'))
-          return { ok: false, message: 'Could not reach the network. Try again.' }
-        }
-        removeFriendByPlayerId(code)
-        window.dispatchEvent(new Event('philroyale-friends-changed'))
-        return {
-          ok: false,
-          message:
-            'Nobody online with that 3-digit code. Both of you: hard-refresh Phil Royale, open Social → Friends, copy the new 3-digit code, and try again while both apps stay open.',
-        }
-      }
-
-      upsertFriend({ name: foundName, playerId: code })
+      const display = foundName || `Player ${code}`
+      upsertFriend({ name: display, playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
+
+      if (!published) {
+        return {
+          ok: true,
+          message: `Saved ${display}. Network was flaky — keep both apps open so names and invites sync.`,
+        }
+      }
       return {
         ok: true,
-        message: `Added ${foundName}. Open their profile → Invite — they get Accept / Decline.`,
+        message: foundName
+          ? `Added ${foundName}. Open their profile → Invite to battle (they need Phil Royale open).`
+          : `Added Player ${code}. Their name updates when they open Phil Royale. You can also Text them your invite link.`,
       }
-    }, [],
+    },
+    [],
   )
 
   const inviteToClub = useCallback(async (friendName: string, playerId?: string) => {
@@ -893,9 +897,31 @@ export default function App() {
               {outgoingChallenge.mode === 'touchdown' ? 'Touchdown' : 'Classic'}…
             </p>
             <p className="mt-1 text-xs font-semibold text-white/50">
-              No link — they must have Phil Royale open. They&apos;ll see Accept / Decline on any
-              screen.
+              They need Phil Royale open for Accept / Decline. You can also text them the battle
+              link from the share sheet.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                const c = outgoingChallenge
+                const link = battleInviteUrl(
+                  c.fromName,
+                  c.toName,
+                  c.challengeId,
+                  c.mode,
+                  c.fromPlayerId,
+                  c.toPlayerId,
+                )
+                void shareText(
+                  'Phil Royale battle',
+                  `Battle me on Phil Royale (${c.mode === 'touchdown' ? 'Touchdown' : 'Normal'})!`,
+                  link,
+                )
+              }}
+              className="mt-3 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#4a9eff] ring-1 ring-white/15"
+            >
+              Text / share battle link
+            </button>
             <button
               type="button"
               onClick={cancelOutgoingChallenge}
@@ -1086,7 +1112,7 @@ export default function App() {
             {tab === 'characters' ? <CharactersScreen /> : null}
             {tab === 'shop' ? <ShopScreen /> : null}
             {tab === 'events' ? (
-              <EventsScreen onPlay={(name) => startMatch(name, 'classic')} />
+                <EventsScreen onPlay={(name, mode) => startMatch(name, mode ?? 'classic')} />
             ) : null}
             {tab === 'friends' ? (
               <FriendsScreen

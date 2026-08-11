@@ -525,7 +525,7 @@ export function HomeScreen({
                 {formatAccountCode(myCode)}
               </span>
               {' · '}
-              invite only works when they&apos;re online (no link).
+              they need Phil Royale open to Accept (share sheet also sends a battle link).
             </p>
             {friends.length === 0 ? (
               <p className="text-center text-sm font-semibold text-white/60">

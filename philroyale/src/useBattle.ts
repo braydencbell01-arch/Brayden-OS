@@ -32,7 +32,7 @@ import {
   type CharacterDef,
 } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
-import { cardLevelMult, scaledStat } from './progression'
+import { botAiProfile, cardLevelMult, scaledStat } from './progression'
 import {
   type BattleNet,
   type BattleRoomMessage,
@@ -99,9 +99,27 @@ const KING_WAKE_RANGE = 7.5
 const KING_WAKE_DELAY_MS = 3000
 /** Soft collision radius (tiles) for CR-style unit push / bunching. */
 const UNIT_RADIUS = 0.85
-const AI_DEPLOY_MIN_MS = 2200
-const AI_DEPLOY_MAX_MS = 3500
 const FACING_TURN_HARD_RAD = 0.4
+
+/** Guaranteed-valid enemy spawn tiles (classic half / touchdown third). */
+const AI_SAFE_SPAWNS_CLASSIC: { col: number; row: number }[] = [
+  { col: 24, row: 42 },
+  { col: 76, row: 42 },
+  { col: 50, row: 48 },
+  { col: 30, row: 55 },
+  { col: 70, row: 55 },
+  { col: 40, row: 38 },
+  { col: 60, row: 38 },
+]
+const AI_SAFE_SPAWNS_TOUCHDOWN: { col: number; row: number }[] = [
+  { col: 25, row: 20 },
+  { col: 75, row: 20 },
+  { col: 50, row: 28 },
+  { col: 35, row: 35 },
+  { col: 65, row: 35 },
+  { col: 20, row: 40 },
+  { col: 80, row: 40 },
+]
 
 export type TowerHp = {
   id: string
@@ -454,15 +472,30 @@ function tryEnemyAiDeploy(
   deckIds: string[] = DEFAULT_DECK,
 ): { unit: BattleUnit | null; elixir: number; deckIndex: number; projectile?: Projectile | null } {
   const lane = pickAiLane(units)
-  const colBase = lane === 'left' ? 20 : 72
-  const colSpan = 9
-  const rowBase = mode === 'touchdown' ? 6 : 8
-  const rowSpan = mode === 'touchdown' ? 36 : 21
+  const colBase = lane === 'left' ? 18 : 70
+  const colSpan = 14
+  const rowBase = mode === 'touchdown' ? 8 : 28
+  const rowSpan = mode === 'touchdown' ? 38 : 40
   const deck = deckIds.length ? deckIds : DEFAULT_DECK
+  const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
 
-  for (let attempt = 0; attempt < deck.length * 3; attempt++) {
-    const charId = deck[deckIndex % deck.length]!
-    deckIndex = (deckIndex + 1) % deck.length
+  // Prefer affordable cards first so the bot actually plays instead of cycling past them.
+  const affordable = deck
+    .map((id, i) => ({ id, i }))
+    .filter(({ id }) => {
+      const c = getCharacter(id)
+      return c && enemyElixir >= c.elixir
+    })
+  const tryOrder =
+    affordable.length > 0
+      ? [
+          ...affordable.map((a) => a.id),
+          ...deck.filter((id) => !affordable.some((a) => a.id === id)),
+        ]
+      : deck
+
+  for (let attempt = 0; attempt < tryOrder.length; attempt++) {
+    const charId = tryOrder[(deckIndex + attempt) % tryOrder.length]!
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
 
@@ -475,18 +508,28 @@ function tryEnemyAiDeploy(
         unit: null,
         projectile,
         elixir: enemyElixir - char.elixir,
-        deckIndex,
+        deckIndex: (deckIndex + attempt + 1) % deck.length,
       }
     }
 
-    for (let tileTry = 0; tileTry < 6; tileTry++) {
+    for (let tileTry = 0; tileTry < 10; tileTry++) {
       const col = colBase + Math.floor(Math.random() * colSpan)
       const row = rowBase + Math.floor(Math.random() * rowSpan)
       if (!canSpawnAt(col, row, 'enemy', towers, live, mode)) continue
       return {
         unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex,
+        deckIndex: (deckIndex + attempt + 1) % deck.length,
+      }
+    }
+
+    // Fallback: known-good tiles so the bot never soft-locks.
+    for (const spot of safeSpawns) {
+      if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
+      return {
+        unit: makeBattleUnit(char, spot.col, spot.row, 'enemy', t, botLevel),
+        elixir: enemyElixir - char.elixir,
+        deckIndex: (deckIndex + attempt + 1) % deck.length,
       }
     }
   }
@@ -500,8 +543,12 @@ function stepUnit(
   dCol: number,
   dRow: number,
   liveTowers: ReadonlySet<string>,
+  openField = false,
 ): { col: number; row: number } {
-  const walk = (c: number, r: number) => isWalkableTile(c, r, liveTowers, u.side)
+  const walk = (c: number, r: number) =>
+    openField
+      ? c >= 0 && c < ARENA_COLS && r >= 0 && r < ARENA_ROWS
+      : isWalkableTile(c, r, liveTowers, u.side)
   let nc = Math.max(0, Math.min(ARENA_COLS - 1, u.col + dCol))
   let nr = Math.max(0, Math.min(ARENA_ROWS - 1, u.row + dRow))
 
@@ -519,7 +566,12 @@ function stepUnit(
 
   const midC = Math.floor(nc)
   const midR = Math.floor(nr)
-  if (isRiverTile(midR, midC) || isRiverTile(Math.floor(u.row), midC) || isRiverTile(midR, Math.floor(u.col))) {
+  if (
+    !openField &&
+    (isRiverTile(midR, midC) ||
+      isRiverTile(Math.floor(u.row), midC) ||
+      isRiverTile(midR, Math.floor(u.col)))
+  ) {
     const bridgeCol = nearestBridgeMidCol(u.col)
     const towardBridge = Math.sign(bridgeCol - u.col) || (dCol >= 0 ? 1 : -1)
     const sideStep = Math.max(Math.abs(dCol), Math.abs(dRow), 0.12)
@@ -678,6 +730,8 @@ export function useBattle(opts?: {
   allyLevels?: Record<string, number>
   /** Enemy bot card level (all units) */
   botLevel?: number
+  /** Player trophies — scales AI cadence / elixir on trophy road. */
+  trophies?: number
   mode?: GameMode
   /** Cards the AI may play (touchdown draft). */
   enemyDeckIds?: string[]
@@ -686,8 +740,12 @@ export function useBattle(opts?: {
 }) {
   const mode = opts?.mode ?? 'classic'
   const net = opts?.net ?? null
+  const aiProfile = botAiProfile(opts?.trophies ?? 0)
+  const botLevel = opts?.botLevel ?? aiProfile.level
   const [elixir, setElixir] = useState(5)
-  const [enemyElixir, setEnemyElixir] = useState(5)
+  const [enemyElixir, setEnemyElixir] = useState(() =>
+    net ? 5 : aiProfile.startElixir,
+  )
   const [lagging, setLagging] = useState(false)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
@@ -719,10 +777,12 @@ export function useBattle(opts?: {
   pausedRef.current = !!opts?.paused
   const allyLevelsRef = useRef(opts?.allyLevels ?? {})
   allyLevelsRef.current = opts?.allyLevels ?? {}
-  const botLevelRef = useRef(opts?.botLevel ?? 1)
-  botLevelRef.current = opts?.botLevel ?? 1
+  const botLevelRef = useRef(botLevel)
+  botLevelRef.current = botLevel
   const modeRef = useRef<GameMode>(mode)
   modeRef.current = mode
+  const aiProfileRef = useRef(aiProfile)
+  aiProfileRef.current = botAiProfile(opts?.trophies ?? 0)
   const enemyDeckRef = useRef(opts?.enemyDeckIds ?? DEFAULT_DECK)
   enemyDeckRef.current = opts?.enemyDeckIds ?? DEFAULT_DECK
   const netRef = useRef(net)
@@ -746,7 +806,7 @@ export function useBattle(opts?: {
   const elixirRef = useRef(elixir)
   const enemyElixirRef = useRef(enemyElixir)
   const aiDeckIndexRef = useRef(0)
-  const aiNextDeployRef = useRef(performance.now() + AI_DEPLOY_MIN_MS)
+  const aiNextDeployRef = useRef(performance.now() + 600)
   unitsRef.current = units
   towersRef.current = towers
   projectilesRef.current = projectiles
@@ -1046,9 +1106,10 @@ export function useBattle(opts?: {
       }
 
       setElixir((e) => Math.min(ELIXIR_MAX, e + ELIXIR_PER_SEC * dt))
+      const enemyRegen = ELIXIR_PER_SEC * (netRef.current ? 1 : aiProfileRef.current.elixirMult)
       let nextEnemyElixir = Math.min(
         ELIXIR_MAX,
-        enemyElixirRef.current + ELIXIR_PER_SEC * dt,
+        enemyElixirRef.current + enemyRegen * dt,
       )
       let enemyElixirChanged = nextEnemyElixir !== enemyElixirRef.current
 
@@ -1231,6 +1292,7 @@ export function useBattle(opts?: {
 
       const liveTowers = nextTowers.filter((tw) => tw.hp > 0)
       const liveIds = liveTowerIdSet(nextTowers)
+      const openField = modeRef.current === 'touchdown'
 
       // Apply guest deploys (friend battle) as enemy units / spells on the host.
       if (netRef.current?.role === 'host' && pendingGuestDeploysRef.current.length) {
@@ -1281,8 +1343,11 @@ export function useBattle(opts?: {
 
       // Bot AI only in solo matches — never during friend battles.
       if (!netRef.current && t >= aiNextDeployRef.current) {
+        const profile = aiProfileRef.current
         aiNextDeployRef.current =
-          t + AI_DEPLOY_MIN_MS + Math.random() * (AI_DEPLOY_MAX_MS - AI_DEPLOY_MIN_MS)
+          t +
+          profile.deployMinMs +
+          Math.random() * Math.max(200, profile.deployMaxMs - profile.deployMinMs)
         const ai = tryEnemyAiDeploy(
           nextUnits,
           nextTowers,
@@ -1522,7 +1587,7 @@ export function useBattle(opts?: {
                   id: f.id,
                   col: c.col,
                   row: c.row,
-                  d: pathCostTo(me.col, me.row, c.col, c.row),
+                  d: pathCostTo(me.col, me.row, c.col, c.row, openField),
                   rangeD: edge,
                 }
               }
@@ -1538,7 +1603,7 @@ export function useBattle(opts?: {
                 id: tw.id,
                 col: aim.col,
                 row: aim.row,
-                d: pathCostTo(me.col, me.row, aim.col, aim.row),
+                d: pathCostTo(me.col, me.row, aim.col, aim.row, openField),
                 rangeD: edge,
               }
             }
@@ -1555,7 +1620,7 @@ export function useBattle(opts?: {
             if (!slot) continue
             const edge = distUnitTileToTower(u.col, u.row, slot)
             const aim = towerFrontEngagePoint(me.col, me.row, slot)
-            const path = pathCostTo(me.col, me.row, aim.col, aim.row)
+            const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
             // Prefer towers we can already hit from the front.
             const inFront = towerInMeleeRange(u.col, u.row, slot, attackRange)
             const score = inFront ? path - 40 : path
@@ -1574,7 +1639,7 @@ export function useBattle(opts?: {
             const c = unitCenter(f)
             const edge = dist(me.col, me.row, c.col, c.row)
             if (edge > unitAggroRange) continue
-            const path = pathCostTo(me.col, me.row, c.col, c.row)
+            const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
             if (!best || path < best.d) {
               best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
             }
@@ -1594,12 +1659,12 @@ export function useBattle(opts?: {
             const step = moveSpeed * dt
             const dir = u.side === 'ally' ? -1 : 1
             const goalRow = dir < 0 ? 0 : ARENA_ROWS - 1
-            const steer = steerTowardGoal(u.col, u.row, u.col, goalRow, liveIds, u.side)
+            const steer = steerTowardGoal(u.col, u.row, u.col, goalRow, liveIds, u.side, openField)
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
             const prevCol = u.col
             const prevRow = u.row
-            const next = stepUnit(u, dCol, dRow, liveIds)
+            const next = stepUnit(u, dCol, dRow, liveIds, openField)
             const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
             u.col = ejected.col
             u.row = ejected.row
@@ -1648,12 +1713,12 @@ export function useBattle(opts?: {
               }
             }
             const step = moveSpeed * dt
-            const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds, u.side)
+            const steer = steerTowardGoal(u.col, u.row, best.col, best.row, liveIds, u.side, openField)
             const dCol = steer.dCol * step
             const dRow = steer.dRow * step
             const prevCol = u.col
             const prevRow = u.row
-            const next = stepUnit(u, dCol, dRow, liveIds)
+            const next = stepUnit(u, dCol, dRow, liveIds, openField)
             const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
             u.col = ejected.col
             u.row = ejected.row
@@ -1838,6 +1903,7 @@ export function useBattle(opts?: {
             Math.cos(ang) * lunge,
             Math.sin(ang) * lunge,
             liveIds,
+            openField,
           )
           const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
           u.col = ejected.col

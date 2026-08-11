@@ -305,39 +305,45 @@ export function steerTowardGoal(
   targetRow: number,
   liveTowerIds?: ReadonlySet<string>,
   forSide?: Side,
+  /** Touchdown: ignore river bridges / tower detours — open field. */
+  openField = false,
 ): { dCol: number; dRow: number } {
-  const bridge = bridgeSteerDir(col, row, targetCol, targetRow)
-  if (bridge) return bridge
+  if (!openField) {
+    const bridge = bridgeSteerDir(col, row, targetCol, targetRow)
+    if (bridge) return bridge
+  }
 
   let aimCol = targetCol
   let aimRow = targetRow
 
   // If the straight path clips an enemy tower, route via the cheapest front-side corner.
-  let blocker: TowerSlot | null = null
-  let blockerDist = Infinity
-  for (const t of TOWERS) {
-    if (forSide && t.side === forSide) continue
-    if (liveTowerIds && !liveTowerIds.has(t.id)) continue
-    const targetIsOnTower =
-      targetCol >= t.col &&
-      targetCol <= t.col + t.w &&
-      targetRow >= t.row &&
-      targetRow <= t.row + t.h
-    const approachesFront =
-      t.side === 'enemy' ? row + 0.5 >= t.row + t.h : row + 0.5 <= t.row
-    if (targetIsOnTower && approachesFront) continue
-    if (!segmentHitsTower(col + 0.5, row + 0.5, targetCol, targetRow, t)) continue
-    const d = distToTowerEdge(col + 0.5, row + 0.5, t)
-    if (d < blockerDist) {
-      blockerDist = d
-      blocker = t
+  if (!openField) {
+    let blocker: TowerSlot | null = null
+    let blockerDist = Infinity
+    for (const t of TOWERS) {
+      if (forSide && t.side === forSide) continue
+      if (liveTowerIds && !liveTowerIds.has(t.id)) continue
+      const targetIsOnTower =
+        targetCol >= t.col &&
+        targetCol <= t.col + t.w &&
+        targetRow >= t.row &&
+        targetRow <= t.row + t.h
+      const approachesFront =
+        t.side === 'enemy' ? row + 0.5 >= t.row + t.h : row + 0.5 <= t.row
+      if (targetIsOnTower && approachesFront) continue
+      if (!segmentHitsTower(col + 0.5, row + 0.5, targetCol, targetRow, t)) continue
+      const d = distToTowerEdge(col + 0.5, row + 0.5, t)
+      if (d < blockerDist) {
+        blockerDist = d
+        blocker = t
+      }
     }
-  }
-  if (blocker) {
-    const bridgeMid = nearestBridgeMidCol(col)
-    const wp = towerDetourPoint(col + 0.5, row + 0.5, targetCol, targetRow, blocker, bridgeMid)
-    aimCol = wp.col
-    aimRow = wp.row
+    if (blocker) {
+      const bridgeMid = nearestBridgeMidCol(col)
+      const wp = towerDetourPoint(col + 0.5, row + 0.5, targetCol, targetRow, blocker, bridgeMid)
+      aimCol = wp.col
+      aimRow = wp.row
+    }
   }
 
   const dx = aimCol - (col + 0.5)
@@ -352,8 +358,9 @@ export function pathCostTo(
   fromRow: number,
   toCol: number,
   toRow: number,
+  openField = false,
 ): number {
-  if (!needsRiverCrossing(fromRow, toRow)) {
+  if (openField || !needsRiverCrossing(fromRow, toRow)) {
     return Math.hypot(toCol - fromCol, toRow - fromRow)
   }
   let best = Infinity
@@ -456,18 +463,27 @@ export function canDeployEnemyAt(
   return false
 }
 
-/** Touchdown mode: place only in your own third of the field. */
+/**
+ * Touchdown mode: open football field (no river) — place only in your own third.
+ * Towers are dead in this mode, so footprints never block.
+ */
 export function canDeployTouchdownAt(
   col: number,
   row: number,
   side: Side,
-  liveTowerIds?: ReadonlySet<string>,
+  _liveTowerIds?: ReadonlySet<string>,
 ): boolean {
   const c = Math.floor(col)
   const r = Math.floor(row)
   if (c < 0 || c >= ARENA_COLS || r < 0 || r >= ARENA_ROWS) return false
-  if (r >= RIVER_MIN && r <= RIVER_MAX) return false
-  if (!isWalkableTile(c, r, liveTowerIds)) return false
+  // Open field — no river band in touchdown.
   if (side === 'ally') return r >= TOUCHDOWN_ALLY_MIN_ROW
   return r <= TOUCHDOWN_ENEMY_MAX_ROW
+}
+
+/** Walkable land for touchdown — full open field (ignore river + towers). */
+export function isWalkableTouchdown(col: number, row: number): boolean {
+  const c = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
+  const r = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
+  return c >= 0 && r >= 0
 }

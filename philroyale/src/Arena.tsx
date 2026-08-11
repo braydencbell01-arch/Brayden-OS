@@ -25,10 +25,26 @@ function FootballField() {
   const EZ = TOUCHDOWN_ZONE_ROWS // 12 — endzone depth in tile units
   const C = ARENA_COLS           // 100
   const R = ARENA_ROWS           // 150
-  // Yard lines every 15 rows (10 lines across the 150-row field = 10 "yards")
-  const YARD_STEP = 15
+  // Yard lines every 12.6 rows across the midfield (10-yard marks on a 126-row field)
+  const playable = R - EZ * 2
+  const YARD_STEP = playable / 10
   const yardLines: number[] = []
-  for (let row = EZ; row <= R - EZ; row += YARD_STEP) yardLines.push(row)
+  for (let i = 0; i <= 10; i++) yardLines.push(EZ + i * YARD_STEP)
+
+  function pylon(x: number, y: number, key: string) {
+    return (
+      <g key={key}>
+        <polygon
+          points={`${x},${y - 3.2} ${x - 1.4},${y + 1.2} ${x + 1.4},${y + 1.2}`}
+          fill="#ffdd00"
+          stroke="#c9a000"
+          strokeWidth="0.25"
+          opacity="0.98"
+        />
+        <rect x={x - 0.55} y={y + 1.1} width="1.1" height="1.6" fill="#e6c200" rx="0.2" />
+      </g>
+    )
+  }
 
   return (
     <svg
@@ -39,112 +55,194 @@ function FootballField() {
     >
       <defs>
         <linearGradient id="td-grass" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#1a5c1a" />
-          <stop offset="50%"  stopColor="#226622" />
+          <stop offset="0%" stopColor="#1a5c1a" />
+          <stop offset="50%" stopColor="#226622" />
           <stop offset="100%" stopColor="#1a5c1a" />
         </linearGradient>
         <linearGradient id="td-ez-enemy" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#5a1a8a" />
-          <stop offset="100%" stopColor="#7c2ab4" />
+          <stop offset="0%" stopColor="#6b1a9a" />
+          <stop offset="100%" stopColor="#8e2fd0" />
         </linearGradient>
         <linearGradient id="td-ez-ally" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#1a3a8a" />
-          <stop offset="100%" stopColor="#2a5ab4" />
+          <stop offset="0%" stopColor="#1a4a9a" />
+          <stop offset="100%" stopColor="#2a6ad4" />
         </linearGradient>
+        <pattern id="td-mow" width="100" height={YARD_STEP} patternUnits="userSpaceOnUse">
+          <rect width="100" height={YARD_STEP / 2} fill="#00000014" />
+        </pattern>
       </defs>
 
-      {/* ── Main grass field ─────────────────────────── */}
+      {/* Main grass */}
       <rect x="0" y="0" width={C} height={R} fill="url(#td-grass)" />
+      <rect x="0" y={EZ} width={C} height={playable} fill="url(#td-mow)" />
 
-      {/* Alternating mow stripes */}
-      {Array.from({ length: 10 }).map((_, i) => (
-        <rect key={i} x="0" y={i * YARD_STEP * 1.5} width={C} height={YARD_STEP * 0.75}
-          fill="#00000010" />
-      ))}
-
-      {/* ── Enemy endzone (top, purple) ─────────────── */}
-      <rect x="0" y="0" width={C} height={EZ} fill="url(#td-ez-enemy)" opacity="0.85" />
-      {/* "ENEMY" diagonal text faked with tilted rect */}
+      {/* Enemy endzone (top) */}
+      <rect x="0" y="0" width={C} height={EZ} fill="url(#td-ez-enemy)" opacity="0.92" />
       <text
-        x={C / 2} y={EZ / 2 + 1}
-        textAnchor="middle" dominantBaseline="middle"
-        fontSize="5" fontWeight="bold" fill="white" opacity="0.55"
-        style={{ fontFamily: 'sans-serif', letterSpacing: '1px' }}
+        x={C / 2}
+        y={EZ / 2 + 1}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="6"
+        fontWeight="bold"
+        fill="white"
+        opacity="0.5"
+        style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif', letterSpacing: '2px' }}
       >
         END ZONE
       </text>
 
-      {/* ── Ally endzone (bottom, blue) ──────────────── */}
-      <rect x="0" y={R - EZ} width={C} height={EZ} fill="url(#td-ez-ally)" opacity="0.85" />
+      {/* Ally endzone (bottom) */}
+      <rect x="0" y={R - EZ} width={C} height={EZ} fill="url(#td-ez-ally)" opacity="0.92" />
       <text
-        x={C / 2} y={R - EZ / 2 + 1}
-        textAnchor="middle" dominantBaseline="middle"
-        fontSize="5" fontWeight="bold" fill="white" opacity="0.55"
-        style={{ fontFamily: 'sans-serif', letterSpacing: '1px' }}
+        x={C / 2}
+        y={R - EZ / 2 + 1}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="6"
+        fontWeight="bold"
+        fill="white"
+        opacity="0.5"
+        style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif', letterSpacing: '2px' }}
       >
         END ZONE
       </text>
 
-      {/* ── Yard lines ───────────────────────────────── */}
-      {yardLines.map((row, i) => (
-        <g key={row}>
-          <line x1="0" y1={row} x2={C} y2={row} stroke="white" strokeWidth="0.7" opacity="0.75" />
-          {/* Yard numbers (both sides) */}
-          {i > 0 && i < yardLines.length && (
-            <>
-              <text x="4" y={row - 1.5}
-                fontSize="3.5" fill="white" opacity="0.7" fontWeight="bold"
-                style={{ fontFamily: 'sans-serif' }}>
-                {yardNumLabel(i, yardLines.length)}
-              </text>
-              <text x={C - 4} y={row - 1.5}
-                fontSize="3.5" fill="white" opacity="0.7" fontWeight="bold" textAnchor="end"
-                style={{ fontFamily: 'sans-serif' }}>
-                {yardNumLabel(i, yardLines.length)}
-              </text>
-            </>
-          )}
-          {/* Hash marks — short lines 1/3 and 2/3 across the field */}
-          <line x1={C * 0.33} y1={row - 1} x2={C * 0.33} y2={row + 1}
-            stroke="white" strokeWidth="0.5" opacity="0.5" />
-          <line x1={C * 0.67} y1={row - 1} x2={C * 0.67} y2={row + 1}
-            stroke="white" strokeWidth="0.5" opacity="0.5" />
-        </g>
-      ))}
+      {/* Yard lines + numbers + hashes */}
+      {yardLines.map((row, i) => {
+        const yard = i <= 5 ? i * 10 : (10 - i) * 10
+        return (
+          <g key={`yl-${i}`}>
+            <line
+              x1="2"
+              y1={row}
+              x2={C - 2}
+              y2={row}
+              stroke="white"
+              strokeWidth={i === 5 ? 1.2 : 0.65}
+              opacity={i === 5 ? 0.9 : 0.72}
+            />
+            {i > 0 && i < 10 ? (
+              <>
+                <text
+                  x="5"
+                  y={row - 1.2}
+                  fontSize="4"
+                  fill="white"
+                  opacity="0.78"
+                  fontWeight="bold"
+                  style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif' }}
+                >
+                  {yard}
+                </text>
+                <text
+                  x={C - 5}
+                  y={row - 1.2}
+                  fontSize="4"
+                  fill="white"
+                  opacity="0.78"
+                  fontWeight="bold"
+                  textAnchor="end"
+                  style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif' }}
+                >
+                  {yard}
+                </text>
+                {/* Hash marks */}
+                {[0.28, 0.72].map((fx) => (
+                  <g key={`${i}-${fx}`}>
+                    <line
+                      x1={C * fx - 1.8}
+                      y1={row}
+                      x2={C * fx + 1.8}
+                      y2={row}
+                      stroke="white"
+                      strokeWidth="0.45"
+                      opacity="0.55"
+                    />
+                    <line
+                      x1={C * fx}
+                      y1={row - 1.4}
+                      x2={C * fx}
+                      y2={row + 1.4}
+                      stroke="white"
+                      strokeWidth="0.45"
+                      opacity="0.55"
+                    />
+                  </g>
+                ))}
+              </>
+            ) : null}
+          </g>
+        )
+      })}
 
-      {/* Endzone boundary lines */}
-      <line x1="0" y1={EZ}     x2={C} y2={EZ}     stroke="white" strokeWidth="1.1" opacity="0.9" />
-      <line x1="0" y1={R - EZ} x2={C} y2={R - EZ} stroke="white" strokeWidth="1.1" opacity="0.9" />
+      {/* Endzone goal lines */}
+      <line x1="0" y1={EZ} x2={C} y2={EZ} stroke="white" strokeWidth="1.4" opacity="0.95" />
+      <line
+        x1="0"
+        y1={R - EZ}
+        x2={C}
+        y2={R - EZ}
+        stroke="white"
+        strokeWidth="1.4"
+        opacity="0.95"
+      />
 
       {/* Sidelines */}
-      <line x1="1"   y1="0" x2="1"   y2={R} stroke="white" strokeWidth="0.8" opacity="0.6" />
-      <line x1={C-1} y1="0" x2={C-1} y2={R} stroke="white" strokeWidth="0.8" opacity="0.6" />
+      <line x1="2" y1="0" x2="2" y2={R} stroke="white" strokeWidth="1" opacity="0.7" />
+      <line x1={C - 2} y1="0" x2={C - 2} y2={R} stroke="white" strokeWidth="1" opacity="0.7" />
 
-      {/* ── Pylons — yellow corner markers at each endzone ── */}
-      {/* Enemy endzone corners */}
-      <rect x="0"     y={EZ - 2}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      <rect x={C-2.5} y={EZ - 2}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      <rect x="0"     y="0"           width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      <rect x={C-2.5} y="0"           width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      {/* Ally endzone corners */}
-      <rect x="0"     y={R - EZ}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      <rect x={C-2.5} y={R - EZ}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      <rect x="0"     y={R - 2.5}    width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
-      <rect x={C-2.5} y={R - 2.5}    width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      {/* Goal posts — enemy (top) */}
+      <g opacity="0.9">
+        <rect x={C / 2 - 10} y="1.5" width="20" height="1.1" fill="#f0f0f0" />
+        <rect x={C / 2 - 10} y="1.5" width="1.1" height="7" fill="#f0f0f0" />
+        <rect x={C / 2 + 8.9} y="1.5" width="1.1" height="7" fill="#f0f0f0" />
+        <rect x={C / 2 - 0.45} y="8" width="0.9" height="3.5" fill="#f0f0f0" />
+      </g>
+      {/* Goal posts — ally (bottom) */}
+      <g opacity="0.9">
+        <rect x={C / 2 - 10} y={R - 2.6} width="20" height="1.1" fill="#f0f0f0" />
+        <rect x={C / 2 - 10} y={R - 8.5} width="1.1" height="7" fill="#f0f0f0" />
+        <rect x={C / 2 + 8.9} y={R - 8.5} width="1.1" height="7" fill="#f0f0f0" />
+        <rect x={C / 2 - 0.45} y={R - 11.5} width="0.9" height="3.5" fill="#f0f0f0" />
+      </g>
 
-      {/* ── 50-yard midfield marker ───────────────────── */}
-      <circle cx={C / 2} cy={R / 2} r="4" fill="none" stroke="white" strokeWidth="0.6" opacity="0.5" />
-      <line x1="0" y1={R / 2} x2={C} y2={R / 2} stroke="white" strokeWidth="0.9" opacity="0.6" />
+      {/* Pylons at endzone corners */}
+      {pylon(3.5, EZ, 'pe-l')}
+      {pylon(C - 3.5, EZ, 'pe-r')}
+      {pylon(3.5, R - EZ, 'pa-l')}
+      {pylon(C - 3.5, R - EZ, 'pa-r')}
+      {pylon(3.5, 2.5, 'pe-bl')}
+      {pylon(C - 3.5, 2.5, 'pe-br')}
+      {pylon(3.5, R - 2.5, 'pa-bl')}
+      {pylon(C - 3.5, R - 2.5, 'pa-br')}
+
+      {/* Midfield logo ring */}
+      <circle
+        cx={C / 2}
+        cy={R / 2}
+        r="5.5"
+        fill="none"
+        stroke="white"
+        strokeWidth="0.7"
+        opacity="0.55"
+      />
+      <text
+        x={C / 2}
+        y={R / 2 + 1.2}
+        textAnchor="middle"
+        fontSize="3.2"
+        fill="white"
+        opacity="0.45"
+        fontWeight="bold"
+        style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif' }}
+      >
+        50
+      </text>
     </svg>
   )
 }
 
-/** Yard number label: "10", "20", … "50" … "20", "10". */
-function yardNumLabel(lineIndex: number, total: number): string {
-  const half = Math.floor(total / 2)
-  const n = lineIndex <= half ? lineIndex * 10 : (total - lineIndex) * 10
-  return String(Math.min(n, 50))
-}
 
 type Props = {
   towers?: TowerHpView[]
