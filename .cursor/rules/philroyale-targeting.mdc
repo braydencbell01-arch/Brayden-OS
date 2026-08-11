@@ -1,0 +1,10 @@
+# Phil Royale — target lock-on (all cards)
+
+Clash Royale–style lock applies to **every** attacking card (troops, buildings, towers):
+
+1. On acquire, lock the nearest valid opponent in range.
+2. Keep that lock until the target **dies** or **leaves range**.
+3. Do **not** retarget mid-fight just because a closer/higher-priority foe appears.
+4. After unlock, acquire the nearest valid opponent in range again.
+
+When adding or changing attacks in `philroyale/`, use the existing `lockKey` / `lockUnitId` paths in `useBattle.ts` — never add free-retarget or “always nearest each tick” behavior unless the user explicitly asks for an exception.
