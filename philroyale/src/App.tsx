@@ -17,6 +17,7 @@ import {
   PRESENCE_HEARTBEAT_MS,
   PRESENCE_ONLINE_MS,
   lookupDirectory,
+  lookupDirectoryPresence,
   pollDirectory,
   publishDirectory,
   publishSocial,
@@ -350,9 +351,9 @@ export default function App() {
         return {
           ok: false,
           message:
-            alnum.length === 6
+            alnum.length === 6 && /[A-Z]/.test(alnum)
               ? 'That looks like a club code — use Club → Join instead.'
-              : 'Friend codes are exactly 3 digits (example 247).',
+              : 'Friend codes are 6 digits (example 482913). Both of you: hard-refresh, open Friends, and copy the new code.',
         }
       }
       if (code === myId) return { ok: false, message: "That's your own code." }
@@ -369,9 +370,10 @@ export default function App() {
         (msg) =>
           (msg.type === 'dir_ping' ||
             msg.type === 'friend_hello' ||
-            msg.type === 'friend_request') &&
+            msg.type === 'friend_request' ||
+            msg.type === 'presence') &&
           msg.fromPlayerId === code,
-        8_000,
+        12_000,
       )
 
       const published = await publishSocial(code, {
@@ -457,10 +459,10 @@ export default function App() {
 
   useEffect(() => {
     const id = loadPlayerId()
-    const flag = 'philroyale.friendCode3DigitNotice.v1'
+    const flag = 'philroyale.friendCode6DigitNotice.v1'
     if (!localStorage.getItem(flag)) {
       localStorage.setItem(flag, '1')
-      flashFriend(`Friend codes are now 3 digits. Yours is ${id} — share it under Social → Friends.`)
+      flashFriend(`Friend codes are now 6 digits. Yours is ${id} — share it under Social → Friends.`)
     }
     repairBrokenLocalClub()
     const friendLink = parseFriendInviteFromUrl()
@@ -751,10 +753,39 @@ export default function App() {
     }
   }, [flashFriend, showIncoming, startMatch])
 
-  // Friend-code directory — both phones must stay open so 3-digit lookup works.
+  // Friend-code directory — both phones must stay open for name + online lookup.
   useEffect(() => {
     if (needsName) return
-    return subscribeDirectory()
+    const unsub = subscribeDirectory()
+    // Directory SSE fills the cache; merge into friend presence often so Online updates fast.
+    const merge = () => {
+      setFriendPresence((prev) => {
+        const next = { ...prev }
+        let changed = false
+        for (const f of loadFriends()) {
+          if (!f.playerId) continue
+          const dir = lookupDirectoryPresence(f.playerId)
+          if (!dir) continue
+          const older = next[f.playerId]
+          if (!older || dir.at > (older.at ?? 0)) {
+            next[f.playerId] = {
+              ...older,
+              at: dir.at,
+              inBattle: dir.inBattle ?? older?.inBattle,
+              trophies: dir.trophies ?? older?.trophies,
+            }
+            changed = true
+          }
+        }
+        return changed ? next : prev
+      })
+    }
+    merge()
+    const id = window.setInterval(merge, 2500)
+    return () => {
+      unsub()
+      window.clearInterval(id)
+    }
   }, [needsName])
 
   // Heartbeat: directory ping + presence to friends.
@@ -764,8 +795,37 @@ export default function App() {
       const me = loadPlayerName().trim() || 'Player'
       const myId = loadPlayerId()
       const at = new Date().toISOString()
-      void publishDirectory(myId, me)
       const inMatch = battle && !!battleNet && !spectating
+      const trophies = loadProfile().trophies
+      void publishDirectory(myId, me, { trophies, inBattle: inMatch })
+
+      // Refresh online status from directory for everyone on your friends list.
+      setFriendPresence((prev) => {
+        const next = { ...prev }
+        for (const f of loadFriends()) {
+          if (!f.playerId) continue
+          const dir = lookupDirectoryPresence(f.playerId)
+          if (!dir) continue
+          const older = next[f.playerId]
+          if (!older || dir.at >= older.at) {
+            next[f.playerId] = {
+              ...older,
+              at: dir.at,
+              inBattle: dir.inBattle ?? older?.inBattle,
+              trophies: dir.trophies ?? older?.trophies,
+            }
+          }
+          if (dir.at && f.name.startsWith('Player ')) {
+            const nm = lookupDirectory(f.playerId)
+            if (nm) {
+              upsertFriend({ name: nm, playerId: f.playerId })
+              window.dispatchEvent(new Event('philroyale-friends-changed'))
+            }
+          }
+        }
+        return next
+      })
+
       const role =
         battleNet?.role === 'guest' ? 'guest' : battleNet?.role === 'host' ? 'host' : undefined
       for (const f of loadFriends()) {
@@ -775,7 +835,7 @@ export default function App() {
           fromPlayerId: myId,
           fromName: me,
           at,
-          trophies: loadProfile().trophies,
+          trophies,
           inBattle: inMatch,
           challengeId: inMatch ? battleNet?.challengeId : undefined,
           mode: inMatch ? battleMode : undefined,
@@ -984,8 +1044,8 @@ export default function App() {
             Welcome to Phil Royale
           </h1>
           <p className="mt-2 text-sm font-semibold text-white/80">
-            Pick a name friends will see. You&apos;ll get a 3-digit friend code — battle
-            invites only work when they&apos;re online.
+            Pick a name friends will see. You&apos;ll get a 6-digit friend code — keep
+            Phil Royale open so friends see you online and can invite you.
           </p>
           <input
             autoFocus
@@ -1045,13 +1105,25 @@ export default function App() {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
         <BattleScreen
+          key={battleNet?.challengeId ?? `local-${opponent ?? 'bot'}`}
           opponentName={opponent}
+          opponentClanName={battleNet ? null : 'Bot Clan'}
+          opponentTrophies={
+            battleNet?.peerPlayerId
+              ? friendPresence[battleNet.peerPlayerId]?.trophies ?? loadProfile().trophies
+              : undefined
+          }
           allyLevels={levels}
           botLevel={botLevelForTrophies(trophies)}
           mode={battleMode}
           deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
           net={battleNet}
           spectating={spectating}
+          onPeerLinkFailed={() => {
+            // Friend never hosted — remount as local bot fight (units move).
+            setBattleNet(null)
+            flashFriend("Friend didn't connect — training match vs bot.")
+          }}
           onExit={() => {
             const wasSpec = spectating
             setBattle(false)

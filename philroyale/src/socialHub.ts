@@ -68,11 +68,13 @@ export type SocialMessage =
       at: string
     }
   | {
-      /** Broadcast so friends can find a 3-digit code while both apps are open. */
+      /** Broadcast so friends can find a friend code while both apps are open. */
       type: 'dir_ping'
       fromPlayerId: string
       fromName: string
       at: string
+      trophies?: number
+      inBattle?: boolean
     }
 
 /** Latest presence snapshot for a friend (from heartbeats). */
@@ -89,12 +91,11 @@ export type FriendPresenceInfo = {
 /** How recently a presence ping counts as "online". */
 export const PRESENCE_ONLINE_MS = 45_000
 export const PRESENCE_HEARTBEAT_MS = 15_000
-/** Shared lobby so 3-digit codes can be discovered while both apps are open. */
+/** Shared lobby so friend codes can be discovered while both apps are open. */
 export const DIRECTORY_HEARTBEAT_MS = 8_000
-const DIRECTORY_TOPIC = 'philroyale-dir-v3'
-const DIRECTORY_FRESH_MS = 60_000
-
-const TOPIC_PREFIX = 'philroyale-v3-'
+const DIRECTORY_TOPIC = 'philroyale-dir-v4'
+const DIRECTORY_FRESH_MS = 90_000
+const TOPIC_PREFIX = 'philroyale-v4-'
 
 function topicFor(playerId: string): string {
   return `${TOPIC_PREFIX}${playerId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64)}`
@@ -108,29 +109,56 @@ function directoryEndpoint(): string {
   return `https://ntfy.sh/${DIRECTORY_TOPIC}`
 }
 
-type DirEntry = { name: string; at: number }
+type DirEntry = { name: string; at: number; trophies?: number; inBattle?: boolean }
 const directoryCache = new Map<string, DirEntry>()
 
-export function rememberDirectoryPing(code: string, name: string, atMs = Date.now()): void {
-  const c = String(code || '').replace(/\D/g, '').slice(0, 3)
-  if (c.length !== 3) return
+export function rememberDirectoryPing(
+  code: string,
+  name: string,
+  atMs = Date.now(),
+  extra?: { trophies?: number; inBattle?: boolean },
+): void {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  if (c.length !== 6) return
   const prev = directoryCache.get(c)
   if (prev && prev.at > atMs) return
-  directoryCache.set(c, { name: name.trim() || `Player ${c}`, at: atMs })
+  directoryCache.set(c, {
+    name: name.trim() || `Player ${c}`,
+    at: atMs,
+    trophies: extra?.trophies ?? prev?.trophies,
+    inBattle: extra?.inBattle ?? prev?.inBattle,
+  })
 }
 
 export function lookupDirectory(code: string): string | null {
-  const c = String(code || '').replace(/\D/g, '').slice(0, 3)
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   const e = directoryCache.get(c)
   if (!e) return null
   if (Date.now() - e.at > DIRECTORY_FRESH_MS) return null
   return e.name
 }
 
-export async function publishDirectory(code: string, name: string): Promise<boolean> {
-  const c = String(code || '').replace(/\D/g, '').slice(0, 3)
-  if (c.length !== 3) return false
-  rememberDirectoryPing(c, name)
+/** Presence snapshot from the public directory (works before you're friends). */
+export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  const e = directoryCache.get(c)
+  if (!e) return null
+  if (Date.now() - e.at > DIRECTORY_FRESH_MS) return null
+  return {
+    at: e.at,
+    inBattle: !!e.inBattle,
+    trophies: e.trophies,
+  }
+}
+
+export async function publishDirectory(
+  code: string,
+  name: string,
+  extra?: { trophies?: number; inBattle?: boolean },
+): Promise<boolean> {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  if (c.length !== 6) return false
+  rememberDirectoryPing(c, name, Date.now(), extra)
   try {
     const res = await fetch(directoryEndpoint(), {
       method: 'POST',
@@ -139,12 +167,16 @@ export async function publishDirectory(code: string, name: string): Promise<bool
         Title: 'Phil Royale directory',
         Priority: 'default',
         Tags: 'bust_in_silhouette',
+        Cache: 'yes',
+        TTL: '90',
       },
       body: JSON.stringify({
         type: 'dir_ping',
         fromPlayerId: c,
         fromName: name.trim() || `Player ${c}`,
         at: new Date().toISOString(),
+        trophies: extra?.trophies,
+        inBattle: extra?.inBattle,
       } satisfies SocialMessage),
     })
     return res.ok
@@ -157,7 +189,10 @@ function handleDirectoryRaw(raw: string): void {
   try {
     const data = JSON.parse(raw) as SocialMessage
     if (!data || data.type !== 'dir_ping') return
-    rememberDirectoryPing(data.fromPlayerId, data.fromName, Date.parse(data.at) || Date.now())
+    rememberDirectoryPing(data.fromPlayerId, data.fromName, Date.parse(data.at) || Date.now(), {
+      trophies: data.trophies,
+      inBattle: data.inBattle,
+    })
     notifySocialWaiters(data)
   } catch {
     /* ignore */
@@ -260,6 +295,8 @@ export async function publishSocial(
         Title: 'Phil Royale',
         Priority: message.type.includes('battle') ? 'high' : 'default',
         Tags: 'video_game',
+        Cache: 'yes',
+        TTL: '120',
       },
       body: JSON.stringify(message),
     })

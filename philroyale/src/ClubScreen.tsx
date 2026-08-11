@@ -13,13 +13,11 @@ import { formatWarRemain, phaseLabel } from './clubWar'
 import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
 import {
   CLUB_SHOP_OFFERS,
-  advanceRiverRace,
   beginWarAttack,
   buyClubShopOffer,
   claimClubChest,
   claimWarRewards,
   clubMemberCount,
-  contributeWarCollection,
   createRichClub,
   fulfillDonation,
   loadCardProgress,
@@ -34,7 +32,6 @@ import {
   requestClubDonation,
   saveRichClub,
   shareText,
-  simWarAttack,
   startClubWar,
   clubInviteUrl,
   upsertFriend,
@@ -338,27 +335,6 @@ export function ClubScreen({
               <Stat tile="War stars" value={String(club.warStars)} />
               <Stat tile="Your donate left" value={String(profile.donateLeft)} />
               <Stat tile="Access" value={club.access === 'open' ? 'Open' : 'Invite only'} />
-            </div>
-            <div
-              className="rounded-xl p-3"
-              style={{ background: 'linear-gradient(180deg,#1a5a6a,#0e3038)' }}
-            >
-              <p className="text-xs font-extrabold uppercase text-[#f5d76e]/85">River Race</p>
-              <p className="mt-1 text-sm font-bold text-white">
-                Paddle for club chest crowns with your crew.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const r = advanceRiverRace()
-                  flash(r.message)
-                  refresh()
-                }}
-                className="mt-2 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
-                style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-              >
-                Race the river
-              </button>
             </div>
             <button
               type="button"
@@ -792,20 +768,8 @@ function ClubWarPanel({
             />
           </div>
           <p className="mt-1 text-[0.65rem] font-semibold text-white/55">
-            Finish collection to start War Day early.
+            Play real ladder / friend battles to earn collection progress — no free click rewards.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              const r = contributeWarCollection()
-              flash(r.message)
-              refresh()
-            }}
-            className="mt-2 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
-            style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-          >
-            Train / contribute
-          </button>
         </div>
       ) : null}
 
@@ -819,7 +783,7 @@ function ClubWarPanel({
               Attacks left: {war.attacksLeft} · Battles fought: {war.battlesFought}
             </p>
             <p className="text-[0.65rem] font-semibold text-white/55">
-              Real battle uses your deck; quick fight sims crowns → stars.
+              Tap Battle to fight with your deck — stars only from real matches.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-[#221610] px-2 py-2 ring-1 ring-white/10">
@@ -855,34 +819,20 @@ function ClubWarPanel({
                       </p>
                     </div>
                     {!full ? (
-                      <div className="flex shrink-0 flex-col gap-1">
-                        <button
-                          type="button"
-                          disabled={war.attacksLeft <= 0}
-                          onClick={() => {
-                            const r = beginWarAttack(boat.id)
-                            flash(r.message)
-                            if (r.ok && r.opponent) onBattleBot(r.opponent)
-                            else refresh()
-                          }}
-                          className="rounded-lg px-2.5 py-1.5 text-[0.65rem] font-extrabold text-[#1a1410] disabled:opacity-40"
-                          style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-                        >
-                          Battle
-                        </button>
-                        <button
-                          type="button"
-                          disabled={war.attacksLeft <= 0}
-                          onClick={() => {
-                            const r = simWarAttack(boat.id)
-                            flash(r.message)
-                            refresh()
-                          }}
-                          className="rounded-lg bg-[#2a1a12] px-2.5 py-1.5 text-[0.65rem] font-extrabold text-white/80 disabled:opacity-40"
-                        >
-                          Quick
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        disabled={war.attacksLeft <= 0}
+                        onClick={() => {
+                          const r = beginWarAttack(boat.id)
+                          flash(r.message)
+                          if (r.ok && r.opponent) onBattleBot(r.opponent)
+                          else refresh()
+                        }}
+                        className="shrink-0 rounded-lg px-2.5 py-1.5 text-[0.65rem] font-extrabold text-[#1a1410] disabled:opacity-40"
+                        style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                      >
+                        Battle
+                      </button>
                     ) : (
                       <span className="text-xs font-extrabold text-[#7dff9a]">3★</span>
                     )}
@@ -911,7 +861,7 @@ function ClubWarPanel({
           </p>
           <button
             type="button"
-            disabled={war.claimed}
+            disabled={war.claimed || war.battlesFought <= 0}
             onClick={() => {
               const r = claimWarRewards()
               flash(r.message)
@@ -920,7 +870,11 @@ function ClubWarPanel({
             className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
             style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
           >
-            {war.claimed ? 'Claimed' : 'Claim war rewards'}
+            {war.claimed
+              ? 'Claimed'
+              : war.battlesFought <= 0
+                ? 'Battle first to claim'
+                : 'Claim war rewards'}
           </button>
         </div>
       ) : null}

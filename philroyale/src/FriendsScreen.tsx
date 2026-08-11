@@ -145,7 +145,7 @@ export function FriendsScreen({
 
   async function sendInvite(friend: Friend, mode: GameMode) {
     if (!friend.playerId) {
-      setAddMsg('Add them with their 3-digit friend code before inviting.')
+      setAddMsg('Add them with their 6-digit friend code before inviting.')
       setInviteTarget(null)
       return
     }
@@ -171,9 +171,9 @@ export function FriendsScreen({
     if (!isFriendCode(code)) {
       const alnum = friendCode.toUpperCase().replace(/[^A-Z0-9]/g, '')
       setAddMsg(
-        alnum.length === 6
-          ? 'That looks like a club code — use Club → Join. Friend codes are 3 digits.'
-          : 'Enter their 3-digit friend code (example 247).',
+        alnum.length === 6 && /[A-Z]/.test(alnum)
+          ? 'That looks like a club code — use Club → Join. Friend codes are 6 digits.'
+          : 'Enter their 6-digit friend code (example 482913).',
       )
       return
     }
@@ -277,8 +277,8 @@ export function FriendsScreen({
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Share your <span className="text-[#f5d76e]">3-digit friend code</span> or text an invite
-          link. Then profile → Invite to play Normal or Touchdown.
+          Share your <span className="text-[#f5d76e]">6-digit friend code</span> or text an invite
+          link. Both keep Phil Royale open, then Invite to play.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
           Your name
@@ -321,9 +321,9 @@ export function FriendsScreen({
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Your friend code (3 digits)
+              Your friend code (6 digits)
             </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-4xl tracking-[0.35em] text-white">
+            <p className="mt-1 font-[family-name:var(--font-display)] text-3xl tracking-[0.2em] text-white">
               {formatAccountCode(myCode)}
             </p>
             <button
@@ -354,16 +354,16 @@ export function FriendsScreen({
             style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
           >
             <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-              Add friend by 3-digit code
+              Add friend by 6-digit code
             </p>
             <div className="flex gap-2">
               <input
                 value={friendCode}
-                onChange={(e) => setFriendCode(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                placeholder="e.g. 247"
+                onChange={(e) => setFriendCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="e.g. 482913"
                 inputMode="numeric"
-                maxLength={3}
-                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-center text-lg font-extrabold tracking-[0.35em] text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
+                maxLength={6}
+                className="min-w-0 flex-1 rounded-lg bg-[#140e0a] px-3 py-2 text-center text-lg font-extrabold tracking-[0.2em] text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
               />
               <button
                 type="button"
@@ -378,7 +378,7 @@ export function FriendsScreen({
               <p className="mt-2 text-xs font-semibold text-[#7dff9a]">{addMsg}</p>
             ) : (
               <p className="mt-2 text-xs font-semibold text-white/45">
-                Enter their 3-digit code anytime — they do not need to be online to be added.
+                Enter their 6-digit code while both of you have Phil Royale open so names sync.
               </p>
             )}
           </div>

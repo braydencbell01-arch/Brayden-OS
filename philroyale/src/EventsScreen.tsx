@@ -1,12 +1,4 @@
-import { useState } from 'react'
-import { SEASON_FREE_TRACK } from './clubMeta'
-import {
-  claimSeasonReward,
-  kingInfo,
-  loadProfile,
-  loadSeason,
-  type SeasonState,
-} from './storage'
+import { kingInfo, loadProfile, loadSeason } from './storage'
 import type { GameMode } from './storage'
 
 type Props = {
@@ -14,19 +6,9 @@ type Props = {
 }
 
 export function EventsScreen({ onPlay }: Props) {
-  const [season, setSeason] = useState<SeasonState>(() => loadSeason())
-  const [toast, setToast] = useState<string | null>(null)
+  const season = loadSeason()
   const king = kingInfo()
   const profile = loadProfile()
-
-  function flash(msg: string) {
-    setToast(msg)
-    window.setTimeout(() => setToast(null), 2200)
-  }
-
-  function refresh() {
-    setSeason(loadSeason())
-  }
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -44,53 +26,10 @@ export function EventsScreen({ onPlay }: Props) {
           className="rounded-xl p-3"
           style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
         >
-          <p className="text-xs font-extrabold uppercase text-[#f5d76e]/85">Season pass</p>
+          <p className="text-xs font-extrabold uppercase text-[#f5d76e]/85">Season</p>
           <p className="text-sm font-semibold text-white/80">
-            {season.points} season points · claim free track rewards
+            {season.points} season points from battles you play — no free click rewards.
           </p>
-          <ul className="mt-2 space-y-1.5">
-            {SEASON_FREE_TRACK.slice(0, 6).map((step, i) => {
-              const claimed = season.claimed.includes(i)
-              const ready = season.points >= step.points && !claimed
-              const label = step.chest
-                ? `${step.chest} chest`
-                : step.gems
-                  ? `${step.gems} gems`
-                  : step.gold
-                    ? `${step.gold} gold`
-                    : step.copies
-                      ? `${step.copies.amount}× ${step.copies.rarity}`
-                      : 'Reward'
-              return (
-                <li
-                  key={i}
-                  className="flex items-center justify-between rounded-lg bg-[#221610] px-2.5 py-2 ring-1 ring-white/10"
-                >
-                  <span className="text-xs font-bold text-white/80">
-                    {step.points} pts · {label}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={!ready}
-                    onClick={() => {
-                      const r = claimSeasonReward(i)
-                      flash(r.message)
-                      refresh()
-                    }}
-                    className="rounded-md px-2 py-1 text-[0.65rem] font-extrabold disabled:opacity-40"
-                    style={{
-                      background: claimed
-                        ? '#2a1a12'
-                        : 'linear-gradient(180deg,#ffe08a,#c9a227)',
-                      color: claimed ? '#fff6e8aa' : '#1a1410',
-                    }}
-                  >
-                    {claimed ? 'Claimed' : ready ? 'Claim' : 'Locked'}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
         </section>
 
         <section
@@ -119,20 +58,12 @@ export function EventsScreen({ onPlay }: Props) {
             >
               <p className="text-sm font-extrabold text-white">Touchdown</p>
               <p className="text-xs font-semibold text-white/55">
-                Football field · end zones · no towers · first to 3
+                Football field · score in the end zone · draft a deck first
               </p>
             </button>
           </div>
         </section>
       </div>
-
-      {toast ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center px-4">
-          <p className="rounded-lg bg-black/90 px-3 py-2 text-center text-sm font-bold text-white ring-1 ring-[#f5d76e]/45">
-            {toast}
-          </p>
-        </div>
-      ) : null}
     </div>
   )
 }

@@ -142,7 +142,18 @@ export function saveDeck(ids: string[]): void {
 }
 
 export function loadFriends(): Friend[] {
-  return readJson(FRIENDS_KEY, [])
+  const friends = readJson<Friend[]>(FRIENDS_KEY, [])
+  // Drop short digit codes from the old 3-digit era — they collide and break online/PvP.
+  const cleaned = friends.filter((f) => {
+    const id = (f.playerId || '').trim()
+    if (!id) return true
+    if (/^\d{1,5}$/.test(id)) return false
+    return true
+  })
+  if (cleaned.length !== friends.length) {
+    localStorage.setItem(FRIENDS_KEY, JSON.stringify(cleaned))
+  }
+  return cleaned
 }
 
 export function saveFriends(friends: Friend[]): void {
@@ -177,19 +188,19 @@ export function savePlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim())
 }
 
-/** Friend codes are exactly 3 digits (100–999) — easy to share with a small player base. */
-export const FRIEND_CODE_LEN = 3
+/** Friend codes are 6 digits — unique enough that two players rarely share a topic. */
+export const FRIEND_CODE_LEN = 6
 
 /** Short shareable friend code (also the live social player id). */
 export function generateAccountCode(): string {
   const n =
     typeof crypto !== 'undefined' && crypto.getRandomValues
-      ? 100 + (crypto.getRandomValues(new Uint32Array(1))[0]! % 900)
-      : 100 + Math.floor(Math.random() * 900)
+      ? 100_000 + (crypto.getRandomValues(new Uint32Array(1))[0]! % 900_000)
+      : 100_000 + Math.floor(Math.random() * 900_000)
   return String(n)
 }
 
-/** Digits only, max 3 — for friend codes. */
+/** Digits only, max 6 — for friend codes. */
 export function normalizeFriendCode(raw: string): string {
   return String(raw || '')
     .replace(/\D/g, '')
@@ -197,7 +208,7 @@ export function normalizeFriendCode(raw: string): string {
 }
 
 export function isFriendCode(code: string): boolean {
-  return /^\d{3}$/.test(code)
+  return /^\d{6}$/.test(code)
 }
 
 /** @deprecated use normalizeFriendCode — kept for call sites that also strip club junk */
@@ -217,24 +228,20 @@ export function formatAccountCode(code: string): string {
 }
 
 /**
- * Canonical online id = 3-digit friend code.
- * Migrates older 8-char / UUID ids to a new code while keeping legacy inboxes.
+ * Canonical online id = 6-digit friend code.
+ * Migrates older 3-digit / 8-char / UUID ids to a new code while keeping legacy inboxes.
  */
 export function loadPlayerId(): string {
   const existing = localStorage.getItem(PLAYER_ID_KEY) || ''
   let code = localStorage.getItem(ACCOUNT_CODE_KEY) || ''
 
-  // Force cutover to 3-digit codes (old 8-char codes never matched reliably).
+  // Force cutover to 6-digit codes (3-digit codes collided and broke friending / PvP).
   if (!isFriendCode(code)) {
     const old = code || existing
-    if (old && old !== code) {
-      /* keep falling through */
-    }
     if (old && !isFriendCode(old)) {
       const prevLegacy = localStorage.getItem(LEGACY_PLAYER_ID_KEY)?.trim()
       if (!prevLegacy) localStorage.setItem(LEGACY_PLAYER_ID_KEY, old)
       else if (prevLegacy !== old) {
-        // Keep the oldest legacy; stash the mid-tier code as a second legacy via comma.
         const parts = new Set(prevLegacy.split(',').map((s) => s.trim()).filter(Boolean))
         parts.add(old)
         localStorage.setItem(LEGACY_PLAYER_ID_KEY, [...parts].join(','))
@@ -1884,6 +1891,9 @@ export function claimWarRewards(): { ok: boolean; message: string; war: ClubWarS
     return { ok: false, message: 'War is not over yet', war }
   }
   if (war.claimed) return { ok: false, message: 'Already claimed', war }
+  if (war.battlesFought <= 0) {
+    return { ok: false, message: 'Fight at least one war battle before claiming.', war }
+  }
   const reward = warRewardForResult(war.ourStars, war.theirStars)
   const p = loadProfile()
   p.gold += reward.gold

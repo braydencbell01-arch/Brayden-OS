@@ -743,6 +743,8 @@ export function useBattle(opts?: {
   enemyDeckIds?: string[]
   /** Friend battle: host sim + guest mirror over ntfy. */
   net?: BattleNet | null
+  /** Guest never got host state — App should drop net / fall back. */
+  onPeerLinkFailed?: () => void
 }) {
   const mode = opts?.mode ?? 'classic'
   const net = opts?.net ?? null
@@ -793,10 +795,11 @@ export function useBattle(opts?: {
   enemyDeckRef.current = opts?.enemyDeckIds ?? DEFAULT_DECK
   const netRef = useRef(net)
   netRef.current = net
-  /** May promote guest → host if the challenger never joins (avoids eternal Linking…). */
+  /** Tracks live net role; must clear when net drops so bot AI can run. */
   const liveRoleRef = useRef<BattleNet['role'] | null>(net?.role ?? null)
-  liveRoleRef.current = liveRoleRef.current ?? net?.role ?? null
-  if (net?.role === 'spectator') liveRoleRef.current = 'spectator'
+  if (!net) liveRoleRef.current = null
+  else if (net.role === 'spectator') liveRoleRef.current = 'spectator'
+  else if (liveRoleRef.current == null) liveRoleRef.current = net.role
   const allyScoreRef = useRef(0)
   const enemyScoreRef = useRef(0)
   const syncSeqRef = useRef(0)
@@ -1055,18 +1058,16 @@ export function useBattle(opts?: {
     })
 
     let announceTimer = 0
-    let promoteTimer = 0
+    let failTimer = 0
     if (net.role === 'guest') {
       announceGuest()
       announceTimer = window.setInterval(announceGuest, 900)
-      // If the challenger never starts hosting, take over so we don't freeze on Linking…
-      promoteTimer = window.setTimeout(() => {
+      // Friend host never showed up — ask App to drop net (bot match) instead of freezing.
+      failTimer = window.setTimeout(() => {
         if (liveRoleRef.current !== 'guest') return
         if (lastRemoteSeqRef.current > 0) return
-        liveRoleRef.current = 'host'
-        setSyncReady(true)
-        publishHostState(true)
-      }, 6500)
+        opts?.onPeerLinkFailed?.()
+      }, 10000)
     }
 
     if (net.role === 'host' || net.role === 'guest') {
@@ -1081,17 +1082,16 @@ export function useBattle(opts?: {
     if (net.role === 'host') {
       setSyncReady(true)
       publishHostState(true)
-      // Burst a few states so a late guest picks one up quickly.
-      const burst = window.setInterval(() => publishHostState(true), 700)
-      window.setTimeout(() => window.clearInterval(burst), 8000)
+      const burst = window.setInterval(() => publishHostState(true), 600)
+      window.setTimeout(() => window.clearInterval(burst), 10000)
     }
 
     return () => {
       unsub()
       if (announceTimer) window.clearInterval(announceTimer)
-      if (promoteTimer) window.clearTimeout(promoteTimer)
+      if (failTimer) window.clearTimeout(failTimer)
     }
-  }, [net, publishHostState])
+  }, [net, publishHostState, opts?.onPeerLinkFailed])
 
   useEffect(() => {
     let raf = 0
@@ -1107,11 +1107,13 @@ export function useBattle(opts?: {
       if (rawDt > LAG_FRAME_DT) lagStreakRef.current = Math.min(12, lagStreakRef.current + 2)
       else lagStreakRef.current = Math.max(0, lagStreakRef.current - 1)
       let syncLag = false
-      const n = netRef.current
-      if (n?.role === 'guest' || n?.role === 'spectator') {
-        syncLag = Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS
-      } else if (n?.role === 'host') {
-        // Host: no recent guest traffic and we are publishing — treat stale deploy channel as lag.
+      const roleNow = liveRoleRef.current ?? netRef.current?.role
+      if (roleNow === 'guest' || roleNow === 'spectator') {
+        // Don't flash LAG while still linking — wait until we've received a frame.
+        syncLag =
+          lastRemoteSeqRef.current > 0 &&
+          Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS
+      } else if (roleNow === 'host' && netRef.current) {
         syncLag =
           pendingGuestDeploysRef.current.length > 2 ||
           (Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS * 2 &&
@@ -1127,10 +1129,7 @@ export function useBattle(opts?: {
 
       // Guest / spectator only mirrors host state — do not run a second local sim.
       // Still advance local spell VFX (sundae throw) so casts feel responsive.
-      if (
-        netRef.current?.role === 'guest' ||
-        netRef.current?.role === 'spectator'
-      ) {
+      if (roleNow === 'guest' || roleNow === 'spectator') {
         let nextProjectiles = projectilesRef.current.slice()
         let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < 900)
         let projectilesChanged = false
@@ -1359,7 +1358,7 @@ export function useBattle(opts?: {
       const openField = modeRef.current === 'touchdown'
 
       // Apply guest deploys (friend battle) as enemy units / spells on the host.
-      if (netRef.current?.role === 'host' && pendingGuestDeploysRef.current.length) {
+      if ((liveRoleRef.current ?? netRef.current?.role) === 'host' && pendingGuestDeploysRef.current.length) {
         const pending = pendingGuestDeploysRef.current
         pendingGuestDeploysRef.current = []
         for (const d of pending) {
@@ -2164,7 +2163,7 @@ export function useBattle(opts?: {
         setEnemyElixir(nextEnemyElixir)
       }
 
-      if (netRef.current?.role === 'host') {
+      if ((liveRoleRef.current ?? netRef.current?.role) === 'host') {
         // Keep refs current before publish so guests see this frame's HP.
         if (unitsChanged) unitsRef.current = filteredUnits
         if (towersChanged) towersRef.current = nextTowers

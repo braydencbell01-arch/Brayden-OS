@@ -282,8 +282,7 @@ export function PhotoTroop({
             className="h-full w-full object-contain object-bottom"
             style={{
               objectPosition: '50% 100%',
-              // Fill the token frame — transparent PNGs, no black studio square.
-              transform: 'scale(1.18)',
+              transform: 'scale(1.02)',
               transformOrigin: '50% 100%',
               mixBlendMode: 'normal',
               filter: enraged

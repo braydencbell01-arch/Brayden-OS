@@ -61,6 +61,8 @@ type Props = {
   net?: BattleNet | null
   /** Watching a friend's match — no deploys / trophy changes. */
   spectating?: boolean
+  /** Friend never linked — App should drop net so local bot AI can run. */
+  onPeerLinkFailed?: () => void
 }
 
 type DragState = {
@@ -225,7 +227,7 @@ function LagBadge() {
 export function BattleScreen({
   onExit,
   opponentName,
-  opponentClanName = 'Bot Clan',
+  opponentClanName = null,
   opponentTrophies = 3200,
   allyLevels,
   botLevel = 1,
@@ -233,6 +235,7 @@ export function BattleScreen({
   deckIds: deckOverride,
   net = null,
   spectating = false,
+  onPeerLinkFailed,
 }: Props) {
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
@@ -280,6 +283,7 @@ export function BattleScreen({
     mode,
     enemyDeckIds: net ? undefined : botDeckIds,
     net,
+    onPeerLinkFailed,
   })
 
   useEffect(() => {
