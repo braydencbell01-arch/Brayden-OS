@@ -1014,7 +1014,7 @@ export function useBattle(opts?: {
             maxHp: remote.maxHp,
             activated:
               remote.hp > 0
-                ? remote.activated ?? tw.activated || tw.kind === 'princess'
+                ? (remote.activated ?? tw.activated) || tw.kind === 'princess'
                 : false,
           }
         })
