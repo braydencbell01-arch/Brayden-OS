@@ -53,11 +53,13 @@ export async function ntfyPublish(
     }
   }
 
-  const primary = await post(NTFY_PRIMARY)
-  if (opts.mirrorLive !== false) {
-    void post(NTFY_LIVE)
+  // Race both relays — envs.net has history; ntfy.sh is usually faster.
+  // Success if either accepts (fixes "Network was flaky" when one host is slow).
+  if (opts.mirrorLive === false) {
+    return post(NTFY_PRIMARY)
   }
-  return primary
+  const results = await Promise.all([post(NTFY_PRIMARY), post(NTFY_LIVE)])
+  return results[0] || results[1]
 }
 
 export type NtfyEnvelope = {
@@ -76,8 +78,8 @@ function parseEnvelopeLine(line: string): NtfyEnvelope | null {
 }
 
 /**
- * Subscribe via SSE + aggressive poll on the primary (cached) server.
- * Dedupes by ntfy message id.
+ * Subscribe via SSE + poll on the cached primary, plus live SSE on ntfy.sh.
+ * Dedupes by ntfy message id / payload fingerprint.
  */
 export function ntfySubscribe(
   topic: string,
@@ -93,13 +95,12 @@ export function ntfySubscribe(
   const pollMs = opts?.pollMs ?? 900
 
   function handle(raw: string, id?: string) {
-    if (id) {
-      if (seen.has(id)) return
-      seen.add(id)
-      if (seen.size > 400) {
-        const first = seen.values().next().value
-        if (first) seen.delete(first)
-      }
+    const key = id || `p:${raw.length}:${raw.slice(0, 96)}`
+    if (seen.has(key)) return
+    seen.add(key)
+    if (seen.size > 500) {
+      const first = seen.values().next().value
+      if (first) seen.delete(first)
     }
     onRaw(raw, id)
   }
@@ -126,21 +127,28 @@ export function ntfySubscribe(
     }
   }
 
-  let es: EventSource | null = null
-  try {
-    es = new EventSource(`${ntfyUrl(topic)}/sse`)
-    es.onmessage = (ev) => {
-      try {
-        const envelope = JSON.parse(ev.data) as NtfyEnvelope
-        if (envelope.time) lastSince = Math.max(lastSince, envelope.time)
-        if (envelope.message) handle(envelope.message, envelope.id)
-      } catch {
-        /* ignore */
+  function attachSse(base: string): EventSource | null {
+    try {
+      const es = new EventSource(`${ntfyUrl(topic, base)}/sse`)
+      es.onmessage = (ev) => {
+        try {
+          const envelope = JSON.parse(ev.data) as NtfyEnvelope
+          if (envelope.time && base === NTFY_PRIMARY) {
+            lastSince = Math.max(lastSince, envelope.time)
+          }
+          if (envelope.message) handle(envelope.message, envelope.id)
+        } catch {
+          /* ignore */
+        }
       }
+      return es
+    } catch {
+      return null
     }
-  } catch {
-    es = null
   }
+
+  const esPrimary = attachSse(NTFY_PRIMARY)
+  const esLive = attachSse(NTFY_LIVE)
 
   void pollOnce()
   const poll = window.setInterval(() => void pollOnce(), pollMs)
@@ -148,6 +156,7 @@ export function ntfySubscribe(
   return () => {
     stopped = true
     window.clearInterval(poll)
-    es?.close()
+    esPrimary?.close()
+    esLive?.close()
   }
 }

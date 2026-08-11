@@ -254,7 +254,7 @@ export async function resolvePlayerName(
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return null
 
-  await pollDirectory(300)
+  await pollDirectory(120)
   let name = lookupDirectory(c)
   if (name) return name
 
@@ -280,10 +280,10 @@ export async function resolvePlayerName(
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
     if (fromReply) return fromReply
-    await pollDirectory(180)
+    await pollDirectory(90)
     name = lookupDirectory(c)
     if (name) return name
-    await new Promise((r) => window.setTimeout(r, 400))
+    await new Promise((r) => window.setTimeout(r, 350))
   }
 
   await replyPromise

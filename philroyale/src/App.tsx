@@ -391,70 +391,57 @@ export default function App() {
       }
       if (code === myId) return { ok: false, message: "That's your own code." }
 
+      // Instant add — never block the UI for a long name lookup.
+      const cached = lookupDirectory(code)
+      upsertFriend({ name: cached || `Player ${code}`, playerId: code })
+      window.dispatchEvent(new Event('philroyale-friends-changed'))
+
       void publishDirectory(myId, me, { trophies: loadProfile().trophies })
-      const published = await publishSocial(code, {
+      void publishSocial(code, {
         type: 'friend_request',
         fromPlayerId: myId,
         fromName: me,
         toPlayerId: code,
         at: new Date().toISOString(),
       })
-      const ask = () => {
-        void publishSocial(code, {
-          type: 'friend_request',
-          fromPlayerId: myId,
-          fromName: me,
-          toPlayerId: code,
-          at: new Date().toISOString(),
-        })
-        void publishSocial(code, {
-          type: 'friend_hello',
-          fromPlayerId: myId,
-          fromName: me,
-          at: new Date().toISOString(),
-        })
-        void publishSocial(code, {
-          type: 'presence',
-          fromPlayerId: myId,
-          fromName: me,
-          at: new Date().toISOString(),
-          trophies: loadProfile().trophies,
-        })
-      }
-      ask()
-      ;[700, 2000, 4000].forEach((ms) => {
-        window.setTimeout(ask, ms)
+      void publishSocial(code, {
+        type: 'friend_hello',
+        fromPlayerId: myId,
+        fromName: me,
+        at: new Date().toISOString(),
+      })
+      ;[600, 1800].forEach((ms) => {
+        window.setTimeout(() => {
+          void publishSocial(code, {
+            type: 'friend_request',
+            fromPlayerId: myId,
+            fromName: me,
+            toPlayerId: code,
+            at: new Date().toISOString(),
+          })
+          void publishSocial(code, {
+            type: 'friend_hello',
+            fromPlayerId: myId,
+            fromName: me,
+            at: new Date().toISOString(),
+          })
+        }, ms)
       })
 
-      const foundName = await resolvePlayerName(code, 16_000)
-      const display = foundName || `Player ${code}`
-      upsertFriend({ name: display, playerId: code })
-      window.dispatchEvent(new Event('philroyale-friends-changed'))
+      // Background: pull real name and update the list (no waiting here).
+      void (async () => {
+        const name = cached || (await resolvePlayerName(code, 8_000))
+        if (!name) return
+        upsertFriend({ name, playerId: code })
+        window.dispatchEvent(new Event('philroyale-friends-changed'))
+        if (!cached) flashFriend(`Friend name: ${name}`)
+      })()
 
-      // Keep watching — if they open the app a few seconds later, swap in their real name.
-      if (!foundName) {
-        void (async () => {
-          const late = await resolvePlayerName(code, 45_000)
-          if (!late) return
-          upsertFriend({ name: late, playerId: code })
-          window.dispatchEvent(new Event('philroyale-friends-changed'))
-          flashFriend(`Friend name updated: ${late}`)
-        })()
-      }
-
-      if (!published) {
-        return {
-          ok: true,
-          message: foundName
-            ? `Added ${foundName}. Network was flaky — keep both apps open for invites.`
-            : `Saved code ${code}. Keep both apps open so we can pull their name.`,
-        }
-      }
       return {
         ok: true,
-        message: foundName
-          ? `Added ${foundName}! Open their profile → Invite to battle.`
-          : `Code ${code} saved. Have them open Phil Royale (Friends screen) so their name appears — we're still looking.`,
+        message: cached
+          ? `Added ${cached}!`
+          : `Added — looking up their name now (keep both apps open).`,
       }
     },
     [flashFriend],
