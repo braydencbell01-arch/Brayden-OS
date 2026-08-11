@@ -26,7 +26,8 @@ import type { GameMode } from './storage'
 import { loadPlayerId, loadPlayerName } from './storage'
 import {
   getCharacter,
-  DEFAULT_DECK,
+  randomBotDeck,
+  uniqueDeckFrom,
   isBuildingCard,
   isSpellCard,
   pickSpawnFromPool,
@@ -482,14 +483,14 @@ function tryEnemyAiDeploy(
   t: number,
   botLevel: number,
   mode: GameMode = 'classic',
-  deckIds: string[] = DEFAULT_DECK,
+  deckIds: string[] = [],
 ): { unit: BattleUnit | null; elixir: number; deckIndex: number; projectile?: Projectile | null } {
   const lane = pickAiLane(units)
   const colBase = lane === 'left' ? 18 : 70
   const colSpan = 14
   const rowBase = mode === 'touchdown' ? 8 : 28
   const rowSpan = mode === 'touchdown' ? 38 : 40
-  const deck = deckIds.length ? deckIds : DEFAULT_DECK
+  const deck = uniqueDeckFrom(deckIds.length ? deckIds : randomBotDeck())
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
 
   // Prefer affordable cards first so the bot actually plays instead of cycling past them.
@@ -805,8 +806,8 @@ export function useBattle(opts?: {
   modeRef.current = mode
   const aiProfileRef = useRef(aiProfile)
   aiProfileRef.current = botAiProfile(opts?.trophies ?? 0)
-  const enemyDeckRef = useRef(opts?.enemyDeckIds ?? DEFAULT_DECK)
-  enemyDeckRef.current = opts?.enemyDeckIds ?? DEFAULT_DECK
+  const enemyDeckRef = useRef(uniqueDeckFrom(opts?.enemyDeckIds ?? randomBotDeck()))
+  enemyDeckRef.current = uniqueDeckFrom(opts?.enemyDeckIds ?? enemyDeckRef.current)
   const netRef = useRef(net)
   netRef.current = net
   /** Tracks live net role; must clear when net drops so bot AI can run. */

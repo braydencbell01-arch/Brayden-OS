@@ -255,7 +255,7 @@ export function BattleScreen({
 }: Props) {
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
-  // Solo bots get a fresh random deck each match (not a copy of yours).
+  // Solo CPUs: fresh random deck from the full roster, max one of each card.
   const botDeckIds = useMemo(() => randomBotDeck(), [])
   const trophies = useMemo(() => loadProfile().trophies, [])
   const [drawPile, setDrawPile] = useState<string[]>([])

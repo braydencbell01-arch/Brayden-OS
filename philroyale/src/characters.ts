@@ -699,7 +699,7 @@ export const CHARACTERS: CharacterDef[] = [
 
 export const DECK_SIZE = 8
 
-/** Default 8-card mix across the roster (duplicates allowed). */
+/** Default 8-card mix across the roster (player starter; duplicates allowed in saved decks). */
 export const DEFAULT_DECK = [
   PHIL.id,
   KATHIE.id,
@@ -711,16 +711,52 @@ export const DEFAULT_DECK = [
   FINLEY.id,
 ]
 
-/** Fresh random 8-card bot deck (unique cards, shuffled) for each solo match. */
-export function randomBotDeck(): string[] {
-  const pool = CHARACTERS.map((c) => c.id)
-  for (let i = pool.length - 1; i > 0; i--) {
+/** Fisher–Yates shuffle (in place). */
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
-    const a = pool[i]!
-    pool[i] = pool[j]!
-    pool[j] = a
+    const a = arr[i]!
+    arr[i] = arr[j]!
+    arr[j] = a
   }
-  return pool.slice(0, DECK_SIZE)
+  return arr
+}
+
+/**
+ * Fresh random CPU deck each solo match.
+ * Drawn from the full roster; at most one of each card (no duplicates).
+ */
+export function randomBotDeck(size = DECK_SIZE): string[] {
+  const pool = shuffleInPlace(CHARACTERS.map((c) => c.id))
+  const unique: string[] = []
+  const seen = new Set<string>()
+  for (const id of pool) {
+    if (seen.has(id)) continue
+    seen.add(id)
+    unique.push(id)
+    if (unique.length >= size) break
+  }
+  return unique
+}
+
+/** Enforce max-one-of-each; if short, fill from remaining roster at random. */
+export function uniqueDeckFrom(ids: string[], size = DECK_SIZE): string[] {
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const id of ids) {
+    if (!getCharacter(id) || seen.has(id)) continue
+    seen.add(id)
+    out.push(id)
+    if (out.length >= size) return out
+  }
+  const fillers = shuffleInPlace(
+    CHARACTERS.map((c) => c.id).filter((id) => !seen.has(id)),
+  )
+  for (const id of fillers) {
+    out.push(id)
+    if (out.length >= size) break
+  }
+  return out
 }
 
 export function cardKindOf(c: CharacterDef): CardKind {
