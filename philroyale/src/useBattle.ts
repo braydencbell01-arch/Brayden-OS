@@ -769,6 +769,13 @@ export function useBattle(opts?: {
   const [allyScore, setAllyScore] = useState(0)
   const [enemyScore, setEnemyScore] = useState(0)
   const [syncReady, setSyncReady] = useState(!net)
+  /** Host: true once guest has announced. Guest/spectator: follows syncReady. */
+  const [peerJoined, setPeerJoined] = useState(() => !net || net.role !== 'host')
+  const peerJoinedRef = useRef(peerJoined)
+  peerJoinedRef.current = peerJoined
+  const [clockSec, setClockSec] = useState(() => (mode === 'touchdown' ? 150 : 180))
+  const clockSecRef = useRef(clockSec)
+  clockSecRef.current = clockSec
   const [towers, setTowers] = useState<TowerHp[]>(() =>
     TOWERS.map((t) => {
       const maxHp = towerMaxHp(t.kind)
@@ -870,6 +877,8 @@ export function useBattle(opts?: {
       })),
       allyScore: allyScoreRef.current,
       enemyScore: enemyScoreRef.current,
+      clockSec: clockSecRef.current,
+      peerJoined: peerJoinedRef.current,
     }
     void publishBattle(n.challengeId, msg)
   }, [])
@@ -979,12 +988,20 @@ export function useBattle(opts?: {
 
       if (msg.type === 'battle_peer_accept' || msg.type === 'battle_ready') {
         lastRemoteAtRef.current = Date.now()
-        if (role === 'host') publishHostState(true)
+        if (role === 'host') {
+          if (msg.type === 'battle_peer_accept' || msg.role === 'guest') {
+            setPeerJoined(true)
+            peerJoinedRef.current = true
+          }
+          publishHostState(true)
+        }
         return
       }
 
       if (msg.type === 'battle_deploy' && role === 'host') {
         lastRemoteAtRef.current = Date.now()
+        setPeerJoined(true)
+        peerJoinedRef.current = true
         pendingGuestDeploysRef.current.push({
           charId: msg.charId,
           col: msg.col,
@@ -1038,11 +1055,13 @@ export function useBattle(opts?: {
             facing: flip ? u.facing + Math.PI : u.facing,
             rootedUntil: 0,
             spawnedAt: t,
-            enraged: u.enraged,
+            enraged: !!u.enraged,
             movingUntil: u.moving ? t + 200 : 0,
             lockKey: null,
           }
         })
+        towersRef.current = nextTowers
+        unitsRef.current = nextUnits
         setTowers(nextTowers)
         setUnits(nextUnits)
         if (flip) {
@@ -1063,22 +1082,28 @@ export function useBattle(opts?: {
           setAllyScore(allyScoreRef.current)
           setEnemyScore(enemyScoreRef.current)
         }
+        if (typeof msg.clockSec === 'number') {
+          clockSecRef.current = msg.clockSec
+          setClockSec(msg.clockSec)
+        }
         setSyncReady(true)
+        setPeerJoined(true)
         setProjectiles([])
       }
     })
 
     let announceTimer = 0
     let failTimer = 0
+    let hostBurst = 0
     if (net.role === 'guest') {
       announceGuest()
-      announceTimer = window.setInterval(announceGuest, 900)
-      // Friend host never showed up — ask App to drop net (bot match) instead of freezing.
+      announceTimer = window.setInterval(announceGuest, 700)
+      // Host never published state — give up after a long wait (keep trying hard first).
       failTimer = window.setTimeout(() => {
         if (liveRoleRef.current !== 'guest') return
         if (lastRemoteSeqRef.current > 0) return
         opts?.onPeerLinkFailed?.()
-      }, 10000)
+      }, 28_000)
     }
 
     if (net.role === 'host' || net.role === 'guest') {
@@ -1091,16 +1116,19 @@ export function useBattle(opts?: {
       })
     }
     if (net.role === 'host') {
-      setSyncReady(true)
+      // Publish the empty board immediately so an accepting guest can link from cache.
+      setPeerJoined(false)
+      peerJoinedRef.current = false
       publishHostState(true)
-      const burst = window.setInterval(() => publishHostState(true), 600)
-      window.setTimeout(() => window.clearInterval(burst), 10000)
+      hostBurst = window.setInterval(() => publishHostState(true), 450)
+      window.setTimeout(() => window.clearInterval(hostBurst), 20_000)
     }
 
     return () => {
       unsub()
       if (announceTimer) window.clearInterval(announceTimer)
       if (failTimer) window.clearTimeout(failTimer)
+      if (hostBurst) window.clearInterval(hostBurst)
     }
   }, [net, publishHostState, opts?.onPeerLinkFailed])
 
@@ -1114,11 +1142,28 @@ export function useBattle(opts?: {
       last = t
       setNow(t)
 
+      if (pausedRef.current) {
+        raf = requestAnimationFrame(tick)
+        return
+      }
+
+      // Friend match: freeze the sim until both sides are linked (clock stays synced).
+      const roleNow = liveRoleRef.current ?? netRef.current?.role
+      const linked =
+        !netRef.current ||
+        (roleNow === 'guest' || roleNow === 'spectator'
+          ? lastRemoteSeqRef.current > 0
+          : peerJoinedRef.current)
+      if (netRef.current && !linked) {
+        if (roleNow === 'host') publishHostState(false)
+        raf = requestAnimationFrame(tick)
+        return
+      }
+
       // Lag indicator: long frames, or friend-battle sync going quiet.
       if (rawDt > LAG_FRAME_DT) lagStreakRef.current = Math.min(12, lagStreakRef.current + 2)
       else lagStreakRef.current = Math.max(0, lagStreakRef.current - 1)
       let syncLag = false
-      const roleNow = liveRoleRef.current ?? netRef.current?.role
       if (roleNow === 'guest' || roleNow === 'spectator') {
         // Don't flash LAG while still linking — wait until we've received a frame.
         syncLag =
@@ -1132,11 +1177,6 @@ export function useBattle(opts?: {
       }
       const nextLag = lagStreakRef.current >= 4 || syncLag
       setLagging((prev) => (prev === nextLag ? prev : nextLag))
-
-      if (pausedRef.current) {
-        raf = requestAnimationFrame(tick)
-        return
-      }
 
       // Guest / spectator only mirrors host state — do not run a second local sim.
       // Still advance local spell VFX (sundae throw) so casts feel responsive.
@@ -2307,6 +2347,16 @@ export function useBattle(opts?: {
     enemyScore,
     touchdownWinScore: TOUCHDOWN_WIN_SCORE,
     syncReady,
+    peerJoined,
+    linkReady:
+      !net ||
+      (net.role === 'host'
+        ? peerJoined
+        : net.role === 'spectator'
+          ? syncReady
+          : syncReady),
+    clockSec,
+    setClockSec,
     netRole: liveRoleRef.current ?? net?.role ?? null,
     lagging,
   }

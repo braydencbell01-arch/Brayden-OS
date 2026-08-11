@@ -380,6 +380,56 @@ export function subscribeSocial(
       notifySocialWaiters(msg)
       onMessage(msg)
     },
-    { lookbackSec: 180, pollMs: 800 },
+    { lookbackSec: 180, pollMs: 600 },
+  )
+}
+
+/** Stable shared mailbox for two friend codes — survives missed personal-topic delivery. */
+export function pairTopicFor(codeA: string, codeB: string): string {
+  const a = String(codeA || '').replace(/\D/g, '').slice(0, 6)
+  const b = String(codeB || '').replace(/\D/g, '').slice(0, 6)
+  const [x, y] = [a, b].sort()
+  return `philroyale-pair-v5-${x}-${y}`
+}
+
+export async function publishPair(
+  codeA: string,
+  codeB: string,
+  message: SocialMessage,
+): Promise<boolean> {
+  const a = String(codeA || '').replace(/\D/g, '').slice(0, 6)
+  const b = String(codeB || '').replace(/\D/g, '').slice(0, 6)
+  if (a.length !== 6 || b.length !== 6) return false
+  return ntfyPublish(pairTopicFor(a, b), message, {
+    title: 'Phil Royale friends',
+    priority:
+      message.type === 'battle_invite' ||
+      message.type === 'battle_accept' ||
+      message.type === 'friend_request'
+        ? 'high'
+        : 'default',
+    tags: 'busts_in_silhouette',
+    ttl: 180,
+  })
+}
+
+export function subscribePair(
+  codeA: string,
+  codeB: string,
+  onMessage: (msg: SocialMessage) => void,
+): () => void {
+  const a = String(codeA || '').replace(/\D/g, '').slice(0, 6)
+  const b = String(codeB || '').replace(/\D/g, '').slice(0, 6)
+  if (a.length !== 6 || b.length !== 6 || typeof window === 'undefined') return () => {}
+
+  return ntfySubscribe(
+    pairTopicFor(a, b),
+    (raw) => {
+      const msg = parsePayload(raw)
+      if (!msg) return
+      notifySocialWaiters(msg)
+      onMessage(msg)
+    },
+    { lookbackSec: 180, pollMs: 700 },
   )
 }

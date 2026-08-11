@@ -15,13 +15,14 @@ import { joinClubVerified, startClubSync } from './clubSync'
 import {
   DIRECTORY_HEARTBEAT_MS,
   PRESENCE_HEARTBEAT_MS,
-  PRESENCE_ONLINE_MS,
   lookupDirectory,
   lookupDirectoryPresence,
   publishDirectory,
+  publishPair,
   publishSocial,
   resolvePlayerName,
   subscribeDirectory,
+  subscribePair,
   subscribeSocial,
   type FriendPresenceInfo,
   type SocialMessage,
@@ -240,11 +241,20 @@ export default function App() {
 
     const burstAccept = () => {
       const at = new Date().toISOString()
+      const myId = loadPlayerId()
       if (fromPlayerId) {
         void publishSocial(fromPlayerId, {
           type: 'battle_accept',
           challengeId,
-          fromPlayerId: loadPlayerId(),
+          fromPlayerId: myId,
+          fromName: acceptedBy,
+          mode: modeFinal,
+          at,
+        })
+        void publishPair(myId, fromPlayerId, {
+          type: 'battle_accept',
+          challengeId,
+          fromPlayerId: myId,
           fromName: acceptedBy,
           mode: modeFinal,
           at,
@@ -254,7 +264,7 @@ export default function App() {
         type: 'battle_peer_accept',
         challengeId,
         fromName: acceptedBy,
-        fromPlayerId: loadPlayerId(),
+        fromPlayerId: myId,
         mode: modeFinal,
         at,
       })
@@ -319,14 +329,18 @@ export default function App() {
         flashFriend(`${friendName} is already in a battle — spectate from their profile.`)
         return
       }
-      const lastSeen = friendPresence[toPlayerId]?.at
-      const looksOnline = !!lastSeen && Date.now() - lastSeen < PRESENCE_ONLINE_MS
       const challenge = createBattleChallenge(friendName, {
         mode,
         toPlayerId,
       })
-      setOutgoingChallenge(challenge)
-      postBattleMessage({ type: 'challenge', challenge })
+      // Host the room IMMEDIATELY so Accept joins a live match (no Waiting→Linking deadlock).
+      clearOutgoingChallenge()
+      setOutgoingChallenge(null)
+      startMatch(friendName, mode, {
+        challengeId: challenge.challengeId,
+        role: 'host',
+        peerPlayerId: toPlayerId,
+      })
 
       const invitePayload = {
         type: 'battle_invite' as const,
@@ -338,37 +352,19 @@ export default function App() {
         mode,
         at: challenge.createdAt,
       }
-      const ok = await publishSocial(toPlayerId, invitePayload)
-      // Retries — friend phone may poll a second later.
-      ;[500, 1500, 3000].forEach((ms) => {
+      const myId = loadPlayerId()
+      void publishSocial(toPlayerId, invitePayload)
+      void publishPair(myId, toPlayerId, invitePayload)
+      ;[400, 1200, 2500, 4500].forEach((ms) => {
         window.setTimeout(() => {
-          void publishSocial(toPlayerId, {
-            ...invitePayload,
-            at: new Date().toISOString(),
-          })
+          const at = new Date().toISOString()
+          void publishSocial(toPlayerId, { ...invitePayload, at })
+          void publishPair(myId, toPlayerId, { ...invitePayload, at })
         }, ms)
       })
-      // Pre-open the battle room so guest accepts land even if social is slow.
-      void publishBattle(challenge.challengeId, {
-        type: 'battle_ready',
-        challengeId: challenge.challengeId,
-        role: 'host',
-        name: challenge.fromName,
-        at: new Date().toISOString(),
-      })
-
-      if (!ok) {
-        clearOutgoingChallenge()
-        setOutgoingChallenge(null)
-        flashFriend('Invite failed — check your connection and try again.')
-        return
-      }
-      flashFriend(
-        looksOnline
-          ? `Invite sent to ${friendName} — they should see Accept / Decline now.`
-          : `Invite sent. Keep Phil Royale open on both phones so they get the popup.`,
-      )
-    }, [flashFriend, friendPresence],
+      flashFriend(`Battle started — waiting for ${friendName} to Accept on their phone.`)
+    },
+    [flashFriend, friendPresence, startMatch],
   )
 
   const addFriendByCode = useCallback(
@@ -404,6 +400,13 @@ export default function App() {
         toPlayerId: code,
         at: new Date().toISOString(),
       })
+      void publishPair(myId, code, {
+        type: 'friend_request',
+        fromPlayerId: myId,
+        fromName: me,
+        toPlayerId: code,
+        at: new Date().toISOString(),
+      })
       void publishSocial(code, {
         type: 'friend_hello',
         fromPlayerId: myId,
@@ -413,6 +416,13 @@ export default function App() {
       ;[600, 1800].forEach((ms) => {
         window.setTimeout(() => {
           void publishSocial(code, {
+            type: 'friend_request',
+            fromPlayerId: myId,
+            fromName: me,
+            toPlayerId: code,
+            at: new Date().toISOString(),
+          })
+          void publishPair(myId, code, {
             type: 'friend_request',
             fromPlayerId: myId,
             fromName: me,
@@ -509,10 +519,16 @@ export default function App() {
 
   // Club roster sync on every screen so joins work even if Social isn't open.
   const [clubSyncKey, setClubSyncKey] = useState(0)
+  const [friendsTick, setFriendsTick] = useState(0)
   useEffect(() => {
     const bump = () => setClubSyncKey((k) => k + 1)
     window.addEventListener('philroyale-club-changed', bump)
     return () => window.removeEventListener('philroyale-club-changed', bump)
+  }, [])
+  useEffect(() => {
+    const bump = () => setFriendsTick((k) => k + 1)
+    window.addEventListener('philroyale-friends-changed', bump)
+    return () => window.removeEventListener('philroyale-friends-changed', bump)
   }, [])
   useEffect(() => {
     repairBrokenLocalClub()
@@ -672,6 +688,7 @@ export default function App() {
   useEffect(() => {
     const myId = loadPlayerId()
     const inboxIds = [myId, ...loadLegacyPlayerIds()]
+    void friendsTick
 
     const onSocial = (msg: SocialMessage) => {
       if (msg.type === 'presence') {
@@ -805,10 +822,15 @@ export default function App() {
     }
 
     const unsubs = inboxIds.map((id) => subscribeSocial(id, onSocial))
+    // Pair mailboxes with each friend — invites/friend adds land even if personal topics miss.
+    for (const f of loadFriends()) {
+      if (!f.playerId || !isFriendCode(f.playerId)) continue
+      unsubs.push(subscribePair(myId, f.playerId, onSocial))
+    }
     return () => {
       for (const u of unsubs) u()
     }
-  }, [flashFriend, showIncoming, startMatch])
+  }, [flashFriend, showIncoming, startMatch, friendsTick])
 
   // Friend-code directory — both phones must stay open for name + online lookup.
   useEffect(() => {

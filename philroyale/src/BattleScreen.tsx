@@ -288,7 +288,11 @@ export function BattleScreen({
     allyScore,
     enemyScore,
     touchdownWinScore,
-    syncReady,
+    syncReady: _syncReady,
+    peerJoined: _peerJoined,
+    linkReady,
+    clockSec,
+    setClockSec,
     netRole,
     lagging,
   } = useBattle({
@@ -303,6 +307,18 @@ export function BattleScreen({
   })
 
   useEffect(() => {
+    if (!net) return
+    if (net.role === 'guest' || net.role === 'spectator') {
+      setSeconds(clockSec)
+    }
+  }, [net, clockSec])
+
+  useEffect(() => {
+    if (!net || net.role !== 'host' || !linkReady) return
+    setClockSec(seconds)
+  }, [net, linkReady, seconds, setClockSec])
+
+  useEffect(() => {
     const pile = [...deckIds].sort(() => Math.random() - 0.5)
     const h = pile.slice(0, 4)
     setHand(h)
@@ -312,10 +328,10 @@ export function BattleScreen({
   }, [deckIds, setSelectedCharId])
 
   useEffect(() => {
-    if (ended || isSpectating) return
+    if (ended || isSpectating || (net && !linkReady)) return
     const id = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
     return () => window.clearInterval(id)
-  }, [ended, isSpectating])
+  }, [ended, isSpectating, net, linkReady])
 
   useEffect(() => {
     if (!result) return
@@ -417,7 +433,7 @@ export function BattleScreen({
   }
 
   function onArenaPointer(col: number, row: number) {
-    if (ended || (net && !syncReady)) return
+    if (ended || (net && !linkReady)) return
     if (dragRef.current) return
     setEmotePickerOpen(false)
     if (!selectedCharId) return
@@ -458,7 +474,7 @@ export function BattleScreen({
   }
 
   function onCardPointerDown(e: React.PointerEvent, charId: string) {
-    if (ended || (net && !syncReady)) return
+    if (ended || (net && !linkReady)) return
     setEmotePickerOpen(false)
     const card = getCharacter(charId)
     if (!card || elixir < card.elixir) {
@@ -558,18 +574,18 @@ export function BattleScreen({
 
   return (
     <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
-      {net && !syncReady ? (
+      {net && !linkReady ? (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl text-white">
             {isSpectating
               ? 'Joining spectate…'
               : netRole === 'guest'
-                ? 'Linking battle…'
-                : 'Waiting for opponent…'}
+                ? 'Connecting to friend…'
+                : 'Waiting for friend to join…'}
           </p>
           <p className="max-w-xs text-sm font-semibold text-white/75">
-            Keep Phil Royale open on both phones. If this hangs, the other player should Accept
-            again — we retry automatically.
+            Keep Phil Royale open on both phones. Accept the invite on the other phone — the match
+            starts when both are connected.
           </p>
         </div>
       ) : null}
