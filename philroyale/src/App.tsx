@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BattleScreen } from './BattleScreen'
 import { CharactersScreen } from './CharactersScreen'
@@ -18,6 +18,7 @@ import {
   lookupDirectory,
   lookupDirectoryPresence,
   publishDirectory,
+  publishLobby,
   publishPair,
   publishSocial,
   resolvePlayerName,
@@ -122,6 +123,8 @@ export default function App() {
     fromName: string
   } | null>(null)
   const needsName = !playerName.trim()
+  /** Keep re-broadcasting battle invites until this time (host waiting for Accept). */
+  const hostInviteUntilRef = useRef(0)
 
   const flashFriend = useCallback((msg: string) => {
     setFriendToast(msg)
@@ -243,22 +246,18 @@ export default function App() {
       const at = new Date().toISOString()
       const myId = loadPlayerId()
       if (fromPlayerId) {
-        void publishSocial(fromPlayerId, {
-          type: 'battle_accept',
+        const acceptMsg = {
+          type: 'battle_accept' as const,
           challengeId,
           fromPlayerId: myId,
           fromName: acceptedBy,
+          toPlayerId: fromPlayerId,
           mode: modeFinal,
           at,
-        })
-        void publishPair(myId, fromPlayerId, {
-          type: 'battle_accept',
-          challengeId,
-          fromPlayerId: myId,
-          fromName: acceptedBy,
-          mode: modeFinal,
-          at,
-        })
+        }
+        void publishSocial(fromPlayerId, acceptMsg)
+        void publishLobby(acceptMsg)
+        void publishPair(myId, fromPlayerId, acceptMsg)
       }
       void publishBattle(challengeId, {
         type: 'battle_peer_accept',
@@ -288,6 +287,7 @@ export default function App() {
     setTouchdownDeck(null)
     setShowRoad(false)
     // Guest enters the shared room immediately — both screens show the same match.
+    hostInviteUntilRef.current = 0
     startMatch(fromName, modeFinal, {
       challengeId,
       role: 'guest',
@@ -341,6 +341,7 @@ export default function App() {
         role: 'host',
         peerPlayerId: toPlayerId,
       })
+      hostInviteUntilRef.current = Date.now() + 40_000
 
       const invitePayload = {
         type: 'battle_invite' as const,
@@ -353,16 +354,18 @@ export default function App() {
         at: challenge.createdAt,
       }
       const myId = loadPlayerId()
-      void publishSocial(toPlayerId, invitePayload)
-      void publishPair(myId, toPlayerId, invitePayload)
-      ;[400, 1200, 2500, 4500].forEach((ms) => {
-        window.setTimeout(() => {
-          const at = new Date().toISOString()
-          void publishSocial(toPlayerId, { ...invitePayload, at })
-          void publishPair(myId, toPlayerId, { ...invitePayload, at })
-        }, ms)
+      const pushInvite = (at = new Date().toISOString()) => {
+        const payload = { ...invitePayload, at }
+        void publishSocial(toPlayerId, payload)
+        void publishLobby(payload)
+        void publishPair(myId, toPlayerId, payload)
+      }
+      pushInvite(challenge.createdAt)
+      // Keep pinging while the other phone may still be waking up / polling.
+      ;[500, 1500, 3000, 5000, 8000, 12000, 18000, 25000].forEach((ms) => {
+        window.setTimeout(() => pushInvite(), ms)
       })
-      flashFriend(`Battle started — waiting for ${friendName} to Accept on their phone.`)
+      flashFriend(`Battle started — ${friendName} should see Accept on their phone now.`)
     },
     [flashFriend, friendPresence, startMatch],
   )
@@ -392,50 +395,33 @@ export default function App() {
       upsertFriend({ name: cached || `Player ${code}`, playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
 
-      void publishDirectory(myId, me, { trophies: loadProfile().trophies })
-      void publishSocial(code, {
-        type: 'friend_request',
-        fromPlayerId: myId,
-        fromName: me,
-        toPlayerId: code,
-        at: new Date().toISOString(),
-      })
-      void publishPair(myId, code, {
-        type: 'friend_request',
-        fromPlayerId: myId,
-        fromName: me,
-        toPlayerId: code,
-        at: new Date().toISOString(),
-      })
-      void publishSocial(code, {
-        type: 'friend_hello',
-        fromPlayerId: myId,
-        fromName: me,
-        at: new Date().toISOString(),
-      })
-      ;[600, 1800].forEach((ms) => {
-        window.setTimeout(() => {
-          void publishSocial(code, {
-            type: 'friend_request',
-            fromPlayerId: myId,
-            fromName: me,
-            toPlayerId: code,
-            at: new Date().toISOString(),
-          })
-          void publishPair(myId, code, {
-            type: 'friend_request',
-            fromPlayerId: myId,
-            fromName: me,
-            toPlayerId: code,
-            at: new Date().toISOString(),
-          })
-          void publishSocial(code, {
-            type: 'friend_hello',
-            fromPlayerId: myId,
-            fromName: me,
-            at: new Date().toISOString(),
-          })
-        }, ms)
+      const trophies = loadProfile().trophies
+      void publishDirectory(myId, me, { trophies })
+      const pushAdd = () => {
+        const at = new Date().toISOString()
+        const req = {
+          type: 'friend_request' as const,
+          fromPlayerId: myId,
+          fromName: me,
+          toPlayerId: code,
+          at,
+        }
+        const hello = {
+          type: 'friend_hello' as const,
+          fromPlayerId: myId,
+          fromName: me,
+          toPlayerId: code,
+          at,
+        }
+        void publishSocial(code, req)
+        void publishLobby(req)
+        void publishPair(myId, code, req)
+        void publishSocial(code, hello)
+        void publishLobby(hello)
+      }
+      pushAdd()
+      ;[700, 2000, 4500, 9000].forEach((ms) => {
+        window.setTimeout(pushAdd, ms)
       })
 
       // Background: pull real name and update the list (no waiting here).
@@ -689,10 +675,30 @@ export default function App() {
     const myId = loadPlayerId()
     const inboxIds = [myId, ...loadLegacyPlayerIds()]
     void friendsTick
+    const seenInvite = new Set<string>()
+    const seenFriendReq = new Set<string>()
 
     const onSocial = (msg: SocialMessage) => {
+      // Lobby broadcasts everything — only handle what is for this phone.
+      if (msg.type === 'dir_ping') {
+        if (msg.fromPlayerId === myId) return
+        const at = Date.now()
+        setFriendPresence((prev) => ({
+          ...prev,
+          [msg.fromPlayerId]: {
+            ...prev[msg.fromPlayerId],
+            at,
+            inBattle: !!msg.inBattle,
+            trophies: msg.trophies ?? prev[msg.fromPlayerId]?.trophies,
+          },
+        }))
+        return
+      }
+
       if (msg.type === 'presence') {
         if (msg.fromPlayerId === myId) return
+        // Presence may be lobbied to a specific friend; accept untargeted or for me.
+        if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const at = Date.parse(msg.at) || Date.now()
         setFriendPresence((prev) => ({
           ...prev,
@@ -717,57 +723,45 @@ export default function App() {
       }
       if (msg.type === 'friend_request') {
         if (msg.fromPlayerId === myId) return
+        if (msg.toPlayerId !== myId) return
+        if (seenFriendReq.has(msg.fromPlayerId)) return
+        seenFriendReq.add(msg.fromPlayerId)
+        window.setTimeout(() => seenFriendReq.delete(msg.fromPlayerId), 20_000)
         const me = loadPlayerName().trim() || 'Player'
         const trophies = loadProfile().trophies
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
         window.dispatchEvent(new Event('philroyale-friends-changed'))
-        // Instant name announce so the adder resolves "Player ######" → real name.
+        // Reply on lobby + personal so the adder always gets our real name.
         void publishDirectory(myId, me, { trophies })
-        void publishSocial(msg.fromPlayerId, {
-          type: 'friend_hello',
+        const hello = {
+          type: 'friend_hello' as const,
           fromPlayerId: myId,
           fromName: me,
+          toPlayerId: msg.fromPlayerId,
           at: new Date().toISOString(),
-        })
-        void publishSocial(msg.fromPlayerId, {
-          type: 'presence',
-          fromPlayerId: myId,
-          fromName: me,
-          at: new Date().toISOString(),
-          trophies,
-          inBattle: false,
-        })
-        // Burst a couple more so their resolvePlayerName poll catches us.
+        }
+        void publishSocial(msg.fromPlayerId, hello)
+        void publishLobby(hello)
         window.setTimeout(() => {
           void publishDirectory(myId, me, { trophies })
-          void publishSocial(msg.fromPlayerId, {
-            type: 'friend_hello',
-            fromPlayerId: myId,
-            fromName: me,
-            at: new Date().toISOString(),
-          })
-        }, 500)
-        window.setTimeout(() => {
-          void publishDirectory(myId, me, { trophies })
-          void publishSocial(msg.fromPlayerId, {
-            type: 'friend_hello',
-            fromPlayerId: myId,
-            fromName: me,
-            at: new Date().toISOString(),
-          })
-        }, 1600)
+          void publishLobby({ ...hello, at: new Date().toISOString() })
+        }, 800)
         setIncomingFriendReq({ fromPlayerId: msg.fromPlayerId, fromName: msg.fromName })
         flashFriend(`${msg.fromName} added you as a friend!`)
         return
       }
       if (msg.type === 'friend_hello') {
         if (msg.fromPlayerId === myId) return
+        if (msg.toPlayerId && msg.toPlayerId !== myId) return
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
         window.dispatchEvent(new Event('philroyale-friends-changed'))
-        flashFriend(`${msg.fromName} is now your friend!`)
         return
       }
       if (msg.type === 'battle_invite') {
+        if (msg.toPlayerId !== myId) return
+        if (msg.fromPlayerId === myId) return
+        if (seenInvite.has(msg.challengeId)) return
+        seenInvite.add(msg.challengeId)
         showIncoming({
           challengeId: msg.challengeId,
           fromName: msg.fromName,
@@ -777,9 +771,15 @@ export default function App() {
           mode: msg.mode,
           createdAt: msg.at,
         })
+        try {
+          navigator.vibrate?.(200)
+        } catch {
+          /* ignore */
+        }
         return
       }
       if (msg.type === 'battle_accept') {
+        if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const outgoingNow = loadOutgoingChallenge()
         if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
           const challengeId = outgoingNow.challengeId
@@ -800,6 +800,7 @@ export default function App() {
         return
       }
       if (msg.type === 'battle_decline') {
+        if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const outgoingNow = loadOutgoingChallenge()
         if (outgoingNow && outgoingNow.challengeId === msg.challengeId) {
           clearOutgoingChallenge()
@@ -809,6 +810,7 @@ export default function App() {
         return
       }
       if (msg.type === 'club_invite') {
+        if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const invite: ClubInviteIncoming = {
           fromPlayerId: msg.fromPlayerId,
           fromName: msg.fromName,
@@ -821,8 +823,10 @@ export default function App() {
       }
     }
 
-    const unsubs = inboxIds.map((id) => subscribeSocial(id, onSocial))
-    // Pair mailboxes with each friend — invites/friend adds land even if personal topics miss.
+    // Lobby first — both phones always share this channel.
+    const unsubs = [subscribeDirectory(onSocial)]
+    for (const id of inboxIds) unsubs.push(subscribeSocial(id, onSocial))
+    // Pair mailboxes (poll-only) as a backup.
     for (const f of loadFriends()) {
       if (!f.playerId || !isFriendCode(f.playerId)) continue
       unsubs.push(subscribePair(myId, f.playerId, onSocial))
@@ -832,11 +836,9 @@ export default function App() {
     }
   }, [flashFriend, showIncoming, startMatch, friendsTick])
 
-  // Friend-code directory — both phones must stay open for name + online lookup.
+  // Merge lobby presence into friend online dots often.
   useEffect(() => {
     if (needsName) return
-    const unsub = subscribeDirectory()
-    // Directory SSE fills the cache; merge into friend presence often so Online updates fast.
     const merge = () => {
       setFriendPresence((prev) => {
         const next = { ...prev }
@@ -846,7 +848,7 @@ export default function App() {
           const dir = lookupDirectoryPresence(f.playerId)
           if (!dir) continue
           const older = next[f.playerId]
-          if (!older || dir.at > (older.at ?? 0)) {
+          if (!older || dir.at >= (older.at ?? 0)) {
             next[f.playerId] = {
               ...older,
               at: dir.at,
@@ -860,26 +862,43 @@ export default function App() {
       })
     }
     merge()
-    const id = window.setInterval(merge, 2500)
-    return () => {
-      unsub()
-      window.clearInterval(id)
-    }
-  }, [needsName])
+    const id = window.setInterval(merge, 2000)
+    return () => window.clearInterval(id)
+  }, [needsName, friendsTick])
 
-  // Heartbeat: directory ping + presence to friends.
+  // Heartbeat: lobby ping only (online status). Don't spam every friend's topic.
   useEffect(() => {
     if (needsName) return
     const beat = () => {
       const me = loadPlayerName().trim() || 'Player'
       const myId = loadPlayerId()
-      const at = new Date().toISOString()
       const inMatch = battle && !!battleNet && !spectating
       const trophies = loadProfile().trophies
-      // Publish MY name often so friends adding my code resolve it.
       void publishDirectory(myId, me, { trophies, inBattle: inMatch })
 
-      // Refresh online status + swap placeholder "Player ######" names for real ones.
+      // While hosting and still waiting for Accept, keep re-sending the invite on the lobby.
+      if (
+        inMatch &&
+        battleNet?.role === 'host' &&
+        battleNet.peerPlayerId &&
+        battleNet.challengeId &&
+        Date.now() < hostInviteUntilRef.current
+      ) {
+        const toPlayerId = battleNet.peerPlayerId
+        const invitePayload = {
+          type: 'battle_invite' as const,
+          challengeId: battleNet.challengeId,
+          fromPlayerId: myId,
+          fromName: me,
+          toPlayerId,
+          toName: opponent || 'Friend',
+          mode: battleMode,
+          at: new Date().toISOString(),
+        }
+        void publishSocial(toPlayerId, invitePayload)
+        void publishLobby(invitePayload)
+      }
+
       setFriendPresence((prev) => {
         const next = { ...prev }
         for (const f of loadFriends()) {
@@ -903,24 +922,6 @@ export default function App() {
         }
         return next
       })
-
-      const role =
-        battleNet?.role === 'guest' ? 'guest' : battleNet?.role === 'host' ? 'host' : undefined
-      for (const f of loadFriends()) {
-        if (!f.playerId || f.playerId === myId) continue
-        void publishSocial(f.playerId, {
-          type: 'presence',
-          fromPlayerId: myId,
-          fromName: me,
-          at,
-          trophies,
-          inBattle: inMatch,
-          challengeId: inMatch ? battleNet?.challengeId : undefined,
-          mode: inMatch ? battleMode : undefined,
-          opponentName: inMatch ? opponent ?? undefined : undefined,
-          battleRole: inMatch ? role : undefined,
-        })
-      }
     }
     beat()
     const id = window.setInterval(beat, Math.min(PRESENCE_HEARTBEAT_MS, DIRECTORY_HEARTBEAT_MS))

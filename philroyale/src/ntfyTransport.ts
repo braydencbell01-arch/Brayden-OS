@@ -1,13 +1,13 @@
 /**
  * Shared ntfy transport for Phil Royale social / battle / club sync.
  *
- * ntfy.sh stopped retaining anonymous topic history (poll always empty),
- * which broke in-app friend adds, battle invites, and online presence unless
- * a text/URL link was used. ntfy.envs.net still caches — use it as primary.
+ * Mobile browsers cap concurrent connections per host (~6). Opening SSE on
+ * every personal + pair + directory topic starves delivery — friend adds and
+ * battle invites silently never arrive. Keep ONE SSE per subscribe + poll.
  */
 
 export const NTFY_PRIMARY = 'https://ntfy.envs.net'
-/** Live fan-out only (no reliable history on the public instance). */
+/** Mirror publish target (fan-out). Poll only — no extra SSE. */
 export const NTFY_LIVE = 'https://ntfy.sh'
 
 export function ntfyUrl(topic: string, base = NTFY_PRIMARY): string {
@@ -21,7 +21,7 @@ type PublishOpts = {
   tags?: string
   /** Seconds to retain on servers that support cache. */
   ttl?: number
-  /** Also POST to ntfy.sh for devices that already have a live SSE open there. */
+  /** Also POST to ntfy.sh (default true). */
   mirrorLive?: boolean
 }
 
@@ -36,7 +36,7 @@ export async function ntfyPublish(
     Title: opts.title ?? 'Phil Royale',
     Priority: opts.priority ?? 'default',
     Cache: 'yes',
-    TTL: String(opts.ttl ?? 180),
+    TTL: String(opts.ttl ?? 300),
   }
   if (opts.tags) headers.Tags = opts.tags
 
@@ -53,8 +53,6 @@ export async function ntfyPublish(
     }
   }
 
-  // Race both relays — envs.net has history; ntfy.sh is usually faster.
-  // Success if either accepts (fixes "Network was flaky" when one host is slow).
   if (opts.mirrorLive === false) {
     return post(NTFY_PRIMARY)
   }
@@ -78,38 +76,39 @@ function parseEnvelopeLine(line: string): NtfyEnvelope | null {
 }
 
 /**
- * Subscribe via SSE + poll on the cached primary, plus live SSE on ntfy.sh.
- * Dedupes by ntfy message id / payload fingerprint.
+ * One SSE on the cached primary + aggressive poll (primary + live).
+ * Avoids dual-SSE which blows mobile connection limits.
  */
 export function ntfySubscribe(
   topic: string,
   onRaw: (raw: string, id?: string) => void,
-  opts?: { lookbackSec?: number; pollMs?: number },
+  opts?: { lookbackSec?: number; pollMs?: number; sse?: boolean },
 ): () => void {
   if (!topic || typeof window === 'undefined') return () => {}
 
   let stopped = false
-  const lookback = opts?.lookbackSec ?? 180
+  const lookback = opts?.lookbackSec ?? 300
   let lastSince = Math.floor(Date.now() / 1000) - lookback
   const seen = new Set<string>()
-  const pollMs = opts?.pollMs ?? 900
+  const pollMs = opts?.pollMs ?? 700
+  const useSse = opts?.sse !== false
 
   function handle(raw: string, id?: string) {
-    const key = id || `p:${raw.length}:${raw.slice(0, 96)}`
+    const key = id || `p:${raw.length}:${raw.slice(0, 120)}`
     if (seen.has(key)) return
     seen.add(key)
-    if (seen.size > 500) {
+    if (seen.size > 800) {
       const first = seen.values().next().value
       if (first) seen.delete(first)
     }
     onRaw(raw, id)
   }
 
-  async function pollOnce() {
+  async function pollBase(base: string) {
     if (stopped) return
     try {
       const res = await fetch(
-        `${ntfyUrl(topic)}/json?poll=1&since=${lastSince}`,
+        `${ntfyUrl(topic, base)}/json?poll=1&since=${lastSince}`,
       )
       if (!res.ok) return
       const text = (await res.text()).trim()
@@ -127,28 +126,27 @@ export function ntfySubscribe(
     }
   }
 
-  function attachSse(base: string): EventSource | null {
+  async function pollOnce() {
+    await Promise.all([pollBase(NTFY_PRIMARY), pollBase(NTFY_LIVE)])
+  }
+
+  let es: EventSource | null = null
+  if (useSse) {
     try {
-      const es = new EventSource(`${ntfyUrl(topic, base)}/sse`)
+      es = new EventSource(`${ntfyUrl(topic, NTFY_PRIMARY)}/sse`)
       es.onmessage = (ev) => {
         try {
           const envelope = JSON.parse(ev.data) as NtfyEnvelope
-          if (envelope.time && base === NTFY_PRIMARY) {
-            lastSince = Math.max(lastSince, envelope.time)
-          }
+          if (envelope.time) lastSince = Math.max(lastSince, envelope.time)
           if (envelope.message) handle(envelope.message, envelope.id)
         } catch {
           /* ignore */
         }
       }
-      return es
     } catch {
-      return null
+      es = null
     }
   }
-
-  const esPrimary = attachSse(NTFY_PRIMARY)
-  const esLive = attachSse(NTFY_LIVE)
 
   void pollOnce()
   const poll = window.setInterval(() => void pollOnce(), pollMs)
@@ -156,7 +154,6 @@ export function ntfySubscribe(
   return () => {
     stopped = true
     window.clearInterval(poll)
-    esPrimary?.close()
-    esLive?.close()
+    es?.close()
   }
 }
