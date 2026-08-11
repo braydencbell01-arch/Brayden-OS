@@ -179,7 +179,7 @@ export const PETE: CharacterDef = {
   pronoun: 'he',
   height: "6'2\"",
   rarity: 'epic',
-  elixir: 6,
+  elixir: 5,
   hp: 3250,
   moveSpeed: 4,
   attackDelaySec: 0,
