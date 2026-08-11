@@ -45,6 +45,10 @@ export type BattleRoomMessage =
       units: SyncUnit[]
       allyScore?: number
       enemyScore?: number
+      /** Host match clock (seconds remaining) — guest mirrors this. */
+      clockSec?: number
+      /** Host has seen the guest join. */
+      peerJoined?: boolean
     }
   | {
       type: 'battle_deploy'
@@ -80,7 +84,7 @@ export type BattleNet = {
   viewAs?: 'host' | 'guest'
 }
 
-const TOPIC_PREFIX = 'philroyale-battle-v5-'
+const TOPIC_PREFIX = 'philroyale-battle-v6-'
 
 function topicFor(challengeId: string): string {
   const clean = challengeId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48)
@@ -93,8 +97,11 @@ export async function publishBattle(
 ): Promise<boolean> {
   return ntfyPublish(topicFor(challengeId), message, {
     title: 'Phil Royale battle',
-    priority: message.type === 'battle_peer_accept' ? 'high' : 'default',
-    ttl: 120,
+    priority:
+      message.type === 'battle_peer_accept' || message.type === 'battle_ready'
+        ? 'high'
+        : 'default',
+    ttl: 180,
   })
 }
 
@@ -115,7 +122,7 @@ export function subscribeBattle(
         /* ignore */
       }
     },
-    { lookbackSec: 180, pollMs: 400 },
+    { lookbackSec: 180, pollMs: 250 },
   )
 }
 
