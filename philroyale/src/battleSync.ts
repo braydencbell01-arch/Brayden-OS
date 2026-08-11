@@ -122,7 +122,7 @@ export function subscribeBattle(
         /* ignore */
       }
     },
-    { lookbackSec: 180, pollMs: 250 },
+    { lookbackSec: 180, pollMs: 400, sse: true },
   )
 }
 
