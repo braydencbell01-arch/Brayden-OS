@@ -1,0 +1,77 @@
+name: Deploy Phil Royale multiplayer API
+
+# Cloudflare Worker + Durable Objects for friends / online / battle invites.
+# Required GitHub secrets:
+#   CLOUDFLARE_API_TOKEN
+#   CLOUDFLARE_ACCOUNT_ID
+# Optional (bake into Vite builds):
+#   VITE_PHILROYALE_MP_URL
+
+on:
+  push:
+    branches: [Brayden-OS]
+    paths:
+      - 'philroyale/mp-api/**'
+      - '.github/workflows/deploy-philroyale-mp.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Cloudflare secrets
+        id: check
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${CF_TOKEN}" ] || [ -z "${CF_ACCOUNT}" ]; then
+            echo "has_cf=false" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare secrets not set — skip Phil Royale MP deploy."
+          else
+            echo "has_cf=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.has_cf == 'true'
+        with:
+          node-version: '22'
+
+      - name: Deploy Worker
+        if: steps.check.outputs.has_cf == 'true'
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: philroyale/mp-api
+          command: deploy
+
+      - name: Point Phil Royale client at Worker URL
+        if: steps.check.outputs.has_cf == 'true'
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.deployment-url }}
+          SECRET_URL: ${{ secrets.VITE_PHILROYALE_MP_URL }}
+        run: |
+          URL="${DEPLOY_URL:-$SECRET_URL}"
+          URL="${URL%/}"
+          if [ -z "$URL" ]; then
+            echo "No deployment-url from wrangler — skip endpoint file update."
+            exit 0
+          fi
+          echo "Worker URL: $URL"
+          printf '%s\n' "{\"url\":\"${URL}\"}" > philroyale/public/mp-endpoint.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add philroyale/public/mp-endpoint.json
+          if git diff --staged --quiet; then
+            echo "mp-endpoint.json already up to date."
+          else
+            git commit -m "chore(philroyale): point client at Cloudflare MP (${URL})"
+            git push origin HEAD:Brayden-OS
+          fi

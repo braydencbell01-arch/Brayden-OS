@@ -12,6 +12,7 @@ import { TrophyRoadScreen } from './TrophyRoadScreen'
 import type { BattleNet } from './battleSync'
 import { publishBattle, subscribeBattle } from './battleSync'
 import { joinClubVerified, startClubSync } from './clubSync'
+import { mpConnect, mpReady, mpSetStatus } from './mpClient'
 import {
   DIRECTORY_HEARTBEAT_MS,
   PRESENCE_HEARTBEAT_MS,
@@ -835,6 +836,20 @@ export default function App() {
       for (const u of unsubs) u()
     }
   }, [flashFriend, showIncoming, startMatch, friendsTick])
+
+  // Cloudflare multiplayer socket — presence + invites (ntfy is backup only).
+  useEffect(() => {
+    if (needsName) return
+    const myId = loadPlayerId()
+    const me = loadPlayerName().trim() || 'Player'
+    let unsub = () => {}
+    void mpReady().then((ok) => {
+      if (!ok) return
+      unsub = mpConnect(myId, me)
+      mpSetStatus({ name: me, trophies: loadProfile().trophies })
+    })
+    return () => unsub()
+  }, [needsName, playerName])
 
   // Merge lobby presence into friend online dots often.
   useEffect(() => {

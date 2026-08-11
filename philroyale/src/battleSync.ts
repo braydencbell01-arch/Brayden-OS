@@ -1,10 +1,12 @@
 /**
- * Friend-battle room over ntfy.
+ * Friend-battle room — Cloudflare Durable Object relay (ntfy backup).
  * Host runs the simulation; guest sends deploys and mirrors flipped state.
  */
 
 import { ARENA_ROWS } from './arena'
 import type { AttackId } from './characters'
+import { loadPlayerId } from './storage'
+import { mpPublishBattle, mpReady, mpSubscribeBattle } from './mpClient'
 import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
 export type BattleRole = 'host' | 'guest' | 'spectator'
@@ -95,7 +97,10 @@ export async function publishBattle(
   challengeId: string,
   message: BattleRoomMessage,
 ): Promise<boolean> {
-  return ntfyPublish(topicFor(challengeId), message, {
+  const cf = (await mpReady())
+    ? await mpPublishBattle(challengeId, message)
+    : false
+  const ntfy = await ntfyPublish(topicFor(challengeId), message, {
     title: 'Phil Royale battle',
     priority:
       message.type === 'battle_peer_accept' || message.type === 'battle_ready'
@@ -103,6 +108,7 @@ export async function publishBattle(
         : 'default',
     ttl: 180,
   })
+  return cf || ntfy
 }
 
 export function subscribeBattle(
@@ -111,19 +117,44 @@ export function subscribeBattle(
 ): () => void {
   if (!challengeId || typeof window === 'undefined') return () => {}
 
-  return ntfySubscribe(
+  const seen = new Set<string>()
+  const deliver = (data: BattleRoomMessage) => {
+    if (!data?.type || data.challengeId !== challengeId) return
+    const key =
+      data.type === 'battle_state'
+        ? `state:${data.seq}`
+        : data.type === 'battle_deploy'
+          ? `dep:${data.at}:${data.charId}`
+          : `${data.type}:${'at' in data ? data.at : ''}`
+    if (seen.has(key)) return
+    seen.add(key)
+    if (seen.size > 300) {
+      const first = seen.values().next().value
+      if (first) seen.delete(first)
+    }
+    onMessage(data)
+  }
+
+  const unsubCf = mpSubscribeBattle(challengeId, loadPlayerId(), (raw) => {
+    deliver(raw as BattleRoomMessage)
+  })
+
+  const unsubNtfy = ntfySubscribe(
     topicFor(challengeId),
     (raw) => {
       try {
-        const data = JSON.parse(raw) as BattleRoomMessage
-        if (!data?.type || data.challengeId !== challengeId) return
-        onMessage(data)
+        deliver(JSON.parse(raw) as BattleRoomMessage)
       } catch {
         /* ignore */
       }
     },
-    { lookbackSec: 180, pollMs: 400, sse: true },
+    { lookbackSec: 120, pollMs: 800, sse: false },
   )
+
+  return () => {
+    unsubCf()
+    unsubNtfy()
+  }
 }
 
 /** Flip host-sim coords into the guest's local view (guest is always ally at bottom). */

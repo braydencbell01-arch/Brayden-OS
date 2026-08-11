@@ -278,7 +278,7 @@ export function FriendsScreen({
         </h1>
         <p className="text-sm font-semibold text-white/70">
           Share your <span className="text-[#f5d76e]">6-digit friend code</span>. Keep Phil Royale
-          open on both phones — adds and battle invites sync in a few seconds.
+          open on both phones so online status and battle invites can connect.
           link. Both keep Phil Royale open, then Invite to play.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">

@@ -5,6 +5,15 @@
  * Personal + pair topics are backups only — mobile SSE limits made them flaky.
  */
 
+import {
+  mpFetchPresence,
+  mpLastPresence,
+  mpOnMessage,
+  mpOnPresence,
+  mpPollInbox,
+  mpPublish,
+  mpSetStatus,
+} from './mpClient'
 import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
 export type GameMode = 'classic' | 'touchdown'
@@ -185,6 +194,19 @@ export function lookupDirectory(code: string): string | null {
 /** Presence snapshot from the public directory (works before you're friends). */
 export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  const mp = mpLastPresence()[c]
+  if (mp && Date.now() - mp.at < PRESENCE_ONLINE_MS) {
+    rememberDirectoryPing(c, mp.name, mp.at, {
+      trophies: mp.trophies,
+      inBattle: mp.inBattle,
+    })
+    return {
+      at: mp.at,
+      inBattle: !!mp.inBattle,
+      challengeId: mp.challengeId,
+      trophies: mp.trophies,
+    }
+  }
   const e = directoryCache.get(c)
   if (!e) return null
   if (Date.now() - e.seenAt > DIRECTORY_FRESH_MS) return null
@@ -195,74 +217,98 @@ export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null
   }
 }
 
+function handleSocialObject(data: SocialMessage): void {
+  if (!data || typeof data !== 'object' || !('type' in data)) return
+  if (data.type === 'dir_ping') {
+    rememberDirectoryPing(data.fromPlayerId, data.fromName, Date.parse(data.at) || Date.now(), {
+      trophies: data.trophies,
+      inBattle: data.inBattle,
+    })
+  }
+  if (
+    data.type === 'presence' ||
+    data.type === 'friend_hello' ||
+    data.type === 'friend_request'
+  ) {
+    rememberDirectoryPing(
+      data.fromPlayerId,
+      data.fromName,
+      Date.parse(data.at) || Date.now(),
+      'trophies' in data
+        ? { trophies: data.trophies, inBattle: 'inBattle' in data ? data.inBattle : undefined }
+        : undefined,
+    )
+  }
+  notifySocialWaiters(data)
+  for (const fn of lobbyListeners) {
+    try {
+      fn(data)
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 export async function publishDirectory(
   code: string,
   name: string,
-  extra?: { trophies?: number; inBattle?: boolean },
+  extra?: { trophies?: number; inBattle?: boolean; challengeId?: string },
 ): Promise<boolean> {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return false
   rememberDirectoryPing(c, name, Date.now(), extra)
-  return ntfyPublish(
-    LOBBY_TOPIC,
-    {
-      type: 'dir_ping',
-      fromPlayerId: c,
-      fromName: name.trim() || `Player ${c}`,
-      at: new Date().toISOString(),
-      trophies: extra?.trophies,
-      inBattle: extra?.inBattle,
-    } satisfies SocialMessage,
-    { title: 'Phil Royale lobby', tags: 'bust_in_silhouette', ttl: 120 },
-  )
+  mpSetStatus({
+    name: name.trim() || `Player ${c}`,
+    trophies: extra?.trophies,
+    inBattle: extra?.inBattle,
+    challengeId: extra?.challengeId,
+  })
+  const msg = {
+    type: 'dir_ping' as const,
+    fromPlayerId: c,
+    fromName: name.trim() || `Player ${c}`,
+    at: new Date().toISOString(),
+    trophies: extra?.trophies,
+    inBattle: extra?.inBattle,
+  } satisfies SocialMessage
+
+  const cf = await mpPublish({ lobby: true, msg })
+  // Keep ntfy as backup while CF rolls out.
+  const ntfy = await ntfyPublish(LOBBY_TOPIC, msg, {
+    title: 'Phil Royale lobby',
+    tags: 'bust_in_silhouette',
+    ttl: 120,
+  })
+  return cf || ntfy
 }
 
 /** Publish to the shared lobby both phones always read (invites / friend adds). */
 export async function publishLobby(message: SocialMessage): Promise<boolean> {
+  const to =
+    'toPlayerId' in message && message.toPlayerId
+      ? String(message.toPlayerId).replace(/\D/g, '').slice(0, 6)
+      : undefined
+  const cf = await mpPublish({
+    to: to && to.length === 6 ? to : undefined,
+    lobby: true,
+    msg: message,
+  })
   const high =
     message.type === 'battle_invite' ||
     message.type === 'battle_accept' ||
     message.type === 'friend_request'
-  return ntfyPublish(LOBBY_TOPIC, message, {
+  const ntfy = await ntfyPublish(LOBBY_TOPIC, message, {
     title: 'Phil Royale lobby',
     priority: high ? 'high' : 'default',
     tags: 'video_game',
     ttl: high ? 300 : 120,
   })
+  return cf || ntfy
 }
 
 function handleLobbyRaw(raw: string): void {
   try {
-    const data = JSON.parse(raw) as SocialMessage
-    if (!data || typeof data !== 'object' || !('type' in data)) return
-    if (data.type === 'dir_ping') {
-      rememberDirectoryPing(data.fromPlayerId, data.fromName, Date.parse(data.at) || Date.now(), {
-        trophies: data.trophies,
-        inBattle: data.inBattle,
-      })
-    }
-    if (
-      data.type === 'presence' ||
-      data.type === 'friend_hello' ||
-      data.type === 'friend_request'
-    ) {
-      rememberDirectoryPing(
-        data.fromPlayerId,
-        data.fromName,
-        Date.parse(data.at) || Date.now(),
-        'trophies' in data
-          ? { trophies: data.trophies, inBattle: 'inBattle' in data ? data.inBattle : undefined }
-          : undefined,
-      )
-    }
-    notifySocialWaiters(data)
-    for (const fn of lobbyListeners) {
-      try {
-        fn(data)
-      } catch {
-        /* ignore listener errors */
-      }
-    }
+    handleSocialObject(JSON.parse(raw) as SocialMessage)
   } catch {
     /* ignore */
   }
@@ -355,11 +401,41 @@ let lobbyRefCount = 0
 function ensureLobbySubscribed(): void {
   if (lobbyUnsub) return
   void pollDirectory()
-  lobbyUnsub = ntfySubscribe(LOBBY_TOPIC, (raw) => handleLobbyRaw(raw), {
-    lookbackSec: 300,
-    pollMs: 800,
-    sse: true,
+  void mpFetchPresence()
+
+  const unsubMpMsg = mpOnMessage((msg) => {
+    handleSocialObject(msg as SocialMessage)
   })
+  const unsubMpPres = mpOnPresence((players) => {
+    for (const [code, p] of Object.entries(players)) {
+      rememberDirectoryPing(code, p.name, p.at, {
+        trophies: p.trophies,
+        inBattle: p.inBattle,
+      })
+    }
+  })
+  const unsubNtfy = ntfySubscribe(LOBBY_TOPIC, (raw) => handleLobbyRaw(raw), {
+    lookbackSec: 300,
+    pollMs: 2000,
+    sse: false,
+  })
+
+  // Inbox poll backup (covers brief WS gaps).
+  let since = Date.now() - 60_000
+  const pollId = window.setInterval(() => {
+    void (async () => {
+      // Poll is per-player — App also connects mpConnect; here we only refresh presence.
+      await mpFetchPresence()
+    })()
+  }, 5000)
+
+  lobbyUnsub = () => {
+    unsubMpMsg()
+    unsubMpPres()
+    unsubNtfy()
+    window.clearInterval(pollId)
+    void since
+  }
 }
 
 /** Stay subscribed to the shared lobby (presence + invites + friend adds). */
@@ -405,6 +481,16 @@ export async function publishSocial(
         ? { ...message, toPlayerId }
         : message
 
+  const cf = await mpPublish({
+    to: toPlayerId.replace(/\D/g, '').slice(0, 6),
+    lobby:
+      high ||
+      message.type === 'friend_hello' ||
+      message.type === 'battle_decline' ||
+      message.type === 'presence',
+    msg: withTo,
+  })
+
   const [personal, lobby] = await Promise.all([
     ntfyPublish(topicFor(toPlayerId), withTo, {
       title: 'Phil Royale',
@@ -417,10 +503,15 @@ export async function publishSocial(
     message.type === 'friend_hello' ||
     message.type === 'battle_decline' ||
     message.type === 'presence'
-      ? publishLobby(withTo as SocialMessage)
+      ? ntfyPublish(LOBBY_TOPIC, withTo, {
+          title: 'Phil Royale lobby',
+          priority: high ? 'high' : 'default',
+          tags: 'video_game',
+          ttl: high ? 300 : 120,
+        })
       : Promise.resolve(false),
   ])
-  return personal || lobby
+  return cf || personal || lobby
 }
 
 function parsePayload(raw: string): SocialMessage | null {
@@ -471,23 +562,58 @@ export function waitForSocial(
   })
 }
 
-/** Subscribe to inbound personal-topic messages (poll + one SSE). */
+/** Subscribe to inbound personal-topic messages (CF poll + light ntfy backup). */
 export function subscribeSocial(
   playerId: string,
   onMessage: (msg: SocialMessage) => void,
 ): () => void {
   if (!playerId.trim() || typeof window === 'undefined') return () => {}
 
-  return ntfySubscribe(
+  let since = Date.now() - 120_000
+  const seen = new Set<string>()
+  const deliver = (msg: SocialMessage) => {
+    const key = `${msg.type}:${'at' in msg ? msg.at : ''}:${'fromPlayerId' in msg ? msg.fromPlayerId : ''}:${'challengeId' in msg ? msg.challengeId : ''}`
+    if (seen.has(key)) return
+    seen.add(key)
+    if (seen.size > 400) {
+      const first = seen.values().next().value
+      if (first) seen.delete(first)
+    }
+    notifySocialWaiters(msg)
+    onMessage(msg)
+  }
+
+  const unsubMp = mpOnMessage((raw) => {
+    const msg = raw as SocialMessage
+    if (!msg?.type) return
+    deliver(msg)
+  })
+
+  const pollId = window.setInterval(() => {
+    void mpPollInbox(playerId, since).then((rows) => {
+      for (const row of rows) {
+        since = Math.max(since, row.at)
+        const msg = row.msg as SocialMessage
+        if (msg?.type) deliver(msg)
+      }
+    })
+  }, 2500)
+
+  const unsubNtfy = ntfySubscribe(
     topicFor(playerId),
     (raw) => {
       const msg = parsePayload(raw)
       if (!msg) return
-      notifySocialWaiters(msg)
-      onMessage(msg)
+      deliver(msg)
     },
-    { lookbackSec: 300, pollMs: 900, sse: true },
+    { lookbackSec: 120, pollMs: 2500, sse: false },
   )
+
+  return () => {
+    unsubMp()
+    unsubNtfy()
+    window.clearInterval(pollId)
+  }
 }
 
 /** Stable shared mailbox for two friend codes — backup channel. */

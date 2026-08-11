@@ -63,6 +63,7 @@ jobs:
         working-directory: philroyale
         env:
           PHILROYALE_BASE: ./
+          VITE_PHILROYALE_MP_URL: ${{ secrets.VITE_PHILROYALE_MP_URL }}
         run: |
           npm ci
           npm run build

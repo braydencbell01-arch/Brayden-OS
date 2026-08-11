@@ -1,0 +1,22 @@
+name = "philroyale-mp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Realtime friends / presence / battle invites for Phil Royale.
+# Deploy: wrangler deploy (GitHub secrets CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)
+
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "LobbyDO"
+
+[[durable_objects.bindings]]
+name = "BATTLE"
+class_name = "BattleRoomDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["LobbyDO", "BattleRoomDO"]
+
+[vars]
+# Optional override; clients also read VITE_PHILROYALE_MP_URL / mp-endpoint.json
+APP_ORIGIN = "https://braydencbell01-arch.github.io"
