@@ -51,6 +51,7 @@ export type Projectile = {
     | 'cash'
     | 'rocket'
     | 'witchcraft'
+    | 'pancake'
   fromCol: number
   fromRow: number
   toCol: number
@@ -94,6 +95,7 @@ export type SplatFx = {
     | 'witchcraft'
     | 'uppercut'
     | 'jump'
+    | 'pancake'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

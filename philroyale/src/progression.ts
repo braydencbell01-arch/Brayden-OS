@@ -49,7 +49,8 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 600, arena: 'Sundae Strip', label: 'Arena unlocked!', gold: 150, unlockCard: 'mike' },
   { trophies: 625, arena: 'Sundae Strip', label: 'Unlock Scott', unlockCard: 'scott', gold: 60 },
   { trophies: 650, arena: 'Sundae Strip', label: 'Unlock Huck', unlockCard: 'footballHuck', gold: 70 },
-  { trophies: 675, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 50 },
+  { trophies: 675, arena: 'Sundae Strip', label: "Unlock Steve's Diner", unlockCard: 'stevesDiner', gold: 65 },
+  { trophies: 700, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 50 },
   { trophies: 750, arena: 'Sundae Strip', label: 'Common Chest', chest: 'common', gold: 60 },
   { trophies: 825, arena: 'Sundae Strip', label: 'Gold pouch', gold: 80 },
   { trophies: 900, arena: 'Sundae Strip', label: 'Unlock Todd', unlockCard: 'todd', gold: 100 },
@@ -112,6 +113,7 @@ export const STARTER_UNLOCKS = [
   'dave',
   'gretchin',
   'philSpirit',
+  'stevesDiner',
 ]
 
 export function cardLevelMult(level: number): number {

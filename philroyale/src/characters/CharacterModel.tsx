@@ -20,6 +20,7 @@ import { IceCreamModel } from './IceCreamModel'
 import { GretchinModel } from './GretchinModel'
 import { DaveModel } from './DaveModel'
 import { PhilSpiritModel } from './PhilSpiritModel'
+import { StevesDinerModel } from './StevesDinerModel'
 
 type Props = {
   charId: string
@@ -79,6 +80,10 @@ export function CharacterModel({
   } else if (charId === 'philsCar') {
     model = (
       <PhilsCarModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
+  } else if (charId === 'stevesDiner') {
+    model = (
+      <StevesDinerModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
     )
   } else if (charId === 'iceCream') {
     model = <IceCreamModel anim={anim} facing={facing} portrait={portrait} />
