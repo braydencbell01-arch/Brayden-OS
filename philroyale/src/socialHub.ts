@@ -420,13 +420,8 @@ function ensureLobbySubscribed(): void {
     sse: false,
   })
 
-  // Inbox poll backup (covers brief WS gaps).
-  let since = Date.now() - 60_000
   const pollId = window.setInterval(() => {
-    void (async () => {
-      // Poll is per-player — App also connects mpConnect; here we only refresh presence.
-      await mpFetchPresence()
-    })()
+    void mpFetchPresence()
   }, 5000)
 
   lobbyUnsub = () => {
@@ -434,7 +429,6 @@ function ensureLobbySubscribed(): void {
     unsubMpPres()
     unsubNtfy()
     window.clearInterval(pollId)
-    void since
   }
 }
 
