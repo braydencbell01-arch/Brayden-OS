@@ -127,22 +127,27 @@ export default function App() {
       const trophies = loadProfile().trophies
       setOpponent(name ?? botNameForTrophies(trophies))
       setBattleMode(mode)
-      // Always host a spectate room so friends can watch bot + friend battles.
-      const room: BattleNet =
-        net ??
-        ({
-          challengeId: `s-${loadPlayerId().slice(0, 8)}-${Date.now().toString(36)}`,
-          role: 'host',
-        } satisfies BattleNet)
+
+      // If this is a friend/shared match the caller provides `net`.
+      // For solo bot matches (no `net` and no name passed) run the local sim with no network
+      // so the AI branch in useBattle can run. For non-solo (UI-driven) matches we host so
+      // friends can spectate.
+      const room: BattleNet | null = net ?? (name == null ? null : ({
+        challengeId: `s-${loadPlayerId().slice(0, 8)}-${Date.now().toString(36)}`,
+        role: 'host',
+      } as BattleNet))
+
       setBattleNet(room)
       setSpectating(false)
       setShowRoad(false)
+
       if (mode === 'touchdown') {
         setDraftingTouchdown(true)
         setTouchdownDeck(null)
         setBattle(false)
         return
       }
+
       setDraftingTouchdown(false)
       setTouchdownDeck(null)
       setBattle(true)
@@ -169,8 +174,7 @@ export default function App() {
       setShowRoad(false)
       setBattle(true)
       flashFriend(`Spectating ${friendName}…`)
-    },
-    [flashFriend],
+    }, [flashFriend],
   )
 
   const completeFriendLink = useCallback(
@@ -196,8 +200,7 @@ export default function App() {
       savePendingFriendLink(null)
       flashFriend(`You're now friends with ${link.name}!`)
       setTab('friends')
-    },
-    [flashFriend],
+    }, [flashFriend],
   )
 
   const showIncoming = useCallback((challenge: BattleChallenge) => {
@@ -313,8 +316,7 @@ export default function App() {
           ? `Invite sent to ${friendName}. Waiting for Accept / Decline…`
           : `Invite sent to ${friendName}. They need Phil Royale open to see Accept / Decline.`,
       )
-    },
-    [flashFriend, friendPresence],
+    }, [flashFriend, friendPresence],
   )
 
   const addFriendByCode = useCallback(
@@ -406,8 +408,7 @@ export default function App() {
         ok: true,
         message: `Added ${foundName}. Open their profile → Invite — they get Accept / Decline.`,
       }
-    },
-    [],
+    }, [],
   )
 
   const inviteToClub = useCallback(async (friendName: string, playerId?: string) => {
@@ -1122,9 +1123,7 @@ export default function App() {
                   onClick={() => setTab(t.id)}
                   className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
                   style={{
-                    background: active
-                      ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
-                      : 'transparent',
+                    background: active ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : 'transparent',
                     color: active ? '#1a1410' : '#f5d76e',
                     boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
                   }}
