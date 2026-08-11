@@ -18,12 +18,11 @@ import {
   PRESENCE_ONLINE_MS,
   lookupDirectory,
   lookupDirectoryPresence,
-  pollDirectory,
   publishDirectory,
   publishSocial,
+  resolvePlayerName,
   subscribeDirectory,
   subscribeSocial,
-  waitForSocial,
   type FriendPresenceInfo,
   type SocialMessage,
 } from './socialHub'
@@ -392,24 +391,7 @@ export default function App() {
       }
       if (code === myId) return { ok: false, message: "That's your own code." }
 
-      // Always save by code — do not require them to be online.
-      upsertFriend({ name: `Player ${code}`, playerId: code })
-      window.dispatchEvent(new Event('philroyale-friends-changed'))
-
-      void publishDirectory(myId, me)
-      await pollDirectory()
-      let foundName = lookupDirectory(code)
-
-      const replyPromise = waitForSocial(
-        (msg) =>
-          (msg.type === 'dir_ping' ||
-            msg.type === 'friend_hello' ||
-            msg.type === 'friend_request' ||
-            msg.type === 'presence') &&
-          msg.fromPlayerId === code,
-        12_000,
-      )
-
+      void publishDirectory(myId, me, { trophies: loadProfile().trophies })
       const published = await publishSocial(code, {
         type: 'friend_request',
         fromPlayerId: myId,
@@ -417,63 +399,65 @@ export default function App() {
         toPlayerId: code,
         at: new Date().toISOString(),
       })
-      const hello = {
-        type: 'friend_hello' as const,
-        fromPlayerId: myId,
-        fromName: me,
-        at: new Date().toISOString(),
+      const ask = () => {
+        void publishSocial(code, {
+          type: 'friend_request',
+          fromPlayerId: myId,
+          fromName: me,
+          toPlayerId: code,
+          at: new Date().toISOString(),
+        })
+        void publishSocial(code, {
+          type: 'friend_hello',
+          fromPlayerId: myId,
+          fromName: me,
+          at: new Date().toISOString(),
+        })
+        void publishSocial(code, {
+          type: 'presence',
+          fromPlayerId: myId,
+          fromName: me,
+          at: new Date().toISOString(),
+          trophies: loadProfile().trophies,
+        })
       }
-      void publishSocial(code, hello)
-      ;[600, 1800, 3500].forEach((ms) => {
-        window.setTimeout(() => {
-          void publishSocial(code, {
-            type: 'friend_request',
-            fromPlayerId: myId,
-            fromName: me,
-            toPlayerId: code,
-            at: new Date().toISOString(),
-          })
-          void publishSocial(code, { ...hello, at: new Date().toISOString() })
-          void publishSocial(code, {
-            type: 'presence',
-            fromPlayerId: myId,
-            fromName: me,
-            at: new Date().toISOString(),
-            trophies: loadProfile().trophies,
-          })
-        }, ms)
+      ask()
+      ;[700, 2000, 4000].forEach((ms) => {
+        window.setTimeout(ask, ms)
       })
-      void publishDirectory(myId, me, { trophies: loadProfile().trophies })
 
-      if (!foundName) {
-        const reply = await replyPromise
-        if (reply && 'fromName' in reply && reply.fromName) {
-          foundName = reply.fromName
-        }
-      }
-      if (!foundName) {
-        await pollDirectory()
-        foundName = lookupDirectory(code)
-      }
-
+      const foundName = await resolvePlayerName(code, 16_000)
       const display = foundName || `Player ${code}`
       upsertFriend({ name: display, playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
 
+      // Keep watching — if they open the app a few seconds later, swap in their real name.
+      if (!foundName) {
+        void (async () => {
+          const late = await resolvePlayerName(code, 45_000)
+          if (!late) return
+          upsertFriend({ name: late, playerId: code })
+          window.dispatchEvent(new Event('philroyale-friends-changed'))
+          flashFriend(`Friend name updated: ${late}`)
+        })()
+      }
+
       if (!published) {
         return {
           ok: true,
-          message: `Saved ${display}. Network was flaky — keep both apps open so names and invites sync.`,
+          message: foundName
+            ? `Added ${foundName}. Network was flaky — keep both apps open for invites.`
+            : `Saved code ${code}. Keep both apps open so we can pull their name.`,
         }
       }
       return {
         ok: true,
         message: foundName
-          ? `Added ${foundName}. Open their profile → Invite to battle (they need Phil Royale open).`
-          : `Added Player ${code}. Their name updates when they open Phil Royale. You can also Text them your invite link.`,
+          ? `Added ${foundName}! Open their profile → Invite to battle.`
+          : `Code ${code} saved. Have them open Phil Royale (Friends screen) so their name appears — we're still looking.`,
       }
     },
-    [],
+    [flashFriend],
   )
 
   const inviteToClub = useCallback(async (friendName: string, playerId?: string) => {
@@ -729,25 +713,45 @@ export default function App() {
       }
       if (msg.type === 'friend_request') {
         if (msg.fromPlayerId === myId) return
+        const me = loadPlayerName().trim() || 'Player'
+        const trophies = loadProfile().trophies
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
         window.dispatchEvent(new Event('philroyale-friends-changed'))
-        const me = loadPlayerName().trim() || 'Player'
+        // Instant name announce so the adder resolves "Player ######" → real name.
+        void publishDirectory(myId, me, { trophies })
         void publishSocial(msg.fromPlayerId, {
           type: 'friend_hello',
           fromPlayerId: myId,
           fromName: me,
           at: new Date().toISOString(),
         })
-        // Also push presence so they see us online immediately.
         void publishSocial(msg.fromPlayerId, {
           type: 'presence',
           fromPlayerId: myId,
           fromName: me,
           at: new Date().toISOString(),
-          trophies: loadProfile().trophies,
+          trophies,
           inBattle: false,
         })
-        void publishDirectory(myId, me, { trophies: loadProfile().trophies })
+        // Burst a couple more so their resolvePlayerName poll catches us.
+        window.setTimeout(() => {
+          void publishDirectory(myId, me, { trophies })
+          void publishSocial(msg.fromPlayerId, {
+            type: 'friend_hello',
+            fromPlayerId: myId,
+            fromName: me,
+            at: new Date().toISOString(),
+          })
+        }, 500)
+        window.setTimeout(() => {
+          void publishDirectory(myId, me, { trophies })
+          void publishSocial(msg.fromPlayerId, {
+            type: 'friend_hello',
+            fromPlayerId: myId,
+            fromName: me,
+            at: new Date().toISOString(),
+          })
+        }, 1600)
         setIncomingFriendReq({ fromPlayerId: msg.fromPlayerId, fromName: msg.fromName })
         flashFriend(`${msg.fromName} added you as a friend!`)
         return
@@ -863,9 +867,10 @@ export default function App() {
       const at = new Date().toISOString()
       const inMatch = battle && !!battleNet && !spectating
       const trophies = loadProfile().trophies
+      // Publish MY name often so friends adding my code resolve it.
       void publishDirectory(myId, me, { trophies, inBattle: inMatch })
 
-      // Refresh online status from directory for everyone on your friends list.
+      // Refresh online status + swap placeholder "Player ######" names for real ones.
       setFriendPresence((prev) => {
         const next = { ...prev }
         for (const f of loadFriends()) {
@@ -881,12 +886,10 @@ export default function App() {
               trophies: dir.trophies ?? older?.trophies,
             }
           }
-          if (dir.at && f.name.startsWith('Player ')) {
-            const nm = lookupDirectory(f.playerId)
-            if (nm) {
-              upsertFriend({ name: nm, playerId: f.playerId })
-              window.dispatchEvent(new Event('philroyale-friends-changed'))
-            }
+          const nm = lookupDirectory(f.playerId)
+          if (nm && (/^player\s/i.test(f.name) || f.name === `Player ${f.playerId}`)) {
+            upsertFriend({ name: nm, playerId: f.playerId })
+            window.dispatchEvent(new Event('philroyale-friends-changed'))
           }
         }
         return next

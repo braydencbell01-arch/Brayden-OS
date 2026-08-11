@@ -181,7 +181,7 @@ export function FriendsScreen({
       setAddMsg("That's your own code.")
       return
     }
-    setAddMsg('Looking for that code… keep both apps open.')
+    setAddMsg('Looking up their name… keep Phil Royale open on both phones.')
     if (onAddByCode) {
       try {
         const res = await onAddByCode(code)

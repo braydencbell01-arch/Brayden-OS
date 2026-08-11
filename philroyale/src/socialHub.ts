@@ -103,8 +103,24 @@ function topicFor(playerId: string): string {
   return `${TOPIC_PREFIX}${playerId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64)}`
 }
 
-type DirEntry = { name: string; at: number; trophies?: number; inBattle?: boolean }
+type DirEntry = {
+  name: string
+  /** Sender's claimed timestamp (for ordering). */
+  at: number
+  /** When we locally received/cached this ping — used for online freshness. */
+  seenAt: number
+  trophies?: number
+  inBattle?: boolean
+}
 const directoryCache = new Map<string, DirEntry>()
+
+function isPlaceholderName(name: string): boolean {
+  const n = name.trim()
+  if (!n) return true
+  if (/^player(\s|#|-)?\d*$/i.test(n)) return true
+  if (/^player\s+\d{3,6}$/i.test(n)) return true
+  return false
+}
 
 export function rememberDirectoryPing(
   code: string,
@@ -114,11 +130,30 @@ export function rememberDirectoryPing(
 ): void {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return
+  const cleaned = name.trim()
+  if (!cleaned || isPlaceholderName(cleaned)) {
+    // Don't overwrite a real name with a placeholder ping.
+    const prev = directoryCache.get(c)
+    if (prev && !isPlaceholderName(prev.name)) {
+      directoryCache.set(c, {
+        ...prev,
+        seenAt: Date.now(),
+        at: Math.max(prev.at, atMs),
+        trophies: extra?.trophies ?? prev.trophies,
+        inBattle: extra?.inBattle ?? prev.inBattle,
+      })
+      return
+    }
+  }
   const prev = directoryCache.get(c)
-  if (prev && prev.at > atMs) return
+  if (prev && prev.at > atMs && !isPlaceholderName(prev.name)) {
+    directoryCache.set(c, { ...prev, seenAt: Date.now() })
+    return
+  }
   directoryCache.set(c, {
-    name: name.trim() || `Player ${c}`,
+    name: cleaned || `Player ${c}`,
     at: atMs,
+    seenAt: Date.now(),
     trophies: extra?.trophies ?? prev?.trophies,
     inBattle: extra?.inBattle ?? prev?.inBattle,
   })
@@ -128,7 +163,9 @@ export function lookupDirectory(code: string): string | null {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   const e = directoryCache.get(c)
   if (!e) return null
-  if (Date.now() - e.at > DIRECTORY_FRESH_MS) return null
+  // Freshness is based on when WE saw them — not their possibly-stale `at` clock.
+  if (Date.now() - e.seenAt > DIRECTORY_FRESH_MS) return null
+  if (isPlaceholderName(e.name)) return null
   return e.name
 }
 
@@ -137,9 +174,9 @@ export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   const e = directoryCache.get(c)
   if (!e) return null
-  if (Date.now() - e.at > DIRECTORY_FRESH_MS) return null
+  if (Date.now() - e.seenAt > DIRECTORY_FRESH_MS) return null
   return {
-    at: e.at,
+    at: e.seenAt,
     inBattle: !!e.inBattle,
     trophies: e.trophies,
   }
@@ -182,9 +219,9 @@ function handleDirectoryRaw(raw: string): void {
 }
 
 /** Pull recent directory pings into the local cache. */
-export async function pollDirectory(): Promise<void> {
+export async function pollDirectory(lookbackSec = 300): Promise<void> {
   try {
-    const since = Math.floor(Date.now() / 1000) - 90
+    const since = Math.floor(Date.now() / 1000) - lookbackSec
     const res = await fetch(
       `https://ntfy.envs.net/${DIRECTORY_TOPIC}/json?poll=1&since=${since}`,
     )
@@ -206,13 +243,60 @@ export async function pollDirectory(): Promise<void> {
   }
 }
 
+/**
+ * Actively resolve a 6-digit friend code → display name.
+ * Polls the directory and waits for a hello/presence reply from that player.
+ */
+export async function resolvePlayerName(
+  code: string,
+  timeoutMs = 14_000,
+): Promise<string | null> {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  if (c.length !== 6) return null
+
+  await pollDirectory(300)
+  let name = lookupDirectory(c)
+  if (name) return name
+
+  let fromReply: string | null = null
+  const replyPromise = waitForSocial(
+    (msg) =>
+      (msg.type === 'dir_ping' ||
+        msg.type === 'friend_hello' ||
+        msg.type === 'friend_request' ||
+        msg.type === 'presence') &&
+      msg.fromPlayerId === c &&
+      !!msg.fromName &&
+      !isPlaceholderName(msg.fromName),
+    timeoutMs,
+  ).then((reply) => {
+    if (reply && 'fromName' in reply && reply.fromName && !isPlaceholderName(reply.fromName)) {
+      fromReply = reply.fromName.trim()
+      rememberDirectoryPing(c, fromReply, Date.now())
+    }
+    return fromReply
+  })
+
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    if (fromReply) return fromReply
+    await pollDirectory(180)
+    name = lookupDirectory(c)
+    if (name) return name
+    await new Promise((r) => window.setTimeout(r, 400))
+  }
+
+  await replyPromise
+  return fromReply || lookupDirectory(c)
+}
+
 /** Stay subscribed to the friend-code directory while the app is open. */
 export function subscribeDirectory(): () => void {
   if (typeof window === 'undefined') return () => {}
   void pollDirectory()
   return ntfySubscribe(DIRECTORY_TOPIC, (raw) => handleDirectoryRaw(raw), {
-    lookbackSec: 90,
-    pollMs: 2000,
+    lookbackSec: 300,
+    pollMs: 1500,
   })
 }
 
