@@ -444,7 +444,7 @@ function CardProfile({
                   {character.noLock ? ' · never locks (nearest foe)' : ''}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
                   {a.knockbackTiles != null
-                    ? ` · launches troops ${a.knockbackTiles} blocks (not buildings/towers)`
+                    ? ` · launches troops ${a.knockbackTiles} blocks (damage on land; not buildings/towers)`
                     : ''}
                   {a.splashRadius != null ? ` · ${a.splashRadius} block splash` : ''}
                   {a.burstShots != null && a.burstShots > 1

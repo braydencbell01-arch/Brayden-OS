@@ -67,6 +67,10 @@ const ROCKET_PROJECTILE_MS = 5000
 const ROCKET_VFX_MS = 620
 /** Steve's Diner pancake stack lob. */
 const PANCAKE_PROJECTILE_MS = 850
+/** Big Mable Launch flight — ms per tile of knockback (clamped). */
+const LAUNCH_MS_PER_TILE = 32
+const LAUNCH_FLIGHT_MIN_MS = 520
+const LAUNCH_FLIGHT_MAX_MS = 1100
 const PANCAKE_SPLAT_MS = 820
 const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
@@ -329,6 +333,7 @@ function makeBattleUnit(
     enraged: false,
     movingUntil: 0,
     lockKey: null,
+    launch: null,
     nextSpawnAt: isBuildingCard(char) && everySec > 0 ? t + everySec * 1000 : undefined,
   }
 }
@@ -494,6 +499,7 @@ function tryEnemyAiDeploy(
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
 
   // Prefer affordable cards first so the bot actually plays instead of cycling past them.
+  // Deck is already unique (max one of each card).
   const affordable = deck
     .map((id, i) => ({ id, i }))
     .filter(({ id }) => {
@@ -508,8 +514,16 @@ function tryEnemyAiDeploy(
         ]
       : deck
 
-  for (let attempt = 0; attempt < tryOrder.length; attempt++) {
-    const charId = tryOrder[(deckIndex + attempt) % tryOrder.length]!
+  // Guard: never consider the same card id twice in one deploy pass.
+  const seenTry = new Set<string>()
+  const uniqueTry = tryOrder.filter((id) => {
+    if (seenTry.has(id)) return false
+    seenTry.add(id)
+    return true
+  })
+
+  for (let attempt = 0; attempt < uniqueTry.length; attempt++) {
+    const charId = uniqueTry[(deckIndex + attempt) % uniqueTry.length]!
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
 
@@ -636,10 +650,10 @@ function resolveUnitPushes(
   const n = units.length
   for (let i = 0; i < n; i++) {
     const a = units[i]!
-    if (a.hp <= 0) continue
+    if (a.hp <= 0 || a.launch) continue
     for (let j = i + 1; j < n; j++) {
       const b = units[j]!
-      if (b.hp <= 0) continue
+      if (b.hp <= 0 || b.launch) continue
       const ac = unitCenter(a)
       const bc = unitCenter(b)
       let dx = bc.col - ac.col
@@ -1059,6 +1073,7 @@ export function useBattle(opts?: {
             enraged: !!u.enraged,
             movingUntil: u.moving ? t + 200 : 0,
             lockKey: null,
+            launch: null,
           }
         })
         towersRef.current = nextTowers
@@ -1524,6 +1539,30 @@ export function useBattle(opts?: {
         if (u.vfx && t >= u.vfxUntil) {
           u.vfx = null
           unitsChanged = true
+        }
+
+        // Big Mable Launch: fly first, take damage when you land.
+        if (u.launch) {
+          const flight = u.launch
+          const dur = Math.max(1, flight.arriveAt - flight.bornAt)
+          if (t >= flight.arriveAt) {
+            u.col = flight.toCol
+            u.row = flight.toRow
+            u.hp -= flight.landDamage
+            u.launch = null
+            u.rootedUntil = Math.max(u.rootedUntil, t + 200)
+            sfx.hit()
+            unitsChanged = true
+            if (u.hp <= 0) continue
+          } else {
+            const p = Math.min(1, Math.max(0, (t - flight.bornAt) / dur))
+            u.col = flight.fromCol + (flight.toCol - flight.fromCol) * p
+            u.row = flight.fromRow + (flight.toRow - flight.fromRow) * p
+            u.movingUntil = t + 120
+            u.rootedUntil = Math.max(u.rootedUntil, flight.arriveAt)
+            unitsChanged = true
+            continue
+          }
         }
 
         const def = getCharacter(u.charId)
@@ -2085,48 +2124,65 @@ export function useBattle(opts?: {
         if (best.kind === 'unit') {
           const target = nextUnits.find((x) => x.id === best.id)
           if (target) {
-            target.hp -= damage
-            sfx.hit()
-            if (attack.pullToRange != null) {
-              const ang = Math.atan2(target.row - u.row, target.col - u.col)
-              let pc = Math.max(
-                0,
-                Math.min(ARENA_COLS - 1, u.col + Math.cos(ang) * attack.pullToRange),
-              )
-              let pr = Math.max(
-                0,
-                Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * attack.pullToRange),
-              )
-              const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
-              target.col = ejected.col
-              target.row = ejected.row
-            }
-            // Launch / knockback — troops only (never buildings or towers).
-            if (
+            // Launch / knockback — fling troops first; damage lands with them.
+            // Towers/buildings still take damage immediately (no fling).
+            const canLaunch =
               attack.knockbackTiles != null &&
               attack.knockbackTiles > 0 &&
               !isBuildingCard(getCharacter(target.charId))
-            ) {
+
+            if (canLaunch) {
               const ang = Math.atan2(target.row - u.row, target.col - u.col)
               let pc = Math.max(
                 0,
                 Math.min(
                   ARENA_COLS - 1,
-                  target.col + Math.cos(ang) * attack.knockbackTiles,
+                  target.col + Math.cos(ang) * attack.knockbackTiles!,
                 ),
               )
               let pr = Math.max(
                 0,
                 Math.min(
                   ARENA_ROWS - 1,
-                  target.row + Math.sin(ang) * attack.knockbackTiles,
+                  target.row + Math.sin(ang) * attack.knockbackTiles!,
                 ),
               )
               const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
-              target.col = ejected.col
-              target.row = ejected.row
+              const tiles = Math.hypot(ejected.col - target.col, ejected.row - target.row)
+              const flightMs = Math.min(
+                LAUNCH_FLIGHT_MAX_MS,
+                Math.max(LAUNCH_FLIGHT_MIN_MS, tiles * LAUNCH_MS_PER_TILE),
+              )
+              target.launch = {
+                fromCol: target.col,
+                fromRow: target.row,
+                toCol: ejected.col,
+                toRow: ejected.row,
+                bornAt: t,
+                arriveAt: t + flightMs,
+                landDamage: damage,
+              }
               target.lockKey = null
-              target.nextAttackAt = Math.max(target.nextAttackAt, t + 280)
+              target.nextAttackAt = Math.max(target.nextAttackAt, t + flightMs + 280)
+              target.rootedUntil = Math.max(target.rootedUntil, t + flightMs)
+              target.movingUntil = t + flightMs
+            } else {
+              target.hp -= damage
+              sfx.hit()
+              if (attack.pullToRange != null) {
+                const ang = Math.atan2(target.row - u.row, target.col - u.col)
+                let pc = Math.max(
+                  0,
+                  Math.min(ARENA_COLS - 1, u.col + Math.cos(ang) * attack.pullToRange),
+                )
+                let pr = Math.max(
+                  0,
+                  Math.min(ARENA_ROWS - 1, u.row + Math.sin(ang) * attack.pullToRange),
+                )
+                const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
+                target.col = ejected.col
+                target.row = ejected.row
+              }
             }
             unitsChanged = true
           }

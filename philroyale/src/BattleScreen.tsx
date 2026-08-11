@@ -256,7 +256,11 @@ export function BattleScreen({
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
   // Solo CPUs: fresh random deck from the full roster, max one of each card.
-  const botDeckIds = useMemo(() => randomBotDeck(), [])
+  const botDeckIds = useMemo(() => {
+    const deck = randomBotDeck()
+    // Hard guarantee — never ship a CPU deck with duplicate card ids.
+    return [...new Set(deck)]
+  }, [])
   const trophies = useMemo(() => loadProfile().trophies, [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
@@ -610,14 +614,25 @@ export function BattleScreen({
               let sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
               if (uDef?.cardKind === 'building') sizeScale *= 1.28
               if (u.charId === 'bigMable') sizeScale *= 1.35
+              const flight = u.launch
+              let drawCol = u.col
+              let drawRow = u.row
+              let launchArc = 0
+              if (flight && now < flight.arriveAt) {
+                const dur = Math.max(1, flight.arriveAt - flight.bornAt)
+                const p = Math.min(1, Math.max(0, (now - flight.bornAt) / dur))
+                drawCol = flight.fromCol + (flight.toCol - flight.fromCol) * p
+                drawRow = flight.fromRow + (flight.toRow - flight.fromRow) * p
+                launchArc = Math.sin(p * Math.PI) * 7.5
+              }
               return (
               <div
                 key={u.id}
                 className="absolute -translate-x-1/2 -translate-y-[92%]"
                 style={{
-                  ...unitStyle(u.col, u.row),
+                  ...unitStyle(drawCol, drawRow - launchArc),
                   width: unitVisualWidthPct(sizeScale),
-                  zIndex: 10 + Math.round(u.row),
+                  zIndex: 10 + Math.round(drawRow) + (launchArc > 0.2 ? 8 : 0),
                 }}
               >
                 <UnitToken
@@ -628,7 +643,7 @@ export function BattleScreen({
                   vfx={u.vfx}
                   enraged={u.enraged}
                   facing={u.facing}
-                  moving={now < u.movingUntil}
+                  moving={now < u.movingUntil || !!flight}
                 />
               </div>
               )

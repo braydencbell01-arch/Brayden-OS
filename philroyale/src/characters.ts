@@ -659,7 +659,7 @@ export const BIG_MABLE: CharacterDef = {
   hue: 28,
   noLock: true,
   blurb:
-    'Common tube — slides to the nearest foe (no lock). Launch flings troops 25 blocks; towers take damage only.',
+    'Common tube — slides to the nearest foe (no lock). Launch flings troops; they take the hit when they land. Towers take damage only.',
   attacks: [
     {
       id: 'launch',

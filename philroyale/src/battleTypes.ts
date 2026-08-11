@@ -3,6 +3,17 @@ import type { Side } from './arena'
 
 export type UnitId = string
 
+/** Big Mable Launch — troop flies then takes damage on landing. */
+export type LaunchFlight = {
+  fromCol: number
+  fromRow: number
+  toCol: number
+  toRow: number
+  bornAt: number
+  arriveAt: number
+  landDamage: number
+}
+
 export type BattleUnit = {
   id: UnitId
   charId: string
@@ -33,6 +44,8 @@ export type BattleUnit = {
   lockKey: string | null
   /** Building spawn timer (performance.now ms). */
   nextSpawnAt?: number
+  /** In-flight Launch knockback; damage applies on land. */
+  launch?: LaunchFlight | null
 }
 
 export type Projectile = {
