@@ -41,7 +41,9 @@ type Props = {
 }
 
 /**
- * Cards use promo art. Battlefield uses front/back 3D troop sprites + attack overlays.
+ * Cards and battlefield share the same character art.
+ * Portrait shows promo card (blue studio). Battlefield shows transparent
+ * troop cutouts derived from that same card so style/pose/identity match.
  * No CSS drop-shadow (that caused a ghost “second troop” while moving).
  */
 export function PhotoTroop({

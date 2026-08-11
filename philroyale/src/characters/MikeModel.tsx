@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Michael — stiff gait, curls while moving, overhead Dumbbell Huck. */
+/** Michael — stiff gait; card/troop share overhead-dumbbell art (no extra prop overlay). */
 export function MikeModel({ anim, facing, attackId, portrait }: Props) {
   const throwing = anim === 'attack' && attackId === 'dumbbellHuck'
   return (
@@ -27,7 +27,7 @@ export function MikeModel({ anim, facing, attackId, portrait }: Props) {
       portrait={portrait}
       objectPos="50% 12%"
       gait="stiff"
-      carry="dumbbell"
+      carry="none"
       spriteLegs
       attack={throwing ? 'dumbbell' : 'none'}
       legColor="#3a3a42"
