@@ -73,6 +73,8 @@ export type SplatFx = {
   col: number
   row: number
   bornAt: number
+  /** When set, draw an AoE ring centered on the impact (blocks). */
+  radius?: number
   kind:
     | 'sundae'
     | 'slobber'

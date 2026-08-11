@@ -20,9 +20,6 @@ const BRIDGES = [
 ]
 
 export function ClashMap({ destroyedIds: _d }: { destroyedIds?: ReadonlySet<string> }) {
-  const riverY     = (RIVER_ROW_START / R) * 100
-  const riverH     = ((RIVER_ROW_END - RIVER_ROW_START) / R) * 100
-
   return (
     <svg
       className="absolute inset-0 h-full w-full"

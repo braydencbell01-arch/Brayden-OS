@@ -105,17 +105,51 @@ export function UnitToken({
 /** Flying rocket for Phil's Car. */
 export function RocketDot() {
   return (
-    <div
-      className="relative h-3 w-7 rounded-sm"
-      style={{
-        background: 'linear-gradient(90deg,#f5d76e 0%,#e85a20 45%,#6a6a70 45%,#3a3a40 100%)',
-        boxShadow: '0 0 6px #ff6a2088, 0 1px 2px #000a',
-      }}
-      aria-hidden
-    >
+    <div className="relative h-4 w-10" aria-hidden>
+      {/* Nose cone */}
       <div
-        className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-        style={{ background: 'radial-gradient(circle, #fff6a0, #ff6a20 60%, transparent)' }}
+        className="absolute right-0 top-1/2 h-0 w-0 -translate-y-1/2"
+        style={{
+          borderTop: '7px solid transparent',
+          borderBottom: '7px solid transparent',
+          borderLeft: '10px solid #d62828',
+        }}
+      />
+      {/* Body */}
+      <div
+        className="absolute left-[10px] top-1/2 h-3 w-5 -translate-y-1/2 rounded-sm"
+        style={{
+          background: 'linear-gradient(180deg,#f2f2f5 0%,#c8c8d0 45%,#8a8a94 100%)',
+          boxShadow: 'inset 0 1px 0 #fff8, 0 1px 2px #0008',
+        }}
+      />
+      {/* Fin stripes */}
+      <div className="absolute left-[12px] top-1/2 h-3 w-[3px] -translate-y-1/2 bg-[#d62828]/90" />
+      <div className="absolute left-[18px] top-1/2 h-3 w-[3px] -translate-y-1/2 bg-[#d62828]/90" />
+      {/* Exhaust flame */}
+      <div
+        className="absolute left-0 top-1/2 h-2.5 w-3 -translate-y-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 80% 50%, #fff6a0 0%, #ff8a20 45%, #ff3b00 70%, transparent 75%)',
+          boxShadow: '0 0 8px #ff6a2088',
+        }}
+      />
+      {/* Fins */}
+      <div
+        className="absolute left-[8px] top-0 h-0 w-0"
+        style={{
+          borderLeft: '6px solid transparent',
+          borderRight: '6px solid transparent',
+          borderBottom: '5px solid #4a4a54',
+        }}
+      />
+      <div
+        className="absolute bottom-0 left-[8px] h-0 w-0"
+        style={{
+          borderLeft: '6px solid transparent',
+          borderRight: '6px solid transparent',
+          borderTop: '5px solid #4a4a54',
+        }}
       />
     </div>
   )
@@ -146,23 +180,29 @@ export function RocketSplat({ ageMs }: { ageMs: number }) {
 /** Flying cash wad for Scott's Cash Gun. */
 export function CashDot() {
   return (
-    <div className="relative h-5 w-7" aria-hidden>
+    <div className="relative h-6 w-8" aria-hidden>
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="absolute rounded-[2px]"
+          className="absolute overflow-hidden rounded-[2px]"
           style={{
-            left: `${i * 4}px`,
-            top: `${2 - i}px`,
-            width: '14px',
-            height: '9px',
-            background: 'linear-gradient(180deg,#7dff9a,#2a9a4a)',
-            boxShadow: '0 1px 1px #0008, inset 0 0 0 1px #1a5a28',
-            transform: `rotate(${-12 + i * 10}deg)`,
+            left: `${i * 3}px`,
+            top: `${3 - i}px`,
+            width: '18px',
+            height: '11px',
+            background: 'linear-gradient(180deg,#b8f5c8 0%,#4caf50 40%,#2e7d32 100%)',
+            boxShadow: '0 1px 2px #0008, inset 0 0 0 1px #1b5e20aa',
+            transform: `rotate(${-14 + i * 9}deg)`,
           }}
-        />
+        >
+          <div className="absolute inset-x-1 top-1/2 h-[1px] -translate-y-1/2 bg-[#c8ffd4]/70" />
+          <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#1b5e2088] bg-[#81c78455]" />
+        </div>
       ))}
-      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[0.45rem] font-black text-[#0a3a14]">
+      <span
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[0.55rem] font-black"
+        style={{ color: '#0d3d14', textShadow: '0 0 2px #c8ffd4' }}
+      >
         $
       </span>
     </div>
@@ -173,15 +213,40 @@ export function CashDot() {
 export function FootballDot() {
   return (
     <div
-      className="relative h-4 w-6 rounded-full"
+      className="relative h-5 w-8"
       style={{
-        background: 'radial-gradient(circle at 30% 30%, #c48a4a, #6a3a18 70%, #3a1a08)',
-        boxShadow: '0 1px 2px #000a',
+        borderRadius: '50% / 42%',
+        background:
+          'radial-gradient(ellipse at 32% 30%, #d4a06a 0%, #9a5a28 42%, #5a3010 78%, #2a1808 100%)',
+        boxShadow: '0 2px 3px #0009, inset 0 1px 0 #e8c09066',
       }}
       aria-hidden
     >
-      <div className="absolute inset-x-[20%] top-1/2 h-[1px] -translate-y-1/2 bg-white/80" />
-      <div className="absolute left-1/2 top-[20%] h-[60%] w-[1px] -translate-x-1/2 bg-white/70" />
+      {/* Lace strip */}
+      <div
+        className="absolute left-1/2 top-1/2 h-[55%] w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{ background: 'linear-gradient(180deg,#f5f5f0,#c8c8c0)' }}
+      />
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="absolute left-1/2 h-[2px] w-[7px] -translate-x-1/2 rounded-full"
+          style={{
+            top: `${28 + i * 12}%`,
+            background: '#f0f0ea',
+            boxShadow: '0 0.5px 0 #0004',
+          }}
+        />
+      ))}
+      {/* Tip highlights */}
+      <div
+        className="absolute left-[6%] top-1/2 h-2 w-1.5 -translate-y-1/2 rounded-full opacity-50"
+        style={{ background: 'radial-gradient(circle,#fff8,#d4a06a00)' }}
+      />
+      <div
+        className="absolute right-[6%] top-1/2 h-2 w-1.5 -translate-y-1/2 rounded-full opacity-35"
+        style={{ background: 'radial-gradient(circle,#3a1a08,#0000)' }}
+      />
     </div>
   )
 }
@@ -369,17 +434,24 @@ export function SlobberSplat({ ageMs }: { ageMs: number }) {
 
 export function ShootDot() {
   return (
-    <div className="relative h-2 w-5" aria-hidden>
+    <div className="relative h-2.5 w-6" aria-hidden>
       <div
-        className="absolute inset-y-[3px] left-0 right-0 rounded-full"
+        className="absolute inset-y-[2px] left-1 right-0 rounded-full"
         style={{
-          background: 'linear-gradient(90deg,#fffef5,#ffe08a 35%,#ff9800)',
-          boxShadow: '0 0 8px #ffd54fee, 0 0 14px #ff980088',
+          background: 'linear-gradient(90deg,#fffef8 0%,#ffe082 30%,#ff9800 70%,#e65100 100%)',
+          boxShadow: '0 0 10px #ffd54fcc, 0 0 18px #ff980066',
         }}
       />
       <div
-        className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full"
-        style={{ background: 'radial-gradient(circle,#fff,#ffe08a 60%,transparent)', opacity: 0.9 }}
+        className="absolute -left-0.5 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle,#ffffff,#ffe082 50%,transparent 70%)',
+          opacity: 0.95,
+        }}
+      />
+      <div
+        className="absolute -right-1 top-1/2 h-1.5 w-3 -translate-y-1/2 rounded-full opacity-70"
+        style={{ background: 'linear-gradient(90deg,#ff980088,transparent)' }}
       />
     </div>
   )
