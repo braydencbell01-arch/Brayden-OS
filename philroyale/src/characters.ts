@@ -599,9 +599,9 @@ export function battlefieldScaleForHeight(height: string): number {
   const inches = heightToInches(height) ?? 67
   const ref = 67 // 5'7"
   if (inches < 40) {
-    // Pets — slightly smaller only
-    return Math.min(0.88, Math.max(0.78, 0.76 + inches * 0.004))
+    // Pets — readable, a touch larger on the field
+    return Math.min(0.98, Math.max(0.88, 0.86 + inches * 0.004))
   }
   // Adults: Kathie ~0.93 … Phil 1.0 … Mike ~1.09 … Dan ~1.13 … Jeremy ~1.14
-  return Math.min(1.16, Math.max(0.9, 1 + (inches - ref) * 0.018))
+  return Math.min(1.22, Math.max(0.95, 1 + (inches - ref) * 0.018))
 }

@@ -352,8 +352,9 @@ function makeSpellProjectile(
     kind,
     fromCol: from.col,
     fromRow: from.row,
-    toCol: Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col))),
-    toRow: Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row))),
+    // Keep float aim so impact / AoE ring centers on where the attack landed.
+    toCol: Math.max(0, Math.min(ARENA_COLS - 1, col)),
+    toRow: Math.max(0, Math.min(ARENA_ROWS - 1, row)),
     damage,
     targetId: null,
     targetTowerId: null,
@@ -1034,6 +1035,7 @@ export function useBattle(opts?: {
               row: p.toRow,
               bornAt: t,
               kind: p.kind,
+              radius: p.splashRadius,
             })
             splatsChanged = true
           }
@@ -1090,6 +1092,7 @@ export function useBattle(opts?: {
           continue
         }
         projectilesChanged = true
+        const splatRadius = p.splashRadius
         if (p.kind === 'sundae') {
           nextSplats.push({
             id: nid('splat'),
@@ -1097,6 +1100,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'sundae',
+            radius: splatRadius,
           })
           splatsChanged = true
         } else if (p.kind === 'slobber') {
@@ -1106,6 +1110,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'slobber',
+            radius: splatRadius,
           })
           splatsChanged = true
         } else if (p.kind === 'shoot') {
@@ -1124,6 +1129,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'dumbbell',
+            radius: splatRadius,
           })
           splatsChanged = true
         } else if (p.kind === 'love') {
@@ -1142,6 +1148,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'iceCream',
+            radius: splatRadius,
           })
           splatsChanged = true
         } else if (p.kind === 'football') {
@@ -1151,6 +1158,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'football',
+            radius: splatRadius,
           })
           splatsChanged = true
         } else if (p.kind === 'cash') {
@@ -1160,6 +1168,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'cash',
+            radius: splatRadius,
           })
           splatsChanged = true
         } else if (p.kind === 'rocket') {
@@ -1169,6 +1178,7 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'rocket',
+            radius: splatRadius,
           })
           splatsChanged = true
         }
@@ -1790,6 +1800,7 @@ export function useBattle(opts?: {
                 : attack.kind === 'whip'
                   ? 'whip'
                   : 'melee',
+            radius: attack.splashRadius,
           })
           splatsChanged = true
           continue

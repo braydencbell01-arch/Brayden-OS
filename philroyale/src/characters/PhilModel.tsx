@@ -31,7 +31,7 @@ export function PhilModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 18%"
+      objectPos="50% 22%"
       gait="jog"
       attack={attack}
       spriteLegs

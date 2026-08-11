@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { canDeployAllyAt, canDeployTouchdownAt } from './arena'
-import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct } from './Arena'
+import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct, FIELD_W, FIELD_H } from './Arena'
 import type { GameMode } from './storage'
 import { BattleCard } from './BattleCard'
 import {
@@ -152,13 +152,31 @@ function FlyingShot({
   const style = unitStyle(col, row - arc)
   const travelAngle =
     (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
+  const spin =
+    kind === 'football'
+      ? p * 720
+      : kind === 'cash'
+        ? p * 540
+        : kind === 'dumbbell'
+          ? p * 480
+          : 0
+  const aimKinds =
+    kind === 'rocket' ||
+    kind === 'shoot' ||
+    kind === 'arrow' ||
+    kind === 'football' ||
+    kind === 'cash' ||
+    kind === 'dumbbell'
+  const transform = aimKinds
+    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'cash' || kind === 'dumbbell' ? spin : 0)}deg)`
+    : undefined
 
   return (
     <div
       className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
       style={{
         ...style,
-        transform: kind === 'rocket' ? `translate(-50%, -50%) rotate(${travelAngle}deg)` : undefined,
+        transform,
       }}
       aria-hidden
     >
@@ -170,7 +188,7 @@ function FlyingShot({
       {kind === 'shoot' ? <ShootDot /> : null}
       {kind === 'dumbbell' ? <DumbbellDot /> : null}
       {kind === 'love' ? <LoveDot /> : null}
-      {kind === 'arrow' ? <TowerArrow angleDeg={travelAngle} /> : null}
+      {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
   )
@@ -529,7 +547,8 @@ export function BattleScreen({
             .sort((a, b) => a.row - b.row)
             .map((u) => {
               const uDef = getCharacter(u.charId)
-              const sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
+              let sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
+              if (uDef?.cardKind === 'building') sizeScale *= 1.28
               return (
               <div
                 key={u.id}
@@ -569,40 +588,67 @@ export function BattleScreen({
             ) : null,
           )}
           {splats.map((s) => (
-            <div
-              key={s.id}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{
-                ...unitStyle(s.col, s.row),
-                zIndex: 25 + Math.round(s.row),
-                transform: `translate(-50%, -50%) rotateX(${-ARENA_TILT_DEG}deg)`,
-              }}
-            >
-              {s.kind === 'boom' ? (
-                <BulletBoom ageMs={now - s.bornAt} />
-              ) : s.kind === 'dumbbell' ? (
-                <DumbbellSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'slobber' ? (
-                <SlobberSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'love' ? (
-                <LoveSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'iceCream' ? (
-                <IceCreamSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'football' ? (
-                <FootballSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'cash' ? (
-                <CashSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'rocket' ? (
-                <RocketSplat ageMs={now - s.bornAt} />
-              ) : s.kind === 'melee' ||
-                s.kind === 'whip' ||
-                s.kind === 'bite' ||
-                s.kind === 'kick' ||
-                s.kind === 'hug' ? (
-                <MeleeHitFx ageMs={now - s.bornAt} kind={s.kind} />
-              ) : (
-                <SundaeSplat ageMs={now - s.bornAt} />
-              )}
+            <div key={s.id}>
+              {s.radius != null && s.radius > 0 ? (
+                <div
+                  className="pointer-events-none absolute rounded-full"
+                  style={{
+                    ...unitStyle(s.col, s.row),
+                    width: `${((s.radius * 2) / ARENA_COLS) * FIELD_W * 100}%`,
+                    height: `${((s.radius * 2) / ARENA_ROWS) * FIELD_H * 100}%`,
+                    zIndex: 24 + Math.round(s.row),
+                    // On the tilted plane; center = impact. No counter-rotateX (that shifted the middle).
+                    transform: 'translate(-50%, -50%)',
+                    background:
+                      s.kind === 'football'
+                        ? 'radial-gradient(circle, #e8c09055 0%, #8a5a2844 45%, transparent 70%)'
+                        : s.kind === 'iceCream' || s.kind === 'sundae'
+                          ? 'radial-gradient(circle, #fff8f066 0%, #ffd1e044 45%, transparent 70%)'
+                          : s.kind === 'rocket'
+                            ? 'radial-gradient(circle, #fff2a055 0%, #ff8a3044 45%, transparent 70%)'
+                            : s.kind === 'cash'
+                              ? 'radial-gradient(circle, #b8ffc855 0%, #3ecf6a44 45%, transparent 70%)'
+                              : 'radial-gradient(circle, #ffe08a44 0%, #ff980033 45%, transparent 70%)',
+                    boxShadow: 'inset 0 0 0 2px #ffffff55',
+                    opacity: Math.max(0, 1 - (now - s.bornAt) / 900),
+                  }}
+                  aria-hidden
+                />
+              ) : null}
+              <div
+                className="absolute"
+                style={{
+                  ...unitStyle(s.col, s.row),
+                  zIndex: 25 + Math.round(s.row),
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                {s.kind === 'boom' ? (
+                  <BulletBoom ageMs={now - s.bornAt} />
+                ) : s.kind === 'dumbbell' ? (
+                  <DumbbellSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'slobber' ? (
+                  <SlobberSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'love' ? (
+                  <LoveSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'iceCream' ? (
+                  <IceCreamSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'football' ? (
+                  <FootballSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'cash' ? (
+                  <CashSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'rocket' ? (
+                  <RocketSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'melee' ||
+                  s.kind === 'whip' ||
+                  s.kind === 'bite' ||
+                  s.kind === 'kick' ||
+                  s.kind === 'hug' ? (
+                  <MeleeHitFx ageMs={now - s.bornAt} kind={s.kind} />
+                ) : (
+                  <SundaeSplat ageMs={now - s.bornAt} />
+                )}
+              </div>
             </div>
           ))}
           {hearts.map((h) => (
@@ -621,11 +667,11 @@ export function BattleScreen({
           ))}
           {drag && drag.overArena && dragChar && isSpellCard(dragChar) ? (
             <div
-              className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+              className="absolute rounded-full"
               style={{
                 ...unitStyle(drag.col, drag.row),
-                width: `${((dragChar.spellRadius ?? 10) * 2 * 100) / ARENA_COLS}%`,
-                aspectRatio: '1',
+                width: `${(((dragChar.spellRadius ?? 10) * 2) / ARENA_COLS) * FIELD_W * 100}%`,
+                height: `${(((dragChar.spellRadius ?? 10) * 2) / ARENA_ROWS) * FIELD_H * 100}%`,
                 zIndex: 39,
                 background: drag.valid
                   ? 'radial-gradient(circle, #7ec8ff55 0%, #3a9fd844 55%, transparent 72%)'
@@ -633,7 +679,8 @@ export function BattleScreen({
                 boxShadow: drag.valid
                   ? 'inset 0 0 0 2px #9ad8ffaa'
                   : 'inset 0 0 0 2px #ff8a70aa',
-                transform: `translate(-50%, -50%) rotateX(${-ARENA_TILT_DEG}deg)`,
+                // Ground-plane ring: center stays on the aim tile.
+                transform: 'translate(-50%, -50%)',
               }}
               aria-hidden
             />
@@ -643,7 +690,10 @@ export function BattleScreen({
               className="absolute -translate-x-1/2 -translate-y-[92%]"
               style={{
                 ...unitStyle(drag.col, drag.row),
-                width: unitVisualWidthPct(battlefieldScaleForHeight(dragChar.height)),
+                width: unitVisualWidthPct(
+                  battlefieldScaleForHeight(dragChar.height) *
+                    (dragChar.cardKind === 'building' ? 1.28 : 1),
+                ),
                 zIndex: 40,
                 opacity: drag.valid ? 0.9 : 0.45,
                 filter: drag.valid ? undefined : 'grayscale(1)',

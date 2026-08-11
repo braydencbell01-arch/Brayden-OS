@@ -434,7 +434,7 @@ export function oneTileWidthPct(): string {
   return `${(FIELD_W / ARENA_COLS) * 100}%`
 }
 
-/** Visual character width — ~9× tile (3× prior) so units read CR-scale; hitbox stays 1 tile. */
+/** Visual character width — ~11× tile so troops/buildings read a bit larger; hitbox stays 1 tile. */
 export function unitVisualWidthPct(scale = 1): string {
-  return `${(FIELD_W / ARENA_COLS) * 9.3 * scale * 100}%`
+  return `${(FIELD_W / ARENA_COLS) * 11.2 * scale * 100}%`
 }
