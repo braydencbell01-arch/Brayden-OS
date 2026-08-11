@@ -23,7 +23,7 @@ export function ShayModel({ anim, facing, portrait }: Props) {
       facing={facing}
       portrait={portrait}
       portraitFilter={portrait ? 'brightness(1.12) contrast(1.05)' : undefined}
-      objectPos="50% 100%"
+      objectPos="50% 45%"
       gait="dog"
       attack={anim === 'attack' ? 'love' : 'none'}
       spriteLegs

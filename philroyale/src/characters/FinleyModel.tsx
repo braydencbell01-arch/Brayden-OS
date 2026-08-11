@@ -24,7 +24,7 @@ export function FinleyModel({ anim, facing, portrait, enraged }: Props) {
       facing={facing}
       portrait={portrait}
       portraitFilter={portrait ? 'brightness(1.12) contrast(1.05)' : undefined}
-      objectPos="50% 100%"
+      objectPos="50% 45%"
       enraged={enraged}
       gait="dog"
       attack={anim === 'attack' ? 'bite' : 'none'}

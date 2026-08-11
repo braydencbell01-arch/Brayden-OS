@@ -10,6 +10,7 @@ import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
 import type { BattleNet } from './battleSync'
+import { publishBattle, subscribeBattle } from './battleSync'
 import { joinClubVerified, startClubSync } from './clubSync'
 import {
   DIRECTORY_HEARTBEAT_MS,
@@ -182,9 +183,17 @@ export default function App() {
       }
       if (link.playerId === myId) return
       const realId = link.playerId.startsWith('name:') ? undefined : link.playerId
-      upsertFriend({ name: link.name, playerId: realId })
+      upsertFriend({ name: link.name || 'Friend', playerId: realId })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
       if (realId) {
+        // Mutual: tell them we accepted so they add us back on their screen.
+        await publishSocial(realId, {
+          type: 'friend_request',
+          fromPlayerId: myId,
+          fromName: me,
+          toPlayerId: realId,
+          at: new Date().toISOString(),
+        })
         await publishSocial(realId, {
           type: 'friend_hello',
           fromPlayerId: myId,
@@ -195,7 +204,8 @@ export default function App() {
       savePendingFriendLink(null)
       flashFriend(`You're now friends with ${link.name}!`)
       setTab('friends')
-    }, [flashFriend],
+    },
+    [flashFriend],
   )
 
   const showIncoming = useCallback((challenge: BattleChallenge) => {
@@ -232,15 +242,22 @@ export default function App() {
         at: new Date().toISOString(),
       })
     }
+    // Shared battle room — host listens here even if social inbox is quiet.
+    void publishBattle(challengeId, {
+      type: 'battle_peer_accept',
+      challengeId,
+      fromName: acceptedBy,
+      fromPlayerId: loadPlayerId(),
+      mode: mode ?? 'classic',
+      at: new Date().toISOString(),
+    })
     clearIncomingChallenge()
     setIncomingChallenge(null)
     clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
-    // Drop any current match/draft so Accept works from every screen.
     setBattle(false)
     setDraftingTouchdown(false)
     setTouchdownDeck(null)
     setShowRoad(false)
-    // Accepter is guest; challenger (fromPlayerId) hosts the shared sim.
     startMatch(fromName, mode ?? 'classic', {
       challengeId,
       role: 'guest',
@@ -306,24 +323,10 @@ export default function App() {
         flashFriend('Invite failed — check your connection.')
         return
       }
-      const link = battleInviteUrl(
-        challenge.fromName,
-        friendName,
-        challenge.challengeId,
-        mode,
-        loadPlayerId(),
-        toPlayerId,
-      )
-      // Also offer a shareable battle link (SMS / share sheet) so friending works off-directory.
-      void shareText(
-        'Phil Royale battle',
-        `${challenge.fromName} challenges you to ${mode === 'touchdown' ? 'Touchdown' : 'a battle'} on Phil Royale! Open this link while the app is open:`,
-        link,
-      )
       flashFriend(
         looksOnline
           ? `Invite sent to ${friendName}. Waiting for Accept / Decline…`
-          : `Invite sent + share link ready. They need Phil Royale open (or open your link) to Accept.`,
+          : `Invite sent. They need Phil Royale open — tap Text battle link if needed.`,
       )
     }, [flashFriend, friendPresence],
   )
@@ -585,25 +588,43 @@ export default function App() {
   useEffect(() => {
     if (!outgoingChallenge) return
 
+    const challengeId = outgoingChallenge.challengeId
+    const opponentName = outgoingChallenge.toName
+    const mode = outgoingChallenge.mode ?? 'classic'
+    const peerPlayerId = outgoingChallenge.toPlayerId
+
+    const beginHost = (peerName?: string, peerId?: string) => {
+      clearOutgoingChallenge()
+      clearBattleAccepted()
+      setOutgoingChallenge(null)
+      startMatch(peerName || opponentName, mode, {
+        challengeId,
+        role: 'host',
+        peerPlayerId: peerId || peerPlayerId,
+      })
+    }
+
+    // Listen on the shared battle room — works even when social inbox misses accept.
+    const unsubBattle = subscribeBattle(challengeId, (msg) => {
+      if (msg.type === 'battle_peer_accept' && msg.challengeId === challengeId) {
+        beginHost(msg.fromName, msg.fromPlayerId)
+      }
+      if (msg.type === 'battle_ready' && msg.role === 'guest') {
+        beginHost(msg.name !== 'guest' ? msg.name : undefined, peerPlayerId)
+      }
+    })
+
     const interval = window.setInterval(() => {
       const accepted = loadBattleAccepted()
-      if (accepted && accepted.challengeId === outgoingChallenge.challengeId) {
-        const opponentName = outgoingChallenge.toName
-        const challengeId = outgoingChallenge.challengeId
-        const mode = outgoingChallenge.mode ?? 'classic'
-        const peerPlayerId = outgoingChallenge.toPlayerId
-        clearOutgoingChallenge()
-        clearBattleAccepted()
-        setOutgoingChallenge(null)
-        startMatch(opponentName, mode, {
-          challengeId,
-          role: 'host',
-          peerPlayerId,
-        })
+      if (accepted && accepted.challengeId === challengeId) {
+        beginHost(accepted.acceptedBy, peerPlayerId)
       }
-    }, 800)
+    }, 600)
 
-    return () => window.clearInterval(interval)
+    return () => {
+      unsubBattle()
+      window.clearInterval(interval)
+    }
   }, [outgoingChallenge, startMatch])
 
   useEffect(() => {

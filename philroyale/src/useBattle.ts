@@ -23,6 +23,7 @@ import {
   type Side,
 } from './arena'
 import type { GameMode } from './storage'
+import { loadPlayerName } from './storage'
 import {
   getCharacter,
   DEFAULT_DECK,
@@ -43,6 +44,7 @@ import {
   publishBattle,
   subscribeBattle,
 } from './battleSync'
+import { sfx } from './audio'
 
 const SYNC_INTERVAL_MS = 220
 
@@ -166,7 +168,10 @@ function wakeKing(tw: TowerHp, now: number) {
 function applyTowerDamage(tw: TowerHp, damage: number, now: number) {
   const before = tw.hp
   tw.hp = Math.max(0, tw.hp - damage)
-  if (before > 0 && damage > 0) wakeKing(tw, now)
+  if (before > 0 && damage > 0) {
+    wakeKing(tw, now)
+    sfx.towerHit()
+  }
 }
 
 /** Damage every opposite-side unit (and tower) within radius of an impact point. */
@@ -1027,7 +1032,7 @@ export function useBattle(opts?: {
         type: 'battle_ready',
         challengeId: net.challengeId,
         role: net.role,
-        name: net.role,
+        name: loadPlayerName().trim() || net.role,
         at: new Date().toISOString(),
       })
     }
@@ -1875,6 +1880,7 @@ export function useBattle(opts?: {
           const target = nextUnits.find((x) => x.id === best.id)
           if (target) {
             target.hp -= damage
+            sfx.hit()
             if (attack.pullToRange != null) {
               const ang = Math.atan2(target.row - u.row, target.col - u.col)
               let pc = Math.max(

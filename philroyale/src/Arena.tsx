@@ -5,6 +5,7 @@ import {
   DEPLOY_PAST_RIVER,
   RIVER_MAX,
   RIVER_MIN,
+  TOUCHDOWN_ALLY_MIN_ROW,
   TOUCHDOWN_ZONE_ROWS,
   TOWERS,
 } from './arena'
@@ -92,20 +93,20 @@ function FootballField() {
         END ZONE
       </text>
 
-      {/* Ally endzone (bottom) */}
-      <rect x="0" y={R - EZ} width={C} height={EZ} fill="url(#td-ez-ally)" opacity="0.92" />
+      {/* Ally endzone (bottom — YOUR end zone) */}
+      <rect x="0" y={R - EZ} width={C} height={EZ} fill="url(#td-ez-ally)" opacity="0.95" />
       <text
         x={C / 2}
         y={R - EZ / 2 + 1}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize="6"
+        fontSize="5.5"
         fontWeight="bold"
         fill="white"
-        opacity="0.5"
-        style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif', letterSpacing: '2px' }}
+        opacity="0.7"
+        style={{ fontFamily: 'Impact, Haettenschweiler, sans-serif', letterSpacing: '1.5px' }}
       >
-        END ZONE
+        YOUR END ZONE
       </text>
 
       {/* Yard lines + numbers + hashes */}
@@ -296,10 +297,37 @@ function colPct(col: number) {
 function DeployBlockOverlay({
   towers,
   side,
+  mode = 'classic',
 }: {
   towers: TowerHpView[]
   side: 'ally' | 'enemy'
+  mode?: GameMode
 }) {
+  // Touchdown: shade the 2/3 of the field where you cannot place (everything above your third).
+  if (mode === 'touchdown') {
+    const blockedBottom =
+      side === 'ally'
+        ? (TOUCHDOWN_ALLY_MIN_ROW / ARENA_ROWS) * 100
+        : ((ARENA_ROWS - TOUCHDOWN_ALLY_MIN_ROW) / ARENA_ROWS) * 100
+    return (
+      <svg
+        className="pointer-events-none absolute inset-0 z-[6] h-full w-full"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <rect
+          x="0"
+          y={side === 'ally' ? 0 : 100 - blockedBottom}
+          width="100"
+          height={blockedBottom}
+          fill="#c62828"
+          opacity="0.38"
+        />
+      </svg>
+    )
+  }
+
   const leftId = side === 'ally' ? 'enemy-left' : 'ally-left'
   const rightId = side === 'ally' ? 'enemy-right' : 'ally-right'
   const leftAlive = (towers.find((t) => t.id === leftId)?.hp ?? 0) > 0
@@ -485,7 +513,9 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
           )
         })}
 
-        {showBlockedOverlay ? <DeployBlockOverlay towers={towers} side={overlaySide} /> : null}
+        {showBlockedOverlay ? (
+          <DeployBlockOverlay towers={towers} side={overlaySide} mode={mode} />
+        ) : null}
         {spellDeployOverlay ? (
           <div
             className="pointer-events-none absolute inset-0 z-[6]"
@@ -532,7 +562,7 @@ export function oneTileWidthPct(): string {
   return `${(FIELD_W / ARENA_COLS) * 100}%`
 }
 
-/** Visual character width — ~11× tile so troops/buildings read a bit larger; hitbox stays 1 tile. */
+/** Visual character width — CR-readable troop size; hitbox stays 1 tile. */
 export function unitVisualWidthPct(scale = 1): string {
-  return `${(FIELD_W / ARENA_COLS) * 11.2 * scale * 100}%`
+  return `${(FIELD_W / ARENA_COLS) * 15.5 * scale * 100}%`
 }

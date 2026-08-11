@@ -45,6 +45,7 @@ import {
 } from './storage'
 import type { BattleNet } from './battleSync'
 import { useBattle } from './useBattle'
+import { sfx } from './audio'
 
 type Props = {
   onExit: () => void
@@ -297,6 +298,21 @@ export function BattleScreen({
   }, [ended, isSpectating])
 
   useEffect(() => {
+    if (!result) return
+    if (result === 'victory') sfx.victory()
+    else if (result === 'defeat') sfx.defeat()
+  }, [result])
+
+  const prevScores = useRef({ ally: 0, enemy: 0 })
+  useEffect(() => {
+    if (mode !== 'touchdown') return
+    if (allyScore > prevScores.current.ally || enemyScore > prevScores.current.enemy) {
+      sfx.touchdown()
+    }
+    prevScores.current = { ally: allyScore, enemy: enemyScore }
+  }, [allyScore, enemyScore, mode])
+
+  useEffect(() => {
     if (result) return
     if (mode === 'touchdown') {
       if (allyScore >= touchdownWinScore) {
@@ -487,6 +503,7 @@ export function BattleScreen({
     if (!card || elixir < card.elixir || !dropped.valid) return
     const ok = deploy(card, dropped.col, dropped.row)
     if (ok) {
+      sfx.deploy()
       noteCardDeployed(1)
       cycleAfterDeploy(card.id)
     }

@@ -59,6 +59,15 @@ export type BattleRoomMessage =
       name: string
       at: string
     }
+  | {
+      /** Guest accepted — host can leave Waiting and start hosting. */
+      type: 'battle_peer_accept'
+      challengeId: string
+      fromName: string
+      fromPlayerId?: string
+      mode?: 'classic' | 'touchdown'
+      at: string
+    }
 
 export type BattleNet = {
   challengeId: string

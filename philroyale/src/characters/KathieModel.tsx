@@ -24,7 +24,7 @@ export function KathieModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 100%"
+      objectPos="50% 22%"
       gait="jog"
       attack={anim === 'attack' && attackId === 'chickenWhip' ? 'whip' : 'none'}
       spriteLegs

@@ -99,7 +99,7 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Card art (cool pose on solid blue) — never show black troop studio squares.
+    // Card art — contain so heads/feet aren't cropped out of the frame.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
@@ -108,7 +108,7 @@ export function PhotoTroop({
         <img
           src={cardSrc || troopSrc}
           alt={alt}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
           style={{
             objectPosition: _objectPos,
             filter: portraitFilter ?? 'brightness(1.05) saturate(1.08)',
@@ -282,10 +282,9 @@ export function PhotoTroop({
             className="h-full w-full object-contain object-bottom"
             style={{
               objectPosition: '50% 100%',
-              // Fit full character — transparent PNGs, no black studio square.
-              transform: 'scale(0.96)',
+              // Fill the token frame — transparent PNGs, no black studio square.
+              transform: 'scale(1.18)',
               transformOrigin: '50% 100%',
-              // Drop any leftover near-black fringe from old assets.
               mixBlendMode: 'normal',
               filter: enraged
                 ? 'hue-rotate(265deg) saturate(1.55) brightness(1.08) contrast(1.1)'
