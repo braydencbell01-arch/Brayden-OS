@@ -41,6 +41,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 250, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 40 },
   { trophies: 300, arena: 'Training Camp', label: 'Gold pouch', gold: 60 },
   { trophies: 350, arena: 'Training Camp', label: 'Rare Chest', chest: 'rare' },
+  { trophies: 375, arena: 'Training Camp', label: 'Unlock Dave', unlockCard: 'dave', gold: 80 },
   { trophies: 400, arena: 'Training Camp', label: 'Unlock Kathie', unlockCard: 'kathie', gold: 75 },
   { trophies: 450, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 50 },
   { trophies: 500, arena: 'Training Camp', label: 'Epic Chest', chest: 'epic', gold: 40 },
@@ -54,6 +55,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 900, arena: 'Sundae Strip', label: 'Unlock Todd', unlockCard: 'todd', gold: 100 },
   { trophies: 950, arena: 'Sundae Strip', label: 'Epic Chest', chest: 'epic' },
   { trophies: 1000, arena: 'Sundae Strip', label: 'Legendary Chest', chest: 'legendary', gold: 75 },
+  { trophies: 1050, arena: 'Sundae Strip', label: 'Unlock Gretchin', unlockCard: 'gretchin', gold: 90 },
   { trophies: 1100, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 70 },
   { trophies: 1200, arena: 'Bone Bridge', label: 'Arena unlocked!', gold: 200, unlockCard: 'dan' },
   { trophies: 1300, arena: 'Bone Bridge', label: 'Common Chest', chest: 'common', gold: 80 },
@@ -106,6 +108,8 @@ export const STARTER_UNLOCKS = [
   'scott',
   'footballHuck',
   'philsCar',
+  'dave',
+  'gretchin',
 ]
 
 export function cardLevelMult(level: number): number {

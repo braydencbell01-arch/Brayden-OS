@@ -11,6 +11,8 @@ export type AttackId =
   | 'love'
   | 'cashGun'
   | 'philsRocket'
+  | 'witchcraft'
+  | 'uppercut'
 
 export type AttackDef = {
   id: AttackId
@@ -45,6 +47,8 @@ export type AttackDef = {
     | 'love'
     | 'cash'
     | 'rocket'
+    | 'witchcraft'
+    | 'uppercut'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -105,6 +109,8 @@ export type CharacterDef = {
   spellRadius?: number
   /** Spell: flight time from cast to impact (ms). */
   spellTravelMs?: number
+  /** Only lock / damage enemy buildings and towers (never troops). */
+  targetsBuildingsOnly?: boolean
 }
 
 export const PHIL: CharacterDef = {
@@ -119,7 +125,7 @@ export const PHIL: CharacterDef = {
   moveSpeed: 4,
   attackDelaySec: 1,
   hue: 210,
-  blurb: 'Sundae Huck at 20, then Chicken Whip up close.',
+  blurb: 'Sundae Huck from range, then Chicken Whip up close.',
   attacks: [
     {
       id: 'sundaeHuck',
@@ -152,7 +158,7 @@ export const KATHIE: CharacterDef = {
   moveSpeed: 3,
   attackDelaySec: 1,
   hue: 200,
-  blurb: 'Grandma energy — stops to Chicken Whip, same crack as Phil, 1s cooldown.',
+  blurb: 'Grandma energy — stops to Chicken Whip, same crack as Phil.',
   attacks: [
     {
       id: 'chickenWhip',
@@ -178,7 +184,7 @@ export const PETE: CharacterDef = {
   moveSpeed: 4,
   attackDelaySec: 0,
   hue: 220,
-  blurb: 'Human shield — no attack. On death, drops a purple rage heart for 3s.',
+  blurb: 'Human shield — no attack. On death, drops a purple rage heart.',
   attacks: [],
   dropsRageHeart: true,
 }
@@ -195,7 +201,7 @@ export const BEANS: CharacterDef = {
   moveSpeed: 7.5,
   attackDelaySec: 1.5,
   hue: 35,
-  blurb: 'Apricot miniature poodle, tongue always out. Spits a slow slobber that explodes — 5-block splash.',
+  blurb: 'Apricot miniature poodle, tongue always out. Spits a slow slobber that explodes on impact.',
   attacks: [
     {
       id: 'slobber',
@@ -221,7 +227,7 @@ export const FINLEY: CharacterDef = {
   moveSpeed: 7.5,
   attackDelaySec: 2,
   hue: 280,
-  blurb: 'Border collie bite up close. After 7s he rages purple until death — snarls, claws, double damage and speed.',
+  blurb: 'Border collie bite up close. After a while he rages purple until death — snarls, claws, and hits harder and faster.',
   rageAfterSec: 7,
   rageMoveMult: 2,
   rageDamageMult: 2,
@@ -249,7 +255,7 @@ export const SHAY: CharacterDef = {
   moveSpeed: 5.5,
   attackDelaySec: 1.75,
   hue: 40,
-  blurb: 'Border collie × black lab mix. Stops and sends a slow Love heart — 125 damage at range 22.',
+  blurb: 'Border collie × black lab mix. Stops and sends a slow Love heart.',
   attacks: [
     {
       id: 'love',
@@ -274,7 +280,7 @@ export const JEREMY: CharacterDef = {
   moveSpeed: 5,
   attackDelaySec: 2.5,
   hue: 220,
-  blurb: 'Tallest on the field. Dual pistols — two fast shots 0.5s apart, then a 2.5s reload.',
+  blurb: 'Tallest on the field. Dual pistols — two fast shots, then a reload.',
   attacks: [
     {
       id: 'shoot',
@@ -301,7 +307,7 @@ export const TODD: CharacterDef = {
   moveSpeed: 5,
   attackDelaySec: 2,
   hue: 0,
-  blurb: 'Sprints in, then Flying Kick — 400 damage with 5-block splash.',
+  blurb: 'Sprints in, then Flying Kick with splash.',
   attacks: [
     {
       id: 'flyingKick',
@@ -327,7 +333,7 @@ export const MIKE: CharacterDef = {
   moveSpeed: 7,
   attackDelaySec: 5,
   hue: 30,
-  blurb: 'Stiff curls on the move — then an overhead Dumbbell Huck for 400.',
+  blurb: 'Stiff curls on the move — then an overhead Dumbbell Huck.',
   attacks: [
     {
       id: 'dumbbellHuck',
@@ -352,7 +358,7 @@ export const LYNNE: CharacterDef = {
   moveSpeed: 12,
   attackDelaySec: 0.5,
   hue: 200,
-  blurb: 'Blazes in at 12, then Head Butts for 250 every half-second.',
+  blurb: 'Blazes across the field, then Head Butts in rapid succession.',
   attacks: [
     {
       id: 'headButt',
@@ -406,7 +412,7 @@ export const DOG_HUT: CharacterDef = {
   attackDelaySec: 0,
   hue: 25,
   cardKind: 'building',
-  blurb: 'Building — drops a random dog on place, every 10s, and when it falls.',
+  blurb: 'Building — drops a random dog on place, on a timer, and when it falls.',
   spawnPool: ['shay', 'beans', 'finley'],
   spawnEverySec: 10,
   spawnOnDeath: true,
@@ -427,7 +433,7 @@ export const ICE_CREAM: CharacterDef = {
   attackDelaySec: 0,
   hue: 330,
   cardKind: 'spell',
-  blurb: 'Spell — throw a sundae anywhere. Lands in 2s for 325 damage in a 10-block radius.',
+  blurb: 'Spell — throw a sundae anywhere. Splats a creamy blast where it lands.',
   spellDamage: 325,
   spellRadius: 10,
   spellTravelMs: 2000,
@@ -448,7 +454,7 @@ export const FOOTBALL_HUCK: CharacterDef = {
   attackDelaySec: 0,
   hue: 30,
   cardKind: 'spell',
-  blurb: 'Spell — huck a football. Lands in 4s for 470 damage in a 30-block diameter (15 radius).',
+  blurb: 'Spell — huck a football. Huge turf blast where it lands.',
   spellDamage: 470,
   spellRadius: 15,
   spellTravelMs: 4000,
@@ -469,7 +475,7 @@ export const SCOTT: CharacterDef = {
   attackDelaySec: 2.5,
   hue: 210,
   blurb:
-    'Cash Gun — stops and launches cash (range 35). Direct hit 400; impact explodes for 200 in a 10-block diameter.',
+    'Cash Gun — stops and launches cash. Direct hit, then the wad explodes.',
   attacks: [
     {
       id: 'cashGun',
@@ -499,7 +505,7 @@ export const PHILS_CAR: CharacterDef = {
   hue: 210,
   cardKind: 'building',
   blurb:
-    "Building — grey SUV that turns to face foes. Phil's Rocket: 80 range, 5s flight, 150 damage, 8s reload. Locks until dead or out of range.",
+    "Building — grey SUV that turns to face foes and fires Phil's Rocket. Locks until dead or out of range.",
   attacks: [
     {
       id: 'philsRocket',
@@ -509,6 +515,61 @@ export const PHILS_CAR: CharacterDef = {
       rootWhileAttacking: true,
       projectileMs: 5000,
       kind: 'rocket',
+    },
+  ],
+}
+
+
+/** Skinny old witch — purple wand spell while moving. */
+export const GRETCHIN: CharacterDef = {
+  id: 'gretchin',
+  name: 'Gretchin',
+  initial: 'G',
+  pronoun: 'she',
+  height: "5'8\"",
+  rarity: 'epic',
+  elixir: 3,
+  hp: 825,
+  moveSpeed: 7,
+  attackDelaySec: 1.75,
+  hue: 280,
+  blurb: 'Old evil witch with a magic wand. Witchcraft fires a purple spell while she keeps moving.',
+  attacks: [
+    {
+      id: 'witchcraft',
+      name: 'Witchcraft',
+      range: 32,
+      damage: 125,
+      rootWhileAttacking: false,
+      kind: 'witchcraft',
+    },
+  ],
+}
+
+/** Building basher — Uppercut only hits buildings and towers. */
+export const DAVE: CharacterDef = {
+  id: 'dave',
+  name: 'Dave',
+  initial: 'D',
+  pronoun: 'he',
+  height: "5'11\"",
+  rarity: 'common',
+  elixir: 8,
+  hp: 5000,
+  moveSpeed: 3,
+  attackDelaySec: 1.5,
+  hue: 200,
+  blurb:
+    'Building basher — Uppercut only hits buildings and towers. Stops to punch in slow motion.',
+  targetsBuildingsOnly: true,
+  attacks: [
+    {
+      id: 'uppercut',
+      name: 'Uppercut',
+      range: 3,
+      damage: 550,
+      rootWhileAttacking: true,
+      kind: 'uppercut',
     },
   ],
 }
@@ -526,6 +587,8 @@ export const CHARACTERS: CharacterDef[] = [
   SHAY,
   JEREMY,
   SCOTT,
+  GRETCHIN,
+  DAVE,
   DOG_HUT,
   PHILS_CAR,
   ICE_CREAM,

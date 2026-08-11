@@ -68,7 +68,7 @@ export function UnitToken({
                           ? '3 / 4.85'
                           : charId === 'lynne'
                             ? '3 / 4.9'
-                            : charId === 'phil'
+                            : charId === 'phil' || charId === 'gretchin' || charId === 'dave'
                               ? '3 / 4.9'
                               : '3 / 4.9',
         }}
@@ -463,7 +463,7 @@ export function MeleeHitFx({
   kind = 'melee',
 }: {
   ageMs: number
-  kind?: 'melee' | 'whip' | 'bite' | 'kick' | 'hug'
+  kind?: 'melee' | 'whip' | 'bite' | 'kick' | 'hug' | 'uppercut'
 }) {
   const p = Math.min(1, ageMs / 420)
   const scale = 0.55 + p * 1.6
@@ -477,6 +477,8 @@ export function MeleeHitFx({
           ? '#ffffff'
           : kind === 'hug'
             ? '#ff4d6d'
+            : kind === 'uppercut'
+              ? '#ffe08a'
             : '#ffe08a'
   return (
     <div
@@ -564,6 +566,61 @@ export function LoveDot() {
           strokeLinecap="round"
         />
       </svg>
+    </div>
+  )
+}
+
+/** Gretchin Witchcraft — purple wand bolt. */
+export function WitchcraftDot() {
+  return (
+    <div className="relative h-4 w-7" aria-hidden>
+      <div
+        className="absolute inset-y-[2px] left-0 right-1 rounded-full"
+        style={{
+          background: 'linear-gradient(90deg,#f0d0ff 0%,#c060ff 40%,#7a20c8 100%)',
+          boxShadow: '0 0 10px #b040ffaa, 0 0 18px #8020ff66',
+        }}
+      />
+      <div
+        className="absolute -right-0.5 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full"
+        style={{ background: 'radial-gradient(circle,#fff,#d080ff 45%,transparent 70%)' }}
+      />
+      <div
+        className="absolute -left-1 top-1/2 h-2 w-3 -translate-y-1/2 rounded-full opacity-80"
+        style={{ background: 'linear-gradient(90deg,transparent,#a040ff88)' }}
+      />
+    </div>
+  )
+}
+
+/** Witchcraft impact — purple spark burst. */
+export function WitchcraftSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 520)
+  const scale = 0.5 + p * 1.5
+  const opacity = 1 - p * 0.95
+  return (
+    <div
+      className="relative h-9 w-9"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle,#f0d0ff 0%,#b040ff88 45%,transparent 70%)',
+        }}
+      />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-1 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            background: '#d080ff',
+            transform: `rotate(${deg}deg) translateX(${5 + p * 8}px)`,
+            boxShadow: '0 0 4px #b040ff',
+          }}
+        />
+      ))}
     </div>
   )
 }

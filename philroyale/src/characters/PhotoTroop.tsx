@@ -27,6 +27,8 @@ type Props = {
     | 'dumbbell'
     | 'headbutt'
     | 'love'
+    | 'witchcraft'
+    | 'uppercut'
     | 'none'
   /** Persistent hand prop (Michael curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
@@ -201,6 +203,20 @@ export function PhotoTroop({
                                   rotate: [0, 12, 28, 8, 0],
                                   scaleY: [1, 0.92, 1.1, 1, 1],
                                 }
+                              : attack === 'witchcraft'
+                                ? {
+                                    y: [0, -2, -6, -2, 0],
+                                    x: [0, -4, 8, 4, 0],
+                                    rotate: [0, -14, 10, 4, 0],
+                                    scale: [1, 0.97, 1.05, 1, 1],
+                                  }
+                                : attack === 'uppercut'
+                                  ? {
+                                      y: [0, 8, -10, -4, 0],
+                                      x: [0, -2, 12, 6, 0],
+                                      rotate: [0, 8, -18, -6, 0],
+                                      scaleY: [1, 0.9, 1.12, 1.02, 1],
+                                    }
                               : { y: [0, -3, 0] }
             : walking
               ? gait === 'limp'
@@ -307,6 +323,8 @@ export function PhotoTroop({
         {attacking && attack === 'dumbbell' ? <DumbbellHuckOverlay /> : null}
         {attacking && attack === 'headbutt' ? <HeadButtOverlay /> : null}
         {attacking && attack === 'love' ? <LoveOverlay /> : null}
+        {attacking && attack === 'witchcraft' ? <WitchcraftOverlay /> : null}
+        {attacking && attack === 'uppercut' ? <UppercutOverlay /> : null}
         {!attacking && carry === 'dumbbell' ? <DumbbellCurlOverlay walking={walking} /> : null}
 
         {enraged ? (
@@ -675,6 +693,70 @@ function LoveOverlay() {
         animate={{ scale: [0.4, 1.4], opacity: [0.7, 0] }}
         transition={{ duration: 0.65 }}
         style={{ transformOrigin: '40px 42px' }}
+      />
+    </svg>
+  )
+}
+
+function WitchcraftOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.g
+        initial={{ rotate: -20, opacity: 0.4 }}
+        animate={{ rotate: [-20, 8, 0], opacity: [0.4, 1, 1] }}
+        transition={{ duration: 0.55 }}
+        style={{ transformOrigin: '28px 70px' }}
+      >
+        <rect x="26" y="48" width="4" height="34" rx="1.5" fill="#5a3a18" />
+        <circle cx="28" cy="46" r="6" fill="#c060ff" />
+        <circle cx="28" cy="46" r="3.5" fill="#f0d0ff" />
+      </motion.g>
+      <motion.circle
+        cx="52"
+        cy="36"
+        r="8"
+        fill="#b040ff"
+        initial={{ scale: 0.2, opacity: 0, x: -10 }}
+        animate={{ scale: [0.2, 1.2, 0.9], opacity: [0, 1, 0.7], x: [-10, 8, 18] }}
+        transition={{ duration: 0.55 }}
+      />
+      <motion.circle
+        cx="52"
+        cy="36"
+        r="14"
+        fill="none"
+        stroke="#d080ff88"
+        strokeWidth="2"
+        initial={{ scale: 0.3, opacity: 0.8 }}
+        animate={{ scale: [0.3, 1.3], opacity: [0.8, 0] }}
+        transition={{ duration: 0.55 }}
+        style={{ transformOrigin: '52px 36px' }}
+      />
+    </svg>
+  )
+}
+
+function UppercutOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.g
+        initial={{ y: 10, rotate: 20 }}
+        animate={{ y: [10, 4, -18, -8], rotate: [20, 8, -35, -10], x: [0, 2, 12, 6] }}
+        transition={{ duration: 0.72, ease: 'easeInOut' }}
+        style={{ transformOrigin: '48px 70px' }}
+      >
+        <ellipse cx="54" cy="58" rx="9" ry="11" fill="#e8b888" />
+        <path d="M48 66 Q46 78 50 86" stroke="#e8b888" strokeWidth="7" strokeLinecap="round" fill="none" />
+      </motion.g>
+      <motion.path
+        d="M40 78 Q48 60 58 42"
+        fill="none"
+        stroke="#ffffff66"
+        strokeWidth="3"
+        strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 1], opacity: [0, 0.9, 0] }}
+        transition={{ duration: 0.72 }}
       />
     </svg>
   )

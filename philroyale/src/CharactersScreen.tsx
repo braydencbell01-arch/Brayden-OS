@@ -440,6 +440,7 @@ function CardProfile({
                 <p className="text-xs font-semibold text-white/65">
                   {scaledStat(a.damage, level)} DM (base {a.damage}) · {a.range} block range
                   {a.rootWhileAttacking ? ' · stops to attack' : ' · can move while attacking'}
+                  {character.targetsBuildingsOnly ? ' · buildings & towers only' : ''}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
                   {a.splashRadius != null ? ` · ${a.splashRadius} block splash` : ''}
                   {a.burstShots != null && a.burstShots > 1

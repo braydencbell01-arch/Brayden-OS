@@ -17,6 +17,8 @@ import { FootballModel } from './FootballModel'
 import { PhilsCarModel } from './PhilsCarModel'
 import { ScottModel } from './ScottModel'
 import { IceCreamModel } from './IceCreamModel'
+import { GretchinModel } from './GretchinModel'
+import { DaveModel } from './DaveModel'
 
 type Props = {
   charId: string
@@ -65,6 +67,10 @@ export function CharacterModel({
     model = <JeremyModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'scott') {
     model = <ScottModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'gretchin') {
+    model = <GretchinModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'dave') {
+    model = <DaveModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dogHut') {
     model = <DogHutModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'philsCar') {

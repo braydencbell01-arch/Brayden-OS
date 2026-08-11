@@ -68,6 +68,10 @@ const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
 /** Shay Love heart — drifts slowly toward the target. */
 const LOVE_PROJECTILE_MS = 1600
+/** Gretchin Witchcraft — medium purple bolt. */
+const WITCHCRAFT_PROJECTILE_MS = 520
+const WITCHCRAFT_VFX_MS = 560
+const WITCHCRAFT_SPLAT_MS = 520
 const TOWER_PROJECTILE_MS = 320
 const ROOT_VFX_MS = 450
 const HUG_VFX_MS = 780
@@ -1179,13 +1183,16 @@ export function useBattle(opts?: {
                 ? SLOBBER_SPLAT_MS
                 : s.kind === 'love'
                   ? LOVE_SPLAT_MS
+                  : s.kind === 'witchcraft'
+                    ? WITCHCRAFT_SPLAT_MS
                   : s.kind === 'iceCream'
                     ? 900
                   : s.kind === 'melee' ||
                       s.kind === 'whip' ||
                       s.kind === 'bite' ||
                       s.kind === 'kick' ||
-                      s.kind === 'hug'
+                      s.kind === 'hug' ||
+                      s.kind === 'uppercut'
                     ? MELEE_HIT_MS
                     : SPLAT_MS
         return t - s.bornAt < life
@@ -1253,6 +1260,15 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'love',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'witchcraft') {
+          nextSplats.push({
+            id: nid('witch'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'witchcraft',
           })
           splatsChanged = true
         } else if (p.kind === 'iceCream') {
@@ -1611,7 +1627,12 @@ export function useBattle(opts?: {
         const dmgMult = u.enraged ? (def.rageDamageMult ?? RAGE_DAMAGE_MULT) : 1
 
         const me = unitCenter(u)
-        const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
+        const buildingsOnly = !!def.targetsBuildingsOnly
+        const foes = nextUnits.filter((o) => {
+          if (o.side === u.side || o.hp <= 0) return false
+          if (buildingsOnly && !isBuildingCard(getCharacter(o.charId))) return false
+          return true
+        })
         const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
         const currentAttack = def.attacks[u.attackIndex % def.attacks.length]
         // Towers are the default objective. Units only pull aggro when nearby;
@@ -1641,7 +1662,7 @@ export function useBattle(opts?: {
           const [kind, id] = u.lockKey.split(':') as ['unit' | 'tower', string]
           if (kind === 'unit') {
             const f = foes.find((x) => x.id === id)
-            if (f) {
+            if (f && !(buildingsOnly && !isBuildingCard(getCharacter(f.charId)))) {
               const c = unitCenter(f)
               const edge = dist(me.col, me.row, c.col, c.row)
               if (edge <= attackRange) {
@@ -1833,6 +1854,10 @@ export function useBattle(opts?: {
                     ? HUG_VFX_MS
                     : attack.id === 'love'
                       ? LOVE_VFX_MS
+                      : attack.id === 'witchcraft'
+                        ? WITCHCRAFT_VFX_MS
+                        : attack.id === 'uppercut'
+                          ? 720
                       : attack.rootWhileAttacking
                         ? ROOT_VFX_MS
                         : RANGED_VFX_MS
@@ -1855,6 +1880,7 @@ export function useBattle(opts?: {
           attack.kind === 'shoot' ||
           attack.kind === 'dumbbell' ||
           attack.kind === 'love' ||
+          attack.kind === 'witchcraft' ||
           attack.kind === 'cash' ||
           attack.kind === 'rocket'
         ) {
@@ -1885,6 +1911,8 @@ export function useBattle(opts?: {
                           ? DUMBBELL_PROJECTILE_MS
                           : attack.kind === 'love'
                             ? LOVE_PROJECTILE_MS
+                            : attack.kind === 'witchcraft'
+                              ? WITCHCRAFT_PROJECTILE_MS
                             : PROJECTILE_MS),
             ownerSide: u.side,
             splashRadius: attack.splashRadius,
@@ -1959,10 +1987,18 @@ export function useBattle(opts?: {
           attack.kind === 'kick' ||
           attack.kind === 'bite' ||
           attack.kind === 'headbutt' ||
-          attack.kind === 'hug'
+          attack.kind === 'hug' ||
+          attack.kind === 'uppercut'
         ) {
           const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
-          const lunge = attack.kind === 'kick' ? 1.25 : attack.kind === 'hug' ? 0.85 : 0.65
+          const lunge =
+            attack.kind === 'kick'
+              ? 1.25
+              : attack.kind === 'hug'
+                ? 0.85
+                : attack.kind === 'uppercut'
+                  ? 0.9
+                  : 0.65
           const next = stepUnit(
             u,
             Math.cos(ang) * lunge,
@@ -1989,7 +2025,9 @@ export function useBattle(opts?: {
                     ? 'kick'
                     : attack.kind === 'hug'
                       ? 'hug'
-                      : 'melee',
+                      : attack.kind === 'uppercut'
+                        ? 'uppercut'
+                        : 'melee',
           })
           splatsChanged = true
         }

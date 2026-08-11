@@ -13,6 +13,8 @@ import {
   MeleeHitFx,
   LoveDot,
   LoveSplat,
+  WitchcraftDot,
+  WitchcraftSplat,
   RageHeartPickup,
   ShootDot,
   SlobberDot,
@@ -119,6 +121,7 @@ function FlyingShot({
     | 'shoot'
     | 'dumbbell'
     | 'love'
+    | 'witchcraft'
     | 'arrow'
     | 'cannon'
     | 'iceCream'
@@ -148,6 +151,8 @@ function FlyingShot({
                   ? 5.5
                   : kind === 'love'
                     ? 2.4
+                    : kind === 'witchcraft'
+                      ? 1.8
                     : kind === 'iceCream'
                       ? 9
                       : kind === 'football'
@@ -167,6 +172,7 @@ function FlyingShot({
   const aimKinds =
     kind === 'rocket' ||
     kind === 'shoot' ||
+    kind === 'witchcraft' ||
     kind === 'arrow' ||
     kind === 'football' ||
     kind === 'cash' ||
@@ -192,6 +198,7 @@ function FlyingShot({
       {kind === 'shoot' ? <ShootDot /> : null}
       {kind === 'dumbbell' ? <DumbbellDot /> : null}
       {kind === 'love' ? <LoveDot /> : null}
+      {kind === 'witchcraft' ? <WitchcraftDot /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
@@ -606,6 +613,7 @@ export function BattleScreen({
             p.kind === 'shoot' ||
             p.kind === 'dumbbell' ||
             p.kind === 'love' ||
+            p.kind === 'witchcraft' ||
             p.kind === 'arrow' ||
             p.kind === 'cannon' ||
             p.kind === 'iceCream' ||
@@ -659,6 +667,8 @@ export function BattleScreen({
                   <SlobberSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'love' ? (
                   <LoveSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'witchcraft' ? (
+                  <WitchcraftSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'iceCream' ? (
                   <IceCreamSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'football' ? (
@@ -671,7 +681,8 @@ export function BattleScreen({
                   s.kind === 'whip' ||
                   s.kind === 'bite' ||
                   s.kind === 'kick' ||
-                  s.kind === 'hug' ? (
+                  s.kind === 'hug' ||
+                  s.kind === 'uppercut' ? (
                   <MeleeHitFx ageMs={now - s.bornAt} kind={s.kind} />
                 ) : (
                   <SundaeSplat ageMs={now - s.bornAt} />
