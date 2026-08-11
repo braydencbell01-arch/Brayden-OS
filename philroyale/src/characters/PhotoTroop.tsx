@@ -72,11 +72,14 @@ export function PhotoTroop({
   const backRef = useRef(false)
   const cosF = Math.cos(facing)
   const sinF = Math.sin(facing)
-  if (cosF < -0.55) flipRef.current = -1
-  else if (cosF > 0.55) flipRef.current = 1
+  // Left/right: commit only when clearly sideways so sprites don't shimmer.
+  if (cosF < -0.42) flipRef.current = -1
+  else if (cosF > 0.42) flipRef.current = 1
   if (troopBackSrc) {
-    if (sinF < -0.6) backRef.current = true
-    else if (sinF > 0.35) backRef.current = false
+    // Screen-up (−Y) ⇒ back of character (your troops marching toward the enemy).
+    // Screen-down (+Y) ⇒ front (enemies coming at you).
+    if (sinF < -0.38) backRef.current = true
+    else if (sinF > 0.38) backRef.current = false
   } else {
     backRef.current = false
   }
@@ -129,10 +132,27 @@ export function PhotoTroop({
     >
       {/* Soft ground blob only — never filter:drop-shadow on the moving sprite */}
       <div
-        className="absolute bottom-0 left-1/2 h-[9%] w-[62%] -translate-x-1/2 rounded-[50%]"
-        style={{ background: 'radial-gradient(ellipse, #00000066 0%, transparent 70%)' }}
+        className="absolute bottom-0 left-1/2 h-[11%] w-[68%] -translate-x-1/2 rounded-[50%]"
+        style={{
+          background: 'radial-gradient(ellipse, #00000077 0%, #00000033 45%, transparent 72%)',
+          transform: walking ? 'scaleX(1.08)' : 'scaleX(1)',
+        }}
         aria-hidden
       />
+      {walking ? (
+        <div
+          className="pointer-events-none absolute bottom-[2%] left-1/2 h-[18%] w-[90%] -translate-x-1/2"
+          aria-hidden
+        >
+          <div
+            className="absolute inset-0 animate-pulse rounded-[50%] opacity-40"
+            style={{
+              background:
+                'radial-gradient(ellipse at 30% 70%, #c4a57455 0%, transparent 55%), radial-gradient(ellipse at 70% 60%, #b8956a44 0%, transparent 50%)',
+            }}
+          />
+        </div>
+      ) : null}
 
       <motion.div
         className="absolute inset-0"

@@ -5,6 +5,7 @@
 
 import { ARENA_ROWS } from './arena'
 import type { AttackId } from './characters'
+import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
 export type BattleRole = 'host' | 'guest' | 'spectator'
 
@@ -77,38 +78,22 @@ export type BattleNet = {
   viewAs?: 'host' | 'guest'
 }
 
-const TOPIC_PREFIX = 'philroyale-battle-v2-'
+const TOPIC_PREFIX = 'philroyale-battle-v5-'
 
 function topicFor(challengeId: string): string {
   const clean = challengeId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48)
   return `${TOPIC_PREFIX}${clean || 'lobby'}`
 }
 
-function endpoint(challengeId: string): string {
-  return `https://ntfy.sh/${topicFor(challengeId)}`
-}
-
 export async function publishBattle(
   challengeId: string,
   message: BattleRoomMessage,
 ): Promise<boolean> {
-  try {
-    const res = await fetch(endpoint(challengeId), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Title: 'Phil Royale battle',
-        Priority: message.type === 'battle_peer_accept' ? 'high' : 'default',
-        // Keep accepts/ready around so a late subscriber still sees them.
-        Cache: 'yes',
-        TTL: '120',
-      },
-      body: JSON.stringify(message),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
+  return ntfyPublish(topicFor(challengeId), message, {
+    title: 'Phil Royale battle',
+    priority: message.type === 'battle_peer_accept' ? 'high' : 'default',
+    ttl: 120,
+  })
 }
 
 export function subscribeBattle(
@@ -117,85 +102,19 @@ export function subscribeBattle(
 ): () => void {
   if (!challengeId || typeof window === 'undefined') return () => {}
 
-  let stopped = false
-  // Look far enough back that an accept published before we subscribed is still found.
-  let lastSince = Math.floor(Date.now() / 1000) - 180
-  const seen = new Set<string>()
-
-  function handleRaw(raw: string, id?: string) {
-    if (id && seen.has(id)) return
-    if (id) {
-      seen.add(id)
-      if (seen.size > 400) {
-        const first = seen.values().next().value
-        if (first) seen.delete(first)
-      }
-    }
-    try {
-      const data = JSON.parse(raw) as BattleRoomMessage
-      if (!data?.type || data.challengeId !== challengeId) return
-      onMessage(data)
-    } catch {
-      /* ignore */
-    }
-  }
-
-  async function pollOnce() {
-    if (stopped) return
-    try {
-      const res = await fetch(`${endpoint(challengeId)}/json?poll=1&since=${lastSince}`)
-      if (!res.ok) return
-      const text = (await res.text()).trim()
-      if (!text) return
-      for (const line of text.split('\n')) {
-        if (!line.trim()) continue
-        try {
-          const envelope = JSON.parse(line) as {
-            id?: string
-            message?: string
-            time?: number
-            event?: string
-          }
-          if (envelope.event && envelope.event !== 'message') continue
-          if (envelope.time) lastSince = Math.max(lastSince, envelope.time + 1)
-          if (envelope.message) handleRaw(envelope.message, envelope.id)
-        } catch {
-          /* ignore */
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-
-  let es: EventSource | null = null
-  try {
-    es = new EventSource(`${endpoint(challengeId)}/sse`)
-    es.onmessage = (ev) => {
+  return ntfySubscribe(
+    topicFor(challengeId),
+    (raw) => {
       try {
-        const envelope = JSON.parse(ev.data) as {
-          id?: string
-          message?: string
-          time?: number
-        }
-        if (envelope.time) lastSince = Math.max(lastSince, envelope.time)
-        if (envelope.message) handleRaw(envelope.message, envelope.id)
+        const data = JSON.parse(raw) as BattleRoomMessage
+        if (!data?.type || data.challengeId !== challengeId) return
+        onMessage(data)
       } catch {
         /* ignore */
       }
-    }
-  } catch {
-    es = null
-  }
-
-  void pollOnce()
-  const poll = window.setInterval(() => void pollOnce(), 450)
-
-  return () => {
-    stopped = true
-    window.clearInterval(poll)
-    es?.close()
-  }
+    },
+    { lookbackSec: 180, pollMs: 400 },
+  )
 }
 
 /** Flip host-sim coords into the guest's local view (guest is always ally at bottom). */

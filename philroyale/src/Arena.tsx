@@ -458,14 +458,27 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
             background: isTouchdown
               ? 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.18) 100%)'
               : `
-              linear-gradient(180deg, rgba(8,24,12,0.28) 0%, transparent 22%, transparent 72%, rgba(255,248,200,0.1) 100%),
-              linear-gradient(90deg, rgba(0,0,0,0.18) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.16) 100%),
-              radial-gradient(ellipse 70% 45% at 30% 18%, rgba(255,246,168,0.12), transparent 60%)
+              linear-gradient(180deg, rgba(8,24,12,0.32) 0%, transparent 20%, transparent 70%, rgba(255,248,200,0.14) 100%),
+              linear-gradient(90deg, rgba(0,0,0,0.22) 0%, transparent 16%, transparent 84%, rgba(0,0,0,0.2) 100%),
+              radial-gradient(ellipse 75% 40% at 50% 8%, rgba(255,250,200,0.16), transparent 55%),
+              radial-gradient(ellipse 90% 55% at 50% 100%, rgba(20,40,16,0.25), transparent 60%)
             `,
             mixBlendMode: 'soft-light',
           }}
           aria-hidden
         />
+        {/* Subtle film grain for outdoor grit */}
+        {!isTouchdown ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[2] opacity-[0.07]"
+            style={{
+              backgroundImage:
+                'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")',
+              mixBlendMode: 'overlay',
+            }}
+            aria-hidden
+          />
+        ) : null}
 
         {/* Towers — hidden in touchdown mode (no towers on a football field) */}
         {!isTouchdown && TOWERS.map((t) => {

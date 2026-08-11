@@ -117,6 +117,10 @@ export default function App() {
     {},
   )
   const [spectating, setSpectating] = useState(false)
+  const [incomingFriendReq, setIncomingFriendReq] = useState<{
+    fromPlayerId: string
+    fromName: string
+  } | null>(null)
   const needsName = !playerName.trim()
 
   const flashFriend = useCallback((msg: string) => {
@@ -227,36 +231,45 @@ export default function App() {
     if (!incomingChallenge) return
     const { challengeId, fromName, mode, fromPlayerId } = incomingChallenge
     const acceptedBy = loadPlayerName().trim() || incomingChallenge.toName
+    const modeFinal = mode ?? 'classic'
     saveBattleAccepted({
       challengeId,
       acceptedBy,
       acceptedAt: new Date().toISOString(),
     })
-    postBattleMessage({ type: 'accept', challengeId, acceptedBy, mode })
-    if (fromPlayerId) {
-      void publishSocial(fromPlayerId, {
-        type: 'battle_accept',
+    postBattleMessage({ type: 'accept', challengeId, acceptedBy, mode: modeFinal })
+
+    const burstAccept = () => {
+      const at = new Date().toISOString()
+      if (fromPlayerId) {
+        void publishSocial(fromPlayerId, {
+          type: 'battle_accept',
+          challengeId,
+          fromPlayerId: loadPlayerId(),
+          fromName: acceptedBy,
+          mode: modeFinal,
+          at,
+        })
+      }
+      void publishBattle(challengeId, {
+        type: 'battle_peer_accept',
         challengeId,
-        fromPlayerId: loadPlayerId(),
         fromName: acceptedBy,
-        mode: mode ?? 'classic',
-        at: new Date().toISOString(),
+        fromPlayerId: loadPlayerId(),
+        mode: modeFinal,
+        at,
+      })
+      void publishBattle(challengeId, {
+        type: 'battle_ready',
+        challengeId,
+        role: 'guest',
+        name: acceptedBy,
+        at,
       })
     }
-    // Shared battle room — host listens here even if social inbox is quiet.
-    // Fire a few times so a late host subscriber still catches accept (cached + retries).
-    const acceptPayload = {
-      type: 'battle_peer_accept' as const,
-      challengeId,
-      fromName: acceptedBy,
-      fromPlayerId: loadPlayerId(),
-      mode: mode ?? ('classic' as const),
-      at: new Date().toISOString(),
-    }
-    void publishBattle(challengeId, acceptPayload)
-    window.setTimeout(() => void publishBattle(challengeId, { ...acceptPayload, at: new Date().toISOString() }), 400)
-    window.setTimeout(() => void publishBattle(challengeId, { ...acceptPayload, at: new Date().toISOString() }), 1200)
-    window.setTimeout(() => void publishBattle(challengeId, { ...acceptPayload, at: new Date().toISOString() }), 2500)
+    // Burst so the challenger (host) always picks up accept even if one channel hiccups.
+    burstAccept()
+    ;[300, 800, 1600, 2800, 4500].forEach((ms) => window.setTimeout(burstAccept, ms))
 
     clearIncomingChallenge()
     setIncomingChallenge(null)
@@ -265,7 +278,8 @@ export default function App() {
     setDraftingTouchdown(false)
     setTouchdownDeck(null)
     setShowRoad(false)
-    startMatch(fromName, mode ?? 'classic', {
+    // Guest enters the shared room immediately — both screens show the same match.
+    startMatch(fromName, modeFinal, {
       challengeId,
       role: 'guest',
       peerPlayerId: fromPlayerId,
@@ -298,8 +312,8 @@ export default function App() {
     async (friendName: string, opts?: { mode?: GameMode; playerId?: string }) => {
       const mode = opts?.mode ?? 'classic'
       const toPlayerId = opts?.playerId?.trim()
-      if (!toPlayerId) {
-        flashFriend('Add this friend with their account code first.')
+      if (!toPlayerId || !isFriendCode(toPlayerId)) {
+        flashFriend('Add this friend with their 6-digit friend code first.')
         return
       }
       if (friendPresence[toPlayerId]?.inBattle) {
@@ -314,8 +328,9 @@ export default function App() {
       })
       setOutgoingChallenge(challenge)
       postBattleMessage({ type: 'challenge', challenge })
-      const ok = await publishSocial(toPlayerId, {
-        type: 'battle_invite',
+
+      const invitePayload = {
+        type: 'battle_invite' as const,
         challengeId: challenge.challengeId,
         fromPlayerId: loadPlayerId(),
         fromName: challenge.fromName,
@@ -323,17 +338,36 @@ export default function App() {
         toName: friendName,
         mode,
         at: challenge.createdAt,
+      }
+      const ok = await publishSocial(toPlayerId, invitePayload)
+      // Retries — friend phone may poll a second later.
+      ;[500, 1500, 3000].forEach((ms) => {
+        window.setTimeout(() => {
+          void publishSocial(toPlayerId, {
+            ...invitePayload,
+            at: new Date().toISOString(),
+          })
+        }, ms)
       })
+      // Pre-open the battle room so guest accepts land even if social is slow.
+      void publishBattle(challenge.challengeId, {
+        type: 'battle_ready',
+        challengeId: challenge.challengeId,
+        role: 'host',
+        name: challenge.fromName,
+        at: new Date().toISOString(),
+      })
+
       if (!ok) {
         clearOutgoingChallenge()
         setOutgoingChallenge(null)
-        flashFriend('Invite failed — check your connection.')
+        flashFriend('Invite failed — check your connection and try again.')
         return
       }
       flashFriend(
         looksOnline
-          ? `Invite sent to ${friendName}. Waiting for Accept / Decline…`
-          : `Invite sent. They need Phil Royale open — tap Text battle link if needed.`,
+          ? `Invite sent to ${friendName} — they should see Accept / Decline now.`
+          : `Invite sent. Keep Phil Royale open on both phones so they get the popup.`,
       )
     }, [flashFriend, friendPresence],
   )
@@ -383,12 +417,33 @@ export default function App() {
         toPlayerId: code,
         at: new Date().toISOString(),
       })
-      void publishSocial(code, {
-        type: 'friend_hello',
+      const hello = {
+        type: 'friend_hello' as const,
         fromPlayerId: myId,
         fromName: me,
         at: new Date().toISOString(),
+      }
+      void publishSocial(code, hello)
+      ;[600, 1800, 3500].forEach((ms) => {
+        window.setTimeout(() => {
+          void publishSocial(code, {
+            type: 'friend_request',
+            fromPlayerId: myId,
+            fromName: me,
+            toPlayerId: code,
+            at: new Date().toISOString(),
+          })
+          void publishSocial(code, { ...hello, at: new Date().toISOString() })
+          void publishSocial(code, {
+            type: 'presence',
+            fromPlayerId: myId,
+            fromName: me,
+            at: new Date().toISOString(),
+            trophies: loadProfile().trophies,
+          })
+        }, ms)
       })
+      void publishDirectory(myId, me, { trophies: loadProfile().trophies })
 
       if (!foundName) {
         const reply = await replyPromise
@@ -459,10 +514,10 @@ export default function App() {
 
   useEffect(() => {
     const id = loadPlayerId()
-    const flag = 'philroyale.friendCode6DigitNotice.v1'
+    const flag = 'philroyale.friendCodeRelayV5.v1'
     if (!localStorage.getItem(flag)) {
       localStorage.setItem(flag, '1')
-      flashFriend(`Friend codes are now 6 digits. Yours is ${id} — share it under Social → Friends.`)
+      flashFriend(`Friends & multiplayer relay upgraded. Your code is ${id} — both of you hard-refresh, then re-add.`)
     }
     repairBrokenLocalClub()
     const friendLink = parseFriendInviteFromUrl()
@@ -683,6 +738,17 @@ export default function App() {
           fromName: me,
           at: new Date().toISOString(),
         })
+        // Also push presence so they see us online immediately.
+        void publishSocial(msg.fromPlayerId, {
+          type: 'presence',
+          fromPlayerId: myId,
+          fromName: me,
+          at: new Date().toISOString(),
+          trophies: loadProfile().trophies,
+          inBattle: false,
+        })
+        void publishDirectory(myId, me, { trophies: loadProfile().trophies })
+        setIncomingFriendReq({ fromPlayerId: msg.fromPlayerId, fromName: msg.fromName })
         flashFriend(`${msg.fromName} added you as a friend!`)
         return
       }
@@ -904,6 +970,44 @@ export default function App() {
                 Accept
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {incomingFriendReq ? (
+        <div
+          className="fixed inset-0 z-[69] flex items-center justify-center bg-black/65 p-4"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-sm rounded-xl p-5"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
+            }}
+          >
+            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+              New friend
+            </h2>
+            <p className="mt-2 text-sm font-semibold text-white/85">
+              <span className="font-extrabold text-white">{incomingFriendReq.fromName}</span> added
+              you. They&apos;re on your friends list — invite them to battle anytime.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setIncomingFriendReq(null)
+                setTab('friends')
+              }}
+              className="mt-4 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
+              style={{
+                background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+                boxShadow: '0 3px 0 #8a6a12',
+              }}
+            >
+              Open Friends
+            </button>
           </div>
         </div>
       ) : null}

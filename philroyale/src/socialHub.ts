@@ -1,7 +1,9 @@
 /**
  * Cross-device friend / invite sync via public ntfy topics (no server of ours).
- * Each player has a long random playerId; we publish JSON to their topic.
+ * Each player has a 6-digit friend code; we publish JSON to their topic.
  */
+
+import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
 export type GameMode = 'classic' | 'touchdown'
 
@@ -89,24 +91,16 @@ export type FriendPresenceInfo = {
 }
 
 /** How recently a presence ping counts as "online". */
-export const PRESENCE_ONLINE_MS = 45_000
-export const PRESENCE_HEARTBEAT_MS = 15_000
+export const PRESENCE_ONLINE_MS = 60_000
+export const PRESENCE_HEARTBEAT_MS = 8_000
 /** Shared lobby so friend codes can be discovered while both apps are open. */
-export const DIRECTORY_HEARTBEAT_MS = 8_000
-const DIRECTORY_TOPIC = 'philroyale-dir-v4'
+export const DIRECTORY_HEARTBEAT_MS = 5_000
+const DIRECTORY_TOPIC = 'philroyale-dir-v5'
 const DIRECTORY_FRESH_MS = 90_000
-const TOPIC_PREFIX = 'philroyale-v4-'
+const TOPIC_PREFIX = 'philroyale-v5-'
 
 function topicFor(playerId: string): string {
   return `${TOPIC_PREFIX}${playerId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64)}`
-}
-
-function endpoint(playerId: string): string {
-  return `https://ntfy.sh/${topicFor(playerId)}`
-}
-
-function directoryEndpoint(): string {
-  return `https://ntfy.sh/${DIRECTORY_TOPIC}`
 }
 
 type DirEntry = { name: string; at: number; trophies?: number; inBattle?: boolean }
@@ -159,30 +153,18 @@ export async function publishDirectory(
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return false
   rememberDirectoryPing(c, name, Date.now(), extra)
-  try {
-    const res = await fetch(directoryEndpoint(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Title: 'Phil Royale directory',
-        Priority: 'default',
-        Tags: 'bust_in_silhouette',
-        Cache: 'yes',
-        TTL: '90',
-      },
-      body: JSON.stringify({
-        type: 'dir_ping',
-        fromPlayerId: c,
-        fromName: name.trim() || `Player ${c}`,
-        at: new Date().toISOString(),
-        trophies: extra?.trophies,
-        inBattle: extra?.inBattle,
-      } satisfies SocialMessage),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
+  return ntfyPublish(
+    DIRECTORY_TOPIC,
+    {
+      type: 'dir_ping',
+      fromPlayerId: c,
+      fromName: name.trim() || `Player ${c}`,
+      at: new Date().toISOString(),
+      trophies: extra?.trophies,
+      inBattle: extra?.inBattle,
+    } satisfies SocialMessage,
+    { title: 'Phil Royale directory', tags: 'bust_in_silhouette', ttl: 90 },
+  )
 }
 
 function handleDirectoryRaw(raw: string): void {
@@ -203,7 +185,9 @@ function handleDirectoryRaw(raw: string): void {
 export async function pollDirectory(): Promise<void> {
   try {
     const since = Math.floor(Date.now() / 1000) - 90
-    const res = await fetch(`${directoryEndpoint()}/json?poll=1&since=${since}`)
+    const res = await fetch(
+      `https://ntfy.envs.net/${DIRECTORY_TOPIC}/json?poll=1&since=${since}`,
+    )
     if (!res.ok) return
     const text = (await res.text()).trim()
     if (!text) return
@@ -225,61 +209,11 @@ export async function pollDirectory(): Promise<void> {
 /** Stay subscribed to the friend-code directory while the app is open. */
 export function subscribeDirectory(): () => void {
   if (typeof window === 'undefined') return () => {}
-  let stopped = false
-  let lastSince = Math.floor(Date.now() / 1000) - 90
-  let es: EventSource | null = null
-  try {
-    es = new EventSource(`${directoryEndpoint()}/sse`)
-    es.onmessage = (ev) => {
-      try {
-        const envelope = JSON.parse(ev.data) as {
-          id?: string
-          message?: string
-          time?: number
-        }
-        if (envelope.time) lastSince = Math.max(lastSince, envelope.time)
-        if (envelope.message) handleDirectoryRaw(envelope.message)
-      } catch {
-        /* ignore */
-      }
-    }
-  } catch {
-    es = null
-  }
-  const poll = window.setInterval(() => {
-    if (stopped) return
-    void (async () => {
-      try {
-        const res = await fetch(`${directoryEndpoint()}/json?poll=1&since=${lastSince}`)
-        if (!res.ok) return
-        const text = (await res.text()).trim()
-        if (!text) return
-        for (const line of text.split('\n')) {
-          if (!line.trim()) continue
-          try {
-            const envelope = JSON.parse(line) as {
-              message?: string
-              time?: number
-              event?: string
-            }
-            if (envelope.event && envelope.event !== 'message') continue
-            if (envelope.time) lastSince = Math.max(lastSince, envelope.time + 1)
-            if (envelope.message) handleDirectoryRaw(envelope.message)
-          } catch {
-            /* ignore */
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-    })()
-  }, 3000)
   void pollDirectory()
-  return () => {
-    stopped = true
-    window.clearInterval(poll)
-    es?.close()
-  }
+  return ntfySubscribe(DIRECTORY_TOPIC, (raw) => handleDirectoryRaw(raw), {
+    lookbackSec: 90,
+    pollMs: 2000,
+  })
 }
 
 export async function publishSocial(
@@ -287,23 +221,16 @@ export async function publishSocial(
   message: SocialMessage,
 ): Promise<boolean> {
   if (!toPlayerId.trim()) return false
-  try {
-    const res = await fetch(endpoint(toPlayerId), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Title: 'Phil Royale',
-        Priority: message.type.includes('battle') ? 'high' : 'default',
-        Tags: 'video_game',
-        Cache: 'yes',
-        TTL: '120',
-      },
-      body: JSON.stringify(message),
-    })
-    return res.ok
-  } catch {
-    return false
-  }
+  const high =
+    message.type === 'battle_invite' ||
+    message.type === 'battle_accept' ||
+    message.type === 'friend_request'
+  return ntfyPublish(topicFor(toPlayerId), message, {
+    title: 'Phil Royale',
+    priority: high ? 'high' : 'default',
+    tags: 'video_game',
+    ttl: 180,
+  })
 }
 
 function parsePayload(raw: string): SocialMessage | null {
@@ -354,87 +281,21 @@ export function waitForSocial(
   })
 }
 
-/** Subscribe to inbound social messages (SSE + poll fallback). */
+/** Subscribe to inbound social messages (SSE + poll fallback with cache). */
 export function subscribeSocial(
   playerId: string,
   onMessage: (msg: SocialMessage) => void,
 ): () => void {
   if (!playerId.trim() || typeof window === 'undefined') return () => {}
 
-  let stopped = false
-  let lastSince = Math.floor(Date.now() / 1000) - 30
-  const seen = new Set<string>()
-
-  function handleRaw(raw: string, id?: string) {
-    if (id && seen.has(id)) return
-    if (id) {
-      seen.add(id)
-      if (seen.size > 200) {
-        const first = seen.values().next().value
-        if (first) seen.delete(first)
-      }
-    }
-    const msg = parsePayload(raw)
-    if (msg) {
+  return ntfySubscribe(
+    topicFor(playerId),
+    (raw) => {
+      const msg = parsePayload(raw)
+      if (!msg) return
       notifySocialWaiters(msg)
       onMessage(msg)
-    }
-  }
-
-  let es: EventSource | null = null
-  try {
-    es = new EventSource(`${endpoint(playerId)}/sse`)
-    es.onmessage = (ev) => {
-      try {
-        const envelope = JSON.parse(ev.data) as {
-          id?: string
-          message?: string
-          time?: number
-        }
-        if (envelope.time) lastSince = Math.max(lastSince, envelope.time)
-        if (envelope.message) handleRaw(envelope.message, envelope.id)
-      } catch {
-        /* ignore */
-      }
-    }
-  } catch {
-    es = null
-  }
-
-  const poll = window.setInterval(() => {
-    if (stopped) return
-    void (async () => {
-      try {
-        const url = `${endpoint(playerId)}/json?poll=1&since=${lastSince}`
-        const res = await fetch(url)
-        if (!res.ok) return
-        const text = (await res.text()).trim()
-        if (!text) return
-        for (const line of text.split('\n')) {
-          if (!line.trim()) continue
-          try {
-            const envelope = JSON.parse(line) as {
-              id?: string
-              message?: string
-              time?: number
-              event?: string
-            }
-            if (envelope.event && envelope.event !== 'message') continue
-            if (envelope.time) lastSince = Math.max(lastSince, envelope.time + 1)
-            if (envelope.message) handleRaw(envelope.message, envelope.id)
-          } catch {
-            /* ignore line */
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-    })()
-  }, 2500)
-
-  return () => {
-    stopped = true
-    window.clearInterval(poll)
-    es?.close()
-  }
+    },
+    { lookbackSec: 180, pollMs: 800 },
+  )
 }

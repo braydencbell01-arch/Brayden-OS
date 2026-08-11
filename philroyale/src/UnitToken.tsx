@@ -32,6 +32,8 @@ export function UnitToken({
   const anim: CharacterAnim = vfx ? 'attack' : moving ? 'walk' : 'idle'
   const face =
     facing ?? (side === 'ally' ? -Math.PI / 2 : Math.PI / 2)
+  const leanX = Math.cos(face) * 4
+  const leanRot = Math.cos(face) * 6
 
   return (
     <div
@@ -44,6 +46,8 @@ export function UnitToken({
       <div
         className="relative w-full overflow-visible"
         style={{
+          transform: `translateX(${leanX}%) rotate(${leanRot}deg)`,
+          transformOrigin: '50% 100%',
           // Taller boxes so full-body sprites (feet/paws) are never cropped.
           aspectRatio:
             charId === 'dogHut'
