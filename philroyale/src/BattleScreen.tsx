@@ -39,6 +39,7 @@ import { ARENA_COLS, ARENA_ROWS } from './arena'
 import {
   grantBattleChest,
   loadDeck,
+  loadProfile,
   noteCardDeployed,
   recordMatchResult,
 } from './storage'
@@ -236,6 +237,7 @@ export function BattleScreen({
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
   // Solo bots get a fresh random deck each match (not a copy of yours).
   const botDeckIds = useMemo(() => randomBotDeck(), [])
+  const trophies = useMemo(() => loadProfile().trophies, [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
@@ -273,6 +275,7 @@ export function BattleScreen({
     paused: ended,
     allyLevels,
     botLevel,
+    trophies,
     mode,
     enemyDeckIds: net ? undefined : botDeckIds,
     net,

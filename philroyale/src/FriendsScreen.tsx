@@ -7,6 +7,7 @@ import {
 } from './socialHub'
 import {
   formatAccountCode,
+  friendInviteUrl,
   loadAccountCode,
   loadFriendMeta,
   loadFriends,
@@ -20,7 +21,6 @@ import {
   saveFriends,
   savePlayerName,
   shareText,
-  siteOrigin,
   upsertFriend,
   type Friend,
   type FriendMeta,
@@ -125,13 +125,22 @@ export function FriendsScreen({
   }
 
   function sendInviteLink() {
+    const name = loadPlayerName().trim() || 'Player'
+    const url = friendInviteUrl(name, loadPlayerId())
     const code = formatAccountCode(myCode)
-    const url = siteOrigin()
     void shareText(
       'Play Phil Royale with me!',
-      `Add me on Phil Royale — my friend code is ${code}. Open the link, go to Friends, and enter ${code}.`,
+      `Add me on Phil Royale — friend code ${code}. Tap the link to friend me instantly:`,
       url,
     )
+  }
+
+  function textInviteLink() {
+    const name = loadPlayerName().trim() || 'Player'
+    const url = friendInviteUrl(name, loadPlayerId())
+    const code = formatAccountCode(myCode)
+    const body = `Add me on Phil Royale! Friend code ${code}. Tap to add me: ${url}`
+    window.location.href = `sms:?&body=${encodeURIComponent(body)}`
   }
 
   async function sendInvite(friend: Friend, mode: GameMode) {
@@ -268,8 +277,8 @@ export function FriendsScreen({
           Friends
         </h1>
         <p className="text-sm font-semibold text-white/70">
-          Share your <span className="text-[#f5d76e]">3-digit friend code</span>. Both keep
-          Phil Royale open, add each other, then profile → Invite for Accept / Decline.
+          Share your <span className="text-[#f5d76e]">3-digit friend code</span> or text an invite
+          link. Then profile → Invite to play Normal or Touchdown.
         </p>
         <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
           Your name
@@ -329,7 +338,14 @@ export function FriendsScreen({
               onClick={sendInviteLink}
               className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#4a9eff] ring-1 ring-white/15"
             >
-              📱 Text / share invite link
+              Share invite link
+            </button>
+            <button
+              type="button"
+              onClick={textInviteLink}
+              className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-[#7dff9a] ring-1 ring-white/15"
+            >
+              Text a link
             </button>
           </div>
 
@@ -362,7 +378,7 @@ export function FriendsScreen({
               <p className="mt-2 text-xs font-semibold text-[#7dff9a]">{addMsg}</p>
             ) : (
               <p className="mt-2 text-xs font-semibold text-white/45">
-                Enter their 3-digit code. Both players need Phil Royale open.
+                Enter their 3-digit code anytime — they do not need to be online to be added.
               </p>
             )}
           </div>
