@@ -64,6 +64,9 @@ const CASH_PROJECTILE_MS = 700
 /** Phil's Car rocket — long hang time. */
 const ROCKET_PROJECTILE_MS = 5000
 const ROCKET_VFX_MS = 620
+/** Steve's Diner pancake stack lob. */
+const PANCAKE_PROJECTILE_MS = 850
+const PANCAKE_SPLAT_MS = 820
 const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
 /** Shay Love heart — drifts slowly toward the target. */
@@ -1185,6 +1188,8 @@ export function useBattle(opts?: {
                   ? LOVE_SPLAT_MS
                   : s.kind === 'witchcraft'
                     ? WITCHCRAFT_SPLAT_MS
+                  : s.kind === 'pancake'
+                    ? PANCAKE_SPLAT_MS
                   : s.kind === 'iceCream'
                     ? 900
                   : s.kind === 'melee' ||
@@ -1309,6 +1314,16 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'rocket',
+            radius: splatRadius,
+          })
+          splatsChanged = true
+        } else if (p.kind === 'pancake') {
+          nextSplats.push({
+            id: nid('pancake'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'pancake',
             radius: splatRadius,
           })
           splatsChanged = true
@@ -1590,8 +1605,13 @@ export function useBattle(opts?: {
           u.rootedUntil = t + vfxMs
           unitsChanged = true
 
-          if (attack.kind === 'rocket' || attack.kind === 'shoot' || attack.kind === 'cash') {
-            // Launch from the front bumper (toward the target).
+          if (
+            attack.kind === 'rocket' ||
+            attack.kind === 'shoot' ||
+            attack.kind === 'cash' ||
+            attack.kind === 'pancake'
+          ) {
+            // Launch from the front face (toward the target).
             const nose = 1.4
             nextProjectiles.push({
               id: nid('p'),
@@ -1604,8 +1624,13 @@ export function useBattle(opts?: {
               targetId: best.kind === 'unit' ? best.id : null,
               targetTowerId: best.kind === 'tower' ? best.id : null,
               bornAt: t,
-              arriveAt: t + (attack.projectileMs ?? ROCKET_PROJECTILE_MS),
+              arriveAt:
+                t +
+                (attack.projectileMs ??
+                  (attack.kind === 'pancake' ? PANCAKE_PROJECTILE_MS : ROCKET_PROJECTILE_MS)),
               ownerSide: u.side,
+              splashRadius: attack.splashRadius,
+              splashDamage: attack.splashDamage,
             })
             projectilesChanged = true
           }

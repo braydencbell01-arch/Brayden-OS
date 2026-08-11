@@ -48,7 +48,7 @@ export function UnitToken({
           aspectRatio:
             charId === 'dogHut'
               ? '5 / 4.6'
-              : charId === 'philsCar'
+              : charId === 'philsCar' || charId === 'stevesDiner'
                 ? '5 / 3.4'
               : charId === 'iceCream' || charId === 'footballHuck'
                 ? '3 / 4'
@@ -370,6 +370,93 @@ export function SundaeSplat({ ageMs }: { ageMs: number }) {
           background: 'linear-gradient(180deg,#e8b86a,#9a6420)',
           clipPath: 'polygon(20% 0, 80% 0, 100% 100%, 0 100%)',
           transform: `rotate(${25 + p * 40}deg) translate(${-4 - p * 6}px, ${2 + p * 8}px)`,
+        }}
+      />
+    </div>
+  )
+}
+
+/** Flying pancake stack for Steve's Diner Pancake Huck. */
+export function PancakeDot() {
+  return (
+    <div className="relative h-6 w-7" aria-hidden>
+      <div
+        className="absolute bottom-0 left-1/2 h-[7px] w-[26px] -translate-x-1/2 rounded-[50%]"
+        style={{
+          background: 'radial-gradient(ellipse at 40% 35%, #e8b86a, #c48a3a 55%, #8a5820)',
+          boxShadow: '0 1px 2px #0006',
+        }}
+      />
+      <div
+        className="absolute bottom-[4px] left-1/2 h-[7px] w-[24px] -translate-x-1/2 rounded-[50%]"
+        style={{
+          background: 'radial-gradient(ellipse at 40% 35%, #f0c878, #d4a04a 55%, #9a6428)',
+          boxShadow: '0 1px 1px #0004',
+        }}
+      />
+      <div
+        className="absolute bottom-[8px] left-1/2 h-[7px] w-[22px] -translate-x-1/2 rounded-[50%]"
+        style={{
+          background: 'radial-gradient(ellipse at 40% 35%, #f5d090, #e0b060 55%, #b07830)',
+          boxShadow: '0 1px 1px #0003',
+        }}
+      />
+      <div
+        className="absolute bottom-[13px] left-1/2 h-[5px] w-[10px] -translate-x-1/2 rounded-[2px]"
+        style={{
+          background: 'linear-gradient(180deg,#ffe566,#f0c020 60%,#d4a010)',
+          boxShadow: '0 1px 1px #0003',
+        }}
+      />
+    </div>
+  )
+}
+
+/** Pancake stack impact — syrup + cakes scatter. */
+export function PancakeSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 820)
+  const scale = 0.5 + p * 2.2
+  const opacity = 1 - p * 0.95
+  const cakes = [
+    { deg: 12, r: 10 },
+    { deg: 55, r: 13 },
+    { deg: 110, r: 11 },
+    { deg: 160, r: 14 },
+    { deg: 210, r: 12 },
+    { deg: 265, r: 13 },
+    { deg: 310, r: 11 },
+  ]
+  return (
+    <div
+      className="relative h-14 w-14"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-9 w-11 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+        style={{
+          background:
+            'radial-gradient(ellipse, #c48a3acc 0%, #8a582088 40%, #5a301044 58%, transparent 72%)',
+        }}
+      />
+      {cakes.map(({ deg, r }) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+          style={{
+            width: deg % 2 === 0 ? 12 : 10,
+            height: 5,
+            background: 'radial-gradient(ellipse at 40% 30%, #f0c878, #c48a3a 70%)',
+            transform: `rotate(${deg}deg) translateY(-${r + p * 12}px)`,
+            boxShadow: '0 0 2px #0003',
+          }}
+        />
+      ))}
+      <div
+        className="absolute left-1/2 top-1/2 h-2 w-3 -translate-x-1/2 -translate-y-1/2 rounded-[2px]"
+        style={{
+          background: 'linear-gradient(180deg,#ffe566,#d4a010)',
+          transform: `translate(${p * 10}px, ${-4 - p * 8}px) rotate(${20 + p * 50}deg)`,
         }}
       />
     </div>

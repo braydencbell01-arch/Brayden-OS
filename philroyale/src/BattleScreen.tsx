@@ -23,6 +23,8 @@ import {
   CashSplat,
   FootballDot,
   FootballSplat,
+  PancakeDot,
+  PancakeSplat,
   RocketDot,
   RocketSplat,
   SundaeDot,
@@ -128,6 +130,7 @@ function FlyingShot({
     | 'football'
     | 'cash'
     | 'rocket'
+    | 'pancake'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
@@ -157,6 +160,8 @@ function FlyingShot({
                       ? 9
                       : kind === 'football'
                         ? 14
+                        : kind === 'pancake'
+                          ? 8
                         : 4)
   const style = unitStyle(col, row - arc)
   const travelAngle =
@@ -168,6 +173,8 @@ function FlyingShot({
         ? p * 540
         : kind === 'dumbbell'
           ? p * 480
+          : kind === 'pancake'
+            ? p * 360
           : 0
   const aimKinds =
     kind === 'rocket' ||
@@ -176,9 +183,10 @@ function FlyingShot({
     kind === 'arrow' ||
     kind === 'football' ||
     kind === 'cash' ||
-    kind === 'dumbbell'
+    kind === 'dumbbell' ||
+    kind === 'pancake'
   const transform = aimKinds
-    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'cash' || kind === 'dumbbell' ? spin : 0)}deg)`
+    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' ? spin : 0)}deg)`
     : undefined
 
   return (
@@ -191,6 +199,7 @@ function FlyingShot({
       aria-hidden
     >
       {kind === 'sundae' || kind === 'iceCream' ? <SundaeDot /> : null}
+      {kind === 'pancake' ? <PancakeDot /> : null}
       {kind === 'football' ? <FootballDot /> : null}
       {kind === 'cash' ? <CashDot /> : null}
       {kind === 'rocket' ? <RocketDot /> : null}
@@ -619,7 +628,8 @@ export function BattleScreen({
             p.kind === 'iceCream' ||
             p.kind === 'football' ||
             p.kind === 'cash' ||
-            p.kind === 'rocket' ? (
+            p.kind === 'rocket' ||
+            p.kind === 'pancake' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -640,6 +650,8 @@ export function BattleScreen({
                         ? 'radial-gradient(circle, #e8c09055 0%, #8a5a2844 45%, transparent 70%)'
                         : s.kind === 'iceCream' || s.kind === 'sundae'
                           ? 'radial-gradient(circle, #fff8f066 0%, #ffd1e044 45%, transparent 70%)'
+                          : s.kind === 'pancake'
+                            ? 'radial-gradient(circle, #f5d09066 0%, #c48a3a44 45%, transparent 70%)'
                           : s.kind === 'rocket'
                             ? 'radial-gradient(circle, #fff2a055 0%, #ff8a3044 45%, transparent 70%)'
                             : s.kind === 'cash'
@@ -677,6 +689,8 @@ export function BattleScreen({
                   <CashSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'rocket' ? (
                   <RocketSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'pancake' ? (
+                  <PancakeSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'melee' ||
                   s.kind === 'whip' ||
                   s.kind === 'bite' ||

@@ -14,6 +14,7 @@ export type AttackId =
   | 'witchcraft'
   | 'uppercut'
   | 'jump'
+  | 'pancakeHuck'
 
 export type AttackDef = {
   id: AttackId
@@ -53,6 +54,7 @@ export type AttackDef = {
     | 'witchcraft'
     | 'uppercut'
     | 'jump'
+    | 'pancake'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -523,6 +525,35 @@ export const PHILS_CAR: CharacterDef = {
   ],
 }
 
+/** Rare diner turret — Pancake Huck splash lob. */
+export const STEVES_DINER: CharacterDef = {
+  id: 'stevesDiner',
+  name: "Steve's Diner",
+  initial: 'SD',
+  pronoun: 'it',
+  height: "4'6\"",
+  rarity: 'rare',
+  elixir: 3,
+  hp: 485,
+  moveSpeed: 0,
+  attackDelaySec: 2.25,
+  hue: 25,
+  cardKind: 'building',
+  blurb:
+    'Building — roadside diner that locks on and hucks pancake stacks. Splash where they land.',
+  attacks: [
+    {
+      id: 'pancakeHuck',
+      name: 'Pancake Huck',
+      range: 22,
+      damage: 215,
+      rootWhileAttacking: true,
+      splashRadius: 6.5,
+      projectileMs: 850,
+      kind: 'pancake',
+    },
+  ],
+}
 
 /** Skinny old witch — purple wand spell while moving. */
 export const GRETCHIN: CharacterDef = {
@@ -625,6 +656,7 @@ export const CHARACTERS: CharacterDef[] = [
   PHIL_SPIRIT,
   DOG_HUT,
   PHILS_CAR,
+  STEVES_DINER,
   ICE_CREAM,
   FOOTBALL_HUCK,
 ]
