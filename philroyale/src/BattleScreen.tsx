@@ -682,8 +682,12 @@ export function BattleScreen({
                   s.kind === 'bite' ||
                   s.kind === 'kick' ||
                   s.kind === 'hug' ||
-                  s.kind === 'uppercut' ? (
-                  <MeleeHitFx ageMs={now - s.bornAt} kind={s.kind} />
+                  s.kind === 'uppercut' ||
+                  s.kind === 'jump' ? (
+                  <MeleeHitFx
+                    ageMs={now - s.bornAt}
+                    kind={s.kind === 'jump' ? 'kick' : s.kind}
+                  />
                 ) : (
                   <SundaeSplat ageMs={now - s.bornAt} />
                 )}

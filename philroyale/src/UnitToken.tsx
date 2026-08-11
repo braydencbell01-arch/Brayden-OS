@@ -70,6 +70,8 @@ export function UnitToken({
                             ? '3 / 4.9'
                             : charId === 'phil' || charId === 'gretchin' || charId === 'dave'
                               ? '3 / 4.9'
+                              : charId === 'philSpirit'
+                                ? '1 / 1'
                               : '3 / 4.9',
         }}
       >

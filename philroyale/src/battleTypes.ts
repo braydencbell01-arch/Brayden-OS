@@ -93,6 +93,7 @@ export type SplatFx = {
     | 'rocket'
     | 'witchcraft'
     | 'uppercut'
+    | 'jump'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

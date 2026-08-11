@@ -13,6 +13,7 @@ export type AttackId =
   | 'philsRocket'
   | 'witchcraft'
   | 'uppercut'
+  | 'jump'
 
 export type AttackDef = {
   id: AttackId
@@ -34,6 +35,8 @@ export type AttackDef = {
   splashDamage?: number
   /** Projectile flight time in ms (overrides kind defaults). */
   projectileMs?: number
+  /** After this attack resolves, the attacker dies (Clash-style spirits). */
+  diesOnAttack?: boolean
   kind:
     | 'sundae'
     | 'whip'
@@ -49,6 +52,7 @@ export type AttackDef = {
     | 'rocket'
     | 'witchcraft'
     | 'uppercut'
+    | 'jump'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -574,6 +578,35 @@ export const DAVE: CharacterDef = {
   ],
 }
 
+/** Clash-style spirit — Phil's floating head jumps in and pops. */
+export const PHIL_SPIRIT: CharacterDef = {
+  id: 'philSpirit',
+  name: 'Phil Spirit',
+  initial: 'Ps',
+  pronoun: 'he',
+  height: "1'0\"",
+  rarity: 'legendary',
+  elixir: 1,
+  hp: 125,
+  moveSpeed: 15,
+  attackDelaySec: 1,
+  hue: 210,
+  blurb:
+    "Phil's floating head — dashes in and Jump-slams foes, then pops. Splash where he lands.",
+  attacks: [
+    {
+      id: 'jump',
+      name: 'Jump',
+      range: 10,
+      damage: 250,
+      rootWhileAttacking: true,
+      splashRadius: 5,
+      diesOnAttack: true,
+      kind: 'jump',
+    },
+  ],
+}
+
 export const CHARACTERS: CharacterDef[] = [
   PHIL,
   KATHIE,
@@ -589,6 +622,7 @@ export const CHARACTERS: CharacterDef[] = [
   SCOTT,
   GRETCHIN,
   DAVE,
+  PHIL_SPIRIT,
   DOG_HUT,
   PHILS_CAR,
   ICE_CREAM,

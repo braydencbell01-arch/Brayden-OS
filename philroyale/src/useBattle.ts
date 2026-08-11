@@ -1192,7 +1192,8 @@ export function useBattle(opts?: {
                       s.kind === 'bite' ||
                       s.kind === 'kick' ||
                       s.kind === 'hug' ||
-                      s.kind === 'uppercut'
+                      s.kind === 'uppercut' ||
+                      s.kind === 'jump'
                     ? MELEE_HIT_MS
                     : SPLAT_MS
         return t - s.bornAt < life
@@ -1858,6 +1859,8 @@ export function useBattle(opts?: {
                         ? WITCHCRAFT_VFX_MS
                         : attack.id === 'uppercut'
                           ? 720
+                          : attack.id === 'jump'
+                            ? KICK_VFX_MS
                       : attack.rootWhileAttacking
                         ? ROOT_VFX_MS
                         : RANGED_VFX_MS
@@ -1923,6 +1926,40 @@ export function useBattle(opts?: {
         }
 
         if (attack.splashRadius != null) {
+          // Spirit / kick-style: leap to the impact point, then splash.
+          if (attack.kind === 'jump' || attack.kind === 'kick') {
+            const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
+            const leap =
+              attack.kind === 'jump'
+                ? Math.min(best.rangeD, attack.range)
+                : 1.25
+            if (attack.kind === 'jump') {
+              const landCol = Math.max(
+                0,
+                Math.min(ARENA_COLS - 1, shotAim.col - 0.5),
+              )
+              const landRow = Math.max(
+                0,
+                Math.min(ARENA_ROWS - 1, shotAim.row - 0.5),
+              )
+              const ejected = ejectFromTowers(landCol, landRow, liveIds, u.side)
+              u.col = ejected.col
+              u.row = ejected.row
+              u.facing = ang
+            } else {
+              const next = stepUnit(
+                u,
+                Math.cos(ang) * leap,
+                Math.sin(ang) * leap,
+                liveIds,
+                openField,
+              )
+              const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
+              u.col = ejected.col
+              u.row = ejected.row
+              u.facing = ang
+            }
+          }
           const splash = applySplashAt(
             nextUnits,
             nextTowers,
@@ -1932,6 +1969,7 @@ export function useBattle(opts?: {
             attack.splashRadius,
             damage,
             t,
+            { excludeUnitId: u.id },
           )
           if (splash.unitsChanged) unitsChanged = true
           if (splash.towersChanged) towersChanged = true
@@ -1943,12 +1981,18 @@ export function useBattle(opts?: {
             kind:
               attack.kind === 'kick'
                 ? 'kick'
-                : attack.kind === 'whip'
-                  ? 'whip'
-                  : 'melee',
+                : attack.kind === 'jump'
+                  ? 'jump'
+                  : attack.kind === 'whip'
+                    ? 'whip'
+                    : 'melee',
             radius: attack.splashRadius,
           })
           splatsChanged = true
+          if (attack.diesOnAttack) {
+            u.hp = 0
+            unitsChanged = true
+          }
           continue
         }
 

@@ -29,6 +29,7 @@ type Props = {
     | 'love'
     | 'witchcraft'
     | 'uppercut'
+    | 'jump'
     | 'none'
   /** Persistent hand prop (Michael curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
@@ -217,6 +218,14 @@ export function PhotoTroop({
                                       rotate: [0, 8, -18, -6, 0],
                                       scaleY: [1, 0.9, 1.12, 1.02, 1],
                                     }
+                                  : attack === 'jump'
+                                    ? {
+                                        y: [0, 4, -36, -8, 0],
+                                        x: [0, -2, 20, 8, 0],
+                                        rotate: [0, -8, 12, 4, 0],
+                                        scale: [1, 0.92, 1.18, 1.02, 0.2],
+                                        opacity: [1, 1, 1, 0.85, 0],
+                                      }
                               : { y: [0, -3, 0] }
             : walking
               ? gait === 'limp'
@@ -325,6 +334,7 @@ export function PhotoTroop({
         {attacking && attack === 'love' ? <LoveOverlay /> : null}
         {attacking && attack === 'witchcraft' ? <WitchcraftOverlay /> : null}
         {attacking && attack === 'uppercut' ? <UppercutOverlay /> : null}
+        {attacking && attack === 'jump' ? <JumpOverlay /> : null}
         {!attacking && carry === 'dumbbell' ? <DumbbellCurlOverlay walking={walking} /> : null}
 
         {enraged ? (
@@ -757,6 +767,34 @@ function UppercutOverlay() {
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: [0, 1], opacity: [0, 0.9, 0] }}
         transition={{ duration: 0.72 }}
+      />
+    </svg>
+  )
+}
+
+function JumpOverlay() {
+  return (
+    <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <motion.circle
+        cx="40"
+        cy="70"
+        r="18"
+        fill="#8ec8ff44"
+        initial={{ scale: 0.4, opacity: 0.8 }}
+        animate={{ scale: [0.4, 1.6, 2.2], opacity: [0.7, 0.35, 0] }}
+        transition={{ duration: 0.55 }}
+        style={{ transformOrigin: '40px 70px' }}
+      />
+      <motion.ellipse
+        cx="40"
+        cy="95"
+        rx="16"
+        ry="5"
+        fill="#00000055"
+        initial={{ scaleX: 0.6, opacity: 0.5 }}
+        animate={{ scaleX: [0.6, 1.2, 0.4], opacity: [0.5, 0.3, 0] }}
+        transition={{ duration: 0.55 }}
+        style={{ transformOrigin: '40px 95px' }}
       />
     </svg>
   )
