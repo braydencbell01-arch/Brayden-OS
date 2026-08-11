@@ -77,7 +77,7 @@ export type BattleNet = {
   viewAs?: 'host' | 'guest'
 }
 
-const TOPIC_PREFIX = 'philroyale-battle-v1-'
+const TOPIC_PREFIX = 'philroyale-battle-v2-'
 
 function topicFor(challengeId: string): string {
   const clean = challengeId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 48)
@@ -98,7 +98,10 @@ export async function publishBattle(
       headers: {
         'Content-Type': 'application/json',
         Title: 'Phil Royale battle',
-        Priority: 'default',
+        Priority: message.type === 'battle_peer_accept' ? 'high' : 'default',
+        // Keep accepts/ready around so a late subscriber still sees them.
+        Cache: 'yes',
+        TTL: '120',
       },
       body: JSON.stringify(message),
     })
@@ -115,14 +118,15 @@ export function subscribeBattle(
   if (!challengeId || typeof window === 'undefined') return () => {}
 
   let stopped = false
-  let lastSince = Math.floor(Date.now() / 1000) - 5
+  // Look far enough back that an accept published before we subscribed is still found.
+  let lastSince = Math.floor(Date.now() / 1000) - 180
   const seen = new Set<string>()
 
   function handleRaw(raw: string, id?: string) {
     if (id && seen.has(id)) return
     if (id) {
       seen.add(id)
-      if (seen.size > 300) {
+      if (seen.size > 400) {
         const first = seen.values().next().value
         if (first) seen.delete(first)
       }
@@ -131,6 +135,34 @@ export function subscribeBattle(
       const data = JSON.parse(raw) as BattleRoomMessage
       if (!data?.type || data.challengeId !== challengeId) return
       onMessage(data)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function pollOnce() {
+    if (stopped) return
+    try {
+      const res = await fetch(`${endpoint(challengeId)}/json?poll=1&since=${lastSince}`)
+      if (!res.ok) return
+      const text = (await res.text()).trim()
+      if (!text) return
+      for (const line of text.split('\n')) {
+        if (!line.trim()) continue
+        try {
+          const envelope = JSON.parse(line) as {
+            id?: string
+            message?: string
+            time?: number
+            event?: string
+          }
+          if (envelope.event && envelope.event !== 'message') continue
+          if (envelope.time) lastSince = Math.max(lastSince, envelope.time + 1)
+          if (envelope.message) handleRaw(envelope.message, envelope.id)
+        } catch {
+          /* ignore */
+        }
+      }
     } catch {
       /* ignore */
     }
@@ -156,35 +188,8 @@ export function subscribeBattle(
     es = null
   }
 
-  const poll = window.setInterval(() => {
-    if (stopped) return
-    void (async () => {
-      try {
-        const res = await fetch(`${endpoint(challengeId)}/json?poll=1&since=${lastSince}`)
-        if (!res.ok) return
-        const text = (await res.text()).trim()
-        if (!text) return
-        for (const line of text.split('\n')) {
-          if (!line.trim()) continue
-          try {
-            const envelope = JSON.parse(line) as {
-              id?: string
-              message?: string
-              time?: number
-              event?: string
-            }
-            if (envelope.event && envelope.event !== 'message') continue
-            if (envelope.time) lastSince = Math.max(lastSince, envelope.time + 1)
-            if (envelope.message) handleRaw(envelope.message, envelope.id)
-          } catch {
-            /* ignore */
-          }
-        }
-      } catch {
-        /* ignore */
-      }
-    })()
-  }, 700)
+  void pollOnce()
+  const poll = window.setInterval(() => void pollOnce(), 450)
 
   return () => {
     stopped = true

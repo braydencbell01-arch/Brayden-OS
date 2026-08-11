@@ -23,7 +23,7 @@ import {
   type Side,
 } from './arena'
 import type { GameMode } from './storage'
-import { loadPlayerName } from './storage'
+import { loadPlayerId, loadPlayerName } from './storage'
 import {
   getCharacter,
   DEFAULT_DECK,
@@ -793,6 +793,10 @@ export function useBattle(opts?: {
   enemyDeckRef.current = opts?.enemyDeckIds ?? DEFAULT_DECK
   const netRef = useRef(net)
   netRef.current = net
+  /** May promote guest → host if the challenger never joins (avoids eternal Linking…). */
+  const liveRoleRef = useRef<BattleNet['role'] | null>(net?.role ?? null)
+  liveRoleRef.current = liveRoleRef.current ?? net?.role ?? null
+  if (net?.role === 'spectator') liveRoleRef.current = 'spectator'
   const allyScoreRef = useRef(0)
   const enemyScoreRef = useRef(0)
   const syncSeqRef = useRef(0)
@@ -823,7 +827,7 @@ export function useBattle(opts?: {
 
   const publishHostState = useCallback((force = false) => {
     const n = netRef.current
-    if (!n || n.role !== 'host') return
+    if (!n || (liveRoleRef.current ?? n.role) !== 'host') return
     const t = performance.now()
     if (!force && t - lastSyncAtRef.current < SYNC_INTERVAL_MS) return
     lastSyncAtRef.current = t
@@ -863,7 +867,8 @@ export function useBattle(opts?: {
     (char: CharacterDef, col: number, row: number) => {
       if (pausedRef.current) return false
       const n0 = netRef.current
-      if (n0?.role === 'spectator') return false
+      const role0 = liveRoleRef.current ?? n0?.role
+      if (role0 === 'spectator') return false
       if (elixirRef.current < char.elixir) return false
       const live = liveTowerIdSet(towersRef.current)
       const spell = isSpellCard(char)
@@ -881,7 +886,8 @@ export function useBattle(opts?: {
       }
 
       const n = netRef.current
-      if (n?.role === 'guest') {
+      const role = liveRoleRef.current ?? n?.role
+      if (n && role === 'guest') {
         // Optimistic elixir; host confirms via mirrored state.
         setElixir((e) => Math.max(0, e - char.elixir))
         if (spell) {
@@ -925,7 +931,7 @@ export function useBattle(opts?: {
           return next
         })
       }
-      if (n?.role === 'host') {
+      if (role === 'host') {
         // Push immediately so guest sees the troop without waiting for the tick.
         queueMicrotask(() => publishHostState(true))
       }
@@ -937,14 +943,36 @@ export function useBattle(opts?: {
   // Friend-battle room: host publishes state; guest mirrors + sends deploys.
   useEffect(() => {
     if (!net) return
+    liveRoleRef.current = net.role
+
+    const announceGuest = () => {
+      const name = loadPlayerName().trim() || 'Player'
+      void publishBattle(net.challengeId, {
+        type: 'battle_peer_accept',
+        challengeId: net.challengeId,
+        fromName: name,
+        fromPlayerId: loadPlayerId(),
+        at: new Date().toISOString(),
+      })
+      void publishBattle(net.challengeId, {
+        type: 'battle_ready',
+        challengeId: net.challengeId,
+        role: 'guest',
+        name,
+        at: new Date().toISOString(),
+      })
+    }
+
     const unsub = subscribeBattle(net.challengeId, (msg) => {
-      if (msg.type === 'battle_ready') {
+      const role = liveRoleRef.current
+
+      if (msg.type === 'battle_peer_accept' || msg.type === 'battle_ready') {
         lastRemoteAtRef.current = Date.now()
-        if (net.role === 'host') publishHostState(true)
+        if (role === 'host') publishHostState(true)
         return
       }
 
-      if (msg.type === 'battle_deploy' && net.role === 'host') {
+      if (msg.type === 'battle_deploy' && role === 'host') {
         lastRemoteAtRef.current = Date.now()
         pendingGuestDeploysRef.current.push({
           charId: msg.charId,
@@ -957,14 +985,14 @@ export function useBattle(opts?: {
 
       if (
         msg.type === 'battle_state' &&
-        (net.role === 'guest' || net.role === 'spectator')
+        (role === 'guest' || role === 'spectator')
       ) {
         if (msg.seq <= lastRemoteSeqRef.current) return
         lastRemoteSeqRef.current = msg.seq
         lastRemoteAtRef.current = Date.now()
         const t = performance.now()
         const flip =
-          net.role === 'guest' || (net.role === 'spectator' && net.viewAs === 'guest')
+          role === 'guest' || (role === 'spectator' && net.viewAs === 'guest')
         const nextTowers = towersRef.current.map((tw) => {
           const remoteId = flip ? flipTowerId(tw.id) : tw.id
           const remote = msg.towers.find((x) => x.id === remoteId)
@@ -1004,7 +1032,6 @@ export function useBattle(opts?: {
         setTowers(nextTowers)
         setUnits(nextUnits)
         if (flip) {
-          // Guest / friend-as-guest camera: bottom bar is guest elixir.
           setElixir(msg.guestElixir)
           setEnemyElixir(msg.hostElixir)
         } else {
@@ -1027,6 +1054,21 @@ export function useBattle(opts?: {
       }
     })
 
+    let announceTimer = 0
+    let promoteTimer = 0
+    if (net.role === 'guest') {
+      announceGuest()
+      announceTimer = window.setInterval(announceGuest, 900)
+      // If the challenger never starts hosting, take over so we don't freeze on Linking…
+      promoteTimer = window.setTimeout(() => {
+        if (liveRoleRef.current !== 'guest') return
+        if (lastRemoteSeqRef.current > 0) return
+        liveRoleRef.current = 'host'
+        setSyncReady(true)
+        publishHostState(true)
+      }, 6500)
+    }
+
     if (net.role === 'host' || net.role === 'guest') {
       void publishBattle(net.challengeId, {
         type: 'battle_ready',
@@ -1039,9 +1081,16 @@ export function useBattle(opts?: {
     if (net.role === 'host') {
       setSyncReady(true)
       publishHostState(true)
+      // Burst a few states so a late guest picks one up quickly.
+      const burst = window.setInterval(() => publishHostState(true), 700)
+      window.setTimeout(() => window.clearInterval(burst), 8000)
     }
 
-    return unsub
+    return () => {
+      unsub()
+      if (announceTimer) window.clearInterval(announceTimer)
+      if (promoteTimer) window.clearTimeout(promoteTimer)
+    }
   }, [net, publishHostState])
 
   useEffect(() => {
@@ -2148,7 +2197,7 @@ export function useBattle(opts?: {
     enemyScore,
     touchdownWinScore: TOUCHDOWN_WIN_SCORE,
     syncReady,
-    netRole: net?.role ?? null,
+    netRole: liveRoleRef.current ?? net?.role ?? null,
     lagging,
   }
 }

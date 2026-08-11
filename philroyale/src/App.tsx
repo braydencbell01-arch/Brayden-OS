@@ -243,14 +243,20 @@ export default function App() {
       })
     }
     // Shared battle room — host listens here even if social inbox is quiet.
-    void publishBattle(challengeId, {
-      type: 'battle_peer_accept',
+    // Fire a few times so a late host subscriber still catches accept (cached + retries).
+    const acceptPayload = {
+      type: 'battle_peer_accept' as const,
       challengeId,
       fromName: acceptedBy,
       fromPlayerId: loadPlayerId(),
-      mode: mode ?? 'classic',
+      mode: mode ?? ('classic' as const),
       at: new Date().toISOString(),
-    })
+    }
+    void publishBattle(challengeId, acceptPayload)
+    window.setTimeout(() => void publishBattle(challengeId, { ...acceptPayload, at: new Date().toISOString() }), 400)
+    window.setTimeout(() => void publishBattle(challengeId, { ...acceptPayload, at: new Date().toISOString() }), 1200)
+    window.setTimeout(() => void publishBattle(challengeId, { ...acceptPayload, at: new Date().toISOString() }), 2500)
+
     clearIncomingChallenge()
     setIncomingChallenge(null)
     clearUrlParams(['battleFrom', 'battleTo', 'challenge', 'mode', 'fromId', 'toId'])
@@ -592,34 +598,42 @@ export default function App() {
     const opponentName = outgoingChallenge.toName
     const mode = outgoingChallenge.mode ?? 'classic'
     const peerPlayerId = outgoingChallenge.toPlayerId
+    let started = false
 
-    const beginHost = (peerName?: string, peerId?: string) => {
+    const begin = (role: 'host' | 'guest', peerName?: string, peerId?: string) => {
+      if (started) return
+      started = true
       clearOutgoingChallenge()
       clearBattleAccepted()
       setOutgoingChallenge(null)
       startMatch(peerName || opponentName, mode, {
         challengeId,
-        role: 'host',
+        role,
         peerPlayerId: peerId || peerPlayerId,
       })
     }
 
     // Listen on the shared battle room — works even when social inbox misses accept.
     const unsubBattle = subscribeBattle(challengeId, (msg) => {
+      // Peer already running the sim (guest took over) — join as guest mirror.
+      if (msg.type === 'battle_state') {
+        begin('guest', opponentName, peerPlayerId)
+        return
+      }
       if (msg.type === 'battle_peer_accept' && msg.challengeId === challengeId) {
-        beginHost(msg.fromName, msg.fromPlayerId)
+        begin('host', msg.fromName, msg.fromPlayerId)
       }
       if (msg.type === 'battle_ready' && msg.role === 'guest') {
-        beginHost(msg.name !== 'guest' ? msg.name : undefined, peerPlayerId)
+        begin('host', msg.name !== 'guest' ? msg.name : undefined, peerPlayerId)
       }
     })
 
     const interval = window.setInterval(() => {
       const accepted = loadBattleAccepted()
       if (accepted && accepted.challengeId === challengeId) {
-        beginHost(accepted.acceptedBy, peerPlayerId)
+        begin('host', accepted.acceptedBy, peerPlayerId)
       }
-    }, 600)
+    }, 500)
 
     return () => {
       unsubBattle()

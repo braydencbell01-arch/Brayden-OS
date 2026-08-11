@@ -539,13 +539,17 @@ export function BattleScreen({
   return (
     <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
       {net && !syncReady ? (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/55 px-6 text-center">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl text-white">
             {isSpectating
               ? 'Joining spectate…'
               : netRole === 'guest'
                 ? 'Linking battle…'
                 : 'Waiting for opponent…'}
+          </p>
+          <p className="max-w-xs text-sm font-semibold text-white/75">
+            Keep Phil Royale open on both phones. If this hangs, the other player should Accept
+            again — we retry automatically.
           </p>
         </div>
       ) : null}
