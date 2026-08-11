@@ -5,10 +5,12 @@ import {
   DEPLOY_PAST_RIVER,
   RIVER_MAX,
   RIVER_MIN,
+  TOUCHDOWN_ZONE_ROWS,
   TOWERS,
 } from './arena'
 import { ARENA_PERSPECTIVE_PX, ARENA_TILT_DEG, screenYToPlaneY } from './camera'
 import { ClashMap } from './ClashMap'
+import type { GameMode } from './storage'
 
 export type TowerHpView = { id: string; hp: number; maxHp: number }
 
@@ -18,6 +20,132 @@ export const PAD_Y = 0
 export const FIELD_W = 1
 export const FIELD_H = 1
 
+/** Football field SVG for touchdown mode (viewBox 0 0 100 150). */
+function FootballField() {
+  const EZ = TOUCHDOWN_ZONE_ROWS // 12 — endzone depth in tile units
+  const C = ARENA_COLS           // 100
+  const R = ARENA_ROWS           // 150
+  // Yard lines every 15 rows (10 lines across the 150-row field = 10 "yards")
+  const YARD_STEP = 15
+  const yardLines: number[] = []
+  for (let row = EZ; row <= R - EZ; row += YARD_STEP) yardLines.push(row)
+
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full"
+      viewBox={`0 0 ${C} ${R}`}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id="td-grass" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#1a5c1a" />
+          <stop offset="50%"  stopColor="#226622" />
+          <stop offset="100%" stopColor="#1a5c1a" />
+        </linearGradient>
+        <linearGradient id="td-ez-enemy" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#5a1a8a" />
+          <stop offset="100%" stopColor="#7c2ab4" />
+        </linearGradient>
+        <linearGradient id="td-ez-ally" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor="#1a3a8a" />
+          <stop offset="100%" stopColor="#2a5ab4" />
+        </linearGradient>
+      </defs>
+
+      {/* ── Main grass field ─────────────────────────── */}
+      <rect x="0" y="0" width={C} height={R} fill="url(#td-grass)" />
+
+      {/* Alternating mow stripes */}
+      {Array.from({ length: 10 }).map((_, i) => (
+        <rect key={i} x="0" y={i * YARD_STEP * 1.5} width={C} height={YARD_STEP * 0.75}
+          fill="#00000010" />
+      ))}
+
+      {/* ── Enemy endzone (top, purple) ─────────────── */}
+      <rect x="0" y="0" width={C} height={EZ} fill="url(#td-ez-enemy)" opacity="0.85" />
+      {/* "ENEMY" diagonal text faked with tilted rect */}
+      <text
+        x={C / 2} y={EZ / 2 + 1}
+        textAnchor="middle" dominantBaseline="middle"
+        fontSize="5" fontWeight="bold" fill="white" opacity="0.55"
+        style={{ fontFamily: 'sans-serif', letterSpacing: '1px' }}
+      >
+        END ZONE
+      </text>
+
+      {/* ── Ally endzone (bottom, blue) ──────────────── */}
+      <rect x="0" y={R - EZ} width={C} height={EZ} fill="url(#td-ez-ally)" opacity="0.85" />
+      <text
+        x={C / 2} y={R - EZ / 2 + 1}
+        textAnchor="middle" dominantBaseline="middle"
+        fontSize="5" fontWeight="bold" fill="white" opacity="0.55"
+        style={{ fontFamily: 'sans-serif', letterSpacing: '1px' }}
+      >
+        END ZONE
+      </text>
+
+      {/* ── Yard lines ───────────────────────────────── */}
+      {yardLines.map((row, i) => (
+        <g key={row}>
+          <line x1="0" y1={row} x2={C} y2={row} stroke="white" strokeWidth="0.7" opacity="0.75" />
+          {/* Yard numbers (both sides) */}
+          {i > 0 && i < yardLines.length && (
+            <>
+              <text x="4" y={row - 1.5}
+                fontSize="3.5" fill="white" opacity="0.7" fontWeight="bold"
+                style={{ fontFamily: 'sans-serif' }}>
+                {yardNumLabel(i, yardLines.length)}
+              </text>
+              <text x={C - 4} y={row - 1.5}
+                fontSize="3.5" fill="white" opacity="0.7" fontWeight="bold" textAnchor="end"
+                style={{ fontFamily: 'sans-serif' }}>
+                {yardNumLabel(i, yardLines.length)}
+              </text>
+            </>
+          )}
+          {/* Hash marks — short lines 1/3 and 2/3 across the field */}
+          <line x1={C * 0.33} y1={row - 1} x2={C * 0.33} y2={row + 1}
+            stroke="white" strokeWidth="0.5" opacity="0.5" />
+          <line x1={C * 0.67} y1={row - 1} x2={C * 0.67} y2={row + 1}
+            stroke="white" strokeWidth="0.5" opacity="0.5" />
+        </g>
+      ))}
+
+      {/* Endzone boundary lines */}
+      <line x1="0" y1={EZ}     x2={C} y2={EZ}     stroke="white" strokeWidth="1.1" opacity="0.9" />
+      <line x1="0" y1={R - EZ} x2={C} y2={R - EZ} stroke="white" strokeWidth="1.1" opacity="0.9" />
+
+      {/* Sidelines */}
+      <line x1="1"   y1="0" x2="1"   y2={R} stroke="white" strokeWidth="0.8" opacity="0.6" />
+      <line x1={C-1} y1="0" x2={C-1} y2={R} stroke="white" strokeWidth="0.8" opacity="0.6" />
+
+      {/* ── Pylons — yellow corner markers at each endzone ── */}
+      {/* Enemy endzone corners */}
+      <rect x="0"     y={EZ - 2}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      <rect x={C-2.5} y={EZ - 2}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      <rect x="0"     y="0"           width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      <rect x={C-2.5} y="0"           width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      {/* Ally endzone corners */}
+      <rect x="0"     y={R - EZ}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      <rect x={C-2.5} y={R - EZ}     width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      <rect x="0"     y={R - 2.5}    width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+      <rect x={C-2.5} y={R - 2.5}    width="2.5" height="2.5" fill="#ffdd00" rx="0.3" opacity="0.95" />
+
+      {/* ── 50-yard midfield marker ───────────────────── */}
+      <circle cx={C / 2} cy={R / 2} r="4" fill="none" stroke="white" strokeWidth="0.6" opacity="0.5" />
+      <line x1="0" y1={R / 2} x2={C} y2={R / 2} stroke="white" strokeWidth="0.9" opacity="0.6" />
+    </svg>
+  )
+}
+
+/** Yard number label: "10", "20", … "50" … "20", "10". */
+function yardNumLabel(lineIndex: number, total: number): string {
+  const half = Math.floor(total / 2)
+  const n = lineIndex <= half ? lineIndex * 10 : (total - lineIndex) * 10
+  return String(Math.min(n, 50))
+}
+
 type Props = {
   towers?: TowerHpView[]
   children?: ReactNode
@@ -26,6 +154,8 @@ type Props = {
   /** Spell drag — place-anywhere hint (no troop red zone). */
   spellDeployOverlay?: boolean
   overlaySide?: 'ally' | 'enemy'
+  /** Battle mode — changes background and tower visibility. */
+  mode?: GameMode
 }
 
 /**
@@ -153,9 +283,11 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
     showBlockedOverlay,
     spellDeployOverlay,
     overlaySide = 'ally',
+    mode = 'classic',
   },
   ref,
 ) {
+  const isTouchdown = mode === 'touchdown'
   const hpMap = new Map(towers.map((t) => [t.id, t]))
   const destroyedIds = useMemo(() => {
     const ids = new Set<string>()
@@ -179,7 +311,7 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
           transformStyle: 'preserve-3d',
         }}
         role={onArenaPointerDown ? 'application' : 'img'}
-        aria-label="Clash Royale style arena"
+        aria-label={isTouchdown ? 'Football touchdown arena' : 'Clash Royale style arena'}
         onPointerDown={
           onArenaPointerDown
             ? (e) => {
@@ -191,12 +323,15 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
             : undefined
         }
       >
-        <ClashMap destroyedIds={destroyedIds} />
+        {isTouchdown ? <FootballField /> : <ClashMap destroyedIds={destroyedIds} />}
+
         {/* Lighting / AO wash — visual only; does not change hitboxes or layout */}
         <div
           className="pointer-events-none absolute inset-0 z-[1]"
           style={{
-            background: `
+            background: isTouchdown
+              ? 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.18) 100%)'
+              : `
               linear-gradient(180deg, rgba(8,24,12,0.28) 0%, transparent 22%, transparent 72%, rgba(255,248,200,0.1) 100%),
               linear-gradient(90deg, rgba(0,0,0,0.18) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.16) 100%),
               radial-gradient(ellipse 70% 45% at 30% 18%, rgba(255,246,168,0.12), transparent 60%)
@@ -206,7 +341,8 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
           aria-hidden
         />
 
-        {TOWERS.map((t) => {
+        {/* Towers — hidden in touchdown mode (no towers on a football field) */}
+        {!isTouchdown && TOWERS.map((t) => {
           const th = hpMap.get(t.id)
           if (!th || th.hp <= 0) return null
           const style = towerStyle(t.col, t.row, t.w, t.h)
@@ -264,16 +400,19 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
           />
         ) : null}
 
-        <div
-          className="pointer-events-none absolute z-[2] border-t border-dashed border-white/15 bg-gradient-to-t from-[#2f6fbf18] to-transparent"
-          style={{
-            left: `${PAD_X * 100}%`,
-            width: `${FIELD_W * 100}%`,
-            top: '50%',
-            bottom: `${PAD_Y * 100}%`,
-          }}
-          aria-hidden
-        />
+        {/* Classic mid-line — hidden in touchdown mode (field has own markings) */}
+        {!isTouchdown && (
+          <div
+            className="pointer-events-none absolute z-[2] border-t border-dashed border-white/15 bg-gradient-to-t from-[#2f6fbf18] to-transparent"
+            style={{
+              left: `${PAD_X * 100}%`,
+              width: `${FIELD_W * 100}%`,
+              top: '50%',
+              bottom: `${PAD_Y * 100}%`,
+            }}
+            aria-hidden
+          />
+        )}
 
         <div className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
           {children}
