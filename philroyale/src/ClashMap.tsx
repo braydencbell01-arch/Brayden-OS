@@ -6,6 +6,8 @@
 type Props = {
   /** Tower ids with hp <= 0 — shown as rubble instead of intact towers. */
   destroyedIds?: ReadonlySet<string>
+  /** King tower ids that have woken / activated (cannon deployed). */
+  activatedKingIds?: ReadonlySet<string>
 }
 
 const TOWER_PLACES = [
@@ -17,7 +19,7 @@ const TOWER_PLACES = [
   { id: 'ally-right', x: null as number | null, y: 508, king: false, enemy: false, lane: 'right' as const },
 ] as const
 
-export function ClashMap({ destroyedIds }: Props) {
+export function ClashMap({ destroyedIds, activatedKingIds }: Props) {
   const fieldX = 0
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
@@ -26,6 +28,7 @@ export function ClashMap({ destroyedIds }: Props) {
   const riverY = 312
   const riverH = 26
   const dead = destroyedIds ?? new Set<string>()
+  const woken = activatedKingIds ?? new Set<string>()
 
   return (
     <svg
@@ -380,6 +383,7 @@ export function ClashMap({ destroyedIds }: Props) {
             y={place.y}
             king={place.king}
             enemy={place.enemy}
+            cannonOut={place.king ? woken.has(place.id) : true}
           />
         )
       })}
@@ -502,11 +506,14 @@ function CrownTower({
   y,
   king,
   enemy,
+  cannonOut = true,
 }: {
   x: number
   y: number
   king: boolean
   enemy: boolean
+  /** King: false while asleep (cannon stowed). Princess always true. */
+  cannonOut?: boolean
 }) {
   const s = king ? 0.78 : 0.52
   const banner = enemy ? '#e53935' : '#1e88e5'
@@ -556,30 +563,101 @@ function CrownTower({
         </g>
       ))}
       <rect x="-22" y="-26" width="42" height="6" fill="#b8b2a4" stroke="#7a7468" strokeWidth="0.8" />
-      <rect x="-11" y="-44" width="20" height="12" rx="2" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="1" />
-      <ellipse cx="-1" cy="-46" rx="10" ry="7" fill="#3a4558" stroke="#1a2030" strokeWidth="1" />
-      <ellipse cx="-1" cy="-46" rx="4.5" ry="3.2" fill="#0c1018" />
-      <rect x="-4.5" y="-56" width="7" height="12" rx="1.5" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="0.8" />
 
       {king ? (
-        <g transform="translate(-1 -60)">
-          <circle cx="0" cy="-2" r="3.4" fill="#f5d0a0" />
-          <path d="M-4.5 2 Q0 9 4.5 2" fill="#2a3344" />
-          <path d="M-4 -6 L-1.5 -9.5 L0 -6 L1.5 -9.5 L4 -6 Z" fill="#f5d76e" />
-        </g>
+        <>
+          {/* Closed hatch while asleep — cannon is stowed inside. */}
+          {!cannonOut ? (
+            <g>
+              <rect
+                x="-12"
+                y="-42"
+                width="22"
+                height="10"
+                rx="1.5"
+                fill="#6a6558"
+                stroke="#3a3830"
+                strokeWidth="1"
+              />
+              <rect x="-10" y="-40" width="18" height="3" fill="#2a2820" opacity="0.55" />
+              <line x1="-8" y1="-37" x2="6" y2="-37" stroke="#9a9488" strokeWidth="0.8" opacity="0.5" />
+              {/* Sleeping crown silhouette in the window */}
+              <g transform="translate(-1 -48)" opacity="0.85">
+                <circle cx="0" cy="-2" r="3.4" fill="#f5d0a0" />
+                <path d="M-4.5 2 Q0 9 4.5 2" fill="#2a3344" />
+                <path d="M-4 -6 L-1.5 -9.5 L0 -6 L1.5 -9.5 L4 -6 Z" fill="#f5d76e" />
+              </g>
+            </g>
+          ) : (
+            <g>
+              {/* Cannon rises out of the hatch when the king wakes. */}
+              <g>
+                <animateTransform
+                  attributeName="transform"
+                  type="translate"
+                  from="0 18"
+                  to="0 0"
+                  dur="0.55s"
+                  fill="freeze"
+                />
+                <rect
+                  x="-11"
+                  y="-44"
+                  width="20"
+                  height="12"
+                  rx="2"
+                  fill="url(#cannonMetal)"
+                  stroke="#1a2030"
+                  strokeWidth="1"
+                />
+                <ellipse cx="-1" cy="-46" rx="10" ry="7" fill="#3a4558" stroke="#1a2030" strokeWidth="1" />
+                <ellipse cx="-1" cy="-46" rx="4.5" ry="3.2" fill="#0c1018" />
+                <rect
+                  x="-4.5"
+                  y="-56"
+                  width="7"
+                  height="12"
+                  rx="1.5"
+                  fill="url(#cannonMetal)"
+                  stroke="#1a2030"
+                  strokeWidth="0.8"
+                />
+              </g>
+              {/* Brief smoke puff as the barrel clears the roof */}
+              <g opacity="0.7" pointerEvents="none">
+                <circle cx="-1" cy="-50" r="6" fill="#cfc6b6">
+                  <animate attributeName="r" from="2" to="14" dur="0.6s" fill="freeze" />
+                  <animate attributeName="opacity" from="0.65" to="0" dur="0.65s" fill="freeze" />
+                </circle>
+              </g>
+              <g transform="translate(-1 -60)">
+                <circle cx="0" cy="-2" r="3.4" fill="#f5d0a0" />
+                <path d="M-4.5 2 Q0 9 4.5 2" fill="#2a3344" />
+                <path d="M-4 -6 L-1.5 -9.5 L0 -6 L1.5 -9.5 L4 -6 Z" fill="#f5d76e" />
+              </g>
+            </g>
+          )}
+        </>
       ) : (
-        <g transform="translate(-1 -50)">
-          <g transform="translate(-6 0)">
-            <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
-            <rect x="-2" y="2" width="4" height="5" rx="0.5" fill={enemy ? '#c63c2e' : '#2f6fbf'} />
-            <line x1="2" y1="3" x2="7" y2="1" stroke="#5a3a18" strokeWidth="1.1" />
+        <>
+          {/* Princess towers always show their turret + archers. */}
+          <rect x="-11" y="-44" width="20" height="12" rx="2" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="1" />
+          <ellipse cx="-1" cy="-46" rx="10" ry="7" fill="#3a4558" stroke="#1a2030" strokeWidth="1" />
+          <ellipse cx="-1" cy="-46" rx="4.5" ry="3.2" fill="#0c1018" />
+          <rect x="-4.5" y="-56" width="7" height="12" rx="1.5" fill="url(#cannonMetal)" stroke="#1a2030" strokeWidth="0.8" />
+          <g transform="translate(-1 -50)">
+            <g transform="translate(-6 0)">
+              <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
+              <rect x="-2" y="2" width="4" height="5" rx="0.5" fill={enemy ? '#c63c2e' : '#2f6fbf'} />
+              <line x1="2" y1="3" x2="7" y2="1" stroke="#5a3a18" strokeWidth="1.1" />
+            </g>
+            <g transform="translate(6 0)">
+              <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
+              <rect x="-2" y="2" width="4" height="5" rx="0.5" fill={enemy ? '#c63c2e' : '#2f6fbf'} />
+              <line x1="2" y1="3" x2="7" y2="1" stroke="#5a3a18" strokeWidth="1.1" />
+            </g>
           </g>
-          <g transform="translate(6 0)">
-            <circle cx="0" cy="0" r="2.4" fill="#f5d0a0" />
-            <rect x="-2" y="2" width="4" height="5" rx="0.5" fill={enemy ? '#c63c2e' : '#2f6fbf'} />
-            <line x1="2" y1="3" x2="7" y2="1" stroke="#5a3a18" strokeWidth="1.1" />
-          </g>
-        </g>
+        </>
       )}
     </g>
   )

@@ -13,7 +13,14 @@ import { ARENA_PERSPECTIVE_PX, ARENA_TILT_DEG, screenYToPlaneY } from './camera'
 import { ClashMap } from './ClashMap'
 import type { GameMode } from './storage'
 
-export type TowerHpView = { id: string; hp: number; maxHp: number }
+export type TowerHpView = {
+  id: string
+  hp: number
+  maxHp: number
+  /** King tower wake state — drives cannon reveal on the map. */
+  activated?: boolean
+  kind?: 'king' | 'princess'
+}
 
 /** ClashMap playable field — full board (viewBox 360×640), no side stands. */
 export const PAD_X = 0
@@ -422,6 +429,16 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
     }
     return ids
   }, [towers])
+  const activatedKingIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const t of towers) {
+      if (t.hp <= 0) continue
+      if (t.kind === 'king' && t.activated) ids.add(t.id)
+      // Fallback if kind isn't passed: king ids with activated flag.
+      else if (t.activated && (t.id === 'ally-king' || t.id === 'enemy-king')) ids.add(t.id)
+    }
+    return ids
+  }, [towers])
 
   return (
     <div
@@ -449,7 +466,11 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
             : undefined
         }
       >
-        {isTouchdown ? <FootballField /> : <ClashMap destroyedIds={destroyedIds} />}
+        {isTouchdown ? (
+          <FootballField />
+        ) : (
+          <ClashMap destroyedIds={destroyedIds} activatedKingIds={activatedKingIds} />
+        )}
 
         {/* Lighting / AO wash — visual only; does not change hitboxes or layout */}
         <div
