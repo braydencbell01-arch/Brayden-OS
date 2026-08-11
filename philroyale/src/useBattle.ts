@@ -852,6 +852,7 @@ export function useBattle(opts?: {
         id: tw.id,
         hp: tw.hp,
         maxHp: tw.maxHp,
+        activated: tw.activated,
       })),
       units: unitsRef.current.map((u) => ({
         id: u.id,
@@ -1011,7 +1012,10 @@ export function useBattle(opts?: {
             ...tw,
             hp: remote.hp,
             maxHp: remote.maxHp,
-            activated: remote.hp > 0 ? tw.activated || tw.kind === 'princess' : false,
+            activated:
+              remote.hp > 0
+                ? remote.activated ?? tw.activated || tw.kind === 'princess'
+                : false,
           }
         })
         const nextUnits: BattleUnit[] = msg.units.map((u) => {

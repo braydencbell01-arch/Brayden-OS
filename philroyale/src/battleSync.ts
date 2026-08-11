@@ -28,6 +28,8 @@ export type SyncTower = {
   id: string
   hp: number
   maxHp: number
+  /** King wake / cannon deployed. */
+  activated?: boolean
 }
 
 export type BattleRoomMessage =
