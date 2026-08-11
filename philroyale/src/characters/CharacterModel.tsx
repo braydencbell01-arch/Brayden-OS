@@ -21,6 +21,7 @@ import { GretchinModel } from './GretchinModel'
 import { DaveModel } from './DaveModel'
 import { PhilSpiritModel } from './PhilSpiritModel'
 import { StevesDinerModel } from './StevesDinerModel'
+import { BigMableModel } from './BigMableModel'
 
 type Props = {
   charId: string
@@ -89,6 +90,10 @@ export function CharacterModel({
     model = <IceCreamModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'footballHuck') {
     model = <FootballModel anim={anim} facing={facing} portrait={portrait} />
+  } else if (charId === 'bigMable') {
+    model = (
+      <BigMableModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
   } else {
     model = (
       <CrUnitModel

@@ -609,6 +609,7 @@ export function BattleScreen({
               const uDef = getCharacter(u.charId)
               let sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
               if (uDef?.cardKind === 'building') sizeScale *= 1.28
+              if (u.charId === 'bigMable') sizeScale *= 1.35
               return (
               <div
                 key={u.id}

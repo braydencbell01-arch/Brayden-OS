@@ -441,7 +441,11 @@ function CardProfile({
                   {scaledStat(a.damage, level)} DM (base {a.damage}) · {a.range} block range
                   {a.rootWhileAttacking ? ' · stops to attack' : ' · can move while attacking'}
                   {character.targetsBuildingsOnly ? ' · buildings & towers only' : ''}
+                  {character.noLock ? ' · never locks (nearest foe)' : ''}
                   {a.pullToRange != null ? ` · pulls units to ${a.pullToRange} block` : ''}
+                  {a.knockbackTiles != null
+                    ? ` · launches troops ${a.knockbackTiles} blocks (not buildings/towers)`
+                    : ''}
                   {a.splashRadius != null ? ` · ${a.splashRadius} block splash` : ''}
                   {a.burstShots != null && a.burstShots > 1
                     ? ` · ${a.burstShots} shots ${a.burstGapSec ?? 0}s apart`

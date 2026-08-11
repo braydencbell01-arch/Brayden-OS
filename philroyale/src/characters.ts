@@ -15,6 +15,7 @@ export type AttackId =
   | 'uppercut'
   | 'jump'
   | 'pancakeHuck'
+  | 'launch'
 
 export type AttackDef = {
   id: AttackId
@@ -26,6 +27,8 @@ export type AttackDef = {
   rootWhileAttacking: boolean
   /** Pull unit targets to this distance (tiles). Towers never move. */
   pullToRange?: number
+  /** Push unit targets this many tiles away from the attacker (towers/buildings never move). */
+  knockbackTiles?: number
   /** Shots in one burst (default 1). Gap uses burstGapSec; reload uses character attackDelaySec. */
   burstShots?: number
   /** Seconds between shots inside a burst. */
@@ -55,6 +58,7 @@ export type AttackDef = {
     | 'uppercut'
     | 'jump'
     | 'pancake'
+    | 'launch'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -117,6 +121,8 @@ export type CharacterDef = {
   spellTravelMs?: number
   /** Only lock / damage enemy buildings and towers (never troops). */
   targetsBuildingsOnly?: boolean
+  /** Never sticky-lock — always retarget the nearest opponent. */
+  noLock?: boolean
 }
 
 export const PHIL: CharacterDef = {
@@ -638,6 +644,35 @@ export const PHIL_SPIRIT: CharacterDef = {
   ],
 }
 
+/** Common inflatable tow-tube — slides, Launch knockback, never sticky-locks. */
+export const BIG_MABLE: CharacterDef = {
+  id: 'bigMable',
+  name: 'Big Mable',
+  initial: 'BM',
+  pronoun: 'it',
+  height: "4'6\"",
+  rarity: 'common',
+  elixir: 6,
+  hp: 2925,
+  moveSpeed: 2,
+  attackDelaySec: 0.5,
+  hue: 28,
+  noLock: true,
+  blurb:
+    'Common tube — slides to the nearest foe (no lock). Launch flings troops 25 blocks; towers take damage only.',
+  attacks: [
+    {
+      id: 'launch',
+      name: 'Launch',
+      range: 5,
+      damage: 600,
+      rootWhileAttacking: true,
+      knockbackTiles: 25,
+      kind: 'launch',
+    },
+  ],
+}
+
 export const CHARACTERS: CharacterDef[] = [
   PHIL,
   KATHIE,
@@ -659,6 +694,7 @@ export const CHARACTERS: CharacterDef[] = [
   STEVES_DINER,
   ICE_CREAM,
   FOOTBALL_HUCK,
+  BIG_MABLE,
 ]
 
 export const DECK_SIZE = 8

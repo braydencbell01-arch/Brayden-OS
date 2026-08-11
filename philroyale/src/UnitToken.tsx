@@ -52,7 +52,7 @@ export function UnitToken({
           aspectRatio:
             charId === 'dogHut'
               ? '5 / 4.6'
-              : charId === 'philsCar' || charId === 'stevesDiner'
+              : charId === 'philsCar' || charId === 'stevesDiner' || charId === 'bigMable'
                 ? '5 / 3.4'
               : charId === 'iceCream' || charId === 'footballHuck'
                 ? '3 / 4'

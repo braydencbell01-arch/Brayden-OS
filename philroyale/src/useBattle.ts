@@ -1698,6 +1698,7 @@ export function useBattle(opts?: {
 
         const me = unitCenter(u)
         const buildingsOnly = !!def.targetsBuildingsOnly
+        const noLock = !!def.noLock
         const foes = nextUnits.filter((o) => {
           if (o.side === u.side || o.hp <= 0) return false
           if (buildingsOnly && !isBuildingCard(getCharacter(o.charId))) return false
@@ -1707,7 +1708,10 @@ export function useBattle(opts?: {
         const currentAttack = def.attacks[u.attackIndex % def.attacks.length]
         // Towers are the default objective. Units only pull aggro when nearby;
         // ranged troops may notice enemies up to their own firing range.
-        const unitAggroRange = Math.max(12, currentAttack?.range ?? 0)
+        // noLock troops always chase the absolute nearest opponent (no sticky lock).
+        const unitAggroRange = noLock
+          ? Infinity
+          : Math.max(12, currentAttack?.range ?? 0)
 
         type Target = {
           kind: 'unit' | 'tower'
@@ -1727,8 +1731,9 @@ export function useBattle(opts?: {
           : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
 
         // Clash Royale: once attacking a target, keep it until death or out of range.
+        // Big Mable (noLock): never sticky — always re-pick nearest.
         let best: Target | null = null
-        if (u.lockKey) {
+        if (u.lockKey && !noLock) {
           const [kind, id] = u.lockKey.split(':') as ['unit' | 'tower', string]
           if (kind === 'unit') {
             const f = foes.find((x) => x.id === id)
@@ -1766,6 +1771,9 @@ export function useBattle(opts?: {
             u.lockKey = null
             unitsChanged = true
           }
+        } else if (noLock && u.lockKey) {
+          u.lockKey = null
+          unitsChanged = true
         }
 
         if (!best) {
@@ -1775,8 +1783,8 @@ export function useBattle(opts?: {
             const edge = distUnitTileToTower(u.col, u.row, slot)
             const aim = towerFrontEngagePoint(me.col, me.row, slot)
             const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
-            // Prefer towers we can already hit from the front.
-            const inFront = towerInMeleeRange(u.col, u.row, slot, attackRange)
+            // Prefer towers we can already hit from the front (skipped for noLock).
+            const inFront = !noLock && towerInMeleeRange(u.col, u.row, slot, attackRange)
             const score = inFront ? path - 40 : path
             if (!best || score < best.d) {
               best = {
@@ -1887,9 +1895,15 @@ export function useBattle(opts?: {
         }
 
         // In range — lock onto this target (CR: no retarget until dead / out of range).
-        const nextLock = `${best.kind}:${best.id}`
-        if (u.lockKey !== nextLock) {
-          u.lockKey = nextLock
+        // noLock troops skip sticky lock entirely.
+        if (!noLock) {
+          const nextLock = `${best.kind}:${best.id}`
+          if (u.lockKey !== nextLock) {
+            u.lockKey = nextLock
+            unitsChanged = true
+          }
+        } else if (u.lockKey) {
+          u.lockKey = null
           unitsChanged = true
         }
 
@@ -1930,6 +1944,8 @@ export function useBattle(opts?: {
                           ? 720
                           : attack.id === 'jump'
                             ? KICK_VFX_MS
+                            : attack.id === 'launch'
+                              ? 480
                       : attack.rootWhileAttacking
                         ? ROOT_VFX_MS
                         : RANGED_VFX_MS
@@ -2084,6 +2100,33 @@ export function useBattle(opts?: {
               target.col = ejected.col
               target.row = ejected.row
             }
+            // Launch / knockback — troops only (never buildings or towers).
+            if (
+              attack.knockbackTiles != null &&
+              attack.knockbackTiles > 0 &&
+              !isBuildingCard(getCharacter(target.charId))
+            ) {
+              const ang = Math.atan2(target.row - u.row, target.col - u.col)
+              let pc = Math.max(
+                0,
+                Math.min(
+                  ARENA_COLS - 1,
+                  target.col + Math.cos(ang) * attack.knockbackTiles,
+                ),
+              )
+              let pr = Math.max(
+                0,
+                Math.min(
+                  ARENA_ROWS - 1,
+                  target.row + Math.sin(ang) * attack.knockbackTiles,
+                ),
+              )
+              const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
+              target.col = ejected.col
+              target.row = ejected.row
+              target.lockKey = null
+              target.nextAttackAt = Math.max(target.nextAttackAt, t + 280)
+            }
             unitsChanged = true
           }
         } else {
@@ -2101,7 +2144,8 @@ export function useBattle(opts?: {
           attack.kind === 'bite' ||
           attack.kind === 'headbutt' ||
           attack.kind === 'hug' ||
-          attack.kind === 'uppercut'
+          attack.kind === 'uppercut' ||
+          attack.kind === 'launch'
         ) {
           const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
           const lunge =
@@ -2111,6 +2155,8 @@ export function useBattle(opts?: {
                 ? 0.85
                 : attack.kind === 'uppercut'
                   ? 0.9
+                  : attack.kind === 'launch'
+                    ? 1.1
                   : 0.65
           const next = stepUnit(
             u,
@@ -2140,6 +2186,8 @@ export function useBattle(opts?: {
                       ? 'hug'
                       : attack.kind === 'uppercut'
                         ? 'uppercut'
+                        : attack.kind === 'launch'
+                          ? 'kick'
                         : 'melee',
           })
           splatsChanged = true
