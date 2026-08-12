@@ -368,3 +368,4 @@ export async function mpPublishBattle(room: string, msg: unknown): Promise<boole
     return false
   }
 }
+// mp endpoint live
