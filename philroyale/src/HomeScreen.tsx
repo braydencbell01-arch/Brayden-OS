@@ -6,6 +6,7 @@ import {
   ChestRevealSequence,
   type ChestLoot,
 } from './ChestOpen'
+import { arenaThemeBackground } from './arenaThemes'
 import {
   ARENA_COLORS,
   CHEST_META,
@@ -240,10 +241,7 @@ export function HomeScreen({
           whileTap={{ scale: 0.98 }}
           className="relative mt-3 w-full max-w-md shrink-0 self-center overflow-hidden rounded-[2rem] px-3 pb-4 pt-5 text-center"
           style={{
-            background: `
-              radial-gradient(ellipse 80% 60% at 50% 35%, ${arenaColors.accent}55 0%, transparent 60%),
-              linear-gradient(180deg, ${arenaColors.sky}, ${arenaColors.ground})
-            `,
+            background: arenaThemeBackground(arena),
             boxShadow: `0 10px 0 ${arenaColors.ground}99, 0 16px 28px #00000066, inset 0 2px 0 #ffffff33`,
             minHeight: '9.5rem',
           }}
@@ -255,16 +253,19 @@ export function HomeScreen({
           ) : null}
           <div
             aria-hidden
-            className="mx-auto mb-2 h-16 w-[70%] rounded-[50%]"
+            className="pointer-events-none absolute inset-0 opacity-40"
             style={{
-              background: `radial-gradient(ellipse at 50% 40%, ${arenaColors.accent}88, ${arenaColors.ground})`,
-              boxShadow: '0 8px 0 #00000044',
+              background: `
+                radial-gradient(ellipse 80% 55% at 50% 40%, ${arenaColors.accent}66 0%, transparent 65%)
+              `,
             }}
           />
-          <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]">
+          <p className="relative font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e] drop-shadow-[0_2px_4px_#000]">
             {arena}
           </p>
-          <p className="text-xs font-bold text-white/85">Tap for Trophy Road</p>
+          <p className="relative text-xs font-bold text-white/90 drop-shadow-[0_1px_2px_#000]">
+            Tap for Trophy Road
+          </p>
         </motion.button>
 
         {/* Thin road progress */}
@@ -503,7 +504,7 @@ export function HomeScreen({
           ) : null}
           <button
             type="button"
-            onClick={() => setInviteOpen((v) => !v)}
+            onClick={() => setInviteOpen(true)}
             className="flex-1 rounded-lg py-2 text-xs font-extrabold text-[#1a1410]"
             style={{
               background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
@@ -513,27 +514,45 @@ export function HomeScreen({
             Invite
           </button>
         </div>
+      </main>
 
-        {inviteOpen ? (
+      {inviteOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Invite friends"
+        >
           <div
-            className="mt-3 w-full max-w-sm self-center rounded-xl p-3"
+            className="relative w-full max-w-sm rounded-xl p-4"
             style={{
               background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-              boxShadow: 'inset 0 1px 0 #c9a22744, 0 8px 20px #00000066',
+              boxShadow: 'inset 0 1px 0 #c9a22744, 0 12px 40px #00000088',
             }}
           >
-            <p className="mb-2 text-center text-xs font-semibold text-white/55">
+            <button
+              type="button"
+              onClick={() => setInviteOpen(false)}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#2a1a12] text-lg font-black text-white/80 ring-1 ring-white/20"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+            <h2 className="pr-10 font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+              Invite a friend
+            </h2>
+            <p className="mt-1 text-center text-xs font-semibold text-white/55">
               Your code{' '}
               <span className="font-extrabold text-[#f5d76e]">
                 {formatAccountCode(myCode)}
               </span>
             </p>
             {friends.length === 0 ? (
-              <p className="text-center text-sm font-semibold text-white/60">
+              <p className="mt-4 text-center text-sm font-semibold text-white/60">
                 No friends yet — add someone by account code on Social.
               </p>
             ) : (
-              <ul className="flex flex-col gap-1.5">
+              <ul className="mt-3 max-h-[50vh] flex flex-col gap-1.5 overflow-y-auto">
                 {friends.map((f) => {
                   const online = friendOnline(f)
                   return (
@@ -541,8 +560,11 @@ export function HomeScreen({
                       <button
                         type="button"
                         disabled={!online}
-                        onClick={() => setInviteFriend(f)}
-                        className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2 text-left ring-1 ring-white/10 disabled:opacity-45"
+                        onClick={() => {
+                          setInviteOpen(false)
+                          setInviteFriend(f)
+                        }}
+                        className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2.5 text-left ring-1 ring-white/10 disabled:opacity-45"
                       >
                         <span className="flex items-center gap-2 font-bold text-white">
                           <span
@@ -567,8 +589,8 @@ export function HomeScreen({
               </ul>
             )}
           </div>
-        ) : null}
-      </main>
+        </div>
+      ) : null}
 
       {inviteFriend ? (
         <div
@@ -577,15 +599,23 @@ export function HomeScreen({
           aria-modal="true"
         >
           <div
-            className="w-full max-w-sm rounded-xl p-5"
+            className="relative w-full max-w-sm rounded-xl p-5"
             style={{
               background: 'linear-gradient(180deg,#3a2418,#1a100c)',
               boxShadow: '0 12px 40px #00000088',
             }}
           >
-            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
+            <h2 className="pr-10 font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
               Invite {inviteFriend.name}
             </h2>
+            <button
+              type="button"
+              onClick={() => setInviteFriend(null)}
+              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#2a1a12] text-lg font-black text-white/80 ring-1 ring-white/20"
+              aria-label="Close"
+            >
+              ✕
+            </button>
             <button
               type="button"
               onClick={() => void battleFriend(inviteFriend, 'classic')}

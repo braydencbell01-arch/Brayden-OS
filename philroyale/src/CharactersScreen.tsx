@@ -212,7 +212,7 @@ export function CharactersScreen() {
         `,
       }}
     >
-      <header className="shrink-0 px-3 pb-2 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
+      <header className="shrink-0 px-3 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         <div className="mx-auto flex max-w-md overflow-hidden rounded-xl shadow-lg">
           {([
             ['decks', 'Decks'],
@@ -514,7 +514,7 @@ function CardProfile({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="flex shrink-0 items-center gap-3 px-3 pb-2 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
+      <header className="flex shrink-0 items-center gap-3 px-3 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         <button
           type="button"
           onClick={onBack}
@@ -535,6 +535,18 @@ function CardProfile({
             boxShadow: 'inset 0 1px 0 #c9a22744',
           }}
         >
+          <button
+            type="button"
+            onClick={onAdd}
+            disabled={!unlocked}
+            className="mb-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410] disabled:opacity-50"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+              boxShadow: '0 3px 0 #8a6a12',
+            }}
+          >
+            {unlocked ? 'Add to battle deck' : 'Locked'}
+          </button>
           <div className="mx-auto w-36">
             <BattleCard character={character} size="collection" />
           </div>
@@ -625,19 +637,6 @@ function CardProfile({
                       : `Need ${cost}g`}
             </button>
           </div>
-
-          <button
-            type="button"
-            onClick={onAdd}
-            disabled={!unlocked}
-            className="mt-3 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410] disabled:opacity-50"
-            style={{
-              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
-              boxShadow: '0 3px 0 #8a6a12',
-            }}
-          >
-            {unlocked ? 'Add to battle deck' : 'Locked'}
-          </button>
         </div>
       </div>
     </div>

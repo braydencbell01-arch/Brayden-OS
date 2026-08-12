@@ -12,7 +12,7 @@ export function EventsScreen({ onPlay }: Props) {
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="shrink-0 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="shrink-0 px-4 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]">
           Events
         </h1>

@@ -41,7 +41,12 @@ import {
 } from './progression'
 import type { GameMode } from './gameModes'
 import { parseGameMode } from './gameModes'
-import { getEmoteById } from './emoteCatalog'
+import {
+  getEmoteById,
+  isPurchasableEmote,
+  starterEmoteIds,
+  MAX_ACTIVE_EMOTES,
+} from './emoteCatalog'
 import {
   getGemPack,
   getGoldWithGemsPack,
@@ -637,6 +642,7 @@ const CHESTS_KEY = 'philroyale.chests.v1'
 const ROAD_KEY = 'philroyale.trophyRoad.v1'
 const SHOP_BOUGHT_KEY = 'philroyale.shopBought.v1'
 const EMOTES_KEY = 'philroyale.emotes.v1'
+const ACTIVE_EMOTES_KEY = 'philroyale.activeEmotes.v1'
 
 export type PlayerProfile = {
   trophies: number
@@ -772,6 +778,10 @@ export function saveProfile(profile: PlayerProfile): void {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
 }
 
+function randIntInclusive(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1))
+}
+
 export function recordMatchResult(
   result: 'victory' | 'defeat' | 'draw',
   opts?: {
@@ -787,53 +797,23 @@ export function recordMatchResult(
   const crowns = Math.max(0, Math.min(3, opts?.crowns ?? (result === 'victory' ? 3 : result === 'draw' ? 1 : 0)))
   p.crownChest = Math.min(10, p.crownChest + crowns)
   const awardsTrophies = opts?.awardsTrophies !== false
-  if (opts?.pvp) {
-    const myTrophies = p.trophies
-    const oppTrophies = Math.max(0, opts.opponentTrophies ?? myTrophies)
-    const diff = oppTrophies - myTrophies
-    if (result === 'victory') {
-      p.wins += 1
-      p.winStreak += 1
-      p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
-      if (awardsTrophies) {
-        const gain = Math.max(15, Math.min(32, 28 + Math.round(diff * 0.04)))
-        p.trophies += gain
-      }
-      p.gold += awardsTrophies ? 50 : 25
-      p.xp += awardsTrophies ? 40 : 20
-    } else if (result === 'defeat') {
-      p.losses += 1
-      p.winStreak = 0
-      if (awardsTrophies) {
-        const loss = Math.max(10, Math.min(28, 22 - Math.round(diff * 0.04)))
-        p.trophies = Math.max(0, p.trophies - loss)
-      }
-      p.gold += awardsTrophies ? 15 : 10
-      p.xp += awardsTrophies ? 15 : 10
-    } else {
-      p.draws += 1
-      p.winStreak = 0
-      if (awardsTrophies) p.trophies += 5
-      p.gold += awardsTrophies ? 25 : 15
-      p.xp += awardsTrophies ? 25 : 15
-    }
-  } else if (result === 'victory') {
+  if (result === 'victory') {
     p.wins += 1
     p.winStreak += 1
     p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
-    if (awardsTrophies) p.trophies += 30
+    if (awardsTrophies) p.trophies += randIntInclusive(25, 30)
     p.gold += awardsTrophies ? 50 : 25
     p.xp += awardsTrophies ? 40 : 20
   } else if (result === 'defeat') {
     p.losses += 1
     p.winStreak = 0
-    if (awardsTrophies) p.trophies = Math.max(0, p.trophies - 20)
+    if (awardsTrophies) p.trophies = Math.max(0, p.trophies - randIntInclusive(15, 20))
     p.gold += awardsTrophies ? 15 : 10
     p.xp += awardsTrophies ? 15 : 10
   } else {
     p.draws += 1
     p.winStreak = 0
-    if (awardsTrophies) p.trophies += 5
+    if (awardsTrophies) p.trophies += randIntInclusive(3, 8)
     p.gold += awardsTrophies ? 25 : 15
     p.xp += awardsTrophies ? 25 : 15
   }
@@ -1136,6 +1116,14 @@ export function openChestNow(
   }
   saveCardProgress(progress)
   saveProfile(profile)
+  let emoteMsg = ''
+  if (loot.emoteId) {
+    const unlocked = grantEmote(loot.emoteId)
+    if (unlocked) {
+      const em = getEmoteById(loot.emoteId)
+      emoteMsg = ` · Emote: ${em?.label ?? loot.emoteId}`
+    }
+  }
   const rarity = chest.rarity
   chests.splice(idx, 1)
   saveChests(chests)
@@ -1147,7 +1135,7 @@ export function openChestNow(
     .join(', ')
   return {
     ok: true,
-    message: `+${loot.gold} gold · ${names}`,
+    message: `+${loot.gold} gold · ${names}${emoteMsg}`,
     rarity,
     gold: loot.gold,
     cards: loot.cards,
@@ -1209,6 +1197,10 @@ function grantRoadStep(
     progress.copies[charId] = (progress.copies[charId] ?? 0) + copies
     const char = CHARACTERS.find((c) => c.id === charId)
     messages.push(`+${copies} ${char?.name ?? charId}`)
+  }
+  if (step.unlockEmote && grantEmote(step.unlockEmote)) {
+    const em = getEmoteById(step.unlockEmote)
+    messages.push(`Emote: ${em?.label ?? step.unlockEmote}`)
   }
   return messages
 }
@@ -1273,9 +1265,27 @@ export function getShopOffers(): ShopOffer[] {
   return allShopOffers(todayKey())
 }
 
+export function grantEmote(id: string): boolean {
+  const emote = getEmoteById(id)
+  if (!emote) return false
+  const owned = loadOwnedEmotes()
+  if (owned.includes(id)) return false
+  owned.push(id)
+  saveOwnedEmotes(owned)
+  return true
+}
+
 export function loadOwnedEmotes(): string[] {
   const owned = readJson<string[]>(EMOTES_KEY, [])
-  if (!owned.includes('phil')) return ['phil', ...owned.filter((id) => id !== 'phil')]
+  const starters = starterEmoteIds()
+  let changed = false
+  for (const id of starters) {
+    if (!owned.includes(id)) {
+      owned.push(id)
+      changed = true
+    }
+  }
+  if (changed) saveOwnedEmotes(owned)
   return owned
 }
 
@@ -1283,18 +1293,55 @@ function saveOwnedEmotes(ids: string[]): void {
   localStorage.setItem(EMOTES_KEY, JSON.stringify(ids))
 }
 
+export function loadActiveEmotes(): string[] {
+  const owned = new Set(loadOwnedEmotes())
+  let active = readJson<string[]>(ACTIVE_EMOTES_KEY, []).filter((id) => owned.has(id))
+  if (active.length === 0) {
+    active = [...owned].slice(0, MAX_ACTIVE_EMOTES)
+    saveActiveEmotes(active)
+  } else if (active.length > MAX_ACTIVE_EMOTES) {
+    active = active.slice(0, MAX_ACTIVE_EMOTES)
+    saveActiveEmotes(active)
+  }
+  return active
+}
+
+export function saveActiveEmotes(ids: string[]): void {
+  const owned = new Set(loadOwnedEmotes())
+  const next = ids.filter((id) => owned.has(id)).slice(0, MAX_ACTIVE_EMOTES)
+  localStorage.setItem(ACTIVE_EMOTES_KEY, JSON.stringify(next))
+}
+
+/** Toggle emote in the active battle tray (max 12). */
+export function toggleActiveEmote(id: string): { ok: boolean; message: string; active: string[] } {
+  const owned = loadOwnedEmotes()
+  if (!owned.includes(id)) return { ok: false, message: 'Emote locked', active: loadActiveEmotes() }
+  const active = loadActiveEmotes()
+  const i = active.indexOf(id)
+  if (i >= 0) {
+    if (active.length <= 1) {
+      return { ok: false, message: 'Keep at least 1 active emote', active }
+    }
+    active.splice(i, 1)
+    saveActiveEmotes(active)
+    return { ok: true, message: 'Removed from battle tray', active }
+  }
+  if (active.length >= MAX_ACTIVE_EMOTES) {
+    return { ok: false, message: `Only ${MAX_ACTIVE_EMOTES} active emotes`, active }
+  }
+  active.push(id)
+  saveActiveEmotes(active)
+  return { ok: true, message: 'Added to battle tray', active }
+}
+
 export function buyEmote(id: string): { ok: boolean; message: string } {
   const emote = getEmoteById(id)
   if (!emote) return { ok: false, message: 'Emote not found' }
+  if (!isPurchasableEmote(emote)) {
+    return { ok: false, message: 'Emoji emotes unlock for free' }
+  }
   const owned = loadOwnedEmotes()
   if (owned.includes(id)) return { ok: false, message: 'Already owned' }
-  if (emote.priceGems <= 0) {
-    if (!owned.includes(id)) {
-      owned.push(id)
-      saveOwnedEmotes(owned)
-    }
-    return { ok: true, message: `${emote.label} unlocked!` }
-  }
   const profile = loadProfile()
   if (profile.gems < emote.priceGems) {
     return { ok: false, message: `Need ${emote.priceGems} gems` }

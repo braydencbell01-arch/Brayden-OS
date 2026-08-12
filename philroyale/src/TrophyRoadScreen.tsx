@@ -6,6 +6,7 @@ import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import { BattleCard } from './BattleCard'
 import { ChestArt } from './ChestOpen'
 import { FriendProfileModal } from './FriendsScreen'
+import { arenaThemeBackground } from './arenaThemes'
 import {
   ARENA_COLORS,
   CHEST_META,
@@ -104,42 +105,7 @@ function arenaFor(trophies: number): string {
 }
 
 function arenaBackdrop(arena: string): string {
-  const c = ARENA_COLORS[arena] ?? ARENA_COLORS['Training Camp']!
-  if (arena === 'Sundae Strip') {
-    return `
-      radial-gradient(ellipse 90% 55% at 15% 20%, #ffe8f4cc 0%, transparent 55%),
-      radial-gradient(ellipse 70% 45% at 85% 35%, #ffb0d0aa 0%, transparent 50%),
-      radial-gradient(circle at 50% 80%, #fff5e0aa 0%, transparent 45%),
-      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 52%, #2a1018 100%)
-    `
-  }
-  if (arena === "Pete's Pit") {
-    return `
-      radial-gradient(ellipse 100% 40% at 50% 0%, #e8b86a66 0%, transparent 50%),
-      radial-gradient(ellipse 80% 50% at 20% 70%, #3a201855 0%, transparent 55%),
-      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #100808 100%)
-    `
-  }
-  if (arena === 'Phil Plaza') {
-    return `
-      radial-gradient(ellipse 100% 45% at 50% 0%, #c9a0ff77 0%, transparent 55%),
-      radial-gradient(circle at 80% 60%, #7a4ad044 0%, transparent 40%),
-      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #140818 100%)
-    `
-  }
-  if (arena === 'Phil Peak') {
-    return `
-      radial-gradient(ellipse 110% 50% at 50% 0%, #ffe08acc 0%, transparent 55%),
-      radial-gradient(ellipse 60% 40% at 30% 70%, #c9a22755 0%, transparent 50%),
-      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #1a1008 100%)
-    `
-  }
-  // Training Camp
-  return `
-    radial-gradient(ellipse 100% 45% at 50% 0%, ${c.accent}88 0%, transparent 55%),
-    radial-gradient(ellipse 70% 40% at 10% 60%, #7dff9a33 0%, transparent 50%),
-    linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #0a1828 100%)
-  `
+  return arenaThemeBackground(arena)
 }
 
 export function TrophyRoadScreen({
@@ -361,22 +327,7 @@ export function TrophyRoadScreen({
         transition={{ duration: 0.45 }}
         style={{ background: arenaBackdrop(viewArena) }}
       />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-16 z-[1] flex justify-center"
-      >
-        <p
-          className="rounded-full px-3 py-1 font-[family-name:var(--font-display)] text-sm tracking-wide text-[#f5d76e] ring-1 ring-white/20"
-          style={{
-            background: `linear-gradient(180deg, ${colors.sky}cc, ${colors.ground}ee)`,
-            boxShadow: '0 4px 16px #00000055',
-          }}
-        >
-          {viewArena}
-        </p>
-      </div>
-
-      <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
+      <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -403,6 +354,20 @@ export function TrophyRoadScreen({
             <p className="text-[0.55rem] font-extrabold uppercase text-[#1a1410]/80">Trophies</p>
             <p className="text-sm font-black text-[#1a1410]">{profile.trophies}</p>
           </div>
+        </div>
+        <div
+          className="mt-2 rounded-lg px-3 py-1.5 text-center"
+          style={{
+            background: `linear-gradient(180deg, ${colors.sky}cc, ${colors.ground}ee)`,
+            boxShadow: '0 3px 0 #00000044, inset 0 1px 0 #ffffff33',
+          }}
+        >
+          <p className="text-[0.55rem] font-extrabold uppercase tracking-wide text-white/75">
+            Viewing arena
+          </p>
+          <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
+            {viewArena}
+          </p>
         </div>
         <div className="mt-2 flex gap-2">
           <button
@@ -478,8 +443,9 @@ export function TrophyRoadScreen({
                 (idx === TROPHY_ROAD.length - 1 ||
                   peak < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
               const ready = reached && !done
-              const showArena =
-                rowI === 0 || stepsDesc[rowI - 1]?.step.arena !== step.arena
+              const showArenaFooter =
+                rowI === stepsDesc.length - 1 ||
+                stepsDesc[rowI + 1]?.step.arena !== step.arena
               const friendsHere = friendsByStep.get(idx) ?? []
               const arenaTone = ARENA_COLORS[step.arena] ?? colors
 
@@ -533,21 +499,6 @@ export function TrophyRoadScreen({
                       >
                         {profile.trophies}
                       </span>
-                    </div>
-                  ) : null}
-
-                  {showArena ? (
-                    <div
-                      data-arena-banner={step.arena}
-                      className="mb-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
-                      style={{
-                        background: `linear-gradient(180deg, ${arenaTone.sky}, ${arenaTone.ground})`,
-                        boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
-                      }}
-                    >
-                      <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
-                        {step.arena}
-                      </p>
                     </div>
                   ) : null}
 
@@ -608,6 +559,20 @@ export function TrophyRoadScreen({
                       <span className="h-7 w-7 shrink-0" aria-hidden />
                     )}
                   </div>
+                  {showArenaFooter ? (
+                    <div
+                      data-arena-banner={step.arena}
+                      className="mt-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
+                      style={{
+                        background: `linear-gradient(180deg, ${arenaTone.sky}, ${arenaTone.ground})`,
+                        boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
+                      }}
+                    >
+                      <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
+                        {step.arena}
+                      </p>
+                    </div>
+                  ) : null}
                 </li>
               )
             })}

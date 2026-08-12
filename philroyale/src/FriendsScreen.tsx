@@ -234,7 +234,7 @@ export function FriendsScreen({
   if (section === 'clubs') {
     return (
       <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-        <div className="shrink-0 px-3 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="shrink-0 px-3 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
           <div className="flex gap-2">
             {(
               [
@@ -272,7 +272,7 @@ export function FriendsScreen({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="shrink-0 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <header className="shrink-0 px-4 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]">
           Friends
         </h1>

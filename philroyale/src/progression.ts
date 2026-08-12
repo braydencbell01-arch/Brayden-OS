@@ -17,6 +17,8 @@ export type TrophyRoadReward = {
   /** Grant extra copies of an already-known card (also unlocks if needed). */
   cardCopies?: { charId: string; copies: number }
   gems?: number
+  /** Unlock an emote id (character / photo). */
+  unlockEmote?: string
 }
 
 /** Map trophy count → 0–1 progress along evenly-spaced road steps (bottom = low). */
@@ -55,7 +57,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 75, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 25 },
   { trophies: 100, arena: 'Training Camp', label: 'x1 Beans', unlockCard: 'beans', gold: 50 },
   { trophies: 125, arena: 'Training Camp', label: 'Common Chest', chest: 'common' },
-  { trophies: 150, arena: 'Training Camp', label: 'Rare Chest', chest: 'rare', gold: 35 },
+  { trophies: 150, arena: 'Training Camp', label: 'Rare Chest', chest: 'rare', gold: 35, unlockEmote: 'wave' },
   { trophies: 175, arena: 'Training Camp', label: 'Gold pouch', gold: 50 },
   { trophies: 200, arena: 'Training Camp', label: 'x1 Lynne', gold: 100, unlockCard: 'lynne' },
   { trophies: 225, arena: 'Training Camp', label: '3× Kathie', cardCopies: { charId: 'kathie', copies: 3 } },
@@ -63,7 +65,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 300, arena: 'Training Camp', label: 'Gold pouch', gold: 60 },
   { trophies: 350, arena: 'Training Camp', label: 'Rare Chest', chest: 'rare' },
   { trophies: 375, arena: 'Training Camp', label: 'x1 Dave', unlockCard: 'dave', gold: 80 },
-  { trophies: 400, arena: 'Training Camp', label: 'x1 Kathie', unlockCard: 'kathie', gold: 75 },
+  { trophies: 400, arena: 'Training Camp', label: 'x1 Kathie', unlockCard: 'kathie', gold: 75, unlockEmote: 'heart' },
   { trophies: 450, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 50 },
   { trophies: 500, arena: 'Training Camp', label: 'Epic Chest', chest: 'epic', gold: 40 },
   { trophies: 550, arena: 'Training Camp', label: 'Gold pouch', gold: 70 },
@@ -71,7 +73,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 625, arena: 'Sundae Strip', label: 'x1 Scott', unlockCard: 'scott', gold: 60 },
   { trophies: 650, arena: 'Sundae Strip', label: 'x1 Baseball Huck', unlockCard: 'footballHuck', gold: 70 },
   { trophies: 675, arena: 'Sundae Strip', label: "x1 Ricky's Diner", unlockCard: 'stevesDiner', gold: 65 },
-  { trophies: 700, arena: 'Sundae Strip', label: 'x1 Big Mable', unlockCard: 'bigMable', gold: 80 },
+  { trophies: 700, arena: 'Sundae Strip', label: 'x1 Big Mable', unlockCard: 'bigMable', gold: 80, unlockEmote: 'party' },
   { trophies: 700, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 50 },
   { trophies: 725, arena: 'Sundae Strip', label: 'x1 Bobby Special', unlockCard: 'bobbySpecial', gold: 90 },
   { trophies: 775, arena: 'Sundae Strip', label: '3× Todd', cardCopies: { charId: 'todd', copies: 3 } },
@@ -79,37 +81,40 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 825, arena: 'Sundae Strip', label: 'Gold pouch', gold: 80 },
   { trophies: 900, arena: 'Sundae Strip', label: 'x1 Todd', unlockCard: 'todd', gold: 100 },
   { trophies: 950, arena: 'Sundae Strip', label: 'Epic Chest', chest: 'epic' },
-  { trophies: 1000, arena: 'Sundae Strip', label: 'Legendary Chest', chest: 'legendary', gold: 75 },
+  { trophies: 1000, arena: 'Sundae Strip', label: 'Legendary Chest', chest: 'legendary', gold: 75, unlockEmote: 'cool' },
   { trophies: 1050, arena: 'Sundae Strip', label: 'x1 Gretchin', unlockCard: 'gretchin', gold: 90 },
   { trophies: 1150, arena: 'Sundae Strip', label: '3× Mike', cardCopies: { charId: 'mike', copies: 3 } },
   { trophies: 1100, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 70 },
   { trophies: 1200, arena: "Pete's Pit", label: 'x1 Pete', gold: 200, unlockCard: 'dan' },
   { trophies: 1250, arena: "Pete's Pit", label: '3× Beans', cardCopies: { charId: 'beans', copies: 3 } },
   { trophies: 1300, arena: "Pete's Pit", label: 'Common Chest', chest: 'common', gold: 80 },
-  { trophies: 1400, arena: "Pete's Pit", label: 'Epic Chest', chest: 'epic', gold: 80 },
+  { trophies: 1400, arena: "Pete's Pit", label: 'Epic Chest', chest: 'epic', gold: 80, unlockEmote: 'skull' },
   { trophies: 1500, arena: "Pete's Pit", label: 'Gold pouch', gold: 100 },
   { trophies: 1600, arena: "Pete's Pit", label: 'x1 Chuck', unlockCard: 'pete', gold: 125 },
   { trophies: 1650, arena: "Pete's Pit", label: '3× Lynne', cardCopies: { charId: 'lynne', copies: 3 } },
   { trophies: 1700, arena: "Pete's Pit", label: 'Rare Chest', chest: 'rare', gold: 90 },
-  { trophies: 1800, arena: "Pete's Pit", label: 'Epic Chest', chest: 'epic', gold: 100 },
+  { trophies: 1800, arena: "Pete's Pit", label: 'Epic Chest', chest: 'epic', gold: 100, unlockEmote: 'emote-pete' },
   { trophies: 1900, arena: "Pete's Pit", label: 'Gold pouch', gold: 110 },
-  { trophies: 2000, arena: 'Phil Plaza', label: 'x1 Jeremy', gold: 250, unlockCard: 'jeremy' },
-  { trophies: 2050, arena: 'Phil Plaza', label: '3× Jeremy', cardCopies: { charId: 'jeremy', copies: 3 } },
-  { trophies: 2150, arena: 'Phil Plaza', label: 'Rare Chest', chest: 'rare', gold: 100 },
-  { trophies: 2300, arena: 'Phil Plaza', label: 'Epic Chest', chest: 'epic', gold: 120 },
-  { trophies: 2450, arena: 'Phil Plaza', label: 'Common Chest', chest: 'common', gold: 90 },
-  { trophies: 2600, arena: 'Phil Plaza', label: 'x1 Phil', unlockCard: 'phil', gold: 200 },
-  { trophies: 2650, arena: 'Phil Plaza', label: 'x1 Phil Spirit', unlockCard: 'philSpirit', gold: 150 },
-  { trophies: 2675, arena: 'Phil Plaza', label: 'x1 Pete Spirit', unlockCard: 'peteSpirit', gold: 150 },
-  { trophies: 2688, arena: 'Phil Plaza', label: 'x1 Jeremy Spirit', unlockCard: 'jeremySpirit', gold: 150 },
-  { trophies: 2700, arena: 'Phil Plaza', label: "x1 Phil's Car", unlockCard: 'philsCar', gold: 180 },
-  { trophies: 2750, arena: 'Phil Plaza', label: 'x1 Evil Phil', unlockCard: 'evilPhil', gold: 220 },
-  { trophies: 2850, arena: 'Phil Plaza', label: '3× Kathie', cardCopies: { charId: 'kathie', copies: 3 } },
-  { trophies: 2800, arena: 'Phil Plaza', label: 'Legendary Chest', chest: 'legendary', gold: 120 },
-  { trophies: 3000, arena: 'Phil Plaza', label: 'Epic Chest', chest: 'epic', gold: 150 },
-  { trophies: 3200, arena: 'Phil Plaza', label: 'Gold pouch', gold: 160 },
+  { trophies: 2000, arena: 'Jeremy Land', label: 'x1 Jeremy', gold: 250, unlockCard: 'jeremy' },
+  { trophies: 2050, arena: 'Jeremy Land', label: '3× Jeremy', cardCopies: { charId: 'jeremy', copies: 3 } },
+  { trophies: 2150, arena: 'Jeremy Land', label: 'Rare Chest', chest: 'rare', gold: 100 },
+  { trophies: 2200, arena: 'Jeremy Land', label: 'Emote: Jeremy', unlockEmote: 'emote-jeremy', gold: 60 },
+  { trophies: 2300, arena: 'Jeremy Land', label: 'Epic Chest', chest: 'epic', gold: 120 },
+  { trophies: 2450, arena: 'Jeremy Land', label: 'Common Chest', chest: 'common', gold: 90 },
+  { trophies: 2600, arena: 'Jeremy Land', label: 'x1 Phil', unlockCard: 'phil', gold: 200 },
+  { trophies: 2650, arena: 'Jeremy Land', label: 'x1 Phil Spirit', unlockCard: 'philSpirit', gold: 150 },
+  { trophies: 2675, arena: 'Jeremy Land', label: 'x1 Pete Spirit', unlockCard: 'peteSpirit', gold: 150 },
+  { trophies: 2688, arena: 'Jeremy Land', label: 'x1 Jeremy Spirit', unlockCard: 'jeremySpirit', gold: 150 },
+  { trophies: 2700, arena: 'Jeremy Land', label: "x1 Phil's Car", unlockCard: 'philsCar', gold: 180 },
+  { trophies: 2750, arena: 'Jeremy Land', label: 'x1 Evil Phil', unlockCard: 'evilPhil', gold: 220 },
+  { trophies: 2850, arena: 'Jeremy Land', label: '3× Kathie', cardCopies: { charId: 'kathie', copies: 3 } },
+  { trophies: 2800, arena: 'Jeremy Land', label: 'Legendary Chest', chest: 'legendary', gold: 120 },
+  { trophies: 2900, arena: 'Jeremy Land', label: 'Emote: Coach', unlockEmote: 'coach', gold: 80 },
+  { trophies: 3000, arena: 'Jeremy Land', label: 'Epic Chest', chest: 'epic', gold: 150 },
+  { trophies: 3200, arena: 'Jeremy Land', label: 'Gold pouch', gold: 160 },
   { trophies: 3400, arena: 'Phil Peak', label: 'Arena unlocked!', gold: 300 },
   { trophies: 3500, arena: 'Phil Peak', label: '3× Jeremy', cardCopies: { charId: 'jeremy', copies: 3 } },
+  { trophies: 3550, arena: 'Phil Peak', label: 'Emote: Evil Phil', unlockEmote: 'emote-evilPhil', gold: 100 },
   { trophies: 3600, arena: 'Phil Peak', label: 'Rare Chest', chest: 'rare', gold: 140 },
   { trophies: 3800, arena: 'Phil Peak', label: 'Epic Chest', chest: 'epic', gold: 180 },
   { trophies: 4000, arena: 'Phil Peak', label: 'Gold pouch', gold: 200 },
@@ -120,15 +125,16 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
 ]
 
 export const ARENA_COLORS: Record<string, { sky: string; ground: string; accent: string }> = {
-  'Training Camp': { sky: '#2b8fd4', ground: '#1a5a8a', accent: '#8ec8ff' },
-  'Sundae Strip': { sky: '#c45a8c', ground: '#8a3a62', accent: '#ffb0d0' },
-  "Pete's Pit": { sky: '#5a4030', ground: '#2a1810', accent: '#e8b86a' },
-  'Phil Plaza': { sky: '#5a3a9a', ground: '#3a2068', accent: '#c9a0ff' },
-  'Phil Peak': { sky: '#c9a227', ground: '#6a4a10', accent: '#ffe08a' },
+  'Training Camp': { sky: '#4aad3a', ground: '#1a4a22', accent: '#8fd46a' },
+  'Sundae Strip': { sky: '#ff9ec8', ground: '#8a3060', accent: '#ffb0d0' },
+  "Pete's Pit": { sky: '#6a4a30', ground: '#140a08', accent: '#e8b86a' },
+  'Jeremy Land': { sky: '#1a2838', ground: '#050810', accent: '#5a9ad0' },
+  'Phil Peak': { sky: '#6ec8ff', ground: '#5a3a10', accent: '#ffe08a' },
   // Legacy aliases (saved profiles / old road labels)
-  'Goblin Boot': { sky: '#2b8fd4', ground: '#1a5a8a', accent: '#8ec8ff' },
-  'Bone Bridge': { sky: '#5a4030', ground: '#2a1810', accent: '#e8b86a' },
-  'Royal Yard': { sky: '#5a3a9a', ground: '#3a2068', accent: '#c9a0ff' },
+  'Phil Plaza': { sky: '#1a2838', ground: '#050810', accent: '#5a9ad0' },
+  'Goblin Boot': { sky: '#4aad3a', ground: '#1a4a22', accent: '#8fd46a' },
+  'Bone Bridge': { sky: '#6a4a30', ground: '#140a08', accent: '#e8b86a' },
+  'Royal Yard': { sky: '#1a2838', ground: '#050810', accent: '#5a9ad0' },
 }
 
 /** Exactly 12 starter cards — rest unlock via trophy road / chests. */
@@ -205,7 +211,7 @@ export function botNameForTrophies(trophies: number): string {
     'Training King',
     'Sundae Scout',
     'Pete Bandit',
-    'Plaza Guard',
+    'Jeremy Agent',
     'Peak Phantom',
   ]
   const i = Math.min(names.length - 1, Math.floor(trophies / 800))
@@ -292,9 +298,27 @@ export function allShopOffers(dayKey: string): ShopOffer[] {
   return [...dailyShopOffers(dayKey), ...chestShopOffers(dayKey)]
 }
 
+/** Character / photo emotes that can drop from chests (not free emoji). */
+export const CHEST_EMOTE_POOL = [
+  'coach',
+  'hood',
+  'buzz',
+  'emote-phil',
+  'emote-jeremy',
+  'emote-kathie',
+  'emote-todd',
+  'emote-mike',
+  'emote-beans',
+  'emote-lynne',
+  'emote-evilPhil',
+  'emote-pete',
+  'emote-dan',
+]
+
 export function rollChestLoot(rarity: ChestRarity): {
   gold: number
   cards: { charId: string; copies: number }[]
+  emoteId?: string
 } {
   const goldBase =
     rarity === 'legendary' ? 400 : rarity === 'epic' ? 220 : rarity === 'rare' ? 120 : 60
@@ -326,5 +350,12 @@ export function rollChestLoot(rarity: ChestRarity): {
     cards.push({ charId: pick(pool('epic')).id, copies: 2 + Math.floor(Math.random() * 2) })
     cards.push({ charId: pick(pool('rare')).id, copies: 5 })
   }
-  return { gold, cards }
+
+  const emoteChance =
+    rarity === 'legendary' ? 0.55 : rarity === 'epic' ? 0.35 : rarity === 'rare' ? 0.18 : 0.08
+  let emoteId: string | undefined
+  if (Math.random() < emoteChance) {
+    emoteId = CHEST_EMOTE_POOL[Math.floor(Math.random() * CHEST_EMOTE_POOL.length)]
+  }
+  return { gold, cards, emoteId }
 }

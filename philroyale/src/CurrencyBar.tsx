@@ -69,6 +69,10 @@ function Pill({
   )
 }
 
+/** Clearance under TopStatusBar so content never sits under level/gold/gems. */
+export const TOP_CONTENT_PAD =
+  'pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]'
+
 /** Full-width Clash-style XP / gold / gems bar for the main shell. */
 export function TopStatusBar({ onShop }: { onShop?: () => void }) {
   const [gold, setGold] = useState(() => loadProfile().gold)
@@ -97,7 +101,7 @@ export function TopStatusBar({ onShop }: { onShop?: () => void }) {
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 top-[max(0.35rem,env(safe-area-inset-top))] z-40 flex items-center justify-between gap-2 px-2"
+      className="pointer-events-none absolute inset-x-0 top-[max(0.2rem,env(safe-area-inset-top))] z-50 flex items-center justify-between gap-2 px-2"
       aria-label={`Level ${level.level}, gold ${gold}, gems ${gems}`}
     >
       <Pill ariaLabel={`Level ${level.level}`}>

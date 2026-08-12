@@ -51,11 +51,14 @@ import {
 import { ARENA_COLS, ARENA_ROWS } from './arena'
 import {
   grantBattleChest,
+  loadActiveEmotes,
   loadDeck,
   loadProfile,
   noteCardDeployed,
   recordMatchResult,
 } from './storage'
+import { getEmoteById, PHIL_EMOTE_SRC, type EmoteDef } from './emoteCatalog'
+import { CharacterModel } from './characters/CharacterModel'
 import type { BattleNet } from './battleSync'
 import { useBattle } from './useBattle'
 import { sfx } from './audio'
@@ -91,32 +94,13 @@ type DragState = {
 
 type MatchResult = 'victory' | 'defeat' | 'draw'
 
-type EmoteOption =
-  | { id: string; kind: 'phil' }
-  | { id: string; kind: 'photo'; src: string; label: string }
-  | { id: string; kind: 'emoji'; emoji: string }
+type ActiveEmote = { key: number; option: EmoteDef }
 
-const PHIL_EMOTE_SRC = `${import.meta.env.BASE_URL}characters/phil.png`
-const EMOTE_COACH = `${import.meta.env.BASE_URL}characters/emote-coach.png`
-const EMOTE_HOOD = `${import.meta.env.BASE_URL}characters/emote-hood.png`
-const EMOTE_BUZZ = `${import.meta.env.BASE_URL}characters/emote-buzz.png`
-
-const EMOTE_OPTIONS: EmoteOption[] = [
-  { id: 'phil', kind: 'phil' },
-  { id: 'coach', kind: 'photo', src: EMOTE_COACH, label: 'Coach smile' },
-  { id: 'hood', kind: 'photo', src: EMOTE_HOOD, label: 'Hood stare' },
-  { id: 'buzz', kind: 'photo', src: EMOTE_BUZZ, label: 'Buzz cut' },
-  { id: 'thumbs', kind: 'emoji', emoji: '👍' },
-  { id: 'laugh', kind: 'emoji', emoji: '😂' },
-  { id: 'mad', kind: 'emoji', emoji: '😤' },
-  { id: 'wow', kind: 'emoji', emoji: '😱' },
-  { id: 'party', kind: 'emoji', emoji: '🎉' },
-  { id: 'wave', kind: 'emoji', emoji: '👋' },
-  { id: 'cry', kind: 'emoji', emoji: '😢' },
-  { id: 'fire', kind: 'emoji', emoji: '🔥' },
-]
-
-type ActiveEmote = { key: number; option: EmoteOption }
+function emoteOptionsFromActive(): EmoteDef[] {
+  return loadActiveEmotes()
+    .map((id) => getEmoteById(id))
+    .filter((e): e is EmoteDef => !!e)
+}
 
 function FlyingShot({
   fromCol,
@@ -292,7 +276,8 @@ export function BattleScreen({
   const [draggingActive, setDraggingActive] = useState(false)
   const [emotePickerOpen, setEmotePickerOpen] = useState(false)
   const [activeEmote, setActiveEmote] = useState<ActiveEmote | null>(null)
-  const [emoteKey, setEmoteKey] = useState(0)
+  const emoteKeyRef = useRef(0)
+  const emoteOptions = useMemo(() => emoteOptionsFromActive(), [emotePickerOpen])
   const [result, setResult] = useState<MatchResult | null>(null)
   /** Once the friend link succeeds once, never show Connecting overlay again. */
   const [linkLocked, setLinkLocked] = useState(() => !net)
@@ -302,6 +287,35 @@ export function BattleScreen({
   const movedRef = useRef(false)
   const rewardsAppliedRef = useRef(false)
   const ended = result != null
+
+  function applyForfeitIfNeeded() {
+    if (isSpectating || result || rewardsAppliedRef.current) return
+    rewardsAppliedRef.current = true
+    const isPvp = !!net && net.role !== 'spectator'
+    recordMatchResult('defeat', {
+      crowns: 0,
+      pvp: isPvp,
+      opponentTrophies: isPvp ? opponentTrophies : undefined,
+      awardsTrophies: earnsTrophies(mode),
+    })
+  }
+
+  function leaveBattle() {
+    applyForfeitIfNeeded()
+    onExit()
+  }
+
+  useEffect(() => {
+    if (isSpectating || result) return
+    const onUnload = () => applyForfeitIfNeeded()
+    window.addEventListener('pagehide', onUnload)
+    window.addEventListener('beforeunload', onUnload)
+    return () => {
+      window.removeEventListener('pagehide', onUnload)
+      window.removeEventListener('beforeunload', onUnload)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSpectating, result, mode, net, opponentTrophies])
   const {
     elixir,
     elixirMax,
@@ -620,9 +634,8 @@ export function BattleScreen({
     }
   }
 
-  function pickEmote(option: EmoteOption) {
-    const key = emoteKey + 1
-    setEmoteKey(key)
+  function pickEmote(option: EmoteDef) {
+    const key = ++emoteKeyRef.current
     setActiveEmote({ key, option })
     setEmotePickerOpen(false)
     window.setTimeout(() => {
@@ -984,7 +997,7 @@ export function BattleScreen({
           </div>
           <button
             type="button"
-            onClick={onExit}
+            onClick={leaveBattle}
             className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] font-extrabold text-white/90 drop-shadow-[0_1px_2px_#000]"
             style={{ background: 'rgba(12,12,18,0.55)' }}
             aria-label="Leave battle"
@@ -1013,12 +1026,21 @@ export function BattleScreen({
                   alt="Phil"
                   className="h-14 w-14 rounded-full object-cover"
                 />
-              ) : activeEmote.option.kind === 'photo' ? (
+              ) : activeEmote.option.kind === 'photo' && activeEmote.option.src ? (
                 <img
                   src={activeEmote.option.src}
                   alt={activeEmote.option.label}
                   className="h-14 w-14 rounded-full object-cover"
                 />
+              ) : activeEmote.option.kind === 'character' && activeEmote.option.charId ? (
+                <div className="h-14 w-14 overflow-hidden rounded-full">
+                  <CharacterModel
+                    charId={activeEmote.option.charId}
+                    anim="idle"
+                    facing={1}
+                    portrait
+                  />
+                </div>
               ) : (
                 <span className="block text-4xl leading-none">{activeEmote.option.emoji}</span>
               )}
@@ -1056,10 +1078,10 @@ export function BattleScreen({
                 : !earnsTrophies(mode)
                   ? 'Party mode — gold only, no trophies'
                   : result === 'victory'
-                    ? '+30 trophies · +50 gold · chest chance'
+                    ? '+25–30 trophies · +50 gold · chest chance'
                     : result === 'defeat'
-                      ? '−20 trophies · +15 gold'
-                      : '+5 trophies · +25 gold'}
+                      ? '−15–20 trophies · +15 gold'
+                      : '+3–8 trophies · +25 gold'}
             </p>
             <button
               type="button"
@@ -1116,20 +1138,14 @@ export function BattleScreen({
                     className="absolute bottom-[calc(100%+0.35rem)] left-0 z-40 w-[10.5rem] rounded-2xl bg-white p-1.5 shadow-[0_6px_20px_#00000055]"
                     style={{ border: '2px solid #e8e4dc' }}
                   >
-                    <div className="grid grid-cols-3 gap-1">
-                      {EMOTE_OPTIONS.map((opt) => (
+                    <div className="grid max-h-40 grid-cols-3 gap-1 overflow-y-auto">
+                      {emoteOptions.map((opt) => (
                         <button
                           key={opt.id}
                           type="button"
                           onClick={() => pickEmote(opt)}
                           className="flex h-9 w-full items-center justify-center rounded-xl bg-[#f4f1ea] transition active:scale-95"
-                          aria-label={
-                            opt.kind === 'phil'
-                              ? 'Phil emote'
-                              : opt.kind === 'photo'
-                                ? opt.label
-                                : opt.emoji
-                          }
+                          aria-label={opt.label}
                         >
                           {opt.kind === 'phil' ? (
                             <img
@@ -1137,12 +1153,16 @@ export function BattleScreen({
                               alt=""
                               className="h-7 w-7 rounded-full object-cover"
                             />
-                          ) : opt.kind === 'photo' ? (
+                          ) : opt.kind === 'photo' && opt.src ? (
                             <img
                               src={opt.src}
                               alt=""
                               className="h-7 w-7 rounded-full object-cover"
                             />
+                          ) : opt.kind === 'character' && opt.charId ? (
+                            <div className="h-7 w-7 overflow-hidden rounded-full">
+                              <CharacterModel charId={opt.charId} anim="idle" facing={1} portrait />
+                            </div>
                           ) : (
                             <span className="text-xl leading-none">{opt.emoji}</span>
                           )}

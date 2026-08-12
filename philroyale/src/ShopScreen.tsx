@@ -6,8 +6,8 @@ import { GemIcon, GoldIcon } from './CurrencyBar'
 import { CharacterModel } from './characters/CharacterModel'
 import { RARITY_LABEL, getCharacter, type Rarity } from './characters'
 import {
-  EMOTE_CATALOG,
   PHIL_EMOTE_SRC,
+  shopEmotes,
   type EmoteAnim,
   type EmoteDef,
 } from './emoteCatalog'
@@ -445,7 +445,7 @@ export function ShopScreen() {
 
   return (
     <div className="relative flex h-full min-h-0 flex-col" style={QUILT_BG}>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-12">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         {/* Offers */}
         <section className="mb-5">
           <Ribbon label="Offers" tone="gold" />
@@ -472,7 +472,7 @@ export function ShopScreen() {
             }}
           >
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-              {EMOTE_CATALOG.map((emote) => (
+              {shopEmotes().map((emote) => (
                 <EmoteTile
                   key={emote.id}
                   emote={emote}
