@@ -34,13 +34,19 @@ import {
   STARTER_UNLOCKS,
   TROPHY_ROAD,
   arenaForTrophies,
-  dailyShopOffers,
+  allShopOffers,
   rollChestLoot,
   type ChestRarity,
   type ShopOffer,
 } from './progression'
 import type { GameMode } from './gameModes'
 import { parseGameMode } from './gameModes'
+import { getEmoteById } from './emoteCatalog'
+import {
+  getGemPack,
+  getGoldWithGemsPack,
+  getRealMoneyOffer,
+} from './shopCatalog'
 
 export type { GameMode } from './gameModes'
 export { parseGameMode, earnsTrophies, isPartyMode, modeLabel } from './gameModes'
@@ -630,6 +636,7 @@ const FRIEND_META_KEY = 'philroyale.friendMeta.v1'
 const CHESTS_KEY = 'philroyale.chests.v1'
 const ROAD_KEY = 'philroyale.trophyRoad.v1'
 const SHOP_BOUGHT_KEY = 'philroyale.shopBought.v1'
+const EMOTES_KEY = 'philroyale.emotes.v1'
 
 export type PlayerProfile = {
   trophies: number
@@ -1263,7 +1270,92 @@ function saveShopBought(ids: string[]): void {
 }
 
 export function getShopOffers(): ShopOffer[] {
-  return dailyShopOffers(todayKey())
+  return allShopOffers(todayKey())
+}
+
+export function loadOwnedEmotes(): string[] {
+  const owned = readJson<string[]>(EMOTES_KEY, [])
+  if (!owned.includes('phil')) return ['phil', ...owned.filter((id) => id !== 'phil')]
+  return owned
+}
+
+function saveOwnedEmotes(ids: string[]): void {
+  localStorage.setItem(EMOTES_KEY, JSON.stringify(ids))
+}
+
+export function buyEmote(id: string): { ok: boolean; message: string } {
+  const emote = getEmoteById(id)
+  if (!emote) return { ok: false, message: 'Emote not found' }
+  const owned = loadOwnedEmotes()
+  if (owned.includes(id)) return { ok: false, message: 'Already owned' }
+  if (emote.priceGems <= 0) {
+    if (!owned.includes(id)) {
+      owned.push(id)
+      saveOwnedEmotes(owned)
+    }
+    return { ok: true, message: `${emote.label} unlocked!` }
+  }
+  const profile = loadProfile()
+  if (profile.gems < emote.priceGems) {
+    return { ok: false, message: `Need ${emote.priceGems} gems` }
+  }
+  profile.gems -= emote.priceGems
+  owned.push(id)
+  saveProfile(profile)
+  saveOwnedEmotes(owned)
+  return { ok: true, message: `${emote.label} unlocked!` }
+}
+
+export function buyGemPack(id: string): { ok: boolean; message: string } {
+  const pack = getGemPack(id)
+  if (!pack) return { ok: false, message: 'Pack not found' }
+  const profile = loadProfile()
+  profile.gems += pack.gems
+  saveProfile(profile)
+  return { ok: true, message: `+${pack.gems} gems (simulated $${pack.priceUsd.toFixed(2)})` }
+}
+
+export function buyGoldWithGems(id: string): { ok: boolean; message: string } {
+  const pack = getGoldWithGemsPack(id)
+  if (!pack) return { ok: false, message: 'Pack not found' }
+  const profile = loadProfile()
+  if (profile.gems < pack.gems) return { ok: false, message: `Need ${pack.gems} gems` }
+  profile.gems -= pack.gems
+  profile.gold += pack.gold
+  saveProfile(profile)
+  return { ok: true, message: `+${pack.gold.toLocaleString()} gold` }
+}
+
+export function buyRealMoneyOffer(id: string): { ok: boolean; message: string } {
+  const offer = getRealMoneyOffer(id)
+  if (!offer) return { ok: false, message: 'Offer not found' }
+  const profile = loadProfile()
+  profile.gold += offer.gold
+  profile.gems += offer.gems
+  if (offer.chest) {
+    const added = addChest(offer.chest)
+    if (!added.ok) return added
+  }
+  if (offer.charId && offer.copies) {
+    const progress = loadCardProgress()
+    progress.copies[offer.charId] =
+      (progress.copies[offer.charId] ?? 0) + offer.copies
+    if (!progress.unlocked.includes(offer.charId)) {
+      progress.unlocked.push(offer.charId)
+    }
+    saveCardProgress(progress)
+  }
+  saveProfile(profile)
+  const bits = [`+${offer.gold}g`, `+${offer.gems} gems`]
+  if (offer.chest) bits.push(CHEST_META[offer.chest].label)
+  if (offer.charId && offer.copies) {
+    const char = CHARACTERS.find((c) => c.id === offer.charId)
+    bits.push(`${offer.copies}× ${char?.name ?? offer.charId}`)
+  }
+  return {
+    ok: true,
+    message: `${offer.title} — ${bits.join(' · ')} (simulated $${offer.priceUsd.toFixed(2)})`,
+  }
 }
 
 export function buyShopOffer(offerId: string): { ok: boolean; message: string } {
@@ -1272,7 +1364,18 @@ export function buyShopOffer(offerId: string): { ok: boolean; message: string } 
   const bought = loadShopBoughtToday()
   if (bought.includes(offerId)) return { ok: false, message: 'Already bought today' }
   const profile = loadProfile()
-  if (profile.gold < offer.priceGold) return { ok: false, message: `Need ${offer.priceGold} gold` }
+  if (offer.free) {
+    /* no cost */
+  } else if (offer.priceGems != null && offer.priceGems > 0) {
+    if (profile.gems < offer.priceGems) {
+      return { ok: false, message: `Need ${offer.priceGems} gems` }
+    }
+    profile.gems -= offer.priceGems
+  } else {
+    const cost = offer.priceGold ?? 0
+    if (profile.gold < cost) return { ok: false, message: `Need ${cost} gold` }
+    profile.gold -= cost
+  }
   if (offer.kind === 'chest' && offer.chest) {
     const added = addChest(offer.chest)
     if (!added.ok) return added
@@ -1285,11 +1388,10 @@ export function buyShopOffer(offerId: string): { ok: boolean; message: string } 
     }
     saveCardProgress(progress)
   }
-  profile.gold -= offer.priceGold
   saveProfile(profile)
   bought.push(offerId)
   saveShopBought(bought)
-  return { ok: true, message: 'Purchased!' }
+  return { ok: true, message: offer.free ? 'Free deal claimed!' : 'Purchased!' }
 }
 
 export function grantBattleChest(result: 'victory' | 'defeat' | 'draw'): void {
