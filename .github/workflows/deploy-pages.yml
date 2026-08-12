@@ -59,6 +59,19 @@ jobs:
           npm ci
           npm run build
 
+      - name: Ensure Phil Royale shop Square checkout links
+        env:
+          SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+          SQUARE_ENVIRONMENT: ${{ secrets.SQUARE_ENVIRONMENT }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+          PHILROYALE_SHOP_REDIRECT_URL: https://braydencbell01-arch.github.io/Brayden-OS/philroyale/
+        run: |
+          if [ -z "$SQUARE_ACCESS_TOKEN" ]; then
+            echo "No SQUARE_ACCESS_TOKEN — keeping existing shop-checkout.json"
+            exit 0
+          fi
+          node philroyale/scripts/ensure-shop-payment-links.mjs
+
       - name: Build Phil Royale (/philroyale/)
         working-directory: philroyale
         env:

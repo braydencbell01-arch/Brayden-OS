@@ -26,6 +26,15 @@ export type GoldWithGemsPack = {
   gems: number
 }
 
+export type ShopCheckoutMap = {
+  updatedAt: string | null
+  locationId: string | null
+  skus: Record<
+    string,
+    { url: string; paymentLinkId?: string; cents: number; name: string }
+  >
+}
+
 export const REAL_MONEY_OFFERS: RealMoneyOffer[] = [
   {
     id: 'royale-starter',
@@ -78,4 +87,23 @@ export function getGemPack(id: string): GemPack | undefined {
 
 export function getGoldWithGemsPack(id: string): GoldWithGemsPack | undefined {
   return GOLD_WITH_GEMS_PACKS.find((p) => p.id === id)
+}
+
+export function isUsdShopSku(id: string): boolean {
+  return !!getRealMoneyOffer(id) || !!getGemPack(id)
+}
+
+/** Live Square checkout URL for a USD shop SKU (from deploy-time payment links). */
+export async function loadShopCheckoutUrl(skuId: string): Promise<string | null> {
+  try {
+    const base = import.meta.env.BASE_URL || './'
+    const path = `${base.endsWith('/') ? base : `${base}/`}shop-checkout.json`
+    const res = await fetch(path, { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = (await res.json()) as ShopCheckoutMap
+    const link = data.skus?.[skuId]?.url?.trim()
+    return link || null
+  } catch {
+    return null
+  }
 }

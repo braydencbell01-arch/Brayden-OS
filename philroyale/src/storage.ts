@@ -1306,13 +1306,24 @@ export function buyEmote(id: string): { ok: boolean; message: string } {
   return { ok: true, message: `${emote.label} unlocked!` }
 }
 
-export function buyGemPack(id: string): { ok: boolean; message: string } {
+export function buyGemPack(_id: string): { ok: boolean; message: string } {
+  return {
+    ok: false,
+    message: 'Gem packs require real-money checkout — tap the price to pay with Square.',
+  }
+}
+
+/** Fulfill a gem pack after Square redirects back (real payment completed). */
+export function fulfillGemPackPurchase(id: string): { ok: boolean; message: string } {
   const pack = getGemPack(id)
   if (!pack) return { ok: false, message: 'Pack not found' }
+  if (!consumePendingUsdCheckout(id)) {
+    return { ok: false, message: 'Start checkout from the shop before claiming.' }
+  }
   const profile = loadProfile()
   profile.gems += pack.gems
   saveProfile(profile)
-  return { ok: true, message: `+${pack.gems} gems (simulated $${pack.priceUsd.toFixed(2)})` }
+  return { ok: true, message: `+${pack.gems} gems` }
 }
 
 export function buyGoldWithGems(id: string): { ok: boolean; message: string } {
@@ -1326,9 +1337,20 @@ export function buyGoldWithGems(id: string): { ok: boolean; message: string } {
   return { ok: true, message: `+${pack.gold.toLocaleString()} gold` }
 }
 
-export function buyRealMoneyOffer(id: string): { ok: boolean; message: string } {
+export function buyRealMoneyOffer(_id: string): { ok: boolean; message: string } {
+  return {
+    ok: false,
+    message: 'Offers require real-money checkout — tap the price to pay with Square.',
+  }
+}
+
+/** Fulfill a Royale offer after Square redirects back (real payment completed). */
+export function fulfillRealMoneyOffer(id: string): { ok: boolean; message: string } {
   const offer = getRealMoneyOffer(id)
   if (!offer) return { ok: false, message: 'Offer not found' }
+  if (!consumePendingUsdCheckout(id)) {
+    return { ok: false, message: 'Start checkout from the shop before claiming.' }
+  }
   const profile = loadProfile()
   profile.gold += offer.gold
   profile.gems += offer.gems
@@ -1354,8 +1376,33 @@ export function buyRealMoneyOffer(id: string): { ok: boolean; message: string } 
   }
   return {
     ok: true,
-    message: `${offer.title} — ${bits.join(' · ')} (simulated $${offer.priceUsd.toFixed(2)})`,
+    message: `${offer.title} — ${bits.join(' · ')}`,
   }
+}
+
+const USD_PENDING_KEY = 'philroyale.shop.usdPending.v1'
+
+type PendingUsd = { skuId: string; at: number }
+
+export function beginUsdCheckout(skuId: string): void {
+  const pending: PendingUsd = { skuId, at: Date.now() }
+  localStorage.setItem(USD_PENDING_KEY, JSON.stringify(pending))
+}
+
+function consumePendingUsdCheckout(skuId: string): boolean {
+  const raw = readJson<PendingUsd | null>(USD_PENDING_KEY, null)
+  localStorage.removeItem(USD_PENDING_KEY)
+  if (!raw || raw.skuId !== skuId) return false
+  // Checkout sessions expire after 2 hours.
+  if (Date.now() - raw.at > 2 * 3600 * 1000) return false
+  return true
+}
+
+/** Claim a paid shop SKU after Square redirects back with ?philShopPaid=. */
+export function claimPaidShopSku(skuId: string): { ok: boolean; message: string } {
+  if (getGemPack(skuId)) return fulfillGemPackPurchase(skuId)
+  if (getRealMoneyOffer(skuId)) return fulfillRealMoneyOffer(skuId)
+  return { ok: false, message: 'Unknown shop purchase' }
 }
 
 export function buyShopOffer(offerId: string): { ok: boolean; message: string } {

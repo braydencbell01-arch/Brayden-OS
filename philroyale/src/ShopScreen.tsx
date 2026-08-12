@@ -16,14 +16,15 @@ import {
   GEM_PACKS,
   GOLD_WITH_GEMS_PACKS,
   REAL_MONEY_OFFERS,
+  loadShopCheckoutUrl,
   type RealMoneyOffer,
 } from './shopCatalog'
 import {
+  beginUsdCheckout,
   buyEmote,
-  buyGemPack,
   buyGoldWithGems,
-  buyRealMoneyOffer,
   buyShopOffer,
+  claimPaidShopSku,
   copiesToUpgrade,
   getShopOffers,
   loadCardProgress,
@@ -248,12 +249,28 @@ function RoyaleOfferCard({
         {offer.title}
       </div>
       <div className="flex gap-3 px-3 pb-3 pt-9">
-        <div className="relative h-24 w-24 shrink-0">
+        <div className="flex shrink-0 flex-col items-center gap-1">
           {featured ? (
-            <CharacterModel charId={featured.id} anim="idle" facing={1} portrait />
+            <div className="flex items-center gap-1.5">
+              <div className="w-[3.05rem] shrink-0">
+                <BattleCard character={featured} size="hand" />
+              </div>
+              {offer.copies ? (
+                <span className="rounded-md bg-[#1a1410]/95 px-1.5 py-0.5 text-[0.7rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/70">
+                  ×{offer.copies}
+                </span>
+              ) : null}
+            </div>
           ) : (
-            <ChestArt rarity={offer.chest ?? 'epic'} size="md" bounce />
+            <div className="relative h-24 w-20">
+              <ChestArt rarity={offer.chest ?? 'epic'} size="md" bounce />
+            </div>
           )}
+          {featured && offer.chest ? (
+            <div className="relative h-10 w-10">
+              <ChestArt rarity={offer.chest} size="sm" />
+            </div>
+          ) : null}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-white/85">{offer.subtitle}</p>
@@ -388,16 +405,42 @@ export function ShopScreen() {
   function refresh() {
     setBought(loadShopBoughtToday())
     setOwnedEmotes(loadOwnedEmotes())
+    window.dispatchEvent(new Event('philroyale-profile-changed'))
   }
 
   function flash(msg: string) {
     setToast(msg)
-    window.setTimeout(() => setToast(null), 2400)
+    window.setTimeout(() => setToast(null), 2800)
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const paid = params.get('philShopPaid')?.trim()
+    if (!paid) return
+    const res = claimPaidShopSku(paid)
+    flash(res.message)
+    if (res.ok) refresh()
+    const url = new URL(window.location.href)
+    url.searchParams.delete('philShopPaid')
+    window.history.replaceState({}, '', url.toString())
+  }, [])
 
   function handle(res: { ok: boolean; message: string }) {
     flash(res.message)
     if (res.ok) refresh()
+  }
+
+  async function startUsdPurchase(skuId: string, label: string) {
+    const checkoutUrl = await loadShopCheckoutUrl(skuId)
+    if (!checkoutUrl) {
+      flash(
+        `${label} requires real money. Checkout isn’t ready yet — try again after the next deploy.`,
+      )
+      return
+    }
+    beginUsdCheckout(skuId)
+    flash(`Opening Square checkout for ${label}…`)
+    window.location.assign(checkoutUrl)
   }
 
   return (
@@ -411,7 +454,7 @@ export function ShopScreen() {
               <li key={offer.id}>
                 <RoyaleOfferCard
                   offer={offer}
-                  onBuy={() => handle(buyRealMoneyOffer(offer.id))}
+                  onBuy={() => void startUsdPurchase(offer.id, offer.title)}
                 />
               </li>
             ))}
@@ -504,7 +547,9 @@ export function ShopScreen() {
               <button
                 key={pack.id}
                 type="button"
-                onClick={() => handle(buyGemPack(pack.id))}
+                onClick={() =>
+                  void startUsdPurchase(pack.id, `${pack.gems.toLocaleString()} gems`)
+                }
                 className="flex flex-col items-center rounded-xl py-2"
                 style={{
                   background: 'linear-gradient(180deg,#1a4030,#0a2018)',
