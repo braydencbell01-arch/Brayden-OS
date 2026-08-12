@@ -384,7 +384,7 @@ export function SundaeSplat({ ageMs }: { ageMs: number }) {
   )
 }
 
-/** Flying pancake stack for Ricky's Diner Pancake Huck. */
+/** Flying pancake stack for Steve's Diner Pancake Huck. */
 export function PancakeDot() {
   return (
     <div className="relative h-6 w-7" aria-hidden>

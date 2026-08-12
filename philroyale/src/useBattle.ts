@@ -158,7 +158,7 @@ const CASH_PROJECTILE_MS = 700
 /** Phil's Car rocket — long hang time. */
 const ROCKET_PROJECTILE_MS = 5000
 const ROCKET_VFX_MS = 620
-/** Ricky's Diner pancake stack lob. */
+/** Steve's Diner pancake stack lob. */
 const PANCAKE_PROJECTILE_MS = 850
 /** Big Mable Launch flight — ms per tile of knockback (clamped). */
 const LAUNCH_MS_PER_TILE = 32
@@ -1843,7 +1843,7 @@ export function useBattle(opts?: {
 
         // Buildings: stationary. Spawners (Dog Hut) or turrets (Phil's Car).
         if (isBuildingCard(def)) {
-          // Buildings bleed HP while standing (Ricky's Diner 12/sec; others default 25).
+          // Buildings bleed HP while standing (Steve's Diner 12/sec; others default 25).
           const drain = (def.hpDecayPerSec ?? 25) * dt
           if (drain > 0 && u.hp > 0) {
             u.hp = Math.max(0, u.hp - drain)

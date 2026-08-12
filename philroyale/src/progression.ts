@@ -72,7 +72,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 600, arena: 'Sundae Strip', label: 'x1 Michael', gold: 150, unlockCard: 'mike' },
   { trophies: 625, arena: 'Sundae Strip', label: 'x1 Scott', unlockCard: 'scott', gold: 60 },
   { trophies: 650, arena: 'Sundae Strip', label: 'x1 Baseball Huck', unlockCard: 'footballHuck', gold: 70 },
-  { trophies: 675, arena: 'Sundae Strip', label: "x1 Ricky's Diner", unlockCard: 'stevesDiner', gold: 65 },
+  { trophies: 675, arena: 'Sundae Strip', label: "x1 Steve's Diner", unlockCard: 'stevesDiner', gold: 65 },
   { trophies: 700, arena: 'Sundae Strip', label: 'x1 Big Mable', unlockCard: 'bigMable', gold: 80, unlockEmote: 'party' },
   { trophies: 700, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 50 },
   { trophies: 725, arena: 'Sundae Strip', label: 'x1 Bobby Special', unlockCard: 'bobbySpecial', gold: 90 },

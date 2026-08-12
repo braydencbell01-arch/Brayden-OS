@@ -560,8 +560,8 @@ export const PHILS_CAR: CharacterDef = {
 /** Rare diner turret — Pancake Huck splash lob. */
 export const STEVES_DINER: CharacterDef = {
   id: 'stevesDiner',
-  name: "Ricky's Diner",
-  initial: 'RD',
+  name: "Steve's Diner",
+  initial: 'SD',
   pronoun: 'it',
   height: "4'6\"",
   rarity: 'common',
