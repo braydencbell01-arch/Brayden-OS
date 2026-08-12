@@ -11,6 +11,16 @@ import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
 export type BattleRole = 'host' | 'guest' | 'spectator'
 
+export type SyncLaunch = {
+  fromCol: number
+  fromRow: number
+  toCol: number
+  toRow: number
+  bornAt: number
+  arriveAt: number
+  landDamage: number
+}
+
 export type SyncUnit = {
   id: string
   charId: string
@@ -22,8 +32,51 @@ export type SyncUnit = {
   facing: number
   vfx: AttackId | null
   enraged: boolean
-  moving: boolean
+  /** @deprecated use movingUntil — kept for older hosts */
+  moving?: boolean
   level: number
+  /** Host performance.now() when the unit was placed. */
+  spawnedAt?: number
+  /** Host performance.now() when the next attack is allowed. */
+  nextAttackAt?: number
+  /** Host performance.now() until walk anim should play. */
+  movingUntil?: number
+  attackIndex?: number
+  burstShot?: number
+  nextSpawnAt?: number
+  launch?: SyncLaunch | null
+}
+
+export type SyncProjectile = {
+  id: string
+  kind:
+    | 'sundae'
+    | 'hug'
+    | 'slobber'
+    | 'shoot'
+    | 'dumbbell'
+    | 'love'
+    | 'arrow'
+    | 'cannon'
+    | 'iceCream'
+    | 'football'
+    | 'baseball'
+    | 'cash'
+    | 'rocket'
+    | 'witchcraft'
+    | 'pancake'
+  fromCol: number
+  fromRow: number
+  toCol: number
+  toRow: number
+  damage: number
+  targetId: string | null
+  targetTowerId: string | null
+  bornAt: number
+  arriveAt: number
+  ownerSide?: 'ally' | 'enemy'
+  splashRadius?: number
+  splashDamage?: number
 }
 
 export type SyncTower = {
@@ -51,6 +104,9 @@ export type BattleRoomMessage =
       clockSec?: number
       /** Host has seen the guest join. */
       peerJoined?: boolean
+      /** Host performance.now() at publish — guest maps timers/projectiles. */
+      hostNow?: number
+      projectiles?: SyncProjectile[]
     }
   | {
       type: 'battle_deploy'

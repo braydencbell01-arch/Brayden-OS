@@ -39,6 +39,8 @@ import { botAiProfile, cardLevelMult, scaledStat } from './progression'
 import {
   type BattleNet,
   type BattleRoomMessage,
+  type SyncProjectile,
+  type SyncUnit,
   flipForGuestView,
   flipSide,
   flipTowerId,
@@ -49,6 +51,92 @@ import {
 import { sfx } from './audio'
 
 const SYNC_INTERVAL_MS = 220
+
+/** Map host performance.now timestamps onto the guest clock. */
+function mapHostPerfTime(hostTs: number, hostNow: number, guestNow: number): number {
+  return hostTs + (guestNow - hostNow)
+}
+
+function syncUnitToBattle(u: SyncUnit, flip: boolean, guestNow: number, hostNow: number): BattleUnit {
+  const mapTime = (ts: number | undefined, fallback: number) =>
+    ts != null ? mapHostPerfTime(ts, hostNow, guestNow) : fallback
+  const pos = flip ? flipForGuestView(u.col, u.row) : { col: u.col, row: u.row }
+  const side = flip ? flipSide(u.side) : u.side
+
+  let launch: BattleUnit['launch'] = null
+  if (u.launch) {
+    const from = flip
+      ? flipForGuestView(u.launch.fromCol, u.launch.fromRow)
+      : { col: u.launch.fromCol, row: u.launch.fromRow }
+    const to = flip
+      ? flipForGuestView(u.launch.toCol, u.launch.toRow)
+      : { col: u.launch.toCol, row: u.launch.toRow }
+    launch = {
+      fromCol: from.col,
+      fromRow: from.row,
+      toCol: to.col,
+      toRow: to.row,
+      bornAt: mapTime(u.launch.bornAt, guestNow),
+      arriveAt: mapTime(u.launch.arriveAt, guestNow),
+      landDamage: u.launch.landDamage,
+    }
+  }
+
+  const legacyMoving = u.movingUntil == null && u.moving
+  const movingUntil =
+    u.movingUntil != null ? mapTime(u.movingUntil, guestNow) : legacyMoving ? guestNow + 200 : 0
+
+  return {
+    id: u.id,
+    charId: u.charId,
+    side,
+    col: pos.col,
+    row: pos.row,
+    hp: u.hp,
+    maxHp: u.maxHp,
+    level: u.level || 1,
+    attackIndex: u.attackIndex ?? 0,
+    burstShot: u.burstShot ?? 0,
+    nextAttackAt: mapTime(u.nextAttackAt, 0),
+    vfx: u.vfx,
+    vfxUntil: u.vfx ? guestNow + 400 : 0,
+    facing: flip ? u.facing + Math.PI : u.facing,
+    rootedUntil: 0,
+    spawnedAt: mapTime(u.spawnedAt, guestNow),
+    enraged: !!u.enraged,
+    movingUntil,
+    lockKey: null,
+    launch,
+    nextSpawnAt: u.nextSpawnAt != null ? mapTime(u.nextSpawnAt, guestNow) : undefined,
+  }
+}
+
+function syncProjectileToBattle(
+  p: SyncProjectile,
+  flip: boolean,
+  guestNow: number,
+  hostNow: number,
+): Projectile {
+  const mapTime = (ts: number) => mapHostPerfTime(ts, hostNow, guestNow)
+  const from = flip ? flipForGuestView(p.fromCol, p.fromRow) : { col: p.fromCol, row: p.fromRow }
+  const to = flip ? flipForGuestView(p.toCol, p.toRow) : { col: p.toCol, row: p.toRow }
+  return {
+    id: p.id,
+    kind: p.kind,
+    fromCol: from.col,
+    fromRow: from.row,
+    toCol: to.col,
+    toRow: to.row,
+    damage: p.damage,
+    targetId: p.targetId,
+    targetTowerId: flip && p.targetTowerId ? flipTowerId(p.targetTowerId) : p.targetTowerId,
+    bornAt: mapTime(p.bornAt),
+    arriveAt: mapTime(p.arriveAt),
+    ownerSide: flip && p.ownerSide ? flipSide(p.ownerSide) : p.ownerSide,
+    splashRadius: p.splashRadius,
+    splashDamage: p.splashDamage,
+  }
+}
 
 const ELIXIR_MAX = 10
 const ELIXIR_PER_SEC = 0.35
@@ -862,6 +950,7 @@ export function useBattle(opts?: {
       type: 'battle_state',
       challengeId: n.challengeId,
       seq: syncSeqRef.current,
+      hostNow: t,
       hostElixir: elixirRef.current,
       guestElixir: enemyElixirRef.current,
       towers: towersRef.current.map((tw) => ({
@@ -881,8 +970,40 @@ export function useBattle(opts?: {
         facing: u.facing,
         vfx: u.vfx,
         enraged: u.enraged,
-        moving: u.movingUntil > t,
+        movingUntil: u.movingUntil > t ? u.movingUntil : 0,
         level: u.level,
+        spawnedAt: u.spawnedAt,
+        nextAttackAt: u.nextAttackAt,
+        attackIndex: u.attackIndex,
+        burstShot: u.burstShot,
+        nextSpawnAt: u.nextSpawnAt,
+        launch: u.launch
+          ? {
+              fromCol: u.launch.fromCol,
+              fromRow: u.launch.fromRow,
+              toCol: u.launch.toCol,
+              toRow: u.launch.toRow,
+              bornAt: u.launch.bornAt,
+              arriveAt: u.launch.arriveAt,
+              landDamage: u.launch.landDamage,
+            }
+          : null,
+      })),
+      projectiles: projectilesRef.current.map((p) => ({
+        id: p.id,
+        kind: p.kind,
+        fromCol: p.fromCol,
+        fromRow: p.fromRow,
+        toCol: p.toCol,
+        toRow: p.toRow,
+        damage: p.damage,
+        targetId: p.targetId,
+        targetTowerId: p.targetTowerId,
+        bornAt: p.bornAt,
+        arriveAt: p.arriveAt,
+        ownerSide: p.ownerSide,
+        splashRadius: p.splashRadius,
+        splashDamage: p.splashDamage,
       })),
       allyScore: allyScoreRef.current,
       enemyScore: enemyScoreRef.current,
@@ -1046,6 +1167,7 @@ export function useBattle(opts?: {
         const t = performance.now()
         const flip =
           role === 'guest' || (role === 'spectator' && net.viewAs === 'guest')
+        const hostNow = msg.hostNow ?? t
         const nextTowers = towersRef.current.map((tw) => {
           const remoteId = flip ? flipTowerId(tw.id) : tw.id
           const remote = msg.towers.find((x) => x.id === remoteId)
@@ -1060,36 +1182,20 @@ export function useBattle(opts?: {
                 : false,
           }
         })
-        const nextUnits: BattleUnit[] = msg.units.map((u) => {
-          const pos = flip ? flipForGuestView(u.col, u.row) : { col: u.col, row: u.row }
-          const side = flip ? flipSide(u.side) : u.side
-          return {
-            id: u.id,
-            charId: u.charId,
-            side,
-            col: pos.col,
-            row: pos.row,
-            hp: u.hp,
-            maxHp: u.maxHp,
-            level: u.level || 1,
-            attackIndex: 0,
-            burstShot: 0,
-            nextAttackAt: 0,
-            vfx: u.vfx,
-            vfxUntil: u.vfx ? t + 400 : 0,
-            facing: flip ? u.facing + Math.PI : u.facing,
-            rootedUntil: 0,
-            spawnedAt: t,
-            enraged: !!u.enraged,
-            movingUntil: u.moving ? t + 200 : 0,
-            lockKey: null,
-            launch: null,
-          }
-        })
+        const nextUnits: BattleUnit[] = msg.units.map((u) =>
+          syncUnitToBattle(u, flip, t, hostNow),
+        )
         towersRef.current = nextTowers
         unitsRef.current = nextUnits
         setTowers(nextTowers)
         setUnits(nextUnits)
+        if (msg.projectiles) {
+          const nextProjectiles = msg.projectiles.map((p) =>
+            syncProjectileToBattle(p, flip, t, hostNow),
+          )
+          projectilesRef.current = nextProjectiles
+          setProjectiles(nextProjectiles)
+        }
         if (flip) {
           setElixir(msg.guestElixir)
           setEnemyElixir(msg.hostElixir)
@@ -1114,7 +1220,6 @@ export function useBattle(opts?: {
         }
         setSyncReady(true)
         setPeerJoined(true)
-        setProjectiles([])
       }
     })
 
@@ -2485,8 +2590,9 @@ export function useBattle(opts?: {
         // Keep refs current before publish so guests see this frame's HP.
         if (unitsChanged) unitsRef.current = filteredUnits
         if (towersChanged) towersRef.current = nextTowers
+        if (projectilesChanged) projectilesRef.current = nextProjectiles
         if (enemyElixirChanged) enemyElixirRef.current = nextEnemyElixir
-        publishHostState(towersChanged || unitsChanged)
+        publishHostState(towersChanged || unitsChanged || projectilesChanged)
       }
 
       raf = requestAnimationFrame(tick)

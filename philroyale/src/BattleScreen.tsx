@@ -291,6 +291,7 @@ export function BattleScreen({
   const dragRef = useRef<DragState | null>(null)
   const dragOriginRef = useRef<{ x: number; y: number } | null>(null)
   const movedRef = useRef(false)
+  const rewardsAppliedRef = useRef(false)
   const ended = result != null
   const {
     elixir,
@@ -422,12 +423,18 @@ export function BattleScreen({
   }, [towers, seconds, result, mode, allyScore, enemyScore, touchdownWinScore, isSpectating])
 
   useEffect(() => {
-    if (!result || isSpectating) return
+    if (!result || isSpectating || rewardsAppliedRef.current) return
+    rewardsAppliedRef.current = true
     const enemyDead = towers.filter((t) => t.side === 'enemy' && t.hp <= 0).length
     const crowns = result === 'victory' ? Math.max(1, Math.min(3, enemyDead)) : result === 'draw' ? 1 : 0
-    recordMatchResult(result, { crowns })
+    const isPvp = !!net && net.role !== 'spectator'
+    recordMatchResult(result, {
+      crowns,
+      pvp: isPvp,
+      opponentTrophies: isPvp ? opponentTrophies : undefined,
+    })
     grantBattleChest(result)
-  }, [result, towers, isSpectating])
+  }, [result, isSpectating, net, opponentTrophies, towers])
 
   function cycleAfterDeploy(playedId: string) {
     const incoming = nextId

@@ -745,13 +745,39 @@ export function saveProfile(profile: PlayerProfile): void {
 
 export function recordMatchResult(
   result: 'victory' | 'defeat' | 'draw',
-  opts?: { crowns?: number },
+  opts?: { crowns?: number; pvp?: boolean; opponentTrophies?: number },
 ): PlayerProfile {
   const p = loadProfile()
   p.battlesPlayed += 1
   const crowns = Math.max(0, Math.min(3, opts?.crowns ?? (result === 'victory' ? 3 : result === 'draw' ? 1 : 0)))
   p.crownChest = Math.min(10, p.crownChest + crowns)
-  if (result === 'victory') {
+  if (opts?.pvp) {
+    const myTrophies = p.trophies
+    const oppTrophies = Math.max(0, opts.opponentTrophies ?? myTrophies)
+    const diff = oppTrophies - myTrophies
+    if (result === 'victory') {
+      p.wins += 1
+      p.winStreak += 1
+      p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
+      const gain = Math.max(15, Math.min(32, 28 + Math.round(diff * 0.04)))
+      p.trophies += gain
+      p.gold += 50
+      p.xp += 40
+    } else if (result === 'defeat') {
+      p.losses += 1
+      p.winStreak = 0
+      const loss = Math.max(10, Math.min(28, 22 - Math.round(diff * 0.04)))
+      p.trophies = Math.max(0, p.trophies - loss)
+      p.gold += 15
+      p.xp += 15
+    } else {
+      p.draws += 1
+      p.winStreak = 0
+      p.trophies += 5
+      p.gold += 25
+      p.xp += 25
+    }
+  } else if (result === 'victory') {
     p.wins += 1
     p.winStreak += 1
     p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
