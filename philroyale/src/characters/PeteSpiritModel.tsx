@@ -24,6 +24,7 @@ export function PeteSpiritModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitSrc={TROOP}
       objectPos="50% 45%"
       gait="blitz"
       spriteLegs

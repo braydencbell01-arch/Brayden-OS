@@ -421,7 +421,7 @@ export const DOG_HUT: CharacterDef = {
   initial: 'H',
   pronoun: 'it',
   height: "4'0\"",
-  rarity: 'common',
+  rarity: 'rare',
   elixir: 7,
   hp: 1250,
   moveSpeed: 0,
@@ -564,7 +564,7 @@ export const STEVES_DINER: CharacterDef = {
   initial: 'RD',
   pronoun: 'it',
   height: "4'6\"",
-  rarity: 'rare',
+  rarity: 'common',
   elixir: 2,
   hp: 485,
   moveSpeed: 0,
@@ -831,8 +831,8 @@ export const DEFAULT_DECK = [
   DOG_HUT.id,
   ICE_CREAM.id,
   BEANS.id,
-  FINLEY.id,
-  PETE.id,
+  LYNNE.id,
+  JEREMY.id,
 ]
 
 /** Fisher–Yates shuffle (in place). */

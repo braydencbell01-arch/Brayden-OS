@@ -1161,6 +1161,15 @@ function grantRoadStep(
     }
     messages.push(`Unlocked ${char?.name ?? step.unlockCard}`)
   }
+  if (step.cardCopies) {
+    const { charId, copies } = step.cardCopies
+    if (!progress.unlocked.includes(charId)) {
+      progress.unlocked.push(charId)
+    }
+    progress.copies[charId] = (progress.copies[charId] ?? 0) + copies
+    const char = CHARACTERS.find((c) => c.id === charId)
+    messages.push(`+${copies} ${char?.name ?? charId}`)
+  }
   return messages
 }
 

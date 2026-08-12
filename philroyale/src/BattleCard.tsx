@@ -1,5 +1,4 @@
 import type { CharacterDef, Rarity } from './characters'
-import { RARITY_LABEL } from './characters'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import { CharacterModel } from './characters/CharacterModel'
 
@@ -123,15 +122,6 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
           />
         ) : null}
       </div>
-
-      {!next && collection ? (
-        <span
-          className="pointer-events-none absolute right-1 top-1 z-[2] rounded px-1 py-px text-[0.5rem] font-extrabold uppercase tracking-wide text-[#1a1410]"
-          style={{ background: frame.border }}
-        >
-          {RARITY_LABEL[character.rarity]}
-        </span>
-      ) : null}
     </div>
   )
 }

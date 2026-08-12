@@ -14,7 +14,27 @@ export type TrophyRoadReward = {
   chest?: ChestRarity
   /** Unlock this card id permanently */
   unlockCard?: string
+  /** Grant extra copies of an already-known card (also unlocks if needed). */
+  cardCopies?: { charId: string; copies: number }
   gems?: number
+}
+
+/** Map trophy count → 0–1 progress along evenly-spaced road steps (bottom = low). */
+export function trophyRoadProgress(trophies: number): number {
+  const n = TROPHY_ROAD.length
+  if (n <= 1) return trophies > 0 ? 1 : 0
+  const last = n - 1
+  if (trophies >= TROPHY_ROAD[last]!.trophies) return 1
+  if (trophies <= TROPHY_ROAD[0]!.trophies) return 0
+  for (let i = 0; i < last; i++) {
+    const lo = TROPHY_ROAD[i]!.trophies
+    const hi = TROPHY_ROAD[i + 1]!.trophies
+    if (trophies >= lo && trophies < hi) {
+      const t = hi > lo ? (trophies - lo) / (hi - lo) : 0
+      return (i + t) / last
+    }
+  }
+  return 1
 }
 
 export const CHEST_META: Record<
@@ -31,57 +51,65 @@ export const CHEST_META: Record<
 export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 0, arena: 'Goblin Boot', label: 'Journey begins', gold: 50, unlockCard: 'finley' },
   { trophies: 25, arena: 'Goblin Boot', label: 'Gold pouch', gold: 30 },
-  { trophies: 50, arena: 'Goblin Boot', label: 'Unlock Shay', unlockCard: 'shay', gold: 40 },
+  { trophies: 50, arena: 'Goblin Boot', label: 'x1 Shay', unlockCard: 'shay', gold: 40 },
   { trophies: 75, arena: 'Goblin Boot', label: 'Common Chest', chest: 'common', gold: 25 },
-  { trophies: 100, arena: 'Goblin Boot', label: 'Unlock Beans', unlockCard: 'beans', gold: 50 },
+  { trophies: 100, arena: 'Goblin Boot', label: 'x1 Beans', unlockCard: 'beans', gold: 50 },
   { trophies: 125, arena: 'Goblin Boot', label: 'Common Chest', chest: 'common' },
   { trophies: 150, arena: 'Goblin Boot', label: 'Rare Chest', chest: 'rare', gold: 35 },
   { trophies: 175, arena: 'Goblin Boot', label: 'Gold pouch', gold: 50 },
   { trophies: 200, arena: 'Training Camp', label: 'Arena unlocked!', gold: 100, unlockCard: 'lynne' },
+  { trophies: 225, arena: 'Training Camp', label: '3× Kathie', cardCopies: { charId: 'kathie', copies: 3 } },
   { trophies: 250, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 40 },
   { trophies: 300, arena: 'Training Camp', label: 'Gold pouch', gold: 60 },
   { trophies: 350, arena: 'Training Camp', label: 'Rare Chest', chest: 'rare' },
-  { trophies: 375, arena: 'Training Camp', label: 'Unlock Dave', unlockCard: 'dave', gold: 80 },
-  { trophies: 400, arena: 'Training Camp', label: 'Unlock Kathie', unlockCard: 'kathie', gold: 75 },
+  { trophies: 375, arena: 'Training Camp', label: 'x1 Dave', unlockCard: 'dave', gold: 80 },
+  { trophies: 400, arena: 'Training Camp', label: 'x1 Kathie', unlockCard: 'kathie', gold: 75 },
   { trophies: 450, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 50 },
   { trophies: 500, arena: 'Training Camp', label: 'Epic Chest', chest: 'epic', gold: 40 },
   { trophies: 550, arena: 'Training Camp', label: 'Gold pouch', gold: 70 },
   { trophies: 600, arena: 'Sundae Strip', label: 'Arena unlocked!', gold: 150, unlockCard: 'mike' },
-  { trophies: 625, arena: 'Sundae Strip', label: 'Unlock Scott', unlockCard: 'scott', gold: 60 },
-  { trophies: 650, arena: 'Sundae Strip', label: 'Unlock Baseball Huck', unlockCard: 'footballHuck', gold: 70 },
-  { trophies: 675, arena: 'Sundae Strip', label: "Unlock Ricky's Diner", unlockCard: 'stevesDiner', gold: 65 },
-  { trophies: 700, arena: 'Sundae Strip', label: 'Unlock Big Mable', unlockCard: 'bigMable', gold: 80 },
+  { trophies: 625, arena: 'Sundae Strip', label: 'x1 Scott', unlockCard: 'scott', gold: 60 },
+  { trophies: 650, arena: 'Sundae Strip', label: 'x1 Baseball Huck', unlockCard: 'footballHuck', gold: 70 },
+  { trophies: 675, arena: 'Sundae Strip', label: "x1 Ricky's Diner", unlockCard: 'stevesDiner', gold: 65 },
+  { trophies: 700, arena: 'Sundae Strip', label: 'x1 Big Mable', unlockCard: 'bigMable', gold: 80 },
   { trophies: 700, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 50 },
-  { trophies: 725, arena: 'Sundae Strip', label: 'Unlock Bobby Special', unlockCard: 'bobbySpecial', gold: 90 },
+  { trophies: 725, arena: 'Sundae Strip', label: 'x1 Bobby Special', unlockCard: 'bobbySpecial', gold: 90 },
+  { trophies: 775, arena: 'Sundae Strip', label: '3× Todd', cardCopies: { charId: 'todd', copies: 3 } },
   { trophies: 750, arena: 'Sundae Strip', label: 'Common Chest', chest: 'common', gold: 60 },
   { trophies: 825, arena: 'Sundae Strip', label: 'Gold pouch', gold: 80 },
-  { trophies: 900, arena: 'Sundae Strip', label: 'Unlock Todd', unlockCard: 'todd', gold: 100 },
+  { trophies: 900, arena: 'Sundae Strip', label: 'x1 Todd', unlockCard: 'todd', gold: 100 },
   { trophies: 950, arena: 'Sundae Strip', label: 'Epic Chest', chest: 'epic' },
   { trophies: 1000, arena: 'Sundae Strip', label: 'Legendary Chest', chest: 'legendary', gold: 75 },
-  { trophies: 1050, arena: 'Sundae Strip', label: 'Unlock Gretchin', unlockCard: 'gretchin', gold: 90 },
+  { trophies: 1050, arena: 'Sundae Strip', label: 'x1 Gretchin', unlockCard: 'gretchin', gold: 90 },
+  { trophies: 1150, arena: 'Sundae Strip', label: '3× Mike', cardCopies: { charId: 'mike', copies: 3 } },
   { trophies: 1100, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 70 },
   { trophies: 1200, arena: 'Bone Bridge', label: 'Arena unlocked!', gold: 200, unlockCard: 'dan' },
+  { trophies: 1250, arena: 'Bone Bridge', label: '3× Beans', cardCopies: { charId: 'beans', copies: 3 } },
   { trophies: 1300, arena: 'Bone Bridge', label: 'Common Chest', chest: 'common', gold: 80 },
   { trophies: 1400, arena: 'Bone Bridge', label: 'Epic Chest', chest: 'epic', gold: 80 },
   { trophies: 1500, arena: 'Bone Bridge', label: 'Gold pouch', gold: 100 },
-  { trophies: 1600, arena: 'Bone Bridge', label: 'Unlock Pete', unlockCard: 'pete', gold: 125 },
+  { trophies: 1600, arena: 'Bone Bridge', label: 'x1 Pete', unlockCard: 'pete', gold: 125 },
+  { trophies: 1650, arena: 'Bone Bridge', label: '3× Lynne', cardCopies: { charId: 'lynne', copies: 3 } },
   { trophies: 1700, arena: 'Bone Bridge', label: 'Rare Chest', chest: 'rare', gold: 90 },
   { trophies: 1800, arena: 'Bone Bridge', label: 'Epic Chest', chest: 'epic', gold: 100 },
   { trophies: 1900, arena: 'Bone Bridge', label: 'Gold pouch', gold: 110 },
   { trophies: 2000, arena: 'Royal Yard', label: 'Arena unlocked!', gold: 250, unlockCard: 'jeremy' },
+  { trophies: 2050, arena: 'Royal Yard', label: '3× Jeremy', cardCopies: { charId: 'jeremy', copies: 3 } },
   { trophies: 2150, arena: 'Royal Yard', label: 'Rare Chest', chest: 'rare', gold: 100 },
   { trophies: 2300, arena: 'Royal Yard', label: 'Epic Chest', chest: 'epic', gold: 120 },
   { trophies: 2450, arena: 'Royal Yard', label: 'Common Chest', chest: 'common', gold: 90 },
-  { trophies: 2600, arena: 'Royal Yard', label: 'Unlock Phil', unlockCard: 'phil', gold: 200 },
-  { trophies: 2650, arena: 'Royal Yard', label: 'Unlock Phil Spirit', unlockCard: 'philSpirit', gold: 150 },
-  { trophies: 2675, arena: 'Royal Yard', label: 'Unlock Pete Spirit', unlockCard: 'peteSpirit', gold: 150 },
-  { trophies: 2688, arena: 'Royal Yard', label: 'Unlock Jeremy Spirit', unlockCard: 'jeremySpirit', gold: 150 },
-  { trophies: 2700, arena: 'Royal Yard', label: "Unlock Phil's Car", unlockCard: 'philsCar', gold: 180 },
-  { trophies: 2750, arena: 'Royal Yard', label: 'Unlock Evil Phil', unlockCard: 'evilPhil', gold: 220 },
+  { trophies: 2600, arena: 'Royal Yard', label: 'x1 Phil', unlockCard: 'phil', gold: 200 },
+  { trophies: 2650, arena: 'Royal Yard', label: 'x1 Phil Spirit', unlockCard: 'philSpirit', gold: 150 },
+  { trophies: 2675, arena: 'Royal Yard', label: 'x1 Pete Spirit', unlockCard: 'peteSpirit', gold: 150 },
+  { trophies: 2688, arena: 'Royal Yard', label: 'x1 Jeremy Spirit', unlockCard: 'jeremySpirit', gold: 150 },
+  { trophies: 2700, arena: 'Royal Yard', label: "x1 Phil's Car", unlockCard: 'philsCar', gold: 180 },
+  { trophies: 2750, arena: 'Royal Yard', label: 'x1 Evil Phil', unlockCard: 'evilPhil', gold: 220 },
+  { trophies: 2850, arena: 'Royal Yard', label: '3× Kathie', cardCopies: { charId: 'kathie', copies: 3 } },
   { trophies: 2800, arena: 'Royal Yard', label: 'Legendary Chest', chest: 'legendary', gold: 120 },
   { trophies: 3000, arena: 'Royal Yard', label: 'Epic Chest', chest: 'epic', gold: 150 },
   { trophies: 3200, arena: 'Royal Yard', label: 'Gold pouch', gold: 160 },
   { trophies: 3400, arena: 'Phil Peak', label: 'Arena unlocked!', gold: 300 },
+  { trophies: 3500, arena: 'Phil Peak', label: '3× Jeremy', cardCopies: { charId: 'jeremy', copies: 3 } },
   { trophies: 3600, arena: 'Phil Peak', label: 'Rare Chest', chest: 'rare', gold: 140 },
   { trophies: 3800, arena: 'Phil Peak', label: 'Epic Chest', chest: 'epic', gold: 180 },
   { trophies: 4000, arena: 'Phil Peak', label: 'Gold pouch', gold: 200 },
@@ -102,18 +130,18 @@ export const ARENA_COLORS: Record<string, { sky: string; ground: string; accent:
 
 /** Exactly 12 starter cards — rest unlock via trophy road / chests. */
 export const STARTER_UNLOCKS = [
-  'finley',
-  'shay',
   'beans',
-  'lynne',
-  'mike',
-  'kathie',
-  'todd',
   'iceCream',
-  'dogHut',
+  'lynne',
+  'jeremy',
+  'todd',
+  'kathie',
   'footballHuck',
-  'scott',
-  'pete',
+  'stevesDiner',
+  'mike',
+  'bobbySpecial',
+  'jeremySpirit',
+  'dogHut',
 ]
 
 export function cardLevelMult(level: number): number {

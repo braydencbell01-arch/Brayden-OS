@@ -28,7 +28,15 @@ import { BattleCard } from './BattleCard'
 
 type Pane = 'decks' | 'collection'
 type SortDir = 'asc' | 'desc'
-type RarityFilter = 'all' | Rarity
+type SortMode = 'name' | 'elixir' | 'rarity' | 'level' | 'copies'
+
+const SORT_LABELS: Record<SortMode, string> = {
+  name: 'By Name',
+  elixir: 'By Elixir',
+  rarity: 'By Rarity',
+  level: 'By Level',
+  copies: 'By Copies',
+}
 
 const RARITY_PILL: Record<Rarity, string> = {
   common: '#b8c0cc',
@@ -48,8 +56,9 @@ export function CharactersScreen() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [pickSlot, setPickSlot] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const [rarityFilter, setRarityFilter] = useState<RarityFilter>('all')
+  const [sortMode, setSortMode] = useState<SortMode>('rarity')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
 
   const deck = decks[activeIdx] ?? []
 
@@ -69,22 +78,29 @@ export function CharactersScreen() {
   }, [deck])
 
   const collection = useMemo(() => {
-    let list = [...CHARACTERS]
-    if (rarityFilter !== 'all') list = list.filter((c) => c.rarity === rarityFilter)
+    const list = [...CHARACTERS]
     const unlocked = list.filter((c) => progress.unlocked.includes(c.id))
     const locked = list.filter((c) => !progress.unlocked.includes(c.id))
     const sortFn = (a: CharacterDef, b: CharacterDef) => {
-      const byRarity = RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]
-      const byName = a.name.localeCompare(b.name)
-      const byLevel =
-        (progress.levels[b.id] ?? 1) - (progress.levels[a.id] ?? 1) || byName
-      const primary = rarityFilter === 'all' ? byRarity || byLevel : byLevel
-      return sortDir === 'desc' ? primary : -primary
+      let primary = 0
+      if (sortMode === 'name') primary = a.name.localeCompare(b.name)
+      else if (sortMode === 'elixir') primary = a.elixir - b.elixir || a.name.localeCompare(b.name)
+      else if (sortMode === 'rarity')
+        primary = RARITY_RANK[a.rarity] - RARITY_RANK[b.rarity] || a.name.localeCompare(b.name)
+      else if (sortMode === 'level')
+        primary =
+          (progress.levels[a.id] ?? 1) - (progress.levels[b.id] ?? 1) ||
+          a.name.localeCompare(b.name)
+      else if (sortMode === 'copies')
+        primary =
+          (progress.copies[a.id] ?? 0) - (progress.copies[b.id] ?? 0) ||
+          a.name.localeCompare(b.name)
+      return sortDir === 'desc' ? -primary : primary
     }
     unlocked.sort(sortFn)
     locked.sort(sortFn)
     return { unlocked, locked, found: progress.unlocked.length, total: CHARACTERS.length }
-  }, [progress, rarityFilter, sortDir])
+  }, [progress, sortMode, sortDir])
 
   function flash(msg: string) {
     setToast(msg)
@@ -141,6 +157,7 @@ export function CharactersScreen() {
       return next
     })
     setPickSlot(null)
+    if (pane === 'collection') setPane('decks')
   }
 
   function toggleFavorite(id: string) {
@@ -216,7 +233,7 @@ export function CharactersScreen() {
   }
 
   const collectionHeader = (
-    <div className="mb-2 flex items-end justify-between gap-2">
+    <div className="relative mb-2 flex items-end justify-between gap-2">
       <div className="min-w-0">
         <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-white">
           Card Collection
@@ -228,11 +245,11 @@ export function CharactersScreen() {
       <div className="flex shrink-0 items-center gap-1">
         <button
           type="button"
-          onClick={() => setRarityFilter('all')}
+          onClick={() => setSortMenuOpen((o) => !o)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-[0.7rem] font-black text-white"
           style={{ background: '#2a3a55', boxShadow: '0 2px 0 #0a1528' }}
-          aria-label="Filter"
-          title="Reset filters"
+          aria-label="Sort options"
+          title="Sort options"
         >
           ☰
         </button>
@@ -249,42 +266,70 @@ export function CharactersScreen() {
           {sortDir === 'desc' ? '↑' : '↓'}
         </button>
         <select
-          value={rarityFilter}
-          onChange={(e) => setRarityFilter(e.target.value as RarityFilter)}
-          className="h-7 rounded-md px-1.5 text-[0.65rem] font-extrabold text-white outline-none"
+          value={sortMode}
+          onChange={(e) => setSortMode(e.target.value as SortMode)}
+          className="h-7 max-w-[5.5rem] rounded-md px-1.5 text-[0.65rem] font-extrabold text-white outline-none"
           style={{ background: '#2a3a55', boxShadow: '0 2px 0 #0a1528' }}
           aria-label="Sort by"
         >
-          <option value="all">By Rarity</option>
-          <option value="common">Common</option>
-          <option value="rare">Rare</option>
-          <option value="epic">Epic</option>
-          <option value="legendary">Legendary</option>
+          {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+            <option key={mode} value={mode}>
+              {SORT_LABELS[mode]}
+            </option>
+          ))}
         </select>
       </div>
+      {sortMenuOpen ? (
+        <div
+          className="absolute right-0 top-full z-30 mt-1 min-w-[8.5rem] overflow-hidden rounded-lg ring-1 ring-white/15"
+          style={{ background: 'linear-gradient(180deg,#2a4068,#1a2848)' }}
+        >
+          {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                setSortMode(mode)
+                setSortMenuOpen(false)
+              }}
+              className="block w-full px-3 py-2 text-left text-[0.7rem] font-extrabold text-white hover:bg-white/10"
+              style={sortMode === mode ? { background: '#3a5a88' } : undefined}
+            >
+              {SORT_LABELS[mode]}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   )
 
   const collectionLists = (
     <>
-      <ul className="grid grid-cols-4 gap-2">
-        {collection.unlocked.map((c) => (
-          <CollectionTile
-            key={c.id}
-            character={c}
-            level={progress.levels[c.id] ?? 1}
-            copies={progress.copies[c.id] ?? 0}
-            locked={false}
-            onClick={() => {
-              if (pane === 'decks' && (pickSlot != null || deck.length < DECK_SIZE)) {
-                addToDeck(c.id)
-              } else {
-                setProfileId(c.id)
-              }
-            }}
-          />
-        ))}
-      </ul>
+      {collection.unlocked.length > 0 ? (
+        <>
+          <p className="mb-2 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-[#7dff9a]">
+            Found
+          </p>
+          <ul className="grid grid-cols-4 gap-2">
+            {collection.unlocked.map((c) => (
+              <CollectionTile
+                key={c.id}
+                character={c}
+                level={progress.levels[c.id] ?? 1}
+                copies={progress.copies[c.id] ?? 0}
+                locked={false}
+                onClick={() => {
+                  if (pickSlot != null) {
+                    addToDeck(c.id)
+                  } else {
+                    setProfileId(c.id)
+                  }
+                }}
+              />
+            ))}
+          </ul>
+        </>
+      ) : null}
       {collection.locked.length > 0 ? (
         <>
           <p className="mb-2 mt-4 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-white/55">
@@ -391,7 +436,6 @@ export function CharactersScreen() {
                 const id = deck[i]
                 const c = id ? getCharacter(id) ?? null : null
                 const picking = pickSlot === i
-                const lv = id ? progress.levels[id] ?? 1 : 1
                 return (
                   <button
                     key={i}
@@ -399,7 +443,10 @@ export function CharactersScreen() {
                     className="relative min-w-0"
                     onClick={() => {
                       if (c) removeFromDeck(i)
-                      else setPickSlot(picking ? null : i)
+                      else {
+                        setPickSlot(picking ? null : i)
+                        if (!picking) setPane('collection')
+                      }
                     }}
                     aria-label={c ? `Remove ${c.name}` : `Add to slot ${i + 1}`}
                     style={{
@@ -408,11 +455,6 @@ export function CharactersScreen() {
                     }}
                   >
                     <BattleCard character={c} size="collection" />
-                    {c ? (
-                      <span className="absolute inset-x-0 bottom-0 z-[2] bg-black/75 py-0.5 text-center text-[0.5rem] font-black text-white">
-                        Level {lv}
-                      </span>
-                    ) : null}
                   </button>
                 )
               })}
@@ -424,18 +466,13 @@ export function CharactersScreen() {
             </div>
             {pickSlot != null ? (
               <p className="mt-1 text-center text-xs font-bold text-[#8ec8ff]">
-                Tap a card below to fill the slot · auto-saves
+                Pick a card in Collection to fill slot {pickSlot + 1}
               </p>
             ) : (
               <p className="mt-1 text-center text-[0.6rem] font-semibold text-white/45">
-                Tap a card to remove · empty slot to add · auto-saves
+                Tap a card to remove · empty slot opens Collection · auto-saves
               </p>
             )}
-          </div>
-
-          <div className="mx-auto mt-4 max-w-md">
-            {collectionHeader}
-            {collectionLists}
           </div>
         </div>
       ) : (
@@ -496,18 +533,15 @@ function CollectionTile({
       >
         <div className="relative overflow-hidden rounded-lg">
           <BattleCard character={character} size="collection" />
-          <span
-            className="pointer-events-none absolute left-1/2 top-1 z-[2] h-2 w-2 -translate-x-1/2 rotate-45"
-            style={{ background: RARITY_PILL[character.rarity], boxShadow: '0 0 0 1px #0006' }}
-            aria-hidden
-          />
-          <span className="absolute inset-x-0 bottom-0 z-[2] bg-[#1a1410]/90 py-0.5 text-center text-[0.5rem] font-black text-white">
-            {locked ? 'Not Found' : `Level ${level}`}
-          </span>
+          {locked ? (
+            <span className="absolute inset-x-0 bottom-0 z-[2] bg-[#1a1410]/90 py-0.5 text-center text-[0.5rem] font-black text-white">
+              Not Found
+            </span>
+          ) : null}
         </div>
         {!locked ? (
-          <div className="mt-0.5">
-            <div className="h-1.5 overflow-hidden rounded-sm bg-[#0a2040] ring-1 ring-[#1a4a8a]">
+          <>
+            <div className="relative mt-0.5 h-1.5 overflow-hidden rounded-sm bg-[#0a2040] ring-1 ring-[#1a4a8a]">
               <div
                 className="h-full"
                 style={{
@@ -515,11 +549,14 @@ function CollectionTile({
                   background: 'linear-gradient(90deg,#6ec8ff,#2f6fbf)',
                 }}
               />
+              <span className="absolute inset-0 flex items-center justify-center text-[0.4rem] font-extrabold tabular-nums text-white [text-shadow:0_1px_0_#000]">
+                {copies}/{need}
+              </span>
             </div>
-            <p className="mt-0.5 text-center text-[0.45rem] font-extrabold tabular-nums text-white/70">
-              {copies}/{need}
+            <p className="mt-0.5 text-center text-[0.45rem] font-extrabold text-white/85">
+              Level {level}
             </p>
-          </div>
+          </>
         ) : null}
       </button>
     </li>

@@ -14,6 +14,8 @@ type Props = {
   portrait?: boolean
   objectPos?: string
   portraitFilter?: string
+  /** Portrait uses troop cutout (transparent) instead of card art — fixes wrong card backgrounds. */
+  portraitSrc?: string
   enraged?: boolean
   gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff'
   attack?:
@@ -58,6 +60,7 @@ export function PhotoTroop({
   facing,
   portrait,
   portraitFilter,
+  portraitSrc,
   objectPos: _objectPos = '50% 20%',
   enraged,
   gait = 'run',
@@ -112,7 +115,7 @@ export function PhotoTroop({
         style={{ background: CARD_PORTRAIT_BG }}
       >
         <img
-          src={cardSrc || troopSrc}
+          src={portraitSrc ?? cardSrc ?? troopSrc}
           alt={alt}
           className="h-full w-full object-contain"
           style={{

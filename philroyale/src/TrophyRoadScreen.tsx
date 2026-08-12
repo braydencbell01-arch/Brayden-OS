@@ -3,10 +3,13 @@ import { motion } from 'framer-motion'
 import { getCharacter } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
+import { BattleCard } from './BattleCard'
+import { ChestArt } from './ChestOpen'
 import {
   ARENA_COLORS,
   CHEST_META,
   TROPHY_ROAD,
+  trophyRoadProgress,
   type TrophyRoadReward,
 } from './progression'
 import { type FriendPresenceInfo } from './socialHub'
@@ -28,17 +31,58 @@ type Props = {
   loadFriendsFn?: () => Friend[]
 }
 
-function rewardIcon(step: TrophyRoadReward): { bg: string; glyph: string; sub: string } {
+function RoadRewardIcon({ step }: { step: TrophyRoadReward }) {
   if (step.chest) {
-    const meta = CHEST_META[step.chest]
-    return { bg: meta.color, glyph: '▣', sub: meta.label.replace(' Chest', '') }
+    return (
+      <div className="relative h-12 w-12 shrink-0">
+        <ChestArt rarity={step.chest} size="sm" />
+      </div>
+    )
   }
   if (step.unlockCard) {
     const c = getCharacter(step.unlockCard)
-    return { bg: '#4a9eff', glyph: (c?.initial ?? '?').slice(0, 2), sub: c?.name ?? 'Card' }
+    if (!c) return null
+    return (
+      <div className="relative h-12 w-12 shrink-0">
+        <BattleCard character={c} size="collection" />
+        <span className="absolute -bottom-0.5 -right-0.5 z-[3] rounded bg-[#1a1410]/90 px-1 text-[0.5rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/60">
+          x1
+        </span>
+      </div>
+    )
   }
-  if (step.gems) return { bg: '#7dffc8', glyph: '◆', sub: `${step.gems} gems` }
-  return { bg: '#f5d76e', glyph: '●', sub: `${step.gold ?? 0}g` }
+  if (step.cardCopies) {
+    const c = getCharacter(step.cardCopies.charId)
+    if (!c) return null
+    return (
+      <div className="relative h-12 w-12 shrink-0">
+        <BattleCard character={c} size="collection" />
+        <span className="absolute -bottom-0.5 -right-0.5 z-[3] rounded bg-[#1a1410]/90 px-1 text-[0.5rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/60">
+          x{step.cardCopies.copies}
+        </span>
+      </div>
+    )
+  }
+  if (step.gems) {
+    return (
+      <div
+        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
+        style={{ background: '#7dffc8', color: '#1a1410' }}
+      >
+        <span>◆</span>
+        <span className="text-[0.45rem] font-extrabold uppercase">{step.gems}</span>
+      </div>
+    )
+  }
+  return (
+    <div
+      className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
+      style={{ background: '#f5d76e', color: '#1a1410' }}
+    >
+      <span>●</span>
+      <span className="text-[0.45rem] font-extrabold uppercase">{step.gold ?? 0}g</span>
+    </div>
+  )
 }
 
 function arenaFor(trophies: number): string {
@@ -47,12 +91,6 @@ function arenaFor(trophies: number): string {
     if (trophies >= step.trophies) arena = step.arena
   }
   return arena
-}
-
-/** Map trophy count → vertical progress 0–1 along the road (0 = bottom / low trophies). */
-function trophyProgress(trophies: number): number {
-  const max = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 1
-  return Math.max(0, Math.min(1, trophies / Math.max(1, max)))
 }
 
 export function TrophyRoadScreen({
@@ -72,8 +110,8 @@ export function TrophyRoadScreen({
 
   const colors = ARENA_COLORS[arenaFor(profile.trophies)] ?? ARENA_COLORS['Goblin Boot']!
   const maxTrophies = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 5000
-  const curPct = trophyProgress(profile.trophies) * 100
-  const peakPct = trophyProgress(peak) * 100
+  const curPct = trophyRoadProgress(profile.trophies) * 100
+  const peakPct = trophyRoadProgress(peak) * 100
 
   const stepsDesc = useMemo(
     () =>
@@ -92,13 +130,13 @@ export function TrophyRoadScreen({
   }, [profile.trophies, claimed])
 
   const friendMarkers = useMemo(() => {
-    return friends
-      .map((f) => {
-        const t = f.playerId ? friendPresence[f.playerId]?.trophies : undefined
-        if (typeof t !== 'number') return null
-        return { id: f.id, name: f.name, trophies: t }
-      })
-      .filter(Boolean) as { id: string; name: string; trophies: number }[]
+    return friends.map((f) => {
+      const t =
+        f.playerId && typeof friendPresence[f.playerId]?.trophies === 'number'
+          ? friendPresence[f.playerId]!.trophies!
+          : 0
+      return { id: f.id, name: f.name, trophies: t }
+    })
   }, [friends, friendPresence])
 
   useEffect(() => {
@@ -227,7 +265,6 @@ export function TrophyRoadScreen({
               boxShadow: 'inset 0 0 0 2px #1a4a8a88',
             }}
           >
-            {/* Peak fill (muted) */}
             <div
               className="absolute bottom-0 left-0 right-0"
               style={{
@@ -235,7 +272,6 @@ export function TrophyRoadScreen({
                 background: 'linear-gradient(180deg,#4a7aaa88,#2a4a6a66)',
               }}
             />
-            {/* Current fill */}
             <div
               className="absolute bottom-0 left-0 right-0"
               style={{
@@ -244,23 +280,15 @@ export function TrophyRoadScreen({
                 boxShadow: 'inset 0 1px 0 #ffffff44',
               }}
             />
-            {/* Peak marker when above current */}
-            {peak > profile.trophies ? (
-              <div
-                className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/70"
-                style={{ bottom: `calc(${peakPct}% - 3px)` }}
-              />
-            ) : null}
           </div>
 
-          {/* Friend markers on the rail */}
           {friendMarkers.map((f) => {
-            const pct = trophyProgress(f.trophies) * 100
+            const pct = trophyRoadProgress(f.trophies) * 100
             return (
               <div
                 key={f.id}
-                className="pointer-events-none absolute left-1 z-20 -translate-y-1/2"
-                style={{ bottom: `calc(${pct}% + 1rem)` }}
+                className="pointer-events-none absolute left-0.5 z-20 -translate-y-1/2"
+                style={{ bottom: `calc(1rem + (100% - 2rem) * ${pct / 100})` }}
                 title={`${f.name}: ${f.trophies}`}
               >
                 <div
@@ -283,7 +311,6 @@ export function TrophyRoadScreen({
                 profile.trophies >= step.trophies &&
                 (idx === TROPHY_ROAD.length - 1 ||
                   profile.trophies < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
-              const icon = rewardIcon(step)
               const ready = reached && !done
               const showArena =
                 rowI === 0 || stepsDesc[rowI - 1]?.step.arena !== step.arena
@@ -304,16 +331,6 @@ export function TrophyRoadScreen({
                     </div>
                   ) : null}
 
-                  {/* Trophy tick on rail */}
-                  <div
-                    aria-hidden
-                    className="absolute -left-[1.85rem] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
-                    style={{
-                      background: reached ? '#6ec8ff' : '#3a4a5a',
-                      boxShadow: reached ? '0 0 6px #6ec8ff88' : 'none',
-                    }}
-                  />
-
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.94 }}
@@ -327,23 +344,6 @@ export function TrophyRoadScreen({
                       opacity: reached || done ? 1 : 0.6,
                     }}
                   >
-                    {/* Neon track down the middle of the island */}
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute inset-y-2 left-1/2 w-8 -translate-x-1/2 rounded-sm"
-                      style={{
-                        background: 'linear-gradient(180deg,#2a2018,#1a140e)',
-                        boxShadow: 'inset 0 0 0 1px #5a4a3a',
-                      }}
-                    >
-                      <div
-                        className="absolute inset-x-1 top-1/2 h-1.5 -translate-y-1/2 rounded-full"
-                        style={{
-                          background: 'linear-gradient(90deg,#3dff7a,#1a9a40)',
-                          boxShadow: '0 0 8px #3dff7a88',
-                        }}
-                      />
-                    </div>
                     {isYou ? (
                       <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
                         <span
@@ -365,21 +365,7 @@ export function TrophyRoadScreen({
                       </span>
                     ) : null}
                     <div className="relative z-[1] flex items-center justify-between gap-2 px-1">
-                      <div
-                        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
-                        style={{
-                          background: done ? `${icon.bg}99` : icon.bg,
-                          color: '#1a1410',
-                          boxShadow: done
-                            ? '0 0 0 3px #ffffff55, inset 0 1px 0 #ffffff55'
-                            : 'inset 0 1px 0 #ffffff55',
-                        }}
-                      >
-                        <span>{icon.glyph}</span>
-                        <span className="text-[0.45rem] font-extrabold uppercase leading-none">
-                          {icon.sub.slice(0, 8)}
-                        </span>
-                      </div>
+                      <RoadRewardIcon step={step} />
                       <div className="min-w-0 flex-1 text-right">
                         <p className="truncate text-[0.7rem] font-black text-white drop-shadow">
                           {step.label}
@@ -428,7 +414,10 @@ export function TrophyRoadScreen({
               {selectedStep.gold ? ` · ${selectedStep.gold}g` : ''}
               {selectedStep.chest ? ` · ${CHEST_META[selectedStep.chest].label}` : ''}
               {selectedStep.unlockCard
-                ? ` · Unlock ${getCharacter(selectedStep.unlockCard)?.name}`
+                ? ` · x1 ${getCharacter(selectedStep.unlockCard)?.name}`
+                : ''}
+              {selectedStep.cardCopies
+                ? ` · x${selectedStep.cardCopies.copies} ${getCharacter(selectedStep.cardCopies.charId)?.name}`
                 : ''}
             </p>
           ) : (
