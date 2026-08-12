@@ -192,7 +192,7 @@ export const PETE: CharacterDef = {
   height: "6'2\"",
   rarity: 'epic',
   elixir: 5,
-  hp: 3250,
+  hp: 3750,
   moveSpeed: 4,
   attackDelaySec: 0,
   hue: 220,
@@ -644,6 +644,70 @@ export const PHIL_SPIRIT: CharacterDef = {
   ],
 }
 
+/** Pete's floating head — Phil Spirit kit, +100 Jump damage, −2 move speed. */
+export const PETE_SPIRIT: CharacterDef = {
+  id: 'peteSpirit',
+  name: 'Pete Spirit',
+  initial: 'Pe',
+  pronoun: 'he',
+  height: "1'0\"",
+  rarity: 'legendary',
+  elixir: 1,
+  hp: 125,
+  moveSpeed: 13,
+  attackDelaySec: 1,
+  hue: 25,
+  blurb:
+    "Pete's floating head — same Jump slam as Phil Spirit, hits harder, a touch slower.",
+  attacks: [
+    {
+      id: 'jump',
+      name: 'Jump',
+      range: 10,
+      damage: 350,
+      rootWhileAttacking: true,
+      splashRadius: 5,
+      diesOnAttack: true,
+      kind: 'jump',
+    },
+  ],
+}
+
+/** Dark twin of Phil — stronger, faster, purple mist. */
+export const EVIL_PHIL: CharacterDef = {
+  id: 'evilPhil',
+  name: 'Evil Phil',
+  initial: 'EP',
+  pronoun: 'he',
+  height: "5'7\"",
+  rarity: 'legendary',
+  elixir: 5,
+  hp: 1200,
+  moveSpeed: 8,
+  attackDelaySec: 1,
+  hue: 280,
+  blurb:
+    'Phil gone wrong — black kit, evil grin, purple mist. Harder Sundae Huck and Chicken Whip.',
+  attacks: [
+    {
+      id: 'sundaeHuck',
+      name: 'Sundae Huck',
+      range: 20,
+      damage: 300,
+      rootWhileAttacking: false,
+      kind: 'sundae',
+    },
+    {
+      id: 'chickenWhip',
+      name: 'Chicken Whip',
+      range: 5,
+      damage: 425,
+      rootWhileAttacking: true,
+      kind: 'whip',
+    },
+  ],
+}
+
 /** Common inflatable tow-tube — slides, Launch knockback, never sticky-locks. */
 export const BIG_MABLE: CharacterDef = {
   id: 'bigMable',
@@ -689,6 +753,8 @@ export const CHARACTERS: CharacterDef[] = [
   GRETCHIN,
   DAVE,
   PHIL_SPIRIT,
+  PETE_SPIRIT,
+  EVIL_PHIL,
   DOG_HUT,
   PHILS_CAR,
   STEVES_DINER,

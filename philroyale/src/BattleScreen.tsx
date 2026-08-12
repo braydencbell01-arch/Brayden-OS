@@ -82,12 +82,19 @@ type MatchResult = 'victory' | 'defeat' | 'draw'
 
 type EmoteOption =
   | { id: string; kind: 'phil' }
+  | { id: string; kind: 'photo'; src: string; label: string }
   | { id: string; kind: 'emoji'; emoji: string }
 
 const PHIL_EMOTE_SRC = `${import.meta.env.BASE_URL}characters/phil.png`
+const EMOTE_COACH = `${import.meta.env.BASE_URL}characters/emote-coach.png`
+const EMOTE_HOOD = `${import.meta.env.BASE_URL}characters/emote-hood.png`
+const EMOTE_BUZZ = `${import.meta.env.BASE_URL}characters/emote-buzz.png`
 
 const EMOTE_OPTIONS: EmoteOption[] = [
   { id: 'phil', kind: 'phil' },
+  { id: 'coach', kind: 'photo', src: EMOTE_COACH, label: 'Coach smile' },
+  { id: 'hood', kind: 'photo', src: EMOTE_HOOD, label: 'Hood stare' },
+  { id: 'buzz', kind: 'photo', src: EMOTE_BUZZ, label: 'Buzz cut' },
   { id: 'thumbs', kind: 'emoji', emoji: '👍' },
   { id: 'laugh', kind: 'emoji', emoji: '😂' },
   { id: 'mad', kind: 'emoji', emoji: '😤' },
@@ -900,6 +907,12 @@ export function BattleScreen({
                   alt="Phil"
                   className="h-14 w-14 rounded-full object-cover"
                 />
+              ) : activeEmote.option.kind === 'photo' ? (
+                <img
+                  src={activeEmote.option.src}
+                  alt={activeEmote.option.label}
+                  className="h-14 w-14 rounded-full object-cover"
+                />
               ) : (
                 <span className="block text-4xl leading-none">{activeEmote.option.emoji}</span>
               )}
@@ -1002,11 +1015,23 @@ export function BattleScreen({
                           type="button"
                           onClick={() => pickEmote(opt)}
                           className="flex h-9 w-full items-center justify-center rounded-xl bg-[#f4f1ea] transition active:scale-95"
-                          aria-label={opt.kind === 'phil' ? 'Phil emote' : opt.emoji}
+                          aria-label={
+                            opt.kind === 'phil'
+                              ? 'Phil emote'
+                              : opt.kind === 'photo'
+                                ? opt.label
+                                : opt.emoji
+                          }
                         >
                           {opt.kind === 'phil' ? (
                             <img
                               src={PHIL_EMOTE_SRC}
+                              alt=""
+                              className="h-7 w-7 rounded-full object-cover"
+                            />
+                          ) : opt.kind === 'photo' ? (
+                            <img
+                              src={opt.src}
                               alt=""
                               className="h-7 w-7 rounded-full object-cover"
                             />
