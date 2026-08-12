@@ -9,9 +9,11 @@ import { HomeScreen } from './HomeScreen'
 import { ProfileScreen } from './ProfileScreen'
 import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
+import { PartyModeLobby } from './PartyModeLobby'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
 import type { BattleNet } from './battleSync'
 import { publishBattle, subscribeBattle } from './battleSync'
+import { isPartyMode, modeLabel } from './gameModes'
 import { joinClubVerified, startClubSync } from './clubSync'
 import { mpConnect, mpReady, mpSetStatus } from './mpClient'
 import {
@@ -152,7 +154,9 @@ export default function App() {
   const [battleMode, setBattleMode] = useState<GameMode>('classic')
   const [battleNet, setBattleNet] = useState<BattleNet | null>(null)
   const [draftingTouchdown, setDraftingTouchdown] = useState(false)
+  const [draftingParty, setDraftingParty] = useState(false)
   const [touchdownDeck, setTouchdownDeck] = useState<string[] | null>(null)
+  const [partyDeck, setPartyDeck] = useState<string[] | null>(null)
   const [opponent, setOpponent] = useState<string | null>(null)
   /** Bumps every solo/friend match so BattleScreen remounts with a fresh CPU deck. */
   const [battleSession, setBattleSession] = useState(0)
@@ -230,16 +234,33 @@ export default function App() {
 
       if (mode === 'touchdown') {
         setDraftingTouchdown(true)
+        setDraftingParty(false)
+        setTouchdownDeck(null)
+        setPartyDeck(null)
+        setBattle(false)
+        return
+      }
+
+      if (isPartyMode(mode)) {
+        if (!room) {
+          flashFriend('Draft / Undraft / Infinite Elixir need a friend invite.')
+          return
+        }
+        setDraftingParty(true)
+        setDraftingTouchdown(false)
+        setPartyDeck(null)
         setTouchdownDeck(null)
         setBattle(false)
         return
       }
 
       setDraftingTouchdown(false)
+      setDraftingParty(false)
       setTouchdownDeck(null)
+      setPartyDeck(null)
       setBattle(true)
     },
-    [],
+    [flashFriend],
   )
 
   const startSpectate = useCallback(
@@ -257,7 +278,9 @@ export default function App() {
       })
       setSpectating(true)
       setDraftingTouchdown(false)
+      setDraftingParty(false)
       setTouchdownDeck(null)
+      setPartyDeck(null)
       setShowRoad(false)
       setBattle(true)
       flashFriend(`Spectating ${friendName}…`)
@@ -1073,12 +1096,12 @@ export default function App() {
               id="battle-challenge-title"
               className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]"
             >
-              {incomingChallenge.mode === 'touchdown' ? 'Touchdown invite' : 'Battle invite'}
+              {modeLabel(incomingChallenge.mode)} invite
             </h2>
             <p className="mt-2 text-sm font-semibold text-white/85">
               <span className="font-extrabold text-white">{incomingChallenge.fromName}</span>{' '}
-              invited you to{' '}
-              {incomingChallenge.mode === 'touchdown' ? 'Touchdown' : 'Classic battle'}.
+              invited you to {modeLabel(incomingChallenge.mode)}
+              {isPartyMode(incomingChallenge.mode) ? ' (party — no trophies)' : ''}.
             </p>
             <div className="mt-4 flex gap-2">
               <button
@@ -1226,7 +1249,7 @@ export default function App() {
               Waiting for{' '}
               <span className="font-extrabold text-white">{outgoingChallenge.toName}</span> to
               accept{' '}
-              {outgoingChallenge.mode === 'touchdown' ? 'Touchdown' : 'Classic'}…
+              {modeLabel(outgoingChallenge.mode)}…
             </p>
             <p className="mt-1 text-xs font-semibold text-white/50">
               They need Phil Royale open for Accept / Decline. You can also text them the battle
@@ -1246,7 +1269,7 @@ export default function App() {
                 )
                 void shareText(
                   'Phil Royale battle',
-                  `Battle me on Phil Royale (${c.mode === 'touchdown' ? 'Touchdown' : 'Normal'})!`,
+                  `Battle me on Phil Royale (${modeLabel(c.mode)})!`,
                   link,
                 )
               }}
@@ -1331,6 +1354,34 @@ export default function App() {
             }}
           />
         </div>
+        {battleNet ? <DraftPeerKeepalive net={battleNet} /> : null}
+        {socialOverlays}
+      </div>
+    )
+  }
+
+  if (draftingParty && battleNet && isPartyMode(battleMode)) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <TopStatusBar onShop={() => setTab('shop')} />
+        <div className="min-h-0 flex-1">
+          <PartyModeLobby
+            mode={battleMode as 'draft' | 'undraft' | 'infiniteElixir'}
+            net={battleNet}
+            onCancel={() => {
+              setDraftingParty(false)
+              setOpponent(null)
+              setBattleNet(null)
+              setPartyDeck(null)
+              setBattleMode('classic')
+            }}
+            onReady={(ids) => {
+              setPartyDeck(ids)
+              setDraftingParty(false)
+              setBattle(true)
+            }}
+          />
+        </div>
         {socialOverlays}
       </div>
     )
@@ -1372,7 +1423,13 @@ export default function App() {
           allyLevels={levels}
           botLevel={botLevelForTrophies(trophies)}
           mode={battleMode}
-          deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
+          deckIds={
+            battleMode === 'touchdown'
+              ? touchdownDeck ?? undefined
+              : isPartyMode(battleMode)
+                ? partyDeck ?? undefined
+                : undefined
+          }
           net={battleNet}
           spectating={spectating}
           onPeerLinkFailed={handlePeerLinkFailed}
@@ -1383,6 +1440,7 @@ export default function App() {
             setOpponent(null)
             setBattleNet(null)
             setTouchdownDeck(null)
+            setPartyDeck(null)
             setBattleMode('classic')
             setSpectating(false)
             setTab(wasSpec ? 'social' : 'home')
@@ -1587,4 +1645,24 @@ export default function App() {
       {socialOverlays}
     </div>
   )
+}
+
+/** Keep the battle room warm while both players finish Touchdown draft. */
+function DraftPeerKeepalive({ net }: { net: BattleNet }) {
+  useEffect(() => {
+    if (!net.challengeId || net.role === 'spectator') return
+    const burst = () => {
+      void publishBattle(net.challengeId, {
+        type: 'battle_ready',
+        challengeId: net.challengeId,
+        role: net.role,
+        name: loadPlayerName().trim() || net.role,
+        at: new Date().toISOString(),
+      })
+    }
+    burst()
+    const id = window.setInterval(burst, 1500)
+    return () => window.clearInterval(id)
+  }, [net.challengeId, net.role])
+  return null
 }

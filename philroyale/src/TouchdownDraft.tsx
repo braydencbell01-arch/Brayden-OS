@@ -26,17 +26,24 @@ export function TouchdownDraft({ onReady, onCancel }: Props) {
     })
   }
 
+  const canStart = picks.length === DRAFT_SIZE && pool.length >= DRAFT_SIZE
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a] px-3 pb-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
       <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]">
         Touchdown draft
       </h1>
       <p className="mt-1 text-sm font-semibold text-white/75">
-        Pick {DRAFT_SIZE} troops. Place them in your third — first to score{' '}
-        {DRAFT_SIZE > 0 ? '3 touchdowns' : 'touchdowns'} wins.
+        Pick {DRAFT_SIZE} from your unlocked cards only. Place them in your third — first to score
+        3 touchdowns wins.
       </p>
+      {pool.length < DRAFT_SIZE ? (
+        <p className="mt-2 text-sm font-bold text-[#ff8a7a]">
+          Need {DRAFT_SIZE} unlocked cards to play Touchdown (you have {pool.length}).
+        </p>
+      ) : null}
       <p className="mt-2 text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-        Selected {picks.length}/{DRAFT_SIZE}
+        Selected {picks.length}/{DRAFT_SIZE} · Unlocked {pool.length}
       </p>
       <div className="mt-2 min-h-0 flex-1 overflow-y-auto">
         <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -70,7 +77,7 @@ export function TouchdownDraft({ onReady, onCancel }: Props) {
         </button>
         <button
           type="button"
-          disabled={picks.length < DRAFT_SIZE}
+          disabled={!canStart}
           onClick={() => onReady(picks)}
           className="flex-[2] rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
           style={{

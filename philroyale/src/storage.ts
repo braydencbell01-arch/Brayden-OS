@@ -39,6 +39,11 @@ import {
   type ChestRarity,
   type ShopOffer,
 } from './progression'
+import type { GameMode } from './gameModes'
+import { parseGameMode } from './gameModes'
+
+export type { GameMode } from './gameModes'
+export { parseGameMode, earnsTrophies, isPartyMode, modeLabel } from './gameModes'
 
 const DECK_KEY = 'philroyale.deck.v2'
 const DECKS_KEY = 'philroyale.decks.v1'
@@ -58,8 +63,6 @@ const PENDING_FRIEND_KEY = 'philroyale.pendingFriendLink'
 const INCOMING_CLUB_INVITE_KEY = 'philroyale.incomingClubInvite'
 
 export const BATTLE_CHANNEL_NAME = 'philroyale-battle'
-
-export type GameMode = 'classic' | 'touchdown'
 
 export type BattleChallenge = {
   challengeId: string
@@ -507,8 +510,7 @@ export function parseBattleChallengeFromUrl(
   const toName = params.get('battleTo')?.trim()
   const challengeId = params.get('challenge')?.trim()
   if (!fromName || !toName || !challengeId) return null
-  const modeRaw = params.get('mode')?.trim()
-  const mode: GameMode = modeRaw === 'touchdown' ? 'touchdown' : 'classic'
+  const mode = parseGameMode(params.get('mode')?.trim())
   return {
     challengeId,
     fromName,
@@ -524,7 +526,7 @@ function normalizeChallenge(raw: BattleChallenge | null): BattleChallenge | null
   if (!raw) return null
   return {
     ...raw,
-    mode: raw.mode === 'touchdown' ? 'touchdown' : 'classic',
+    mode: parseGameMode(raw.mode),
   }
 }
 
@@ -765,12 +767,19 @@ export function saveProfile(profile: PlayerProfile): void {
 
 export function recordMatchResult(
   result: 'victory' | 'defeat' | 'draw',
-  opts?: { crowns?: number; pvp?: boolean; opponentTrophies?: number },
+  opts?: {
+    crowns?: number
+    pvp?: boolean
+    opponentTrophies?: number
+    /** Party modes: play still counts, but no trophy ladder moves. */
+    awardsTrophies?: boolean
+  },
 ): PlayerProfile {
   const p = loadProfile()
   p.battlesPlayed += 1
   const crowns = Math.max(0, Math.min(3, opts?.crowns ?? (result === 'victory' ? 3 : result === 'draw' ? 1 : 0)))
   p.crownChest = Math.min(10, p.crownChest + crowns)
+  const awardsTrophies = opts?.awardsTrophies !== false
   if (opts?.pvp) {
     const myTrophies = p.trophies
     const oppTrophies = Math.max(0, opts.opponentTrophies ?? myTrophies)
@@ -779,43 +788,47 @@ export function recordMatchResult(
       p.wins += 1
       p.winStreak += 1
       p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
-      const gain = Math.max(15, Math.min(32, 28 + Math.round(diff * 0.04)))
-      p.trophies += gain
-      p.gold += 50
-      p.xp += 40
+      if (awardsTrophies) {
+        const gain = Math.max(15, Math.min(32, 28 + Math.round(diff * 0.04)))
+        p.trophies += gain
+      }
+      p.gold += awardsTrophies ? 50 : 25
+      p.xp += awardsTrophies ? 40 : 20
     } else if (result === 'defeat') {
       p.losses += 1
       p.winStreak = 0
-      const loss = Math.max(10, Math.min(28, 22 - Math.round(diff * 0.04)))
-      p.trophies = Math.max(0, p.trophies - loss)
-      p.gold += 15
-      p.xp += 15
+      if (awardsTrophies) {
+        const loss = Math.max(10, Math.min(28, 22 - Math.round(diff * 0.04)))
+        p.trophies = Math.max(0, p.trophies - loss)
+      }
+      p.gold += awardsTrophies ? 15 : 10
+      p.xp += awardsTrophies ? 15 : 10
     } else {
       p.draws += 1
       p.winStreak = 0
-      p.trophies += 5
-      p.gold += 25
-      p.xp += 25
+      if (awardsTrophies) p.trophies += 5
+      p.gold += awardsTrophies ? 25 : 15
+      p.xp += awardsTrophies ? 25 : 15
     }
   } else if (result === 'victory') {
     p.wins += 1
     p.winStreak += 1
     p.bestWinStreak = Math.max(p.bestWinStreak, p.winStreak)
-    p.trophies += 30
-    p.gold += 50
-    p.xp += 40
+    if (awardsTrophies) p.trophies += 30
+    p.gold += awardsTrophies ? 50 : 25
+    p.xp += awardsTrophies ? 40 : 20
   } else if (result === 'defeat') {
     p.losses += 1
     p.winStreak = 0
-    p.trophies = Math.max(0, p.trophies - 20)
-    p.gold += 15
-    p.xp += 15
+    if (awardsTrophies) p.trophies = Math.max(0, p.trophies - 20)
+    p.gold += awardsTrophies ? 15 : 10
+    p.xp += awardsTrophies ? 15 : 10
   } else {
     p.draws += 1
     p.winStreak = 0
-    p.trophies += 5
-    p.gold += 25
-    p.xp += 25
+    if (awardsTrophies) p.trophies += 5
+    p.gold += awardsTrophies ? 25 : 15
+    p.xp += awardsTrophies ? 25 : 15
   }
   p.peakTrophies = Math.max(p.peakTrophies ?? 0, p.trophies)
   saveProfile(p)

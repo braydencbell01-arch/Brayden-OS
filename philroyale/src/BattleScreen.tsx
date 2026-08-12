@@ -3,6 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { canDeployAllyAt, canDeployTouchdownAt } from './arena'
 import { Arena, clientToArenaTile, unitStyle, unitVisualWidthPct, FIELD_W, FIELD_H } from './Arena'
 import type { GameMode } from './storage'
+import {
+  OVERTIME_SECONDS,
+  earnsTrophies,
+  elixirMultiplier,
+  formatElixirMult,
+  regulationSeconds,
+} from './gameModes'
 import { BattleCard } from './BattleCard'
 import {
   BulletBoom,
@@ -278,7 +285,9 @@ export function BattleScreen({
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
-  const [seconds, setSeconds] = useState(mode === 'touchdown' ? 150 : 180)
+  const [seconds, setSeconds] = useState(() => regulationSeconds(mode))
+  const [overtime, setOvertime] = useState(false)
+  const overtimeUsedRef = useRef(false)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [draggingActive, setDraggingActive] = useState(false)
   const [emotePickerOpen, setEmotePickerOpen] = useState(false)
@@ -296,6 +305,7 @@ export function BattleScreen({
   const {
     elixir,
     elixirMax,
+    remoteOvertime,
     units,
     projectiles,
     splats,
@@ -322,11 +332,15 @@ export function BattleScreen({
     botLevel,
     trophies,
     mode,
+    overtime,
     // Solo bot: always pass a fresh 8-from-23 deck. Friend net → AI off, deck unused.
     enemyDeckIds: net ? undefined : botDeckIds,
     net,
     onPeerLinkFailed,
   })
+
+  const overtimeActive = overtime || remoteOvertime
+  const displayElixirMult = elixirMultiplier(mode, overtimeActive)
 
   useEffect(() => {
     if (!net) return
@@ -334,6 +348,13 @@ export function BattleScreen({
       setSeconds(clockSec)
     }
   }, [net, clockSec])
+
+  useEffect(() => {
+    if (remoteOvertime) {
+      setOvertime(true)
+      overtimeUsedRef.current = true
+    }
+  }, [remoteOvertime])
 
   useEffect(() => {
     if (!linkReady) return
@@ -397,6 +418,12 @@ export function BattleScreen({
         return
       }
       if (isSpectating || seconds > 0) return
+      if (allyScore === enemyScore && !overtimeUsedRef.current) {
+        overtimeUsedRef.current = true
+        setOvertime(true)
+        setSeconds(OVERTIME_SECONDS)
+        return
+      }
       setResult(
         allyScore > enemyScore ? 'victory' : enemyScore > allyScore ? 'defeat' : 'draw',
       )
@@ -418,6 +445,12 @@ export function BattleScreen({
     if (isSpectating || seconds > 0) return
     const allyLeft = towers.filter((t) => t.side === 'ally' && t.hp > 0).length
     const enemyLeft = towers.filter((t) => t.side === 'enemy' && t.hp > 0).length
+    if (allyLeft === enemyLeft && !overtimeUsedRef.current) {
+      overtimeUsedRef.current = true
+      setOvertime(true)
+      setSeconds(OVERTIME_SECONDS)
+      return
+    }
     setResult(allyLeft > enemyLeft ? 'victory' : enemyLeft > allyLeft ? 'defeat' : 'draw')
     setEmotePickerOpen(false)
   }, [towers, seconds, result, mode, allyScore, enemyScore, touchdownWinScore, isSpectating])
@@ -432,9 +465,10 @@ export function BattleScreen({
       crowns,
       pvp: isPvp,
       opponentTrophies: isPvp ? opponentTrophies : undefined,
+      awardsTrophies: earnsTrophies(mode),
     })
     grantBattleChest(result)
-  }, [result, isSpectating, net, opponentTrophies, towers])
+  }, [result, isSpectating, net, opponentTrophies, towers, mode])
 
   function cycleAfterDeploy(playedId: string) {
     const incoming = nextId
@@ -942,7 +976,7 @@ export function BattleScreen({
             style={{ background: 'rgba(12,12,18,0.72)', boxShadow: '0 2px 6px #00000066' }}
           >
             <p className="text-[0.38rem] font-extrabold uppercase tracking-[0.12em] text-white/80">
-              TIME LEFT
+              {overtimeActive ? 'OVERTIME' : 'TIME LEFT'}
             </p>
             <p className="font-[family-name:var(--font-display)] text-[1.15rem] tracking-wide text-white drop-shadow-[0_1px_2px_#000]">
               {mm}:{ss}
@@ -1019,11 +1053,13 @@ export function BattleScreen({
             <p className="mt-1 text-xs font-bold text-[#5a4a20]/85">
               {isSpectating
                 ? 'Spectating — no trophies for you'
-                : result === 'victory'
-                  ? '+30 trophies · +50 gold · chest chance'
-                  : result === 'defeat'
-                    ? '−20 trophies · +15 gold'
-                    : '+5 trophies · +25 gold'}
+                : !earnsTrophies(mode)
+                  ? 'Party mode — gold only, no trophies'
+                  : result === 'victory'
+                    ? '+30 trophies · +50 gold · chest chance'
+                    : result === 'defeat'
+                      ? '−20 trophies · +15 gold'
+                      : '+5 trophies · +25 gold'}
             </p>
             <button
               type="button"
@@ -1194,6 +1230,16 @@ export function BattleScreen({
                 ))}
               </div>
             </div>
+            <span
+              className="shrink-0 rounded px-1.5 py-0.5 text-[0.6rem] font-extrabold tabular-nums"
+              style={{
+                background: overtimeActive || displayElixirMult > 1 ? '#f5d76e' : '#2a1a12',
+                color: overtimeActive || displayElixirMult > 1 ? '#1a1410' : '#f5d76e',
+              }}
+              title="Elixir rate"
+            >
+              {formatElixirMult(displayElixirMult)}
+            </span>
           </div>
         </div>
         )}

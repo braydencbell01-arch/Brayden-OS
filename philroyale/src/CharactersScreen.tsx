@@ -27,25 +27,13 @@ import {
 import { BattleCard } from './BattleCard'
 
 type Pane = 'decks' | 'collection'
-type SortDir = 'asc' | 'desc'
-type SortMode = 'name' | 'elixir' | 'rarity' | 'level' | 'copies'
-
-const SORT_LABELS: Record<SortMode, string> = {
-  name: 'By Name',
-  elixir: 'By Elixir',
-  rarity: 'By Rarity',
-  level: 'By Level',
-  copies: 'By Copies',
-}
-
+const DECK_SLOTS = 5
 const RARITY_PILL: Record<Rarity, string> = {
   common: '#b8c0cc',
   rare: '#e67e22',
   epic: '#b14fd6',
   legendary: '#f5d76e',
 }
-
-const DECK_SLOTS = 5
 
 export function CharactersScreen() {
   const [pane, setPane] = useState<Pane>('decks')
@@ -56,10 +44,6 @@ export function CharactersScreen() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [pickSlot, setPickSlot] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
-  const [sortMode, setSortMode] = useState<SortMode>('rarity')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [sortMenuOpen, setSortMenuOpen] = useState(false)
-
   const deck = decks[activeIdx] ?? []
 
   useEffect(() => {
@@ -81,26 +65,12 @@ export function CharactersScreen() {
     const list = [...CHARACTERS]
     const unlocked = list.filter((c) => progress.unlocked.includes(c.id))
     const locked = list.filter((c) => !progress.unlocked.includes(c.id))
-    const sortFn = (a: CharacterDef, b: CharacterDef) => {
-      let primary = 0
-      if (sortMode === 'name') primary = a.name.localeCompare(b.name)
-      else if (sortMode === 'elixir') primary = a.elixir - b.elixir || a.name.localeCompare(b.name)
-      else if (sortMode === 'rarity')
-        primary = RARITY_RANK[a.rarity] - RARITY_RANK[b.rarity] || a.name.localeCompare(b.name)
-      else if (sortMode === 'level')
-        primary =
-          (progress.levels[a.id] ?? 1) - (progress.levels[b.id] ?? 1) ||
-          a.name.localeCompare(b.name)
-      else if (sortMode === 'copies')
-        primary =
-          (progress.copies[a.id] ?? 0) - (progress.copies[b.id] ?? 0) ||
-          a.name.localeCompare(b.name)
-      return sortDir === 'desc' ? -primary : primary
-    }
+    const sortFn = (a: CharacterDef, b: CharacterDef) =>
+      RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity] || a.name.localeCompare(b.name)
     unlocked.sort(sortFn)
     locked.sort(sortFn)
     return { unlocked, locked, found: progress.unlocked.length, total: CHARACTERS.length }
-  }, [progress, sortMode, sortDir])
+  }, [progress])
 
   function flash(msg: string) {
     setToast(msg)
@@ -232,126 +202,6 @@ export function CharactersScreen() {
     )
   }
 
-  const collectionHeader = (
-    <div className="relative mb-2 flex items-end justify-between gap-2">
-      <div className="min-w-0">
-        <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-white">
-          Card Collection
-        </h2>
-        <p className="text-xs font-bold text-white/70">
-          Found: {collection.found}/{collection.total}
-        </p>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setSortMenuOpen((o) => !o)}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[0.7rem] font-black text-white"
-          style={{ background: '#2a3a55', boxShadow: '0 2px 0 #0a1528' }}
-          aria-label="Sort options"
-          title="Sort options"
-        >
-          ☰
-        </button>
-        <button
-          type="button"
-          onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-sm font-black text-white"
-          style={{
-            background: 'linear-gradient(180deg,#7dff9a,#2f8f4a)',
-            boxShadow: '0 2px 0 #1a5028',
-          }}
-          aria-label="Sort direction"
-        >
-          {sortDir === 'desc' ? '↑' : '↓'}
-        </button>
-        <select
-          value={sortMode}
-          onChange={(e) => setSortMode(e.target.value as SortMode)}
-          className="h-7 max-w-[5.5rem] rounded-md px-1.5 text-[0.65rem] font-extrabold text-white outline-none"
-          style={{ background: '#2a3a55', boxShadow: '0 2px 0 #0a1528' }}
-          aria-label="Sort by"
-        >
-          {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-            <option key={mode} value={mode}>
-              {SORT_LABELS[mode]}
-            </option>
-          ))}
-        </select>
-      </div>
-      {sortMenuOpen ? (
-        <div
-          className="absolute right-0 top-full z-30 mt-1 min-w-[8.5rem] overflow-hidden rounded-lg ring-1 ring-white/15"
-          style={{ background: 'linear-gradient(180deg,#2a4068,#1a2848)' }}
-        >
-          {(Object.keys(SORT_LABELS) as SortMode[]).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => {
-                setSortMode(mode)
-                setSortMenuOpen(false)
-              }}
-              className="block w-full px-3 py-2 text-left text-[0.7rem] font-extrabold text-white hover:bg-white/10"
-              style={sortMode === mode ? { background: '#3a5a88' } : undefined}
-            >
-              {SORT_LABELS[mode]}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
-
-  const collectionLists = (
-    <>
-      {collection.unlocked.length > 0 ? (
-        <>
-          <p className="mb-2 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-[#7dff9a]">
-            Found
-          </p>
-          <ul className="grid grid-cols-4 gap-2">
-            {collection.unlocked.map((c) => (
-              <CollectionTile
-                key={c.id}
-                character={c}
-                level={progress.levels[c.id] ?? 1}
-                copies={progress.copies[c.id] ?? 0}
-                locked={false}
-                onClick={() => {
-                  if (pickSlot != null) {
-                    addToDeck(c.id)
-                  } else {
-                    setProfileId(c.id)
-                  }
-                }}
-              />
-            ))}
-          </ul>
-        </>
-      ) : null}
-      {collection.locked.length > 0 ? (
-        <>
-          <p className="mb-2 mt-4 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-white/55">
-            Not found
-          </p>
-          <ul className="grid grid-cols-4 gap-2">
-            {collection.locked.map((c) => (
-              <CollectionTile
-                key={c.id}
-                character={c}
-                level={1}
-                copies={0}
-                locked
-                onClick={() => setProfileId(c.id)}
-              />
-            ))}
-          </ul>
-        </>
-      ) : null}
-    </>
-  )
-
   return (
     <div
       className="relative flex h-full min-h-0 flex-col"
@@ -445,7 +295,6 @@ export function CharactersScreen() {
                       if (c) removeFromDeck(i)
                       else {
                         setPickSlot(picking ? null : i)
-                        if (!picking) setPane('collection')
                       }
                     }}
                     aria-label={c ? `Remove ${c.name}` : `Add to slot ${i + 1}`}
@@ -466,20 +315,86 @@ export function CharactersScreen() {
             </div>
             {pickSlot != null ? (
               <p className="mt-1 text-center text-xs font-bold text-[#8ec8ff]">
-                Pick a card in Collection to fill slot {pickSlot + 1}
+                Pick a Found card below for slot {pickSlot + 1}
               </p>
             ) : (
               <p className="mt-1 text-center text-[0.6rem] font-semibold text-white/45">
-                Tap a card to remove · empty slot opens Collection · auto-saves
+                Tap a card to remove · empty slot · pick from Found · auto-saves
               </p>
+            )}
+          </div>
+
+          <div className="mx-auto mt-4 max-w-md">
+            <p className="mb-2 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-[#7dff9a]">
+              Found · {collection.found}/{collection.total}
+            </p>
+            <ul className="grid grid-cols-4 gap-2">
+              {collection.unlocked.map((c) => (
+                <CollectionTile
+                  key={c.id}
+                  character={c}
+                  level={progress.levels[c.id] ?? 1}
+                  copies={progress.copies[c.id] ?? 0}
+                  locked={false}
+                  onClick={() => {
+                    if (pickSlot != null) {
+                      addToDeck(c.id)
+                    } else {
+                      setProfileId(c.id)
+                    }
+                  }}
+                />
+              ))}
+            </ul>
+            <p className="mb-2 mt-4 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-white/55">
+              Not found · {collection.locked.length}/{collection.total}
+            </p>
+            {collection.locked.length === 0 ? (
+              <p className="pb-4 text-center text-xs font-semibold text-white/40">
+                0/{collection.total} — you&apos;ve found them all
+              </p>
+            ) : (
+              <ul className="grid grid-cols-4 gap-2 pb-4">
+                {collection.locked.map((c) => (
+                  <CollectionTile
+                    key={c.id}
+                    character={c}
+                    level={progress.levels[c.id] ?? 1}
+                    copies={progress.copies[c.id] ?? 0}
+                    locked
+                    onClick={() => setProfileId(c.id)}
+                  />
+                ))}
+              </ul>
             )}
           </div>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24">
           <div className="mx-auto max-w-md">
-            {collectionHeader}
-            {collectionLists}
+            <div className="mb-2">
+              <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-white">
+                Card Collection
+              </h2>
+              <p className="text-xs font-bold text-white/70">
+                All cards · Found {collection.found}/{collection.total}
+              </p>
+            </div>
+            <ul className="grid grid-cols-4 gap-2">
+              {[...collection.unlocked, ...collection.locked].map((c) => {
+                const locked = !progress.unlocked.includes(c.id)
+                return (
+                  <CollectionTile
+                    key={c.id}
+                    character={c}
+                    level={progress.levels[c.id] ?? 1}
+                    copies={progress.copies[c.id] ?? 0}
+                    locked={locked}
+                    onClick={() => setProfileId(c.id)}
+                  />
+                )
+              })}
+            </ul>
           </div>
         </div>
       )}
