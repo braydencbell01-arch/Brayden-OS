@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BattleScreen } from './BattleScreen'
 import { CharactersScreen } from './CharactersScreen'
-import { CurrencyBar } from './CurrencyBar'
+import { TopStatusBar } from './CurrencyBar'
 import { EventsScreen } from './EventsScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
+import { ProfileScreen } from './ProfileScreen'
 import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
@@ -74,15 +75,60 @@ import {
   type GameMode,
 } from './storage'
 
-type TabId = 'home' | 'characters' | 'shop' | 'events' | 'friends'
+type TabId = 'shop' | 'cards' | 'home' | 'social' | 'profile'
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'home', label: 'Battle' },
-  { id: 'characters', label: 'Cards' },
   { id: 'shop', label: 'Shop' },
-  { id: 'events', label: 'Events' },
-  { id: 'friends', label: 'Social' },
+  { id: 'cards', label: 'Cards' },
+  { id: 'home', label: 'Battle' },
+  { id: 'social', label: 'Social' },
+  { id: 'profile', label: 'Profile' },
 ]
+
+function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
+  const stroke = active ? '#1a1410' : '#f5d76e'
+  if (id === 'shop') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+        <path fill={stroke} d="M4 9h16l-1.2 11H5.2L4 9zm2-5h12l1 4H5l1-4z" />
+      </svg>
+    )
+  }
+  if (id === 'cards') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+        <rect x="3" y="5" width="10" height="14" rx="1.5" fill={stroke} opacity="0.55" />
+        <rect x="7" y="3" width="10" height="14" rx="1.5" fill={stroke} opacity="0.8" />
+        <rect x="11" y="1" width="10" height="14" rx="1.5" fill={stroke} />
+      </svg>
+    )
+  }
+  if (id === 'home') {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+        <path
+          fill={stroke}
+          d="M7 20 4 8l6 3 2-7 2 7 6-3-3 12H7zm5-6.5c-1.1 0-2 .7-2 1.5s.9 1.5 2 1.5 2-.7 2-1.5-.9-1.5-2-1.5z"
+        />
+      </svg>
+    )
+  }
+  if (id === 'social') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+        <circle cx="8" cy="9" r="3" fill={stroke} />
+        <circle cx="16" cy="9" r="3" fill={stroke} />
+        <circle cx="12" cy="15" r="3" fill={stroke} />
+      </svg>
+    )
+  }
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="8" r="4" fill={stroke} />
+      <path fill={stroke} d="M4 20c1.8-3.5 4.5-5 8-5s6.2 1.5 8 5H4z" />
+    </svg>
+  )
+}
 
 function clearUrlParams(keys: string[]): void {
   const url = new URL(window.location.href)
@@ -110,6 +156,7 @@ export default function App() {
   /** Bumps every solo/friend match so BattleScreen remounts with a fresh CPU deck. */
   const [battleSession, setBattleSession] = useState(0)
   const [showRoad, setShowRoad] = useState(false)
+  const [showEvents, setShowEvents] = useState(false)
   const [incomingChallenge, setIncomingChallenge] = useState<BattleChallenge | null>(null)
   const [outgoingChallenge, setOutgoingChallenge] = useState<BattleChallenge | null>(() =>
     loadOutgoingChallenge(),
@@ -246,7 +293,7 @@ export default function App() {
       }
       savePendingFriendLink(null)
       flashFriend(`You're now friends with ${link.name}!`)
-      setTab('friends')
+      setTab('social')
     },
     [flashFriend],
   )
@@ -495,7 +542,7 @@ export default function App() {
     const club = loadRichClub()
     if (!club) {
       flashFriend('Join or create a club first.')
-      setTab('friends')
+      setTab('social')
       return
     }
     const me = loadPlayerName().trim() || 'Player'
@@ -543,7 +590,7 @@ export default function App() {
     const clubCode = new URLSearchParams(window.location.search).get('club')
     if (clubCode) {
       clearUrlParams(['club'])
-      setTab('friends')
+      setTab('social')
       void joinClubVerified(clubCode).then((res) => {
         flashFriend(res.message)
         window.dispatchEvent(new Event('philroyale-club-changed'))
@@ -1081,7 +1128,7 @@ export default function App() {
                 lastPopupAtRef.current = Date.now()
                 setIncomingFriendReq(null)
                 setFriendToast(null)
-                setTab('friends')
+                setTab('social')
               }}
               className="mt-4 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
               style={{
@@ -1132,7 +1179,7 @@ export default function App() {
                   const invite = clubInvite
                   saveIncomingClubInvite(null)
                   setClubInvite(null)
-                  setTab('friends')
+                  setTab('social')
                   flashFriend(`Joining ${invite.clubName}…`)
                   void joinClubVerified(invite.clubCode).then((res) => {
                     flashFriend(res.message)
@@ -1266,7 +1313,7 @@ export default function App() {
   if (draftingTouchdown) {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
+        <TopStatusBar onShop={() => setTab('shop')} />
         <div className="min-h-0 flex-1">
           <TouchdownDraft
             onCancel={() => {
@@ -1333,7 +1380,7 @@ export default function App() {
             setTouchdownDeck(null)
             setBattleMode('classic')
             setSpectating(false)
-            setTab(wasSpec ? 'friends' : 'home')
+            setTab(wasSpec ? 'social' : 'home')
           }}
         />
         {/* Intentionally no socialOverlays — battle is popup-free except LagBadge. */}
@@ -1346,7 +1393,7 @@ export default function App() {
   if (showRoad) {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
+        <TopStatusBar onShop={() => setTab('shop')} />
         <div className="min-h-0 flex-1">
           <TrophyRoadScreen
             onBack={() => {
@@ -1354,6 +1401,7 @@ export default function App() {
               setTab('home')
             }}
             onPlayBot={() => startMatch(null)}
+            friendPresence={friendPresence}
           />
         </div>
         <nav
@@ -1370,6 +1418,7 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setShowRoad(false)
+                      setShowEvents(false)
                       setTab(t.id)
                     }}
                     className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
@@ -1393,9 +1442,52 @@ export default function App() {
     )
   }
 
+  if (showEvents) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <TopStatusBar onShop={() => setTab('shop')} />
+        <div className="min-h-0 flex-1">
+          <EventsScreen
+            onPlay={(name, mode) => {
+              setShowEvents(false)
+              startMatch(name, mode ?? 'classic')
+            }}
+          />
+        </div>
+        <nav
+          className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+          style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
+          aria-label="Main"
+        >
+          <ul className="mx-auto flex max-w-md gap-0.5">
+            {TABS.map((t) => (
+              <li key={t.id} className="relative flex-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEvents(false)
+                    setTab(t.id)
+                  }}
+                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                  style={{
+                    background: 'transparent',
+                    color: '#f5d76e',
+                  }}
+                >
+                  {t.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {socialOverlays}
+      </div>
+    )
+  }
+
   return (
     <div className="relative flex h-full min-h-0 flex-col">
-      <CurrencyBar />
+      <TopStatusBar onShop={() => setTab('shop')} />
       <div className="min-h-0 flex-1">
         <AnimatePresence mode="wait">
           <motion.div
@@ -1412,17 +1504,15 @@ export default function App() {
                 onPlayTouchdown={() => startMatch(null, 'touchdown')}
                 onRequestBattle={requestBattle}
                 onOpenRoad={() => setShowRoad(true)}
-                onOpenEvents={() => setTab('events')}
-                onOpenClub={() => setTab('friends')}
+                onOpenEvents={() => setShowEvents(true)}
+                onOpenClub={() => setTab('social')}
+                onOpenCards={() => setTab('cards')}
                 friendPresence={friendPresence}
               />
             ) : null}
-            {tab === 'characters' ? <CharactersScreen /> : null}
+            {tab === 'cards' ? <CharactersScreen /> : null}
             {tab === 'shop' ? <ShopScreen /> : null}
-            {tab === 'events' ? (
-                <EventsScreen onPlay={(name, mode) => startMatch(name, mode ?? 'classic')} />
-            ) : null}
-            {tab === 'friends' ? (
+            {tab === 'social' ? (
               <FriendsScreen
                 onBattle={(name, mode) => startMatch(name, mode ?? 'classic')}
                 onRequestBattle={requestBattle}
@@ -1433,30 +1523,49 @@ export default function App() {
                 onSpectate={startSpectate}
               />
             ) : null}
+            {tab === 'profile' ? (
+              <ProfileScreen onOpenSocial={() => setTab('social')} />
+            ) : null}
           </motion.div>
         </AnimatePresence>
       </div>
 
       <nav
-        className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+        className="shrink-0 border-t border-[#c9a227]/35 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
         style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
         aria-label="Main"
       >
-        <ul className="mx-auto flex max-w-md gap-0.5">
+        <ul className="mx-auto flex max-w-md items-end gap-0.5">
           {TABS.map((t) => {
             const active = tab === t.id
+            const battleTab = t.id === 'home'
             return (
               <li key={t.id} className="relative flex-1">
                 <button
                   type="button"
-                  onClick={() => setTab(t.id)}
-                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                  onClick={() => {
+                    setShowRoad(false)
+                    setShowEvents(false)
+                    setTab(t.id)
+                  }}
+                  className={`flex w-full flex-col items-center gap-0.5 rounded-xl font-extrabold uppercase tracking-wide ${
+                    battleTab ? '-mt-2.5 py-2 text-[0.7rem]' : 'py-1.5 text-[0.58rem]'
+                  }`}
                   style={{
-                    background: active ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : 'transparent',
-                    color: active ? '#1a1410' : '#f5d76e',
-                    boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
+                    background: active
+                      ? battleTab
+                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                        : 'linear-gradient(180deg,#4a9eff,#2f6fbf)'
+                      : 'transparent',
+                    color: active ? (battleTab ? '#1a1410' : '#fff') : '#f5d76e',
+                    boxShadow: active
+                      ? battleTab
+                        ? '0 3px 0 #8a6a12'
+                        : '0 3px 0 #1d4a86'
+                      : 'none',
                   }}
                 >
+                  <TabGlyph id={t.id} active={active} />
                   {t.label}
                 </button>
                 {t.id === 'home' && roadBadge > 0 ? (

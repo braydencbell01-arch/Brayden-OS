@@ -1,43 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { getCharacter } from './characters'
+import { CharacterModel } from './characters/CharacterModel'
+import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import {
   ARENA_COLORS,
   CHEST_META,
   TROPHY_ROAD,
   type TrophyRoadReward,
 } from './progression'
+import { type FriendPresenceInfo } from './socialHub'
 import {
   claimAvailableRoadRewards,
   claimRoadStep,
+  loadAvatarId,
+  loadFriends,
+  loadPeakTrophies,
   loadProfile,
   loadTrophyRoad,
+  type Friend,
 } from './storage'
 
 type Props = {
   onBack: () => void
   onPlayBot: () => void
-}
-
-type RoadRow =
-  | { kind: 'arena'; arena: string; trophies: number }
-  | { kind: 'step'; step: TrophyRoadReward; idx: number; side: 'left' | 'right' }
-
-function buildRows(): RoadRow[] {
-  const rows: RoadRow[] = []
-  let lastArena = ''
-  let side: 'left' | 'right' = 'left'
-  // Top of scroll = highest trophies (climb up like CR)
-  for (let i = TROPHY_ROAD.length - 1; i >= 0; i--) {
-    const step = TROPHY_ROAD[i]!
-    if (step.arena !== lastArena) {
-      rows.push({ kind: 'arena', arena: step.arena, trophies: step.trophies })
-      lastArena = step.arena
-    }
-    rows.push({ kind: 'step', step, idx: i, side })
-    side = side === 'left' ? 'right' : 'left'
-  }
-  return rows
+  friendPresence?: Record<string, FriendPresenceInfo>
+  loadFriendsFn?: () => Friend[]
 }
 
 function rewardIcon(step: TrophyRoadReward): { bg: string; glyph: string; sub: string } {
@@ -53,16 +41,47 @@ function rewardIcon(step: TrophyRoadReward): { bg: string; glyph: string; sub: s
   return { bg: '#f5d76e', glyph: '●', sub: `${step.gold ?? 0}g` }
 }
 
-export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
+function arenaFor(trophies: number): string {
+  let arena = TROPHY_ROAD[0]!.arena
+  for (const step of TROPHY_ROAD) {
+    if (trophies >= step.trophies) arena = step.arena
+  }
+  return arena
+}
+
+/** Map trophy count → vertical progress 0–1 along the road (0 = bottom / low trophies). */
+function trophyProgress(trophies: number): number {
+  const max = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 1
+  return Math.max(0, Math.min(1, trophies / Math.max(1, max)))
+}
+
+export function TrophyRoadScreen({
+  onBack,
+  onPlayBot,
+  friendPresence = {},
+  loadFriendsFn = loadFriends,
+}: Props) {
   const [profile, setProfile] = useState(() => loadProfile())
   const [claimed, setClaimed] = useState(() => new Set(loadTrophyRoad().claimed))
   const [toast, setToast] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [friends] = useState(() => loadFriendsFn())
   const youRef = useRef<HTMLLIElement>(null)
+  const avatarId = useMemo(() => loadAvatarId(), [])
+  const peak = Math.max(loadPeakTrophies(), profile.trophies, profile.peakTrophies ?? 0)
 
-  const rows = useMemo(() => buildRows(), [])
   const colors = ARENA_COLORS[arenaFor(profile.trophies)] ?? ARENA_COLORS['Goblin Boot']!
+  const maxTrophies = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 5000
+  const curPct = trophyProgress(profile.trophies) * 100
+  const peakPct = trophyProgress(peak) * 100
+
+  const stepsDesc = useMemo(
+    () =>
+      [...TROPHY_ROAD]
+        .map((step, idx) => ({ step, idx }))
+        .reverse(),
+    [],
+  )
 
   const readyCount = useMemo(() => {
     let n = 0
@@ -72,7 +91,16 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
     return n
   }, [profile.trophies, claimed])
 
-  // Land on current trophy position when opening
+  const friendMarkers = useMemo(() => {
+    return friends
+      .map((f) => {
+        const t = f.playerId ? friendPresence[f.playerId]?.trophies : undefined
+        if (typeof t !== 'number') return null
+        return { id: f.id, name: f.name, trophies: t }
+      })
+      .filter(Boolean) as { id: string; name: string; trophies: number }[]
+  }, [friends, friendPresence])
+
   useEffect(() => {
     const id = window.requestAnimationFrame(() => {
       youRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -118,7 +146,6 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      {/* Arena-tinted sky */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -130,7 +157,7 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
         }}
       />
 
-      <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(0.55rem,env(safe-area-inset-top))]">
+      <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -144,7 +171,7 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
               Trophy Road
             </h1>
             <p className="truncate text-xs font-bold text-white/80">
-              Scroll the path · tap rewards to claim
+              {profile.trophies} now · peak {peak}
             </p>
           </div>
           <div
@@ -186,49 +213,70 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
         </div>
       </header>
 
-      {/* Scrollable zigzag path */}
       <div
-        ref={scrollRef}
         className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-28"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="relative mx-auto max-w-md py-4">
-          {/* Center path rail */}
+        <div className="relative mx-auto max-w-md py-4 pl-10">
+          {/* Left blue progress rail */}
           <div
             aria-hidden
-            className="pointer-events-none absolute bottom-6 left-1/2 top-6 w-[10px] -translate-x-1/2 rounded-full"
+            className="pointer-events-none absolute bottom-4 left-3 top-4 w-3 overflow-hidden rounded-full"
             style={{
-              background:
-                'linear-gradient(180deg, #f5d76e 0%, #c9a227 40%, #8a6a12 100%)',
-              boxShadow: 'inset 0 0 0 2px #ffe08a66, 0 0 12px #00000044',
+              background: 'linear-gradient(180deg,#0a2040,#061428)',
+              boxShadow: 'inset 0 0 0 2px #1a4a8a88',
             }}
-          />
+          >
+            {/* Peak fill (muted) */}
+            <div
+              className="absolute bottom-0 left-0 right-0"
+              style={{
+                height: `${peakPct}%`,
+                background: 'linear-gradient(180deg,#4a7aaa88,#2a4a6a66)',
+              }}
+            />
+            {/* Current fill */}
+            <div
+              className="absolute bottom-0 left-0 right-0"
+              style={{
+                height: `${curPct}%`,
+                background: 'linear-gradient(180deg,#6ec8ff,#2f6fbf)',
+                boxShadow: 'inset 0 1px 0 #ffffff44',
+              }}
+            />
+            {/* Peak marker when above current */}
+            {peak > profile.trophies ? (
+              <div
+                className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white/70"
+                style={{ bottom: `calc(${peakPct}% - 3px)` }}
+              />
+            ) : null}
+          </div>
 
-          <ul className="relative flex flex-col gap-5">
-            {rows.map((row) => {
-              if (row.kind === 'arena') {
-                const ac = ARENA_COLORS[row.arena] ?? ARENA_COLORS['Goblin Boot']!
-                return (
-                  <li key={`arena-${row.arena}-${row.trophies}`} className="relative z-10">
-                    <div
-                      className="mx-auto max-w-[16rem] rounded-xl px-3 py-2.5 text-center"
-                      style={{
-                        background: `linear-gradient(180deg, ${ac.sky}, ${ac.ground})`,
-                        boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
-                      }}
-                    >
-                      <p className="font-[family-name:var(--font-display)] text-lg tracking-wide text-[#f5d76e]">
-                        {row.arena}
-                      </p>
-                      <p className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/80">
-                        Arena · from {row.trophies} trophies
-                      </p>
-                    </div>
-                  </li>
-                )
-              }
+          {/* Friend markers on the rail */}
+          {friendMarkers.map((f) => {
+            const pct = trophyProgress(f.trophies) * 100
+            return (
+              <div
+                key={f.id}
+                className="pointer-events-none absolute left-1 z-20 -translate-y-1/2"
+                style={{ bottom: `calc(${pct}% + 1rem)` }}
+                title={`${f.name}: ${f.trophies}`}
+              >
+                <div
+                  className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full ring-2 ring-white"
+                  style={{ background: CARD_PORTRAIT_BG }}
+                >
+                  <span className="text-[0.55rem] font-black text-[#f5d76e]">
+                    {f.name.slice(0, 1).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            )
+          })}
 
-              const { step, idx, side } = row
+          <ul className="relative flex flex-col gap-6">
+            {stepsDesc.map(({ step, idx }, rowI) => {
               const reached = profile.trophies >= step.trophies
               const done = claimed.has(idx)
               const isYou =
@@ -237,23 +285,32 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
                   profile.trophies < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
               const icon = rewardIcon(step)
               const ready = reached && !done
+              const showArena =
+                rowI === 0 || stepsDesc[rowI - 1]?.step.arena !== step.arena
 
               return (
-                <li
-                  key={`step-${idx}`}
-                  ref={isYou ? youRef : undefined}
-                  className={`relative z-10 flex ${side === 'left' ? 'justify-start pl-2' : 'justify-end pr-2'}`}
-                >
-                  {/* Branch from center rail */}
+                <li key={`step-${idx}`} ref={isYou ? youRef : undefined} className="relative">
+                  {showArena ? (
+                    <div
+                      className="mb-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
+                      style={{
+                        background: `linear-gradient(180deg, ${(ARENA_COLORS[step.arena] ?? colors).sky}, ${(ARENA_COLORS[step.arena] ?? colors).ground})`,
+                        boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
+                      }}
+                    >
+                      <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
+                        {step.arena}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {/* Trophy tick on rail */}
                   <div
                     aria-hidden
-                    className="pointer-events-none absolute top-1/2 h-[3px] w-[22%] -translate-y-1/2"
+                    className="absolute -left-[1.85rem] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full"
                     style={{
-                      left: side === 'left' ? '28%' : 'auto',
-                      right: side === 'right' ? '28%' : 'auto',
-                      background: reached
-                        ? 'linear-gradient(90deg,#f5d76e,#c9a227)'
-                        : '#5a4a30',
+                      background: reached ? '#6ec8ff' : '#3a4a5a',
+                      boxShadow: reached ? '0 0 6px #6ec8ff88' : 'none',
                     }}
                   />
 
@@ -261,31 +318,61 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
                     type="button"
                     whileTap={{ scale: 0.94 }}
                     onClick={() => onNodeClick(idx)}
-                    className="relative w-[42%] max-w-[10.5rem] rounded-2xl p-2 text-left"
+                    className="relative ml-2 w-[90%] max-w-[17rem] overflow-hidden rounded-xl p-2 text-left"
                     style={{
-                      background: ready
-                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
-                        : done
-                          ? 'linear-gradient(180deg,#2d6a3a,#1a4024)'
-                          : 'linear-gradient(180deg,#3a2418,#1a100c)',
+                      background: 'linear-gradient(180deg,#6a6e78,#3a3e48 55%,#2a2e36)',
                       boxShadow: ready
-                        ? '0 5px 0 #8a6a12, 0 0 16px #f5d76e66'
-                        : '0 4px 0 #00000055',
-                      opacity: reached || done ? 1 : 0.55,
+                        ? '0 5px 0 #1a1e24, 0 0 14px #6ec8ff66'
+                        : '0 5px 0 #1a1e24',
+                      opacity: reached || done ? 1 : 0.6,
                     }}
                   >
+                    {/* Neon track down the middle of the island */}
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-y-2 left-1/2 w-8 -translate-x-1/2 rounded-sm"
+                      style={{
+                        background: 'linear-gradient(180deg,#2a2018,#1a140e)',
+                        boxShadow: 'inset 0 0 0 1px #5a4a3a',
+                      }}
+                    >
+                      <div
+                        className="absolute inset-x-1 top-1/2 h-1.5 -translate-y-1/2 rounded-full"
+                        style={{
+                          background: 'linear-gradient(90deg,#3dff7a,#1a9a40)',
+                          boxShadow: '0 0 8px #3dff7a88',
+                        }}
+                      />
+                    </div>
                     {isYou ? (
-                      <span className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#ff3b3b] px-2 py-0.5 text-[0.55rem] font-black uppercase tracking-wide text-white shadow">
-                        You
+                      <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
+                        <span
+                          className="flex h-full w-full items-end justify-center"
+                          style={{ background: CARD_PORTRAIT_BG }}
+                        >
+                          <CharacterModel
+                            charId={avatarId}
+                            anim="idle"
+                            facing={-Math.PI / 2}
+                            portrait
+                          />
+                        </span>
                       </span>
                     ) : null}
-                    <div className="flex items-center gap-2">
+                    {done ? (
+                      <span className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#7dff9a] text-[0.7rem] font-black text-[#1a1410] ring-1 ring-white/80">
+                        ✓
+                      </span>
+                    ) : null}
+                    <div className="relative z-[1] flex items-center justify-between gap-2 px-1">
                       <div
-                        className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl text-sm font-black"
+                        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
                         style={{
-                          background: icon.bg,
+                          background: done ? `${icon.bg}99` : icon.bg,
                           color: '#1a1410',
-                          boxShadow: 'inset 0 1px 0 #ffffff55',
+                          boxShadow: done
+                            ? '0 0 0 3px #ffffff55, inset 0 1px 0 #ffffff55'
+                            : 'inset 0 1px 0 #ffffff55',
                         }}
                       >
                         <span>{icon.glyph}</span>
@@ -293,19 +380,15 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
                           {icon.sub.slice(0, 8)}
                         </span>
                       </div>
-                      <div className="min-w-0">
-                        <p
-                          className={`truncate text-[0.7rem] font-black ${ready || done ? 'text-[#1a1410]' : 'text-white'}`}
-                        >
+                      <div className="min-w-0 flex-1 text-right">
+                        <p className="truncate text-[0.7rem] font-black text-white drop-shadow">
                           {step.label}
                         </p>
-                        <p
-                          className={`text-[0.6rem] font-extrabold ${ready || done ? 'text-[#1a1410]/75' : 'text-[#f5d76e]'}`}
-                        >
-                          {step.trophies} trophies
+                        <p className="text-[0.65rem] font-extrabold text-[#f5d76e]">
+                          {step.trophies}
                         </p>
                         <p
-                          className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#1b7a34]' : done ? 'text-white/80' : 'text-white/50'}`}
+                          className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#7dff9a]' : done ? 'text-white/70' : 'text-white/45'}`}
                         >
                           {done ? 'Claimed' : ready ? 'Tap to claim' : 'Locked'}
                         </p>
@@ -316,10 +399,12 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
               )
             })}
           </ul>
+          <p className="mt-4 text-center text-[0.6rem] font-bold text-white/40">
+            Max {maxTrophies} trophies
+          </p>
         </div>
       </div>
 
-      {/* Bottom detail / battle dock */}
       <div
         className="absolute inset-x-0 bottom-0 z-30 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2"
         style={{
@@ -348,7 +433,7 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
             </p>
           ) : (
             <p className="text-center text-xs font-bold text-white/70">
-              Swipe up for higher arenas · swipe down toward Goblin Boot
+              Single rewards · claim when you reach each marker
             </p>
           )}
         </div>
@@ -363,12 +448,4 @@ export function TrophyRoadScreen({ onBack, onPlayBot }: Props) {
       ) : null}
     </div>
   )
-}
-
-function arenaFor(trophies: number): string {
-  let arena = TROPHY_ROAD[0]!.arena
-  for (const step of TROPHY_ROAD) {
-    if (trophies >= step.trophies) arena = step.arena
-  }
-  return arena
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { playerLevelFromXp } from './clubMeta'
 import { loadProfile } from './storage'
 
 /** Gold coin + gem crystal icons for the persistent currency chip. */
@@ -31,16 +32,55 @@ export function GemIcon({ className = 'h-4 w-4' }: { className?: string }) {
   )
 }
 
-/** Persistent top-right gold + gems. Place once in App shell. */
-export function CurrencyBar() {
+function Pill({
+  children,
+  onPlus,
+  ariaLabel,
+}: {
+  children: React.ReactNode
+  onPlus?: () => void
+  ariaLabel: string
+}) {
+  return (
+    <div
+      className="pointer-events-auto flex items-center gap-1 rounded-full pl-2 pr-1 py-1"
+      style={{
+        background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+        boxShadow: '0 2px 0 #00000066, inset 0 1px 0 #c9a22744',
+      }}
+      aria-label={ariaLabel}
+    >
+      {children}
+      {onPlus ? (
+        <button
+          type="button"
+          onClick={onPlus}
+          className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-[#1a1410]"
+          style={{
+            background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+            boxShadow: '0 1px 0 #8a6a12',
+          }}
+          aria-label="Add"
+        >
+          +
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+/** Full-width Clash-style XP / gold / gems bar for the main shell. */
+export function TopStatusBar({ onShop }: { onShop?: () => void }) {
   const [gold, setGold] = useState(() => loadProfile().gold)
   const [gems, setGems] = useState(() => loadProfile().gems)
+  const [xp, setXp] = useState(() => loadProfile().xp)
 
   useEffect(() => {
     const sync = () => {
       const p = loadProfile()
       setGold(p.gold)
       setGems(p.gems)
+      setXp(p.xp)
     }
     sync()
     const id = window.setInterval(sync, 800)
@@ -53,35 +93,52 @@ export function CurrencyBar() {
     }
   }, [])
 
+  const level = playerLevelFromXp(xp)
+
   return (
     <div
-      className="pointer-events-none absolute right-2 top-[max(0.45rem,env(safe-area-inset-top))] z-40 flex items-center gap-1.5"
-      aria-label={`Gold ${gold}, gems ${gems}`}
+      className="pointer-events-none absolute inset-x-0 top-[max(0.35rem,env(safe-area-inset-top))] z-40 flex items-center justify-between gap-2 px-2"
+      aria-label={`Level ${level.level}, gold ${gold}, gems ${gems}`}
     >
-      <div
-        className="pointer-events-auto flex items-center gap-1 rounded-full px-2 py-1"
-        style={{
-          background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-          boxShadow: '0 2px 0 #00000066, inset 0 1px 0 #c9a22744',
-        }}
-      >
-        <GoldIcon className="h-4 w-4 shrink-0" />
-        <span className="min-w-[1.5rem] text-xs font-extrabold tabular-nums text-[#f5d76e]">
-          {gold}
+      <Pill ariaLabel={`Level ${level.level}`}>
+        <span
+          className="flex h-5 min-w-5 items-center justify-center rounded-full text-[0.65rem] font-black text-[#1a1410]"
+          style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+        >
+          {level.level}
         </span>
-      </div>
-      <div
-        className="pointer-events-auto flex items-center gap-1 rounded-full px-2 py-1"
-        style={{
-          background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-          boxShadow: '0 2px 0 #00000066, inset 0 1px 0 #c9a22744',
-        }}
-      >
-        <GemIcon className="h-4 w-4 shrink-0" />
-        <span className="min-w-[1.25rem] text-xs font-extrabold tabular-nums text-[#7dffef]">
-          {gems}
-        </span>
+        <div className="w-14 pr-1">
+          <div className="h-1.5 overflow-hidden rounded-full bg-black/50">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.round((level.into / Math.max(1, level.need)) * 100)}%`,
+                background: 'linear-gradient(90deg,#7dff9a,#4a9eff)',
+              }}
+            />
+          </div>
+        </div>
+      </Pill>
+
+      <div className="flex items-center gap-1.5">
+        <Pill ariaLabel={`Gold ${gold}`} onPlus={onShop}>
+          <GoldIcon className="h-4 w-4 shrink-0" />
+          <span className="min-w-[1.5rem] text-xs font-extrabold tabular-nums text-[#f5d76e]">
+            {gold}
+          </span>
+        </Pill>
+        <Pill ariaLabel={`Gems ${gems}`} onPlus={onShop}>
+          <GemIcon className="h-4 w-4 shrink-0" />
+          <span className="min-w-[1.25rem] text-xs font-extrabold tabular-nums text-[#7dffef]">
+            {gems}
+          </span>
+        </Pill>
       </div>
     </div>
   )
+}
+
+/** @deprecated Use TopStatusBar — kept as alias for older imports. */
+export function CurrencyBar() {
+  return <TopStatusBar />
 }
