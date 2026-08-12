@@ -454,24 +454,45 @@ export const ICE_CREAM: CharacterDef = {
   attacks: [],
 }
 
-/** Slow football lob — huge splash, long hang time. */
+/** Baseball lob — turf splash where it lands. */
 export const FOOTBALL_HUCK: CharacterDef = {
   id: 'footballHuck',
-  name: 'Huck',
-  initial: 'Fb',
+  name: 'Baseball Huck',
+  initial: 'Bb',
   pronoun: 'it',
   height: "1'0\"",
   rarity: 'rare',
-  elixir: 4,
+  elixir: 3,
   hp: 0,
   moveSpeed: 0,
   attackDelaySec: 0,
   hue: 30,
   cardKind: 'spell',
-  blurb: 'Spell — huck a football. Huge turf blast where it lands.',
+  blurb: 'Spell — huck a baseball. Turf blast where it lands.',
   spellDamage: 470,
   spellRadius: 15,
   spellTravelMs: 4000,
+  attacks: [],
+}
+
+/** Epic football nuke — same look as the old Huck, bigger blast, faster drop. */
+export const BOBBY_SPECIAL: CharacterDef = {
+  id: 'bobbySpecial',
+  name: 'Bobby Special',
+  initial: 'BS',
+  pronoun: 'it',
+  height: "1'0\"",
+  rarity: 'epic',
+  elixir: 5,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 25,
+  cardKind: 'spell',
+  blurb: "Spell — Bobby's football special. Double splash, hits harder, lands in a second.",
+  spellDamage: 825,
+  spellRadius: 30,
+  spellTravelMs: 1000,
   attacks: [],
 }
 
@@ -763,6 +784,7 @@ export const CHARACTERS: CharacterDef[] = [
   STEVES_DINER,
   ICE_CREAM,
   FOOTBALL_HUCK,
+  BOBBY_SPECIAL,
   BIG_MABLE,
 ]
 

@@ -54,7 +54,7 @@ export function UnitToken({
               ? '5 / 4.6'
               : charId === 'philsCar' || charId === 'stevesDiner' || charId === 'bigMable'
                 ? '5 / 3.4'
-              : charId === 'iceCream' || charId === 'footballHuck'
+              : charId === 'iceCream' || charId === 'footballHuck' || charId === 'bobbySpecial'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
               ? '4 / 4.85'
@@ -864,6 +864,61 @@ export function CashSplat({ ageMs }: { ageMs: number }) {
           }}
         />
       ))}
+    </div>
+  )
+}
+
+/** Flying baseball for Baseball Huck. */
+export function BaseballDot() {
+  return (
+    <div
+      className="relative h-5 w-5"
+      style={{
+        borderRadius: '50%',
+        background:
+          'radial-gradient(circle at 32% 28%, #ffffff 0%, #f0f0ea 45%, #d0d0c8 78%, #a8a8a0 100%)',
+        boxShadow: '0 2px 3px #0009, inset 0 1px 0 #fff8',
+      }}
+      aria-hidden
+    >
+      <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full" aria-hidden>
+        <path
+          d="M8 12 Q20 20 8 28"
+          fill="none"
+          stroke="#c62828"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <path
+          d="M32 12 Q20 20 32 28"
+          fill="none"
+          stroke="#c62828"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  )
+}
+
+/** Baseball spell impact — dusty dirt burst. */
+export function BaseballSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 900)
+  const scale = 0.5 + p * 3.0
+  const opacity = 1 - p * 0.92
+  return (
+    <div
+      className="relative h-16 w-16"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #f5f5f0 0%, #c8b090aa 35%, #6a4a2855 55%, transparent 70%)',
+        }}
+      />
     </div>
   )
 }

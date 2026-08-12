@@ -23,6 +23,8 @@ import {
   CashSplat,
   FootballDot,
   FootballSplat,
+  BaseballDot,
+  BaseballSplat,
   PancakeDot,
   PancakeSplat,
   RocketDot,
@@ -137,6 +139,7 @@ function FlyingShot({
     | 'cannon'
     | 'iceCream'
     | 'football'
+    | 'baseball'
     | 'cash'
     | 'rocket'
     | 'pancake'
@@ -169,6 +172,8 @@ function FlyingShot({
                       ? 9
                       : kind === 'football'
                         ? 14
+                        : kind === 'baseball'
+                          ? 12
                         : kind === 'pancake'
                           ? 8
                         : 4)
@@ -176,7 +181,7 @@ function FlyingShot({
   const travelAngle =
     (Math.atan2(toRow - fromRow, toCol - fromCol) * 180) / Math.PI
   const spin =
-    kind === 'football'
+    kind === 'football' || kind === 'baseball'
       ? p * 720
       : kind === 'cash'
         ? p * 540
@@ -191,11 +196,12 @@ function FlyingShot({
     kind === 'witchcraft' ||
     kind === 'arrow' ||
     kind === 'football' ||
+    kind === 'baseball' ||
     kind === 'cash' ||
     kind === 'dumbbell' ||
     kind === 'pancake'
   const transform = aimKinds
-    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' ? spin : 0)}deg)`
+    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' ? spin : 0)}deg)`
     : undefined
 
   return (
@@ -210,6 +216,7 @@ function FlyingShot({
       {kind === 'sundae' || kind === 'iceCream' ? <SundaeDot /> : null}
       {kind === 'pancake' ? <PancakeDot /> : null}
       {kind === 'football' ? <FootballDot /> : null}
+      {kind === 'baseball' ? <BaseballDot /> : null}
       {kind === 'cash' ? <CashDot /> : null}
       {kind === 'rocket' ? <RocketDot /> : null}
       {kind === 'slobber' ? <SlobberDot /> : null}
@@ -682,6 +689,7 @@ export function BattleScreen({
             p.kind === 'cannon' ||
             p.kind === 'iceCream' ||
             p.kind === 'football' ||
+            p.kind === 'baseball' ||
             p.kind === 'cash' ||
             p.kind === 'rocket' ||
             p.kind === 'pancake' ? (
@@ -703,6 +711,8 @@ export function BattleScreen({
                     background:
                       s.kind === 'football'
                         ? 'radial-gradient(circle, #e8c09055 0%, #8a5a2844 45%, transparent 70%)'
+                        : s.kind === 'baseball'
+                          ? 'radial-gradient(circle, #f5f5f055 0%, #c8b09044 45%, transparent 70%)'
                         : s.kind === 'iceCream' || s.kind === 'sundae'
                           ? 'radial-gradient(circle, #fff8f066 0%, #ffd1e044 45%, transparent 70%)'
                           : s.kind === 'pancake'
@@ -740,6 +750,8 @@ export function BattleScreen({
                   <IceCreamSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'football' ? (
                   <FootballSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'baseball' ? (
+                  <BaseballSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'cash' ? (
                   <CashSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'rocket' ? (

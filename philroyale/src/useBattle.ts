@@ -383,7 +383,8 @@ function makeSpellProjectile(
   if (damage <= 0 || radius <= 0) return null
   const from = kingThrowPoint(side)
   const travel = char.spellTravelMs ?? ICE_CREAM_PROJECTILE_MS
-  const kind = char.id === 'footballHuck' ? 'football' : 'iceCream'
+  const kind =
+    char.id === 'bobbySpecial' ? 'football' : char.id === 'footballHuck' ? 'baseball' : 'iceCream'
   return {
     id: nid('spell'),
     kind,
@@ -1213,7 +1214,7 @@ export function useBattle(opts?: {
             continue
           }
           projectilesChanged = true
-          if (p.kind === 'iceCream' || p.kind === 'football') {
+          if (p.kind === 'iceCream' || p.kind === 'football' || p.kind === 'baseball') {
             nextSplats.push({
               id: nid('spellfx'),
               col: p.toCol,
@@ -1359,6 +1360,16 @@ export function useBattle(opts?: {
             row: p.toRow,
             bornAt: t,
             kind: 'football',
+            radius: splatRadius,
+          })
+          splatsChanged = true
+        } else if (p.kind === 'baseball') {
+          nextSplats.push({
+            id: nid('bb'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'baseball',
             radius: splatRadius,
           })
           splatsChanged = true

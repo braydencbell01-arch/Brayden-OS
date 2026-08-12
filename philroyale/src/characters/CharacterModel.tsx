@@ -13,10 +13,11 @@ import { PhilModel, type CharacterAnim } from './PhilModel'
 import { ShayModel } from './ShayModel'
 import { ToddModel } from './ToddModel'
 import { DogHutModel } from './DogHutModel'
-import { FootballModel } from './FootballModel'
 import { PhilsCarModel } from './PhilsCarModel'
 import { ScottModel } from './ScottModel'
 import { IceCreamModel } from './IceCreamModel'
+import { BaseballModel } from './BaseballModel'
+import { BobbySpecialModel } from './BobbySpecialModel'
 import { GretchinModel } from './GretchinModel'
 import { DaveModel } from './DaveModel'
 import { PhilSpiritModel } from './PhilSpiritModel'
@@ -95,7 +96,9 @@ export function CharacterModel({
   } else if (charId === 'iceCream') {
     model = <IceCreamModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'footballHuck') {
-    model = <FootballModel anim={anim} facing={facing} portrait={portrait} />
+    model = <BaseballModel anim={anim} facing={facing} portrait={portrait} />
+  } else if (charId === 'bobbySpecial') {
+    model = <BobbySpecialModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'bigMable') {
     model = (
       <BigMableModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
