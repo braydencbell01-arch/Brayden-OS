@@ -215,33 +215,78 @@ export type ShopOffer = {
   charId?: string
   chest?: ChestRarity
   copies?: number
-  priceGold: number
+  /** Free daily deal — no gold or gems. */
+  free?: boolean
+  priceGold?: number
+  priceGems?: number
 }
 
+function cardCopiesForRarity(rarity: Rarity): number {
+  if (rarity === 'legendary') return 1
+  if (rarity === 'epic') return 2
+  if (rarity === 'rare') return 4
+  return 8
+}
+
+function goldPriceForRarity(rarity: Rarity, seed: number): number {
+  const base =
+    rarity === 'legendary' ? 1200 : rarity === 'epic' ? 500 : rarity === 'rare' ? 200 : 80
+  return base + (seed % 40)
+}
+
+/** Six daily card deals — one free, one gems, four gold (CR 3×2 grid). */
 export function dailyShopOffers(dayKey: string): ShopOffer[] {
   const seed = dayKey.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0)
   const shuffled = [...CHARACTERS].sort(
     (a, b) => ((a.id.charCodeAt(0) + seed) % 7) - ((b.id.charCodeAt(0) + seed) % 7),
   )
-  const cards: ShopOffer[] = shuffled.slice(0, 3).map((c, i) => {
-    const copies = c.rarity === 'legendary' ? 1 : c.rarity === 'epic' ? 2 : c.rarity === 'rare' ? 4 : 8
-    const price =
-      c.rarity === 'legendary' ? 1200 : c.rarity === 'epic' ? 500 : c.rarity === 'rare' ? 200 : 80
-    return {
-      id: `card-${dayKey}-${i}`,
+  const cards: ShopOffer[] = []
+
+  const freeChar = shuffled[0]!
+  cards.push({
+    id: `card-free-${dayKey}`,
+    kind: 'card',
+    charId: freeChar.id,
+    copies: Math.max(2, Math.floor(cardCopiesForRarity(freeChar.rarity) / 2)),
+    free: true,
+  })
+
+  const gemChar =
+    shuffled.find((c) => c.rarity === 'epic' || c.rarity === 'rare') ?? shuffled[1]!
+  cards.push({
+    id: `card-gem-${dayKey}`,
+    kind: 'card',
+    charId: gemChar.id,
+    copies: cardCopiesForRarity(gemChar.rarity),
+    priceGems:
+      gemChar.rarity === 'legendary' ? 40 : gemChar.rarity === 'epic' ? 20 : gemChar.rarity === 'rare' ? 10 : 6,
+  })
+
+  for (let i = 0; i < 4; i++) {
+    const c = shuffled[(i + 2) % shuffled.length]!
+    cards.push({
+      id: `card-${dayKey}-${i + 2}`,
       kind: 'card',
       charId: c.id,
-      copies,
-      priceGold: price + (seed % 40),
-    }
-  })
-  const chests: ShopOffer[] = [
+      copies: cardCopiesForRarity(c.rarity),
+      priceGold: goldPriceForRarity(c.rarity, seed + i * 11),
+    })
+  }
+
+  return cards
+}
+
+export function chestShopOffers(dayKey: string): ShopOffer[] {
+  return [
     { id: `chest-common-${dayKey}`, kind: 'chest', chest: 'common', priceGold: 100 },
     { id: `chest-rare-${dayKey}`, kind: 'chest', chest: 'rare', priceGold: 250 },
     { id: `chest-epic-${dayKey}`, kind: 'chest', chest: 'epic', priceGold: 600 },
     { id: `chest-legendary-${dayKey}`, kind: 'chest', chest: 'legendary', priceGold: 1400 },
   ]
-  return [...cards, ...chests]
+}
+
+export function allShopOffers(dayKey: string): ShopOffer[] {
+  return [...dailyShopOffers(dayKey), ...chestShopOffers(dayKey)]
 }
 
 export function rollChestLoot(rarity: ChestRarity): {
