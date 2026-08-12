@@ -107,6 +107,8 @@ export default function App() {
   const [draftingTouchdown, setDraftingTouchdown] = useState(false)
   const [touchdownDeck, setTouchdownDeck] = useState<string[] | null>(null)
   const [opponent, setOpponent] = useState<string | null>(null)
+  /** Bumps every solo/friend match so BattleScreen remounts with a fresh CPU deck. */
+  const [battleSession, setBattleSession] = useState(0)
   const [showRoad, setShowRoad] = useState(false)
   const [incomingChallenge, setIncomingChallenge] = useState<BattleChallenge | null>(null)
   const [outgoingChallenge, setOutgoingChallenge] = useState<BattleChallenge | null>(() =>
@@ -145,6 +147,7 @@ export default function App() {
       setBattleNet(room)
       setSpectating(false)
       setShowRoad(false)
+      setBattleSession((n) => n + 1)
 
       if (mode === 'touchdown') {
         setDraftingTouchdown(true)
@@ -1242,7 +1245,9 @@ export default function App() {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
         <BattleScreen
-          key={battleNet?.challengeId ?? `local-${opponent ?? 'bot'}`}
+          key={
+            battleNet?.challengeId ?? `local-${battleSession}-${opponent ?? 'bot'}`
+          }
           opponentName={opponent}
           opponentClanName={battleNet ? null : 'Bot Clan'}
           opponentTrophies={

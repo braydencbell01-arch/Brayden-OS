@@ -28,6 +28,7 @@ import {
   getCharacter,
   randomBotDeck,
   uniqueDeckFrom,
+  shuffleInPlace,
   isBuildingCard,
   isSpellCard,
   pickSpawnFromPool,
@@ -495,35 +496,22 @@ function tryEnemyAiDeploy(
   const colSpan = 14
   const rowBase = mode === 'touchdown' ? 8 : 28
   const rowSpan = mode === 'touchdown' ? 38 : 40
-  const deck = uniqueDeckFrom(deckIds.length ? deckIds : randomBotDeck())
+  // Stick to the match deck — never re-roll mid-battle.
+  const deck = uniqueDeckFrom(deckIds.length ? deckIds : [])
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
 
-  // Prefer affordable cards first so the bot actually plays instead of cycling past them.
-  // Deck is already unique (max one of each card).
-  const affordable = deck
-    .map((id, i) => ({ id, i }))
-    .filter(({ id }) => {
-      const c = getCharacter(id)
-      return c && enemyElixir >= c.elixir
-    })
+  // Play uniformly at random among affordable cards in this deck (no cheap-card bias).
+  const affordable = deck.filter((id) => {
+    const c = getCharacter(id)
+    return c != null && enemyElixir >= c.elixir
+  })
   const tryOrder =
     affordable.length > 0
-      ? [
-          ...affordable.map((a) => a.id),
-          ...deck.filter((id) => !affordable.some((a) => a.id === id)),
-        ]
-      : deck
+      ? shuffleInPlace([...affordable])
+      : shuffleInPlace([...deck])
 
-  // Guard: never consider the same card id twice in one deploy pass.
-  const seenTry = new Set<string>()
-  const uniqueTry = tryOrder.filter((id) => {
-    if (seenTry.has(id)) return false
-    seenTry.add(id)
-    return true
-  })
-
-  for (let attempt = 0; attempt < uniqueTry.length; attempt++) {
-    const charId = uniqueTry[(deckIndex + attempt) % uniqueTry.length]!
+  for (let attempt = 0; attempt < tryOrder.length; attempt++) {
+    const charId = tryOrder[attempt]!
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
 
@@ -536,7 +524,7 @@ function tryEnemyAiDeploy(
         unit: null,
         projectile,
         elixir: enemyElixir - char.elixir,
-        deckIndex: (deckIndex + attempt + 1) % deck.length,
+        deckIndex: (deckIndex + 1) % Math.max(1, deck.length),
       }
     }
 
@@ -547,7 +535,7 @@ function tryEnemyAiDeploy(
       return {
         unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex: (deckIndex + attempt + 1) % deck.length,
+        deckIndex: (deckIndex + 1) % Math.max(1, deck.length),
       }
     }
 
@@ -557,7 +545,7 @@ function tryEnemyAiDeploy(
       return {
         unit: makeBattleUnit(char, spot.col, spot.row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex: (deckIndex + attempt + 1) % deck.length,
+        deckIndex: (deckIndex + 1) % Math.max(1, deck.length),
       }
     }
   }

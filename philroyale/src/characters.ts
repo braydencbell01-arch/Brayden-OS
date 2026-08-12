@@ -718,7 +718,7 @@ export const BIG_MABLE: CharacterDef = {
   rarity: 'common',
   elixir: 6,
   hp: 2925,
-  moveSpeed: 2,
+  moveSpeed: 1,
   attackDelaySec: 0.5,
   hue: 28,
   noLock: true,
@@ -778,7 +778,7 @@ export const DEFAULT_DECK = [
 ]
 
 /** Fisher–Yates shuffle (in place). */
-function shuffleInPlace<T>(arr: T[]): T[] {
+export function shuffleInPlace<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     const a = arr[i]!
@@ -790,19 +790,11 @@ function shuffleInPlace<T>(arr: T[]): T[] {
 
 /**
  * Fresh random CPU deck each solo match.
- * Drawn from the full roster; at most one of each card (no duplicates).
+ * Uniform shuffle of the full roster — any card can appear; max one of each.
  */
 export function randomBotDeck(size = DECK_SIZE): string[] {
-  const pool = shuffleInPlace(CHARACTERS.map((c) => c.id))
-  const unique: string[] = []
-  const seen = new Set<string>()
-  for (const id of pool) {
-    if (seen.has(id)) continue
-    seen.add(id)
-    unique.push(id)
-    if (unique.length >= size) break
-  }
-  return unique
+  const n = Math.min(size, CHARACTERS.length)
+  return shuffleInPlace(CHARACTERS.map((c) => c.id)).slice(0, n)
 }
 
 /** Enforce max-one-of-each; if short, fill from remaining roster at random. */

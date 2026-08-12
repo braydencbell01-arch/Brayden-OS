@@ -262,12 +262,8 @@ export function BattleScreen({
 }: Props) {
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
-  // Solo CPUs: fresh random deck from the full roster, max one of each card.
-  const botDeckIds = useMemo(() => {
-    const deck = randomBotDeck()
-    // Hard guarantee — never ship a CPU deck with duplicate card ids.
-    return [...new Set(deck)]
-  }, [])
+  // Solo CPUs: brand-new uniform random 8 from the full roster every match.
+  const botDeckIds = useMemo(() => randomBotDeck(), [])
   const trophies = useMemo(() => loadProfile().trophies, [])
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
