@@ -1231,6 +1231,11 @@ export default function App() {
     )
   }
 
+  const handlePeerLinkFailed = useCallback(() => {
+    setBattleNet(null)
+    flashFriend("Friend didn't connect — training match vs bot.")
+  }, [flashFriend])
+
   if (battle) {
     const trophies = loadProfile().trophies
     const levels = loadCardProgress().levels
@@ -1251,11 +1256,7 @@ export default function App() {
           deckIds={battleMode === 'touchdown' ? touchdownDeck ?? undefined : undefined}
           net={battleNet}
           spectating={spectating}
-          onPeerLinkFailed={() => {
-            // Friend never hosted — remount as local bot fight (units move).
-            setBattleNet(null)
-            flashFriend("Friend didn't connect — training match vs bot.")
-          }}
+          onPeerLinkFailed={handlePeerLinkFailed}
           onExit={() => {
             const wasSpec = spectating
             setBattle(false)

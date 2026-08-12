@@ -976,9 +976,25 @@ export function useBattle(opts?: {
   )
 
   // Friend-battle room: host publishes state; guest mirrors + sends deploys.
+  // Keep onPeerLinkFailed in a ref so App re-renders don't rebind the room
+  // (that was resetting peerJoined and flashing "Waiting for friend…").
+  const onPeerLinkFailedRef = useRef(opts?.onPeerLinkFailed)
+  onPeerLinkFailedRef.current = opts?.onPeerLinkFailed
+
   useEffect(() => {
     if (!net) return
     liveRoleRef.current = net.role
+    lastRemoteSeqRef.current = 0
+    lastRemoteAtRef.current = 0
+    setSyncReady(false)
+    // Reset join latch only when entering a new room.
+    if (net.role === 'host') {
+      setPeerJoined(false)
+      peerJoinedRef.current = false
+    } else {
+      setPeerJoined(true)
+      peerJoinedRef.current = true
+    }
 
     const announceGuest = () => {
       const name = loadPlayerName().trim() || 'Player'
@@ -1118,7 +1134,7 @@ export function useBattle(opts?: {
       failTimer = window.setTimeout(() => {
         if (liveRoleRef.current !== 'guest') return
         if (lastRemoteSeqRef.current > 0) return
-        opts?.onPeerLinkFailed?.()
+        onPeerLinkFailedRef.current?.()
       }, 28_000)
     }
 
@@ -1133,8 +1149,7 @@ export function useBattle(opts?: {
     }
     if (net.role === 'host') {
       // Publish the empty board immediately so an accepting guest can link from cache.
-      setPeerJoined(false)
-      peerJoinedRef.current = false
+      // Do NOT clear peerJoined here on re-entry — that flashes the waiting overlay.
       publishHostState(true)
       hostBurst = window.setInterval(() => publishHostState(true), 450)
       window.setTimeout(() => window.clearInterval(hostBurst), 20_000)
@@ -1146,7 +1161,7 @@ export function useBattle(opts?: {
       if (failTimer) window.clearTimeout(failTimer)
       if (hostBurst) window.clearInterval(hostBurst)
     }
-  }, [net, publishHostState, opts?.onPeerLinkFailed])
+  }, [net?.challengeId, net?.role, net?.viewAs, publishHostState])
 
   useEffect(() => {
     let raf = 0
