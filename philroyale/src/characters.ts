@@ -317,7 +317,7 @@ export const TODD: CharacterDef = {
   elixir: 6,
   hp: 1500,
   moveSpeed: 5,
-  attackDelaySec: 2,
+  attackDelaySec: 1.5,
   hue: 0,
   blurb: 'Sprints in, then Flying Kick with splash.',
   attacks: [
@@ -651,7 +651,7 @@ export const PETE_SPIRIT: CharacterDef = {
   initial: 'Pe',
   pronoun: 'he',
   height: "1'0\"",
-  rarity: 'legendary',
+  rarity: 'epic',
   elixir: 1,
   hp: 125,
   moveSpeed: 13,
