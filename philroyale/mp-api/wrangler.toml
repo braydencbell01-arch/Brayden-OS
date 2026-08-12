@@ -13,12 +13,11 @@ class_name = "LobbyDO"
 name = "BATTLE"
 class_name = "BattleRoomDO"
 
+# Free plan requires SQLite-backed Durable Objects.
 [[migrations]]
 tag = "v1"
-new_classes = ["LobbyDO", "BattleRoomDO"]
+new_sqlite_classes = ["LobbyDO", "BattleRoomDO"]
 
 [vars]
 # Optional override; clients also read VITE_PHILROYALE_MP_URL / mp-endpoint.json
 APP_ORIGIN = "https://braydencbell01-arch.github.io"
-
-# redeploy trigger 2026-08-12T00:28:58Z
