@@ -221,7 +221,41 @@ function FlyingShot({
   )
 }
 
-/** Clash-style lag / high ping indicator. */
+/** Full-screen friend-match lag pause — both clients freeze until clear. */
+function LagPauseOverlay() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-[70] flex flex-col items-center justify-center"
+      style={{ background: 'rgba(8,6,4,0.72)' }}
+      role="status"
+      aria-label="Lag — match paused"
+    >
+      <div
+        className="flex flex-col items-center gap-3 rounded-2xl px-8 py-7"
+        style={{
+          background: 'linear-gradient(180deg,#3a2418ee,#1a100cee)',
+          boxShadow: '0 12px 40px #00000099, inset 0 0 0 2px #ff6b4a88',
+        }}
+      >
+        <svg width="92" height="72" viewBox="0 0 22 18" aria-hidden>
+          <rect x="2" y="12" width="3" height="4" rx="0.5" fill="#ff8a70" />
+          <rect x="7" y="9" width="3" height="7" rx="0.5" fill="#ff8a70" />
+          <rect x="12" y="5" width="3" height="11" rx="0.5" fill="#ff8a7044" />
+          <rect x="17" y="2" width="3" height="14" rx="0.5" fill="#ff8a7022" />
+          <line x1="1" y1="2" x2="21" y2="16" stroke="#ff3b30" strokeWidth="2.2" />
+        </svg>
+        <p className="font-[family-name:var(--font-display)] text-3xl tracking-wide text-[#ffb4a4]">
+          LAG
+        </p>
+        <p className="max-w-[14rem] text-center text-sm font-bold text-white/75">
+          Match paused — waiting for both players to reconnect
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Clash-style lag / high ping indicator (solo / corner). */
 function LagBadge() {
   return (
     <div
@@ -397,11 +431,12 @@ export function BattleScreen({
   }, [deckIds, setSelectedCharId])
 
   // Also gate deploy/clock on linkLocked so a brief sync blip can't soft-lock input.
+  // Friend lag pause freezes the match clock until both players recover.
   useEffect(() => {
-    if (ended || isSpectating || (net && !linkLocked)) return
+    if (ended || isSpectating || (net && !linkLocked) || (net && lagging)) return
     const id = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
     return () => window.clearInterval(id)
-  }, [ended, isSpectating, net, linkLocked])
+  }, [ended, isSpectating, net, linkLocked, lagging])
 
   useEffect(() => {
     if (!result) return
@@ -677,7 +712,7 @@ export function BattleScreen({
           </p>
         </div>
       ) : null}
-      {lagging ? <LagBadge /> : null}
+      {lagging ? (net ? <LagPauseOverlay /> : <LagBadge />) : null}
       {/* Map sits above the solid CR blue dock so all six towers stay visible. */}
       <div
         className={`absolute inset-x-0 top-0 ${isSpectating ? 'bottom-[4.25rem]' : 'bottom-[6.85rem]'}`}

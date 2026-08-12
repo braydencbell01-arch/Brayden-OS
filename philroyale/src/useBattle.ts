@@ -167,6 +167,9 @@ const LAUNCH_FLIGHT_MAX_MS = 1100
 const PANCAKE_SPLAT_MS = 820
 const LAG_FRAME_DT = 0.22
 const LAG_SYNC_MS = 1400
+/** Stay paused this long after lag clears so the match doesn't flicker. */
+const LAG_RESUME_HOLD_MS = 900
+const LAG_GUEST_REPORT_MS = 700
 /** Shay Love heart — drifts slowly toward the target. */
 const LOVE_PROJECTILE_MS = 1600
 /** Gretchin Witchcraft — medium purple bolt. */
@@ -938,6 +941,15 @@ export function useBattle(opts?: {
   const lastRemoteSeqRef = useRef(0)
   const lastRemoteAtRef = useRef(Date.now())
   const lagStreakRef = useRef(0)
+  /** Local lag signal (frame hitch / quiet sync). */
+  const localLaggingRef = useRef(false)
+  /** Guest-reported lag (host only). */
+  const guestLaggingRef = useRef(false)
+  /** Combined friend-match freeze. */
+  const lagPauseRef = useRef(false)
+  const lagClearSinceRef = useRef<number | null>(null)
+  const lastGuestLagSentRef = useRef(false)
+  const lastGuestLagAtRef = useRef(0)
   const pendingGuestDeploysRef = useRef<
     { charId: string; col: number; row: number; at: number }[]
   >([])
@@ -1030,13 +1042,14 @@ export function useBattle(opts?: {
       clockSec: clockSecRef.current,
       overtime: overtimeRef.current,
       peerJoined: peerJoinedRef.current,
+      lagPause: lagPauseRef.current,
     }
     void publishBattle(n.challengeId, msg)
   }, [])
 
   const deploy = useCallback(
     (char: CharacterDef, col: number, row: number) => {
-      if (pausedRef.current) return false
+      if (pausedRef.current || lagPauseRef.current) return false
       const n0 = netRef.current
       const role0 = liveRoleRef.current ?? n0?.role
       if (role0 === 'spectator') return false
@@ -1178,6 +1191,18 @@ export function useBattle(opts?: {
         return
       }
 
+      if (msg.type === 'battle_lag' && role === 'host') {
+        lastRemoteAtRef.current = Date.now()
+        guestLaggingRef.current = !!msg.lagging
+        if (msg.lagging) {
+          lagPauseRef.current = true
+          lagClearSinceRef.current = null
+          setLagging(true)
+          publishHostState(true)
+        }
+        return
+      }
+
       if (
         msg.type === 'battle_state' &&
         (role === 'guest' || role === 'spectator')
@@ -1185,6 +1210,14 @@ export function useBattle(opts?: {
         if (msg.seq <= lastRemoteSeqRef.current) return
         lastRemoteSeqRef.current = msg.seq
         lastRemoteAtRef.current = Date.now()
+        if (typeof msg.lagPause === 'boolean') {
+          lagPauseRef.current = msg.lagPause
+          if (msg.lagPause) lagClearSinceRef.current = null
+          setLagging((prev) => {
+            const next = msg.lagPause || localLaggingRef.current
+            return prev === next ? prev : next
+          })
+        }
         const t = performance.now()
         const flip =
           role === 'guest' || (role === 'spectator' && net.viewAs === 'guest')
@@ -1331,8 +1364,64 @@ export function useBattle(opts?: {
           (Date.now() - lastRemoteAtRef.current > LAG_SYNC_MS * 2 &&
             lastRemoteSeqRef.current > 0)
       }
-      const nextLag = lagStreakRef.current >= 4 || syncLag
-      setLagging((prev) => (prev === nextLag ? prev : nextLag))
+      const localLag = lagStreakRef.current >= 4 || syncLag
+      localLaggingRef.current = localLag
+
+      // Friend match: pause both sides while either player is lagging.
+      if (netRef.current && roleNow !== 'spectator') {
+        const nowMs = Date.now()
+        if (roleNow === 'guest') {
+          const shouldReport =
+            localLag !== lastGuestLagSentRef.current ||
+            nowMs - lastGuestLagAtRef.current > LAG_GUEST_REPORT_MS
+          if (shouldReport) {
+            lastGuestLagSentRef.current = localLag
+            lastGuestLagAtRef.current = nowMs
+            void publishBattle(netRef.current.challengeId, {
+              type: 'battle_lag',
+              challengeId: netRef.current.challengeId,
+              lagging: localLag,
+              at: nowMs,
+            })
+          }
+          // Guest also freezes on local hitch / quiet sync until host confirms clear.
+          if (localLag) {
+            lagPauseRef.current = true
+            lagClearSinceRef.current = null
+          } else if (!lagPauseRef.current) {
+            // host lagPause already applied via battle_state
+          } else if (!localLag && lagPauseRef.current) {
+            // Wait for host lagPause=false; keep overlay until then.
+          }
+        } else if (roleNow === 'host') {
+          const rawPause = localLag || guestLaggingRef.current
+          if (rawPause) {
+            lagPauseRef.current = true
+            lagClearSinceRef.current = null
+          } else if (lagPauseRef.current) {
+            if (lagClearSinceRef.current == null) lagClearSinceRef.current = nowMs
+            if (nowMs - lagClearSinceRef.current >= LAG_RESUME_HOLD_MS) {
+              lagPauseRef.current = false
+              lagClearSinceRef.current = null
+            }
+          }
+        }
+
+        const showLag = lagPauseRef.current || localLag
+        setLagging((prev) => (prev === showLag ? prev : showLag))
+
+        if (lagPauseRef.current) {
+          if (roleNow === 'host') publishHostState(false)
+          raf = requestAnimationFrame(tick)
+          return
+        }
+      } else {
+        const showLag =
+          !!netRef.current && roleNow === 'spectator'
+            ? lagPauseRef.current || localLag
+            : localLag
+        setLagging((prev) => (prev === showLag ? prev : showLag))
+      }
 
       // Guest / spectator only mirrors host state — do not run a second local sim.
       // Still advance local spell VFX (sundae throw) so casts feel responsive.

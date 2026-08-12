@@ -110,6 +110,8 @@ export type BattleRoomMessage =
       /** Host performance.now() at publish — guest maps timers/projectiles. */
       hostNow?: number
       projectiles?: SyncProjectile[]
+      /** Friend match: freeze both clients while either side is lagging. */
+      lagPause?: boolean
     }
   | {
       type: 'battle_deploy'
@@ -118,6 +120,13 @@ export type BattleRoomMessage =
       charId: string
       col: number
       row: number
+      at: number
+    }
+  | {
+      /** Guest reports local lag so host can pause both clients. */
+      type: 'battle_lag'
+      challengeId: string
+      lagging: boolean
       at: number
     }
   | {
@@ -203,7 +212,9 @@ export function subscribeBattle(
         ? `state:${data.seq}`
         : data.type === 'battle_deploy'
           ? `dep:${data.at}:${data.charId}`
-          : `${data.type}:${'at' in data ? data.at : ''}`
+          : data.type === 'battle_lag'
+            ? `lag:${data.at}:${data.lagging}`
+            : `${data.type}:${'at' in data ? data.at : ''}`
     if (seen.has(key)) return
     seen.add(key)
     if (seen.size > 300) {
