@@ -67,6 +67,8 @@ type Props = {
   spectating?: boolean
   /** Friend never linked — App should drop net so local bot AI can run. */
   onPeerLinkFailed?: () => void
+  /** Friend linked — App should stop invite spam / clear invite UI. */
+  onPeerLinked?: () => void
 }
 
 type DragState = {
@@ -259,6 +261,7 @@ export function BattleScreen({
   net = null,
   spectating = false,
   onPeerLinkFailed,
+  onPeerLinked,
 }: Props) {
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
@@ -275,6 +278,8 @@ export function BattleScreen({
   const [activeEmote, setActiveEmote] = useState<ActiveEmote | null>(null)
   const [emoteKey, setEmoteKey] = useState(0)
   const [result, setResult] = useState<MatchResult | null>(null)
+  /** Once the friend link succeeds once, never show Connecting overlay again. */
+  const [linkLocked, setLinkLocked] = useState(() => !net)
   const arenaRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<DragState | null>(null)
   const dragOriginRef = useRef<{ x: number; y: number } | null>(null)
@@ -323,6 +328,18 @@ export function BattleScreen({
   }, [net, clockSec])
 
   useEffect(() => {
+    if (!linkReady) return
+    setLinkLocked(true)
+  }, [linkReady])
+
+  useEffect(() => {
+    if (!linkLocked || !net) return
+    onPeerLinked?.()
+    // Intentionally only when we first lock the link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once per successful link
+  }, [linkLocked])
+
+  useEffect(() => {
     if (!net || net.role !== 'host' || !linkReady) return
     setClockSec(seconds)
   }, [net, linkReady, seconds, setClockSec])
@@ -336,11 +353,12 @@ export function BattleScreen({
     setSelectedCharId(h[0] ?? 'phil')
   }, [deckIds, setSelectedCharId])
 
+  // Also gate deploy/clock on linkLocked so a brief sync blip can't soft-lock input.
   useEffect(() => {
-    if (ended || isSpectating || (net && !linkReady)) return
+    if (ended || isSpectating || (net && !linkLocked)) return
     const id = window.setInterval(() => setSeconds((s) => Math.max(0, s - 1)), 1000)
     return () => window.clearInterval(id)
-  }, [ended, isSpectating, net, linkReady])
+  }, [ended, isSpectating, net, linkLocked])
 
   useEffect(() => {
     if (!result) return
@@ -442,7 +460,7 @@ export function BattleScreen({
   }
 
   function onArenaPointer(col: number, row: number) {
-    if (ended || (net && !linkReady)) return
+    if (ended || (net && !linkLocked)) return
     if (dragRef.current) return
     setEmotePickerOpen(false)
     if (!selectedCharId) return
@@ -483,7 +501,7 @@ export function BattleScreen({
   }
 
   function onCardPointerDown(e: React.PointerEvent, charId: string) {
-    if (ended || (net && !linkReady)) return
+    if (ended || (net && !linkLocked)) return
     setEmotePickerOpen(false)
     const card = getCharacter(charId)
     if (!card || elixir < card.elixir) {
@@ -583,7 +601,7 @@ export function BattleScreen({
 
   return (
     <div className="relative h-[100dvh] min-h-0 overflow-hidden bg-[#3a9a45]">
-      {net && !linkReady ? (
+      {net && !linkLocked ? (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/55 px-6 text-center">
           <p className="font-[family-name:var(--font-display)] text-xl text-white">
             {isSpectating

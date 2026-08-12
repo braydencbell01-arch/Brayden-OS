@@ -128,8 +128,14 @@ export default function App() {
   const needsName = !playerName.trim()
   /** Keep re-broadcasting battle invites until this time (host waiting for Accept). */
   const hostInviteUntilRef = useRef(0)
+  /** Mirrors `battle` for invite handlers (avoid Accept popups mid-match). */
+  const battleRef = useRef(false)
+  battleRef.current = battle
+  const battleNetRef = useRef(battleNet)
+  battleNetRef.current = battleNet
 
   const flashFriend = useCallback((msg: string) => {
+    if (battleRef.current) return
     setFriendToast(msg)
     window.setTimeout(() => setFriendToast(null), 2800)
   }, [])
@@ -148,6 +154,14 @@ export default function App() {
       setSpectating(false)
       setShowRoad(false)
       setBattleSession((n) => n + 1)
+      // Clear social popups so nothing sits on top of the arena.
+      setIncomingChallenge(null)
+      clearIncomingChallenge()
+      setIncomingFriendReq(null)
+      setClubInvite(null)
+      setFriendToast(null)
+      setOutgoingChallenge(null)
+      clearOutgoingChallenge()
 
       if (mode === 'touchdown') {
         setDraftingTouchdown(true)
@@ -221,6 +235,10 @@ export default function App() {
   )
 
   const showIncoming = useCallback((challenge: BattleChallenge) => {
+    // Never cover an active battle with Accept / Decline.
+    if (battleRef.current) return
+    // Same room we're already in (host re-broadcast) — ignore.
+    if (battleNetRef.current?.challengeId === challenge.challengeId) return
     if (!isChallengeForMe(challenge)) return
     const outgoing = loadOutgoingChallenge()
     if (outgoing && outgoing.challengeId === challenge.challengeId) return
@@ -750,8 +768,10 @@ export default function App() {
           void publishDirectory(myId, me, { trophies })
           void publishLobby({ ...hello, at: new Date().toISOString() })
         }, 800)
-        setIncomingFriendReq({ fromPlayerId: msg.fromPlayerId, fromName: msg.fromName })
-        flashFriend(`${msg.fromName} added you as a friend!`)
+        if (!battleRef.current) {
+          setIncomingFriendReq({ fromPlayerId: msg.fromPlayerId, fromName: msg.fromName })
+          flashFriend(`${msg.fromName} added you as a friend!`)
+        }
         return
       }
       if (msg.type === 'friend_hello') {
@@ -762,6 +782,8 @@ export default function App() {
         return
       }
       if (msg.type === 'battle_invite') {
+        if (battleRef.current) return
+        if (battleNetRef.current?.challengeId === msg.challengeId) return
         if (msg.toPlayerId !== myId) return
         if (msg.fromPlayerId === myId) return
         if (seenInvite.has(msg.challengeId)) return
@@ -894,7 +916,8 @@ export default function App() {
       const trophies = loadProfile().trophies
       void publishDirectory(myId, me, { trophies, inBattle: inMatch })
 
-      // While hosting and still waiting for Accept, keep re-sending the invite on the lobby.
+      // While hosting and still waiting for the friend to link, keep re-sending the invite.
+      // Stop as soon as invite window ends (cleared when peer links).
       if (
         inMatch &&
         battleNet?.role === 'host' &&
@@ -1239,6 +1262,16 @@ export default function App() {
     flashFriend("Friend didn't connect — training match vs bot.")
   }, [flashFriend])
 
+  /** Friend linked into the room — stop invite spam; battle UI stays clean. */
+  const handlePeerLinked = useCallback(() => {
+    hostInviteUntilRef.current = 0
+    setIncomingChallenge(null)
+    clearIncomingChallenge()
+    setOutgoingChallenge(null)
+    clearOutgoingChallenge()
+    setFriendToast(null)
+  }, [])
+
   if (battle) {
     const trophies = loadProfile().trophies
     const levels = loadCardProgress().levels
@@ -1262,6 +1295,7 @@ export default function App() {
           net={battleNet}
           spectating={spectating}
           onPeerLinkFailed={handlePeerLinkFailed}
+          onPeerLinked={handlePeerLinked}
           onExit={() => {
             const wasSpec = spectating
             setBattle(false)
@@ -1273,7 +1307,7 @@ export default function App() {
             setTab(wasSpec ? 'friends' : 'home')
           }}
         />
-        {socialOverlays}
+        {/* Intentionally no socialOverlays — battle is popup-free except LagBadge. */}
       </div>
     )
   }
