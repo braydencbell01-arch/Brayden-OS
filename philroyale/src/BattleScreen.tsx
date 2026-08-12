@@ -690,11 +690,11 @@ export function BattleScreen({
                 />
                 {deployWarming ? (
                   <div
-                    className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-0.5 -translate-x-1/2"
+                    className="pointer-events-none absolute left-1/2 bottom-full z-20 mb-1 -translate-x-1/2"
                     aria-hidden
                   >
                     <div
-                      className="relative flex h-4 w-4 items-center justify-center rounded-full font-extrabold text-[#1a1410]"
+                      className="relative flex h-3 w-3 items-center justify-center rounded-full font-extrabold text-[#1a1410]"
                       style={{
                         background:
                           'conic-gradient(#c9a227 ' +
@@ -704,7 +704,7 @@ export function BattleScreen({
                       }}
                     >
                       <span
-                        className="flex h-2.5 w-2.5 items-center justify-center rounded-full text-[0.4rem] leading-none"
+                        className="flex h-2 w-2 items-center justify-center rounded-full text-[0.32rem] leading-none"
                         style={{ background: '#f5d76e' }}
                       >
                         {Math.ceil(deployLeft / 1000)}

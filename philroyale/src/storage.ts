@@ -100,6 +100,8 @@ export type Friend = {
   name: string
   /** Remote player id for cross-device invites (ntfy topic). */
   playerId?: string
+  /** Last known trophies (from presence) — used on Trophy Road. */
+  trophies?: number
   /** When they joined via your invite link */
   addedAt: string
 }
@@ -218,6 +220,24 @@ export function loadFriends(): Friend[] {
 
 export function saveFriends(friends: Friend[]): void {
   localStorage.setItem(FRIENDS_KEY, JSON.stringify(friends))
+}
+
+/** Persist a friend's last-known trophies for Trophy Road markers. */
+export function saveFriendTrophies(playerId: string, trophies: number): void {
+  const id = playerId.trim()
+  if (!id || !Number.isFinite(trophies)) return
+  const friends = loadFriends()
+  let changed = false
+  for (const f of friends) {
+    if (f.playerId === id || f.id === id) {
+      const next = Math.max(0, Math.floor(trophies))
+      if (f.trophies !== next) {
+        f.trophies = next
+        changed = true
+      }
+    }
+  }
+  if (changed) saveFriends(friends)
 }
 
 export function removeFriendByPlayerId(playerId: string): void {

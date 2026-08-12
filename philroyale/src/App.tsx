@@ -69,6 +69,7 @@ import {
   shareText,
   battleInviteUrl,
   upsertFriend,
+  saveFriendTrophies,
   type BattleChallenge,
   type BattleChannelMessage,
   type ClubInviteIncoming,
@@ -776,6 +777,7 @@ export default function App() {
       if (msg.type === 'dir_ping') {
         if (msg.fromPlayerId === myId) return
         const at = Date.now()
+        if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
         setFriendPresence((prev) => ({
           ...prev,
           [msg.fromPlayerId]: {
@@ -793,6 +795,7 @@ export default function App() {
         // Presence may be lobbied to a specific friend; accept untargeted or for me.
         if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const at = Date.parse(msg.at) || Date.now()
+        if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
         setFriendPresence((prev) => ({
           ...prev,
           [msg.fromPlayerId]: {
@@ -1361,7 +1364,9 @@ export default function App() {
           opponentClanName={battleNet ? null : 'Bot Clan'}
           opponentTrophies={
             battleNet?.peerPlayerId
-              ? friendPresence[battleNet.peerPlayerId]?.trophies ?? loadProfile().trophies
+              ? friendPresence[battleNet.peerPlayerId]?.trophies ??
+                loadFriends().find((f) => f.playerId === battleNet.peerPlayerId)?.trophies ??
+                loadProfile().trophies
               : undefined
           }
           allyLevels={levels}

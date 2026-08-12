@@ -541,7 +541,7 @@ function CollectionTile({
         </div>
         {!locked ? (
           <>
-            <div className="relative mt-0.5 h-1.5 overflow-hidden rounded-sm bg-[#0a2040] ring-1 ring-[#1a4a8a]">
+            <div className="relative mt-0.5 h-3 overflow-hidden rounded-sm bg-[#0a2040] ring-1 ring-[#1a4a8a]">
               <div
                 className="h-full"
                 style={{
@@ -549,11 +549,11 @@ function CollectionTile({
                   background: 'linear-gradient(90deg,#6ec8ff,#2f6fbf)',
                 }}
               />
-              <span className="absolute inset-0 flex items-center justify-center text-[0.4rem] font-extrabold tabular-nums text-white [text-shadow:0_1px_0_#000]">
+              <span className="absolute inset-0 flex items-center justify-center text-[0.5rem] font-extrabold tabular-nums text-white [text-shadow:0_1px_0_#000]">
                 {copies}/{need}
               </span>
             </div>
-            <p className="mt-0.5 text-center text-[0.45rem] font-extrabold text-white/85">
+            <p className="mt-0.5 text-center text-[0.5rem] font-extrabold text-white/85">
               Level {level}
             </p>
           </>

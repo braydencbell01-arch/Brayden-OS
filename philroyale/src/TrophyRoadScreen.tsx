@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { getCharacter } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
@@ -9,7 +9,6 @@ import {
   ARENA_COLORS,
   CHEST_META,
   TROPHY_ROAD,
-  trophyRoadProgress,
   type TrophyRoadReward,
 } from './progression'
 import { type FriendPresenceInfo } from './socialHub'
@@ -103,15 +102,26 @@ export function TrophyRoadScreen({
   const [claimed, setClaimed] = useState(() => new Set(loadTrophyRoad().claimed))
   const [toast, setToast] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
-  const [friends] = useState(() => loadFriendsFn())
+  const [friends, setFriends] = useState(() => loadFriendsFn())
+  useEffect(() => {
+    const sync = () => setFriends(loadFriendsFn())
+    window.addEventListener('philroyale-friends-changed', sync)
+    const id = window.setInterval(sync, 4000)
+    return () => {
+      window.removeEventListener('philroyale-friends-changed', sync)
+      window.clearInterval(id)
+    }
+  }, [loadFriendsFn])
   const youRef = useRef<HTMLLIElement>(null)
+  const peakRef = useRef<HTMLLIElement>(null)
+  const railTrackRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
   const avatarId = useMemo(() => loadAvatarId(), [])
   const peak = Math.max(loadPeakTrophies(), profile.trophies, profile.peakTrophies ?? 0)
 
   const colors = ARENA_COLORS[arenaFor(profile.trophies)] ?? ARENA_COLORS['Goblin Boot']!
   const maxTrophies = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 5000
-  const curPct = trophyRoadProgress(profile.trophies) * 100
-  const peakPct = trophyRoadProgress(peak) * 100
+  const [railFill, setRailFill] = useState({ cur: 0, peak: 0, h: 0 })
 
   const stepsDesc = useMemo(
     () =>
@@ -131,13 +141,34 @@ export function TrophyRoadScreen({
 
   const friendMarkers = useMemo(() => {
     return friends.map((f) => {
-      const t =
+      const live =
         f.playerId && typeof friendPresence[f.playerId]?.trophies === 'number'
           ? friendPresence[f.playerId]!.trophies!
-          : 0
+          : undefined
+      const t = typeof live === 'number' ? live : typeof f.trophies === 'number' ? f.trophies : 0
       return { id: f.id, name: f.name, trophies: t }
     })
   }, [friends, friendPresence])
+
+  /** Attach each friend to the nearest road step index (still show at 0). */
+  const friendsByStep = useMemo(() => {
+    const map = new Map<number, { id: string; name: string; trophies: number }[]>()
+    for (const f of friendMarkers) {
+      let best = 0
+      let bestDist = Infinity
+      for (let i = 0; i < TROPHY_ROAD.length; i++) {
+        const d = Math.abs(TROPHY_ROAD[i]!.trophies - f.trophies)
+        if (d < bestDist) {
+          bestDist = d
+          best = i
+        }
+      }
+      const list = map.get(best) ?? []
+      list.push(f)
+      map.set(best, list)
+    }
+    return map
+  }, [friendMarkers])
 
   useEffect(() => {
     const id = window.requestAnimationFrame(() => {
@@ -145,6 +176,38 @@ export function TrophyRoadScreen({
     })
     return () => window.cancelAnimationFrame(id)
   }, [])
+
+  useLayoutEffect(() => {
+    function measure() {
+      const list = listRef.current
+      const track = railTrackRef.current
+      const you = youRef.current
+      const peakEl = peakRef.current
+      if (!list || !track) return
+      const trackH = track.clientHeight
+      const listTop = list.getBoundingClientRect().top
+      const trackBottom = track.getBoundingClientRect().bottom
+      const fromBottom = (el: HTMLElement | null) => {
+        if (!el) return 0
+        const mid = el.getBoundingClientRect().top + el.getBoundingClientRect().height / 2
+        return Math.max(0, Math.min(trackH, trackBottom - mid))
+      }
+      setRailFill({
+        cur: fromBottom(you),
+        peak: Math.max(fromBottom(peakEl), fromBottom(you)),
+        h: trackH,
+      })
+      void listTop
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (listRef.current) ro.observe(listRef.current)
+    window.addEventListener('scroll', measure, true)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('scroll', measure, true)
+    }
+  }, [profile.trophies, peak, stepsDesc, friendsByStep])
 
   function flash(msg: string) {
     setToast(msg)
@@ -256,54 +319,33 @@ export function TrophyRoadScreen({
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className="relative mx-auto max-w-md py-4 pl-10">
-          {/* Left blue progress rail */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute bottom-4 left-3 top-4 w-3 overflow-hidden rounded-full"
-            style={{
-              background: 'linear-gradient(180deg,#0a2040,#061428)',
-              boxShadow: 'inset 0 0 0 2px #1a4a8a88',
-            }}
-          >
+          <ul ref={listRef} className="relative flex flex-col gap-6">
             <div
-              className="absolute bottom-0 left-0 right-0"
+              ref={railTrackRef}
+              aria-hidden
+              className="pointer-events-none absolute bottom-0 left-3 top-0 w-3 overflow-hidden rounded-full"
               style={{
-                height: `${peakPct}%`,
-                background: 'linear-gradient(180deg,#4a7aaa88,#2a4a6a66)',
+                background: 'linear-gradient(180deg,#0a2040,#061428)',
+                boxShadow: 'inset 0 0 0 2px #1a4a8a88',
               }}
-            />
-            <div
-              className="absolute bottom-0 left-0 right-0"
-              style={{
-                height: `${curPct}%`,
-                background: 'linear-gradient(180deg,#6ec8ff,#2f6fbf)',
-                boxShadow: 'inset 0 1px 0 #ffffff44',
-              }}
-            />
-          </div>
-
-          {friendMarkers.map((f) => {
-            const pct = trophyRoadProgress(f.trophies) * 100
-            return (
+            >
               <div
-                key={f.id}
-                className="pointer-events-none absolute left-0.5 z-20 -translate-y-1/2"
-                style={{ bottom: `calc(1rem + (100% - 2rem) * ${pct / 100})` }}
-                title={`${f.name}: ${f.trophies}`}
-              >
-                <div
-                  className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full ring-2 ring-white"
-                  style={{ background: CARD_PORTRAIT_BG }}
-                >
-                  <span className="text-[0.55rem] font-black text-[#f5d76e]">
-                    {f.name.slice(0, 1).toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
+                className="absolute bottom-0 left-0 right-0"
+                style={{
+                  height: railFill.peak,
+                  background: 'linear-gradient(180deg,#4a7aaa88,#2a4a6a66)',
+                }}
+              />
+              <div
+                className="absolute bottom-0 left-0 right-0"
+                style={{
+                  height: railFill.cur,
+                  background: 'linear-gradient(180deg,#6ec8ff,#2f6fbf)',
+                  boxShadow: 'inset 0 1px 0 #ffffff44',
+                }}
+              />
+            </div>
 
-          <ul className="relative flex flex-col gap-6">
             {stepsDesc.map(({ step, idx }, rowI) => {
               const reached = profile.trophies >= step.trophies
               const done = claimed.has(idx)
@@ -311,12 +353,62 @@ export function TrophyRoadScreen({
                 profile.trophies >= step.trophies &&
                 (idx === TROPHY_ROAD.length - 1 ||
                   profile.trophies < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
+              const isPeakStep =
+                peak >= step.trophies &&
+                (idx === TROPHY_ROAD.length - 1 ||
+                  peak < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
               const ready = reached && !done
               const showArena =
                 rowI === 0 || stepsDesc[rowI - 1]?.step.arena !== step.arena
+              const friendsHere = friendsByStep.get(idx) ?? []
 
               return (
-                <li key={`step-${idx}`} ref={isYou ? youRef : undefined} className="relative">
+                <li
+                  key={`step-${idx}`}
+                  ref={(el) => {
+                    if (isYou) youRef.current = el
+                    if (isPeakStep) peakRef.current = el
+                  }}
+                  className="relative"
+                >
+                  {friendsHere.map((f, fi) => (
+                    <div
+                      key={f.id}
+                      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2"
+                      style={{
+                        left: `-${1.15 + fi * 0.55}rem`,
+                        top: `${18 + fi * 16}%`,
+                      }}
+                      title={`${f.name}: ${f.trophies}`}
+                    >
+                      <div
+                        className="flex h-6 w-6 flex-col items-center justify-center overflow-hidden rounded-md ring-2 ring-white"
+                        style={{ background: CARD_PORTRAIT_BG }}
+                      >
+                        <span className="text-[0.55rem] font-black leading-none text-[#f5d76e]">
+                          {f.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <span className="text-[0.4rem] font-extrabold leading-none text-white/80">
+                          {f.trophies}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                  {isYou ? (
+                    <div
+                      className="pointer-events-none absolute left-[-1.35rem] top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
+                      aria-hidden
+                    >
+                      <span
+                        className="rounded px-1 py-0.5 text-[0.5rem] font-black text-[#1a1410]"
+                        style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                      >
+                        {profile.trophies}
+                      </span>
+                    </div>
+                  ) : null}
+
                   {showArena ? (
                     <div
                       className="mb-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
