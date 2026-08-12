@@ -6,6 +6,7 @@ import {
   RARITY_RANK,
   cardKindLabel,
   getCharacter,
+  isSpellCard,
   type CharacterDef,
   type Rarity,
 } from './characters'
@@ -602,13 +603,39 @@ function CardProfile({
           </p>
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
-            <Stat label="Health" value={String(hpNow)} />
-            <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
-            <Stat
-              label="Attack cooldown"
-              value={character.attacks.length === 0 ? '—' : `${character.attackDelaySec}s`}
-            />
-            <Stat label="Height" value={character.height} />
+            {isSpellCard(character) ? (
+              <>
+                <Stat label="Health" value={String(hpNow)} />
+                <Stat
+                  label="Landing time"
+                  value={`${((character.spellTravelMs ?? 0) / 1000).toFixed(
+                    (character.spellTravelMs ?? 0) % 1000 === 0 ? 0 : 1,
+                  )}s`}
+                />
+                <Stat
+                  label="Damage"
+                  value={String(scaledStat(character.spellDamage ?? 0, level))}
+                />
+                <Stat
+                  label="Range"
+                  value={`${character.spellRadius ?? 0} blocks`}
+                />
+              </>
+            ) : (
+              <>
+                <Stat label="Health" value={String(hpNow)} />
+                <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
+                <Stat
+                  label="Attack cooldown"
+                  value={
+                    character.attacks.length === 0
+                      ? '—'
+                      : `${character.attackDelaySec}s`
+                  }
+                />
+                <Stat label="Height" value={character.height} />
+              </>
+            )}
           </dl>
 
           <div className="mt-4 grid grid-cols-2 gap-2">

@@ -86,6 +86,8 @@ const ROOT_VFX_MS = 450
 const HUG_VFX_MS = 780
 const WHIP_VFX_MS = 860
 const KICK_VFX_MS = 780
+/** Spirit Jump — arc onto the foe before splash. */
+const JUMP_LEAP_MS = 480
 const DUMBBELL_VFX_MS = 620
 /** Lynne head butt — short so 0.5s cadence feels constant. */
 const HEADBUTT_VFX_MS = 480
@@ -313,6 +315,7 @@ function makeBattleUnit(
   const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
   const hp = Math.max(1, scaledStat(Math.max(1, char.hp), level))
   const everySec = char.spawnEverySec ?? 0
+  const deployMs = (char.deployDelaySec ?? 0) * 1000
   return {
     id: nid('u'),
     charId: char.id,
@@ -324,8 +327,8 @@ function makeBattleUnit(
     level,
     attackIndex: 0,
     burstShot: 0,
-    // Ready immediately — first hit fires the moment a foe enters range.
-    nextAttackAt: 0,
+    // Deploy warmup (Phil's Car X-Bow-style) or ready immediately.
+    nextAttackAt: deployMs > 0 ? t + deployMs : 0,
     vfx: null,
     vfxUntil: 0,
     facing: side === 'ally' ? -Math.PI / 2 : Math.PI / 2,
@@ -1557,14 +1560,44 @@ export function useBattle(opts?: {
           unitsChanged = true
         }
 
-        // Big Mable Launch: fly first, take damage when you land.
+        // Big Mable Launch / Spirit Jump: fly first, resolve on landing.
         if (u.launch) {
           const flight = u.launch
           const dur = Math.max(1, flight.arriveAt - flight.bornAt)
           if (t >= flight.arriveAt) {
             u.col = flight.toCol
             u.row = flight.toRow
-            u.hp -= flight.landDamage
+            if (flight.landDamage > 0) {
+              u.hp -= flight.landDamage
+            }
+            if (flight.leapHit) {
+              const hit = flight.leapHit
+              const splash = applySplashAt(
+                nextUnits,
+                nextTowers,
+                hit.ownerSide,
+                hit.aimCol,
+                hit.aimRow,
+                hit.splashRadius,
+                hit.damage,
+                t,
+                { excludeUnitId: u.id },
+              )
+              if (splash.unitsChanged) unitsChanged = true
+              if (splash.towersChanged) towersChanged = true
+              nextSplats.push({
+                id: nid('hit'),
+                col: hit.aimCol,
+                row: hit.aimRow,
+                bornAt: t,
+                kind: 'jump',
+                radius: hit.splashRadius,
+              })
+              splatsChanged = true
+              if (hit.diesOnLand) {
+                u.hp = 0
+              }
+            }
             u.launch = null
             u.rootedUntil = Math.max(u.rootedUntil, t + 200)
             sfx.hit()
@@ -1999,7 +2032,7 @@ export function useBattle(opts?: {
                         : attack.id === 'uppercut'
                           ? 720
                           : attack.id === 'jump'
-                            ? KICK_VFX_MS
+                            ? JUMP_LEAP_MS
                             : attack.id === 'launch'
                               ? 480
                       : attack.rootWhileAttacking
@@ -2057,7 +2090,7 @@ export function useBattle(opts?: {
                             ? LOVE_PROJECTILE_MS
                             : attack.kind === 'witchcraft'
                               ? WITCHCRAFT_PROJECTILE_MS
-                            : PROJECTILE_MS),
+                              : PROJECTILE_MS),
             ownerSide: u.side,
             splashRadius: attack.splashRadius,
             splashDamage: attack.splashDamage,
@@ -2067,39 +2100,54 @@ export function useBattle(opts?: {
         }
 
         if (attack.splashRadius != null) {
-          // Spirit / kick-style: leap to the impact point, then splash.
-          if (attack.kind === 'jump' || attack.kind === 'kick') {
+          // Spirit Jump: arc onto the impact point, splash on land.
+          if (attack.kind === 'jump') {
             const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
-            const leap =
-              attack.kind === 'jump'
-                ? Math.min(best.rangeD, attack.range)
-                : 1.25
-            if (attack.kind === 'jump') {
-              const landCol = Math.max(
-                0,
-                Math.min(ARENA_COLS - 1, shotAim.col - 0.5),
-              )
-              const landRow = Math.max(
-                0,
-                Math.min(ARENA_ROWS - 1, shotAim.row - 0.5),
-              )
-              const ejected = ejectFromTowers(landCol, landRow, liveIds, u.side)
-              u.col = ejected.col
-              u.row = ejected.row
-              u.facing = ang
-            } else {
-              const next = stepUnit(
-                u,
-                Math.cos(ang) * leap,
-                Math.sin(ang) * leap,
-                liveIds,
-                openField,
-              )
-              const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
-              u.col = ejected.col
-              u.row = ejected.row
-              u.facing = ang
+            const landCol = Math.max(
+              0,
+              Math.min(ARENA_COLS - 1, shotAim.col - 0.5),
+            )
+            const landRow = Math.max(
+              0,
+              Math.min(ARENA_ROWS - 1, shotAim.row - 0.5),
+            )
+            const ejected = ejectFromTowers(landCol, landRow, liveIds, u.side)
+            u.facing = ang
+            u.launch = {
+              fromCol: u.col,
+              fromRow: u.row,
+              toCol: ejected.col,
+              toRow: ejected.row,
+              bornAt: t,
+              arriveAt: t + JUMP_LEAP_MS,
+              landDamage: 0,
+              leapHit: {
+                damage,
+                splashRadius: attack.splashRadius,
+                diesOnLand: !!attack.diesOnAttack,
+                ownerSide: u.side,
+                aimCol: shotAim.col,
+                aimRow: shotAim.row,
+              },
             }
+            u.rootedUntil = Math.max(u.rootedUntil, t + JUMP_LEAP_MS)
+            continue
+          }
+          // Kick-style: short leap then splash.
+          if (attack.kind === 'kick') {
+            const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
+            const leap = 1.25
+            const next = stepUnit(
+              u,
+              Math.cos(ang) * leap,
+              Math.sin(ang) * leap,
+              liveIds,
+              openField,
+            )
+            const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
+            u.col = ejected.col
+            u.row = ejected.row
+            u.facing = ang
           }
           const splash = applySplashAt(
             nextUnits,
@@ -2122,11 +2170,9 @@ export function useBattle(opts?: {
             kind:
               attack.kind === 'kick'
                 ? 'kick'
-                : attack.kind === 'jump'
-                  ? 'jump'
-                  : attack.kind === 'whip'
-                    ? 'whip'
-                    : 'melee',
+                : attack.kind === 'whip'
+                  ? 'whip'
+                  : 'melee',
             radius: attack.splashRadius,
           })
           splatsChanged = true

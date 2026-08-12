@@ -240,11 +240,12 @@ export function PhotoTroop({
                                     }
                                   : attack === 'jump'
                                     ? {
-                                        y: [0, 4, -36, -8, 0],
-                                        x: [0, -2, 20, 8, 0],
-                                        rotate: [0, -8, 12, 4, 0],
-                                        scale: [1, 0.92, 1.18, 1.02, 0.2],
-                                        opacity: [1, 1, 1, 0.85, 0],
+                                        // Hop squash → peak → dive smash (world pos also arcs)
+                                        y: [0, 8, -28, -6, 4],
+                                        x: [0, -2, 6, 4, 2],
+                                        rotate: [0, -12, 8, 18, 4],
+                                        scale: [1, 0.9, 1.2, 1.05, 0.4],
+                                        opacity: [1, 1, 1, 1, 0],
                                       }
                               : { y: [0, -3, 0] }
             : walking
@@ -298,10 +299,14 @@ export function PhotoTroop({
                           ? 0.72
                           : attack === 'slobber' || attack === 'sundae'
                             ? 0.55
+                            : attack === 'jump'
+                              ? 0.48
                             : 0.36,
                 times:
                   attack === 'kick' || attack === 'dumbbell' || attack === 'headbutt'
                     ? [0, 0.15, 0.4, 0.7, 1]
+                    : attack === 'jump'
+                      ? [0, 0.12, 0.42, 0.72, 1]
                     : undefined,
               }
             : walking
@@ -795,26 +800,48 @@ function UppercutOverlay() {
 function JumpOverlay() {
   return (
     <svg viewBox="0 0 80 118" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      {/* Motion streak while diving onto the target */}
+      <motion.path
+        d="M18 88 Q32 52 48 28"
+        fill="none"
+        stroke="#9fd0ff"
+        strokeWidth="3"
+        strokeLinecap="round"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 1, 0.2], opacity: [0, 0.85, 0] }}
+        transition={{ duration: 0.48, times: [0, 0.45, 1] }}
+      />
       <motion.circle
         cx="40"
         cy="70"
         r="18"
         fill="#8ec8ff44"
         initial={{ scale: 0.4, opacity: 0.8 }}
-        animate={{ scale: [0.4, 1.6, 2.2], opacity: [0.7, 0.35, 0] }}
-        transition={{ duration: 0.55 }}
+        animate={{ scale: [0.4, 1.4, 2.4], opacity: [0.7, 0.4, 0] }}
+        transition={{ duration: 0.48 }}
         style={{ transformOrigin: '40px 70px' }}
       />
       <motion.ellipse
         cx="40"
-        cy="95"
-        rx="16"
-        ry="5"
-        fill="#00000055"
-        initial={{ scaleX: 0.6, opacity: 0.5 }}
-        animate={{ scaleX: [0.6, 1.2, 0.4], opacity: [0.5, 0.3, 0] }}
-        transition={{ duration: 0.55 }}
-        style={{ transformOrigin: '40px 95px' }}
+        cy="100"
+        rx="18"
+        ry="6"
+        fill="#00000066"
+        initial={{ scaleX: 0.5, opacity: 0.55 }}
+        animate={{ scaleX: [0.5, 0.7, 1.35, 0.35], opacity: [0.55, 0.35, 0.45, 0] }}
+        transition={{ duration: 0.48, times: [0, 0.35, 0.72, 1] }}
+        style={{ transformOrigin: '40px 100px' }}
+      />
+      {/* Impact flash on land */}
+      <motion.circle
+        cx="52"
+        cy="92"
+        r="10"
+        fill="#fff8"
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: [0, 0, 1.6, 0.2], opacity: [0, 0, 0.9, 0] }}
+        transition={{ duration: 0.48, times: [0, 0.55, 0.72, 1] }}
+        style={{ transformOrigin: '52px 92px' }}
       />
     </svg>
   )

@@ -653,8 +653,14 @@ export function BattleScreen({
                 const p = Math.min(1, Math.max(0, (now - flight.bornAt) / dur))
                 drawCol = flight.fromCol + (flight.toCol - flight.fromCol) * p
                 drawRow = flight.fromRow + (flight.toRow - flight.fromRow) * p
-                launchArc = Math.sin(p * Math.PI) * 7.5
+                // Spirits leap onto foes with a clear hop arc.
+                const arcH = flight.leapHit ? 5.2 : 7.5
+                launchArc = Math.sin(p * Math.PI) * arcH
               }
+              const deployMs = (uDef?.deployDelaySec ?? 0) * 1000
+              const deployLeft =
+                deployMs > 0 ? Math.max(0, u.spawnedAt + deployMs - now) : 0
+              const deployWarming = deployLeft > 0
               return (
               <div
                 key={u.id}
@@ -675,6 +681,30 @@ export function BattleScreen({
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
                 />
+                {deployWarming ? (
+                  <div
+                    className="pointer-events-none absolute left-1/2 top-[8%] z-20 -translate-x-1/2"
+                    aria-hidden
+                  >
+                    <div
+                      className="relative flex h-9 w-9 items-center justify-center rounded-full font-extrabold text-[#1a1410]"
+                      style={{
+                        background:
+                          'conic-gradient(#c9a227 ' +
+                          `${((1 - deployLeft / deployMs) * 100).toFixed(1)}%` +
+                          ', #2a1a12 0)',
+                        boxShadow: '0 0 0 2px #8a6a12',
+                      }}
+                    >
+                      <span
+                        className="flex h-6 w-6 items-center justify-center rounded-full text-[0.7rem] leading-none"
+                        style={{ background: '#f5d76e' }}
+                      >
+                        {Math.ceil(deployLeft / 1000)}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
               )
             })}

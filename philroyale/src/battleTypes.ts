@@ -12,6 +12,15 @@ export type LaunchFlight = {
   bornAt: number
   arriveAt: number
   landDamage: number
+  /** Spirit Jump — splash (and optional pop) when the leap lands. */
+  leapHit?: {
+    damage: number
+    splashRadius: number
+    diesOnLand: boolean
+    ownerSide: Side
+    aimCol: number
+    aimRow: number
+  }
 }
 
 export type BattleUnit = {

@@ -115,6 +115,8 @@ export type CharacterDef = {
   hpDecayPerSec?: number
   /** Building: also spawn one from the pool when the building dies. */
   spawnOnDeath?: boolean
+  /** Building: seconds after place before first attack (X-Bow-style warmup). */
+  deployDelaySec?: number
   /** Spell: damage dealt to enemies in radius. */
   spellDamage?: number
   /** Spell: radius in blocks (hits anything within this distance). */
@@ -490,7 +492,7 @@ export const BOBBY_SPECIAL: CharacterDef = {
   hue: 25,
   cardKind: 'spell',
   blurb: "Spell — Bobby's football special. Double splash, hits harder, lands in a second.",
-  spellDamage: 825,
+  spellDamage: 615,
   spellRadius: 30,
   spellTravelMs: 1000,
   attacks: [],
@@ -516,7 +518,7 @@ export const SCOTT: CharacterDef = {
       id: 'cashGun',
       name: 'Cash Gun',
       range: 29,
-      damage: 400,
+      damage: 335,
       rootWhileAttacking: true,
       splashRadius: 5,
       splashDamage: 200,
@@ -539,8 +541,9 @@ export const PHILS_CAR: CharacterDef = {
   attackDelaySec: 8,
   hue: 210,
   cardKind: 'building',
+  deployDelaySec: 3,
   blurb:
-    "Building — grey SUV that turns to face foes and fires Phil's Rocket. Locks until dead or out of range.",
+    "Building — grey SUV that warms up 3s, then turns to face foes and fires Phil's Rocket. Locks until dead or out of range.",
   attacks: [
     {
       id: 'philsRocket',
@@ -653,7 +656,7 @@ export const PHIL_SPIRIT: CharacterDef = {
   attackDelaySec: 1,
   hue: 210,
   blurb:
-    "Phil's floating head — dashes in and Jump-slams foes, then pops. Splash where he lands.",
+    "Phil's floating head — jumps onto foes and Jump-slams, then pops. Splash where he lands.",
   attacks: [
     {
       id: 'jump',
@@ -682,7 +685,7 @@ export const PETE_SPIRIT: CharacterDef = {
   attackDelaySec: 1,
   hue: 25,
   blurb:
-    "Pete's floating head — same Jump slam as Phil Spirit, hits harder, a touch slower.",
+    "Pete's floating head — jumps onto foes like Phil Spirit, hits harder, a touch slower.",
   attacks: [
     {
       id: 'jump',
