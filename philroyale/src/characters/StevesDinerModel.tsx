@@ -13,14 +13,14 @@ type Props = {
   portrait?: boolean
 }
 
-/** Steve's Diner — stationary building; Pancake Huck lob. */
+/** Ricky's Diner — stationary building; Pancake Huck lob. */
 export function StevesDinerModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
       cardSrc={CARD}
       troopSrc={TROOP}
       troopBackSrc={BACK}
-      alt="Steve's Diner"
+      alt="Ricky's Diner"
       anim={anim}
       facing={facing}
       portrait={portrait}

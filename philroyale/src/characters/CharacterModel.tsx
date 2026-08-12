@@ -22,6 +22,7 @@ import { GretchinModel } from './GretchinModel'
 import { DaveModel } from './DaveModel'
 import { PhilSpiritModel } from './PhilSpiritModel'
 import { PeteSpiritModel } from './PeteSpiritModel'
+import { JeremySpiritModel } from './JeremySpiritModel'
 import { EvilPhilModel } from './EvilPhilModel'
 import { StevesDinerModel } from './StevesDinerModel'
 import { BigMableModel } from './BigMableModel'
@@ -81,6 +82,10 @@ export function CharacterModel({
     model = <PhilSpiritModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'peteSpirit') {
     model = <PeteSpiritModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'jeremySpirit') {
+    model = (
+      <JeremySpiritModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
   } else if (charId === 'evilPhil') {
     model = <EvilPhilModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dogHut') {

@@ -74,7 +74,9 @@ export function UnitToken({
                             ? '3 / 4.9'
                             : charId === 'phil' || charId === 'gretchin' || charId === 'dave'
                               ? '3 / 4.9'
-                              : charId === 'philSpirit' || charId === 'peteSpirit'
+                              : charId === 'philSpirit' ||
+                                  charId === 'peteSpirit' ||
+                                  charId === 'jeremySpirit'
                                 ? '1 / 1'
                               : charId === 'evilPhil'
                               ? '3 / 4.9'
@@ -382,7 +384,7 @@ export function SundaeSplat({ ageMs }: { ageMs: number }) {
   )
 }
 
-/** Flying pancake stack for Steve's Diner Pancake Huck. */
+/** Flying pancake stack for Ricky's Diner Pancake Huck. */
 export function PancakeDot() {
   return (
     <div className="relative h-6 w-7" aria-hidden>

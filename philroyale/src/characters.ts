@@ -560,12 +560,12 @@ export const PHILS_CAR: CharacterDef = {
 /** Rare diner turret — Pancake Huck splash lob. */
 export const STEVES_DINER: CharacterDef = {
   id: 'stevesDiner',
-  name: "Steve's Diner",
-  initial: 'SD',
+  name: "Ricky's Diner",
+  initial: 'RD',
   pronoun: 'it',
   height: "4'6\"",
   rarity: 'rare',
-  elixir: 3,
+  elixir: 2,
   hp: 485,
   moveSpeed: 0,
   attackDelaySec: 2.25,
@@ -597,7 +597,7 @@ export const GRETCHIN: CharacterDef = {
   height: "5'8\"",
   rarity: 'epic',
   elixir: 3,
-  hp: 755,
+  hp: 590,
   moveSpeed: 7,
   attackDelaySec: 1.75,
   hue: 280,
@@ -606,7 +606,7 @@ export const GRETCHIN: CharacterDef = {
     {
       id: 'witchcraft',
       name: 'Witchcraft',
-      range: 32,
+      range: 48,
       damage: 95,
       rootWhileAttacking: false,
       kind: 'witchcraft',
@@ -700,6 +700,35 @@ export const PETE_SPIRIT: CharacterDef = {
   ],
 }
 
+/** Jeremy's floating head — spirit Jump slam; splash diameter 20. */
+export const JEREMY_SPIRIT: CharacterDef = {
+  id: 'jeremySpirit',
+  name: 'Jeremy Spirit',
+  initial: 'Js',
+  pronoun: 'he',
+  height: "1'0\"",
+  rarity: 'rare',
+  elixir: 1,
+  hp: 125,
+  moveSpeed: 12,
+  attackDelaySec: 1,
+  hue: 220,
+  blurb:
+    "Jeremy's floating head — jumps onto foes and Jump-slams, then pops. Wide splash where he lands.",
+  attacks: [
+    {
+      id: 'jump',
+      name: 'Jump',
+      range: 10,
+      damage: 185,
+      rootWhileAttacking: true,
+      splashRadius: 10,
+      diesOnAttack: true,
+      kind: 'jump',
+    },
+  ],
+}
+
 /** Dark twin of Phil — stronger, faster, purple mist. */
 export const EVIL_PHIL: CharacterDef = {
   id: 'evilPhil',
@@ -781,6 +810,7 @@ export const CHARACTERS: CharacterDef[] = [
   DAVE,
   PHIL_SPIRIT,
   PETE_SPIRIT,
+  JEREMY_SPIRIT,
   EVIL_PHIL,
   DOG_HUT,
   PHILS_CAR,
