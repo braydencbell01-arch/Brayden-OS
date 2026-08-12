@@ -492,7 +492,7 @@ export const SCOTT: CharacterDef = {
     {
       id: 'cashGun',
       name: 'Cash Gun',
-      range: 35,
+      range: 29,
       damage: 400,
       rootWhileAttacking: true,
       splashRadius: 5,
@@ -510,7 +510,7 @@ export const PHILS_CAR: CharacterDef = {
   pronoun: 'it',
   height: "5'0\"",
   rarity: 'legendary',
-  elixir: 3,
+  elixir: 4,
   hp: 1850,
   moveSpeed: 0,
   attackDelaySec: 8,
