@@ -37,7 +37,7 @@ type Props = {
   loadFriendsFn?: () => Friend[]
   onRequestBattle?: (
     name: string,
-    opts: { mode: GameMode; playerId: string },
+    opts?: { mode?: GameMode; playerId?: string },
   ) => Promise<void>
   onInviteClub?: (name: string, playerId?: string) => void | Promise<void>
   onSpectate?: (friendName: string, info: FriendPresenceInfo) => void
