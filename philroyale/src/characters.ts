@@ -790,9 +790,8 @@ export const CHARACTERS: CharacterDef[] = [
 
 export const DECK_SIZE = 8
 
-/** Default 8-card mix across the roster (player starter; duplicates allowed in saved decks). */
+/** Default 8-card mix from starter unlocks. */
 export const DEFAULT_DECK = [
-  PHIL.id,
   KATHIE.id,
   TODD.id,
   MIKE.id,
@@ -800,6 +799,7 @@ export const DEFAULT_DECK = [
   ICE_CREAM.id,
   BEANS.id,
   FINLEY.id,
+  PETE.id,
 ]
 
 /** Fisher–Yates shuffle (in place). */

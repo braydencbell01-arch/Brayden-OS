@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BattleScreen } from './BattleScreen'
 import { CharactersScreen } from './CharactersScreen'
-import { CurrencyBar } from './CurrencyBar'
+import { TopStatusBar } from './CurrencyBar'
 import { EventsScreen } from './EventsScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
+import { ProfileScreen } from './ProfileScreen'
 import { ShopScreen } from './ShopScreen'
 import { TouchdownDraft } from './TouchdownDraft'
 import { TrophyRoadScreen } from './TrophyRoadScreen'
@@ -74,14 +75,14 @@ import {
   type GameMode,
 } from './storage'
 
-type TabId = 'home' | 'characters' | 'shop' | 'events' | 'friends'
+type TabId = 'shop' | 'cards' | 'home' | 'social' | 'profile'
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'home', label: 'Battle' },
-  { id: 'characters', label: 'Cards' },
   { id: 'shop', label: 'Shop' },
-  { id: 'events', label: 'Events' },
-  { id: 'friends', label: 'Social' },
+  { id: 'cards', label: 'Cards' },
+  { id: 'home', label: 'Battle' },
+  { id: 'social', label: 'Social' },
+  { id: 'profile', label: 'Profile' },
 ]
 
 function clearUrlParams(keys: string[]): void {
@@ -110,6 +111,7 @@ export default function App() {
   /** Bumps every solo/friend match so BattleScreen remounts with a fresh CPU deck. */
   const [battleSession, setBattleSession] = useState(0)
   const [showRoad, setShowRoad] = useState(false)
+  const [showEvents, setShowEvents] = useState(false)
   const [incomingChallenge, setIncomingChallenge] = useState<BattleChallenge | null>(null)
   const [outgoingChallenge, setOutgoingChallenge] = useState<BattleChallenge | null>(() =>
     loadOutgoingChallenge(),
@@ -229,7 +231,7 @@ export default function App() {
       }
       savePendingFriendLink(null)
       flashFriend(`You're now friends with ${link.name}!`)
-      setTab('friends')
+      setTab('social')
     },
     [flashFriend],
   )
@@ -469,7 +471,7 @@ export default function App() {
     const club = loadRichClub()
     if (!club) {
       flashFriend('Join or create a club first.')
-      setTab('friends')
+      setTab('social')
       return
     }
     const me = loadPlayerName().trim() || 'Player'
@@ -517,7 +519,7 @@ export default function App() {
     const clubCode = new URLSearchParams(window.location.search).get('club')
     if (clubCode) {
       clearUrlParams(['club'])
-      setTab('friends')
+      setTab('social')
       void joinClubVerified(clubCode).then((res) => {
         flashFriend(res.message)
         window.dispatchEvent(new Event('philroyale-club-changed'))
@@ -1052,7 +1054,7 @@ export default function App() {
               type="button"
               onClick={() => {
                 setIncomingFriendReq(null)
-                setTab('friends')
+                setTab('social')
               }}
               className="mt-4 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
               style={{
@@ -1103,7 +1105,7 @@ export default function App() {
                   const invite = clubInvite
                   saveIncomingClubInvite(null)
                   setClubInvite(null)
-                  setTab('friends')
+                  setTab('social')
                   flashFriend(`Joining ${invite.clubName}…`)
                   void joinClubVerified(invite.clubCode).then((res) => {
                     flashFriend(res.message)
@@ -1237,7 +1239,7 @@ export default function App() {
   if (draftingTouchdown) {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
+        <TopStatusBar onShop={() => setTab('shop')} />
         <div className="min-h-0 flex-1">
           <TouchdownDraft
             onCancel={() => {
@@ -1304,7 +1306,7 @@ export default function App() {
             setTouchdownDeck(null)
             setBattleMode('classic')
             setSpectating(false)
-            setTab(wasSpec ? 'friends' : 'home')
+            setTab(wasSpec ? 'social' : 'home')
           }}
         />
         {/* Intentionally no socialOverlays — battle is popup-free except LagBadge. */}
@@ -1317,7 +1319,7 @@ export default function App() {
   if (showRoad) {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
-        <CurrencyBar />
+        <TopStatusBar onShop={() => setTab('shop')} />
         <div className="min-h-0 flex-1">
           <TrophyRoadScreen
             onBack={() => {
@@ -1325,6 +1327,7 @@ export default function App() {
               setTab('home')
             }}
             onPlayBot={() => startMatch(null)}
+            friendPresence={friendPresence}
           />
         </div>
         <nav
@@ -1341,6 +1344,7 @@ export default function App() {
                     type="button"
                     onClick={() => {
                       setShowRoad(false)
+                      setShowEvents(false)
                       setTab(t.id)
                     }}
                     className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
@@ -1364,9 +1368,52 @@ export default function App() {
     )
   }
 
+  if (showEvents) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <TopStatusBar onShop={() => setTab('shop')} />
+        <div className="min-h-0 flex-1">
+          <EventsScreen
+            onPlay={(name, mode) => {
+              setShowEvents(false)
+              startMatch(name, mode ?? 'classic')
+            }}
+          />
+        </div>
+        <nav
+          className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+          style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
+          aria-label="Main"
+        >
+          <ul className="mx-auto flex max-w-md gap-0.5">
+            {TABS.map((t) => (
+              <li key={t.id} className="relative flex-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEvents(false)
+                    setTab(t.id)
+                  }}
+                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                  style={{
+                    background: 'transparent',
+                    color: '#f5d76e',
+                  }}
+                >
+                  {t.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {socialOverlays}
+      </div>
+    )
+  }
+
   return (
     <div className="relative flex h-full min-h-0 flex-col">
-      <CurrencyBar />
+      <TopStatusBar onShop={() => setTab('shop')} />
       <div className="min-h-0 flex-1">
         <AnimatePresence mode="wait">
           <motion.div
@@ -1383,17 +1430,15 @@ export default function App() {
                 onPlayTouchdown={() => startMatch(null, 'touchdown')}
                 onRequestBattle={requestBattle}
                 onOpenRoad={() => setShowRoad(true)}
-                onOpenEvents={() => setTab('events')}
-                onOpenClub={() => setTab('friends')}
+                onOpenEvents={() => setShowEvents(true)}
+                onOpenClub={() => setTab('social')}
+                onOpenCards={() => setTab('cards')}
                 friendPresence={friendPresence}
               />
             ) : null}
-            {tab === 'characters' ? <CharactersScreen /> : null}
+            {tab === 'cards' ? <CharactersScreen /> : null}
             {tab === 'shop' ? <ShopScreen /> : null}
-            {tab === 'events' ? (
-                <EventsScreen onPlay={(name, mode) => startMatch(name, mode ?? 'classic')} />
-            ) : null}
-            {tab === 'friends' ? (
+            {tab === 'social' ? (
               <FriendsScreen
                 onBattle={(name, mode) => startMatch(name, mode ?? 'classic')}
                 onRequestBattle={requestBattle}
@@ -1403,6 +1448,9 @@ export default function App() {
                 onAddByCode={addFriendByCode}
                 onSpectate={startSpectate}
               />
+            ) : null}
+            {tab === 'profile' ? (
+              <ProfileScreen onOpenSocial={() => setTab('social')} />
             ) : null}
           </motion.div>
         </AnimatePresence>
@@ -1420,7 +1468,11 @@ export default function App() {
               <li key={t.id} className="relative flex-1">
                 <button
                   type="button"
-                  onClick={() => setTab(t.id)}
+                  onClick={() => {
+                    setShowRoad(false)
+                    setShowEvents(false)
+                    setTab(t.id)
+                  }}
                   className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
                   style={{
                     background: active ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : 'transparent',

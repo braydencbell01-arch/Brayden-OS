@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BattleCard } from './BattleCard'
 import {
   ChestArt,
   ChestInspectModal,
   ChestRevealSequence,
   type ChestLoot,
 } from './ChestOpen'
-import { getCharacter } from './characters'
 import {
   ARENA_COLORS,
   CHEST_META,
@@ -23,16 +21,13 @@ import {
   claimDailyQuest,
   countUnclaimedRoadRewards,
   formatAccountCode,
-  kingInfo,
   loadAccountCode,
+  loadAvatarId,
   loadChests,
   loadDaily,
-  loadDeck,
   loadFriends,
   loadPlayerName,
   loadProfile,
-  loadRichClub,
-  loadSeason,
   openChestNow,
   questLabel,
   savePlayerName,
@@ -43,6 +38,8 @@ import {
   type OwnedChest,
   type PlayerProfile,
 } from './storage'
+import { CharacterModel } from './characters/CharacterModel'
+import { CARD_PORTRAIT_BG } from './characters/cardArt'
 
 type Props = {
   onPlay: (opponentName?: string | null) => void
@@ -52,8 +49,9 @@ type Props = {
     opts?: { mode?: GameMode; playerId?: string },
   ) => Promise<void>
   onOpenRoad: () => void
-  onOpenEvents: () => void
-  onOpenClub: () => void
+  onOpenEvents?: () => void
+  onOpenClub?: () => void
+  onOpenCards?: () => void
   /** playerId → latest presence snapshot */
   friendPresence?: Record<string, FriendPresenceInfo>
 }
@@ -72,14 +70,12 @@ export function HomeScreen({
   onOpenRoad,
   onOpenEvents,
   onOpenClub,
+  onOpenCards,
   friendPresence = {},
 }: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
-  const deck = useMemo(() => loadDeck(), [])
-  const club = useMemo(() => loadRichClub(), [])
-  const season = useMemo(() => loadSeason(), [])
-  const king = useMemo(() => kingInfo(), [])
   const myCode = useMemo(() => loadAccountCode(), [])
+  const avatarId = useMemo(() => loadAvatarId(), [])
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteFriend, setInviteFriend] = useState<Friend | null>(null)
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
@@ -112,14 +108,17 @@ export function HomeScreen({
   const nextStep = nextRoadStep(profile.trophies)
   const botName = botNameForTrophies(profile.trophies)
   const unclaimed = countUnclaimedRoadRewards()
-  const arenaColors = ARENA_COLORS[arenaTitle(profile.trophies)] ?? ARENA_COLORS['Goblin Boot']!
+  const arena = arenaTitle(profile.trophies)
+  const arenaColors = ARENA_COLORS[arena] ?? ARENA_COLORS['Goblin Boot']!
+  const prevTrophies = nextStep
+    ? TROPHY_PREV(profile.trophies, nextStep.trophies)
+    : 0
   const roadProgress = nextStep
     ? Math.max(
         0,
         Math.min(
           1,
-          (profile.trophies - (nextStep.trophies > 0 ? Math.max(0, nextStep.trophies - 100) : 0)) /
-            Math.max(1, nextStep.trophies - Math.max(0, nextStep.trophies - 100)),
+          (profile.trophies - prevTrophies) / Math.max(1, nextStep.trophies - prevTrophies),
         ),
       )
     : 1
@@ -175,7 +174,6 @@ export function HomeScreen({
   }
 
   function onChestTap(chest: OwnedChest) {
-    // CR: tap slot → inspect modal (never instant-open from the dock)
     setInspectId(chest.id)
   }
 
@@ -203,138 +201,167 @@ export function HomeScreen({
         className="pointer-events-none absolute inset-0"
         style={{
           background: `
-            radial-gradient(ellipse 100% 55% at 50% 0%, #4caf50 0%, transparent 55%),
-            linear-gradient(180deg, #2b8fd4 0%, #1a4a7a 28%, #3f8f4a 58%, #2d5a32 100%)
+            radial-gradient(ellipse 100% 50% at 50% 20%, ${arenaColors.sky}cc 0%, transparent 55%),
+            linear-gradient(180deg, ${arenaColors.sky} 0%, ${arenaColors.ground} 42%, #1a100c 100%)
           `,
         }}
       />
 
-      <main className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3 pt-[max(0.6rem,env(safe-area-inset-top))]">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center text-center"
-        >
-          <h1
-            className="font-[family-name:var(--font-display)] text-[clamp(2.2rem,9vw,3.8rem)] leading-[0.95] tracking-wide text-[#f5d76e]"
-            style={{ textShadow: '0 4px 0 #8a6a12, 0 10px 24px #00000066' }}
-          >
-            Phil Royale
-          </h1>
-        </motion.div>
-
-        {/* King banner */}
-        <section
-          className="mt-3 w-full max-w-md shrink-0 self-center rounded-xl p-3"
+      <main className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-3 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
+        {/* Profile strip */}
+        <div
+          className="flex w-full max-w-md items-center gap-2 self-center rounded-xl px-2.5 py-1.5"
           style={{
-            background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-            boxShadow: 'inset 0 1px 0 #c9a22744, 0 8px 20px #00000055',
+            background: 'linear-gradient(180deg,#3a2418cc,#1a100cee)',
+            boxShadow: 'inset 0 1px 0 #c9a22744',
           }}
         >
-          <label className="block text-left text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-            King
-            <input
-              value={playerName}
-              onChange={(e) => persistName(e.target.value)}
-              placeholder="Your name"
-              className="mt-1 w-full rounded-lg bg-[#140e0a] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
-            />
-          </label>
-          <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
-            <StatChip label="Trophies" value={String(profile.trophies)} />
-            <StatChip label="Gold" value={String(profile.gold)} />
-            <StatChip label="Gems" value={String(profile.gems)} />
-            <StatChip label="Streak" value={`${profile.winStreak}W`} />
-          </div>
-          <p className="mt-2 text-center text-xs font-extrabold uppercase tracking-wide text-white/70">
-            King Lv {king.level} · {king.into}/{king.need} XP · {arenaTitle(profile.trophies)}
-          </p>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-black/40">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.round((king.into / Math.max(1, king.need)) * 100)}%`,
-                background: 'linear-gradient(90deg,#7dff9a,#4a9eff)',
-              }}
-            />
-          </div>
-        </section>
-
-        <div className="mt-3 grid w-full max-w-md shrink-0 grid-cols-2 gap-2 self-center">
-          <motion.button
-            type="button"
-            onClick={onOpenEvents}
-            whileTap={{ scale: 0.98 }}
-            className="rounded-xl px-3 py-2.5 text-left"
-            style={{ background: 'linear-gradient(180deg,#5a3a9a,#2a1848)' }}
+          <div
+            className="h-9 w-9 shrink-0 overflow-hidden rounded-lg"
+            style={{ background: CARD_PORTRAIT_BG }}
           >
-            <p className="font-[family-name:var(--font-display)] text-lg text-[#f5d76e]">
-              Events
-            </p>
-            <p className="text-[0.65rem] font-bold text-white/80">
-              Season {season.seasonId} · {season.points} pts
-            </p>
-          </motion.button>
-          <motion.button
-            type="button"
-            onClick={onOpenClub}
-            whileTap={{ scale: 0.98 }}
-            className="rounded-xl px-3 py-2.5 text-left"
-            style={{ background: 'linear-gradient(180deg,#2f6fbf,#1d4a86)' }}
-          >
-            <p className="font-[family-name:var(--font-display)] text-lg text-[#f5d76e]">
-              Club
-            </p>
-            <p className="text-[0.65rem] font-bold text-white/80">
-              {club ? `${club.name} · ${club.chestCrowns} crowns` : 'Join or create'}
-            </p>
-          </motion.button>
+            <CharacterModel charId={avatarId} anim="idle" facing={-Math.PI / 2} portrait />
+          </div>
+          <input
+            value={playerName}
+            onChange={(e) => persistName(e.target.value)}
+            placeholder="Name"
+            className="min-w-0 flex-1 bg-transparent text-sm font-extrabold text-white outline-none placeholder:text-white/35"
+          />
+          <span className="shrink-0 text-sm font-black tabular-nums text-[#f5d76e]">
+            {profile.trophies} ★
+          </span>
         </div>
 
-        {/* Big clickable Trophy Road entry — CR style (opens full road; no Road tab) */}
+        {/* Arena island */}
         <motion.button
           type="button"
           onClick={onOpenRoad}
           whileTap={{ scale: 0.98 }}
-          className="relative mt-3 w-full max-w-md shrink-0 self-center overflow-hidden rounded-2xl px-3 py-3.5 text-left"
+          className="relative mt-3 w-full max-w-md shrink-0 self-center overflow-hidden rounded-[2rem] px-3 pb-4 pt-5 text-center"
           style={{
-            background: `linear-gradient(135deg, ${arenaColors.sky}, ${arenaColors.ground})`,
-            boxShadow: '0 6px 0 #00000055, inset 0 1px 0 #ffffff33',
-            minHeight: '5.5rem',
+            background: `
+              radial-gradient(ellipse 80% 60% at 50% 35%, ${arenaColors.accent}55 0%, transparent 60%),
+              linear-gradient(180deg, ${arenaColors.sky}, ${arenaColors.ground})
+            `,
+            boxShadow: `0 10px 0 ${arenaColors.ground}99, 0 16px 28px #00000066, inset 0 2px 0 #ffffff33`,
+            minHeight: '9.5rem',
           }}
         >
           {unclaimed > 0 ? (
-            <span className="absolute right-2 top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#ff3b3b] px-1.5 text-xs font-black text-white shadow">
+            <span className="absolute right-3 top-3 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#ff3b3b] px-1.5 text-xs font-black text-white shadow">
               {unclaimed}
             </span>
           ) : null}
-          <p className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[#f5d76e]">
-            Trophy Road
+          <div
+            aria-hidden
+            className="mx-auto mb-2 h-16 w-[70%] rounded-[50%]"
+            style={{
+              background: `radial-gradient(ellipse at 50% 40%, ${arenaColors.accent}88, ${arenaColors.ground})`,
+              boxShadow: '0 8px 0 #00000044',
+            }}
+          />
+          <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]">
+            {arena}
           </p>
-          <p className="text-xs font-bold text-white/90">
-            Tap to open · claim chests, gold & cards
-          </p>
-          <div className="mt-2 h-2.5 shrink-0 overflow-hidden rounded-full bg-black/35 ring-1 ring-white/20">
+          <p className="text-xs font-bold text-white/85">Tap for Trophy Road</p>
+        </motion.button>
+
+        {/* Thin road progress */}
+        <button
+          type="button"
+          onClick={onOpenRoad}
+          className="mt-2 w-full max-w-md self-center rounded-full px-3 py-1.5 text-left"
+          style={{
+            background: 'linear-gradient(180deg,#1a100ccc,#0e0a08ee)',
+            boxShadow: 'inset 0 1px 0 #ffffff22',
+          }}
+        >
+          <div className="mb-1 flex items-center justify-between gap-2 text-[0.65rem] font-extrabold text-white/85">
+            <span>{profile.trophies} trophies</span>
+            <span className="truncate text-[#f5d76e]">
+              {nextStep ? `Next: ${nextStep.label}` : 'Road complete'}
+            </span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-black/45 ring-1 ring-[#2f6fbf66]">
             <div
               className="h-full rounded-full"
               style={{
                 width: `${Math.round(roadProgress * 100)}%`,
-                background: 'linear-gradient(90deg,#ffe08a,#f5d76e)',
+                background: 'linear-gradient(90deg,#6ec8ff,#2f6fbf)',
               }}
             />
           </div>
-          <p className="mt-1 text-[0.7rem] font-extrabold text-white">
-            {profile.trophies} trophies
-            {nextStep
-              ? ` · next reward at ${nextStep.trophies} (${nextStep.label})`
-              : ' · road complete!'}
-          </p>
+        </button>
+
+        {/* Battle cluster — moved up (where catch-up would be) */}
+        <div className="mt-4 flex w-full max-w-md items-stretch justify-center gap-2 self-center">
+          <motion.button
+            type="button"
+            onClick={() => onOpenCards?.()}
+            whileTap={{ scale: 0.96 }}
+            className="flex w-14 shrink-0 flex-col items-center justify-center rounded-xl px-1 py-2"
+            style={{
+              background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
+              boxShadow: '0 4px 0 #1d4a86',
+            }}
+            aria-label="Deck"
+          >
+            <span className="text-lg font-black text-white">▣</span>
+            <span className="text-[0.55rem] font-extrabold uppercase text-white/90">Deck</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={() => onPlay(botName)}
+            whileTap={{ scale: 0.97 }}
+            className="min-w-0 flex-1 rounded-xl px-4 py-3.5 text-xl font-extrabold uppercase tracking-wider text-[#1a1410]"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#f5d76e 40%,#c9a227)',
+              boxShadow: '0 6px 0 #8a6a12, 0 12px 24px #00000055',
+            }}
+          >
+            Battle
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={onOpenRoad}
+            whileTap={{ scale: 0.96 }}
+            className="flex w-14 shrink-0 flex-col items-center justify-center rounded-xl px-1 py-2"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+              boxShadow: '0 4px 0 #8a6a12',
+            }}
+            aria-label="Trophy Road"
+          >
+            <span className="text-lg font-black text-[#1a1410]">★</span>
+            <span className="text-[0.55rem] font-extrabold uppercase text-[#1a1410]/90">
+              Road
+            </span>
+          </motion.button>
+        </div>
+        <p className="mt-1 text-center text-[0.7rem] font-bold text-white/70">
+          vs {botName}
+        </p>
+
+        <motion.button
+          type="button"
+          onClick={onPlayTouchdown}
+          whileTap={{ scale: 0.97 }}
+          className="mt-2 w-full max-w-md self-center rounded-xl px-4 py-3.5 text-lg font-extrabold uppercase tracking-wider text-white"
+          style={{
+            background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
+            boxShadow: '0 6px 0 #1d4a86, 0 12px 24px #00000044',
+          }}
+        >
+          Touchdown
         </motion.button>
 
-        {/* Chest slots — CR dock */}
-        <section className="mt-3 w-full max-w-md self-center">
+        {/* Chest slots */}
+        <section className="mt-4 w-full max-w-md self-center">
           <p className="mb-1.5 text-center text-[0.65rem] font-extrabold uppercase tracking-wide text-white/80">
-            Chest slots · tap a chest
+            Chest slots
           </p>
           <div
             className="grid grid-cols-4 gap-1.5 rounded-2xl p-2"
@@ -450,66 +477,42 @@ export function HomeScreen({
           >
             <p className="text-[0.6rem] font-extrabold uppercase opacity-80">Crowns</p>
             <p className="text-xs font-extrabold">{profile.crownChest}/10</p>
-            <p className="text-[0.6rem] font-bold opacity-80">Claim rare</p>
           </button>
         </section>
 
-        <section
-          className="mt-3 w-full max-w-md self-center rounded-xl p-2"
-          style={{
-            background: 'linear-gradient(180deg,#3a2418,#1f140e)',
-            boxShadow: 'inset 0 1px 0 #c9a22744',
-          }}
-        >
-          <p className="mb-1.5 text-center text-[0.65rem] font-extrabold uppercase tracking-wider text-[#f5d76e]/85">
-            Battle deck
-          </p>
-          <div className="grid grid-cols-8 gap-1">
-            {deck.map((id) => (
-              <BattleCard key={id} character={getCharacter(id) ?? null} />
-            ))}
-          </div>
-        </section>
-
-        <motion.button
-          type="button"
-          onClick={() => onPlay(botName)}
-          whileTap={{ scale: 0.97 }}
-          className="mt-4 min-w-[14rem] self-center rounded-xl px-10 py-3.5 text-xl font-extrabold uppercase tracking-wider text-[#1a1410]"
-          style={{
-            background: 'linear-gradient(180deg,#ffe08a,#f5d76e 40%,#c9a227)',
-            boxShadow: '0 6px 0 #8a6a12, 0 14px 28px #00000055',
-          }}
-        >
-          Battle
-        </motion.button>
-        <p className="mt-1 text-center text-xs font-bold text-white/75">
-          Classic 1v1 vs bot · {botName}
-        </p>
-
-        <button
-          type="button"
-          onClick={onPlayTouchdown}
-          className="mt-2 self-center rounded-lg px-6 py-2.5 text-sm font-extrabold text-white"
-          style={{
-            background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
-            boxShadow: '0 4px 0 #1d4a86',
-          }}
-        >
-          Touchdown mode
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setInviteOpen((v) => !v)}
-          className="mt-3 self-center rounded-lg px-5 py-2.5 text-sm font-extrabold text-[#1a1410]"
-          style={{
-            background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
-            boxShadow: '0 4px 0 #1a7a3a',
-          }}
-        >
-          Invite a friend
-        </button>
+        <div className="mt-3 flex w-full max-w-md gap-2 self-center">
+          {onOpenEvents ? (
+            <button
+              type="button"
+              onClick={onOpenEvents}
+              className="flex-1 rounded-lg py-2 text-xs font-extrabold text-[#f5d76e] ring-1 ring-[#c9a227]/40"
+              style={{ background: '#2a1a12' }}
+            >
+              Events
+            </button>
+          ) : null}
+          {onOpenClub ? (
+            <button
+              type="button"
+              onClick={onOpenClub}
+              className="flex-1 rounded-lg py-2 text-xs font-extrabold text-white ring-1 ring-white/15"
+              style={{ background: '#2a1a12' }}
+            >
+              Club
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setInviteOpen((v) => !v)}
+            className="flex-1 rounded-lg py-2 text-xs font-extrabold text-[#1a1410]"
+            style={{
+              background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)',
+              boxShadow: '0 3px 0 #1a7a3a',
+            }}
+          >
+            Invite
+          </button>
+        </div>
 
         {inviteOpen ? (
           <div
@@ -524,8 +527,6 @@ export function HomeScreen({
               <span className="font-extrabold text-[#f5d76e]">
                 {formatAccountCode(myCode)}
               </span>
-              {' · '}
-              they need Phil Royale open to Accept (share sheet also sends a battle link).
             </p>
             {friends.length === 0 ? (
               <p className="text-center text-sm font-semibold text-white/60">
@@ -585,7 +586,6 @@ export function HomeScreen({
             <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
               Invite {inviteFriend.name}
             </h2>
-            <p className="mt-2 text-sm font-semibold text-white/80">Pick a mode:</p>
             <button
               type="button"
               onClick={() => void battleFriend(inviteFriend, 'classic')}
@@ -654,13 +654,8 @@ export function HomeScreen({
   )
 }
 
-function StatChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-[#140e0a] px-1.5 py-1.5 ring-1 ring-white/10">
-      <p className="text-[0.55rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/75">
-        {label}
-      </p>
-      <p className="text-sm font-extrabold text-white">{value}</p>
-    </div>
-  )
+function TROPHY_PREV(current: number, next: number): number {
+  // Approximate previous milestone ~100 below next, clamped
+  void current
+  return Math.max(0, next - 100)
 }

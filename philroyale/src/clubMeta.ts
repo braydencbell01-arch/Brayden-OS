@@ -232,3 +232,6 @@ export function kingLevelFromXp(xp: number): { level: number; into: number; need
   }
   return { level, into: remain, need }
 }
+
+/** Cosmetic player level — same curve as kingLevelFromXp (display only). */
+export const playerLevelFromXp = kingLevelFromXp

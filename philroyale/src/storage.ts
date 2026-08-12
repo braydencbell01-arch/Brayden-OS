@@ -41,6 +41,9 @@ import {
 } from './progression'
 
 const DECK_KEY = 'philroyale.deck.v2'
+const DECKS_KEY = 'philroyale.decks.v1'
+const ACTIVE_DECK_KEY = 'philroyale.activeDeck.v1'
+const DECK_SLOT_COUNT = 5
 const FRIENDS_KEY = 'philroyale.friends'
 const MY_CLUB_KEY = 'philroyale.myClub'
 const MY_CLUB_META_KEY = 'philroyale.myClubMeta'
@@ -123,22 +126,79 @@ function readJson<T>(key: string, fallback: T): T {
   }
 }
 
-export function loadDeck(): string[] {
-  const ids = readJson<string[]>(DECK_KEY, DEFAULT_DECK)
+export function normalizeDeck(ids: string[], opts?: { fill?: boolean }): string[] {
   const unlocked = new Set(loadCardProgress().unlocked)
   const valid = ids.filter(
-    (id) => CHARACTERS.some((c) => c.id === id) && unlocked.has(id),
+    (id) => id && CHARACTERS.some((c) => c.id === id) && unlocked.has(id),
   )
-  if (valid.length === DECK_SIZE) return valid
-  const fallback = DEFAULT_DECK.filter((id) => unlocked.has(id))
+  // Dedupe while preserving order
+  const unique: string[] = []
+  for (const id of valid) {
+    if (!unique.includes(id)) unique.push(id)
+  }
+  const sliced = unique.slice(0, DECK_SIZE)
+  if (!opts?.fill && sliced.length > 0) return sliced
+  if (sliced.length === DECK_SIZE) return sliced
+  const fallback = [...sliced]
+  const pool = [
+    ...DEFAULT_DECK.filter((id) => unlocked.has(id)),
+    ...STARTER_UNLOCKS.filter((id) => unlocked.has(id)),
+  ]
+  for (const id of pool) {
+    if (fallback.length >= DECK_SIZE) break
+    if (!fallback.includes(id)) fallback.push(id)
+  }
   while (fallback.length < DECK_SIZE && STARTER_UNLOCKS.length) {
     fallback.push(STARTER_UNLOCKS[fallback.length % STARTER_UNLOCKS.length]!)
   }
   return fallback.slice(0, DECK_SIZE)
 }
 
+export function loadActiveDeckIndex(): number {
+  const raw = Number(localStorage.getItem(ACTIVE_DECK_KEY) ?? '0')
+  if (!Number.isFinite(raw)) return 0
+  return Math.max(0, Math.min(DECK_SLOT_COUNT - 1, Math.floor(raw)))
+}
+
+export function setActiveDeckIndex(index: number): void {
+  const i = Math.max(0, Math.min(DECK_SLOT_COUNT - 1, Math.floor(index)))
+  localStorage.setItem(ACTIVE_DECK_KEY, String(i))
+}
+
+export function loadDecks(): string[][] {
+  const raw = readJson<string[][] | null>(DECKS_KEY, null)
+  const legacy = readJson<string[]>(DECK_KEY, DEFAULT_DECK)
+  const decks: string[][] = []
+  for (let i = 0; i < DECK_SLOT_COUNT; i++) {
+    const slot = Array.isArray(raw?.[i]) ? raw![i]! : i === 0 ? legacy : DEFAULT_DECK
+    decks.push(normalizeDeck(slot, { fill: true }))
+  }
+  return decks
+}
+
+export function saveDecks(decks: string[][]): void {
+  const next = Array.from({ length: DECK_SLOT_COUNT }, (_, i) =>
+    normalizeDeck(decks[i] ?? DEFAULT_DECK, { fill: false }),
+  )
+  // Ensure each slot has a battle-ready fallback when empty
+  const stored = next.map((d) => (d.length === 0 ? normalizeDeck(DEFAULT_DECK, { fill: true }) : d))
+  localStorage.setItem(DECKS_KEY, JSON.stringify(stored))
+  localStorage.setItem(
+    DECK_KEY,
+    JSON.stringify(normalizeDeck(stored[loadActiveDeckIndex()]!, { fill: true })),
+  )
+}
+
+export function loadDeck(): string[] {
+  const decks = loadDecks()
+  return normalizeDeck(decks[loadActiveDeckIndex()] ?? DEFAULT_DECK, { fill: true })
+}
+
 export function saveDeck(ids: string[]): void {
-  localStorage.setItem(DECK_KEY, JSON.stringify(ids.slice(0, DECK_SIZE)))
+  const decks = loadDecks()
+  const i = loadActiveDeckIndex()
+  decks[i] = normalizeDeck(ids, { fill: false })
+  saveDecks(decks)
 }
 
 export function loadFriends(): Friend[] {
@@ -551,6 +611,8 @@ const SHOP_BOUGHT_KEY = 'philroyale.shopBought.v1'
 
 export type PlayerProfile = {
   trophies: number
+  /** Highest trophies ever reached (cosmetic peak for trophy road). */
+  peakTrophies: number
   gold: number
   gems: number
   wins: number
@@ -563,6 +625,8 @@ export type PlayerProfile = {
   crownChest: number
   /** King tower XP */
   xp: number
+  /** Portrait character id for profile / road markers */
+  avatarId: string
   /** Daily donation remaining */
   donateLeft: number
   donateDay: string
@@ -611,6 +675,7 @@ export type FriendMeta = {
 
 const DEFAULT_PROFILE: PlayerProfile = {
   trophies: 0,
+  peakTrophies: 0,
   gold: 500,
   gems: 20,
   wins: 0,
@@ -621,6 +686,7 @@ const DEFAULT_PROFILE: PlayerProfile = {
   battlesPlayed: 0,
   crownChest: 0,
   xp: 0,
+  avatarId: 'phil',
   donateLeft: DONATE_LIMIT_DAY,
   donateDay: '',
 }
@@ -662,6 +728,8 @@ export function loadProfile(): PlayerProfile {
   const legacy = readJson<Partial<PlayerProfile>>('philroyale.profile.v1', {})
   const cur = readJson<Partial<PlayerProfile>>(PROFILE_KEY, {})
   const p = { ...DEFAULT_PROFILE, ...legacy, ...cur }
+  if (p.peakTrophies < p.trophies) p.peakTrophies = p.trophies
+  if (!p.avatarId || typeof p.avatarId !== 'string') p.avatarId = 'phil'
   const day = todayKey()
   if (p.donateDay !== day) {
     p.donateDay = day
@@ -703,6 +771,7 @@ export function recordMatchResult(
     p.gold += 25
     p.xp += 25
   }
+  p.peakTrophies = Math.max(p.peakTrophies ?? 0, p.trophies)
   saveProfile(p)
   addSeasonPoints(result === 'victory' ? 25 : result === 'draw' ? 10 : 5)
   addClubCrowns(result === 'victory' ? 3 : result === 'draw' ? 1 : 0)
@@ -2082,6 +2151,27 @@ export function claimSeasonReward(index: number): { ok: boolean; message: string
 
 export function kingInfo() {
   return kingLevelFromXp(loadProfile().xp)
+}
+
+/** Cosmetic player level from XP (alias of king level curve). */
+export function playerLevelInfo() {
+  return kingLevelFromXp(loadProfile().xp)
+}
+
+export function loadPeakTrophies(): number {
+  const p = loadProfile()
+  return Math.max(p.peakTrophies ?? 0, p.trophies)
+}
+
+export function loadAvatarId(): string {
+  const id = loadProfile().avatarId || 'phil'
+  return CHARACTERS.some((c) => c.id === id) ? id : 'phil'
+}
+
+export function saveAvatarId(avatarId: string): void {
+  const p = loadProfile()
+  p.avatarId = CHARACTERS.some((c) => c.id === avatarId) ? avatarId : 'phil'
+  saveProfile(p)
 }
 
 /* ——— Events ——— */

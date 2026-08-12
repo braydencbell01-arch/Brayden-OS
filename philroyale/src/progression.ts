@@ -99,6 +99,7 @@ export const ARENA_COLORS: Record<string, { sky: string; ground: string; accent:
   'Phil Peak': { sky: '#c9a227', ground: '#6a4a10', accent: '#ffe08a' },
 }
 
+/** Exactly 12 starter cards — rest unlock via trophy road / chests. */
 export const STARTER_UNLOCKS = [
   'finley',
   'shay',
@@ -107,21 +108,11 @@ export const STARTER_UNLOCKS = [
   'mike',
   'kathie',
   'todd',
-  'dan',
-  'pete',
-  'dogHut',
   'iceCream',
-  'scott',
+  'dogHut',
   'footballHuck',
-  'bobbySpecial',
-  'philsCar',
-  'dave',
-  'gretchin',
-  'philSpirit',
-  'peteSpirit',
-  'evilPhil',
-  'stevesDiner',
-  'bigMable',
+  'scott',
+  'pete',
 ]
 
 export function cardLevelMult(level: number): number {
