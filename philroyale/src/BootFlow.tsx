@@ -4,13 +4,21 @@ import { CharacterModel } from './characters/CharacterModel'
 
 const BOOT_SEEN_KEY = 'philroyale.bootSeen.v1'
 
-/** Overlapping hero poses for the CR-style loading splash. */
+/**
+ * CR-style loading collage — full characters only (no blue portrait boxes).
+ * They overlap each other; z-index controls who cuts whom off.
+ */
 const COLLAGE = [
-  { id: 'phil', left: '8%', bottom: '4%', scale: 1.35, z: 3, facing: 1 },
-  { id: 'kathie', left: '52%', bottom: '2%', scale: 1.25, z: 4, facing: -1 },
-  { id: 'evilPhil', left: '28%', bottom: '18%', scale: 1.55, z: 2, facing: 1 },
-  { id: 'todd', left: '68%', bottom: '22%', scale: 1.05, z: 1, facing: -1 },
-  { id: 'mike', left: '0%', bottom: '28%', scale: 0.95, z: 1, facing: 1 },
+  { id: 'bigMable', left: '-4%', bottom: '6%', scale: 1.15, z: 1, facing: 1, w: '48%' },
+  { id: 'stevesDiner', left: '58%', bottom: '8%', scale: 1.05, z: 2, facing: -1, w: '44%' },
+  { id: 'pete', left: '34%', bottom: '4%', scale: 1.2, z: 3, facing: 1, w: '40%' },
+  { id: 'jeremy', left: '70%', bottom: '18%', scale: 1.18, z: 4, facing: -1, w: '38%' },
+  { id: 'kathie', left: '48%', bottom: '2%', scale: 1.28, z: 5, facing: -1, w: '40%' },
+  { id: 'phil', left: '6%', bottom: '0%', scale: 1.4, z: 6, facing: 1, w: '44%' },
+  { id: 'evilPhil', left: '22%', bottom: '26%', scale: 1.35, z: 2, facing: 1, w: '42%' },
+  { id: 'todd', left: '78%', bottom: '28%', scale: 0.95, z: 3, facing: -1, w: '32%' },
+  { id: 'mike', left: '-2%', bottom: '30%', scale: 0.9, z: 2, facing: 1, w: '34%' },
+  { id: 'lynne', left: '40%', bottom: '32%', scale: 0.88, z: 1, facing: -1, w: '30%' },
 ] as const
 
 const TIPS = [
@@ -92,7 +100,6 @@ export function BootFlow({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (phase !== 'supercell') return
-    // Fade in ~1s, hold, fade out ~0.9s → then loading
     const t = window.setTimeout(() => setPhase('loading'), 3000)
     return () => window.clearTimeout(t)
   }, [phase])
@@ -152,7 +159,6 @@ export function BootFlow({ children }: { children: ReactNode }) {
             `,
           }}
         >
-          {/* Soft clouds */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-8 h-24 opacity-40"
@@ -163,7 +169,7 @@ export function BootFlow({ children }: { children: ReactNode }) {
           />
 
           <div className="relative flex min-h-0 flex-1 flex-col items-center px-4 pt-10">
-            <div className="relative z-10 text-center">
+            <div className="relative z-20 text-center">
               <div
                 aria-hidden
                 className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full"
@@ -184,8 +190,7 @@ export function BootFlow({ children }: { children: ReactNode }) {
               </h1>
             </div>
 
-            <div className="relative mt-2 h-[min(48vh,340px)] w-full max-w-md flex-1">
-              {/* Green mist / portal at bottom like CR splash */}
+            <div className="relative mt-1 h-[min(52vh,380px)] w-full max-w-md flex-1">
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-28"
@@ -195,32 +200,31 @@ export function BootFlow({ children }: { children: ReactNode }) {
                 }}
               />
               {COLLAGE.map((slot) => (
-                <div
+                <motion.div
                   key={slot.id}
                   className="absolute overflow-visible"
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, delay: 0.05 * slot.z }}
                   style={{
                     left: slot.left,
                     bottom: slot.bottom,
-                    width: '42%',
-                    height: '70%',
+                    width: slot.w,
+                    height: '78%',
                     zIndex: slot.z,
                     transform: `scale(${slot.scale})`,
                     transformOrigin: 'bottom center',
-                    filter: 'drop-shadow(0 8px 12px #00000099)',
+                    filter: 'drop-shadow(0 10px 14px #000000aa)',
                   }}
                 >
-                  <CharacterModel
-                    charId={slot.id}
-                    anim="idle"
-                    facing={slot.facing}
-                    portrait
-                  />
-                </div>
+                  {/* No portrait — battlefield sprites, transparent, free to overlap */}
+                  <CharacterModel charId={slot.id} anim="idle" facing={slot.facing} />
+                </motion.div>
               ))}
             </div>
           </div>
 
-          <div className="relative z-10 shrink-0 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+          <div className="relative z-30 shrink-0 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
             <p className="mb-2 text-center text-sm font-bold text-white drop-shadow">
               {tip}
             </p>

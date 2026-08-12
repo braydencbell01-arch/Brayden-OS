@@ -160,6 +160,21 @@ export function TrophyRoadScreen({
     [],
   )
 
+  /** High→low sections; each arena fills from its bottom label up to the next arena. */
+  const arenaSections = useMemo(() => {
+    const sections: { arena: string; items: { step: (typeof TROPHY_ROAD)[number]; idx: number }[] }[] =
+      []
+    for (const item of stepsDesc) {
+      const last = sections[sections.length - 1]
+      if (!last || last.arena !== item.step.arena) {
+        sections.push({ arena: item.step.arena, items: [item] })
+      } else {
+        last.items.push(item)
+      }
+    }
+    return sections
+  }, [stepsDesc])
+
   const readyCount = useMemo(() => {
     let n = 0
     for (let i = 0; i < TROPHY_ROAD.length; i++) {
@@ -207,9 +222,8 @@ export function TrophyRoadScreen({
   }, [])
 
   /**
-   * Sticky section tracking: last arena banner that has scrolled past a probe
-   * near the top of the list. Avoids mid-viewport row/banner fights that flip
-   * Sundae ↔ Pete’s Pit every frame while scrolling.
+   * Arena for the reward row closest to the probe — labels sit at the *bottom*
+   * of each arena, so “banners past probe” wrongly picks the arena above.
    */
   function computeViewArena(): string {
     const scroller = scrollRef.current
@@ -217,19 +231,32 @@ export function TrophyRoadScreen({
     const fallback = arenaFor(profile.trophies)
     if (!scroller || !list) return viewArenaRef.current || fallback
     const scrollerTop = scroller.getBoundingClientRect().top
-    const probe = scrollerTop + Math.min(96, scroller.clientHeight * 0.22)
-    const banners = list.querySelectorAll<HTMLElement>('[data-arena-banner]')
-    let arena = ''
-    banners.forEach((el) => {
-      if (el.getBoundingClientRect().top <= probe + 8) {
-        arena = el.dataset.arenaBanner || arena
+    const probe = scrollerTop + Math.min(120, scroller.clientHeight * 0.28)
+    const rows = list.querySelectorAll<HTMLElement>('[data-arena-row]')
+    let best = ''
+    let bestDist = Infinity
+    rows.forEach((el) => {
+      const rect = el.getBoundingClientRect()
+      if (rect.bottom < scrollerTop - 40 || rect.top > scrollerTop + scroller.clientHeight + 40) {
+        return
+      }
+      const mid = rect.top + rect.height / 2
+      const dist = Math.abs(mid - probe)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = el.dataset.arenaRow || best
       }
     })
-    if (!arena) {
-      const first = banners[0]
-      arena = first?.dataset.arenaBanner || fallback
+    if (!best) {
+      const sections = list.querySelectorAll<HTMLElement>('[data-arena-section]')
+      sections.forEach((el) => {
+        const rect = el.getBoundingClientRect()
+        if (rect.top <= probe && rect.bottom >= probe) {
+          best = el.dataset.arenaSection || best
+        }
+      })
     }
-    return arena || fallback
+    return best || viewArenaRef.current || fallback
   }
 
   function scheduleViewArena() {
@@ -374,7 +401,7 @@ export function TrophyRoadScreen({
           }}
         >
           <p className="text-[0.55rem] font-extrabold uppercase tracking-wide text-white/75">
-            Viewing arena
+            Arena section
           </p>
           <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
             {viewArena}
@@ -442,148 +469,159 @@ export function TrophyRoadScreen({
               />
             </div>
 
-            {stepsDesc.map(({ step, idx }, rowI) => {
-              const reached = profile.trophies >= step.trophies
-              const done = claimed.has(idx)
-              const isYou =
-                profile.trophies >= step.trophies &&
-                (idx === TROPHY_ROAD.length - 1 ||
-                  profile.trophies < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
-              const isPeakStep =
-                peak >= step.trophies &&
-                (idx === TROPHY_ROAD.length - 1 ||
-                  peak < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
-              const ready = reached && !done
-              const showArenaFooter =
-                rowI === stepsDesc.length - 1 ||
-                stepsDesc[rowI + 1]?.step.arena !== step.arena
-              const friendsHere = friendsByStep.get(idx) ?? []
-              const arenaTone = ARENA_COLORS[step.arena] ?? colors
-
+            {arenaSections.map((section) => {
+              const arenaTone = ARENA_COLORS[section.arena] ?? colors
               return (
                 <li
-                  key={`step-${idx}`}
-                  ref={(el) => {
-                    if (isYou) youRef.current = el
-                    if (isPeakStep) peakRef.current = el
+                  key={`arena-${section.arena}`}
+                  className="relative list-none rounded-2xl px-1.5 pb-3 pt-2"
+                  data-arena-section={section.arena}
+                  style={{
+                    background: arenaBackdrop(section.arena),
+                    boxShadow: 'inset 0 1px 0 #ffffff22, 0 6px 0 #00000033',
                   }}
-                  className="relative"
-                  data-arena-row={step.arena}
                 >
-                  {friendsHere.map((f, fi) => (
-                    <button
-                      key={f.friend.id}
-                      type="button"
-                      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-                      style={{
-                        left: `${0.375 - fi * 0.05}rem`,
-                        top: `${18 + fi * 18}%`,
-                      }}
-                      title={`${f.friend.name}: ${f.trophies}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setProfileFriend(f.friend)
-                      }}
-                    >
-                      <div
-                        className="flex h-7 w-7 flex-col items-center justify-center overflow-hidden rounded-md ring-2 ring-white"
-                        style={{ background: CARD_PORTRAIT_BG }}
-                      >
-                        <span className="text-[0.55rem] font-black leading-none text-[#f5d76e]">
-                          {f.friend.name.slice(0, 1).toUpperCase()}
-                        </span>
-                        <span className="text-[0.4rem] font-extrabold leading-none text-white/80">
-                          {f.trophies}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                  <ul className="relative flex flex-col gap-6">
+                    {section.items.map(({ step, idx }) => {
+                      const reached = profile.trophies >= step.trophies
+                      const done = claimed.has(idx)
+                      const isYou =
+                        profile.trophies >= step.trophies &&
+                        (idx === TROPHY_ROAD.length - 1 ||
+                          profile.trophies < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
+                      const isPeakStep =
+                        peak >= step.trophies &&
+                        (idx === TROPHY_ROAD.length - 1 ||
+                          peak < (TROPHY_ROAD[idx + 1]?.trophies ?? Infinity))
+                      const ready = reached && !done
+                      const friendsHere = friendsByStep.get(idx) ?? []
 
-                  {isYou ? (
-                    <div
-                      className="pointer-events-none absolute left-[0.375rem] top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
-                      aria-hidden
-                    >
-                      <span
-                        className="rounded px-1 py-0.5 text-[0.5rem] font-black text-[#1a1410]"
-                        style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-                      >
-                        {profile.trophies}
-                      </span>
-                    </div>
-                  ) : null}
+                      return (
+                        <li
+                          key={`step-${idx}`}
+                          ref={(el) => {
+                            if (isYou) youRef.current = el
+                            if (isPeakStep) peakRef.current = el
+                          }}
+                          className="relative"
+                          data-arena-row={step.arena}
+                        >
+                          {friendsHere.map((f, fi) => (
+                            <button
+                              key={f.friend.id}
+                              type="button"
+                              className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+                              style={{
+                                left: `${0.375 - fi * 0.05}rem`,
+                                top: `${18 + fi * 18}%`,
+                              }}
+                              title={`${f.friend.name}: ${f.trophies}`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setProfileFriend(f.friend)
+                              }}
+                            >
+                              <div
+                                className="flex h-7 w-7 flex-col items-center justify-center overflow-hidden rounded-md ring-2 ring-white"
+                                style={{ background: CARD_PORTRAIT_BG }}
+                              >
+                                <span className="text-[0.55rem] font-black leading-none text-[#f5d76e]">
+                                  {f.friend.name.slice(0, 1).toUpperCase()}
+                                </span>
+                                <span className="text-[0.4rem] font-extrabold leading-none text-white/80">
+                                  {f.trophies}
+                                </span>
+                              </div>
+                            </button>
+                          ))}
 
-                  <div className="relative ml-2 flex items-center gap-2">
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => onNodeClick(idx)}
-                      className="relative min-w-0 flex-1 overflow-visible rounded-xl p-2 text-left"
-                      style={{
-                        background: 'linear-gradient(180deg,#6a6e78,#3a3e48 55%,#2a2e36)',
-                        boxShadow: ready
-                          ? '0 5px 0 #1a1e24, 0 0 14px #6ec8ff66'
-                          : '0 5px 0 #1a1e24',
-                        opacity: reached || done ? 1 : 0.6,
-                      }}
-                    >
-                      {isYou ? (
-                        <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
-                          <span
-                            className="flex h-full w-full items-end justify-center"
-                            style={{ background: CARD_PORTRAIT_BG }}
-                          >
-                            <CharacterModel
-                              charId={avatarId}
-                              anim="idle"
-                              facing={-Math.PI / 2}
-                              portrait
-                            />
-                          </span>
-                        </span>
-                      ) : null}
-                      <div className="relative z-[1] flex items-center gap-2 px-0.5">
-                        <RoadRewardIcon step={step} />
-                        <div className="min-w-0 flex-1 text-right">
-                          <p className="truncate text-[0.75rem] font-black text-white drop-shadow">
-                            {step.label}
-                          </p>
-                          <p className="text-[0.7rem] font-extrabold text-[#f5d76e]">
-                            {step.trophies}
-                          </p>
-                          <p
-                            className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#7dff9a]' : done ? 'text-white/70' : 'text-white/45'}`}
-                          >
-                            {done ? 'Claimed' : ready ? 'Tap to claim' : 'Locked'}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.button>
-                    {done ? (
-                      <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#7dff9a] text-sm font-black text-[#1a1410] ring-2 ring-white/80"
-                        aria-label="Claimed"
-                      >
-                        ✓
-                      </span>
-                    ) : (
-                      <span className="h-7 w-7 shrink-0" aria-hidden />
-                    )}
+                          {isYou ? (
+                            <div
+                              className="pointer-events-none absolute left-[0.375rem] top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
+                              aria-hidden
+                            >
+                              <span
+                                className="rounded px-1 py-0.5 text-[0.5rem] font-black text-[#1a1410]"
+                                style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                              >
+                                {profile.trophies}
+                              </span>
+                            </div>
+                          ) : null}
+
+                          <div className="relative ml-2 flex items-center gap-2">
+                            <motion.button
+                              type="button"
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => onNodeClick(idx)}
+                              className="relative min-w-0 flex-1 overflow-visible rounded-xl p-2 text-left"
+                              style={{
+                                background: 'linear-gradient(180deg,#6a6e78,#3a3e48 55%,#2a2e36)',
+                                boxShadow: ready
+                                  ? '0 5px 0 #1a1e24, 0 0 14px #6ec8ff66'
+                                  : '0 5px 0 #1a1e24',
+                                opacity: reached || done ? 1 : 0.6,
+                              }}
+                            >
+                              {isYou ? (
+                                <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
+                                  <span
+                                    className="flex h-full w-full items-end justify-center"
+                                    style={{ background: CARD_PORTRAIT_BG }}
+                                  >
+                                    <CharacterModel
+                                      charId={avatarId}
+                                      anim="idle"
+                                      facing={-Math.PI / 2}
+                                      portrait
+                                    />
+                                  </span>
+                                </span>
+                              ) : null}
+                              <div className="relative z-[1] flex items-center gap-2 px-0.5">
+                                <RoadRewardIcon step={step} />
+                                <div className="min-w-0 flex-1 text-right">
+                                  <p className="truncate text-[0.75rem] font-black text-white drop-shadow">
+                                    {step.label}
+                                  </p>
+                                  <p className="text-[0.7rem] font-extrabold text-[#f5d76e]">
+                                    {step.trophies}
+                                  </p>
+                                  <p
+                                    className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#7dff9a]' : done ? 'text-white/70' : 'text-white/45'}`}
+                                  >
+                                    {done ? 'Claimed' : ready ? 'Tap to claim' : 'Locked'}
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.button>
+                            {done ? (
+                              <span
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#7dff9a] text-sm font-black text-[#1a1410] ring-2 ring-white/80"
+                                aria-label="Claimed"
+                              >
+                                ✓
+                              </span>
+                            ) : (
+                              <span className="h-7 w-7 shrink-0" aria-hidden />
+                            )}
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  <div
+                    data-arena-banner={section.arena}
+                    className="mt-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
+                    style={{
+                      background: `linear-gradient(180deg, ${arenaTone.sky}, ${arenaTone.ground})`,
+                      boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
+                    }}
+                  >
+                    <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
+                      {section.arena}
+                    </p>
                   </div>
-                  {showArenaFooter ? (
-                    <div
-                      data-arena-banner={step.arena}
-                      className="mt-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
-                      style={{
-                        background: `linear-gradient(180deg, ${arenaTone.sky}, ${arenaTone.ground})`,
-                        boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
-                      }}
-                    >
-                      <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
-                        {step.arena}
-                      </p>
-                    </div>
-                  ) : null}
                 </li>
               )
             })}
