@@ -133,12 +133,29 @@ export default function App() {
   battleRef.current = battle
   const battleNetRef = useRef(battleNet)
   battleNetRef.current = battleNet
+  /** No social popup / toast more than once every 10s (stops friend-add spam). */
+  const POPUP_COOLDOWN_MS = 10_000
+  const lastPopupAtRef = useRef(0)
+  /** Survive effect remounts — friend_request is retried for several seconds. */
+  const seenFriendReqRef = useRef(new Set<string>())
+  const seenInviteRef = useRef(new Set<string>())
 
-  const flashFriend = useCallback((msg: string) => {
-    if (battleRef.current) return
-    setFriendToast(msg)
-    window.setTimeout(() => setFriendToast(null), 2800)
+  const claimPopupSlot = useCallback(() => {
+    const now = Date.now()
+    if (now - lastPopupAtRef.current < POPUP_COOLDOWN_MS) return false
+    lastPopupAtRef.current = now
+    return true
   }, [])
+
+  const flashFriend = useCallback(
+    (msg: string) => {
+      if (battleRef.current) return
+      if (!claimPopupSlot()) return
+      setFriendToast(msg)
+      window.setTimeout(() => setFriendToast(null), 2800)
+    },
+    [claimPopupSlot],
+  )
 
   const startMatch = useCallback(
     (name?: string | null, mode: GameMode = 'classic', net: BattleNet | null = null) => {
@@ -234,23 +251,32 @@ export default function App() {
     [flashFriend],
   )
 
-  const showIncoming = useCallback((challenge: BattleChallenge) => {
-    // Never cover an active battle with Accept / Decline.
-    if (battleRef.current) return
-    // Same room we're already in (host re-broadcast) — ignore.
-    if (battleNetRef.current?.challengeId === challenge.challengeId) return
-    if (!isChallengeForMe(challenge)) return
-    const outgoing = loadOutgoingChallenge()
-    if (outgoing && outgoing.challengeId === challenge.challengeId) return
-    if (challenge.fromPlayerId || challenge.fromName) {
-      upsertFriend({
-        name: challenge.fromName,
-        playerId: challenge.fromPlayerId,
-      })
-    }
-    saveIncomingChallenge(challenge)
-    setIncomingChallenge(challenge)
-  }, [])
+  const showIncoming = useCallback(
+    (challenge: BattleChallenge) => {
+      // Never cover an active battle with Accept / Decline.
+      if (battleRef.current) return
+      // Same room we're already in (host re-broadcast) — ignore.
+      if (battleNetRef.current?.challengeId === challenge.challengeId) return
+      if (!isChallengeForMe(challenge)) return
+      const outgoing = loadOutgoingChallenge()
+      if (outgoing && outgoing.challengeId === challenge.challengeId) return
+      if (challenge.fromPlayerId || challenge.fromName) {
+        upsertFriend({
+          name: challenge.fromName,
+          playerId: challenge.fromPlayerId,
+        })
+      }
+      // Already showing this invite — don't re-trigger / reset cooldown.
+      if (incomingChallenge?.challengeId === challenge.challengeId) {
+        saveIncomingChallenge(challenge)
+        return
+      }
+      if (!claimPopupSlot()) return
+      saveIncomingChallenge(challenge)
+      setIncomingChallenge(challenge)
+    },
+    [claimPopupSlot, incomingChallenge?.challengeId],
+  )
 
   const handleAcceptChallenge = useCallback(() => {
     if (!incomingChallenge) return
@@ -442,7 +468,7 @@ export default function App() {
         void publishLobby(hello)
       }
       pushAdd()
-      ;[700, 2000, 4500, 9000].forEach((ms) => {
+      ;[900].forEach((ms) => {
         window.setTimeout(pushAdd, ms)
       })
 
@@ -697,8 +723,6 @@ export default function App() {
     const myId = loadPlayerId()
     const inboxIds = [myId, ...loadLegacyPlayerIds()]
     void friendsTick
-    const seenInvite = new Set<string>()
-    const seenFriendReq = new Set<string>()
 
     const onSocial = (msg: SocialMessage) => {
       // Lobby broadcasts everything — only handle what is for this phone.
@@ -746,9 +770,9 @@ export default function App() {
       if (msg.type === 'friend_request') {
         if (msg.fromPlayerId === myId) return
         if (msg.toPlayerId !== myId) return
-        if (seenFriendReq.has(msg.fromPlayerId)) return
-        seenFriendReq.add(msg.fromPlayerId)
-        window.setTimeout(() => seenFriendReq.delete(msg.fromPlayerId), 20_000)
+        // Session-wide dedupe — retries used to reopen the modal every ~2s.
+        if (seenFriendReqRef.current.has(msg.fromPlayerId)) return
+        seenFriendReqRef.current.add(msg.fromPlayerId)
         const me = loadPlayerName().trim() || 'Player'
         const trophies = loadProfile().trophies
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
@@ -768,9 +792,10 @@ export default function App() {
           void publishDirectory(myId, me, { trophies })
           void publishLobby({ ...hello, at: new Date().toISOString() })
         }, 800)
-        if (!battleRef.current) {
+        if (!battleRef.current && claimPopupSlot()) {
           setIncomingFriendReq({ fromPlayerId: msg.fromPlayerId, fromName: msg.fromName })
-          flashFriend(`${msg.fromName} added you as a friend!`)
+          setFriendToast(`${msg.fromName} added you as a friend!`)
+          window.setTimeout(() => setFriendToast(null), 2800)
         }
         return
       }
@@ -786,8 +811,8 @@ export default function App() {
         if (battleNetRef.current?.challengeId === msg.challengeId) return
         if (msg.toPlayerId !== myId) return
         if (msg.fromPlayerId === myId) return
-        if (seenInvite.has(msg.challengeId)) return
-        seenInvite.add(msg.challengeId)
+        if (seenInviteRef.current.has(msg.challengeId)) return
+        seenInviteRef.current.add(msg.challengeId)
         showIncoming({
           challengeId: msg.challengeId,
           fromName: msg.fromName,
@@ -837,6 +862,7 @@ export default function App() {
       }
       if (msg.type === 'club_invite') {
         if (msg.toPlayerId && msg.toPlayerId !== myId) return
+        if (!claimPopupSlot()) return
         const invite: ClubInviteIncoming = {
           fromPlayerId: msg.fromPlayerId,
           fromName: msg.fromName,
@@ -860,7 +886,7 @@ export default function App() {
     return () => {
       for (const u of unsubs) u()
     }
-  }, [flashFriend, showIncoming, startMatch, friendsTick])
+  }, [flashFriend, showIncoming, startMatch, friendsTick, claimPopupSlot])
 
   // Cloudflare multiplayer socket — presence + invites (ntfy is backup only).
   useEffect(() => {
@@ -1051,7 +1077,10 @@ export default function App() {
             <button
               type="button"
               onClick={() => {
+                // Restart the 10s cooldown so nothing reopens immediately.
+                lastPopupAtRef.current = Date.now()
                 setIncomingFriendReq(null)
+                setFriendToast(null)
                 setTab('friends')
               }}
               className="mt-4 w-full rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
