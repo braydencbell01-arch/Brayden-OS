@@ -5,6 +5,7 @@ import { CharacterModel } from './characters/CharacterModel'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import { BattleCard } from './BattleCard'
 import { ChestArt } from './ChestOpen'
+import { FriendProfileModal } from './FriendsScreen'
 import {
   ARENA_COLORS,
   CHEST_META,
@@ -16,11 +17,17 @@ import {
   claimAvailableRoadRewards,
   claimRoadStep,
   loadAvatarId,
+  loadFriendMeta,
   loadFriends,
   loadPeakTrophies,
   loadProfile,
   loadTrophyRoad,
+  markFriendBattled,
+  saveFriendMeta,
+  saveFriends,
   type Friend,
+  type FriendMeta,
+  type GameMode,
 } from './storage'
 
 type Props = {
@@ -28,36 +35,40 @@ type Props = {
   onPlayBot: () => void
   friendPresence?: Record<string, FriendPresenceInfo>
   loadFriendsFn?: () => Friend[]
+  onRequestBattle?: (
+    name: string,
+    opts: { mode: GameMode; playerId: string },
+  ) => Promise<void>
+  onInviteClub?: (name: string, playerId?: string) => void | Promise<void>
+  onSpectate?: (friendName: string, info: FriendPresenceInfo) => void
+}
+
+function rewardCopies(step: TrophyRoadReward): number | null {
+  if (step.cardCopies) return step.cardCopies.copies
+  if (step.unlockCard) return 1
+  return null
 }
 
 function RoadRewardIcon({ step }: { step: TrophyRoadReward }) {
   if (step.chest) {
     return (
-      <div className="relative h-12 w-12 shrink-0">
+      <div className="relative h-[4.35rem] w-[3.05rem] shrink-0">
         <ChestArt rarity={step.chest} size="sm" />
       </div>
     )
   }
-  if (step.unlockCard) {
-    const c = getCharacter(step.unlockCard)
+  const charId = step.unlockCard ?? step.cardCopies?.charId
+  const copies = rewardCopies(step)
+  if (charId && copies != null) {
+    const c = getCharacter(charId)
     if (!c) return null
     return (
-      <div className="relative h-12 w-12 shrink-0">
-        <BattleCard character={c} size="collection" />
-        <span className="absolute -bottom-0.5 -right-0.5 z-[3] rounded bg-[#1a1410]/90 px-1 text-[0.5rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/60">
-          x1
-        </span>
-      </div>
-    )
-  }
-  if (step.cardCopies) {
-    const c = getCharacter(step.cardCopies.charId)
-    if (!c) return null
-    return (
-      <div className="relative h-12 w-12 shrink-0">
-        <BattleCard character={c} size="collection" />
-        <span className="absolute -bottom-0.5 -right-0.5 z-[3] rounded bg-[#1a1410]/90 px-1 text-[0.5rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/60">
-          x{step.cardCopies.copies}
+      <div className="flex shrink-0 items-center gap-1.5">
+        <div className="w-[3.05rem] shrink-0">
+          <BattleCard character={c} size="hand" />
+        </div>
+        <span className="rounded-md bg-[#1a1410]/95 px-1.5 py-0.5 text-[0.7rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/70">
+          ×{copies}
         </span>
       </div>
     )
@@ -65,21 +76,21 @@ function RoadRewardIcon({ step }: { step: TrophyRoadReward }) {
   if (step.gems) {
     return (
       <div
-        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
+        className="flex h-[4.35rem] w-[3.05rem] shrink-0 flex-col items-center justify-center rounded-[0.4rem] text-sm font-black"
         style={{ background: '#7dffc8', color: '#1a1410' }}
       >
         <span>◆</span>
-        <span className="text-[0.45rem] font-extrabold uppercase">{step.gems}</span>
+        <span className="text-[0.5rem] font-extrabold uppercase">{step.gems}</span>
       </div>
     )
   }
   return (
     <div
-      className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
+      className="flex h-[4.35rem] w-[3.05rem] shrink-0 flex-col items-center justify-center rounded-[0.4rem] text-sm font-black"
       style={{ background: '#f5d76e', color: '#1a1410' }}
     >
       <span>●</span>
-      <span className="text-[0.45rem] font-extrabold uppercase">{step.gold ?? 0}g</span>
+      <span className="text-[0.5rem] font-extrabold uppercase">{step.gold ?? 0}g</span>
     </div>
   )
 }
@@ -92,21 +103,70 @@ function arenaFor(trophies: number): string {
   return arena
 }
 
+function arenaBackdrop(arena: string): string {
+  const c = ARENA_COLORS[arena] ?? ARENA_COLORS['Training Camp']!
+  if (arena === 'Sundae Strip') {
+    return `
+      radial-gradient(ellipse 90% 55% at 15% 20%, #ffe8f4cc 0%, transparent 55%),
+      radial-gradient(ellipse 70% 45% at 85% 35%, #ffb0d0aa 0%, transparent 50%),
+      radial-gradient(circle at 50% 80%, #fff5e0aa 0%, transparent 45%),
+      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 52%, #2a1018 100%)
+    `
+  }
+  if (arena === "Pete's Pit") {
+    return `
+      radial-gradient(ellipse 100% 40% at 50% 0%, #e8b86a66 0%, transparent 50%),
+      radial-gradient(ellipse 80% 50% at 20% 70%, #3a201855 0%, transparent 55%),
+      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #100808 100%)
+    `
+  }
+  if (arena === 'Phil Plaza') {
+    return `
+      radial-gradient(ellipse 100% 45% at 50% 0%, #c9a0ff77 0%, transparent 55%),
+      radial-gradient(circle at 80% 60%, #7a4ad044 0%, transparent 40%),
+      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #140818 100%)
+    `
+  }
+  if (arena === 'Phil Peak') {
+    return `
+      radial-gradient(ellipse 110% 50% at 50% 0%, #ffe08acc 0%, transparent 55%),
+      radial-gradient(ellipse 60% 40% at 30% 70%, #c9a22755 0%, transparent 50%),
+      linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #1a1008 100%)
+    `
+  }
+  // Training Camp
+  return `
+    radial-gradient(ellipse 100% 45% at 50% 0%, ${c.accent}88 0%, transparent 55%),
+    radial-gradient(ellipse 70% 40% at 10% 60%, #7dff9a33 0%, transparent 50%),
+    linear-gradient(180deg, ${c.sky} 0%, ${c.ground} 55%, #0a1828 100%)
+  `
+}
+
 export function TrophyRoadScreen({
   onBack,
   onPlayBot,
   friendPresence = {},
   loadFriendsFn = loadFriends,
+  onRequestBattle,
+  onInviteClub,
+  onSpectate,
 }: Props) {
   const [profile, setProfile] = useState(() => loadProfile())
   const [claimed, setClaimed] = useState(() => new Set(loadTrophyRoad().claimed))
   const [toast, setToast] = useState<string | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [friends, setFriends] = useState(() => loadFriendsFn())
+  const [meta, setMeta] = useState<FriendMeta>(() => loadFriendMeta())
+  const [profileFriend, setProfileFriend] = useState<Friend | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  const [viewArena, setViewArena] = useState(() => arenaFor(loadProfile().trophies))
   useEffect(() => {
     const sync = () => setFriends(loadFriendsFn())
     window.addEventListener('philroyale-friends-changed', sync)
-    const id = window.setInterval(sync, 4000)
+    const id = window.setInterval(() => {
+      sync()
+      setNow(Date.now())
+    }, 4000)
     return () => {
       window.removeEventListener('philroyale-friends-changed', sync)
       window.clearInterval(id)
@@ -116,10 +176,11 @@ export function TrophyRoadScreen({
   const peakRef = useRef<HTMLLIElement>(null)
   const railTrackRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const avatarId = useMemo(() => loadAvatarId(), [])
   const peak = Math.max(loadPeakTrophies(), profile.trophies, profile.peakTrophies ?? 0)
 
-  const colors = ARENA_COLORS[arenaFor(profile.trophies)] ?? ARENA_COLORS['Goblin Boot']!
+  const colors = ARENA_COLORS[viewArena] ?? ARENA_COLORS['Training Camp']!
   const maxTrophies = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 5000
   const [railFill, setRailFill] = useState({ cur: 0, peak: 0, h: 0 })
 
@@ -146,13 +207,13 @@ export function TrophyRoadScreen({
           ? friendPresence[f.playerId]!.trophies!
           : undefined
       const t = typeof live === 'number' ? live : typeof f.trophies === 'number' ? f.trophies : 0
-      return { id: f.id, name: f.name, trophies: t }
+      return { friend: f, trophies: t }
     })
   }, [friends, friendPresence])
 
   /** Attach each friend to the nearest road step index (still show at 0). */
   const friendsByStep = useMemo(() => {
-    const map = new Map<number, { id: string; name: string; trophies: number }[]>()
+    const map = new Map<number, { friend: Friend; trophies: number }[]>()
     for (const f of friendMarkers) {
       let best = 0
       let bestDist = Infinity
@@ -177,6 +238,33 @@ export function TrophyRoadScreen({
     return () => window.cancelAnimationFrame(id)
   }, [])
 
+  function updateViewArena() {
+    const scroller = scrollRef.current
+    const list = listRef.current
+    if (!scroller || !list) return
+    const mid = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.42
+    let bestArena = arenaFor(profile.trophies)
+    let bestDist = Infinity
+    const banners = list.querySelectorAll<HTMLElement>('[data-arena-banner]')
+    banners.forEach((el) => {
+      const r = el.getBoundingClientRect()
+      const c = r.top + r.height / 2
+      const d = Math.abs(c - mid)
+      if (d < bestDist) {
+        bestDist = d
+        bestArena = el.dataset.arenaBanner || bestArena
+      }
+    })
+    // Prefer the reward row nearest the viewport midpoint when between banners.
+    const rows = list.querySelectorAll<HTMLElement>('[data-arena-row]')
+    rows.forEach((el) => {
+      const r = el.getBoundingClientRect()
+      if (r.bottom < mid || r.top > mid) return
+      bestArena = el.dataset.arenaRow || bestArena
+    })
+    setViewArena((prev) => (prev === bestArena ? prev : bestArena))
+  }
+
   useLayoutEffect(() => {
     function measure() {
       const list = listRef.current
@@ -185,7 +273,6 @@ export function TrophyRoadScreen({
       const peakEl = peakRef.current
       if (!list || !track) return
       const trackH = track.clientHeight
-      const listTop = list.getBoundingClientRect().top
       const trackBottom = track.getBoundingClientRect().bottom
       const fromBottom = (el: HTMLElement | null) => {
         if (!el) return 0
@@ -197,7 +284,7 @@ export function TrophyRoadScreen({
         peak: Math.max(fromBottom(peakEl), fromBottom(you)),
         h: trackH,
       })
-      void listTop
+      updateViewArena()
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -243,20 +330,51 @@ export function TrophyRoadScreen({
     if (res.ok) refresh()
   }
 
+  function togglePin(id: string) {
+    setMeta((prev) => {
+      const next = {
+        ...prev,
+        pinned: { ...prev.pinned, [id]: !prev.pinned[id] },
+      }
+      saveFriendMeta(next)
+      return next
+    })
+  }
+
+  function removeFriend(id: string) {
+    const next = friends.filter((f) => f.id !== id)
+    setFriends(next)
+    saveFriends(next)
+    setProfileFriend(null)
+  }
+
   const selectedStep = selected != null ? TROPHY_ROAD[selected] : null
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <div
+      <motion.div
         aria-hidden
         className="pointer-events-none absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(ellipse 120% 50% at 50% 0%, ${colors.accent}55 0%, transparent 55%),
-            linear-gradient(180deg, ${colors.sky} 0%, ${colors.ground} 55%, #140e0a 100%)
-          `,
-        }}
+        animate={{ opacity: 1 }}
+        key={viewArena}
+        initial={{ opacity: 0.55 }}
+        transition={{ duration: 0.45 }}
+        style={{ background: arenaBackdrop(viewArena) }}
       />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-16 z-[1] flex justify-center"
+      >
+        <p
+          className="rounded-full px-3 py-1 font-[family-name:var(--font-display)] text-sm tracking-wide text-[#f5d76e] ring-1 ring-white/20"
+          style={{
+            background: `linear-gradient(180deg, ${colors.sky}cc, ${colors.ground}ee)`,
+            boxShadow: '0 4px 16px #00000055',
+          }}
+        >
+          {viewArena}
+        </p>
+      </div>
 
       <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
         <div className="flex items-center gap-2">
@@ -315,15 +433,17 @@ export function TrophyRoadScreen({
       </header>
 
       <div
+        ref={scrollRef}
         className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-28"
         style={{ WebkitOverflowScrolling: 'touch' }}
+        onScroll={updateViewArena}
       >
-        <div className="relative mx-auto max-w-md py-4 pl-10">
+        <div className="relative mx-auto max-w-md py-4 pl-12 pr-1">
           <ul ref={listRef} className="relative flex flex-col gap-6">
             <div
               ref={railTrackRef}
               aria-hidden
-              className="pointer-events-none absolute bottom-0 left-3 top-0 w-3 overflow-hidden rounded-full"
+              className="pointer-events-none absolute bottom-0 left-0 top-0 w-3 overflow-hidden rounded-full"
               style={{
                 background: 'linear-gradient(180deg,#0a2040,#061428)',
                 boxShadow: 'inset 0 0 0 2px #1a4a8a88',
@@ -361,6 +481,7 @@ export function TrophyRoadScreen({
               const showArena =
                 rowI === 0 || stepsDesc[rowI - 1]?.step.arena !== step.arena
               const friendsHere = friendsByStep.get(idx) ?? []
+              const arenaTone = ARENA_COLORS[step.arena] ?? colors
 
               return (
                 <li
@@ -370,34 +491,40 @@ export function TrophyRoadScreen({
                     if (isPeakStep) peakRef.current = el
                   }}
                   className="relative"
+                  data-arena-row={step.arena}
                 >
                   {friendsHere.map((f, fi) => (
-                    <div
-                      key={f.id}
-                      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2"
+                    <button
+                      key={f.friend.id}
+                      type="button"
+                      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
                       style={{
-                        left: `-${1.15 + fi * 0.55}rem`,
-                        top: `${18 + fi * 16}%`,
+                        left: `${0.375 - fi * 0.05}rem`,
+                        top: `${18 + fi * 18}%`,
                       }}
-                      title={`${f.name}: ${f.trophies}`}
+                      title={`${f.friend.name}: ${f.trophies}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setProfileFriend(f.friend)
+                      }}
                     >
                       <div
-                        className="flex h-6 w-6 flex-col items-center justify-center overflow-hidden rounded-md ring-2 ring-white"
+                        className="flex h-7 w-7 flex-col items-center justify-center overflow-hidden rounded-md ring-2 ring-white"
                         style={{ background: CARD_PORTRAIT_BG }}
                       >
                         <span className="text-[0.55rem] font-black leading-none text-[#f5d76e]">
-                          {f.name.slice(0, 1).toUpperCase()}
+                          {f.friend.name.slice(0, 1).toUpperCase()}
                         </span>
                         <span className="text-[0.4rem] font-extrabold leading-none text-white/80">
                           {f.trophies}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
 
                   {isYou ? (
                     <div
-                      className="pointer-events-none absolute left-[-1.35rem] top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
+                      className="pointer-events-none absolute left-[0.375rem] top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
                       aria-hidden
                     >
                       <span
@@ -411,9 +538,10 @@ export function TrophyRoadScreen({
 
                   {showArena ? (
                     <div
+                      data-arena-banner={step.arena}
                       className="mb-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
                       style={{
-                        background: `linear-gradient(180deg, ${(ARENA_COLORS[step.arena] ?? colors).sky}, ${(ARENA_COLORS[step.arena] ?? colors).ground})`,
+                        background: `linear-gradient(180deg, ${arenaTone.sky}, ${arenaTone.ground})`,
                         boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
                       }}
                     >
@@ -423,56 +551,63 @@ export function TrophyRoadScreen({
                     </div>
                   ) : null}
 
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.94 }}
-                    onClick={() => onNodeClick(idx)}
-                    className="relative ml-2 w-[90%] max-w-[17rem] overflow-hidden rounded-xl p-2 text-left"
-                    style={{
-                      background: 'linear-gradient(180deg,#6a6e78,#3a3e48 55%,#2a2e36)',
-                      boxShadow: ready
-                        ? '0 5px 0 #1a1e24, 0 0 14px #6ec8ff66'
-                        : '0 5px 0 #1a1e24',
-                      opacity: reached || done ? 1 : 0.6,
-                    }}
-                  >
-                    {isYou ? (
-                      <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
-                        <span
-                          className="flex h-full w-full items-end justify-center"
-                          style={{ background: CARD_PORTRAIT_BG }}
-                        >
-                          <CharacterModel
-                            charId={avatarId}
-                            anim="idle"
-                            facing={-Math.PI / 2}
-                            portrait
-                          />
+                  <div className="relative ml-2 flex items-center gap-2">
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => onNodeClick(idx)}
+                      className="relative min-w-0 flex-1 overflow-visible rounded-xl p-2 text-left"
+                      style={{
+                        background: 'linear-gradient(180deg,#6a6e78,#3a3e48 55%,#2a2e36)',
+                        boxShadow: ready
+                          ? '0 5px 0 #1a1e24, 0 0 14px #6ec8ff66'
+                          : '0 5px 0 #1a1e24',
+                        opacity: reached || done ? 1 : 0.6,
+                      }}
+                    >
+                      {isYou ? (
+                        <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
+                          <span
+                            className="flex h-full w-full items-end justify-center"
+                            style={{ background: CARD_PORTRAIT_BG }}
+                          >
+                            <CharacterModel
+                              charId={avatarId}
+                              anim="idle"
+                              facing={-Math.PI / 2}
+                              portrait
+                            />
+                          </span>
                         </span>
-                      </span>
-                    ) : null}
+                      ) : null}
+                      <div className="relative z-[1] flex items-center gap-2 px-0.5">
+                        <RoadRewardIcon step={step} />
+                        <div className="min-w-0 flex-1 text-right">
+                          <p className="truncate text-[0.75rem] font-black text-white drop-shadow">
+                            {step.label}
+                          </p>
+                          <p className="text-[0.7rem] font-extrabold text-[#f5d76e]">
+                            {step.trophies}
+                          </p>
+                          <p
+                            className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#7dff9a]' : done ? 'text-white/70' : 'text-white/45'}`}
+                          >
+                            {done ? 'Claimed' : ready ? 'Tap to claim' : 'Locked'}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.button>
                     {done ? (
-                      <span className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#7dff9a] text-[0.7rem] font-black text-[#1a1410] ring-1 ring-white/80">
+                      <span
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#7dff9a] text-sm font-black text-[#1a1410] ring-2 ring-white/80"
+                        aria-label="Claimed"
+                      >
                         ✓
                       </span>
-                    ) : null}
-                    <div className="relative z-[1] flex items-center justify-between gap-2 px-1">
-                      <RoadRewardIcon step={step} />
-                      <div className="min-w-0 flex-1 text-right">
-                        <p className="truncate text-[0.7rem] font-black text-white drop-shadow">
-                          {step.label}
-                        </p>
-                        <p className="text-[0.65rem] font-extrabold text-[#f5d76e]">
-                          {step.trophies}
-                        </p>
-                        <p
-                          className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#7dff9a]' : done ? 'text-white/70' : 'text-white/45'}`}
-                        >
-                          {done ? 'Claimed' : ready ? 'Tap to claim' : 'Locked'}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.button>
+                    ) : (
+                      <span className="h-7 w-7 shrink-0" aria-hidden />
+                    )}
+                  </div>
                 </li>
               )
             })}
@@ -526,6 +661,51 @@ export function TrophyRoadScreen({
             {toast}
           </p>
         </div>
+      ) : null}
+
+      {profileFriend ? (
+        <FriendProfileModal
+          friend={profileFriend}
+          presence={
+            profileFriend.playerId ? friendPresence[profileFriend.playerId] : undefined
+          }
+          now={now}
+          note={meta.notes[profileFriend.id] ?? ''}
+          pinned={!!meta.pinned[profileFriend.id]}
+          onClose={() => setProfileFriend(null)}
+          onInvite={() => {
+            const pid = profileFriend.playerId
+            if (!pid || !onRequestBattle) {
+              flash('Open Social to invite this friend')
+              setProfileFriend(null)
+              return
+            }
+            const f = profileFriend
+            setProfileFriend(null)
+            markFriendBattled(f.id)
+            setMeta(loadFriendMeta())
+            void onRequestBattle(f.name, { mode: 'classic', playerId: pid })
+          }}
+          onSpectate={
+            onSpectate
+              ? () => {
+                  const p = profileFriend.playerId
+                    ? friendPresence[profileFriend.playerId]
+                    : undefined
+                  if (p) {
+                    onSpectate(profileFriend.name, p)
+                    setProfileFriend(null)
+                  }
+                }
+              : undefined
+          }
+          onTogglePin={() => togglePin(profileFriend.id)}
+          onRemove={() => removeFriend(profileFriend.id)}
+          onInviteClub={() => {
+            void onInviteClub?.(profileFriend.name, profileFriend.playerId)
+            setProfileFriend(null)
+          }}
+        />
       ) : null}
     </div>
   )

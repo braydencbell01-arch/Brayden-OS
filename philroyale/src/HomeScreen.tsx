@@ -109,7 +109,7 @@ export function HomeScreen({
   const botName = botNameForTrophies(profile.trophies)
   const unclaimed = countUnclaimedRoadRewards()
   const arena = arenaTitle(profile.trophies)
-  const arenaColors = ARENA_COLORS[arena] ?? ARENA_COLORS['Goblin Boot']!
+  const arenaColors = ARENA_COLORS[arena] ?? ARENA_COLORS['Training Camp']!
   const prevTrophies = nextStep
     ? TROPHY_PREV(profile.trophies, nextStep.trophies)
     : 0

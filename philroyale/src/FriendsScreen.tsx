@@ -652,7 +652,7 @@ function inBattle(
   return now - info.at < PRESENCE_ONLINE_MS
 }
 
-function FriendProfileModal({
+export function FriendProfileModal({
   friend,
   presence,
   now,

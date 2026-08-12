@@ -1465,6 +1465,9 @@ export default function App() {
             }}
             onPlayBot={() => startMatch(null)}
             friendPresence={friendPresence}
+            onRequestBattle={requestBattle}
+            onInviteClub={inviteToClub}
+            onSpectate={startSpectate}
           />
         </div>
         <nav

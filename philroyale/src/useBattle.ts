@@ -282,6 +282,11 @@ function applyTowerDamage(tw: TowerHp, damage: number, now: number) {
 }
 
 /** Damage every opposite-side unit (and tower) within radius of an impact point. */
+/** Clash-style: airborne (Spirit Jump / Launch) units take no damage until they land. */
+function isAirborne(u: BattleUnit): boolean {
+  return !!u.launch
+}
+
 function applySplashAt(
   units: BattleUnit[],
   towers: TowerHp[],
@@ -296,7 +301,7 @@ function applySplashAt(
   let unitsChanged = false
   let towersChanged = false
   for (const u of units) {
-    if (u.hp <= 0 || u.side === ownerSide) continue
+    if (u.hp <= 0 || u.side === ownerSide || isAirborne(u)) continue
     if (opts?.excludeUnitId && u.id === opts.excludeUnitId) continue
     const c = unitCenter(u)
     if (dist(c.col, c.row, col, row) <= radius) {
@@ -519,7 +524,9 @@ function pickAiSpellTarget(
   side: Side,
 ): { col: number; row: number } | null {
   const targetSide: Side = side === 'enemy' ? 'ally' : 'enemy'
-  const foes = units.filter((u) => u.side === targetSide && u.hp > 0)
+  const foes = units.filter(
+    (u) => u.side === targetSide && u.hp > 0 && !isAirborne(u),
+  )
   if (foes.length > 0) {
     const avg = foes.reduce(
       (acc, u) => ({ col: acc.col + u.col, row: acc.row + u.row }),
@@ -1539,7 +1546,7 @@ export function useBattle(opts?: {
           // Primary hit + separate splash (Cash Gun).
           if (p.targetId) {
             const target = nextUnits.find((u) => u.id === p.targetId)
-            if (target) {
+            if (target && !isAirborne(target)) {
               target.hp -= p.damage
               unitsChanged = true
             }
@@ -1578,7 +1585,7 @@ export function useBattle(opts?: {
           if (splash.towersChanged) towersChanged = true
         } else if (p.targetId) {
           const target = nextUnits.find((u) => u.id === p.targetId)
-          if (target) {
+          if (target && !isAirborne(target)) {
             target.hp -= p.damage
             unitsChanged = true
           }
@@ -1770,7 +1777,9 @@ export function useBattle(opts?: {
           if (def.attacks.length === 0) continue
 
           const me = unitCenter(u)
-          const foes = nextUnits.filter((o) => o.side !== u.side && o.hp > 0)
+          const foes = nextUnits.filter(
+            (o) => o.side !== u.side && o.hp > 0 && !isAirborne(o),
+          )
           const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
           const attack = def.attacks[u.attackIndex % def.attacks.length]!
           const attackRange = Math.max(2, attack.range)
@@ -1917,7 +1926,7 @@ export function useBattle(opts?: {
         const buildingsOnly = !!def.targetsBuildingsOnly
         const noLock = !!def.noLock
         const foes = nextUnits.filter((o) => {
-          if (o.side === u.side || o.hp <= 0) return false
+          if (o.side === u.side || o.hp <= 0 || isAirborne(o)) return false
           if (buildingsOnly && !isBuildingCard(getCharacter(o.charId))) return false
           return true
         })
@@ -2313,7 +2322,7 @@ export function useBattle(opts?: {
 
         if (best.kind === 'unit') {
           const target = nextUnits.find((x) => x.id === best.id)
-          if (target) {
+          if (target && !isAirborne(target)) {
             // Launch / knockback — fling troops first; damage lands with them.
             // Towers/buildings still take damage immediately (no fling).
             const canLaunch =
@@ -2447,7 +2456,9 @@ export function useBattle(opts?: {
         const slot = towerSlot(tw.id)
         if (!slot) continue
         const origin = { col: slot.col + slot.w / 2, row: slot.row + slot.h / 2 }
-        const foes = nextUnits.filter((u) => u.side !== tw.side && u.hp > 0)
+        const foes = nextUnits.filter(
+          (u) => u.side !== tw.side && u.hp > 0 && !isAirborne(u),
+        )
 
         if (tw.kind === 'king' && !tw.activated) {
           for (const f of foes) {
