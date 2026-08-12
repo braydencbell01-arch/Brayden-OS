@@ -143,6 +143,8 @@ export function TrophyRoadScreen({
   const railTrackRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const viewArenaRef = useRef(viewArena)
+  const arenaRafRef = useRef(0)
   const avatarId = useMemo(() => loadAvatarId(), [])
   const peak = Math.max(loadPeakTrophies(), profile.trophies, profile.peakTrophies ?? 0)
 
@@ -204,35 +206,45 @@ export function TrophyRoadScreen({
     return () => window.cancelAnimationFrame(id)
   }, [])
 
-  function updateViewArena() {
+  /**
+   * Sticky section tracking: last arena banner that has scrolled past a probe
+   * near the top of the list. Avoids mid-viewport row/banner fights that flip
+   * Sundae ↔ Pete’s Pit every frame while scrolling.
+   */
+  function computeViewArena(): string {
     const scroller = scrollRef.current
     const list = listRef.current
-    if (!scroller || !list) return
-    const mid = scroller.getBoundingClientRect().top + scroller.clientHeight * 0.42
-    let bestArena = arenaFor(profile.trophies)
-    let bestDist = Infinity
+    const fallback = arenaFor(profile.trophies)
+    if (!scroller || !list) return viewArenaRef.current || fallback
+    const scrollerTop = scroller.getBoundingClientRect().top
+    const probe = scrollerTop + Math.min(96, scroller.clientHeight * 0.22)
     const banners = list.querySelectorAll<HTMLElement>('[data-arena-banner]')
+    let arena = ''
     banners.forEach((el) => {
-      const r = el.getBoundingClientRect()
-      const c = r.top + r.height / 2
-      const d = Math.abs(c - mid)
-      if (d < bestDist) {
-        bestDist = d
-        bestArena = el.dataset.arenaBanner || bestArena
+      if (el.getBoundingClientRect().top <= probe + 8) {
+        arena = el.dataset.arenaBanner || arena
       }
     })
-    // Prefer the reward row nearest the viewport midpoint when between banners.
-    const rows = list.querySelectorAll<HTMLElement>('[data-arena-row]')
-    rows.forEach((el) => {
-      const r = el.getBoundingClientRect()
-      if (r.bottom < mid || r.top > mid) return
-      bestArena = el.dataset.arenaRow || bestArena
+    if (!arena) {
+      const first = banners[0]
+      arena = first?.dataset.arenaBanner || fallback
+    }
+    return arena || fallback
+  }
+
+  function scheduleViewArena() {
+    if (arenaRafRef.current) return
+    arenaRafRef.current = window.requestAnimationFrame(() => {
+      arenaRafRef.current = 0
+      const next = computeViewArena()
+      if (next === viewArenaRef.current) return
+      viewArenaRef.current = next
+      setViewArena(next)
     })
-    setViewArena((prev) => (prev === bestArena ? prev : bestArena))
   }
 
   useLayoutEffect(() => {
-    function measure() {
+    function measureRail() {
       const list = listRef.current
       const track = railTrackRef.current
       const you = youRef.current
@@ -250,15 +262,18 @@ export function TrophyRoadScreen({
         peak: Math.max(fromBottom(peakEl), fromBottom(you)),
         h: trackH,
       })
-      updateViewArena()
     }
-    measure()
-    const ro = new ResizeObserver(measure)
+    function onScrollOrResize() {
+      measureRail()
+      scheduleViewArena()
+    }
+    onScrollOrResize()
+    const ro = new ResizeObserver(onScrollOrResize)
     if (listRef.current) ro.observe(listRef.current)
-    window.addEventListener('scroll', measure, true)
+    if (scrollRef.current) ro.observe(scrollRef.current)
     return () => {
       ro.disconnect()
-      window.removeEventListener('scroll', measure, true)
+      if (arenaRafRef.current) window.cancelAnimationFrame(arenaRafRef.current)
     }
   }, [profile.trophies, peak, stepsDesc, friendsByStep])
 
@@ -318,13 +333,9 @@ export function TrophyRoadScreen({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <motion.div
+      <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
-        animate={{ opacity: 1 }}
-        key={viewArena}
-        initial={{ opacity: 0.55 }}
-        transition={{ duration: 0.45 }}
+        className="pointer-events-none absolute inset-0 transition-[background] duration-500 ease-out"
         style={{ background: arenaBackdrop(viewArena) }}
       />
       <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
@@ -401,7 +412,7 @@ export function TrophyRoadScreen({
         ref={scrollRef}
         className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-28"
         style={{ WebkitOverflowScrolling: 'touch' }}
-        onScroll={updateViewArena}
+        onScroll={scheduleViewArena}
       >
         <div className="relative mx-auto max-w-md py-4 pl-12 pr-1">
           <ul ref={listRef} className="relative flex flex-col gap-6">
