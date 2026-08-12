@@ -5,6 +5,7 @@
 
 import { ARENA_ROWS } from './arena'
 import type { AttackId } from './characters'
+import type { GameMode } from './gameModes'
 import { loadPlayerId } from './storage'
 import { mpPublishBattle, mpReady, mpSubscribeBattle } from './mpClient'
 import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
@@ -102,6 +103,8 @@ export type BattleRoomMessage =
       enemyScore?: number
       /** Host match clock (seconds remaining) — guest mirrors this. */
       clockSec?: number
+      /** Host overtime flag — elixir mult + OT label. */
+      overtime?: boolean
       /** Host has seen the guest join. */
       peerJoined?: boolean
       /** Host performance.now() at publish — guest maps timers/projectiles. */
@@ -130,8 +133,27 @@ export type BattleRoomMessage =
       challengeId: string
       fromName: string
       fromPlayerId?: string
-      mode?: 'classic' | 'touchdown'
+      mode?: GameMode
       at: string
+    }
+  | {
+      /** Party draft/undraft/infinite — share a reject/gift card with peer. */
+      type: 'party_card'
+      challengeId: string
+      role: BattleRole
+      /** Card the sender is giving the peer (draft reject / undraft pick). */
+      charId: string
+      /** Index of the pick round (0-based). */
+      round: number
+      at: number
+    }
+  | {
+      /** Party lobby — my final 8-card deck is ready. */
+      type: 'party_deck_ready'
+      challengeId: string
+      role: BattleRole
+      deckIds: string[]
+      at: number
     }
 
 export type BattleNet = {

@@ -25,6 +25,11 @@ import {
 import type { GameMode } from './storage'
 import { loadPlayerId, loadPlayerName } from './storage'
 import {
+  BASE_ELIXIR_PER_SEC,
+  elixirMultiplier,
+  regulationSeconds,
+} from './gameModes'
+import {
   DECK_SIZE,
   getCharacter,
   randomBotDeck,
@@ -139,7 +144,6 @@ function syncProjectileToBattle(
 }
 
 const ELIXIR_MAX = 10
-const ELIXIR_PER_SEC = 0.35
 const PROJECTILE_MS = 480
 /** Beans slobber — slow lob that takes a beat to land. */
 const SLOBBER_PROJECTILE_MS = 1100
@@ -833,6 +837,8 @@ export function useBattle(opts?: {
   /** Player trophies — scales AI cadence / elixir on trophy road. */
   trophies?: number
   mode?: GameMode
+  /** Overtime — elixir regen uses OT multiplier. */
+  overtime?: boolean
   /** Cards the AI may play (touchdown draft). */
   enemyDeckIds?: string[]
   /** Friend battle: host sim + guest mirror over ntfy. */
@@ -841,13 +847,20 @@ export function useBattle(opts?: {
   onPeerLinkFailed?: () => void
 }) {
   const mode = opts?.mode ?? 'classic'
+  const overtime = !!opts?.overtime
   const net = opts?.net ?? null
   const aiProfile = botAiProfile(opts?.trophies ?? 0)
   const botLevel = opts?.botLevel ?? aiProfile.level
+  const elixirMult = elixirMultiplier(mode, overtime)
+  const elixirMultRef = useRef(elixirMult)
+  elixirMultRef.current = elixirMult
+  const overtimeRef = useRef(overtime)
+  overtimeRef.current = overtime
   const [elixir, setElixir] = useState(5)
   const [enemyElixir, setEnemyElixir] = useState(() =>
     net ? 5 : aiProfile.startElixir,
   )
+  const [remoteOvertime, setRemoteOvertime] = useState(false)
   const [lagging, setLagging] = useState(false)
   const [units, setUnits] = useState<BattleUnit[]>([])
   const [projectiles, setProjectiles] = useState<Projectile[]>([])
@@ -860,7 +873,7 @@ export function useBattle(opts?: {
   const [peerJoined, setPeerJoined] = useState(() => !net || net.role !== 'host')
   const peerJoinedRef = useRef(peerJoined)
   peerJoinedRef.current = peerJoined
-  const [clockSec, setClockSec] = useState(() => (mode === 'touchdown' ? 150 : 180))
+  const [clockSec, setClockSec] = useState(() => regulationSeconds(mode))
   const clockSecRef = useRef(clockSec)
   clockSecRef.current = clockSec
   const [towers, setTowers] = useState<TowerHp[]>(() =>
@@ -1008,6 +1021,7 @@ export function useBattle(opts?: {
       allyScore: allyScoreRef.current,
       enemyScore: enemyScoreRef.current,
       clockSec: clockSecRef.current,
+      overtime: overtimeRef.current,
       peerJoined: peerJoinedRef.current,
     }
     void publishBattle(n.challengeId, msg)
@@ -1218,6 +1232,9 @@ export function useBattle(opts?: {
           clockSecRef.current = msg.clockSec
           setClockSec(msg.clockSec)
         }
+        if (typeof msg.overtime === 'boolean') {
+          setRemoteOvertime(msg.overtime)
+        }
         setSyncReady(true)
         setPeerJoined(true)
       }
@@ -1234,7 +1251,9 @@ export function useBattle(opts?: {
         if (liveRoleRef.current !== 'guest') return
         if (lastRemoteSeqRef.current > 0) return
         onPeerLinkFailedRef.current?.()
-      }, 28_000)
+      }, mode === 'touchdown' || mode === 'draft' || mode === 'undraft' || mode === 'infiniteElixir'
+        ? 90_000
+        : 28_000)
     }
 
     if (net.role === 'host' || net.role === 'guest') {
@@ -1341,8 +1360,12 @@ export function useBattle(opts?: {
         return
       }
 
-      setElixir((e) => Math.min(ELIXIR_MAX, e + ELIXIR_PER_SEC * dt))
-      const enemyRegen = ELIXIR_PER_SEC * (netRef.current ? 1 : aiProfileRef.current.elixirMult)
+      const regen = BASE_ELIXIR_PER_SEC * elixirMultRef.current
+      setElixir((e) => Math.min(ELIXIR_MAX, e + regen * dt))
+      const enemyRegen =
+        BASE_ELIXIR_PER_SEC *
+        elixirMultRef.current *
+        (netRef.current ? 1 : aiProfileRef.current.elixirMult)
       let nextEnemyElixir = Math.min(
         ELIXIR_MAX,
         enemyElixirRef.current + enemyRegen * dt,
@@ -2551,11 +2574,16 @@ export function useBattle(opts?: {
         nextHearts = kept
       }
 
-      // Touchdown scoring — unit reaches the far end zone.
+      // Touchdown scoring — moving troops reach the far end zone (not buildings).
       if (modeRef.current === 'touchdown') {
         const keptTd: BattleUnit[] = []
         for (const u of nextUnits) {
           if (u.hp <= 0) continue
+          const def = getCharacter(u.charId)
+          if (!def || isBuildingCard(def) || isSpellCard(def) || def.moveSpeed <= 0) {
+            keptTd.push(u)
+            continue
+          }
           if (u.side === 'ally' && u.row < TOUCHDOWN_ZONE_ROWS) {
             allyScoreRef.current += 1
             setAllyScore(allyScoreRef.current)
@@ -2606,6 +2634,8 @@ export function useBattle(opts?: {
     elixir,
     enemyElixir,
     elixirMax: ELIXIR_MAX,
+    elixirMult,
+    remoteOvertime,
     units,
     projectiles,
     splats,

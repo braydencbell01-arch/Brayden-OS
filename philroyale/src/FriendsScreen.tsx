@@ -592,6 +592,30 @@ export function FriendsScreen({
             </button>
             <button
               type="button"
+              onClick={() => void sendInvite(inviteTarget, 'draft')}
+              className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
+              style={{ background: 'linear-gradient(180deg,#9b6bff,#5a2fbf)' }}
+            >
+              Draft · party
+            </button>
+            <button
+              type="button"
+              onClick={() => void sendInvite(inviteTarget, 'undraft')}
+              className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
+              style={{ background: 'linear-gradient(180deg,#ff7a4a,#bf3f2f)' }}
+            >
+              Undraft · party
+            </button>
+            <button
+              type="button"
+              onClick={() => void sendInvite(inviteTarget, 'infiniteElixir')}
+              className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410]"
+              style={{ background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)' }}
+            >
+              Infinite Elixir · party
+            </button>
+            <button
+              type="button"
               onClick={() => setInviteTarget(null)}
               className="mt-2 w-full rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-white/70 ring-1 ring-white/15"
             >

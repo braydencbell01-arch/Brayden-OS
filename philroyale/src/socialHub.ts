@@ -16,7 +16,9 @@ import {
 } from './mpClient'
 import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
-export type GameMode = 'classic' | 'touchdown'
+import type { GameMode } from './gameModes'
+
+export type { GameMode } from './gameModes'
 
 export type SocialMessage =
   | {
