@@ -210,6 +210,8 @@ const KING_DAMAGE = 150
 const KING_CD_MS = 1500
 const KING_WAKE_RANGE = 7.5
 const KING_WAKE_DELAY_MS = 3000
+/** When out of attack range, chase enemy cards within this many tiles (range ≤ this only). */
+const CARD_CHASE_RANGE = 20
 /** Soft collision radius (tiles) for CR-style unit push / bunching. */
 const UNIT_RADIUS = 0.85
 const FACING_TURN_HARD_RAD = 0.4
@@ -2048,13 +2050,6 @@ export function useBattle(opts?: {
           return true
         })
         const foeTowers = liveTowers.filter((tw) => tw.side !== u.side)
-        const currentAttack = def.attacks[u.attackIndex % def.attacks.length]
-        // Towers are the default objective. Units only pull aggro when nearby;
-        // ranged troops may notice enemies up to their own firing range.
-        // noLock troops always chase the absolute nearest opponent (no sticky lock).
-        const unitAggroRange = noLock
-          ? Infinity
-          : Math.max(12, currentAttack?.range ?? 0)
 
         type Target = {
           kind: 'unit' | 'tower'
@@ -2072,6 +2067,16 @@ export function useBattle(opts?: {
         const attackRange = noAttack
           ? 2
           : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
+        // Short-range troops: out of range → chase cards within 20, else towers.
+        // Skipped for Dave (buildings only) and cards whose attack range is > 20.
+        const useCardChase = !buildingsOnly && attackRange <= CARD_CHASE_RANGE
+        // Long-range / buildings-only: units pull aggro within firing range (floor 12).
+        // noLock always sees every foe when not using the 20-tile chase rule.
+        const unitAggroRange = useCardChase
+          ? CARD_CHASE_RANGE
+          : noLock
+            ? Infinity
+            : Math.max(12, attackRange)
 
         // Clash Royale: once attacking a target, keep it until death or out of range.
         // Big Mable (noLock): never sticky — always re-pick nearest.
@@ -2120,33 +2125,108 @@ export function useBattle(opts?: {
         }
 
         if (!best) {
-          for (const tw of foeTowers) {
-            const slot = towerSlot(tw.id)
-            if (!slot) continue
-            const edge = distUnitTileToTower(u.col, u.row, slot)
-            const aim = towerFrontEngagePoint(me.col, me.row, slot)
-            const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
-            // Prefer towers we can already hit from the front (skipped for noLock).
-            const inFront = !noLock && towerInMeleeRange(u.col, u.row, slot, attackRange)
-            const score = inFront ? path - 40 : path
-            if (!best || score < best.d) {
-              best = {
-                kind: 'tower',
-                id: tw.id,
-                col: aim.col,
-                row: aim.row,
-                d: score,
-                rangeD: edge,
+          if (useCardChase) {
+            // 1) Anything already in attack range (nearest by path).
+            for (const f of foes) {
+              const c = unitCenter(f)
+              const edge = dist(me.col, me.row, c.col, c.row)
+              if (edge > attackRange) continue
+              const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
+              if (!best || path < best.d) {
+                best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
               }
             }
-          }
-          for (const f of foes) {
-            const c = unitCenter(f)
-            const edge = dist(me.col, me.row, c.col, c.row)
-            if (edge > unitAggroRange) continue
-            const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
-            if (!best || path < best.d) {
-              best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
+            for (const tw of foeTowers) {
+              const slot = towerSlot(tw.id)
+              if (!slot || !towerInMeleeRange(u.col, u.row, slot, attackRange)) continue
+              const edge = distUnitTileToTower(u.col, u.row, slot)
+              const aim = towerFrontEngagePoint(me.col, me.row, slot)
+              const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
+              if (!best || path < best.d) {
+                best = {
+                  kind: 'tower',
+                  id: tw.id,
+                  col: aim.col,
+                  row: aim.row,
+                  d: path,
+                  rangeD: edge,
+                }
+              }
+            }
+            // 2) No one in range → nearest enemy card within 20 tiles.
+            if (!best) {
+              for (const f of foes) {
+                const c = unitCenter(f)
+                const edge = dist(me.col, me.row, c.col, c.row)
+                if (edge > CARD_CHASE_RANGE) continue
+                const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
+                if (!best || path < best.d) {
+                  best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
+                }
+              }
+            }
+            // 3) No card within 20 → nearest opponent tower.
+            if (!best) {
+              for (const tw of foeTowers) {
+                const slot = towerSlot(tw.id)
+                if (!slot) continue
+                const edge = distUnitTileToTower(u.col, u.row, slot)
+                const aim = towerFrontEngagePoint(me.col, me.row, slot)
+                const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
+                if (!best || path < best.d) {
+                  best = {
+                    kind: 'tower',
+                    id: tw.id,
+                    col: aim.col,
+                    row: aim.row,
+                    d: path,
+                    rangeD: edge,
+                  }
+                }
+              }
+            }
+          } else {
+            // Dave (buildings/towers only) and long-range (>20): towers default,
+            // units only pull when within unitAggroRange.
+            for (const tw of foeTowers) {
+              const slot = towerSlot(tw.id)
+              if (!slot) continue
+              const edge = distUnitTileToTower(u.col, u.row, slot)
+              const aim = towerFrontEngagePoint(me.col, me.row, slot)
+              const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
+              const inFront = !noLock && towerInMeleeRange(u.col, u.row, slot, attackRange)
+              const score = inFront ? path - 40 : path
+              if (!best || score < best.d) {
+                best = {
+                  kind: 'tower',
+                  id: tw.id,
+                  col: aim.col,
+                  row: aim.row,
+                  d: score,
+                  rangeD: edge,
+                }
+              }
+            }
+            if (!buildingsOnly) {
+              for (const f of foes) {
+                const c = unitCenter(f)
+                const edge = dist(me.col, me.row, c.col, c.row)
+                if (edge > unitAggroRange) continue
+                const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
+                if (!best || path < best.d) {
+                  best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
+                }
+              }
+            } else {
+              // Dave: also consider building cards among foes.
+              for (const f of foes) {
+                const c = unitCenter(f)
+                const edge = dist(me.col, me.row, c.col, c.row)
+                const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
+                if (!best || path < best.d) {
+                  best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
+                }
+              }
             }
           }
         }
