@@ -146,7 +146,15 @@ function clearUrlParams(keys: string[]): void {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<TabId>('home')
+  const [tab, setTab] = useState<TabId>(() => {
+    try {
+      return new URLSearchParams(window.location.search).has('philShopPaid')
+        ? 'shop'
+        : 'home'
+    } catch {
+      return 'home'
+    }
+  })
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [nameDraft, setNameDraft] = useState(() => loadPlayerName())
   const [friendToast, setFriendToast] = useState<string | null>(null)
