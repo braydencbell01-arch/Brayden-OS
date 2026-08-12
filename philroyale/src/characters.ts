@@ -848,13 +848,35 @@ export function shuffleInPlace<T>(arr: T[]): T[] {
 
 /**
  * Fresh random CPU deck: shuffle the full roster, take `size` (default 8).
- * Pool = every card in CHARACTERS (currently 23). Max one of each.
+ * Pool = every card in CHARACTERS. Max one of each.
+ * At most one spirit so the AI doesn’t 1-elixir-spam floating heads.
  */
 export function randomBotDeck(size = DECK_SIZE): string[] {
-  const pool = CHARACTERS.map((c) => c.id)
-  if (pool.length === 0) return []
-  const n = Math.min(Math.max(1, size), pool.length)
-  return shuffleInPlace(pool).slice(0, n)
+  const spirits = new Set(
+    CHARACTERS.filter((c) => /spirit/i.test(c.id) || /spirit/i.test(c.name)).map(
+      (c) => c.id,
+    ),
+  )
+  const pool = shuffleInPlace(CHARACTERS.map((c) => c.id))
+  const out: string[] = []
+  let spiritTaken = false
+  for (const id of pool) {
+    if (spirits.has(id)) {
+      if (spiritTaken) continue
+      spiritTaken = true
+    }
+    out.push(id)
+    if (out.length >= size) break
+  }
+  // If we somehow short-filled, top up from remaining non-spirit (or any).
+  if (out.length < size) {
+    for (const id of pool) {
+      if (out.includes(id)) continue
+      out.push(id)
+      if (out.length >= size) break
+    }
+  }
+  return shuffleInPlace(out)
 }
 
 /** Enforce max-one-of-each; if short, fill from remaining roster at random. */
