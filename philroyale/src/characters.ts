@@ -111,6 +111,8 @@ export type CharacterDef = {
   spawnPool?: string[]
   /** Building: seconds between spawns (first spawn is on place). */
   spawnEverySec?: number
+  /** Building: HP lost per second while standing (default 25). */
+  hpDecayPerSec?: number
   /** Building: also spawn one from the pool when the building dies. */
   spawnOnDeath?: boolean
   /** Spell: damage dealt to enemies in radius. */
@@ -545,6 +547,7 @@ export const STEVES_DINER: CharacterDef = {
   attackDelaySec: 2.25,
   hue: 25,
   cardKind: 'building',
+  hpDecayPerSec: 12,
   blurb:
     'Building — roadside diner that locks on and hucks pancake stacks. Splash where they land.',
   attacks: [
@@ -654,7 +657,7 @@ export const PETE_SPIRIT: CharacterDef = {
   rarity: 'epic',
   elixir: 1,
   hp: 125,
-  moveSpeed: 13,
+  moveSpeed: 10,
   attackDelaySec: 1,
   hue: 25,
   blurb:

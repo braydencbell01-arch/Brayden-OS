@@ -1575,8 +1575,8 @@ export function useBattle(opts?: {
 
         // Buildings: stationary. Spawners (Dog Hut) or turrets (Phil's Car).
         if (isBuildingCard(def)) {
-          // Buildings bleed 25 HP / sec while standing.
-          const drain = 25 * dt
+          // Buildings bleed HP while standing (Steve's Diner 12/sec; others default 25).
+          const drain = (def.hpDecayPerSec ?? 25) * dt
           if (drain > 0 && u.hp > 0) {
             u.hp = Math.max(0, u.hp - drain)
             unitsChanged = true
