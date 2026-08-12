@@ -4,22 +4,20 @@ import { CharacterModel } from './characters/CharacterModel'
 
 const BOOT_SEEN_KEY = 'philroyale.bootSeen.v1'
 
+/** Overlapping hero poses for the CR-style loading splash. */
 const COLLAGE = [
-  'phil',
-  'evilPhil',
-  'kathie',
-  'todd',
-  'mike',
-  'pete',
-  'beans',
-  'scott',
+  { id: 'phil', left: '8%', bottom: '4%', scale: 1.35, z: 3, facing: 1 },
+  { id: 'kathie', left: '52%', bottom: '2%', scale: 1.25, z: 4, facing: -1 },
+  { id: 'evilPhil', left: '28%', bottom: '18%', scale: 1.55, z: 2, facing: 1 },
+  { id: 'todd', left: '68%', bottom: '22%', scale: 1.05, z: 1, facing: -1 },
+  { id: 'mike', left: '0%', bottom: '28%', scale: 0.95, z: 1, facing: 1 },
 ] as const
 
 const TIPS = [
+  'Two Kings enter. One King leaves!',
   'Place troops behind the bridge for a stronger push.',
-  'Chests unlock over time — or open now with gold.',
   'Climb the Trophy Road to unlock new cards.',
-  'Build five decks and switch before battle.',
+  'Build five decks — they save automatically.',
   'Touchdown mode uses a fresh draft each match.',
 ]
 
@@ -41,16 +39,61 @@ function markBootSeen(): void {
   }
 }
 
+/** Exact SUP / ERC / ELL 3×3 slab wordmark (Supercell boot style). */
+function SupercellLogo() {
+  return (
+    <div
+      className="select-none"
+      aria-label="Supercell"
+      style={{
+        fontFamily: '"Rockwell", "Roboto Slab", "Courier New", Georgia, serif',
+        fontWeight: 900,
+        letterSpacing: '0.12em',
+        color: '#f4f4f4',
+        textShadow:
+          '0 1px 0 #fff, 0 2px 0 #bbb, 0 3px 0 #999, 0 6px 14px #000000aa',
+        WebkitTextStroke: '0.5px #ddd',
+      }}
+    >
+      {['SUP', 'ERC', 'ELL'].map((row) => (
+        <div
+          key={row}
+          className="flex justify-center"
+          style={{
+            gap: '0.28em',
+            fontSize: 'clamp(2.4rem, 11vw, 4.2rem)',
+            lineHeight: 0.92,
+            fontStyle: 'normal',
+          }}
+        >
+          {row.split('').map((ch, i) => (
+            <span
+              key={`${row}-${i}`}
+              style={{
+                display: 'inline-block',
+                transform: 'scaleY(1.08)',
+                filter: 'contrast(1.05)',
+              }}
+            >
+              {ch}
+            </span>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function BootFlow({ children }: { children: ReactNode }) {
   const shorten = hasSeenBoot()
   const [phase, setPhase] = useState<Phase>(shorten ? 'loading' : 'supercell')
   const [progress, setProgress] = useState(shorten ? 55 : 0)
-  const tip = TIPS[Math.floor(Math.random() * TIPS.length)]!
+  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]!)
 
   useEffect(() => {
     if (phase !== 'supercell') return
-    // ~1.2s fade in, brief hold, 0.8s fade out
-    const t = window.setTimeout(() => setPhase('loading'), 2800)
+    // Fade in ~1s, hold, fade out ~0.9s → then loading
+    const t = window.setTimeout(() => setPhase('loading'), 3000)
     return () => window.clearTimeout(t)
   }, [phase])
 
@@ -81,33 +124,17 @@ export function BootFlow({ children }: { children: ReactNode }) {
         <motion.div
           key="sc"
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black"
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.45 }}
         >
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2 }}
-            className="select-none text-center"
-            style={{
-              fontFamily: 'Georgia, "Times New Roman", serif',
-              letterSpacing: '0.18em',
-              color: '#ffffff',
-              textShadow: '0 2px 0 #000, 0 0 24px #ffffff33',
-            }}
+            animate={{ opacity: [0, 1, 1, 0] }}
+            transition={{ duration: 2.85, times: [0, 0.28, 0.72, 1], ease: 'easeInOut' }}
           >
-            {['SUP', 'ERC', 'ELL'].map((row) => (
-              <div
-                key={row}
-                className="flex justify-center gap-[0.35em] text-[clamp(1.8rem,8vw,3.2rem)] font-black leading-[1.05]"
-              >
-                {row.split('').map((ch, i) => (
-                  <span key={`${row}-${i}`}>{ch}</span>
-                ))}
-              </div>
-            ))}
+            <SupercellLogo />
           </motion.div>
         </motion.div>
       ) : (
@@ -120,69 +147,102 @@ export function BootFlow({ children }: { children: ReactNode }) {
           transition={{ duration: 0.35 }}
           style={{
             background: `
-              radial-gradient(ellipse 90% 50% at 50% 15%, #3a6aaa 0%, transparent 55%),
-              linear-gradient(180deg, #1a3a62 0%, #0e1c30 45%, #1a100c 100%)
+              radial-gradient(ellipse 120% 55% at 50% 0%, #5a9ad8 0%, #2a5a92 42%, transparent 70%),
+              linear-gradient(180deg, #3a6aaa 0%, #1a3a62 38%, #0e1c30 62%, #1a100c 100%)
             `,
           }}
         >
-          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-4 pt-8">
-            <h1
-              className="relative z-10 font-[family-name:var(--font-display)] text-[clamp(2rem,10vw,3.4rem)] tracking-wide text-[#f5d76e]"
-              style={{ textShadow: '0 4px 0 #8a6a12, 0 10px 28px #00000088' }}
-            >
-              Phil Royale
-            </h1>
-            <div className="relative mt-4 h-[min(42vh,280px)] w-full max-w-md">
-              {COLLAGE.map((id, i) => {
-                const col = i % 4
-                const row = Math.floor(i / 4)
-                return (
-                  <div
-                    key={id}
-                    className="absolute overflow-hidden rounded-xl"
-                    style={{
-                      width: '28%',
-                      height: '48%',
-                      left: `${6 + col * 22}%`,
-                      top: `${row * 48 + (col % 2) * 4}%`,
-                      transform: `rotate(${(i % 3) * 4 - 4}deg)`,
-                      boxShadow: '0 6px 16px #00000088',
-                      background: 'linear-gradient(180deg,#4a3018,#1a100c)',
-                      zIndex: i,
-                    }}
-                  >
-                    <div className="flex h-full w-full items-end justify-center pb-1">
-                      <div className="h-[115%] w-[115%] origin-bottom scale-[1.15]">
-                        <CharacterModel charId={id} anim="idle" facing={1} portrait />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+          {/* Soft clouds */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-8 h-24 opacity-40"
+            style={{
+              background:
+                'radial-gradient(ellipse 40% 60% at 20% 50%, #fff8, transparent), radial-gradient(ellipse 35% 50% at 75% 40%, #fff6, transparent)',
+            }}
+          />
+
+          <div className="relative flex min-h-0 flex-1 flex-col items-center px-4 pt-10">
+            <div className="relative z-10 text-center">
+              <div
+                aria-hidden
+                className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full"
+                style={{
+                  background: 'linear-gradient(180deg,#4a9eff,#1d4a86)',
+                  boxShadow: '0 3px 0 #0a2040, inset 0 1px 0 #ffffff55',
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path fill="#f5d76e" d="M5 18h14l-1.5-9-4 3L12 6l-1.5 6-4-3L5 18z" />
+                </svg>
+              </div>
+              <h1
+                className="font-[family-name:var(--font-display)] text-[clamp(2.1rem,11vw,3.6rem)] tracking-wide text-[#f5d76e]"
+                style={{ textShadow: '0 4px 0 #8a6a12, 0 10px 28px #00000088' }}
+              >
+                Phil Royale
+              </h1>
+            </div>
+
+            <div className="relative mt-2 h-[min(48vh,340px)] w-full max-w-md flex-1">
+              {/* Green mist / portal at bottom like CR splash */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-28"
+                style={{
+                  background:
+                    'radial-gradient(ellipse 70% 80% at 50% 100%, #3dff7a88 0%, #1a6a3088 35%, transparent 70%)',
+                }}
+              />
+              {COLLAGE.map((slot) => (
+                <div
+                  key={slot.id}
+                  className="absolute overflow-visible"
+                  style={{
+                    left: slot.left,
+                    bottom: slot.bottom,
+                    width: '42%',
+                    height: '70%',
+                    zIndex: slot.z,
+                    transform: `scale(${slot.scale})`,
+                    transformOrigin: 'bottom center',
+                    filter: 'drop-shadow(0 8px 12px #00000099)',
+                  }}
+                >
+                  <CharacterModel
+                    charId={slot.id}
+                    anim="idle"
+                    facing={slot.facing}
+                    portrait
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="relative z-10 shrink-0 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
-            <p className="mb-2 text-center text-sm font-bold text-white/85">{tip}</p>
+            <p className="mb-2 text-center text-sm font-bold text-white drop-shadow">
+              {tip}
+            </p>
             <div
-              className="mx-auto h-5 max-w-md overflow-hidden rounded-full ring-2 ring-[#1a4a8a]"
+              className="relative mx-auto h-6 max-w-md overflow-hidden rounded-md ring-2 ring-[#1a4a8a]"
               style={{
                 background: 'linear-gradient(180deg,#0a2040,#061428)',
                 boxShadow: 'inset 0 2px 4px #00000088',
               }}
             >
               <motion.div
-                className="h-full rounded-full"
+                className="h-full"
                 style={{
                   width: `${progress}%`,
-                  background: 'linear-gradient(180deg,#6ec8ff,#2f6fbf 55%,#1d4a86)',
-                  boxShadow: 'inset 0 1px 0 #ffffff55',
+                  background: 'linear-gradient(180deg,#8ed8ff,#3a8fd4 45%, #1d4a86)',
+                  boxShadow: 'inset 0 1px 0 #ffffff66',
                 }}
               />
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs font-extrabold tabular-nums text-white drop-shadow">
+                {progress}%
+              </span>
             </div>
-            <p className="mt-1.5 text-center text-xs font-extrabold tabular-nums text-[#8ec8ff]">
-              {progress}%
-            </p>
           </div>
         </motion.div>
       )}

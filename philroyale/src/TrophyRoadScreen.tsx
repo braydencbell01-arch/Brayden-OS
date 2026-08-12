@@ -318,19 +318,32 @@ export function TrophyRoadScreen({
                     type="button"
                     whileTap={{ scale: 0.94 }}
                     onClick={() => onNodeClick(idx)}
-                    className="relative ml-2 w-[88%] max-w-[16rem] rounded-2xl p-2.5 text-left"
+                    className="relative ml-2 w-[90%] max-w-[17rem] overflow-hidden rounded-xl p-2 text-left"
                     style={{
-                      background: ready
-                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
-                        : done
-                          ? 'linear-gradient(180deg,#2d6a3a,#1a4024)'
-                          : 'linear-gradient(180deg,#3a2418,#1a100c)',
+                      background: 'linear-gradient(180deg,#6a6e78,#3a3e48 55%,#2a2e36)',
                       boxShadow: ready
-                        ? '0 5px 0 #8a6a12, 0 0 16px #f5d76e66'
-                        : '0 4px 0 #00000055',
-                      opacity: reached || done ? 1 : 0.55,
+                        ? '0 5px 0 #1a1e24, 0 0 14px #6ec8ff66'
+                        : '0 5px 0 #1a1e24',
+                      opacity: reached || done ? 1 : 0.6,
                     }}
                   >
+                    {/* Neon track down the middle of the island */}
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-y-2 left-1/2 w-8 -translate-x-1/2 rounded-sm"
+                      style={{
+                        background: 'linear-gradient(180deg,#2a2018,#1a140e)',
+                        boxShadow: 'inset 0 0 0 1px #5a4a3a',
+                      }}
+                    >
+                      <div
+                        className="absolute inset-x-1 top-1/2 h-1.5 -translate-y-1/2 rounded-full"
+                        style={{
+                          background: 'linear-gradient(90deg,#3dff7a,#1a9a40)',
+                          boxShadow: '0 0 8px #3dff7a88',
+                        }}
+                      />
+                    </div>
                     {isYou ? (
                       <span className="absolute -left-1 -top-3 z-10 flex h-7 w-7 items-center justify-center overflow-hidden rounded-full ring-2 ring-[#ff3b3b]">
                         <span
@@ -347,17 +360,19 @@ export function TrophyRoadScreen({
                       </span>
                     ) : null}
                     {done ? (
-                      <span className="absolute -right-1 -top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#7dff9a] text-[0.7rem] font-black text-[#1a1410]">
+                      <span className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-[#7dff9a] text-[0.7rem] font-black text-[#1a1410] ring-1 ring-white/80">
                         ✓
                       </span>
                     ) : null}
-                    <div className="flex items-center gap-2">
+                    <div className="relative z-[1] flex items-center justify-between gap-2 px-1">
                       <div
-                        className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl text-sm font-black"
+                        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg text-sm font-black"
                         style={{
-                          background: icon.bg,
+                          background: done ? `${icon.bg}99` : icon.bg,
                           color: '#1a1410',
-                          boxShadow: 'inset 0 1px 0 #ffffff55',
+                          boxShadow: done
+                            ? '0 0 0 3px #ffffff55, inset 0 1px 0 #ffffff55'
+                            : 'inset 0 1px 0 #ffffff55',
                         }}
                       >
                         <span>{icon.glyph}</span>
@@ -365,19 +380,15 @@ export function TrophyRoadScreen({
                           {icon.sub.slice(0, 8)}
                         </span>
                       </div>
-                      <div className="min-w-0">
-                        <p
-                          className={`truncate text-[0.75rem] font-black ${ready || done ? 'text-[#1a1410]' : 'text-white'}`}
-                        >
+                      <div className="min-w-0 flex-1 text-right">
+                        <p className="truncate text-[0.7rem] font-black text-white drop-shadow">
                           {step.label}
                         </p>
-                        <p
-                          className={`text-[0.65rem] font-extrabold ${ready || done ? 'text-[#1a1410]/75' : 'text-[#f5d76e]'}`}
-                        >
-                          {step.trophies} trophies
+                        <p className="text-[0.65rem] font-extrabold text-[#f5d76e]">
+                          {step.trophies}
                         </p>
                         <p
-                          className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#1b7a34]' : done ? 'text-white/80' : 'text-white/50'}`}
+                          className={`text-[0.55rem] font-bold uppercase ${ready ? 'text-[#7dff9a]' : done ? 'text-white/70' : 'text-white/45'}`}
                         >
                           {done ? 'Claimed' : ready ? 'Tap to claim' : 'Locked'}
                         </p>

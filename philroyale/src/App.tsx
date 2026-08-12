@@ -85,6 +85,51 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'profile', label: 'Profile' },
 ]
 
+function TabGlyph({ id, active }: { id: TabId; active: boolean }) {
+  const stroke = active ? '#1a1410' : '#f5d76e'
+  if (id === 'shop') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+        <path fill={stroke} d="M4 9h16l-1.2 11H5.2L4 9zm2-5h12l1 4H5l1-4z" />
+      </svg>
+    )
+  }
+  if (id === 'cards') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+        <rect x="3" y="5" width="10" height="14" rx="1.5" fill={stroke} opacity="0.55" />
+        <rect x="7" y="3" width="10" height="14" rx="1.5" fill={stroke} opacity="0.8" />
+        <rect x="11" y="1" width="10" height="14" rx="1.5" fill={stroke} />
+      </svg>
+    )
+  }
+  if (id === 'home') {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+        <path
+          fill={stroke}
+          d="M7 20 4 8l6 3 2-7 2 7 6-3-3 12H7zm5-6.5c-1.1 0-2 .7-2 1.5s.9 1.5 2 1.5 2-.7 2-1.5-.9-1.5-2-1.5z"
+        />
+      </svg>
+    )
+  }
+  if (id === 'social') {
+    return (
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+        <circle cx="8" cy="9" r="3" fill={stroke} />
+        <circle cx="16" cy="9" r="3" fill={stroke} />
+        <circle cx="12" cy="15" r="3" fill={stroke} />
+      </svg>
+    )
+  }
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="8" r="4" fill={stroke} />
+      <path fill={stroke} d="M4 20c1.8-3.5 4.5-5 8-5s6.2 1.5 8 5H4z" />
+    </svg>
+  )
+}
+
 function clearUrlParams(keys: string[]): void {
   const url = new URL(window.location.href)
   let changed = false
@@ -1457,13 +1502,14 @@ export default function App() {
       </div>
 
       <nav
-        className="shrink-0 border-t border-[#c9a227]/30 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
+        className="shrink-0 border-t border-[#c9a227]/35 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1"
         style={{ background: 'linear-gradient(180deg,#3a2418,#1a100c)' }}
         aria-label="Main"
       >
-        <ul className="mx-auto flex max-w-md gap-0.5">
+        <ul className="mx-auto flex max-w-md items-end gap-0.5">
           {TABS.map((t) => {
             const active = tab === t.id
+            const battleTab = t.id === 'home'
             return (
               <li key={t.id} className="relative flex-1">
                 <button
@@ -1473,13 +1519,24 @@ export default function App() {
                     setShowEvents(false)
                     setTab(t.id)
                   }}
-                  className="flex w-full flex-col items-center rounded-lg py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide"
+                  className={`flex w-full flex-col items-center gap-0.5 rounded-xl font-extrabold uppercase tracking-wide ${
+                    battleTab ? '-mt-2.5 py-2 text-[0.7rem]' : 'py-1.5 text-[0.58rem]'
+                  }`}
                   style={{
-                    background: active ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : 'transparent',
-                    color: active ? '#1a1410' : '#f5d76e',
-                    boxShadow: active ? '0 3px 0 #8a6a12' : 'none',
+                    background: active
+                      ? battleTab
+                        ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                        : 'linear-gradient(180deg,#4a9eff,#2f6fbf)'
+                      : 'transparent',
+                    color: active ? (battleTab ? '#1a1410' : '#fff') : '#f5d76e',
+                    boxShadow: active
+                      ? battleTab
+                        ? '0 3px 0 #8a6a12'
+                        : '0 3px 0 #1d4a86'
+                      : 'none',
                   }}
                 >
+                  <TabGlyph id={t.id} active={active} />
                   {t.label}
                 </button>
                 {t.id === 'home' && roadBadge > 0 ? (

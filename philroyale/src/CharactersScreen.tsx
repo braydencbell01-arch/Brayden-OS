@@ -214,10 +214,110 @@ export function CharactersScreen() {
     )
   }
 
+  const collectionHeader = (
+    <div className="mb-2 flex items-end justify-between gap-2">
+      <div className="min-w-0">
+        <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-white">
+          Card Collection
+        </h2>
+        <p className="text-xs font-bold text-white/70">
+          Found: {collection.found}/{collection.total}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setRarityFilter('all')}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-[0.7rem] font-black text-white"
+          style={{ background: '#2a3a55', boxShadow: '0 2px 0 #0a1528' }}
+          aria-label="Filter"
+          title="Reset filters"
+        >
+          ☰
+        </button>
+        <button
+          type="button"
+          onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-sm font-black text-white"
+          style={{
+            background: 'linear-gradient(180deg,#7dff9a,#2f8f4a)',
+            boxShadow: '0 2px 0 #1a5028',
+          }}
+          aria-label="Sort direction"
+        >
+          {sortDir === 'desc' ? '↑' : '↓'}
+        </button>
+        <select
+          value={rarityFilter}
+          onChange={(e) => setRarityFilter(e.target.value as RarityFilter)}
+          className="h-7 rounded-md px-1.5 text-[0.65rem] font-extrabold text-white outline-none"
+          style={{ background: '#2a3a55', boxShadow: '0 2px 0 #0a1528' }}
+          aria-label="Sort by"
+        >
+          <option value="all">By Rarity</option>
+          <option value="common">Common</option>
+          <option value="rare">Rare</option>
+          <option value="epic">Epic</option>
+          <option value="legendary">Legendary</option>
+        </select>
+      </div>
+    </div>
+  )
+
+  const collectionLists = (
+    <>
+      <ul className="grid grid-cols-4 gap-2">
+        {collection.unlocked.map((c) => (
+          <CollectionTile
+            key={c.id}
+            character={c}
+            level={progress.levels[c.id] ?? 1}
+            copies={progress.copies[c.id] ?? 0}
+            locked={false}
+            onClick={() => {
+              if (pane === 'decks' && (pickSlot != null || deck.length < DECK_SIZE)) {
+                addToDeck(c.id)
+              } else {
+                setProfileId(c.id)
+              }
+            }}
+          />
+        ))}
+      </ul>
+      {collection.locked.length > 0 ? (
+        <>
+          <p className="mb-2 mt-4 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-white/55">
+            Not found
+          </p>
+          <ul className="grid grid-cols-4 gap-2">
+            {collection.locked.map((c) => (
+              <CollectionTile
+                key={c.id}
+                character={c}
+                level={1}
+                copies={0}
+                locked
+                onClick={() => setProfileId(c.id)}
+              />
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </>
+  )
+
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-[#140e0a]">
+    <div
+      className="relative flex h-full min-h-0 flex-col"
+      style={{
+        background: `
+          repeating-linear-gradient(135deg, #1a2a44 0 10px, #162238 10px 20px),
+          #162238
+        `,
+      }}
+    >
       <header className="shrink-0 px-3 pb-2 pt-[max(3.1rem,calc(env(safe-area-inset-top)+2.5rem))]">
-        <div className="mx-auto flex max-w-md gap-1 rounded-xl bg-[#1a100c] p-1 ring-1 ring-white/10">
+        <div className="mx-auto flex max-w-md overflow-hidden rounded-xl shadow-lg">
           {([
             ['decks', 'Decks'],
             ['collection', 'Collection'],
@@ -229,12 +329,14 @@ export function CharactersScreen() {
                 setPane(id)
                 setPickSlot(null)
               }}
-              className="flex-1 rounded-lg py-2 text-sm font-extrabold uppercase tracking-wide"
+              className="flex-1 py-2.5 text-sm font-extrabold uppercase tracking-wide"
               style={{
                 background:
-                  pane === id ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : 'transparent',
-                color: pane === id ? '#1a1410' : '#f5d76e',
-                boxShadow: pane === id ? '0 2px 0 #8a6a12' : 'none',
+                  pane === id
+                    ? 'linear-gradient(180deg,#7eb8ff,#3a7fd4)'
+                    : 'linear-gradient(180deg,#2a4a78,#1a3058)',
+                color: '#fff',
+                boxShadow: pane === id ? 'inset 0 -3px 0 #ffe08a' : 'inset 0 0 0 1px #0a204088',
               }}
             >
               {label}
@@ -245,54 +347,55 @@ export function CharactersScreen() {
 
       {pane === 'decks' ? (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24">
-          <div className="mx-auto flex max-w-md gap-1.5">
+          <div className="mx-auto flex max-w-md items-center gap-1">
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-xs font-black text-white"
+              style={{ background: '#2a3a55' }}
+              aria-hidden
+            >
+              ☰
+            </span>
             {Array.from({ length: DECK_SLOTS }, (_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => selectDeck(i)}
-                className="flex-1 rounded-lg py-2 text-sm font-black"
+                className="relative flex-1 rounded-t-lg py-2 text-sm font-black text-white"
                 style={{
                   background:
                     activeIdx === i
-                      ? 'linear-gradient(180deg,#4a9eff,#2f6fbf)'
-                      : '#2a1a12',
-                  color: '#fff',
-                  boxShadow: activeIdx === i ? '0 3px 0 #1d4a86' : 'none',
-                  outline: activeIdx === i ? '2px solid #ffe08a' : undefined,
+                      ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                      : 'linear-gradient(180deg,#3a5a88,#2a4068)',
+                  color: activeIdx === i ? '#1a1410' : '#fff',
+                  boxShadow: activeIdx === i ? '0 0 0 2px #ffe08a' : 'none',
                 }}
               >
                 {i + 1}
+                {activeIdx === i ? (
+                  <span className="absolute -bottom-1 left-1/2 h-0 w-0 -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-[#c9a227]" />
+                ) : null}
               </button>
             ))}
           </div>
 
           <div
-            className="mx-auto mt-3 max-w-md rounded-xl p-2.5"
+            className="mx-auto max-w-md rounded-b-xl rounded-tr-xl p-2.5"
             style={{
-              background: 'linear-gradient(180deg,#3a2418,#1f140e)',
-              boxShadow: 'inset 0 1px 0 #c9a22744',
+              background: 'linear-gradient(180deg,#2a4068,#1a2848)',
+              boxShadow: 'inset 0 1px 0 #ffffff22, 0 6px 16px #00000055',
             }}
           >
-            <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-                Deck {activeIdx + 1}
-              </p>
-              <p className="flex items-center gap-1 text-sm font-black text-[#d8a0ff]">
-                <ElixirDrop />
-                {avgElixir}
-              </p>
-            </div>
             <div className="grid grid-cols-4 gap-2">
               {Array.from({ length: DECK_SIZE }, (_, i) => {
                 const id = deck[i]
                 const c = id ? getCharacter(id) ?? null : null
                 const picking = pickSlot === i
+                const lv = id ? progress.levels[id] ?? 1 : 1
                 return (
                   <button
                     key={i}
                     type="button"
-                    className="min-w-0"
+                    className="relative min-w-0"
                     onClick={() => {
                       if (c) removeFromDeck(i)
                       else setPickSlot(picking ? null : i)
@@ -304,98 +407,41 @@ export function CharactersScreen() {
                     }}
                   >
                     <BattleCard character={c} size="collection" />
+                    {c ? (
+                      <span className="absolute inset-x-0 bottom-0 z-[2] bg-black/75 py-0.5 text-center text-[0.5rem] font-black text-white">
+                        Level {lv}
+                      </span>
+                    ) : null}
                   </button>
                 )
               })}
             </div>
+            <div className="mt-2 flex items-center gap-1.5 px-0.5">
+              <ElixirDrop />
+              <span className="text-sm font-black tabular-nums text-[#d8a0ff]">{avgElixir}</span>
+              <span className="text-[0.6rem] font-bold text-white/50">avg elixir</span>
+            </div>
             {pickSlot != null ? (
-              <p className="mt-2 text-center text-xs font-bold text-[#8ec8ff]">
-                Tap an unlocked card below to fill the slot
+              <p className="mt-1 text-center text-xs font-bold text-[#8ec8ff]">
+                Tap a card below to fill the slot · auto-saves
               </p>
             ) : (
-              <p className="mt-2 text-center text-[0.65rem] font-semibold text-white/55">
-                Tap a card to remove · tap empty to add · auto-saves
+              <p className="mt-1 text-center text-[0.6rem] font-semibold text-white/45">
+                Tap a card to remove · empty slot to add · auto-saves
               </p>
             )}
           </div>
 
-          {(pickSlot != null || deck.length < DECK_SIZE) && (
-            <ul className="mx-auto mt-3 grid max-w-md grid-cols-4 gap-2">
-              {CHARACTERS.filter((c) => progress.unlocked.includes(c.id)).map((c) => (
-                <li key={c.id}>
-                  <button type="button" className="w-full" onClick={() => addToDeck(c.id)}>
-                    <BattleCard character={c} size="collection" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="mx-auto mt-4 max-w-md">
+            {collectionHeader}
+            {collectionLists}
+          </div>
         </div>
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24">
           <div className="mx-auto max-w-md">
-            <h2 className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
-              Card Collection
-            </h2>
-            <p className="text-sm font-bold text-white/70">
-              Found {collection.found}/{collection.total}
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-1 text-[0.65rem] font-bold text-white/70">
-                Rarity
-                <select
-                  value={rarityFilter}
-                  onChange={(e) => setRarityFilter(e.target.value as RarityFilter)}
-                  className="rounded bg-[#221610] px-1.5 py-0.5 text-[0.65rem] font-extrabold text-white outline-none ring-1 ring-white/15"
-                >
-                  <option value="all">All</option>
-                  <option value="common">Common</option>
-                  <option value="rare">Rare</option>
-                  <option value="epic">Epic</option>
-                  <option value="legendary">Legendary</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
-                className="rounded bg-[#221610] px-2 py-0.5 text-[0.65rem] font-extrabold text-white ring-1 ring-white/15"
-              >
-                Sort {sortDir === 'desc' ? '↓' : '↑'}
-              </button>
-            </div>
-
-            <ul className="mt-3 grid grid-cols-4 gap-2">
-              {collection.unlocked.map((c) => (
-                <CollectionTile
-                  key={c.id}
-                  character={c}
-                  level={progress.levels[c.id] ?? 1}
-                  copies={progress.copies[c.id] ?? 0}
-                  locked={false}
-                  onClick={() => setProfileId(c.id)}
-                />
-              ))}
-            </ul>
-
-            {collection.locked.length > 0 ? (
-              <>
-                <p className="mb-2 mt-4 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-white/50">
-                  Not found
-                </p>
-                <ul className="grid grid-cols-4 gap-2">
-                  {collection.locked.map((c) => (
-                    <CollectionTile
-                      key={c.id}
-                      character={c}
-                      level={1}
-                      copies={0}
-                      locked
-                      onClick={() => setProfileId(c.id)}
-                    />
-                  ))}
-                </ul>
-              </>
-            ) : null}
+            {collectionHeader}
+            {collectionLists}
           </div>
         </div>
       )}
@@ -444,30 +490,36 @@ function CollectionTile({
       <button
         type="button"
         onClick={onClick}
-        className="relative w-full overflow-hidden rounded-lg"
-        style={{ opacity: locked ? 0.45 : 1, filter: locked ? 'grayscale(1)' : undefined }}
+        className="relative w-full"
+        style={{ filter: locked ? 'grayscale(1)' : undefined, opacity: locked ? 0.72 : 1 }}
       >
-        <BattleCard character={character} size="collection" />
-        <span
-          className="absolute bottom-5 left-1/2 z-[2] -translate-x-1/2 rounded px-1 text-[0.5rem] font-black text-[#1a1410]"
-          style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-        >
-          {locked ? '?' : `Lv ${level}`}
-        </span>
-        <div className="absolute inset-x-1 bottom-1 z-[2] h-1 overflow-hidden rounded-full bg-black/60">
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${pct}%`,
-              background: 'linear-gradient(90deg,#7dff9a,#4a9eff)',
-            }}
+        <div className="relative overflow-hidden rounded-lg">
+          <BattleCard character={character} size="collection" />
+          <span
+            className="pointer-events-none absolute left-1/2 top-1 z-[2] h-2 w-2 -translate-x-1/2 rotate-45"
+            style={{ background: RARITY_PILL[character.rarity], boxShadow: '0 0 0 1px #0006' }}
+            aria-hidden
           />
+          <span className="absolute inset-x-0 bottom-0 z-[2] bg-[#1a1410]/90 py-0.5 text-center text-[0.5rem] font-black text-white">
+            {locked ? 'Not Found' : `Level ${level}`}
+          </span>
         </div>
-        <span
-          className="pointer-events-none absolute right-1 top-1 z-[2] h-2 w-2 rounded-full"
-          style={{ background: RARITY_PILL[character.rarity] }}
-          aria-hidden
-        />
+        {!locked ? (
+          <div className="mt-0.5">
+            <div className="h-1.5 overflow-hidden rounded-sm bg-[#0a2040] ring-1 ring-[#1a4a8a]">
+              <div
+                className="h-full"
+                style={{
+                  width: `${pct}%`,
+                  background: 'linear-gradient(90deg,#6ec8ff,#2f6fbf)',
+                }}
+              />
+            </div>
+            <p className="mt-0.5 text-center text-[0.45rem] font-extrabold tabular-nums text-white/70">
+              {copies}/{need}
+            </p>
+          </div>
+        ) : null}
       </button>
     </li>
   )
