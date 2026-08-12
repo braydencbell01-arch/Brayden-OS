@@ -37,6 +37,7 @@ import {
   isBuildingCard,
   isSpellCard,
   pickSpawnFromPool,
+  shuffleInPlace,
   type CharacterDef,
 } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
@@ -591,64 +592,91 @@ function tryEnemyAiDeploy(
   towers: TowerHp[],
   live: ReadonlySet<string>,
   enemyElixir: number,
-  deckIndex: number,
   t: number,
   botLevel: number,
   mode: GameMode = 'classic',
   deckIds: string[] = [],
-): { unit: BattleUnit | null; elixir: number; deckIndex: number; projectile?: Projectile | null } {
+): {
+  unit: BattleUnit | null
+  elixir: number
+  deck: string[]
+  projectile?: Projectile | null
+} {
   const lane = pickAiLane(units)
   const colBase = lane === 'left' ? 18 : 70
   const colSpan = 14
   const rowBase = mode === 'touchdown' ? 8 : 28
   const rowSpan = mode === 'touchdown' ? 38 : 40
-  // Fixed match deck only — never re-roll from the full roster mid-battle.
-  const deck = deckIds.length > 0 ? deckIds : randomBotDeck()
+  const deck =
+    deckIds.length > 0 ? deckIds.slice() : randomBotDeck()
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
-  if (deck.length === 0) return { unit: null, elixir: enemyElixir, deckIndex }
+  if (deck.length === 0) {
+    return { unit: null, elixir: enemyElixir, deck }
+  }
 
-  // Cycle the 8-card deck in order (Clash-style). Skip unaffordable / unsplaceable.
-  for (let attempt = 0; attempt < deck.length; attempt++) {
-    const idx = (deckIndex + attempt) % deck.length
-    const charId = deck[idx]!
+  // Clash-style hand = first 4 of the rotating deck queue.
+  const handSize = Math.min(4, deck.length)
+  const handSlots = Array.from({ length: handSize }, (_, i) => i)
+
+  // Only play what we can afford — never fall through the whole deck to a
+  // 1-elixir spirit when bigger cards are waiting (that caused spirit spam).
+  const affordable = handSlots.filter((slot) => {
+    const char = getCharacter(deck[slot]!)
+    return !!char && enemyElixir >= char.elixir
+  })
+  if (affordable.length === 0) {
+    return { unit: null, elixir: enemyElixir, deck }
+  }
+
+  const order = shuffleInPlace(affordable.slice())
+  for (const slot of order) {
+    const charId = deck[slot]!
     const char = getCharacter(charId)
-    if (!char || enemyElixir < char.elixir) continue
+    if (!char) continue
+
+    const finish = (payload: {
+      unit: BattleUnit | null
+      projectile?: Projectile | null
+      elixir: number
+    }) => {
+      // Played card goes to the back of the queue (Clash hand cycle).
+      const [played] = deck.splice(slot, 1)
+      if (played) deck.push(played)
+      return { ...payload, deck }
+    }
 
     if (isSpellCard(char)) {
       const target = pickAiSpellTarget(units, towers, 'enemy')
       if (!target) continue
       const projectile = makeSpellProjectile(char, 'enemy', target.col, target.row, t, botLevel)
       if (!projectile) continue
-      return {
+      return finish({
         unit: null,
         projectile,
         elixir: enemyElixir - char.elixir,
-        deckIndex: (idx + 1) % deck.length,
-      }
+      })
     }
 
     for (let tileTry = 0; tileTry < 10; tileTry++) {
       const col = colBase + Math.floor(Math.random() * colSpan)
       const row = rowBase + Math.floor(Math.random() * rowSpan)
       if (!canSpawnAt(col, row, 'enemy', towers, live, mode)) continue
-      return {
+      return finish({
         unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex: (idx + 1) % deck.length,
-      }
+      })
     }
 
     for (const spot of safeSpawns) {
       if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
-      return {
+      return finish({
         unit: makeBattleUnit(char, spot.col, spot.row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex: (idx + 1) % deck.length,
-      }
+      })
     }
   }
 
-  return { unit: null, elixir: enemyElixir, deckIndex }
+  return { unit: null, elixir: enemyElixir, deck }
 }
 
 /** Move with river + enemy-tower collision — own towers are passable. */
@@ -927,6 +955,8 @@ export function useBattle(opts?: {
         : randomBotDeck(DECK_SIZE),
     ),
   )
+  // Rotating queue copy for Clash-style AI hand (mutated as cards are played).
+  const aiDeckCycleRef = useRef<string[]>(enemyDeckRef.current.slice())
   const netRef = useRef(net)
   netRef.current = net
   /** Tracks live net role; must clear when net drops so bot AI can run. */
@@ -961,7 +991,6 @@ export function useBattle(opts?: {
   const heartsRef = useRef(hearts)
   const elixirRef = useRef(elixir)
   const enemyElixirRef = useRef(enemyElixir)
-  const aiDeckIndexRef = useRef(0)
   const aiNextDeployRef = useRef(performance.now() + 600)
   unitsRef.current = units
   towersRef.current = towers
@@ -1751,13 +1780,12 @@ export function useBattle(opts?: {
           nextTowers,
           liveIds,
           nextEnemyElixir,
-          aiDeckIndexRef.current,
           t,
           botLevelRef.current,
           modeRef.current,
-          enemyDeckRef.current ?? randomBotDeck(DECK_SIZE),
+          aiDeckCycleRef.current,
         )
-        aiDeckIndexRef.current = ai.deckIndex
+        aiDeckCycleRef.current = ai.deck
         if (ai.projectile) {
           nextProjectiles.push(ai.projectile)
           projectilesChanged = true
