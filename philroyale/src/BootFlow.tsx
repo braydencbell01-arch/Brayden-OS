@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { CharacterModel } from './characters/CharacterModel'
 
 const BOOT_SEEN_KEY = 'philroyale.bootSeen.v1'
+/** Loading splash always stays up at least this long (can run longer while assets load). */
+const LOADING_MIN_MS = 3000
 
 /**
  * CR-style loading collage — full characters only (no blue portrait boxes).
@@ -45,6 +47,52 @@ function markBootSeen(): void {
   } catch {
     /* ignore */
   }
+}
+
+function charAssetUrls(charId: string): string[] {
+  const base = import.meta.env.BASE_URL || './'
+  const root = base.endsWith('/') ? base : `${base}/`
+  const fileBase =
+    charId === 'stevesDiner'
+      ? 'steves-diner'
+      : charId === 'bigMable'
+        ? 'big-mable'
+        : charId === 'evilPhil'
+          ? 'evil-phil'
+          : charId.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
+  return [
+    `${root}characters/${fileBase}-troop.png`,
+    `${root}characters/${fileBase}-card.png`,
+  ]
+}
+
+function preloadImage(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = () => resolve()
+    img.src = url
+  })
+}
+
+async function preloadBootAssets(
+  onProgress?: (ratio: number) => void,
+): Promise<void> {
+  const urls = Array.from(
+    new Set(COLLAGE.flatMap((slot) => charAssetUrls(slot.id))),
+  )
+  if (urls.length === 0) {
+    onProgress?.(1)
+    return
+  }
+  let done = 0
+  await Promise.all(
+    urls.map(async (url) => {
+      await preloadImage(url)
+      done += 1
+      onProgress?.(done / urls.length)
+    }),
+  )
 }
 
 /** Exact SUP / ERC / ELL 3×3 slab wordmark (Supercell boot style). */
@@ -95,7 +143,7 @@ function SupercellLogo() {
 export function BootFlow({ children }: { children: ReactNode }) {
   const shorten = hasSeenBoot()
   const [phase, setPhase] = useState<Phase>(shorten ? 'loading' : 'supercell')
-  const [progress, setProgress] = useState(shorten ? 55 : 0)
+  const [progress, setProgress] = useState(0)
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]!)
 
   useEffect(() => {
@@ -106,22 +154,42 @@ export function BootFlow({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (phase !== 'loading') return
-    const duration = shorten ? 900 : 2800 + Math.random() * 700
-    const start = performance.now()
+    let cancelled = false
     let raf = 0
+    const start = performance.now()
+    let assetRatio = 0
+    let assetsDone = false
+
+    void preloadBootAssets((ratio) => {
+      assetRatio = ratio
+    }).then(() => {
+      if (!cancelled) {
+        assetRatio = 1
+        assetsDone = true
+      }
+    })
+
     const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration)
-      setProgress(Math.round(t * 100))
-      if (t < 1) {
-        raf = requestAnimationFrame(tick)
-      } else {
+      if (cancelled) return
+      const elapsed = now - start
+      const timeRatio = Math.min(1, elapsed / LOADING_MIN_MS)
+      // Bar tracks the slower of min-time vs asset preload; never finishes early.
+      const combined = Math.min(timeRatio, assetsDone ? 1 : Math.min(0.94, assetRatio * 0.94 + 0.02))
+      setProgress(Math.round(combined * 100))
+      if (elapsed >= LOADING_MIN_MS && assetsDone) {
+        setProgress(100)
         markBootSeen()
         setPhase('done')
+        return
       }
+      raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [phase, shorten])
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf)
+    }
+  }, [phase])
 
   if (phase === 'done') return <>{children}</>
 
