@@ -25,10 +25,10 @@ import {
 import type { GameMode } from './storage'
 import { loadPlayerId, loadPlayerName } from './storage'
 import {
+  DECK_SIZE,
   getCharacter,
   randomBotDeck,
   uniqueDeckFrom,
-  shuffleInPlace,
   isBuildingCard,
   isSpellCard,
   pickSpawnFromPool,
@@ -496,22 +496,15 @@ function tryEnemyAiDeploy(
   const colSpan = 14
   const rowBase = mode === 'touchdown' ? 8 : 28
   const rowSpan = mode === 'touchdown' ? 38 : 40
-  // Stick to the match deck — never re-roll mid-battle.
-  const deck = uniqueDeckFrom(deckIds.length ? deckIds : [])
+  // Fixed match deck only — never re-roll from the full roster mid-battle.
+  const deck = deckIds.length > 0 ? deckIds : randomBotDeck()
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
+  if (deck.length === 0) return { unit: null, elixir: enemyElixir, deckIndex }
 
-  // Play uniformly at random among affordable cards in this deck (no cheap-card bias).
-  const affordable = deck.filter((id) => {
-    const c = getCharacter(id)
-    return c != null && enemyElixir >= c.elixir
-  })
-  const tryOrder =
-    affordable.length > 0
-      ? shuffleInPlace([...affordable])
-      : shuffleInPlace([...deck])
-
-  for (let attempt = 0; attempt < tryOrder.length; attempt++) {
-    const charId = tryOrder[attempt]!
+  // Cycle the 8-card deck in order (Clash-style). Skip unaffordable / unsplaceable.
+  for (let attempt = 0; attempt < deck.length; attempt++) {
+    const idx = (deckIndex + attempt) % deck.length
+    const charId = deck[idx]!
     const char = getCharacter(charId)
     if (!char || enemyElixir < char.elixir) continue
 
@@ -524,7 +517,7 @@ function tryEnemyAiDeploy(
         unit: null,
         projectile,
         elixir: enemyElixir - char.elixir,
-        deckIndex: (deckIndex + 1) % Math.max(1, deck.length),
+        deckIndex: (idx + 1) % deck.length,
       }
     }
 
@@ -535,17 +528,16 @@ function tryEnemyAiDeploy(
       return {
         unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex: (deckIndex + 1) % Math.max(1, deck.length),
+        deckIndex: (idx + 1) % deck.length,
       }
     }
 
-    // Fallback: known-good tiles so the bot never soft-locks.
     for (const spot of safeSpawns) {
       if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
       return {
         unit: makeBattleUnit(char, spot.col, spot.row, 'enemy', t, botLevel),
         elixir: enemyElixir - char.elixir,
-        deckIndex: (deckIndex + 1) % Math.max(1, deck.length),
+        deckIndex: (idx + 1) % deck.length,
       }
     }
   }
@@ -808,8 +800,18 @@ export function useBattle(opts?: {
   modeRef.current = mode
   const aiProfileRef = useRef(aiProfile)
   aiProfileRef.current = botAiProfile(opts?.trophies ?? 0)
-  const enemyDeckRef = useRef(uniqueDeckFrom(opts?.enemyDeckIds ?? randomBotDeck()))
-  enemyDeckRef.current = uniqueDeckFrom(opts?.enemyDeckIds ?? enemyDeckRef.current)
+  /**
+   * Solo CPU deck locked for this battle instance: 8 random cards from all CHARACTERS.
+   * BattleScreen remounts each match (battleSession key) so this re-rolls every game.
+   * Do not reassign every render — that used to thrash the deck.
+   */
+  const enemyDeckRef = useRef(
+    uniqueDeckFrom(
+      opts?.enemyDeckIds && opts.enemyDeckIds.length > 0
+        ? opts.enemyDeckIds
+        : randomBotDeck(DECK_SIZE),
+    ),
+  )
   const netRef = useRef(net)
   netRef.current = net
   /** Tracks live net role; must clear when net drops so bot AI can run. */
@@ -1515,7 +1517,7 @@ export function useBattle(opts?: {
           t,
           botLevelRef.current,
           modeRef.current,
-          enemyDeckRef.current,
+          enemyDeckRef.current ?? randomBotDeck(DECK_SIZE),
         )
         aiDeckIndexRef.current = ai.deckIndex
         if (ai.projectile) {
@@ -2467,5 +2469,7 @@ export function useBattle(opts?: {
     setClockSec,
     netRole: liveRoleRef.current ?? net?.role ?? null,
     lagging,
+    /** Locked CPU deck for this match (8 ids). Empty when unused. */
+    enemyDeckIds: enemyDeckRef.current,
   }
 }

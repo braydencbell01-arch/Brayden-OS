@@ -789,12 +789,14 @@ export function shuffleInPlace<T>(arr: T[]): T[] {
 }
 
 /**
- * Fresh random CPU deck each solo match.
- * Uniform shuffle of the full roster — any card can appear; max one of each.
+ * Fresh random CPU deck: shuffle the full roster, take `size` (default 8).
+ * Pool = every card in CHARACTERS (currently 23). Max one of each.
  */
 export function randomBotDeck(size = DECK_SIZE): string[] {
-  const n = Math.min(size, CHARACTERS.length)
-  return shuffleInPlace(CHARACTERS.map((c) => c.id)).slice(0, n)
+  const pool = CHARACTERS.map((c) => c.id)
+  if (pool.length === 0) return []
+  const n = Math.min(Math.max(1, size), pool.length)
+  return shuffleInPlace(pool).slice(0, n)
 }
 
 /** Enforce max-one-of-each; if short, fill from remaining roster at random. */

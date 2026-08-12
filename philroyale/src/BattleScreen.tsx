@@ -262,7 +262,7 @@ export function BattleScreen({
 }: Props) {
   const isSpectating = spectating || net?.role === 'spectator'
   const deckIds = useMemo(() => deckOverride ?? loadDeck(), [deckOverride])
-  // Solo CPUs: brand-new uniform random 8 from the full roster every match.
+  // Solo: BattleScreen may pass a pre-rolled deck; useBattle also locks one if missing.
   const botDeckIds = useMemo(() => randomBotDeck(), [])
   const trophies = useMemo(() => loadProfile().trophies, [])
   const [drawPile, setDrawPile] = useState<string[]>([])
@@ -302,12 +302,14 @@ export function BattleScreen({
     setClockSec,
     netRole,
     lagging,
+    enemyDeckIds: cpuDeckIds,
   } = useBattle({
     paused: ended,
     allyLevels,
     botLevel,
     trophies,
     mode,
+    // Solo bot: always pass a fresh 8-from-23 deck. Friend net → AI off, deck unused.
     enemyDeckIds: net ? undefined : botDeckIds,
     net,
     onPeerLinkFailed,
@@ -833,6 +835,13 @@ export function BattleScreen({
             {clanLine ? (
               <p className="max-w-[5.5rem] truncate text-[0.48rem] font-bold text-white drop-shadow-[0_1px_1px_#000]">
                 {clanLine}
+              </p>
+            ) : null}
+            {!net && cpuDeckIds.length > 0 ? (
+              <p className="mt-0.5 max-w-[7.5rem] truncate text-[0.42rem] font-bold leading-tight text-white/70 drop-shadow-[0_1px_1px_#000]">
+                {cpuDeckIds
+                  .map((id) => getCharacter(id)?.initial ?? '?')
+                  .join(' · ')}
               </p>
             ) : null}
             <p className="mt-0.5 flex items-center gap-0.5 text-[0.5rem] font-extrabold leading-none text-[#f5d76e] drop-shadow-[0_1px_1px_#000]">
