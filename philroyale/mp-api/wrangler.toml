@@ -21,3 +21,5 @@ new_sqlite_classes = ["LobbyDO", "BattleRoomDO"]
 [vars]
 # Optional override; clients also read VITE_PHILROYALE_MP_URL / mp-endpoint.json
 APP_ORIGIN = "https://braydencbell01-arch.github.io"
+
+# subdomain ready 2026-08-12T00:35:12Z
