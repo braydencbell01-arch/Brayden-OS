@@ -55,6 +55,8 @@ export type BattleUnit = {
   nextSpawnAt?: number
   /** In-flight Launch knockback; damage applies on land. */
   launch?: LaunchFlight | null
+  /** Ram (once-per-target) keys already hit: `unit:id` / `tower:id`. */
+  hitOnceKeys?: string[]
 }
 
 export type Projectile = {

@@ -17,7 +17,7 @@ type Props = {
   /** Portrait uses troop cutout (transparent) instead of card art — fixes wrong card backgrounds. */
   portraitSrc?: string
   enraged?: boolean
-  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff'
+  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle'
   attack?:
     | 'whip'
     | 'sundae'
@@ -32,6 +32,7 @@ type Props = {
     | 'witchcraft'
     | 'uppercut'
     | 'jump'
+    | 'ram'
     | 'none'
   /** Persistent hand prop (Michael curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
@@ -101,6 +102,8 @@ export function PhotoTroop({
           ? 0.26
           : gait === 'stiff'
             ? 0.48
+            : gait === 'waddle'
+              ? 0.52
             : gait === 'limp'
               ? 0.72
               : gait === 'jog'
@@ -227,6 +230,15 @@ export function PhotoTroop({
                                   rotate: [0, 12, 28, 8, 0],
                                   scaleY: [1, 0.92, 1.1, 1, 1],
                                 }
+                            : attack === 'ram'
+                              ? {
+                                  // Cock horns back → slam head-on into the building
+                                  y: [0, 5, -3, 6, 0],
+                                  x: [0, -12, 24, 16, 0],
+                                  rotate: [0, -26, 22, 10, 0],
+                                  scaleY: [1, 0.88, 1.14, 1.04, 1],
+                                  scaleX: [1, 1.08, 0.9, 1, 1],
+                                }
                               : attack === 'witchcraft'
                                 ? {
                                     y: [0, -2, -6, -2, 0],
@@ -281,6 +293,14 @@ export function PhotoTroop({
                           rotate: [0, 1, 0, -1, 0],
                           scaleY: [1, 0.995, 1, 0.995, 1],
                         }
+                    : gait === 'waddle'
+                      ? {
+                          // Penguin waddle — heavy side-to-side rock
+                          y: [0, -2, 0, -2, 0],
+                          rotate: [0, 11, 0, -11, 0],
+                          x: [0, 3, 0, -3, 0],
+                          scaleY: [1, 0.96, 1, 0.96, 1],
+                        }
                       : {
                           // Running stride: bounce only (no left/right rotate — that looked two-way)
                           y: [0, -6, -1, -7, 0],
@@ -296,6 +316,8 @@ export function PhotoTroop({
                     ? 0.65
                     : attack === 'dumbbell'
                       ? 0.55
+                      : attack === 'ram'
+                        ? 0.52
                       : attack === 'headbutt'
                         ? 0.4
                         : attack === 'whip' || attack === 'hug'
@@ -306,8 +328,11 @@ export function PhotoTroop({
                               ? 0.48
                             : 0.36,
                 times:
-                  attack === 'kick' || attack === 'dumbbell' || attack === 'headbutt'
-                    ? [0, 0.15, 0.4, 0.7, 1]
+                  attack === 'kick' ||
+                  attack === 'dumbbell' ||
+                  attack === 'headbutt' ||
+                  attack === 'ram'
+                    ? [0, 0.18, 0.42, 0.72, 1]
                     : attack === 'jump'
                       ? [0, 0.12, 0.42, 0.72, 1]
                     : undefined,
@@ -359,6 +384,7 @@ export function PhotoTroop({
         {attacking && attack === 'kick' ? <FlyingKickOverlay /> : null}
         {attacking && attack === 'dumbbell' ? <DumbbellHuckOverlay /> : null}
         {attacking && attack === 'headbutt' ? <HeadButtOverlay /> : null}
+        {attacking && attack === 'ram' ? <RamOverlay /> : null}
         {attacking && attack === 'love' ? <LoveOverlay /> : null}
         {attacking && attack === 'witchcraft' ? <WitchcraftOverlay /> : null}
         {attacking && attack === 'uppercut' ? <UppercutOverlay /> : null}
@@ -386,7 +412,7 @@ function RunLegs({
   legColor,
   shoeColor,
 }: {
-  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff'
+  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle'
   walking: boolean
   legColor: string
   shoeColor: string
@@ -1065,6 +1091,49 @@ function HeadButtOverlay() {
             y2={40 + Math.sin((deg * Math.PI) / 180) * 12}
             stroke="#fff6e8"
             strokeWidth="1.3"
+            strokeLinecap="round"
+          />
+        ))}
+      </motion.g>
+    </svg>
+  )
+}
+
+/** Horn ram — cream horns lunge forward into the building. */
+function RamOverlay() {
+  return (
+    <svg
+      viewBox="0 0 80 118"
+      className="pointer-events-none absolute inset-[-8%] h-[116%] w-[116%] overflow-visible"
+      aria-hidden
+    >
+      <motion.g
+        initial={{ x: 0, rotate: -18, opacity: 0 }}
+        animate={{ x: [0, -6, 22, 16], rotate: [-18, -28, 12, 4], opacity: [0.4, 1, 1, 0] }}
+        transition={{ duration: 0.52, times: [0, 0.22, 0.55, 1], ease: 'easeOut' }}
+        style={{ transformOrigin: '40px 42px' }}
+      >
+        <path d="M36 40 Q28 22 18 14" fill="none" stroke="#e8d4a8" strokeWidth="7" strokeLinecap="round" />
+        <path d="M44 40 Q56 20 68 12" fill="none" stroke="#e8d4a8" strokeWidth="7" strokeLinecap="round" />
+        <path d="M36 40 Q28 22 18 14" fill="none" stroke="#fff6e8" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M44 40 Q56 20 68 12" fill="none" stroke="#fff6e8" strokeWidth="2.2" strokeLinecap="round" />
+      </motion.g>
+      <motion.g
+        initial={{ scale: 0.2, opacity: 0 }}
+        animate={{ scale: [0.2, 1.45, 1], opacity: [0, 1, 0] }}
+        transition={{ duration: 0.52, times: [0.28, 0.52, 1] }}
+        style={{ transformOrigin: '72px 36px' }}
+      >
+        <circle cx="72" cy="36" r="8" fill="#ffe08a66" />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+          <line
+            key={deg}
+            x1="72"
+            y1="36"
+            x2={72 + Math.cos((deg * Math.PI) / 180) * 14}
+            y2={36 + Math.sin((deg * Math.PI) / 180) * 14}
+            stroke="#fff6e8"
+            strokeWidth="1.5"
             strokeLinecap="round"
           />
         ))}
