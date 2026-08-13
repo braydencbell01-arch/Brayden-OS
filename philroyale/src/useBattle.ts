@@ -156,7 +156,7 @@ const SHOOT_PROJECTILE_MS = 140
 /** Michael overhead dumbbell lob — long hang time. */
 const DUMBBELL_PROJECTILE_MS = 920
 /** Default spell lob when a card omits spellTravelMs. */
-const ICE_CREAM_PROJECTILE_MS = 2000
+const ICE_CREAM_PROJECTILE_MS = 1000
 /** Scott Cash Gun bills — medium lob. */
 const CASH_PROJECTILE_MS = 700
 /** Phil's Car rocket — long hang time. */
@@ -392,7 +392,7 @@ function nudgeSidewaysIfStuck(
       nearest = t
     }
   }
-  if (!nearest || nearestD > 5) return
+  if (!nearest || nearestD > 1.8) return
   const engage = towerFrontEngagePoint(u.col + 0.5, u.row + 0.5, nearest)
   const left = nearest.col - 2.2
   const right = nearest.col + nearest.w + 2.2
@@ -474,15 +474,15 @@ function spawnDogFromBuilding(
   return pup
 }
 
-/** Clash-style swarm offsets (Chicken Army = 2-1-2 pack). */
+/** Clash-style swarm offsets (Chicken Army = wide pentagon so each chicken is visible). */
 function swarmOffsets(count: number): { col: number; row: number }[] {
   if (count <= 1) return [{ col: 0, row: 0 }]
   const pack = [
-    { col: 0, row: 0 },
-    { col: -1.2, row: -0.55 },
-    { col: 1.2, row: -0.55 },
-    { col: -0.75, row: 1.0 },
-    { col: 0.75, row: 1.0 },
+    { col: 0, row: -4.8 },
+    { col: -6.4, row: -0.6 },
+    { col: 6.4, row: -0.6 },
+    { col: -3.8, row: 5.2 },
+    { col: 3.8, row: 5.2 },
   ]
   return pack.slice(0, Math.min(count, pack.length))
 }
@@ -891,7 +891,8 @@ function ejectFromTowers(
     if (!isInsideTower(col, row, t) && !isInsideTower(col + 0.5, row + 0.5, t)) continue
     // Push out toward the front face so melee stays in front of the tower.
     const engage = towerFrontEngagePoint(col + 0.5, row + 0.5, t)
-    if (isWalkableTile(engage.col, engage.row, liveTowers, side)) {
+    const jump = Math.hypot(engage.col - (col + 0.5), engage.row - (row + 0.5))
+    if (jump <= 3.5 && isWalkableTile(engage.col, engage.row, liveTowers, side)) {
       return {
         col: Math.max(0, Math.min(ARENA_COLS - 1, engage.col)),
         row: Math.max(0, Math.min(ARENA_ROWS - 1, engage.row)),
@@ -2441,16 +2442,19 @@ export function useBattle(opts?: {
             unitsChanged = true
           }
           if (!rooted) {
-            // If somehow north of an enemy tower (or south of an ally tower), snap to front.
-            if (best.kind === 'tower') {
+            // Local unstick only — never teleport across the arena (Hamburger Chicken).
+            if (best.kind === 'tower' && !def.pathToBuildingsOnly) {
               const slot = towerSlot(best.id)
               if (slot && !isOnTowerFrontSide(u.col, u.row, slot)) {
                 const aim = towerFrontEngagePoint(me.col, me.row, slot)
-                u.col = Math.max(0, Math.min(ARENA_COLS - 1, aim.col - 0.5))
-                u.row = Math.max(0, Math.min(ARENA_ROWS - 1, aim.row - 0.5))
-                u.movingUntil = t + 140
-                unitsChanged = true
-                continue
+                const jump = Math.hypot(aim.col - me.col, aim.row - me.row)
+                if (jump <= 3.2) {
+                  u.col = Math.max(0, Math.min(ARENA_COLS - 1, aim.col - 0.5))
+                  u.row = Math.max(0, Math.min(ARENA_ROWS - 1, aim.row - 0.5))
+                  u.movingUntil = t + 140
+                  unitsChanged = true
+                  continue
+                }
               }
             }
             const step = moveSpeed * dt

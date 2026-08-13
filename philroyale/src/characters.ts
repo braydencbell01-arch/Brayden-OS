@@ -466,7 +466,7 @@ export const ICE_CREAM: CharacterDef = {
   blurb: 'Spell — throw a sundae anywhere. Splats a creamy blast where it lands.',
   spellDamage: 325,
   spellRadius: 10,
-  spellTravelMs: 2000,
+  spellTravelMs: 1000,
   attacks: [],
 }
 
@@ -487,7 +487,7 @@ export const FOOTBALL_HUCK: CharacterDef = {
   blurb: 'Spell — huck a baseball. Turf blast where it lands.',
   spellDamage: 470,
   spellRadius: 15,
-  spellTravelMs: 4000,
+  spellTravelMs: 2000,
   attacks: [],
 }
 
@@ -505,10 +505,10 @@ export const BOBBY_SPECIAL: CharacterDef = {
   attackDelaySec: 0,
   hue: 25,
   cardKind: 'spell',
-  blurb: "Spell — Bobby's football special. Double splash, hits harder, lands in a second.",
+  blurb: "Spell — Bobby's football special. Double splash, hits harder, lands fast.",
   spellDamage: 615,
   spellRadius: 30,
-  spellTravelMs: 1000,
+  spellTravelMs: 500,
   attacks: [],
 }
 
@@ -659,7 +659,7 @@ export const DAVE: CharacterDef = {
 const CHICKEN_WHIP: AttackDef = {
   id: 'chickenWhip',
   name: 'Whip',
-  range: 14,
+  range: 11,
   damage: 130,
   rootWhileAttacking: false,
   kind: 'whip',
@@ -675,7 +675,7 @@ export const HAMBURGER_CHICKEN: CharacterDef = {
   rarity: 'rare',
   elixir: 4,
   hp: 630,
-  moveSpeed: 13,
+  moveSpeed: 11,
   attackDelaySec: 1.1,
   hue: 32,
   blurb:

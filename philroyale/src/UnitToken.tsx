@@ -222,45 +222,17 @@ export function CashDot() {
   )
 }
 
-/** Flying football for Football Huck. */
+/** Flying football for Football Huck / Bobby Special. */
 export function FootballDot() {
+  const src = `${import.meta.env.BASE_URL}projectiles/football.png`
   return (
-    <div
-      className="relative h-5 w-8"
-      style={{
-        borderRadius: '50% / 42%',
-        background:
-          'radial-gradient(ellipse at 32% 30%, #d4a06a 0%, #9a5a28 42%, #5a3010 78%, #2a1808 100%)',
-        boxShadow: '0 2px 3px #0009, inset 0 1px 0 #e8c09066',
-      }}
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className="pointer-events-none h-11 w-[3.6rem] object-contain"
       aria-hidden
-    >
-      {/* Lace strip */}
-      <div
-        className="absolute left-1/2 top-1/2 h-[55%] w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{ background: 'linear-gradient(180deg,#f5f5f0,#c8c8c0)' }}
-      />
-      {[0, 1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="absolute left-1/2 h-[2px] w-[7px] -translate-x-1/2 rounded-full"
-          style={{
-            top: `${28 + i * 12}%`,
-            background: '#f0f0ea',
-            boxShadow: '0 0.5px 0 #0004',
-          }}
-        />
-      ))}
-      {/* Tip highlights */}
-      <div
-        className="absolute left-[6%] top-1/2 h-2 w-1.5 -translate-y-1/2 rounded-full opacity-50"
-        style={{ background: 'radial-gradient(circle,#fff8,#d4a06a00)' }}
-      />
-      <div
-        className="absolute right-[6%] top-1/2 h-2 w-1.5 -translate-y-1/2 rounded-full opacity-35"
-        style={{ background: 'radial-gradient(circle,#3a1a08,#0000)' }}
-      />
-    </div>
+    />
   )
 }
 
@@ -330,60 +302,17 @@ export function BarrelSplat({ ageMs }: { ageMs: number }) {
   )
 }
 
-/** Flying ice cream sundae for Sundae Huck. */
+/** Flying ice cream sundae for Sundae Huck / Sundae spell. */
 export function SundaeDot() {
+  const src = `${import.meta.env.BASE_URL}projectiles/sundae.png`
   return (
-    <div className="relative h-6 w-5" aria-hidden>
-      {/* Wafer cone */}
-      <div
-        className="absolute bottom-0 left-1/2 h-3 w-[14px] -translate-x-1/2"
-        style={{
-          background: 'linear-gradient(180deg,#e8b86a 0%,#c48a3a 55%,#9a6420 100%)',
-          clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0 100%)',
-          boxShadow: 'inset 0 1px 0 #f5d49a88',
-        }}
-      />
-      {/* Cone waffle lines */}
-      <div
-        className="absolute bottom-[1px] left-1/2 h-[10px] w-[12px] -translate-x-1/2 opacity-40"
-        style={{
-          background:
-            'repeating-linear-gradient(135deg, transparent 0 2px, #7a4a18 2px 3px)',
-          clipPath: 'polygon(15% 0, 85% 0, 100% 100%, 0 100%)',
-        }}
-      />
-      {/* Vanilla scoop */}
-      <div
-        className="absolute left-1/2 top-[7px] h-[11px] w-[15px] -translate-x-1/2 rounded-[50%]"
-        style={{
-          background: 'radial-gradient(circle at 35% 30%, #ffffff, #fff4e0 55%, #f0e0c0)',
-          boxShadow: '0 1px 1px #0003',
-        }}
-      />
-      {/* Chocolate scoop */}
-      <div
-        className="absolute left-[3px] top-[3px] h-[9px] w-[10px] rounded-[50%]"
-        style={{
-          background: 'radial-gradient(circle at 35% 30%, #8b5a2b, #5a3010 70%)',
-        }}
-      />
-      {/* Strawberry scoop */}
-      <div
-        className="absolute right-[2px] top-[2px] h-[9px] w-[10px] rounded-[50%]"
-        style={{
-          background: 'radial-gradient(circle at 40% 30%, #ff8aa0, #d62848 70%)',
-        }}
-      />
-      {/* Cherry */}
-      <div
-        className="absolute left-1/2 top-0 h-[6px] w-[6px] -translate-x-1/2 rounded-full"
-        style={{
-          background: 'radial-gradient(circle at 35% 30%, #ff4d5a, #b01020)',
-          boxShadow: '0 0 3px #ff607088',
-        }}
-      />
-      <div className="absolute left-[52%] top-[-1px] h-[4px] w-[1.5px] -translate-x-1/2 rounded-full bg-[#2e7d32]" />
-    </div>
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className="pointer-events-none h-14 w-11 object-contain"
+      aria-hidden
+    />
   )
 }
 
@@ -941,34 +870,15 @@ export function CashSplat({ ageMs }: { ageMs: number }) {
 
 /** Flying baseball for Baseball Huck. */
 export function BaseballDot() {
+  const src = `${import.meta.env.BASE_URL}projectiles/baseball.png`
   return (
-    <div
-      className="relative h-5 w-5"
-      style={{
-        borderRadius: '50%',
-        background:
-          'radial-gradient(circle at 32% 28%, #ffffff 0%, #f0f0ea 45%, #d0d0c8 78%, #a8a8a0 100%)',
-        boxShadow: '0 2px 3px #0009, inset 0 1px 0 #fff8',
-      }}
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className="pointer-events-none h-8 w-8 object-contain"
       aria-hidden
-    >
-      <svg viewBox="0 0 40 40" className="absolute inset-0 h-full w-full" aria-hidden>
-        <path
-          d="M8 12 Q20 20 8 28"
-          fill="none"
-          stroke="#c62828"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-        />
-        <path
-          d="M32 12 Q20 20 32 28"
-          fill="none"
-          stroke="#c62828"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-        />
-      </svg>
-    </div>
+    />
   )
 }
 
