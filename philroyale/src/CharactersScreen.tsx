@@ -576,10 +576,19 @@ function CardProfile({
                     (character.spellTravelMs ?? 0) % 1000 === 0 ? 0 : 1,
                   )}s`}
                 />
-                <Stat
-                  label="Damage"
-                  value={String(scaledStat(character.spellDamage ?? 0, level))}
-                />
+                {character.spawnAsId ? (
+                  <Stat
+                    label="Spawns"
+                    value={`${character.spawnCount ?? 1} ${(getCharacter(character.spawnAsId)?.name ?? 'troop')}${
+                      (character.spawnCount ?? 1) === 1 ? '' : 's'
+                    }`}
+                  />
+                ) : (
+                  <Stat
+                    label="Damage"
+                    value={String(scaledStat(character.spellDamage ?? 0, level))}
+                  />
+                )}
                 <Stat
                   label="Range"
                   value={`${character.spellRadius ?? 0} blocks`}

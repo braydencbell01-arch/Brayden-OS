@@ -77,6 +77,7 @@ export type Projectile = {
     | 'rocket'
     | 'witchcraft'
     | 'pancake'
+    | 'barrel'
   fromCol: number
   fromRow: number
   toCol: number
@@ -92,6 +93,10 @@ export type Projectile = {
   splashRadius?: number
   /** When set with splashRadius, AoE uses this instead of `damage` (primary still uses `damage`). */
   splashDamage?: number
+  /** Spell spawn-on-land (Chicken Barrel). */
+  spawnAsId?: string
+  spawnCount?: number
+  spawnLevel?: number
 }
 
 /** Impact FX — sundae splat, slobber explode, bullet boom, or melee strike. */
@@ -122,6 +127,7 @@ export type SplatFx = {
     | 'uppercut'
     | 'jump'
     | 'pancake'
+    | 'barrel'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */
