@@ -380,21 +380,54 @@ export function CucumberSplat({ ageMs }: { ageMs: number }) {
   )
 }
 
-/** Berry — blue juice lob (normal or aura-empowered size via CSS). */
+/** Berry — tiny irregular blue water blob (not a perfect bubble). */
 export function BerryJuiceDot({ empowered }: { empowered?: boolean }) {
-  const size = empowered ? 'h-11 w-11' : 'h-7 w-7'
+  // ~half the old size; empowered is only a touch larger.
+  const size = empowered ? 'h-3.5 w-4' : 'h-2.5 w-3'
   return (
-    <div
-      className={`relative ${size} rounded-full`}
-      style={{
-        background:
-          'radial-gradient(circle at 35% 30%, #c8f0ff 0%, #3aa0ff 45%, #1060c8 75%, #0a3060 100%)',
-        boxShadow: empowered
-          ? '0 0 12px #40b0ffcc, inset 0 1px 0 #ffffff88'
-          : '0 0 6px #40b0ff88, inset 0 1px 0 #ffffff66',
-      }}
-      aria-hidden
-    />
+    <div className={`relative ${size}`} aria-hidden>
+      {/* Main watery blob — lumpy border-radius, soft edges */}
+      <div
+        className="absolute inset-0"
+        style={{
+          borderRadius: '62% 38% 55% 45% / 48% 58% 42% 52%',
+          background:
+            'radial-gradient(ellipse 70% 65% at 38% 32%, #b8e8ffcc 0%, #4ab0ffaa 38%, #1878d0bb 68%, #0a3a7888 100%)',
+          filter: 'blur(0.35px)',
+          boxShadow: empowered
+            ? '0 0 4px #40b0ff66'
+            : '0 0 2px #40b0ff44',
+        }}
+      />
+      {/* Side drip / satellite droplet */}
+      <div
+        className="absolute"
+        style={{
+          right: '-18%',
+          bottom: '8%',
+          width: '42%',
+          height: '48%',
+          borderRadius: '55% 45% 60% 40% / 50% 55% 45% 50%',
+          background:
+            'radial-gradient(ellipse at 40% 35%, #98d8ffaa 0%, #2080d088 70%, transparent 100%)',
+          filter: 'blur(0.4px)',
+          opacity: 0.9,
+        }}
+      />
+      {/* Soft highlight sheen — water, not glass bubble */}
+      <div
+        className="absolute"
+        style={{
+          left: '18%',
+          top: '12%',
+          width: '36%',
+          height: '28%',
+          borderRadius: '70% 30% 60% 40%',
+          background: '#ffffff55',
+          filter: 'blur(0.6px)',
+        }}
+      />
+    </div>
   )
 }
 
@@ -402,15 +435,35 @@ export function BerryJuiceSplat({ ageMs }: { ageMs: number }) {
   const p = Math.min(1, ageMs / 800)
   return (
     <div
-      className="relative h-14 w-14"
-      style={{ transform: `scale(${0.55 + p * 2.2})`, opacity: 1 - p * 0.92 }}
+      className="relative h-8 w-10"
+      style={{ transform: `scale(${0.45 + p * 1.6})`, opacity: 1 - p * 0.92 }}
       aria-hidden
     >
+      {/* Irregular water puddle */}
       <div
-        className="absolute inset-0 rounded-full"
+        className="absolute left-1/2 top-1/2 h-5 w-7 -translate-x-1/2 -translate-y-1/2"
         style={{
+          borderRadius: '58% 42% 62% 38% / 45% 55% 40% 60%',
           background:
-            'radial-gradient(circle, #a0e0ff99 0%, #3080ff66 40%, transparent 70%)',
+            'radial-gradient(ellipse, #a8dcffaa 0%, #3088e066 42%, #1060a033 65%, transparent 78%)',
+          filter: 'blur(0.5px)',
+        }}
+      />
+      {/* Extra blobs for splash edges */}
+      <div
+        className="absolute left-[12%] top-[28%] h-2 w-2.5"
+        style={{
+          borderRadius: '60% 40% 55% 45%',
+          background: '#60b0ff55',
+          filter: 'blur(0.6px)',
+        }}
+      />
+      <div
+        className="absolute right-[8%] top-[35%] h-1.5 w-2"
+        style={{
+          borderRadius: '45% 55% 40% 60%',
+          background: '#80c8ff44',
+          filter: 'blur(0.5px)',
         }}
       />
     </div>
