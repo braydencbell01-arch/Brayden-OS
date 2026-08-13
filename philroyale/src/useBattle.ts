@@ -37,7 +37,6 @@ import {
   isBuildingCard,
   isSpellCard,
   pickSpawnFromPool,
-  shuffleInPlace,
   type CharacterDef,
 } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
@@ -584,13 +583,23 @@ function pickAiSpellTarget(
     (u) => u.side === targetSide && u.hp > 0 && !isAirborne(u),
   )
   if (foes.length > 0) {
-    const avg = foes.reduce(
-      (acc, u) => ({ col: acc.col + u.col, row: acc.row + u.row }),
-      { col: 0, row: 0 },
-    )
+    // Aim at the densest foe cluster (best splash / multi-hit value).
+    let best = foes[0]!
+    let bestScore = -1
+    for (const anchor of foes) {
+      let score = 0
+      for (const o of foes) {
+        const d = Math.hypot(o.col - anchor.col, o.row - anchor.row)
+        if (d <= 12) score += 1 + (o.maxHp > 0 ? o.hp / o.maxHp : 0)
+      }
+      if (score > bestScore) {
+        bestScore = score
+        best = anchor
+      }
+    }
     return {
-      col: Math.max(0, Math.min(ARENA_COLS - 1, avg.col / foes.length)),
-      row: Math.max(0, Math.min(ARENA_ROWS - 1, avg.row / foes.length)),
+      col: Math.max(0, Math.min(ARENA_COLS - 1, best.col + 0.5)),
+      row: Math.max(0, Math.min(ARENA_ROWS - 1, best.row + 0.5)),
     }
   }
 
@@ -626,17 +635,50 @@ function canSpawnAt(
     : canDeployEnemyAt(clampedCol, clampedRow, towers, live)
 }
 
-function pickAiLane(units: BattleUnit[]): 'left' | 'right' {
-  let left = 0
-  let right = 0
+function pickAiLane(
+  units: BattleUnit[],
+  skill: number,
+): 'left' | 'right' {
+  let allyLeft = 0
+  let allyRight = 0
+  let botLeft = 0
+  let botRight = 0
   for (const u of units) {
-    if (u.side !== 'ally' || u.hp <= 0) continue
-    if (u.col < ARENA_COLS / 2) left++
-    else right++
+    if (u.hp <= 0 || isAirborne(u)) continue
+    const left = u.col < ARENA_COLS / 2
+    if (u.side === 'ally') {
+      if (left) allyLeft++
+      else allyRight++
+    } else {
+      if (left) botLeft++
+      else botRight++
+    }
   }
-  if (left > right) return 'left'
-  if (right > left) return 'right'
+  // Prefer the lane the player is pushing (defend / mirror), with a chance to
+  // opposite-lane pressure at higher skill when the board is quiet.
+  const allyPressureLeft = allyLeft - allyRight
+  if (Math.abs(allyPressureLeft) >= 1) {
+    const defendLane: 'left' | 'right' = allyPressureLeft > 0 ? 'left' : 'right'
+    if (Math.random() < 0.55 + skill * 0.35) return defendLane
+  }
+  if (botLeft !== botRight && Math.random() < 0.4 + skill * 0.35) {
+    return botLeft >= botRight ? 'left' : 'right'
+  }
   return Math.random() < 0.5 ? 'left' : 'right'
+}
+
+type AiRole = 'tank' | 'wincon' | 'swarm' | 'support' | 'building' | 'spell' | 'cycle'
+
+function aiCardRole(char: CharacterDef): AiRole {
+  if (isSpellCard(char)) return 'spell'
+  if (isBuildingCard(char)) return 'building'
+  if (char.pathToBuildingsOnly || char.targetsBuildingsOnly) return 'wincon'
+  if (char.elixir <= 2 && (char.attacks[0]?.diesOnAttack || /spirit/i.test(char.id))) {
+    return 'cycle'
+  }
+  if (char.hp >= 2000 || char.attacks.length === 0) return 'tank'
+  if ((char.spawnCount ?? 1) >= 3 || char.elixir <= 2) return 'swarm'
+  return 'support'
 }
 
 function tryEnemyAiDeploy(
@@ -648,17 +690,16 @@ function tryEnemyAiDeploy(
   botLevel: number,
   mode: GameMode = 'classic',
   deckIds: string[] = [],
+  skill = 0.75,
 ): {
   units: BattleUnit[]
   elixir: number
   deck: string[]
   projectile?: Projectile | null
 } {
-  const lane = pickAiLane(units)
+  const lane = pickAiLane(units, skill)
   const colBase = lane === 'left' ? 18 : 70
-  const colSpan = 14
-  const rowBase = mode === 'touchdown' ? 8 : 28
-  const rowSpan = mode === 'touchdown' ? 38 : 40
+  const midCol = lane === 'left' ? 24 : 76
   const deck =
     deckIds.length > 0 ? deckIds.slice() : randomBotDeck()
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
@@ -666,12 +707,21 @@ function tryEnemyAiDeploy(
     return { units: [], elixir: enemyElixir, deck }
   }
 
-  // Clash-style hand = first 4 of the rotating deck queue.
+  const allies = units.filter((u) => u.side === 'ally' && u.hp > 0 && !isAirborne(u))
+  const bots = units.filter((u) => u.side === 'enemy' && u.hp > 0 && !isAirborne(u))
+  // Ally past river / deep = defend. Quiet board + elixir = punish.
+  const deepAllies = allies.filter((u) =>
+    mode === 'touchdown' ? u.row < 45 : u.row > 40,
+  )
+  const pushBots = bots.filter((u) =>
+    mode === 'touchdown' ? u.row > 35 : u.row < 45,
+  )
+  const needDefend = deepAllies.length >= 1
+  const canPunish = !needDefend && enemyElixir >= 5 && allies.length <= 1
+  const clusterThreat = deepAllies.length >= 2 || allies.length >= 3
+
   const handSize = Math.min(4, deck.length)
   const handSlots = Array.from({ length: handSize }, (_, i) => i)
-
-  // Only play what we can afford — never fall through the whole deck to a
-  // 1-elixir spirit when bigger cards are waiting (that caused spirit spam).
   const affordable = handSlots.filter((slot) => {
     const char = getCharacter(deck[slot]!)
     return !!char && enemyElixir >= char.elixir
@@ -680,52 +730,144 @@ function tryEnemyAiDeploy(
     return { units: [], elixir: enemyElixir, deck }
   }
 
-  const order = shuffleInPlace(affordable.slice())
-  for (const slot of order) {
-    const charId = deck[slot]!
-    const char = getCharacter(charId)
-    if (!char) continue
+  // Bank big elixir at high skill unless defending / punishing.
+  if (
+    !needDefend &&
+    !canPunish &&
+    enemyElixir < 6 + skill * 2 &&
+    Math.random() < 0.35 + skill * 0.4
+  ) {
+    const onlyCheap = affordable.every((slot) => {
+      const c = getCharacter(deck[slot]!)
+      return !!c && c.elixir <= 3
+    })
+    if (!onlyCheap && Math.random() < skill) {
+      return { units: [], elixir: enemyElixir, deck }
+    }
+  }
 
-    const finish = (payload: {
+  const scored = affordable
+    .map((slot) => {
+      const char = getCharacter(deck[slot]!)!
+      const role = aiCardRole(char)
+      let score = 1 + Math.random() * (1.2 - skill) // less noise at high skill
+      if (needDefend) {
+        if (role === 'tank' || role === 'swarm' || role === 'building') score += 4 + skill * 3
+        if (role === 'spell' && clusterThreat) score += 5 + skill * 2
+        if (role === 'wincon') score -= 2
+        if (role === 'cycle') score += 1
+      } else if (canPunish) {
+        if (role === 'wincon' || role === 'tank') score += 4 + skill * 3
+        if (role === 'support' || role === 'swarm') score += 2 + skill
+        if (role === 'spell' && (pushBots.length >= 1 || allies.length === 0)) score += 3
+        if (role === 'building') score -= 1
+      } else {
+        if (role === 'cycle') score += 2
+        if (role === 'support' || role === 'swarm') score += 1.5
+        if (role === 'spell' && clusterThreat) score += 3 + skill * 2
+        if (role === 'tank' && enemyElixir >= char.elixir + 2) score += 2
+        if (char.elixir >= 6 && enemyElixir < char.elixir + 3) score -= 2 * skill
+      }
+      // Prefer spending closer to a full hand when skilled.
+      if (skill > 0.8 && enemyElixir >= 9 && char.elixir >= 4) score += 1.5
+      return { slot, char, role, score }
+    })
+    .sort((a, b) => b.score - a.score)
+
+  // At lower skill, sometimes pick 2nd/3rd choice.
+  let pickIdx = 0
+  if (scored.length > 1 && Math.random() > skill) {
+    pickIdx = Math.floor(Math.random() * Math.min(3, scored.length))
+  }
+  const ordered = [
+    scored[pickIdx]!,
+    ...scored.filter((_, i) => i !== pickIdx),
+  ]
+
+  const finish = (
+    slot: number,
+    payload: {
       units: BattleUnit[]
       projectile?: Projectile | null
       elixir: number
-    }) => {
-      // Played card goes to the back of the queue (Clash hand cycle).
-      const [played] = deck.splice(slot, 1)
-      if (played) deck.push(played)
-      return { ...payload, deck }
-    }
+    },
+  ) => {
+    const [played] = deck.splice(slot, 1)
+    if (played) deck.push(played)
+    return { ...payload, deck }
+  }
 
+  const spawnCandidates = (
+    role: AiRole,
+  ): { col: number; row: number }[] => {
+    const spots: { col: number; row: number }[] = []
+    const jitter = (n: number) => n + Math.floor(Math.random() * 5) - 2
+    if (mode === 'touchdown') {
+      spots.push(
+        { col: jitter(midCol), row: jitter(needDefend ? 22 : 32) },
+        { col: jitter(midCol), row: jitter(28) },
+      )
+    } else if (needDefend) {
+      // Meet the push — closer to river / threatened side.
+      const threat = deepAllies[0]
+      const defCol = threat ? Math.max(12, Math.min(88, Math.round(threat.col))) : midCol
+      spots.push(
+        { col: jitter(defCol), row: jitter(48) },
+        { col: jitter(defCol), row: jitter(55) },
+        { col: jitter(midCol), row: jitter(50) },
+      )
+    } else if (role === 'building') {
+      spots.push(
+        { col: jitter(50), row: jitter(62) },
+        { col: jitter(midCol), row: jitter(58) },
+      )
+    } else if (role === 'wincon' || role === 'tank' || canPunish) {
+      // Bridge / forward pressure
+      spots.push(
+        { col: jitter(midCol), row: jitter(36) },
+        { col: jitter(midCol), row: jitter(40) },
+        { col: jitter(colBase + 6), row: jitter(38) },
+      )
+    } else {
+      spots.push(
+        { col: jitter(midCol), row: jitter(46) },
+        { col: jitter(colBase + 7), row: jitter(50) },
+        { col: jitter(50), row: jitter(52) },
+      )
+    }
+    // Always fall back to safe tiles.
+    for (const s of safeSpawns) {
+      if (lane === 'left' && s.col > 55) continue
+      if (lane === 'right' && s.col < 45) continue
+      spots.push(s)
+    }
+    for (const s of safeSpawns) spots.push(s)
+    return spots
+  }
+
+  for (const choice of ordered) {
+    const { slot, char, role } = choice
     if (isSpellCard(char)) {
+      // Hold spells for value unless defending a cluster or punishing a tower.
+      if (!clusterThreat && !canPunish && Math.random() < 0.55 + skill * 0.25) {
+        continue
+      }
       const target = pickAiSpellTarget(units, towers, 'enemy')
       if (!target) continue
       const projectile = makeSpellProjectile(char, 'enemy', target.col, target.row, t, botLevel)
       if (!projectile) continue
-      return finish({
+      return finish(slot, {
         units: [],
         projectile,
         elixir: enemyElixir - char.elixir,
       })
     }
 
-    for (let tileTry = 0; tileTry < 10; tileTry++) {
-      const col = colBase + Math.floor(Math.random() * colSpan)
-      const row = rowBase + Math.floor(Math.random() * rowSpan)
-      if (!canSpawnAt(col, row, 'enemy', towers, live, mode)) continue
-      const spawned: BattleUnit[] = []
-      spawnDeployedCard(char, col, row, 'enemy', t, botLevel, spawned)
-      return finish({
-        units: spawned,
-        elixir: enemyElixir - char.elixir,
-      })
-    }
-
-    for (const spot of safeSpawns) {
+    for (const spot of spawnCandidates(role)) {
       if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
       const spawned: BattleUnit[] = []
       spawnDeployedCard(char, spot.col, spot.row, 'enemy', t, botLevel, spawned)
-      return finish({
+      return finish(slot, {
         units: spawned,
         elixir: enemyElixir - char.elixir,
       })
@@ -1890,6 +2032,7 @@ export function useBattle(opts?: {
           botLevelRef.current,
           modeRef.current,
           aiDeckCycleRef.current,
+          profile.skill,
         )
         aiDeckCycleRef.current = ai.deck
         if (ai.projectile) {

@@ -220,11 +220,20 @@ export function nextRoadStep(trophies: number): TrophyRoadReward | null {
 }
 
 export function botLevelForTrophies(trophies: number): number {
-  // Scales across the trophy road (~0 → Phil Peak 5000).
+  // Card levels keep scaling with trophies so high-arena bots stay durable.
   return Math.max(1, Math.min(MAX_CARD_LEVEL, 1 + Math.floor(trophies / 400)))
 }
 
-/** AI cadence / elixir pressure — harder the further you are on trophy road. */
+/**
+ * Decision-skill 0..1 — rises from 0→1000 trophies, then flat to 5000.
+ * Floor is already strong (even Training Camp bots play well).
+ */
+export function botSkillForTrophies(trophies: number): number {
+  const t = Math.max(0, Math.min(1000, trophies))
+  return 0.62 + (t / 1000) * 0.38
+}
+
+/** AI cadence / elixir pressure — harder through 1000 trophies, then holds. */
 export function botAiProfile(trophies: number): {
   level: number
   /** Min ms between deploy attempts */
@@ -235,16 +244,21 @@ export function botAiProfile(trophies: number): {
   elixirMult: number
   /** Starting enemy elixir */
   startElixir: number
+  /** Decision quality 0..1 (placement / card choice) */
+  skill: number
 } {
-  const t = Math.max(0, trophies)
-  const level = botLevelForTrophies(t)
-  // 0 trophies → ~2.4–3.8s; 4000+ → ~0.7–1.3s
-  const deployMinMs = Math.max(700, Math.round(2400 - t * 0.42))
-  const deployMaxMs = Math.max(deployMinMs + 400, Math.round(3800 - t * 0.6))
-  // Mild elixir edge at high trophies (1.0 → ~1.35)
-  const elixirMult = Math.min(1.35, 1 + t / 12000)
-  const startElixir = Math.min(7, 4 + Math.floor(t / 1200))
-  return { level, deployMinMs, deployMaxMs, elixirMult, startElixir }
+  const raw = Math.max(0, trophies)
+  // Cadence + elixir plateau at 1000; skill uses the same ramp.
+  const t = Math.min(1000, raw)
+  const level = botLevelForTrophies(raw)
+  const skill = botSkillForTrophies(raw)
+  // 0 trophies → ~1.55–2.45s (already brisk); 1000 → ~0.85–1.35s; flat after
+  const deployMinMs = Math.max(850, Math.round(1550 - t * 0.7))
+  const deployMaxMs = Math.max(deployMinMs + 350, Math.round(2450 - t * 1.1))
+  // Mild elixir edge only (skill does the heavy lifting): 1.04 → 1.16 by 1000
+  const elixirMult = 1.04 + (t / 1000) * 0.12
+  const startElixir = t >= 700 ? 5 : 4
+  return { level, deployMinMs, deployMaxMs, elixirMult, startElixir, skill }
 }
 
 export function botNameForTrophies(trophies: number): string {
