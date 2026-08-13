@@ -26,9 +26,8 @@ export function BerryModel({ anim, facing, attackId, portrait, auraActive }: Pro
         anim={anim}
         facing={facing}
         portrait={portrait}
-        portraitSrc={TROOP}
-        objectPos="50% 10%"
-        portraitFilter="brightness(1) saturate(1)"
+        objectPos="50% 12%"
+        portraitFilter="brightness(1) saturate(1.05)"
         gait="jog"
         spriteLegs
         attack={anim === 'attack' && attackId === 'aura' ? 'sundae' : 'none'}

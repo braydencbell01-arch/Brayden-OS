@@ -24,11 +24,12 @@ export function LynneModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 14%"
+      objectPos="50% 12%"
+      portraitFilter="brightness(1) saturate(1.05)"
       gait="blitz"
       spriteLegs
       attack={anim === 'attack' && attackId === 'headButt' ? 'headbutt' : 'none'}
-      legColor="#1a1a20"
+      legColor="#3a6a9a"
       shoeColor="#0a0a0c"
     />
   )
