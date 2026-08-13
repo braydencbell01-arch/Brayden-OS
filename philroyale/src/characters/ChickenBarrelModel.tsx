@@ -12,14 +12,14 @@ type Props = {
 
 /**
  * Clash Goblin Barrel pose — tilted open keg with the in-game chicken peeking out.
- * Kept small enough that the full barrel + chicken head stay inside the card frame.
+ * Portrait scales the whole stack so the full chicken (comb + head) stays inside the card.
  */
 export function ChickenBarrelModel({ portrait }: Props) {
   const uid = useId().replace(/:/g, '')
-  // Portrait: center the full keg in the middle of the card.
-  const boxW = portrait ? '78%' : '84%'
-  const boxH = portrait ? '86%' : '92%'
-  const rot = portrait ? -12 : -30
+  // Portrait: leave headroom above the comb; battlefield can lean harder.
+  const boxW = portrait ? '68%' : '84%'
+  const boxH = portrait ? '82%' : '92%'
+  const rot = portrait ? -8 : -30
   return (
     <div
       className="relative flex h-full w-full items-center justify-center overflow-hidden"
@@ -31,7 +31,10 @@ export function ChickenBarrelModel({ portrait }: Props) {
         style={{
           width: boxW,
           height: boxH,
-          transform: `rotate(${rot}deg)`,
+          transform: portrait
+            ? `translateY(4%) scale(0.92) rotate(${rot}deg)`
+            : `rotate(${rot}deg)`,
+          transformOrigin: '50% 55%',
         }}
       >
         <svg
@@ -49,19 +52,21 @@ export function ChickenBarrelModel({ portrait }: Props) {
           <ellipse cx="50" cy="50" rx="24" ry="10" fill={`url(#${uid}-hole)`} />
         </svg>
 
-        {/* In-game chicken-troop — head / comb / beak out of the open top. */}
+        {/* Full chicken peeking out — object-contain so comb/beak aren't cropped. */}
         <img
           src={CHICKEN}
           alt=""
           draggable={false}
-          className="pointer-events-none absolute z-[1] object-cover"
+          className="pointer-events-none absolute z-[1]"
           style={{
-            left: '18%',
-            top: '2%',
-            width: '64%',
-            height: '52%',
+            left: portrait ? '20%' : '18%',
+            top: portrait ? '0%' : '2%',
+            width: portrait ? '60%' : '64%',
+            height: portrait ? '58%' : '52%',
+            objectFit: 'contain',
             objectPosition: '50% 0%',
-            clipPath: 'inset(0 16% 42% 10%)',
+            // Hide only the lower body inside the keg — never clip the head.
+            clipPath: portrait ? 'inset(0 6% 28% 6%)' : 'inset(0 16% 42% 10%)',
             filter: 'brightness(1.06) saturate(1.08)',
           }}
         />

@@ -1,27 +1,72 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { CHARACTERS } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
 
 const BOOT_SEEN_KEY = 'philroyale.bootSeen.v1'
 /** Loading splash always stays up at least this long (can run longer while assets load). */
 const LOADING_MIN_MS = 3000
 
+type CollageSlot = {
+  id: string
+  left: string
+  bottom: string
+  scale: number
+  z: number
+  facing: number
+  w: string
+}
+
 /**
- * CR-style loading collage — full characters only (no blue portrait boxes).
- * They overlap each other; z-index controls who cuts whom off.
+ * CR-style loading collage — every card, battlefield sprites only (no blue portrait boxes).
+ * Packed to fill the screen; overlap + z-index for depth.
  */
-const COLLAGE = [
-  { id: 'bigMable', left: '-4%', bottom: '6%', scale: 1.15, z: 1, facing: 1, w: '48%' },
-  { id: 'stevesDiner', left: '58%', bottom: '8%', scale: 1.05, z: 2, facing: -1, w: '44%' },
-  { id: 'pete', left: '34%', bottom: '4%', scale: 1.2, z: 3, facing: 1, w: '40%' },
-  { id: 'jeremy', left: '70%', bottom: '18%', scale: 1.18, z: 4, facing: -1, w: '38%' },
-  { id: 'kathie', left: '48%', bottom: '2%', scale: 1.28, z: 5, facing: -1, w: '40%' },
-  { id: 'phil', left: '6%', bottom: '0%', scale: 1.4, z: 6, facing: 1, w: '44%' },
-  { id: 'evilPhil', left: '22%', bottom: '26%', scale: 1.35, z: 2, facing: 1, w: '42%' },
-  { id: 'todd', left: '78%', bottom: '28%', scale: 0.95, z: 3, facing: -1, w: '32%' },
-  { id: 'mike', left: '-2%', bottom: '30%', scale: 0.9, z: 2, facing: 1, w: '34%' },
-  { id: 'lynne', left: '40%', bottom: '32%', scale: 0.88, z: 1, facing: -1, w: '30%' },
-] as const
+function buildCollage(): CollageSlot[] {
+  const ids = CHARACTERS.map((c) => c.id)
+  // Prefer a lively front row of signature units, then pack the rest.
+  const priority = [
+    'phil',
+    'kathie',
+    'evilPhil',
+    'berry',
+    'tristan',
+    'hamburgerChicken',
+    'bigMable',
+    'chickenBarrel',
+    'stevesDiner',
+    'lynne',
+    'jeremy',
+    'pete',
+  ]
+  const ordered = [
+    ...priority.filter((id) => ids.includes(id)),
+    ...ids.filter((id) => !priority.includes(id)),
+  ]
+  const cols = 7
+  const rows = Math.ceil(ordered.length / cols)
+  return ordered.map((id, i) => {
+    const col = i % cols
+    const row = Math.floor(i / cols)
+    // Stagger columns so the cloud feels packed, not a rigid grid.
+    const stagger = (row % 2 === 0 ? 0 : 0.42) + ((i * 17) % 7) * 0.015
+    const leftPct = -8 + (col + stagger) * (116 / Math.max(1, cols - 0.2))
+    const bottomPct = -4 + row * (88 / Math.max(1, rows - 1))
+    const front = row <= 1
+    const scale = front ? 1.02 + (i % 4) * 0.05 : 0.78 + (i % 5) * 0.04
+    const w = front ? 26 + (i % 4) * 2 : 20 + (i % 4) * 2
+    return {
+      id,
+      left: `${leftPct}%`,
+      bottom: `${bottomPct}%`,
+      scale,
+      z: front ? 12 + (cols - col) + row : 2 + row * 2 + (col % 3),
+      facing: col % 2 === 0 ? 1 : -1,
+      w: `${w}%`,
+    }
+  })
+}
+
+const COLLAGE = buildCollage()
 
 const TIPS = [
   'Two Kings enter. One King leaves!',
@@ -59,7 +104,29 @@ function charAssetUrls(charId: string): string[] {
         ? 'big-mable'
         : charId === 'evilPhil'
           ? 'evil-phil'
-          : charId.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
+          : charId === 'dogHut'
+            ? 'dog-hut'
+            : charId === 'philsCar'
+              ? 'phils-car'
+              : charId === 'iceCream'
+                ? 'ice-cream'
+                : charId === 'footballHuck'
+                  ? 'baseball'
+                  : charId === 'bobbySpecial'
+                    ? 'bobby-special'
+                    : charId === 'hamburgerChicken'
+                      ? 'hamburger-chicken'
+                      : charId === 'chickenArmy'
+                        ? 'chicken'
+                        : charId === 'chickenBarrel'
+                          ? 'chicken'
+                          : charId === 'philSpirit'
+                            ? 'phil-spirit'
+                            : charId === 'peteSpirit'
+                              ? 'pete-spirit'
+                              : charId === 'jeremySpirit'
+                                ? 'jeremy-spirit'
+                                : charId.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
   return [
     `${root}characters/${fileBase}-troop.png`,
     `${root}characters/${fileBase}-card.png`,
@@ -236,8 +303,8 @@ export function BootFlow({ children }: { children: ReactNode }) {
             }}
           />
 
-          <div className="relative flex min-h-0 flex-1 flex-col items-center px-4 pt-10">
-            <div className="relative z-20 text-center">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center px-2 pt-8 sm:pt-10">
+            <div className="relative z-20 shrink-0 text-center">
               <div
                 aria-hidden
                 className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full"
@@ -258,35 +325,41 @@ export function BootFlow({ children }: { children: ReactNode }) {
               </h1>
             </div>
 
-            <div className="relative mt-1 h-[min(52vh,380px)] w-full max-w-md flex-1">
+            <div className="relative mt-0 w-full max-w-xl flex-1 min-h-[min(68vh,560px)]">
               <div
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-28"
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-36"
                 style={{
                   background:
-                    'radial-gradient(ellipse 70% 80% at 50% 100%, #3dff7a88 0%, #1a6a3088 35%, transparent 70%)',
+                    'radial-gradient(ellipse 80% 90% at 50% 100%, #3dff7a88 0%, #1a6a3088 35%, transparent 70%)',
                 }}
               />
-              {COLLAGE.map((slot) => (
+              {COLLAGE.map((slot, i) => (
                 <motion.div
-                  key={slot.id}
+                  key={`${slot.id}-${i}`}
                   className="absolute overflow-visible"
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, delay: 0.05 * slot.z }}
+                  transition={{ duration: 0.45, delay: 0.012 * i }}
                   style={{
                     left: slot.left,
                     bottom: slot.bottom,
                     width: slot.w,
-                    height: '78%',
+                    height: '42%',
                     zIndex: slot.z,
                     transform: `scale(${slot.scale})`,
                     transformOrigin: 'bottom center',
-                    filter: 'drop-shadow(0 10px 14px #000000aa)',
+                    // Soft ground shadow only — never a rectangular card plate
+                    filter: 'drop-shadow(0 8px 10px #00000088)',
                   }}
                 >
-                  {/* No portrait — battlefield sprites, transparent, free to overlap */}
-                  <CharacterModel charId={slot.id} anim="idle" facing={slot.facing} />
+                  {/* Battlefield sprites only — transparent cutouts, no blue portrait boxes */}
+                  <CharacterModel
+                    charId={slot.id}
+                    anim="idle"
+                    facing={slot.facing}
+                    portrait={false}
+                  />
                 </motion.div>
               ))}
             </div>
