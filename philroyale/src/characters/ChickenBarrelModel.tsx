@@ -10,18 +10,25 @@ type Props = {
   portrait?: boolean
 }
 
-/** Clash Goblin Barrel pose — tilted open keg with the in-game chicken peeking out. */
+/**
+ * Clash Goblin Barrel pose — tilted open keg with the in-game chicken peeking out.
+ * Sized so the chicken head + full barrel stay inside the card frame (not clipped).
+ */
 export function ChickenBarrelModel({ portrait }: Props) {
   const uid = useId().replace(/:/g, '')
   return (
     <div
-      className={`relative h-full w-full ${portrait ? 'overflow-hidden' : 'overflow-visible'}`}
+      className="relative h-full w-full overflow-hidden"
       style={{ background: portrait ? CARD_PORTRAIT_BG : 'transparent' }}
       aria-hidden
     >
       <div
-        className="absolute left-1/2 top-[56%] h-[108%] w-[108%] -translate-x-1/2 -translate-y-1/2"
-        style={{ transform: 'translate(-50%, -50%) rotate(-38deg)' }}
+        className="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2"
+        style={{
+          width: portrait ? '78%' : '92%',
+          height: portrait ? '88%' : '100%',
+          transform: 'translate(-50%, -50%) rotate(-32deg)',
+        }}
       >
         <svg
           className="absolute inset-0 z-0 h-full w-full"
@@ -34,24 +41,23 @@ export function ChickenBarrelModel({ portrait }: Props) {
               <stop offset="100%" stopColor="#3a2210" />
             </radialGradient>
           </defs>
-          {/* Far rim + hollow interior (behind the chicken). */}
-          <ellipse cx="50" cy="42" rx="33" ry="15" fill="#6a4220" />
-          <ellipse cx="50" cy="44" rx="27" ry="12" fill={`url(#${uid}-hole)`} />
+          <ellipse cx="50" cy="48" rx="30" ry="13" fill="#6a4220" />
+          <ellipse cx="50" cy="50" rx="24" ry="10" fill={`url(#${uid}-hole)`} />
         </svg>
 
-        {/* Same chicken-troop sprite — head / comb / beak out of the open top. */}
+        {/* In-game chicken-troop — head / comb / beak out of the open top. */}
         <img
           src={CHICKEN}
           alt=""
           draggable={false}
           className="pointer-events-none absolute z-[1] object-cover"
           style={{
-            left: '16%',
-            top: '-6%',
-            width: '68%',
-            height: '58%',
+            left: '18%',
+            top: '2%',
+            width: '64%',
+            height: '52%',
             objectPosition: '50% 0%',
-            clipPath: 'inset(0 18% 38% 8%)',
+            clipPath: 'inset(0 16% 42% 10%)',
             filter: 'brightness(1.06) saturate(1.08)',
           }}
         />
@@ -76,44 +82,42 @@ export function ChickenBarrelModel({ portrait }: Props) {
               <stop offset="100%" stopColor="#2a1608" />
             </linearGradient>
             <clipPath id={`${uid}-body`}>
-              <path d="M18 56 C12 78 13 98 22 118 A28 11 0 0 0 78 118 C87 98 88 78 82 56 A32 14 0 0 1 18 56 Z" />
+              <path d="M20 60 C14 78 15 96 24 114 A26 10 0 0 0 76 114 C85 96 86 78 80 60 A30 13 0 0 1 20 60 Z" />
             </clipPath>
           </defs>
-          {/* Front wall — covers the chicken body, leaves the open top clear. */}
           <path
-            d="M18 56 C12 78 13 98 22 118 A28 11 0 0 0 78 118 C87 98 88 78 82 56 A32 14 0 0 1 18 56 Z"
+            d="M20 60 C14 78 15 96 24 114 A26 10 0 0 0 76 114 C85 96 86 78 80 60 A30 13 0 0 1 20 60 Z"
             fill={`url(#${uid}-wood)`}
             stroke="#3a1a08"
             strokeWidth="1.1"
           />
           <g clipPath={`url(#${uid}-body)`}>
-            {[22, 30, 38, 46, 54, 62, 70, 78].map((x) => (
+            {[24, 32, 40, 48, 56, 64, 72, 76].map((x) => (
               <path
                 key={x}
-                d={`M${x} 54 L${x} 120`}
+                d={`M${x} 58 L${x} 116`}
                 fill="none"
                 stroke="#5a301088"
                 strokeWidth="1.15"
               />
             ))}
             <path
-              d="M12 72 C50 82 88 72 88 72 L86 80 C50 90 14 80 14 80 Z"
+              d="M14 76 C50 86 86 76 86 76 L84 84 C50 94 16 84 16 84 Z"
               fill={`url(#${uid}-hoop)`}
             />
             <path
-              d="M16 100 C50 110 84 100 84 100 L82 108 C50 118 18 108 18 108 Z"
+              d="M18 100 C50 110 82 100 82 100 L80 108 C50 118 20 108 20 108 Z"
               fill={`url(#${uid}-hoop)`}
             />
           </g>
-          {/* Near rim in front of the chicken’s chest. */}
           <path
-            d="M18 56 A32 14 0 0 0 82 56"
+            d="M20 60 A30 13 0 0 0 80 60"
             fill="none"
             stroke="#c48a3a"
-            strokeWidth="3.4"
+            strokeWidth="3.2"
             strokeLinecap="round"
           />
-          <ellipse cx="50" cy="118" rx="28" ry="10" fill="#6a3e18" stroke="#3a1a08" strokeWidth="1" />
+          <ellipse cx="50" cy="114" rx="26" ry="9" fill="#6a3e18" stroke="#3a1a08" strokeWidth="1" />
         </svg>
       </div>
     </div>
