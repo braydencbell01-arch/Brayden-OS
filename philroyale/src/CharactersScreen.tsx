@@ -509,8 +509,44 @@ function CardProfile({
   const need = needCopies
   const cost = upgradeCost
   const maxed = level >= MAX_CARD_LEVEL
+  const hpBase = character.hp
   const hpNow = scaledStat(character.hp, level)
   const kindTag = cardKindLabel(character)
+  const spawnDef = character.spawnAsId ? getCharacter(character.spawnAsId) : undefined
+  const damageRows: { label: string; base: number; current: number }[] = []
+  if (isSpellCard(character)) {
+    if ((character.spellDamage ?? 0) > 0) {
+      damageRows.push({
+        label: 'Damage',
+        base: character.spellDamage ?? 0,
+        current: scaledStat(character.spellDamage ?? 0, level),
+      })
+    }
+    if (spawnDef) {
+      if (spawnDef.hp > 0) {
+        damageRows.push({
+          label: `${spawnDef.name} HP`,
+          base: spawnDef.hp,
+          current: scaledStat(spawnDef.hp, level),
+        })
+      }
+      for (const atk of spawnDef.attacks) {
+        damageRows.push({
+          label: atk.name,
+          base: atk.damage,
+          current: scaledStat(atk.damage, level),
+        })
+      }
+    }
+  } else {
+    for (const atk of character.attacks) {
+      damageRows.push({
+        label: atk.name,
+        base: atk.damage,
+        current: scaledStat(atk.damage, level),
+      })
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
@@ -569,7 +605,12 @@ function CardProfile({
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
             {isSpellCard(character) ? (
               <>
-                <Stat label="Health" value={String(hpNow)} />
+                <Stat
+                  label="Health"
+                  base={hpBase}
+                  current={hpNow}
+                  level={level}
+                />
                 <Stat
                   label="Landing time"
                   value={`${((character.spellTravelMs ?? 0) / 1000).toFixed(
@@ -579,16 +620,20 @@ function CardProfile({
                 {character.spawnAsId ? (
                   <Stat
                     label="Spawns"
-                    value={`${character.spawnCount ?? 1} ${(getCharacter(character.spawnAsId)?.name ?? 'troop')}${
+                    value={`${character.spawnCount ?? 1} ${(spawnDef?.name ?? 'troop')}${
                       (character.spawnCount ?? 1) === 1 ? '' : 's'
                     }`}
                   />
-                ) : (
+                ) : null}
+                {damageRows.map((row) => (
                   <Stat
-                    label="Damage"
-                    value={String(scaledStat(character.spellDamage ?? 0, level))}
+                    key={row.label}
+                    label={row.label}
+                    base={row.base}
+                    current={row.current}
+                    level={level}
                   />
-                )}
+                ))}
                 <Stat
                   label="Range"
                   value={`${character.spellRadius ?? 0} blocks`}
@@ -596,7 +641,12 @@ function CardProfile({
               </>
             ) : (
               <>
-                <Stat label="Health" value={String(hpNow)} />
+                <Stat
+                  label="Health"
+                  base={hpBase}
+                  current={hpNow}
+                  level={level}
+                />
                 <Stat label="Speed" value={`${character.moveSpeed} blocks/s`} />
                 <Stat
                   label="Attack cooldown"
@@ -607,6 +657,15 @@ function CardProfile({
                   }
                 />
                 <Stat label="Height" value={character.height} />
+                {damageRows.map((row) => (
+                  <Stat
+                    key={row.label}
+                    label={row.label}
+                    base={row.base}
+                    current={row.current}
+                    level={level}
+                  />
+                ))}
               </>
             )}
           </dl>
@@ -652,13 +711,46 @@ function CardProfile({
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  base,
+  current,
+  level,
+}: {
+  label: string
+  value?: string
+  base?: number
+  current?: number
+  level?: number
+}) {
+  const showScaled = base != null && current != null
   return (
     <div className="rounded-lg bg-[#140e0a] px-2 py-2 ring-1 ring-white/10">
       <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]/75">
         {label}
       </dt>
-      <dd className="font-extrabold text-white">{value}</dd>
+      {showScaled ? (
+        <dd className="font-extrabold text-white">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span>
+              <span className="text-[0.65rem] font-bold uppercase tracking-wide text-white/45">
+                Base{' '}
+              </span>
+              {base}
+            </span>
+            <span className="text-white/25">·</span>
+            <span>
+              <span className="text-[0.65rem] font-bold uppercase tracking-wide text-white/45">
+                Lv.{level ?? 1}{' '}
+              </span>
+              {current}
+            </span>
+          </div>
+        </dd>
+      ) : (
+        <dd className="font-extrabold text-white">{value}</dd>
+      )}
     </div>
   )
 }
