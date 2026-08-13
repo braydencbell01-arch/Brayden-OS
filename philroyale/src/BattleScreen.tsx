@@ -40,6 +40,8 @@ import {
   CheeseSplat,
   CucumberDot,
   CucumberSplat,
+  BerryJuiceDot,
+  BerryJuiceSplat,
   RocketDot,
   RocketSplat,
   SundaeDot,
@@ -143,6 +145,7 @@ function FlyingShot({
     | 'barrel'
     | 'cheese'
     | 'cucumber'
+    | 'berryJuice'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
@@ -193,7 +196,7 @@ function FlyingShot({
             ? p * 360
           : kind === 'barrel'
             ? p * 540
-          : kind === 'cheese' || kind === 'cucumber'
+          : kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice'
             ? p * 600
           : 0
   const aimKinds =
@@ -208,9 +211,10 @@ function FlyingShot({
     kind === 'pancake' ||
     kind === 'barrel' ||
     kind === 'cheese' ||
-    kind === 'cucumber'
+    kind === 'cucumber' ||
+    kind === 'berryJuice'
   const transform = aimKinds
-    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' || kind === 'cheese' || kind === 'cucumber' ? spin : 0)}deg)`
+    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' || kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice' ? spin : 0)}deg)`
     : undefined
 
   return (
@@ -236,6 +240,7 @@ function FlyingShot({
       {kind === 'witchcraft' ? <WitchcraftDot /> : null}
       {kind === 'cheese' ? <CheeseDot /> : null}
       {kind === 'cucumber' ? <CucumberDot /> : null}
+      {kind === 'berryJuice' ? <BerryJuiceDot empowered={dur < 500} /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
@@ -755,6 +760,7 @@ export function BattleScreen({
               if (uDef?.cardKind === 'building') sizeScale *= 1.28
               if (u.charId === 'bigMable') sizeScale *= 1.35
               if (u.charId === 'chicken') sizeScale *= 0.68
+              if (u.charId === 'tristan') sizeScale *= 0.72
               const flight = u.launch
               let drawCol = u.col
               let drawRow = u.row
@@ -789,6 +795,7 @@ export function BattleScreen({
                   maxHp={u.maxHp}
                   vfx={u.vfx}
                   enraged={u.enraged}
+                  auraActive={u.auraActive}
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
                 />
@@ -836,7 +843,8 @@ export function BattleScreen({
             p.kind === 'pancake' ||
             p.kind === 'barrel' ||
             p.kind === 'cheese' ||
-            p.kind === 'cucumber' ? (
+            p.kind === 'cucumber' ||
+            p.kind === 'berryJuice' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -910,6 +918,8 @@ export function BattleScreen({
                   <CheeseSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'cucumber' ? (
                   <CucumberSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'berryJuice' ? (
+                  <BerryJuiceSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'melee' ||
                   s.kind === 'whip' ||
                   s.kind === 'bite' ||

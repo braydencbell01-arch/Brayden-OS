@@ -19,6 +19,7 @@ export type AttackId =
   | 'ram'
   | 'cheeseAndCucumbers'
   | 'suplex'
+  | 'aura'
 
 export type AttackDef = {
   id: AttackId
@@ -76,6 +77,7 @@ export type AttackDef = {
     | 'cheese'
     | 'cucumber'
     | 'suplex'
+    | 'berryJuice'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -150,6 +152,14 @@ export type CharacterDef = {
   spawnCount?: number
   /** If set, spawned units use this character id (Chicken Army / Barrel → chicken). */
   spawnAsId?: string
+  /** After this unit kills anything, enter aura mode (Berry). */
+  auraOnKill?: boolean
+  /** Attack delay while aura is active. */
+  auraAttackDelaySec?: number
+  /** Damage while aura is active (Berry empowered juice). */
+  auraDamage?: number
+  /** Projectile flight ms while aura is active. */
+  auraProjectileMs?: number
 }
 
 export const PHIL: CharacterDef = {
@@ -928,6 +938,39 @@ export const TRISTAN: CharacterDef = {
   ],
 }
 
+/** Sombrero legend — blue juice splash; kills empower Aura mode. */
+export const BERRY: CharacterDef = {
+  id: 'berry',
+  name: 'Berry',
+  initial: 'Be',
+  pronoun: 'he',
+  height: "5'10\"",
+  rarity: 'legendary',
+  elixir: 7,
+  hp: 1660,
+  moveSpeed: 8.25,
+  attackDelaySec: 1.7,
+  hue: 200,
+  auraOnKill: true,
+  auraAttackDelaySec: 1.3,
+  auraDamage: 895,
+  auraProjectileMs: 220,
+  blurb:
+    'Legendary juice lobber. Aura after a kill — blue smoke, faster bigger juice, harder splash.',
+  attacks: [
+    {
+      id: 'aura',
+      name: 'Aura',
+      range: 27,
+      damage: 595,
+      rootWhileAttacking: true,
+      splashRadius: 9,
+      projectileMs: 1100,
+      kind: 'berryJuice',
+    },
+  ],
+}
+
 /** Common inflatable tow-tube — slides, Launch knockback, never sticky-locks. */
 export const BIG_MABLE: CharacterDef = {
   id: 'bigMable',
@@ -987,6 +1030,7 @@ export const CHARACTERS: CharacterDef[] = [
   FOOTBALL_HUCK,
   BOBBY_SPECIAL,
   TRISTAN,
+  BERRY,
   BIG_MABLE,
 ]
 

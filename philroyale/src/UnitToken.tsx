@@ -11,6 +11,7 @@ type Props = {
   maxHp: number
   vfx: AttackId | null
   enraged?: boolean
+  auraActive?: boolean
   facing?: number
   moving?: boolean
 }
@@ -23,6 +24,7 @@ export function UnitToken({
   maxHp,
   vfx,
   enraged,
+  auraActive,
   facing,
   moving,
 }: Props) {
@@ -84,6 +86,8 @@ export function UnitToken({
                                 ? '1 / 1'
                               : charId === 'evilPhil'
                               ? '3 / 4.9'
+                              : charId === 'tristan'
+                                ? '3 / 4.2'
                               : '3 / 4.9',
         }}
       >
@@ -95,6 +99,7 @@ export function UnitToken({
           hue={def.hue}
           initial={def.initial}
           enraged={enraged}
+          auraActive={auraActive}
         />
       </div>
       {/* Unit HP at feet — CR-style */}
@@ -353,6 +358,43 @@ export function CucumberSplat({ ageMs }: { ageMs: number }) {
         style={{
           background:
             'radial-gradient(circle, #b8f08099 0%, #4a9a3866 40%, transparent 70%)',
+        }}
+      />
+    </div>
+  )
+}
+
+/** Berry — blue juice lob (normal or aura-empowered size via CSS). */
+export function BerryJuiceDot({ empowered }: { empowered?: boolean }) {
+  const size = empowered ? 'h-11 w-11' : 'h-7 w-7'
+  return (
+    <div
+      className={`relative ${size} rounded-full`}
+      style={{
+        background:
+          'radial-gradient(circle at 35% 30%, #c8f0ff 0%, #3aa0ff 45%, #1060c8 75%, #0a3060 100%)',
+        boxShadow: empowered
+          ? '0 0 12px #40b0ffcc, inset 0 1px 0 #ffffff88'
+          : '0 0 6px #40b0ff88, inset 0 1px 0 #ffffff66',
+      }}
+      aria-hidden
+    />
+  )
+}
+
+export function BerryJuiceSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 800)
+  return (
+    <div
+      className="relative h-14 w-14"
+      style={{ transform: `scale(${0.55 + p * 2.2})`, opacity: 1 - p * 0.92 }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #a0e0ff99 0%, #3080ff66 40%, transparent 70%)',
         }}
       />
     </div>

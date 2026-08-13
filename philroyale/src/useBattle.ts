@@ -109,6 +109,7 @@ function syncUnitToBattle(u: SyncUnit, flip: boolean, guestNow: number, hostNow:
     rootedUntil: 0,
     spawnedAt: mapTime(u.spawnedAt, guestNow),
     enraged: !!u.enraged,
+    auraActive: !!u.auraActive,
     movingUntil,
     lockKey: null,
     launch,
@@ -138,6 +139,7 @@ function syncProjectileToBattle(
     bornAt: mapTime(p.bornAt),
     arriveAt: mapTime(p.arriveAt),
     ownerSide: flip && p.ownerSide ? flipSide(p.ownerSide) : p.ownerSide,
+    ownerUnitId: p.ownerUnitId,
     splashRadius: p.splashRadius,
     splashDamage: p.splashDamage,
     spawnAsId: p.spawnAsId,
@@ -441,6 +443,7 @@ function makeBattleUnit(
     rootedUntil: 0,
     spawnedAt: t,
     enraged: false,
+    auraActive: false,
     movingUntil: 0,
     lockKey: null,
     launch: null,
@@ -1230,6 +1233,7 @@ export function useBattle(opts?: {
         facing: u.facing,
         vfx: u.vfx,
         enraged: u.enraged,
+        auraActive: u.auraActive,
         movingUntil: u.movingUntil > t ? u.movingUntil : 0,
         level: u.level,
         spawnedAt: u.spawnedAt,
@@ -1262,6 +1266,7 @@ export function useBattle(opts?: {
         bornAt: p.bornAt,
         arriveAt: p.arriveAt,
         ownerSide: p.ownerSide,
+        ownerUnitId: p.ownerUnitId,
         splashRadius: p.splashRadius,
         splashDamage: p.splashDamage,
         spawnAsId: p.spawnAsId,
@@ -1890,7 +1895,25 @@ export function useBattle(opts?: {
             kind: 'cucumber',
           })
           splatsChanged = true
+        } else if (p.kind === 'berryJuice') {
+          nextSplats.push({
+            id: nid('berry'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'berryJuice',
+            radius: splatRadius,
+          })
+          splatsChanged = true
         }
+        const berrySnapUnits =
+          p.kind === 'berryJuice' && p.ownerUnitId
+            ? new Map(nextUnits.map((u) => [u.id, u.hp]))
+            : null
+        const berrySnapTowers =
+          p.kind === 'berryJuice' && p.ownerUnitId
+            ? new Map(nextTowers.map((tw) => [tw.id, tw.hp]))
+            : null
         if (p.splashRadius != null && p.ownerSide != null && p.splashDamage != null) {
           // Primary hit + separate splash (Cash Gun).
           if (p.targetId) {
@@ -1943,6 +1966,22 @@ export function useBattle(opts?: {
           if (tw) {
             applyTowerDamage(tw, p.damage, t)
             towersChanged = true
+          }
+        }
+        if (berrySnapUnits && berrySnapTowers && p.ownerUnitId) {
+          const gotKill =
+            nextUnits.some(
+              (u) => (berrySnapUnits.get(u.id) ?? 0) > 0 && u.hp <= 0,
+            ) ||
+            nextTowers.some(
+              (tw) => (berrySnapTowers.get(tw.id) ?? 0) > 0 && tw.hp <= 0,
+            )
+          if (gotKill) {
+            const owner = nextUnits.find((x) => x.id === p.ownerUnitId && x.hp > 0)
+            if (owner && getCharacter(owner.charId)?.auraOnKill && !owner.auraActive) {
+              owner.auraActive = true
+              unitsChanged = true
+            }
           }
         }
         if (p.spawnAsId && (p.spawnCount ?? 0) > 0 && p.ownerSide) {
@@ -2709,7 +2748,10 @@ export function useBattle(opts?: {
         }
         if (t < u.nextAttackAt && !attack.ignoreAttackDelay) continue
 
-        const damage = attack.damage * dmgMult * cardLevelMult(u.level)
+        const auraOn = !!u.auraActive && !!def.auraOnKill
+        const attackDamage =
+          auraOn && def.auraDamage != null ? def.auraDamage : attack.damage
+        const damage = attackDamage * dmgMult * cardLevelMult(u.level)
         const shotAim =
           best.kind === 'tower'
             ? (() => {
@@ -2751,7 +2793,12 @@ export function useBattle(opts?: {
         u.vfx = attack.id
         u.vfxUntil = t + vfxMs
         if (!attack.ignoreAttackDelay) {
-          u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
+          const delaySec = burstDone
+            ? auraOn && def.auraAttackDelaySec != null
+              ? def.auraAttackDelaySec
+              : def.attackDelaySec
+            : burstGapSec
+          u.nextAttackAt = t + delaySec * 1000
         }
         u.burstShot = burstDone ? 0 : nextBurst
         if (burstDone && !def.pathToBuildingsOnly) {
@@ -2773,7 +2820,8 @@ export function useBattle(opts?: {
           attack.kind === 'cash' ||
           attack.kind === 'rocket' ||
           attack.kind === 'cheese' ||
-          attack.kind === 'cucumber'
+          attack.kind === 'cucumber' ||
+          attack.kind === 'berryJuice'
         ) {
           const maxTargets = Math.max(1, attack.maxTargets ?? 1)
           const volley: {
@@ -2824,6 +2872,11 @@ export function useBattle(opts?: {
           }
           const hits = volley.slice(0, maxTargets)
           const snackAttack = attack.id === 'cheeseAndCucumbers'
+          const berryAttack = attack.kind === 'berryJuice'
+          const berryFlight =
+            berryAttack && auraOn && def.auraProjectileMs != null
+              ? def.auraProjectileMs
+              : attack.projectileMs
           for (const hit of hits) {
             const projKind = snackAttack
               ? Math.random() < 0.5
@@ -2843,8 +2896,8 @@ export function useBattle(opts?: {
               bornAt: t,
               arriveAt:
                 t +
-                (attack.projectileMs != null
-                  ? attack.projectileMs
+                (berryFlight != null
+                  ? berryFlight
                   : snackAttack
                     ? PROJECTILE_MS
                     : attack.kind === 'shoot'
@@ -2863,6 +2916,7 @@ export function useBattle(opts?: {
                                   ? WITCHCRAFT_PROJECTILE_MS
                                   : PROJECTILE_MS),
               ownerSide: u.side,
+              ownerUnitId: berryAttack ? u.id : undefined,
               splashRadius: attack.splashRadius,
               splashDamage: attack.splashDamage,
             })

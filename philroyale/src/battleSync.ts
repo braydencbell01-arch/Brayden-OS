@@ -33,6 +33,8 @@ export type SyncUnit = {
   facing: number
   vfx: AttackId | null
   enraged: boolean
+  /** Berry Aura after a kill. */
+  auraActive?: boolean
   /** @deprecated use movingUntil — kept for older hosts */
   moving?: boolean
   level: number
@@ -69,6 +71,7 @@ export type SyncProjectile = {
     | 'barrel'
     | 'cheese'
     | 'cucumber'
+    | 'berryJuice'
   fromCol: number
   fromRow: number
   toCol: number
@@ -79,6 +82,7 @@ export type SyncProjectile = {
   bornAt: number
   arriveAt: number
   ownerSide?: 'ally' | 'enemy'
+  ownerUnitId?: string
   splashRadius?: number
   splashDamage?: number
   spawnAsId?: string

@@ -57,6 +57,8 @@ export type BattleUnit = {
   launch?: LaunchFlight | null
   /** Ram (once-per-target) keys already hit: `unit:id` / `tower:id`. */
   hitOnceKeys?: string[]
+  /** Berry Aura — blue smoke after a kill; stronger / faster juice. */
+  auraActive?: boolean
 }
 
 export type Projectile = {
@@ -80,6 +82,7 @@ export type Projectile = {
     | 'barrel'
     | 'cheese'
     | 'cucumber'
+    | 'berryJuice'
   fromCol: number
   fromRow: number
   toCol: number
@@ -91,6 +94,8 @@ export type Projectile = {
   arriveAt: number
   /** Attacker side — used for splash so allies are never hit. */
   ownerSide?: Side
+  /** Attacker unit id — used for kill credit (Berry Aura). */
+  ownerUnitId?: UnitId
   /** Splash radius in blocks around the impact point. */
   splashRadius?: number
   /** When set with splashRadius, AoE uses this instead of `damage` (primary still uses `damage`). */
@@ -132,6 +137,7 @@ export type SplatFx = {
     | 'barrel'
     | 'cheese'
     | 'cucumber'
+    | 'berryJuice'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

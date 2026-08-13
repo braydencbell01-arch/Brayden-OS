@@ -66,14 +66,14 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 0, arena: 'Training Camp', label: 'Journey begins', gold: 50, unlockCard: 'finley' },
   { trophies: 20, arena: 'Training Camp', label: 'x1 Shay', unlockCard: 'shay', gold: 40 },
   { trophies: 40, arena: 'Training Camp', label: 'x1 Tristan', unlockCard: 'tristan', gold: 50 },
-  { trophies: 60, arena: 'Training Camp', label: 'x1 Dan', unlockCard: 'dan', gold: 40 },
-  { trophies: 80, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'pete', gold: 70 },
+  { trophies: 60, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'dan', gold: 40 },
+  { trophies: 80, arena: 'Training Camp', label: 'x1 Chuck', unlockCard: 'pete', gold: 70 },
   // Sundae Strip 100–300
   { trophies: 100, arena: 'Sundae Strip', label: 'x1 Dave', unlockCard: 'dave', gold: 80 },
   { trophies: 140, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 35, unlockEmote: 'wave' },
   { trophies: 180, arena: 'Sundae Strip', label: 'x1 Gretchin', unlockCard: 'gretchin', gold: 70 },
   { trophies: 220, arena: 'Sundae Strip', label: 'x8 Lynne', cardCopies: { charId: 'lynne', copies: 8 }, gold: 100 },
-  { trophies: 260, arena: 'Sundae Strip', label: 'Common Chest', chest: 'common', gold: 40 },
+  { trophies: 260, arena: 'Sundae Strip', label: 'x1 Berry', unlockCard: 'berry', gold: 90 },
   // Beans' Battleground 300–500
   { trophies: 300, arena: "Beans' Battleground", label: 'x5 Beans', cardCopies: { charId: 'beans', copies: 5 }, gold: 50 },
   { trophies: 340, arena: "Beans' Battleground", label: 'x1 Phil Spirit', unlockCard: 'philSpirit', gold: 80 },
@@ -111,7 +111,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 1840, arena: "Gretchin's Grill", label: 'x12 Mike', cardCopies: { charId: 'mike', copies: 12 } },
   { trophies: 1920, arena: "Gretchin's Grill", label: 'Gold pouch', gold: 100 },
   // Ricky's Diner 2000–2400
-  { trophies: 2000, arena: "Ricky's Diner", label: 'x4 Pete', cardCopies: { charId: 'pete', copies: 4 }, gold: 125 },
+  { trophies: 2000, arena: "Ricky's Diner", label: 'x4 Chuck', cardCopies: { charId: 'pete', copies: 4 }, gold: 125 },
   { trophies: 2080, arena: "Ricky's Diner", label: 'x5 Lynne', cardCopies: { charId: 'lynne', copies: 5 } },
   { trophies: 2160, arena: "Ricky's Diner", label: 'Rare Chest', chest: 'rare', gold: 90 },
   { trophies: 2240, arena: "Ricky's Diner", label: 'Epic Chest', chest: 'epic', gold: 100, unlockEmote: 'emote-pete' },
@@ -144,7 +144,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 4300, arena: 'Pete Palace', label: 'Legendary Chest', chest: 'legendary', gold: 250 },
   { trophies: 4450, arena: 'Pete Palace', label: 'Epic Chest', chest: 'epic', gold: 220 },
   { trophies: 4600, arena: 'Pete Palace', label: 'Rare Chest', chest: 'rare', gold: 200 },
-  { trophies: 4750, arena: 'Pete Palace', label: 'x2 Dan', cardCopies: { charId: 'dan', copies: 2 }, gold: 200 },
+  { trophies: 4750, arena: 'Pete Palace', label: 'x2 Pete', cardCopies: { charId: 'dan', copies: 2 }, gold: 200 },
   { trophies: 4880, arena: 'Pete Palace', label: 'x10 Todd', cardCopies: { charId: 'todd', copies: 10 } },
   // Phil Peak 4900–5000
   { trophies: 4900, arena: 'Phil Peak', label: 'Arena unlocked!', gold: 300 },

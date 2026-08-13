@@ -515,7 +515,11 @@ export function TrophyRoadScreen({
                                 <RoadRewardIcon step={step} />
                                 <div className="min-w-0 flex-1 text-right">
                                   <p className="truncate text-[0.75rem] font-black text-white drop-shadow">
-                                    {step.label}
+                                    {step.unlockCard
+                                      ? `x1 ${getCharacter(step.unlockCard)?.name ?? step.label}`
+                                      : step.cardCopies
+                                        ? `x${step.cardCopies.copies} ${getCharacter(step.cardCopies.charId)?.name ?? step.label}`
+                                        : step.label}
                                   </p>
                                   <p className="text-[0.7rem] font-extrabold text-[#f5d76e]">
                                     {step.trophies}

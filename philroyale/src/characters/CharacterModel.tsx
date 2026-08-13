@@ -30,6 +30,7 @@ import { HamburgerChickenModel } from './HamburgerChickenModel'
 import { ChickenModel } from './ChickenModel'
 import { ChickenBarrelModel } from './ChickenBarrelModel'
 import { TristanModel } from './TristanModel'
+import { BerryModel } from './BerryModel'
 
 type Props = {
   charId: string
@@ -40,6 +41,7 @@ type Props = {
   hue?: number
   initial?: string
   enraged?: boolean
+  auraActive?: boolean
 }
 
 /** Routes to Clash Royale–style toy-3D character models. */
@@ -50,6 +52,7 @@ export function CharacterModel({
   attackId,
   portrait,
   enraged,
+  auraActive,
 }: Props) {
   let model: ReactNode
   if (charId === 'phil') {
@@ -131,6 +134,16 @@ export function CharacterModel({
   } else if (charId === 'tristan') {
     model = (
       <TristanModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
+  } else if (charId === 'berry') {
+    model = (
+      <BerryModel
+        anim={anim}
+        facing={facing}
+        attackId={attackId}
+        portrait={portrait}
+        auraActive={auraActive}
+      />
     )
   } else {
     model = (
