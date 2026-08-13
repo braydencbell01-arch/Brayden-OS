@@ -77,6 +77,8 @@ type Props = {
   opponentClanName?: string | null
   opponentTrophies?: number
   allyLevels?: Record<string, number>
+  /** Card ids with evolution unlocked */
+  allyEvolutions?: string[]
   botLevel?: number
   mode?: GameMode
   /** Override battle deck (touchdown draft). */
@@ -313,6 +315,7 @@ export function BattleScreen({
   opponentClanName = null,
   opponentTrophies = 3200,
   allyLevels,
+  allyEvolutions,
   botLevel = 1,
   mode = 'classic',
   deckIds: deckOverride,
@@ -400,9 +403,12 @@ export function BattleScreen({
     netRole,
     lagging,
     enemyDeckIds: cpuDeckIds,
+    nextPlayIsEvolved,
+    evoPlayTick,
   } = useBattle({
     paused: ended,
     allyLevels,
+    allyEvolutions,
     botLevel,
     trophies,
     mode,
@@ -798,6 +804,7 @@ export function BattleScreen({
                   auraActive={u.auraActive}
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
+                  evolved={u.evolved}
                 />
                 {deployWarming ? (
                   <div
@@ -993,6 +1000,7 @@ export function BattleScreen({
                 maxHp={Math.max(1, dragChar.hp)}
                 vfx={null}
                 facing={-Math.PI / 2}
+                evolved={nextPlayIsEvolved(dragChar.id)}
               />
               <div
                 className="pointer-events-none absolute bottom-0 left-1/2 h-2 w-2/3 -translate-x-1/2 rounded-full"
@@ -1279,6 +1287,7 @@ export function BattleScreen({
                 character={nextId ? getCharacter(nextId) ?? null : null}
                 size="next"
                 elixir={elixir}
+                evolved={nextId ? nextPlayIsEvolved(nextId) : false}
               />
             </div>
 
@@ -1287,6 +1296,7 @@ export function BattleScreen({
                 const c = getCharacter(id) ?? null
                 const selected = id === selectedCharId
                 const dragging = drag?.charId === id
+                void evoPlayTick
                 return (
                   <button
                     key={`${id}-${i}`}
@@ -1300,7 +1310,12 @@ export function BattleScreen({
                     aria-label={c ? `Select or drag ${c.name}` : `Card ${i + 1}`}
                     aria-pressed={selected}
                   >
-                    <BattleCard character={c} elixir={elixir} selected={selected} />
+                    <BattleCard
+                      character={c}
+                      elixir={elixir}
+                      selected={selected}
+                      evolved={nextPlayIsEvolved(id)}
+                    />
                   </button>
                 )
               })}

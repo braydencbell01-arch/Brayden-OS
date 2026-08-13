@@ -1428,6 +1428,7 @@ export default function App() {
   if (battle) {
     const trophies = loadProfile().trophies
     const levels = loadCardProgress().levels
+    const evolutions = loadCardProgress().evolutions ?? []
     return (
       <div className="relative flex h-full min-h-0 flex-col">
         <BattleScreen
@@ -1444,6 +1445,7 @@ export default function App() {
               : undefined
           }
           allyLevels={levels}
+          allyEvolutions={evolutions}
           botLevel={botLevelForTrophies(trophies)}
           mode={battleMode}
           deckIds={

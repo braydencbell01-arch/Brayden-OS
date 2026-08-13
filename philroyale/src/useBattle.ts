@@ -40,7 +40,7 @@ import {
   type CharacterDef,
 } from './characters'
 import type { BattleUnit, Projectile, RageHeart, SplatFx } from './battleTypes'
-import { botAiProfile, cardLevelMult, scaledStat } from './progression'
+import { botAiProfile, cardLevelMult, evoStatMult, scaledStat } from './progression'
 import {
   type BattleNet,
   type BattleRoomMessage,
@@ -114,6 +114,7 @@ function syncUnitToBattle(u: SyncUnit, flip: boolean, guestNow: number, hostNow:
     lockKey: null,
     launch,
     nextSpawnAt: u.nextSpawnAt != null ? mapTime(u.nextSpawnAt, guestNow) : undefined,
+    evolved: !!u.evolved,
   }
 }
 
@@ -418,10 +419,14 @@ function makeBattleUnit(
   side: Side,
   t: number,
   level = 1,
+  evolved = false,
 ): BattleUnit {
   const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
   const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
-  const hp = Math.max(1, scaledStat(Math.max(1, char.hp), level))
+  const hp = Math.max(
+    1,
+    Math.round(scaledStat(Math.max(1, char.hp), level) * evoStatMult(evolved)),
+  )
   const everySec = char.spawnEverySec ?? 0
   const deployMs = (char.deployDelaySec ?? 0) * 1000
   return {
@@ -449,6 +454,7 @@ function makeBattleUnit(
     launch: null,
     hitOnceKeys: [],
     nextSpawnAt: isBuildingCard(char) && everySec > 0 ? t + everySec * 1000 : undefined,
+    evolved,
   }
 }
 
@@ -471,7 +477,7 @@ function spawnDogFromBuilding(
   const dog = getCharacter(dogId)
   if (!dog) return null
   const pos = spawnOffsetNear(hut.col, hut.row, hut.side)
-  const pup = makeBattleUnit(dog, pos.col, pos.row, hut.side, t, hut.level)
+  const pup = makeBattleUnit(dog, pos.col, pos.row, hut.side, t, hut.level, !!hut.evolved)
   into.push(pup)
   return pup
 }
@@ -497,12 +503,15 @@ function spawnDeployedCard(
   t: number,
   level: number,
   into: BattleUnit[],
+  evolved = false,
 ): BattleUnit[] {
   const count = Math.max(1, char.spawnCount ?? 1)
   const spawnDef = (char.spawnAsId ? getCharacter(char.spawnAsId) : null) ?? char
   const spawned: BattleUnit[] = []
   for (const o of swarmOffsets(count)) {
-    spawned.push(makeBattleUnit(spawnDef, col + o.col, row + o.row, side, t, level))
+    spawned.push(
+      makeBattleUnit(spawnDef, col + o.col, row + o.row, side, t, level, evolved),
+    )
   }
   into.push(...spawned)
   if (count === 1 && isBuildingCard(spawnDef) && spawnDef.spawnPool?.length && spawned[0]) {
@@ -524,10 +533,13 @@ function makeSpellProjectile(
   row: number,
   t: number,
   level: number,
+  evolved = false,
 ): Projectile | null {
   if (!isSpellCard(char)) return null
   const spawnOnLand = !!(char.spawnAsId && (char.spawnCount ?? 0) > 0)
-  const damage = scaledStat(char.spellDamage ?? 0, level)
+  const damage = Math.round(
+    scaledStat(char.spellDamage ?? 0, level) * evoStatMult(evolved),
+  )
   const radius = char.spellRadius ?? 0
   if (!spawnOnLand && (damage <= 0 || radius <= 0)) return null
   const from = kingThrowPoint(side)
@@ -558,6 +570,7 @@ function makeSpellProjectile(
     spawnAsId: spawnOnLand ? char.spawnAsId : undefined,
     spawnCount: spawnOnLand ? char.spawnCount : undefined,
     spawnLevel: spawnOnLand ? level : undefined,
+    spawnEvolved: spawnOnLand ? evolved : undefined,
   }
 }
 
@@ -569,8 +582,9 @@ function castSpellProjectile(
   t: number,
   level: number,
   into: Projectile[],
+  evolved = false,
 ): boolean {
-  const projectile = makeSpellProjectile(char, side, col, row, t, level)
+  const projectile = makeSpellProjectile(char, side, col, row, t, level, evolved)
   if (!projectile) return false
   into.push(projectile)
   return true
@@ -1072,6 +1086,8 @@ export function useBattle(opts?: {
   paused?: boolean
   /** Ally card levels by charId */
   allyLevels?: Record<string, number>
+  /** Ally cards with evolution unlocked */
+  allyEvolutions?: string[]
   /** Enemy bot card level (all units) */
   botLevel?: number
   /** Player trophies — scales AI cadence / elixir on trophy road. */
@@ -1139,6 +1155,11 @@ export function useBattle(opts?: {
   pausedRef.current = !!opts?.paused
   const allyLevelsRef = useRef(opts?.allyLevels ?? {})
   allyLevelsRef.current = opts?.allyLevels ?? {}
+  const allyEvolutionsRef = useRef(new Set(opts?.allyEvolutions ?? []))
+  allyEvolutionsRef.current = new Set(opts?.allyEvolutions ?? [])
+  /** Plays since last evolved deploy (0–2); 3rd play is evolved. */
+  const allyPlayCountRef = useRef<Record<string, number>>({})
+  const [evoPlayTick, setEvoPlayTick] = useState(0)
   const botLevelRef = useRef(botLevel)
   botLevelRef.current = botLevel
   const modeRef = useRef<GameMode>(mode)
@@ -1183,8 +1204,22 @@ export function useBattle(opts?: {
   const lastGuestLagSentRef = useRef(false)
   const lastGuestLagAtRef = useRef(0)
   const pendingGuestDeploysRef = useRef<
-    { charId: string; col: number; row: number; at: number }[]
+    { charId: string; col: number; row: number; at: number; evolved?: boolean }[]
   >([])
+
+  function consumeAllyEvolvedPlay(charId: string): boolean {
+    if (!allyEvolutionsRef.current.has(charId)) return false
+    const n = (allyPlayCountRef.current[charId] ?? 0) + 1
+    const evolved = n % 3 === 0
+    allyPlayCountRef.current[charId] = evolved ? 0 : n
+    setEvoPlayTick((x) => x + 1)
+    return evolved
+  }
+
+  function nextPlayIsEvolved(charId: string): boolean {
+    if (!allyEvolutionsRef.current.has(charId)) return false
+    return ((allyPlayCountRef.current[charId] ?? 0) + 1) % 3 === 0
+  }
 
   const unitsRef = useRef(units)
   const towersRef = useRef(towers)
@@ -1236,6 +1271,7 @@ export function useBattle(opts?: {
         auraActive: u.auraActive,
         movingUntil: u.movingUntil > t ? u.movingUntil : 0,
         level: u.level,
+        evolved: u.evolved,
         spawnedAt: u.spawnedAt,
         nextAttackAt: u.nextAttackAt,
         attackIndex: u.attackIndex,
@@ -1307,6 +1343,7 @@ export function useBattle(opts?: {
 
       const n = netRef.current
       const role = liveRoleRef.current ?? n?.role
+      const evolved = consumeAllyEvolvedPlay(char.id)
       if (n && role === 'guest') {
         // Optimistic elixir; host confirms via mirrored state.
         setElixir((e) => Math.max(0, e - char.elixir))
@@ -1316,7 +1353,7 @@ export function useBattle(opts?: {
           const level = allyLevelsRef.current[char.id] ?? 1
           setProjectiles((prev) => {
             const next = prev.slice()
-            castSpellProjectile(char, 'ally', col, row, spawnT, level, next)
+            castSpellProjectile(char, 'ally', col, row, spawnT, level, next, evolved)
             return next
           })
         }
@@ -1327,6 +1364,7 @@ export function useBattle(opts?: {
           col,
           row,
           at: Date.now(),
+          evolved,
         })
         return true
       }
@@ -1337,13 +1375,13 @@ export function useBattle(opts?: {
       if (spell) {
         setProjectiles((prev) => {
           const next = prev.slice()
-          castSpellProjectile(char, 'ally', col, row, spawnT, level, next)
+          castSpellProjectile(char, 'ally', col, row, spawnT, level, next, evolved)
           return next
         })
       } else {
         setUnits((prev) => {
           const next = [...prev]
-          spawnDeployedCard(char, col, row, 'ally', spawnT, level, next)
+          spawnDeployedCard(char, col, row, 'ally', spawnT, level, next, evolved)
           return next
         })
       }
@@ -1419,6 +1457,7 @@ export function useBattle(opts?: {
           col: msg.col,
           row: msg.row,
           at: msg.at,
+          evolved: !!msg.evolved,
         })
         return
       }
@@ -1998,6 +2037,7 @@ export function useBattle(opts?: {
                   p.ownerSide,
                   t,
                   level,
+                  !!p.spawnEvolved,
                 ),
               )
             }
@@ -2029,6 +2069,7 @@ export function useBattle(opts?: {
                 t,
                 botLevelRef.current,
                 nextProjectiles,
+                !!d.evolved,
               )
             ) {
               nextEnemyElixir -= char.elixir
@@ -2048,6 +2089,7 @@ export function useBattle(opts?: {
             t,
             botLevelRef.current,
             nextUnits,
+            !!d.evolved,
           )
           nextEnemyElixir -= char.elixir
           enemyElixirChanged = true
@@ -2266,7 +2308,7 @@ export function useBattle(opts?: {
 
           if (t < u.nextAttackAt) continue
 
-          const damage = attack.damage * cardLevelMult(u.level)
+          const damage = attack.damage * cardLevelMult(u.level) * evoStatMult(!!u.evolved)
           const shotAim = { col: best.col, row: best.row }
           const vfxMs = attack.id === 'philsRocket' ? ROCKET_VFX_MS : RANGED_VFX_MS
           u.vfx = attack.id
@@ -2319,8 +2361,11 @@ export function useBattle(opts?: {
 
         const moveSpeed =
           def.moveSpeed *
-          (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1)
-        const dmgMult = u.enraged ? (def.rageDamageMult ?? RAGE_DAMAGE_MULT) : 1
+          (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1) *
+          evoStatMult(!!u.evolved)
+        const dmgMult =
+          (u.enraged ? (def.rageDamageMult ?? RAGE_DAMAGE_MULT) : 1) *
+          evoStatMult(!!u.evolved)
 
         const me = unitCenter(u)
         const buildingsOnly = !!def.targetsBuildingsOnly
@@ -3364,6 +3409,8 @@ export function useBattle(opts?: {
     deploy,
     now,
     mode,
+    nextPlayIsEvolved,
+    evoPlayTick,
     allyScore,
     enemyScore,
     touchdownWinScore: TOUCHDOWN_WIN_SCORE,

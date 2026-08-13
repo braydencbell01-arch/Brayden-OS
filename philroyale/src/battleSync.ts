@@ -48,6 +48,8 @@ export type SyncUnit = {
   burstShot?: number
   nextSpawnAt?: number
   launch?: SyncLaunch | null
+  /** Evolution form (+30% stats). */
+  evolved?: boolean
 }
 
 export type SyncProjectile = {
@@ -131,6 +133,7 @@ export type BattleRoomMessage =
       col: number
       row: number
       at: number
+      evolved?: boolean
     }
   | {
       /** Guest reports local lag so host can pause both clients. */

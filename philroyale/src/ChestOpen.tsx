@@ -7,6 +7,7 @@ import type { OwnedChest } from './storage'
 
 export type ChestLoot = {
   gold: number
+  gems?: number
   cards: { charId: string; copies: number; newlyUnlocked?: boolean }[]
 }
 
@@ -236,8 +237,27 @@ type RevealStep =
   | { kind: 'closed' }
   | { kind: 'opening' }
   | { kind: 'gold' }
+  | { kind: 'gems' }
   | { kind: 'card'; index: number }
   | { kind: 'summary' }
+
+function firstLootStep(loot: ChestLoot): RevealStep {
+  if (loot.gold > 0) return { kind: 'gold' }
+  if ((loot.gems ?? 0) > 0) return { kind: 'gems' }
+  if (loot.cards.length) return { kind: 'card', index: 0 }
+  return { kind: 'summary' }
+}
+
+function afterGold(loot: ChestLoot): RevealStep {
+  if ((loot.gems ?? 0) > 0) return { kind: 'gems' }
+  if (loot.cards.length) return { kind: 'card', index: 0 }
+  return { kind: 'summary' }
+}
+
+function afterGems(loot: ChestLoot): RevealStep {
+  if (loot.cards.length) return { kind: 'card', index: 0 }
+  return { kind: 'summary' }
+}
 
 /** Full-screen CR chest open: tap closed chest → burst → rewards one by one. */
 export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
@@ -246,9 +266,9 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
 
   useEffect(() => {
     if (step.kind !== 'opening') return
-    const id = window.setTimeout(() => setStep({ kind: 'gold' }), 700)
+    const id = window.setTimeout(() => setStep(firstLootStep(loot)), 700)
     return () => window.clearTimeout(id)
-  }, [step.kind])
+  }, [step.kind, loot])
 
   function advance() {
     if (step.kind === 'closed') {
@@ -257,8 +277,11 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
     }
     if (step.kind === 'opening') return
     if (step.kind === 'gold') {
-      if (loot.cards.length) setStep({ kind: 'card', index: 0 })
-      else setStep({ kind: 'summary' })
+      setStep(afterGold(loot))
+      return
+    }
+    if (step.kind === 'gems') {
+      setStep(afterGems(loot))
       return
     }
     if (step.kind === 'card') {
@@ -349,6 +372,33 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
           </motion.div>
         ) : null}
 
+        {step.kind === 'gems' ? (
+          <motion.div
+            key="gems"
+            className="flex flex-col items-center"
+            initial={{ scale: 0.5, y: 40, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+          >
+            <div
+              className="flex h-28 w-28 items-center justify-center rounded-full text-4xl font-black text-white"
+              style={{
+                background: 'linear-gradient(180deg,#9ae8ff,#2f8fd6)',
+                boxShadow: '0 8px 0 #1a4a78, 0 0 30px #5ad0ff88',
+              }}
+            >
+              ◆
+            </div>
+            <p className="mt-4 font-[family-name:var(--font-display)] text-4xl text-[#9ae8ff]">
+              +{loot.gems ?? 0}
+            </p>
+            <p className="text-sm font-extrabold uppercase tracking-wide text-white/70">
+              Gems
+            </p>
+            <p className="mt-6 text-xs font-bold text-white/50">Tap to continue</p>
+          </motion.div>
+        ) : null}
+
         {step.kind === 'card' && cardDef && cardDrop ? (
           <motion.div
             key={`card-${step.index}`}
@@ -384,9 +434,16 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
               Loot!
             </p>
             <ul className="mt-3 w-full space-y-1.5">
-              <li className="rounded-lg bg-[#2a1a12] px-3 py-2 text-center text-sm font-extrabold text-[#f5d76e] ring-1 ring-white/10">
-                +{loot.gold} gold
-              </li>
+              {loot.gold > 0 ? (
+                <li className="rounded-lg bg-[#2a1a12] px-3 py-2 text-center text-sm font-extrabold text-[#f5d76e] ring-1 ring-white/10">
+                  +{loot.gold} gold
+                </li>
+              ) : null}
+              {(loot.gems ?? 0) > 0 ? (
+                <li className="rounded-lg bg-[#2a1a12] px-3 py-2 text-center text-sm font-extrabold text-[#9ae8ff] ring-1 ring-white/10">
+                  +{loot.gems} gems
+                </li>
+              ) : null}
               {loot.cards.map((d) => {
                 const c = getCharacter(d.charId)
                 return (

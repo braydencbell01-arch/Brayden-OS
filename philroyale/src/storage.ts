@@ -30,6 +30,7 @@ import {
 } from './clubWar'
 import {
   CHEST_META,
+  EVO_SHARDS_NEEDED,
   MAX_CARD_LEVEL,
   STARTER_UNLOCKS,
   TROPHY_ROAD,
@@ -712,6 +713,10 @@ export type CardProgress = {
   copies: Record<string, number>
   favorites: string[]
   unlocked: string[]
+  /** charId → evolution shards (need EVO_SHARDS_NEEDED to unlock) */
+  evoShards?: Record<string, number>
+  /** charIds with evolution unlocked */
+  evolutions?: string[]
 }
 
 export type OwnedChest = {
@@ -1008,16 +1013,78 @@ export function loadCardProgress(): CardProgress {
     }
     copies[c.id] = Math.max(0, count)
   }
+  const evoShards: Record<string, number> = {}
+  for (const c of CHARACTERS) {
+    evoShards[c.id] = Math.max(0, Math.floor(raw.evoShards?.[c.id] ?? 0))
+  }
+  const evolutions = [
+    ...new Set([
+      ...(raw.evolutions ?? []).filter((id) => CHARACTERS.some((c) => c.id === id)),
+      ...CHARACTERS.filter((c) => (evoShards[c.id] ?? 0) >= EVO_SHARDS_NEEDED).map(
+        (c) => c.id,
+      ),
+    ]),
+  ]
   return {
     levels,
     copies,
     favorites: (raw.favorites ?? []).filter((id) => CHARACTERS.some((c) => c.id === id)),
     unlocked: [...unlockedSet],
+    evoShards,
+    evolutions,
   }
 }
 
 export function saveCardProgress(progress: CardProgress): void {
   localStorage.setItem(CARD_PROGRESS_KEY, JSON.stringify(progress))
+}
+
+export function evoShardsOwned(charId: string): number {
+  return loadCardProgress().evoShards?.[charId] ?? 0
+}
+
+export function isEvolutionUnlocked(charId: string): boolean {
+  const p = loadCardProgress()
+  if (p.evolutions?.includes(charId)) return true
+  return (p.evoShards?.[charId] ?? 0) >= EVO_SHARDS_NEEDED
+}
+
+/** Grant evolution shards; unlocks evolution at EVO_SHARDS_NEEDED. */
+export function addEvoShards(
+  charId: string,
+  amount: number,
+): { ok: boolean; message: string; unlockedEvo: boolean } {
+  if (amount <= 0 || !CHARACTERS.some((c) => c.id === charId)) {
+    return { ok: false, message: 'Invalid shards', unlockedEvo: false }
+  }
+  const progress = loadCardProgress()
+  const shards = { ...(progress.evoShards ?? {}) }
+  const before = shards[charId] ?? 0
+  const next = Math.min(EVO_SHARDS_NEEDED, before + amount)
+  shards[charId] = next
+  progress.evoShards = shards
+  let unlockedEvo = false
+  if (next >= EVO_SHARDS_NEEDED) {
+    const evo = new Set(progress.evolutions ?? [])
+    if (!evo.has(charId)) {
+      evo.add(charId)
+      unlockedEvo = true
+    }
+    progress.evolutions = [...evo]
+  }
+  saveCardProgress(progress)
+  const name = CHARACTERS.find((c) => c.id === charId)?.name ?? charId
+  return {
+    ok: true,
+    message: unlockedEvo
+      ? `${name} Evolution unlocked!`
+      : `+${amount} ${name} evo shard (${next}/${EVO_SHARDS_NEEDED})`,
+    unlockedEvo,
+  }
+}
+
+export function loadedEvolutions(): string[] {
+  return loadCardProgress().evolutions ?? []
 }
 
 export function isCardUnlocked(charId: string): boolean {
@@ -1329,6 +1396,7 @@ export function openChestNow(
   message: string
   rarity?: ChestRarity
   gold?: number
+  gems?: number
   cards?: { charId: string; copies: number; newlyUnlocked?: boolean }[]
 } {
   const chests = loadChests()
@@ -1360,6 +1428,7 @@ export function openChestNow(
     markChestGrantChested(pendingGrant.grantId)
   }
   profile.gold += loot.gold
+  if (loot.gems > 0) profile.gems += loot.gems
   const progress = loadCardProgress()
   const newlyUnlockedIds = new Set<string>()
   for (const drop of loot.cards) {
@@ -1394,11 +1463,14 @@ export function openChestNow(
       return `${d.copies}× ${c?.name ?? d.charId}`
     })
     .join(', ')
+  const gemBit = loot.gems > 0 ? ` · +${loot.gems} gems` : ''
+  const goldBit = loot.gold > 0 ? `+${loot.gold} gold` : ''
   return {
     ok: true,
-    message: `+${loot.gold} gold · ${names}${emoteMsg}`,
+    message: `${[goldBit, names].filter(Boolean).join(' · ')}${gemBit}${emoteMsg}`,
     rarity,
     gold: loot.gold,
+    gems: loot.gems,
     cards,
   }
 }

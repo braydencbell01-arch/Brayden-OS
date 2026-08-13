@@ -7,6 +7,8 @@ type Props = {
   size?: 'hand' | 'next' | 'collection'
   elixir?: number
   selected?: boolean
+  /** Show purple evolution diamond (unlocked evo / evolved play). */
+  evolved?: boolean
 }
 
 const RARITY_FRAME: Record<
@@ -39,7 +41,13 @@ const RARITY_FRAME: Record<
   },
 }
 
-export function BattleCard({ character, size = 'hand', elixir, selected }: Props) {
+export function BattleCard({
+  character,
+  size = 'hand',
+  elixir,
+  selected,
+  evolved,
+}: Props) {
   const next = size === 'next'
   const collection = size === 'collection'
 
@@ -120,6 +128,21 @@ export function BattleCard({ character, size = 'hand', elixir, selected }: Props
             style={{ height: `${greyPct}%` }}
             aria-hidden
           />
+        ) : null}
+
+        {evolved ? (
+          <div
+            className={`pointer-events-none absolute z-[4] ${next ? 'right-0.5 top-0.5' : collection ? 'right-1 top-1' : 'right-0.5 top-0.5'}`}
+            aria-label="Evolved"
+          >
+            <span
+              className={`block rotate-45 ${next ? 'h-2 w-2' : collection ? 'h-3.5 w-3.5' : 'h-2.5 w-2.5'}`}
+              style={{
+                background: 'linear-gradient(135deg,#e9b8ff,#9b2dff 45%,#5a00a8)',
+                boxShadow: '0 0 6px #c060ffcc, inset 0 1px 0 #ffffff88',
+              }}
+            />
+          </div>
         ) : null}
       </div>
     </div>

@@ -59,6 +59,8 @@ export type BattleUnit = {
   hitOnceKeys?: string[]
   /** Berry Aura — blue smoke after a kill; stronger / faster juice. */
   auraActive?: boolean
+  /** Evolution form — +30% HP / damage / speed. */
+  evolved?: boolean
 }
 
 export type Projectile = {
@@ -104,6 +106,7 @@ export type Projectile = {
   spawnAsId?: string
   spawnCount?: number
   spawnLevel?: number
+  spawnEvolved?: boolean
 }
 
 /** Impact FX — sundae splat, slobber explode, bullet boom, or melee strike. */

@@ -10,7 +10,7 @@ import {
   type CharacterDef,
   type Rarity,
 } from './characters'
-import { MAX_CARD_LEVEL, scaledStat } from './progression'
+import { EVO_SHARDS_NEEDED, MAX_CARD_LEVEL, scaledStat } from './progression'
 import {
   copiesToUpgrade,
   goldToUpgrade,
@@ -178,6 +178,8 @@ export function CharactersScreen() {
           copies={copies}
           favorite={progress.favorites.includes(profile.id)}
           unlocked={progress.unlocked.includes(profile.id)}
+          evoShards={progress.evoShards?.[profile.id] ?? 0}
+          evoUnlocked={(progress.evolutions ?? []).includes(profile.id)}
           gold={gold}
           canUpgrade={canUpgrade}
           needCopies={need}
@@ -484,6 +486,8 @@ function CardProfile({
   copies,
   favorite,
   unlocked,
+  evoShards,
+  evoUnlocked,
   canUpgrade,
   needCopies,
   upgradeCost,
@@ -497,6 +501,8 @@ function CardProfile({
   copies: number
   favorite: boolean
   unlocked: boolean
+  evoShards: number
+  evoUnlocked: boolean
   gold: number
   canUpgrade: boolean
   needCopies: number
@@ -584,7 +590,11 @@ function CardProfile({
             {unlocked ? 'Add to battle deck' : 'Locked'}
           </button>
           <div className="mx-auto w-36">
-            <BattleCard character={character} size="collection" />
+            <BattleCard
+              character={character}
+              size="collection"
+              evolved={evoUnlocked}
+            />
           </div>
           <h2 className="mt-3 text-center font-[family-name:var(--font-display)] text-3xl text-[#f5d76e]">
             {character.name}{' '}
@@ -601,6 +611,24 @@ function CardProfile({
           <p className="mt-1 text-center text-[0.7rem] font-semibold text-white/55">
             {copies}/{need} copies
           </p>
+          <div className="mt-3 rounded-lg bg-[#1a1020] px-3 py-2 ring-1 ring-[#9b2dff66]">
+            <p className="text-center text-[0.65rem] font-extrabold uppercase tracking-wide text-[#e9b8ff]">
+              {evoUnlocked
+                ? 'Evolution unlocked — 3rd play is evolved (+30%)'
+                : `Evolution shards ${Math.min(evoShards, EVO_SHARDS_NEEDED)}/${EVO_SHARDS_NEEDED}`}
+            </p>
+            {!evoUnlocked ? (
+              <div className="relative mt-1.5 h-2 overflow-hidden rounded-sm bg-[#2a1838]">
+                <div
+                  className="h-full"
+                  style={{
+                    width: `${Math.min(100, (evoShards / EVO_SHARDS_NEEDED) * 100)}%`,
+                    background: 'linear-gradient(90deg,#c080ff,#7a20d8)',
+                  }}
+                />
+              </div>
+            ) : null}
+          </div>
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
             {isSpellCard(character) ? (

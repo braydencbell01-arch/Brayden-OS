@@ -14,6 +14,7 @@ type Props = {
   auraActive?: boolean
   facing?: number
   moving?: boolean
+  evolved?: boolean
 }
 
 /** Large 2.5D troop; gameplay footprint remains 1 tile. */
@@ -27,6 +28,7 @@ export function UnitToken({
   auraActive,
   facing,
   moving,
+  evolved,
 }: Props) {
   const def = getCharacter(charId)
   if (!def) return null
@@ -91,6 +93,20 @@ export function UnitToken({
                               : '3 / 4.9',
         }}
       >
+        {evolved ? (
+          <div
+            className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-[120%]"
+            aria-hidden
+          >
+            <span
+              className="block h-2.5 w-2.5 rotate-45"
+              style={{
+                background: 'linear-gradient(135deg,#e9b8ff,#9b2dff 45%,#5a00a8)',
+                boxShadow: '0 0 8px #c060ffcc, inset 0 1px 0 #ffffff88',
+              }}
+            />
+          </div>
+        ) : null}
         <CharacterModel
           charId={charId}
           anim={anim}

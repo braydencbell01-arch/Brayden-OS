@@ -380,25 +380,36 @@ export const CHEST_EMOTE_POOL = [
 
 export function rollChestLoot(rarity: ChestRarity): {
   gold: number
+  gems: number
   cards: { charId: string; copies: number }[]
   emoteId?: string
 } {
-  const goldBase =
-    rarity === 'legendary' ? 400 : rarity === 'epic' ? 220 : rarity === 'rare' ? 120 : 60
-  const gold = goldBase + Math.floor(Math.random() * goldBase * 0.4)
-
   const pool = (r: Rarity) => CHARACTERS.filter((c) => c.rarity === r)
   const pick = (list: typeof CHARACTERS) =>
     list[Math.floor(Math.random() * list.length)] ?? CHARACTERS[0]!
+  const randInt = (lo: number, hi: number) =>
+    lo + Math.floor(Math.random() * (hi - lo + 1))
 
-  const cards: { charId: string; copies: number }[] = []
+  /** Common: independent rolls (~3 items avg). Gold / gems / common / rare only. */
   if (rarity === 'common') {
-    cards.push({ charId: pick(pool('common')).id, copies: 4 + Math.floor(Math.random() * 5) })
-    cards.push({ charId: pick(pool('common')).id, copies: 2 + Math.floor(Math.random() * 3) })
-    if (Math.random() < 0.35) {
+    const gold = Math.random() < 0.7 ? randInt(40, 100) : 0
+    const gems = Math.random() < 0.6 ? randInt(4, 10) : 0
+    const cards: { charId: string; copies: number }[] = [
+      { charId: pick(pool('common')).id, copies: randInt(1, 3) },
+    ]
+    if (Math.random() < 0.7) {
       cards.push({ charId: pick(pool('rare')).id, copies: 1 })
     }
-  } else if (rarity === 'rare') {
+    return { gold, gems, cards }
+  }
+
+  const goldBase =
+    rarity === 'legendary' ? 400 : rarity === 'epic' ? 220 : 120
+  const gold = goldBase + Math.floor(Math.random() * goldBase * 0.4)
+  const gems = 0
+
+  const cards: { charId: string; copies: number }[] = []
+  if (rarity === 'rare') {
     cards.push({ charId: pick(pool('rare')).id, copies: 3 + Math.floor(Math.random() * 4) })
     cards.push({ charId: pick(pool('common')).id, copies: 6 + Math.floor(Math.random() * 6) })
     if (Math.random() < 0.4) {
@@ -415,10 +426,19 @@ export function rollChestLoot(rarity: ChestRarity): {
   }
 
   const emoteChance =
-    rarity === 'legendary' ? 0.55 : rarity === 'epic' ? 0.35 : rarity === 'rare' ? 0.18 : 0.08
+    rarity === 'legendary' ? 0.55 : rarity === 'epic' ? 0.35 : 0.18
   let emoteId: string | undefined
   if (Math.random() < emoteChance) {
     emoteId = CHEST_EMOTE_POOL[Math.floor(Math.random() * CHEST_EMOTE_POOL.length)]
   }
-  return { gold, cards, emoteId }
+  return { gold, gems, cards, emoteId }
+}
+
+/** Evolution shards needed to unlock a card's evolution. */
+export const EVO_SHARDS_NEEDED = 5
+/** Evolved form: +30% HP, damage, and move speed. */
+export const EVO_STAT_MULT = 1.3
+
+export function evoStatMult(evolved: boolean): number {
+  return evolved ? EVO_STAT_MULT : 1
 }
