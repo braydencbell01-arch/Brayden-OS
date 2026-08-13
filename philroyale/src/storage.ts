@@ -1215,6 +1215,55 @@ export function startChestUnlock(chestId: string): { ok: boolean; message: strin
   return { ok: true, message: `Unlocking ${CHEST_META[chest.rarity].label}` }
 }
 
+/** One-shot named grants injected into the player's next chest (any rarity). */
+const NAMED_CHEST_CARD_GRANTS: ReadonlyArray<{
+  id: string
+  playerName: string
+  charId: string
+  copies: number
+}> = [
+  {
+    id: 'caleb0416-evil-phil-next-chest',
+    playerName: 'Caleb0416',
+    charId: 'evilPhil',
+    copies: 1,
+  },
+]
+
+const CONSUMED_CHEST_GRANTS_KEY = 'philroyale.consumedChestGrants.v1'
+
+function loadConsumedChestGrantIds(): string[] {
+  try {
+    const raw = localStorage.getItem(CONSUMED_CHEST_GRANTS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((x): x is string => typeof x === 'string')
+  } catch {
+    return []
+  }
+}
+
+function markChestGrantConsumed(grantId: string): void {
+  const ids = loadConsumedChestGrantIds()
+  if (ids.includes(grantId)) return
+  ids.push(grantId)
+  localStorage.setItem(CONSUMED_CHEST_GRANTS_KEY, JSON.stringify(ids))
+}
+
+function takePendingChestCardGrant(
+  playerName: string,
+): { grantId: string; charId: string; copies: number } | null {
+  const name = playerName.trim().toLowerCase()
+  if (!name) return null
+  const consumed = new Set(loadConsumedChestGrantIds())
+  const grant = NAMED_CHEST_CARD_GRANTS.find(
+    (g) => g.playerName.trim().toLowerCase() === name && !consumed.has(g.id),
+  )
+  if (!grant) return null
+  return { grantId: grant.id, charId: grant.charId, copies: grant.copies }
+}
+
 export function openChestNow(
   chestId: string,
   payGold: boolean,
@@ -1238,6 +1287,19 @@ export function openChestNow(
     profile.gold -= cost
   }
   const loot = rollChestLoot(chest.rarity)
+  const pendingGrant = takePendingChestCardGrant(loadPlayerName())
+  if (pendingGrant) {
+    const existing = loot.cards.find((c) => c.charId === pendingGrant.charId)
+    if (existing) {
+      existing.copies = Math.max(existing.copies, pendingGrant.copies)
+    } else {
+      loot.cards.unshift({
+        charId: pendingGrant.charId,
+        copies: pendingGrant.copies,
+      })
+    }
+    markChestGrantConsumed(pendingGrant.grantId)
+  }
   profile.gold += loot.gold
   const progress = loadCardProgress()
   for (const drop of loot.cards) {
