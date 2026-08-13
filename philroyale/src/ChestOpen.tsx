@@ -9,6 +9,7 @@ export type ChestLoot = {
   gold: number
   gems?: number
   cards: { charId: string; copies: number; newlyUnlocked?: boolean }[]
+  evoShards?: { charId: string; shards: number; unlockedEvo?: boolean }[]
 }
 
 type InspectProps = {
@@ -239,23 +240,34 @@ type RevealStep =
   | { kind: 'gold' }
   | { kind: 'gems' }
   | { kind: 'card'; index: number }
+  | { kind: 'shard'; index: number }
   | { kind: 'summary' }
 
 function firstLootStep(loot: ChestLoot): RevealStep {
   if (loot.gold > 0) return { kind: 'gold' }
   if ((loot.gems ?? 0) > 0) return { kind: 'gems' }
   if (loot.cards.length) return { kind: 'card', index: 0 }
+  if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
   return { kind: 'summary' }
 }
 
 function afterGold(loot: ChestLoot): RevealStep {
   if ((loot.gems ?? 0) > 0) return { kind: 'gems' }
   if (loot.cards.length) return { kind: 'card', index: 0 }
+  if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
   return { kind: 'summary' }
 }
 
 function afterGems(loot: ChestLoot): RevealStep {
   if (loot.cards.length) return { kind: 'card', index: 0 }
+  if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
+  return { kind: 'summary' }
+}
+
+function afterCards(loot: ChestLoot, cardIndex: number): RevealStep {
+  const next = cardIndex + 1
+  if (next < loot.cards.length) return { kind: 'card', index: next }
+  if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
   return { kind: 'summary' }
 }
 
@@ -285,8 +297,13 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
       return
     }
     if (step.kind === 'card') {
+      setStep(afterCards(loot, step.index))
+      return
+    }
+    if (step.kind === 'shard') {
       const next = step.index + 1
-      if (next < loot.cards.length) setStep({ kind: 'card', index: next })
+      const shards = loot.evoShards ?? []
+      if (next < shards.length) setStep({ kind: 'shard', index: next })
       else setStep({ kind: 'summary' })
       return
     }
@@ -296,6 +313,9 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
   const cardDrop =
     step.kind === 'card' ? loot.cards[step.index] : null
   const cardDef = cardDrop ? getCharacter(cardDrop.charId) : null
+  const shardDrop =
+    step.kind === 'shard' ? (loot.evoShards ?? [])[step.index] : null
+  const shardDef = shardDrop ? getCharacter(shardDrop.charId) : null
 
   return (
     <div
@@ -423,6 +443,44 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
           </motion.div>
         ) : null}
 
+        {step.kind === 'shard' && shardDef && shardDrop ? (
+          <motion.div
+            key={`shard-${step.index}`}
+            className="flex flex-col items-center"
+            initial={{ scale: 0.4, rotate: 8, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            exit={{ scale: 0.7, opacity: 0 }}
+          >
+            <div className="relative w-36">
+              <BattleCard character={shardDef} size="collection" evolved />
+              <div
+                className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                aria-hidden
+              >
+                <span
+                  className="block h-10 w-10 rotate-45"
+                  style={{
+                    background: 'linear-gradient(135deg,#e9b8ff,#9b2dff 45%,#5a00a8)',
+                    boxShadow: '0 0 18px #c060ffcc',
+                  }}
+                />
+              </div>
+            </div>
+            <p className="mt-3 font-[family-name:var(--font-display)] text-2xl text-[#e9b8ff]">
+              {shardDef.name}
+            </p>
+            <p className="text-lg font-extrabold text-white">
+              ×{shardDrop.shards} evo shard{shardDrop.shards === 1 ? '' : 's'}
+            </p>
+            {shardDrop.unlockedEvo ? (
+              <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide text-[#c080ff]">
+                Evolution unlocked!
+              </p>
+            ) : null}
+            <p className="mt-6 text-xs font-bold text-white/50">Tap to continue</p>
+          </motion.div>
+        ) : null}
+
         {step.kind === 'summary' ? (
           <motion.div
             key="summary"
@@ -455,6 +513,22 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
                     {d.newlyUnlocked ? (
                       <span className="mt-0.5 block text-xs font-extrabold uppercase tracking-wide text-[#7dff9a]">
                         Unlocked!
+                      </span>
+                    ) : null}
+                  </li>
+                )
+              })}
+              {(loot.evoShards ?? []).map((d) => {
+                const c = getCharacter(d.charId)
+                return (
+                  <li
+                    key={`evo-${d.charId}-${d.shards}`}
+                    className="rounded-lg bg-[#1a1020] px-3 py-2 text-center text-sm font-extrabold text-[#e9b8ff] ring-1 ring-[#9b2dff66]"
+                  >
+                    {d.shards}× {c?.name ?? d.charId} evo shard
+                    {d.unlockedEvo ? (
+                      <span className="mt-0.5 block text-xs font-extrabold uppercase tracking-wide text-[#c080ff]">
+                        Evolution unlocked!
                       </span>
                     ) : null}
                   </li>

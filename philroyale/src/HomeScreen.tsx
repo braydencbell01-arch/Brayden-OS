@@ -187,7 +187,12 @@ export function HomeScreen({
     setInspectId(null)
     setReveal({
       rarity: res.rarity,
-      loot: { gold: res.gold, gems: res.gems ?? 0, cards: res.cards },
+      loot: {
+        gold: res.gold,
+        gems: res.gems ?? 0,
+        cards: res.cards,
+        evoShards: res.evoShards ?? [],
+      },
     })
     refresh()
   }

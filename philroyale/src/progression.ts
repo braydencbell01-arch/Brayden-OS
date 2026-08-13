@@ -361,77 +361,75 @@ export function allShopOffers(dayKey: string): ShopOffer[] {
   return [...dailyShopOffers(dayKey), ...chestShopOffers(dayKey)]
 }
 
-/** Character / photo emotes that can drop from chests (not free emoji). */
-export const CHEST_EMOTE_POOL = [
-  'coach',
-  'hood',
-  'buzz',
-  'emote-phil',
-  'emote-jeremy',
-  'emote-kathie',
-  'emote-todd',
-  'emote-mike',
-  'emote-beans',
-  'emote-lynne',
-  'emote-evilPhil',
-  'emote-pete',
-  'emote-dan',
-]
-
 export function rollChestLoot(rarity: ChestRarity): {
   gold: number
   gems: number
   cards: { charId: string; copies: number }[]
-  emoteId?: string
+  evoShards: { charId: string; shards: number }[]
 } {
   const pool = (r: Rarity) => CHARACTERS.filter((c) => c.rarity === r)
   const pick = (list: typeof CHARACTERS) =>
     list[Math.floor(Math.random() * list.length)] ?? CHARACTERS[0]!
   const randInt = (lo: number, hi: number) =>
     lo + Math.floor(Math.random() * (hi - lo + 1))
+  const chance = (p: number) => Math.random() < p
 
-  /** Common: independent rolls (~3 items avg). Gold / gems / common / rare only. */
   if (rarity === 'common') {
-    const gold = Math.random() < 0.7 ? randInt(40, 100) : 0
-    const gems = Math.random() < 0.6 ? randInt(4, 10) : 0
-    const cards: { charId: string; copies: number }[] = [
-      { charId: pick(pool('common')).id, copies: randInt(1, 3) },
-    ]
-    if (Math.random() < 0.7) {
-      cards.push({ charId: pick(pool('rare')).id, copies: 1 })
+    return {
+      gold: chance(0.7) ? randInt(40, 100) : 0,
+      gems: chance(0.6) ? randInt(4, 10) : 0,
+      cards: [
+        { charId: pick(pool('common')).id, copies: randInt(1, 3) },
+        ...(chance(0.7) ? [{ charId: pick(pool('rare')).id, copies: 1 }] : []),
+      ],
+      evoShards: [],
     }
-    return { gold, gems, cards }
   }
 
-  const goldBase =
-    rarity === 'legendary' ? 400 : rarity === 'epic' ? 220 : 120
-  const gold = goldBase + Math.floor(Math.random() * goldBase * 0.4)
-  const gems = 0
-
-  const cards: { charId: string; copies: number }[] = []
   if (rarity === 'rare') {
-    cards.push({ charId: pick(pool('rare')).id, copies: 3 + Math.floor(Math.random() * 4) })
-    cards.push({ charId: pick(pool('common')).id, copies: 6 + Math.floor(Math.random() * 6) })
-    if (Math.random() < 0.4) {
-      cards.push({ charId: pick(pool('epic')).id, copies: 1 })
+    return {
+      gold: chance(0.8) ? randInt(80, 200) : 0,
+      gems: chance(0.5) ? randInt(8, 20) : 0,
+      cards: [
+        ...(chance(0.85) ? [{ charId: pick(pool('common')).id, copies: randInt(1, 5) }] : []),
+        { charId: pick(pool('rare')).id, copies: randInt(1, 3) },
+        ...(chance(0.6) ? [{ charId: pick(pool('epic')).id, copies: 1 }] : []),
+      ],
+      evoShards: chance(0.25)
+        ? [{ charId: pick(CHARACTERS).id, shards: 1 }]
+        : [],
     }
-  } else if (rarity === 'epic') {
-    cards.push({ charId: pick(pool('epic')).id, copies: 2 + Math.floor(Math.random() * 3) })
-    cards.push({ charId: pick(pool('rare')).id, copies: 4 + Math.floor(Math.random() * 4) })
-    cards.push({ charId: pick(pool('common')).id, copies: 8 })
-  } else {
-    cards.push({ charId: pick(pool('legendary')).id, copies: 1 })
-    cards.push({ charId: pick(pool('epic')).id, copies: 2 + Math.floor(Math.random() * 2) })
-    cards.push({ charId: pick(pool('rare')).id, copies: 5 })
   }
 
-  const emoteChance =
-    rarity === 'legendary' ? 0.55 : rarity === 'epic' ? 0.35 : 0.18
-  let emoteId: string | undefined
-  if (Math.random() < emoteChance) {
-    emoteId = CHEST_EMOTE_POOL[Math.floor(Math.random() * CHEST_EMOTE_POOL.length)]
+  if (rarity === 'epic') {
+    return {
+      gold: chance(0.9) ? randInt(160, 400) : 0,
+      gems: chance(0.75) ? randInt(16, 40) : 0,
+      cards: [
+        ...(chance(0.65) ? [{ charId: pick(pool('common')).id, copies: randInt(1, 8) }] : []),
+        ...(chance(0.85) ? [{ charId: pick(pool('rare')).id, copies: randInt(1, 5) }] : []),
+        { charId: pick(pool('epic')).id, copies: randInt(1, 3) },
+        ...(chance(0.25) ? [{ charId: pick(pool('legendary')).id, copies: 1 }] : []),
+      ],
+      evoShards: chance(0.6)
+        ? [{ charId: pick(CHARACTERS).id, shards: randInt(1, 3) }]
+        : [],
+    }
   }
-  return { gold, gems, cards, emoteId }
+
+  // Legendary
+  return {
+    gold: randInt(320, 800),
+    gems: randInt(32, 80),
+    cards: [
+      ...(chance(0.5) ? [{ charId: pick(pool('common')).id, copies: randInt(1, 15) }] : []),
+      ...(chance(0.65) ? [{ charId: pick(pool('rare')).id, copies: randInt(1, 8) }] : []),
+      ...(chance(0.85) ? [{ charId: pick(pool('epic')).id, copies: randInt(1, 5) }] : []),
+      { charId: pick(pool('legendary')).id, copies: randInt(1, 3) },
+    ],
+    // Count not specified — scale above epic (1–3) as 1–5.
+    evoShards: [{ charId: pick(CHARACTERS).id, shards: randInt(1, 5) }],
+  }
 }
 
 /** Evolution shards needed to unlock a card's evolution. */

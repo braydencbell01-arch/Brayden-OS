@@ -1398,6 +1398,7 @@ export function openChestNow(
   gold?: number
   gems?: number
   cards?: { charId: string; copies: number; newlyUnlocked?: boolean }[]
+  evoShards?: { charId: string; shards: number; unlockedEvo?: boolean }[]
 } {
   const chests = loadChests()
   const idx = chests.findIndex((c) => c.id === chestId)
@@ -1442,14 +1443,19 @@ export function openChestNow(
   }
   saveCardProgress(progress)
   saveProfile(profile)
-  let emoteMsg = ''
-  if (loot.emoteId) {
-    const unlocked = grantEmote(loot.emoteId)
-    if (unlocked) {
-      const em = getEmoteById(loot.emoteId)
-      emoteMsg = ` · Emote: ${em?.label ?? loot.emoteId}`
+
+  const evoShardDrops: { charId: string; shards: number; unlockedEvo?: boolean }[] = []
+  for (const drop of loot.evoShards) {
+    const res = addEvoShards(drop.charId, drop.shards)
+    if (res.ok) {
+      evoShardDrops.push({
+        charId: drop.charId,
+        shards: drop.shards,
+        unlockedEvo: res.unlockedEvo,
+      })
     }
   }
+
   const rarity = chest.rarity
   chests.splice(idx, 1)
   saveChests(chests)
@@ -1463,15 +1469,23 @@ export function openChestNow(
       return `${d.copies}× ${c?.name ?? d.charId}`
     })
     .join(', ')
+  const shardBit = evoShardDrops
+    .map((d) => {
+      const c = CHARACTERS.find((x) => x.id === d.charId)
+      return `${d.shards}× ${c?.name ?? d.charId} evo`
+    })
+    .join(', ')
   const gemBit = loot.gems > 0 ? ` · +${loot.gems} gems` : ''
   const goldBit = loot.gold > 0 ? `+${loot.gold} gold` : ''
+  const shardMsg = shardBit ? ` · ${shardBit}` : ''
   return {
     ok: true,
-    message: `${[goldBit, names].filter(Boolean).join(' · ')}${gemBit}${emoteMsg}`,
+    message: `${[goldBit, names].filter(Boolean).join(' · ')}${gemBit}${shardMsg}`,
     rarity,
     gold: loot.gold,
     gems: loot.gems,
     cards,
+    evoShards: evoShardDrops,
   }
 }
 
