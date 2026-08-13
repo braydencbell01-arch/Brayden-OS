@@ -68,6 +68,7 @@ import {
   saveIncomingClubInvite,
   savePendingFriendLink,
   savePlayerName,
+  applyNamedPlayerCardGrants,
   shareText,
   battleInviteUrl,
   upsertFriend,
@@ -633,6 +634,7 @@ export default function App() {
 
   useEffect(() => {
     const id = loadPlayerId()
+    applyNamedPlayerCardGrants()
     const flag = 'philroyale.friendCodeRelayV5.v1'
     if (!localStorage.getItem(flag)) {
       localStorage.setItem(flag, '1')

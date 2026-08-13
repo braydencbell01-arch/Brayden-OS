@@ -317,6 +317,7 @@ export function loadPlayerName(): string {
 
 export function savePlayerName(name: string): void {
   localStorage.setItem(PLAYER_NAME_KEY, name.trim())
+  applyNamedPlayerCardGrants()
 }
 
 /** Friend codes are 6 digits — unique enough that two players rarely share a topic. */
@@ -1215,53 +1216,108 @@ export function startChestUnlock(chestId: string): { ok: boolean; message: strin
   return { ok: true, message: `Unlocking ${CHEST_META[chest.rarity].label}` }
 }
 
-/** One-shot named grants injected into the player's next chest (any rarity). */
-const NAMED_CHEST_CARD_GRANTS: ReadonlyArray<{
+/**
+ * One-shot named player grants.
+ * Phil Royale progress is localStorage-only, so we match by player name
+ * (alphanumeric, case-insensitive) and deliver both:
+ * - immediate unlock into the collection (guaranteed)
+ * - injection into the next chest open (visible reveal)
+ */
+const NAMED_PLAYER_CARD_GRANTS: ReadonlyArray<{
   id: string
   playerName: string
   charId: string
   copies: number
 }> = [
   {
-    id: 'caleb0416-evil-phil-next-chest',
+    id: 'caleb0416-evil-phil-v2',
     playerName: 'Caleb0416',
     charId: 'evilPhil',
     copies: 1,
   },
 ]
 
-const CONSUMED_CHEST_GRANTS_KEY = 'philroyale.consumedChestGrants.v1'
+const NAMED_GRANT_STATE_KEY = 'philroyale.namedCardGrants.v2'
 
-function loadConsumedChestGrantIds(): string[] {
+type NamedGrantState = Record<string, { unlocked?: boolean; chested?: boolean }>
+
+function normalizeGrantName(name: string): string {
+  return name.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function loadNamedGrantState(): NamedGrantState {
   try {
-    const raw = localStorage.getItem(CONSUMED_CHEST_GRANTS_KEY)
-    if (!raw) return []
+    const raw = localStorage.getItem(NAMED_GRANT_STATE_KEY)
+    if (!raw) return {}
     const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) return []
-    return parsed.filter((x): x is string => typeof x === 'string')
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    return parsed as NamedGrantState
   } catch {
-    return []
+    return {}
   }
 }
 
-function markChestGrantConsumed(grantId: string): void {
-  const ids = loadConsumedChestGrantIds()
-  if (ids.includes(grantId)) return
-  ids.push(grantId)
-  localStorage.setItem(CONSUMED_CHEST_GRANTS_KEY, JSON.stringify(ids))
+function saveNamedGrantState(state: NamedGrantState): void {
+  localStorage.setItem(NAMED_GRANT_STATE_KEY, JSON.stringify(state))
+}
+
+function grantsForPlayerName(playerName: string) {
+  const key = normalizeGrantName(playerName)
+  if (!key) return []
+  return NAMED_PLAYER_CARD_GRANTS.filter(
+    (g) => normalizeGrantName(g.playerName) === key,
+  )
+}
+
+/** Unlock named grants into the collection as soon as the player name matches. */
+export function applyNamedPlayerCardGrants(): { granted: string[] } {
+  const grants = grantsForPlayerName(loadPlayerName())
+  if (!grants.length) return { granted: [] }
+  const state = loadNamedGrantState()
+  const progress = loadCardProgress()
+  const granted: string[] = []
+  let dirty = false
+  for (const grant of grants) {
+    const st = state[grant.id] ?? {}
+    if (st.unlocked) continue
+    const alreadyOwned = progress.unlocked.includes(grant.charId)
+    if (!alreadyOwned) {
+      progress.unlocked.push(grant.charId)
+      const char = CHARACTERS.find((c) => c.id === grant.charId)
+      const base = char ? startingCopiesFor(char.rarity) : grant.copies
+      progress.copies[grant.charId] = Math.max(
+        progress.copies[grant.charId] ?? 0,
+        Math.max(base, grant.copies),
+      )
+      granted.push(grant.charId)
+      dirty = true
+    } else {
+      progress.copies[grant.charId] =
+        (progress.copies[grant.charId] ?? 0) + grant.copies
+      dirty = true
+    }
+    state[grant.id] = { ...st, unlocked: true }
+  }
+  if (dirty) saveCardProgress(progress)
+  saveNamedGrantState(state)
+  return { granted }
 }
 
 function takePendingChestCardGrant(
   playerName: string,
 ): { grantId: string; charId: string; copies: number } | null {
-  const name = playerName.trim().toLowerCase()
-  if (!name) return null
-  const consumed = new Set(loadConsumedChestGrantIds())
-  const grant = NAMED_CHEST_CARD_GRANTS.find(
-    (g) => g.playerName.trim().toLowerCase() === name && !consumed.has(g.id),
-  )
+  const grants = grantsForPlayerName(playerName)
+  if (!grants.length) return null
+  const state = loadNamedGrantState()
+  const grant = grants.find((g) => !state[g.id]?.chested)
   if (!grant) return null
   return { grantId: grant.id, charId: grant.charId, copies: grant.copies }
+}
+
+function markChestGrantChested(grantId: string): void {
+  const state = loadNamedGrantState()
+  state[grantId] = { ...state[grantId], chested: true }
+  saveNamedGrantState(state)
 }
 
 export function openChestNow(
@@ -1286,6 +1342,8 @@ export function openChestNow(
     if (profile.gold < cost) return { ok: false, message: `Need ${cost} gold` }
     profile.gold -= cost
   }
+  const ownedBeforeOpen = new Set(loadCardProgress().unlocked)
+  applyNamedPlayerCardGrants()
   const loot = rollChestLoot(chest.rarity)
   const pendingGrant = takePendingChestCardGrant(loadPlayerName())
   if (pendingGrant) {
@@ -1298,14 +1356,13 @@ export function openChestNow(
         copies: pendingGrant.copies,
       })
     }
-    markChestGrantConsumed(pendingGrant.grantId)
+    markChestGrantChested(pendingGrant.grantId)
   }
   profile.gold += loot.gold
   const progress = loadCardProgress()
-  const previouslyUnlocked = new Set(progress.unlocked)
   const newlyUnlockedIds = new Set<string>()
   for (const drop of loot.cards) {
-    if (!previouslyUnlocked.has(drop.charId)) {
+    if (!ownedBeforeOpen.has(drop.charId)) {
       newlyUnlockedIds.add(drop.charId)
     }
     progress.copies[drop.charId] = (progress.copies[drop.charId] ?? 0) + drop.copies
