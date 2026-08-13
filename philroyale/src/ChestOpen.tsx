@@ -7,7 +7,7 @@ import type { OwnedChest } from './storage'
 
 export type ChestLoot = {
   gold: number
-  cards: { charId: string; copies: number }[]
+  cards: { charId: string; copies: number; newlyUnlocked?: boolean }[]
 }
 
 type InspectProps = {
@@ -364,6 +364,11 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
               {cardDef.name}
             </p>
             <p className="text-lg font-extrabold text-white">×{cardDrop.copies}</p>
+            {cardDrop.newlyUnlocked ? (
+              <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide text-[#7dff9a]">
+                Unlocked!
+              </p>
+            ) : null}
             <p className="mt-6 text-xs font-bold text-white/50">Tap to continue</p>
           </motion.div>
         ) : null}
@@ -390,6 +395,11 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
                     className="rounded-lg bg-[#2a1a12] px-3 py-2 text-center text-sm font-extrabold text-white ring-1 ring-white/10"
                   >
                     {d.copies}× {c?.name ?? d.charId}
+                    {d.newlyUnlocked ? (
+                      <span className="mt-0.5 block text-xs font-extrabold uppercase tracking-wide text-[#7dff9a]">
+                        Unlocked!
+                      </span>
+                    ) : null}
                   </li>
                 )
               })}

@@ -1272,7 +1272,7 @@ export function openChestNow(
   message: string
   rarity?: ChestRarity
   gold?: number
-  cards?: { charId: string; copies: number }[]
+  cards?: { charId: string; copies: number; newlyUnlocked?: boolean }[]
 } {
   const chests = loadChests()
   const idx = chests.findIndex((c) => c.id === chestId)
@@ -1302,7 +1302,12 @@ export function openChestNow(
   }
   profile.gold += loot.gold
   const progress = loadCardProgress()
+  const previouslyUnlocked = new Set(progress.unlocked)
+  const newlyUnlockedIds = new Set<string>()
   for (const drop of loot.cards) {
+    if (!previouslyUnlocked.has(drop.charId)) {
+      newlyUnlockedIds.add(drop.charId)
+    }
     progress.copies[drop.charId] = (progress.copies[drop.charId] ?? 0) + drop.copies
     if (!progress.unlocked.includes(drop.charId)) {
       progress.unlocked.push(drop.charId)
@@ -1321,7 +1326,11 @@ export function openChestNow(
   const rarity = chest.rarity
   chests.splice(idx, 1)
   saveChests(chests)
-  const names = loot.cards
+  const cards = loot.cards.map((d) => ({
+    ...d,
+    newlyUnlocked: newlyUnlockedIds.has(d.charId),
+  }))
+  const names = cards
     .map((d) => {
       const c = CHARACTERS.find((x) => x.id === d.charId)
       return `${d.copies}× ${c?.name ?? d.charId}`
@@ -1332,7 +1341,7 @@ export function openChestNow(
     message: `+${loot.gold} gold · ${names}${emoteMsg}`,
     rarity,
     gold: loot.gold,
-    cards: loot.cards,
+    cards,
   }
 }
 
