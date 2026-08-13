@@ -1,6 +1,7 @@
 import type { AttackId } from './characters'
 import { getCharacter } from './characters'
 import { CharacterModel, type CharacterAnim } from './characters/CharacterModel'
+import { ChickenBarrelModel } from './characters/ChickenBarrelModel'
 import { ARENA_TILT_DEG } from './camera'
 
 type Props = {
@@ -236,35 +237,11 @@ export function FootballDot() {
   )
 }
 
-/** Flying Chicken Barrel keg. */
+/** Flying Chicken Barrel keg — same tilted keg + chicken as the card. */
 export function BarrelDot() {
   return (
-    <div
-      className="relative h-7 w-6"
-      style={{
-        borderRadius: '42% / 36%',
-        background:
-          'linear-gradient(90deg,#5a3010 0%,#c48a3a 22%,#e8b86a 50%,#c48a3a 78%,#5a3010 100%)',
-        boxShadow: '0 2px 4px #0009, inset 0 1px 0 #f5d09066',
-      }}
-      aria-hidden
-    >
-      <div
-        className="absolute left-[8%] right-[8%] top-[18%] h-[2px] rounded-full"
-        style={{ background: '#2a1408' }}
-      />
-      <div
-        className="absolute left-[6%] right-[6%] top-1/2 h-[2.5px] -translate-y-1/2 rounded-full"
-        style={{ background: '#2a1408' }}
-      />
-      <div
-        className="absolute left-[8%] right-[8%] bottom-[18%] h-[2px] rounded-full"
-        style={{ background: '#2a1408' }}
-      />
-      <div
-        className="absolute left-1/2 top-[6%] h-[18%] w-[70%] -translate-x-1/2 rounded-full"
-        style={{ background: '#8a5a28', boxShadow: 'inset 0 0 0 1px #3a1a08' }}
-      />
+    <div className="relative h-12 w-10 overflow-visible" aria-hidden>
+      <ChickenBarrelModel anim="idle" facing={0} portrait={false} />
     </div>
   )
 }

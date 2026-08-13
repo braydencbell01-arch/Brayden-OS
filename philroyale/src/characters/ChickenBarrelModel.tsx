@@ -1,4 +1,8 @@
+import { useId } from 'react'
+import { CARD_PORTRAIT_BG } from './cardArt'
 import type { CharacterAnim } from './PhilModel'
+
+const CHICKEN = `${import.meta.env.BASE_URL}characters/chicken-troop.png`
 
 type Props = {
   anim: CharacterAnim
@@ -6,68 +10,112 @@ type Props = {
   portrait?: boolean
 }
 
-/** Chicken Barrel — wooden keg with chickens packed inside (spell card). */
+/** Clash Goblin Barrel pose — tilted open keg with the in-game chicken peeking out. */
 export function ChickenBarrelModel({ portrait }: Props) {
+  const uid = useId().replace(/:/g, '')
   return (
-    <div className="relative h-full w-full overflow-hidden" aria-hidden>
-      <svg
-        viewBox="0 0 80 100"
-        className="h-full w-full"
-        preserveAspectRatio={portrait ? 'xMidYMid slice' : 'xMidYMid meet'}
+    <div
+      className={`relative h-full w-full ${portrait ? 'overflow-hidden' : 'overflow-visible'}`}
+      style={{ background: portrait ? CARD_PORTRAIT_BG : 'transparent' }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-1/2 top-[56%] h-[108%] w-[108%] -translate-x-1/2 -translate-y-1/2"
+        style={{ transform: 'translate(-50%, -50%) rotate(-38deg)' }}
       >
-        <defs>
-          <linearGradient id="cbSky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6ec8ff" />
-            <stop offset="55%" stopColor="#c8e8a8" />
-            <stop offset="100%" stopColor="#5a8a38" />
-          </linearGradient>
-          <linearGradient id="cbWood" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#5a3010" />
-            <stop offset="22%" stopColor="#c48a3a" />
-            <stop offset="50%" stopColor="#e8b86a" />
-            <stop offset="78%" stopColor="#c48a3a" />
-            <stop offset="100%" stopColor="#5a3010" />
-          </linearGradient>
-        </defs>
-        <rect width="80" height="100" fill="url(#cbSky)" />
-        <ellipse cx="40" cy="86" rx="28" ry="6" fill="#3a5a20" opacity="0.45" />
-        {/* Barrel */}
-        <ellipse cx="40" cy="38" rx="22" ry="8" fill="#8a5a28" />
-        <path
-          d="M18 40 C18 78 62 78 62 40"
-          fill="url(#cbWood)"
-          stroke="#3a1a08"
-          strokeWidth="1.4"
+        <svg
+          className="absolute inset-0 z-0 h-full w-full"
+          viewBox="0 0 100 130"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <radialGradient id={`${uid}-hole`} cx="48%" cy="42%" r="70%">
+              <stop offset="0%" stopColor="#1a0c06" />
+              <stop offset="100%" stopColor="#3a2210" />
+            </radialGradient>
+          </defs>
+          {/* Far rim + hollow interior (behind the chicken). */}
+          <ellipse cx="50" cy="42" rx="33" ry="15" fill="#6a4220" />
+          <ellipse cx="50" cy="44" rx="27" ry="12" fill={`url(#${uid}-hole)`} />
+        </svg>
+
+        {/* Same chicken-troop sprite — head / comb / beak out of the open top. */}
+        <img
+          src={CHICKEN}
+          alt=""
+          draggable={false}
+          className="pointer-events-none absolute z-[1] object-cover"
+          style={{
+            left: '16%',
+            top: '-6%',
+            width: '68%',
+            height: '58%',
+            objectPosition: '50% 0%',
+            clipPath: 'inset(0 18% 38% 8%)',
+            filter: 'brightness(1.06) saturate(1.08)',
+          }}
         />
-        <ellipse cx="40" cy="40" rx="22" ry="8" fill="#d4a06a" stroke="#5a3010" strokeWidth="1.2" />
-        <ellipse cx="40" cy="40" rx="14" ry="5" fill="#6a3a12" />
-        <ellipse cx="40" cy="40" rx="8" ry="3" fill="#2a1408" />
-        {[52, 62, 72].map((y) => (
+
+        <svg
+          className="absolute inset-0 z-[2] h-full w-full"
+          viewBox="0 0 100 130"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <linearGradient id={`${uid}-wood`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#5a3010" />
+              <stop offset="16%" stopColor="#a56a32" />
+              <stop offset="38%" stopColor="#e0b06a" />
+              <stop offset="52%" stopColor="#f0d08a" />
+              <stop offset="70%" stopColor="#c4843a" />
+              <stop offset="100%" stopColor="#4a240c" />
+            </linearGradient>
+            <linearGradient id={`${uid}-hoop`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3a2414" />
+              <stop offset="45%" stopColor="#6a4428" />
+              <stop offset="100%" stopColor="#2a1608" />
+            </linearGradient>
+            <clipPath id={`${uid}-body`}>
+              <path d="M18 56 C12 78 13 98 22 118 A28 11 0 0 0 78 118 C87 98 88 78 82 56 A32 14 0 0 1 18 56 Z" />
+            </clipPath>
+          </defs>
+          {/* Front wall — covers the chicken body, leaves the open top clear. */}
           <path
-            key={y}
-            d={`M20 ${y} Q40 ${y + 6} 60 ${y}`}
-            fill="none"
-            stroke="#2a1408"
-            strokeWidth="2.2"
+            d="M18 56 C12 78 13 98 22 118 A28 11 0 0 0 78 118 C87 98 88 78 82 56 A32 14 0 0 1 18 56 Z"
+            fill={`url(#${uid}-wood)`}
+            stroke="#3a1a08"
+            strokeWidth="1.1"
           />
-        ))}
-        {/* Chickens peeking from the lid */}
-        <g transform="translate(28 28)">
-          <ellipse cx="0" cy="0" rx="6" ry="5.2" fill="#f0c040" />
-          <circle cx="-2" cy="-1" r="1.1" fill="#1a1008" />
-          <path d="M6 0 L11 1 L6 3 Z" fill="#e07020" />
-        </g>
-        <g transform="translate(40 24)">
-          <ellipse cx="0" cy="0" rx="6.4" ry="5.6" fill="#f5d76e" />
-          <circle cx="-2.2" cy="-1" r="1.15" fill="#1a1008" />
-          <path d="M6.2 0 L12 1.2 L6.2 3.2 Z" fill="#e07020" />
-        </g>
-        <g transform="translate(52 29)">
-          <ellipse cx="0" cy="0" rx="5.8" ry="5" fill="#e8b84a" />
-          <circle cx="-1.8" cy="-0.8" r="1.05" fill="#1a1008" />
-          <path d="M5.6 0 L10.5 1 L5.6 2.8 Z" fill="#e07020" />
-        </g>
-      </svg>
+          <g clipPath={`url(#${uid}-body)`}>
+            {[22, 30, 38, 46, 54, 62, 70, 78].map((x) => (
+              <path
+                key={x}
+                d={`M${x} 54 L${x} 120`}
+                fill="none"
+                stroke="#5a301088"
+                strokeWidth="1.15"
+              />
+            ))}
+            <path
+              d="M12 72 C50 82 88 72 88 72 L86 80 C50 90 14 80 14 80 Z"
+              fill={`url(#${uid}-hoop)`}
+            />
+            <path
+              d="M16 100 C50 110 84 100 84 100 L82 108 C50 118 18 108 18 108 Z"
+              fill={`url(#${uid}-hoop)`}
+            />
+          </g>
+          {/* Near rim in front of the chicken’s chest. */}
+          <path
+            d="M18 56 A32 14 0 0 0 82 56"
+            fill="none"
+            stroke="#c48a3a"
+            strokeWidth="3.4"
+            strokeLinecap="round"
+          />
+          <ellipse cx="50" cy="118" rx="28" ry="10" fill="#6a3e18" stroke="#3a1a08" strokeWidth="1" />
+        </svg>
+      </div>
     </div>
   )
 }
