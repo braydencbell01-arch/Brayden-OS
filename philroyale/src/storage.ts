@@ -992,6 +992,7 @@ export function loadCardProgress(): CardProgress {
   for (const idx of road.claimed) {
     const step = TROPHY_ROAD[idx]
     if (step?.unlockCard) unlockedSet.add(step.unlockCard)
+    if (step?.cardCopies?.charId) unlockedSet.add(step.cardCopies.charId)
   }
   for (const c of CHARACTERS) {
     const level = Math.max(1, Math.min(MAX_CARD_LEVEL, raw.levels?.[c.id] ?? 1))
