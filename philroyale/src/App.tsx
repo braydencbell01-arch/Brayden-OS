@@ -295,6 +295,24 @@ export default function App() {
     }, [flashFriend],
   )
 
+  // Must stay above name / draft / battle early returns (Rules of Hooks).
+  // Previously these sat after those returns and crashed to a black screen on
+  // first-time name submit and when opening Touchdown draft.
+  const handlePeerLinkFailed = useCallback(() => {
+    setBattleNet(null)
+    flashFriend("Friend didn't connect — training match vs bot.")
+  }, [flashFriend])
+
+  /** Friend linked into the room — stop invite spam; battle UI stays clean. */
+  const handlePeerLinked = useCallback(() => {
+    hostInviteUntilRef.current = 0
+    setIncomingChallenge(null)
+    clearIncomingChallenge()
+    setOutgoingChallenge(null)
+    clearOutgoingChallenge()
+    setFriendToast(null)
+  }, [])
+
   const completeFriendLink = useCallback(
     async (link: { playerId: string; name: string }) => {
       const me = loadPlayerName().trim()
@@ -1394,21 +1412,6 @@ export default function App() {
       </div>
     )
   }
-
-  const handlePeerLinkFailed = useCallback(() => {
-    setBattleNet(null)
-    flashFriend("Friend didn't connect — training match vs bot.")
-  }, [flashFriend])
-
-  /** Friend linked into the room — stop invite spam; battle UI stays clean. */
-  const handlePeerLinked = useCallback(() => {
-    hostInviteUntilRef.current = 0
-    setIncomingChallenge(null)
-    clearIncomingChallenge()
-    setOutgoingChallenge(null)
-    clearOutgoingChallenge()
-    setFriendToast(null)
-  }, [])
 
   if (battle) {
     const trophies = loadProfile().trophies
