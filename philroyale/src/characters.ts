@@ -18,6 +18,7 @@ export type AttackId =
   | 'launch'
   | 'ram'
   | 'cheeseAndCucumbers'
+  | 'suplex'
 
 export type AttackDef = {
   id: AttackId
@@ -31,6 +32,8 @@ export type AttackDef = {
   pullToRange?: number
   /** Push unit targets this many tiles away from the attacker (towers/buildings never move). */
   knockbackTiles?: number
+  /** With knockbackTiles: fling behind the attacker (Chuck Suplex) instead of past the target. */
+  knockbackBehind?: boolean
   /** Shots in one burst (default 1). Gap uses burstGapSec; reload uses character attackDelaySec. */
   burstShots?: number
   /** Seconds between shots inside a burst. */
@@ -72,6 +75,7 @@ export type AttackDef = {
     | 'ram'
     | 'cheese'
     | 'cucumber'
+    | 'suplex'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -206,7 +210,7 @@ export const KATHIE: CharacterDef = {
   ],
 }
 
-/** Chuck — human shield (kit swapped with Pete). */
+/** Chuck — human shield + Suplex (kit swapped with Pete). */
 export const PETE: CharacterDef = {
   id: 'pete',
   name: 'Chuck',
@@ -217,11 +221,23 @@ export const PETE: CharacterDef = {
   elixir: 5,
   hp: 3750,
   moveSpeed: 4,
-  attackDelaySec: 0,
+  attackDelaySec: 1.2,
   hue: 220,
-  blurb: 'Human shield — no attack. On death, drops a purple rage heart.',
-  attacks: [],
+  blurb:
+    'Human shield — Suplex grabs a troop at range 1 and throws them behind him. They take the hit when they land. On death, drops a purple rage heart.',
   dropsRageHeart: true,
+  attacks: [
+    {
+      id: 'suplex',
+      name: 'Suplex',
+      range: 1,
+      damage: 50,
+      rootWhileAttacking: true,
+      knockbackTiles: 15,
+      knockbackBehind: true,
+      kind: 'suplex',
+    },
+  ],
 }
 
 export const BEANS: CharacterDef = {

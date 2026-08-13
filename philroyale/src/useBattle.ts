@@ -2600,7 +2600,7 @@ export function useBattle(opts?: {
                           ? 720
                           : attack.id === 'jump'
                             ? JUMP_LEAP_MS
-                            : attack.id === 'launch'
+                            : attack.id === 'launch' || attack.id === 'suplex'
                               ? 480
                       : attack.rootWhileAttacking
                         ? ROOT_VFX_MS
@@ -2824,18 +2824,22 @@ export function useBattle(opts?: {
 
             if (canLaunch) {
               const ang = Math.atan2(target.row - u.row, target.col - u.col)
+              // Suplex: throw behind Chuck. Launch: fling past the target.
+              const throwAng = attack.knockbackBehind ? ang + Math.PI : ang
+              const originCol = attack.knockbackBehind ? u.col : target.col
+              const originRow = attack.knockbackBehind ? u.row : target.row
               let pc = Math.max(
                 0,
                 Math.min(
                   ARENA_COLS - 1,
-                  target.col + Math.cos(ang) * attack.knockbackTiles!,
+                  originCol + Math.cos(throwAng) * attack.knockbackTiles!,
                 ),
               )
               let pr = Math.max(
                 0,
                 Math.min(
                   ARENA_ROWS - 1,
-                  target.row + Math.sin(ang) * attack.knockbackTiles!,
+                  originRow + Math.sin(throwAng) * attack.knockbackTiles!,
                 ),
               )
               const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
@@ -2901,6 +2905,7 @@ export function useBattle(opts?: {
           attack.kind === 'hug' ||
           attack.kind === 'uppercut' ||
           attack.kind === 'launch' ||
+          attack.kind === 'suplex' ||
           attack.kind === 'ram'
         ) {
           const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
@@ -2914,7 +2919,7 @@ export function useBattle(opts?: {
                 ? 0.85
                 : attack.kind === 'uppercut'
                   ? 0.9
-                  : attack.kind === 'launch'
+                  : attack.kind === 'launch' || attack.kind === 'suplex'
                     ? 1.1
                   : 0.65
           if (!skipLunge) {
@@ -2947,7 +2952,7 @@ export function useBattle(opts?: {
                       ? 'hug'
                       : attack.kind === 'uppercut'
                         ? 'uppercut'
-                        : attack.kind === 'launch'
+                        : attack.kind === 'launch' || attack.kind === 'suplex'
                           ? 'kick'
                         : 'melee',
           })

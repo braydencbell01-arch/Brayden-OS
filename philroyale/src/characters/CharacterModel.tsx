@@ -66,8 +66,10 @@ export function CharacterModel({
     // Pete — Death Hug (PeteModel art)
     model = <PeteModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'pete') {
-    // Chuck — human shield (DanModel art)
-    model = <DanModel anim={anim} facing={facing} portrait={portrait} />
+    // Chuck — human shield + Suplex (DanModel art)
+    model = (
+      <DanModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
   } else if (charId === 'beans') {
     model = <BeansModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'finley') {

@@ -1,3 +1,4 @@
+import type { AttackId } from '../characters'
 import type { CharacterAnim } from './PhilModel'
 import { PhotoTroop } from './PhotoTroop'
 
@@ -8,12 +9,14 @@ const DAN_BACK = `${import.meta.env.BASE_URL}characters/dan-troop-back.png`
 type Props = {
   anim: CharacterAnim
   facing: number
+  attackId?: AttackId | null
   portrait?: boolean
   enraged?: boolean
 }
 
-/** Chuck — walking human shield; no attack. */
-export function DanModel({ anim, facing, portrait, enraged }: Props) {
+/** Chuck — human shield; Suplex throws troops behind him. */
+export function DanModel({ anim, facing, attackId, portrait, enraged }: Props) {
+  const suplex = anim === 'attack' && attackId === 'suplex'
   return (
     <PhotoTroop
       cardSrc={DAN_CARD}
@@ -25,7 +28,7 @@ export function DanModel({ anim, facing, portrait, enraged }: Props) {
       portrait={portrait}
       objectPos="50% 12%"
       gait="jog"
-      attack="none"
+      attack={suplex ? 'hug' : 'none'}
       enraged={enraged}
       spriteLegs
       legColor="#2a2a36"
