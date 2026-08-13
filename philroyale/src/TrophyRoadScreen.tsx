@@ -9,6 +9,8 @@ import { FriendProfileModal } from './FriendsScreen'
 import { ClubPeekModal } from './ClubScreen'
 import { joinClubVerified } from './clubSync'
 import { arenaThemeBackground } from './arenaThemes'
+import { GoldIcon, GemIcon } from './CurrencyBar'
+import { getEmoteById, PHIL_EMOTE_SRC } from './emoteCatalog'
 import {
   ARENA_COLORS,
   CHEST_META,
@@ -76,24 +78,61 @@ function RoadRewardIcon({ step }: { step: TrophyRoadReward }) {
       </div>
     )
   }
+  if (step.unlockEmote) {
+    const emote = getEmoteById(step.unlockEmote)
+    return (
+      <div
+        className="relative flex h-[4.35rem] w-[3.05rem] shrink-0 items-center justify-center overflow-hidden rounded-[0.4rem]"
+        style={{
+          background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+          boxShadow: 'inset 0 0 0 2px #c9a22788',
+        }}
+        aria-label={emote?.label ?? step.unlockEmote}
+      >
+        {emote?.kind === 'phil' ? (
+          <img src={PHIL_EMOTE_SRC} alt="" className="h-[85%] w-[85%] object-contain" />
+        ) : emote?.kind === 'photo' && emote.src ? (
+          <img src={emote.src} alt="" className="h-full w-full object-cover" />
+        ) : emote?.kind === 'character' && emote.charId ? (
+          <div className="h-full w-full scale-110">
+            <CharacterModel charId={emote.charId} anim="idle" facing={1} portrait />
+          </div>
+        ) : emote?.emoji ? (
+          <span className="text-2xl leading-none">{emote.emoji}</span>
+        ) : (
+          <span className="text-[0.55rem] font-extrabold text-[#f5d76e]">Emote</span>
+        )}
+      </div>
+    )
+  }
   if (step.gems) {
     return (
       <div
-        className="flex h-[4.35rem] w-[3.05rem] shrink-0 flex-col items-center justify-center rounded-[0.4rem] text-sm font-black"
-        style={{ background: '#7dffc8', color: '#1a1410' }}
+        className="flex h-[4.35rem] w-[3.05rem] shrink-0 flex-col items-center justify-center gap-0.5 rounded-[0.4rem]"
+        style={{
+          background: 'linear-gradient(180deg,#1a3048,#0e1a28)',
+          boxShadow: 'inset 0 0 0 2px #3ec6ff66',
+        }}
       >
-        <span>◆</span>
-        <span className="text-[0.5rem] font-extrabold uppercase">{step.gems}</span>
+        <GemIcon className="h-7 w-7" />
+        <span className="text-[0.55rem] font-extrabold tabular-nums text-[#7dffef]">
+          {step.gems}
+        </span>
       </div>
     )
   }
   return (
     <div
-      className="flex h-[4.35rem] w-[3.05rem] shrink-0 flex-col items-center justify-center rounded-[0.4rem] text-sm font-black"
-      style={{ background: '#f5d76e', color: '#1a1410' }}
+      className="flex h-[4.35rem] w-[3.05rem] shrink-0 flex-col items-center justify-center gap-0.5 rounded-[0.4rem]"
+      style={{
+        background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+        boxShadow: 'inset 0 0 0 2px #c9a22788',
+      }}
     >
-      <span>●</span>
-      <span className="text-[0.5rem] font-extrabold uppercase">{step.gold ?? 0}g</span>
+      <GoldIcon className="h-7 w-7" />
+      <span className="text-[0.55rem] font-extrabold tabular-nums text-[#f5d76e]">
+        {step.gold ?? 0}
+      </span>
     </div>
   )
 }
