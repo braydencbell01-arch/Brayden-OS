@@ -34,6 +34,7 @@ import {
   STARTER_UNLOCKS,
   TROPHY_ROAD,
   arenaForTrophies,
+  roadStepKey,
   allShopOffers,
   rollChestLoot,
   type ChestRarity,
@@ -116,6 +117,9 @@ export type Friend = {
   playerId?: string
   /** Last known trophies (from presence) — used on Trophy Road. */
   trophies?: number
+  /** Last known club (from presence) — profile → view their club. */
+  clubCode?: string
+  clubName?: string
   /** When they joined via your invite link */
   addedAt: string
 }
@@ -248,6 +252,39 @@ export function saveFriendTrophies(playerId: string, trophies: number): void {
       if (f.trophies !== next) {
         f.trophies = next
         changed = true
+      }
+    }
+  }
+  if (changed) saveFriends(friends)
+}
+
+/** Persist a friend's last-known club for profile → view club. */
+export function saveFriendClub(
+  playerId: string,
+  club: { clubCode?: string; clubName?: string },
+): void {
+  const id = playerId.trim()
+  if (!id) return
+  const friends = loadFriends()
+  let changed = false
+  const code = (club.clubCode || '').trim()
+  const name = (club.clubName || '').trim()
+  for (const f of friends) {
+    if (f.playerId === id || f.id === id) {
+      if (code && f.clubCode !== code) {
+        f.clubCode = code
+        changed = true
+      }
+      if (name && f.clubName !== name) {
+        f.clubName = name
+        changed = true
+      }
+      if (!code && club.clubCode === '') {
+        if (f.clubCode || f.clubName) {
+          f.clubCode = undefined
+          f.clubName = undefined
+          changed = true
+        }
       }
     }
   }
@@ -686,7 +723,102 @@ export type OwnedChest = {
 }
 
 export type TrophyRoadState = {
+  /** @deprecated index-based; migrated to claimedKeys */
   claimed: number[]
+  /** Stable `${trophies}:${rewardId}` keys */
+  claimedKeys?: string[]
+}
+
+/** Old TROPHY_ROAD order — maps legacy claimed indices after the 2026-08 road rewrite. */
+const LEGACY_ROAD_KEYS = [
+  '0:finley',
+  '25:x',
+  '50:shay',
+  '75:common',
+  '100:beans',
+  '125:common',
+  '150:rare',
+  '175:x',
+  '200:lynne',
+  '225:kathie',
+  '250:common',
+  '300:x',
+  '350:rare',
+  '375:dave',
+  '400:kathie',
+  '450:common',
+  '500:epic',
+  '550:x',
+  '600:mike',
+  '625:scott',
+  '650:footballHuck',
+  '675:stevesDiner',
+  '700:bigMable',
+  '700:rare',
+  '725:bobbySpecial',
+  '775:todd',
+  '750:common',
+  '825:x',
+  '900:todd',
+  '950:epic',
+  '1000:legendary',
+  '1050:gretchin',
+  '1150:mike',
+  '1100:rare',
+  '1200:dan',
+  '1250:beans',
+  '1300:common',
+  '1400:epic',
+  '1500:x',
+  '1600:pete',
+  '1650:lynne',
+  '1700:rare',
+  '1800:epic',
+  '1900:x',
+  '2000:jeremy',
+  '2050:jeremy',
+  '2150:rare',
+  '2200:e:emote-jeremy',
+  '2300:epic',
+  '2450:common',
+  '2600:phil',
+  '2650:philSpirit',
+  '2675:peteSpirit',
+  '2688:jeremySpirit',
+  '2700:philsCar',
+  '2750:evilPhil',
+  '2850:kathie',
+  '2800:legendary',
+  '2900:e:coach',
+  '3000:epic',
+  '3200:x',
+  '3400:x',
+  '3500:jeremy',
+  '3550:e:emote-evilPhil',
+  '3600:rare',
+  '3800:epic',
+  '4000:x',
+  '4200:legendary',
+  '4500:epic',
+  '4800:rare',
+  '5000:legendary',
+] as const
+
+export function trophyRoadClaimedKeys(state: TrophyRoadState): string[] {
+  if (state.claimedKeys && state.claimedKeys.length > 0) return state.claimedKeys
+  const keys: string[] = []
+  for (const idx of state.claimed) {
+    const k = LEGACY_ROAD_KEYS[idx]
+    if (k) keys.push(k)
+  }
+  return keys
+}
+
+export function isRoadStepClaimed(idx: number, claimedKeys: Iterable<string>): boolean {
+  const step = TROPHY_ROAD[idx]
+  if (!step) return false
+  const set = claimedKeys instanceof Set ? claimedKeys : new Set(claimedKeys)
+  return set.has(roadStepKey(step))
 }
 
 export type DailyState = {
@@ -1155,7 +1287,12 @@ export function claimCrownChest(): { ok: boolean; message: string } {
 /* ——— Trophy road ——— */
 
 export function loadTrophyRoad(): TrophyRoadState {
-  return readJson<TrophyRoadState>(ROAD_KEY, { claimed: [] })
+  const raw = readJson<TrophyRoadState>(ROAD_KEY, { claimed: [] })
+  const claimedKeys = trophyRoadClaimedKeys(raw)
+  const claimed = TROPHY_ROAD.map((step, idx) =>
+    claimedKeys.includes(roadStepKey(step)) ? idx : -1,
+  ).filter((i) => i >= 0)
+  return { claimed, claimedKeys }
 }
 
 export function saveTrophyRoad(state: TrophyRoadState): void {
@@ -1212,9 +1349,15 @@ export function claimRoadStep(idx: number): { ok: boolean; message: string } {
   const profile = loadProfile()
   const state = loadTrophyRoad()
   if (profile.trophies < step.trophies) return { ok: false, message: 'Not enough trophies' }
-  if (state.claimed.includes(idx)) return { ok: false, message: 'Already claimed' }
+  const key = roadStepKey(step)
+  const claimedKeys = trophyRoadClaimedKeys(state)
+  if (claimedKeys.includes(key)) return { ok: false, message: 'Already claimed' }
   const progress = loadCardProgress()
-  state.claimed.push(idx)
+  claimedKeys.push(key)
+  state.claimedKeys = claimedKeys
+  state.claimed = TROPHY_ROAD.map((s, i) =>
+    claimedKeys.includes(roadStepKey(s)) ? i : -1,
+  ).filter((i) => i >= 0)
   const messages = grantRoadStep(step, profile, progress)
   saveTrophyRoad(state)
   saveProfile(profile)
@@ -1226,13 +1369,19 @@ export function claimAvailableRoadRewards(): string[] {
   const profile = loadProfile()
   const state = loadTrophyRoad()
   const progress = loadCardProgress()
+  const claimedKeys = trophyRoadClaimedKeys(state)
   const messages: string[] = []
-  TROPHY_ROAD.forEach((step, idx) => {
-    if (state.claimed.includes(idx)) return
+  TROPHY_ROAD.forEach((step) => {
+    const key = roadStepKey(step)
+    if (claimedKeys.includes(key)) return
     if (profile.trophies < step.trophies) return
-    state.claimed.push(idx)
+    claimedKeys.push(key)
     messages.push(...grantRoadStep(step, profile, progress))
   })
+  state.claimedKeys = claimedKeys
+  state.claimed = TROPHY_ROAD.map((s, i) =>
+    claimedKeys.includes(roadStepKey(s)) ? i : -1,
+  ).filter((i) => i >= 0)
   saveTrophyRoad(state)
   saveProfile(profile)
   saveCardProgress(progress)
@@ -1241,9 +1390,9 @@ export function claimAvailableRoadRewards(): string[] {
 
 export function countUnclaimedRoadRewards(): number {
   const trophies = loadProfile().trophies
-  const claimed = new Set(loadTrophyRoad().claimed)
+  const claimed = new Set(trophyRoadClaimedKeys(loadTrophyRoad()))
   return TROPHY_ROAD.reduce(
-    (n, step, idx) => (trophies >= step.trophies && !claimed.has(idx) ? n + 1 : n),
+    (n, step) => (trophies >= step.trophies && !claimed.has(roadStepKey(step)) ? n + 1 : n),
     0,
   )
 }

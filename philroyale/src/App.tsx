@@ -72,11 +72,18 @@ import {
   battleInviteUrl,
   upsertFriend,
   saveFriendTrophies,
+  saveFriendClub,
   type BattleChallenge,
   type BattleChannelMessage,
   type ClubInviteIncoming,
   type GameMode,
 } from './storage'
+
+function directoryClubExtra(): { clubCode?: string; clubName?: string } {
+  const club = loadRichClub()
+  if (!club?.code) return {}
+  return { clubCode: club.code, clubName: club.name }
+}
 
 type TabId = 'shop' | 'cards' | 'home' | 'social' | 'profile'
 
@@ -541,7 +548,7 @@ export default function App() {
       window.dispatchEvent(new Event('philroyale-friends-changed'))
 
       const trophies = loadProfile().trophies
-      void publishDirectory(myId, me, { trophies })
+      void publishDirectory(myId, me, { trophies, ...directoryClubExtra() })
       const pushAdd = () => {
         const at = new Date().toISOString()
         const req = {
@@ -827,6 +834,7 @@ export default function App() {
         if (msg.fromPlayerId === myId) return
         const at = Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
+        if (msg.clubCode) saveFriendClub(msg.fromPlayerId, { clubCode: msg.clubCode, clubName: msg.clubName })
         setFriendPresence((prev) => ({
           ...prev,
           [msg.fromPlayerId]: {
@@ -834,6 +842,8 @@ export default function App() {
             at,
             inBattle: !!msg.inBattle,
             trophies: msg.trophies ?? prev[msg.fromPlayerId]?.trophies,
+            clubCode: msg.clubCode ?? prev[msg.fromPlayerId]?.clubCode,
+            clubName: msg.clubName ?? prev[msg.fromPlayerId]?.clubName,
           },
         }))
         return
@@ -877,7 +887,7 @@ export default function App() {
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
         window.dispatchEvent(new Event('philroyale-friends-changed'))
         // Reply on lobby + personal so the adder always gets our real name.
-        void publishDirectory(myId, me, { trophies })
+        void publishDirectory(myId, me, { trophies, ...directoryClubExtra() })
         const hello = {
           type: 'friend_hello' as const,
           fromPlayerId: myId,
@@ -888,7 +898,7 @@ export default function App() {
         void publishSocial(msg.fromPlayerId, hello)
         void publishLobby(hello)
         window.setTimeout(() => {
-          void publishDirectory(myId, me, { trophies })
+          void publishDirectory(myId, me, { trophies, ...directoryClubExtra() })
           void publishLobby({ ...hello, at: new Date().toISOString() })
         }, 800)
         if (!battleRef.current && claimPopupSlot()) {
@@ -1039,7 +1049,7 @@ export default function App() {
       const myId = loadPlayerId()
       const inMatch = battle && !!battleNet && !spectating
       const trophies = loadProfile().trophies
-      void publishDirectory(myId, me, { trophies, inBattle: inMatch })
+      void publishDirectory(myId, me, { trophies, inBattle: inMatch, ...directoryClubExtra() })
 
       // While hosting and still waiting for the friend to link, keep re-sending the invite.
       // Stop as soon as invite window ends (cleared when peer links).

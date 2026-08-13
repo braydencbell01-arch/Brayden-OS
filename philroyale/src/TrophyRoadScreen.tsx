@@ -6,6 +6,8 @@ import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import { BattleCard } from './BattleCard'
 import { ChestArt } from './ChestOpen'
 import { FriendProfileModal } from './FriendsScreen'
+import { ClubPeekModal } from './ClubScreen'
+import { joinClubVerified } from './clubSync'
 import { arenaThemeBackground } from './arenaThemes'
 import {
   ARENA_COLORS,
@@ -69,7 +71,7 @@ function RoadRewardIcon({ step }: { step: TrophyRoadReward }) {
           <BattleCard character={c} size="hand" />
         </div>
         <span className="rounded-md bg-[#1a1410]/95 px-1.5 py-0.5 text-[0.7rem] font-black text-[#f5d76e] ring-1 ring-[#c9a227]/70">
-          ×{copies}
+          x{copies}
         </span>
       </div>
     )
@@ -114,7 +116,7 @@ export function TrophyRoadScreen({
   friendPresence = {},
   loadFriendsFn = loadFriends,
   onRequestBattle,
-  onInviteClub,
+  onInviteClub: _onInviteClub,
   onSpectate,
 }: Props) {
   const [profile, setProfile] = useState(() => loadProfile())
@@ -124,8 +126,9 @@ export function TrophyRoadScreen({
   const [friends, setFriends] = useState(() => loadFriendsFn())
   const [meta, setMeta] = useState<FriendMeta>(() => loadFriendMeta())
   const [profileFriend, setProfileFriend] = useState<Friend | null>(null)
+  const [peekClub, setPeekClub] = useState<{ code: string; name?: string } | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  const [viewArena, setViewArena] = useState(() => arenaFor(loadProfile().trophies))
+  const playerArena = arenaFor(profile.trophies)
   useEffect(() => {
     const sync = () => setFriends(loadFriendsFn())
     window.addEventListener('philroyale-friends-changed', sync)
@@ -143,12 +146,10 @@ export function TrophyRoadScreen({
   const railTrackRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const viewArenaRef = useRef(viewArena)
-  const arenaRafRef = useRef(0)
   const avatarId = useMemo(() => loadAvatarId(), [])
   const peak = Math.max(loadPeakTrophies(), profile.trophies, profile.peakTrophies ?? 0)
 
-  const colors = ARENA_COLORS[viewArena] ?? ARENA_COLORS['Training Camp']!
+  const colors = ARENA_COLORS[playerArena] ?? ARENA_COLORS['Training Camp']!
   const maxTrophies = TROPHY_ROAD[TROPHY_ROAD.length - 1]?.trophies ?? 5000
   const [railFill, setRailFill] = useState({ cur: 0, peak: 0, h: 0 })
 
@@ -221,55 +222,6 @@ export function TrophyRoadScreen({
     return () => window.cancelAnimationFrame(id)
   }, [])
 
-  /**
-   * Arena for the reward row closest to the probe — labels sit at the *bottom*
-   * of each arena, so “banners past probe” wrongly picks the arena above.
-   */
-  function computeViewArena(): string {
-    const scroller = scrollRef.current
-    const list = listRef.current
-    const fallback = arenaFor(profile.trophies)
-    if (!scroller || !list) return viewArenaRef.current || fallback
-    const scrollerTop = scroller.getBoundingClientRect().top
-    const probe = scrollerTop + Math.min(120, scroller.clientHeight * 0.28)
-    const rows = list.querySelectorAll<HTMLElement>('[data-arena-row]')
-    let best = ''
-    let bestDist = Infinity
-    rows.forEach((el) => {
-      const rect = el.getBoundingClientRect()
-      if (rect.bottom < scrollerTop - 40 || rect.top > scrollerTop + scroller.clientHeight + 40) {
-        return
-      }
-      const mid = rect.top + rect.height / 2
-      const dist = Math.abs(mid - probe)
-      if (dist < bestDist) {
-        bestDist = dist
-        best = el.dataset.arenaRow || best
-      }
-    })
-    if (!best) {
-      const sections = list.querySelectorAll<HTMLElement>('[data-arena-section]')
-      sections.forEach((el) => {
-        const rect = el.getBoundingClientRect()
-        if (rect.top <= probe && rect.bottom >= probe) {
-          best = el.dataset.arenaSection || best
-        }
-      })
-    }
-    return best || viewArenaRef.current || fallback
-  }
-
-  function scheduleViewArena() {
-    if (arenaRafRef.current) return
-    arenaRafRef.current = window.requestAnimationFrame(() => {
-      arenaRafRef.current = 0
-      const next = computeViewArena()
-      if (next === viewArenaRef.current) return
-      viewArenaRef.current = next
-      setViewArena(next)
-    })
-  }
-
   useLayoutEffect(() => {
     function measureRail() {
       const list = listRef.current
@@ -290,17 +242,15 @@ export function TrophyRoadScreen({
         h: trackH,
       })
     }
-    function onScrollOrResize() {
-      measureRail()
-      scheduleViewArena()
-    }
-    onScrollOrResize()
-    const ro = new ResizeObserver(onScrollOrResize)
+    measureRail()
+    const scroller = scrollRef.current
+    scroller?.addEventListener('scroll', measureRail, { passive: true })
+    const ro = new ResizeObserver(measureRail)
     if (listRef.current) ro.observe(listRef.current)
-    if (scrollRef.current) ro.observe(scrollRef.current)
+    if (scroller) ro.observe(scroller)
     return () => {
+      scroller?.removeEventListener('scroll', measureRail)
       ro.disconnect()
-      if (arenaRafRef.current) window.cancelAnimationFrame(arenaRafRef.current)
     }
   }, [profile.trophies, peak, stepsDesc, friendsByStep])
 
@@ -363,7 +313,7 @@ export function TrophyRoadScreen({
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 transition-[background] duration-500 ease-out"
-        style={{ background: arenaBackdrop(viewArena) }}
+        style={{ background: arenaBackdrop(playerArena) }}
       />
       <header className="relative z-20 shrink-0 px-3 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
         <div className="flex items-center gap-2">
@@ -401,10 +351,10 @@ export function TrophyRoadScreen({
           }}
         >
           <p className="text-[0.55rem] font-extrabold uppercase tracking-wide text-white/75">
-            Arena section
+            Current arena
           </p>
           <p className="font-[family-name:var(--font-display)] text-base tracking-wide text-[#f5d76e]">
-            {viewArena}
+            {playerArena}
           </p>
         </div>
         <div className="mt-2 flex gap-2">
@@ -439,35 +389,39 @@ export function TrophyRoadScreen({
         ref={scrollRef}
         className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-28"
         style={{ WebkitOverflowScrolling: 'touch' }}
-        onScroll={scheduleViewArena}
       >
-        <div className="relative mx-auto max-w-md py-4 pl-12 pr-1">
-          <ul ref={listRef} className="relative flex flex-col gap-6">
+        <div className="relative mx-auto max-w-md py-4 pl-1 pr-1">
+          <div className="relative">
             <div
               ref={railTrackRef}
               aria-hidden
-              className="pointer-events-none absolute bottom-0 left-0 top-0 w-3 overflow-hidden rounded-full"
+              className="pointer-events-none absolute bottom-2 top-2 z-0 w-[1.15rem] overflow-hidden rounded-full"
               style={{
-                background: 'linear-gradient(180deg,#0a2040,#061428)',
-                boxShadow: 'inset 0 0 0 2px #1a4a8a88',
+                left: '2.55rem',
+                background:
+                  'linear-gradient(180deg, rgba(210,235,255,0.55) 0%, rgba(120,185,240,0.38) 45%, rgba(70,140,210,0.32) 100%)',
+                boxShadow:
+                  'inset 0 0 0 2px rgba(255,255,255,0.45), inset 0 0 14px rgba(90,170,255,0.35), 0 0 10px rgba(80,160,255,0.25)',
               }}
             >
               <div
                 className="absolute bottom-0 left-0 right-0"
                 style={{
                   height: railFill.peak,
-                  background: 'linear-gradient(180deg,#4a7aaa88,#2a4a6a66)',
+                  background: 'linear-gradient(180deg,#9ad0ffaa,#4a8ac888)',
                 }}
               />
               <div
                 className="absolute bottom-0 left-0 right-0"
                 style={{
                   height: railFill.cur,
-                  background: 'linear-gradient(180deg,#6ec8ff,#2f6fbf)',
-                  boxShadow: 'inset 0 1px 0 #ffffff44',
+                  background: 'linear-gradient(180deg,#c8ecff,#5eb0ff 40%, #2f7fd4)',
+                  boxShadow: 'inset 0 1px 0 #ffffff88, 0 0 8px #6ec8ff88',
                 }}
               />
             </div>
+
+            <ul ref={listRef} className="relative z-[1] flex flex-col gap-6">
 
             {arenaSections.map((section) => {
               const arenaTone = ARENA_COLORS[section.arena] ?? colors
@@ -512,7 +466,7 @@ export function TrophyRoadScreen({
                               type="button"
                               className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
                               style={{
-                                left: `${0.375 - fi * 0.05}rem`,
+                                left: `${2.55 + 0.575 - fi * 0.15}rem`,
                                 top: `${18 + fi * 18}%`,
                               }}
                               title={`${f.friend.name}: ${f.trophies}`}
@@ -537,19 +491,27 @@ export function TrophyRoadScreen({
 
                           {isYou ? (
                             <div
-                              className="pointer-events-none absolute left-[0.375rem] top-1/2 z-30 -translate-x-1/2 -translate-y-1/2"
+                              className="pointer-events-none absolute left-[2.55rem] top-1/2 z-30 -translate-y-1/2"
                               aria-hidden
                             >
                               <span
-                                className="rounded px-1 py-0.5 text-[0.5rem] font-black text-[#1a1410]"
-                                style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+                                className="ml-3 flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[0.65rem] font-black text-[#1a1410]"
+                                style={{
+                                  background: 'linear-gradient(180deg,#fff,#e8eef6)',
+                                  boxShadow: '0 2px 0 #8aa0b8, 0 0 8px #ffffff88',
+                                }}
                               >
+                                <span aria-hidden>🏆</span>
                                 {profile.trophies}
                               </span>
                             </div>
                           ) : null}
 
-                          <div className="relative ml-2 flex items-center gap-2">
+                          <div className="relative flex items-center gap-2">
+                            <span className="w-10 shrink-0 text-right text-[0.7rem] font-black tabular-nums text-white drop-shadow">
+                              {step.trophies}
+                            </span>
+                            <span className="w-5 shrink-0" aria-hidden />
                             <motion.button
                               type="button"
                               whileTap={{ scale: 0.96 }}
@@ -626,6 +588,7 @@ export function TrophyRoadScreen({
               )
             })}
           </ul>
+          </div>
           <p className="mt-4 text-center text-[0.6rem] font-bold text-white/40">
             Max {maxTrophies} trophies
           </p>
@@ -716,8 +679,30 @@ export function TrophyRoadScreen({
           onTogglePin={() => togglePin(profileFriend.id)}
           onRemove={() => removeFriend(profileFriend.id)}
           onInviteClub={() => {
-            void onInviteClub?.(profileFriend.name, profileFriend.playerId)
-            setProfileFriend(null)
+            const code = profileFriend.clubCode
+            const live =
+              profileFriend.playerId
+                ? friendPresence[profileFriend.playerId]
+                : undefined
+            const clubCode = live?.clubCode || code
+            const clubName = live?.clubName || profileFriend.clubName
+            if (!clubCode) {
+              flash('Not in a club')
+              return
+            }
+            setPeekClub({ code: clubCode, name: clubName })
+          }}
+        />
+      ) : null}
+
+      {peekClub ? (
+        <ClubPeekModal
+          clubCode={peekClub.code}
+          clubName={peekClub.name}
+          onClose={() => setPeekClub(null)}
+          onJoin={(code) => {
+            setPeekClub(null)
+            void joinClubVerified(code).then((res) => flash(res.message))
           }}
         />
       ) : null}

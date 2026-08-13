@@ -7,7 +7,7 @@ import {
   roleRank,
   type ClubMember,
 } from './clubMeta'
-import { normalizeClubCode, publishClub } from './clubHub'
+import { normalizeClubCode, publishClub, subscribeClub, type ClubMessage } from './clubHub'
 import { joinClubVerified } from './clubSync'
 import { formatWarRemain, phaseLabel } from './clubWar'
 import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
@@ -890,6 +890,134 @@ function ClubWarPanel({
       <p className="text-center text-xs font-semibold text-white/50">
         Signed in as {loadPlayerName().trim() || 'You'}
       </p>
+    </div>
+  )
+}
+
+type ClubPeekState = Extract<ClubMessage, { type: 'club_state' }>
+
+/** Read-only view of another player's club (does not join). */
+export function ClubPeekModal({
+  clubCode,
+  clubName,
+  onClose,
+  onJoin,
+}: {
+  clubCode: string
+  clubName?: string
+  onClose: () => void
+  onJoin?: (code: string) => void
+}) {
+  const code = normalizeClubCode(clubCode)
+  const [state, setState] = useState<ClubPeekState | null>(null)
+  const [waiting, setWaiting] = useState(true)
+
+  useEffect(() => {
+    if (code.length < 4) {
+      setWaiting(false)
+      return
+    }
+    let got = false
+    const unsub = subscribeClub(code, (msg) => {
+      if (msg.type === 'club_state') {
+        got = true
+        setState(msg)
+        setWaiting(false)
+      }
+    })
+    const timer = window.setTimeout(() => {
+      if (!got) setWaiting(false)
+    }, 5000)
+    return () => {
+      unsub()
+      window.clearTimeout(timer)
+    }
+  }, [code])
+
+  const name = state?.name || clubName || 'Club'
+  const badgeMeta = CLUB_BADGES[state?.badge ?? 0] ?? CLUB_BADGES[0]!
+  const members = state?.members ?? []
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="club-peek-title"
+    >
+      <div
+        className="w-full max-w-sm rounded-xl p-5"
+        style={{
+          background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+          boxShadow: '0 12px 40px #00000088',
+        }}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black text-[#1a1410]"
+            style={{ background: badgeMeta.color }}
+          >
+            {badgeMeta.label.slice(0, 1)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2
+              id="club-peek-title"
+              className="font-[family-name:var(--font-display)] text-xl text-[#f5d76e]"
+            >
+              {name}
+            </h2>
+            <p className="text-xs font-extrabold uppercase tracking-wide text-white/55">
+              Code {code || '—'}
+              {members.length ? ` · ${members.length} members` : ''}
+            </p>
+          </div>
+        </div>
+        {state?.description ? (
+          <p className="mt-2 text-sm font-semibold text-white/75">{state.description}</p>
+        ) : null}
+        {waiting ? (
+          <p className="mt-3 text-sm font-semibold text-white/55">Looking up club…</p>
+        ) : null}
+        {!waiting && !state ? (
+          <p className="mt-3 text-sm font-semibold text-white/55">
+            Club is offline right now. You can still join if you have the code.
+          </p>
+        ) : null}
+        {members.length > 0 ? (
+          <ul className="mt-3 max-h-40 overflow-y-auto rounded-lg bg-[#140e0a] ring-1 ring-white/10">
+            {members.slice(0, 20).map((m) => (
+              <li
+                key={m.playerId}
+                className="flex items-center justify-between px-3 py-1.5 text-sm"
+              >
+                <span className="truncate font-bold text-white">{m.name}</span>
+                <span className="tabular-nums font-extrabold text-[#f5d76e]">
+                  {m.trophies ?? 0}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div className="mt-4 flex gap-2">
+          {onJoin && code ? (
+            <button
+              type="button"
+              onClick={() => onJoin(code)}
+              className="flex-1 rounded-lg py-2.5 text-sm font-extrabold text-[#1a1410]"
+              style={{ background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)' }}
+            >
+              Join
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg bg-[#2a1a12] py-2.5 text-sm font-extrabold text-white/70 ring-1 ring-white/15"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

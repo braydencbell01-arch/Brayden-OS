@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ClubScreen } from './ClubScreen'
+import { ClubPeekModal, ClubScreen } from './ClubScreen'
 import { joinClubVerified } from './clubSync'
 import {
   PRESENCE_ONLINE_MS,
@@ -44,7 +44,7 @@ type Props = {
 export function FriendsScreen({
   onBattle: _onBattle,
   onRequestBattle,
-  onInviteClub,
+  onInviteClub: _onInviteClub,
   waitingForFriend,
   friendPresence = {},
   onAddByCode,
@@ -62,6 +62,7 @@ export function FriendsScreen({
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [inviteTarget, setInviteTarget] = useState<Friend | null>(null)
   const [profileFriend, setProfileFriend] = useState<Friend | null>(null)
+  const [peekClub, setPeekClub] = useState<{ code: string; name?: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [now, setNow] = useState(() => Date.now())
 
@@ -502,7 +503,15 @@ export function FriendsScreen({
                       </button>
                       <button
                         type="button"
-                        onClick={() => void onInviteClub(f.name, f.playerId)}
+                        onClick={() => {
+                          const live = f.playerId ? friendPresence[f.playerId] : undefined
+                          const code = live?.clubCode || f.clubCode
+                          if (!code) {
+                            setAddMsg('Not in a club')
+                            return
+                          }
+                          setPeekClub({ code, name: live?.clubName || f.clubName })
+                        }}
                         className="text-[10px] font-extrabold uppercase tracking-wide text-[#7ec8ff]"
                       >
                         Club
@@ -551,7 +560,33 @@ export function FriendsScreen({
             removeFriend(profileFriend.id)
             setProfileFriend(null)
           }}
-          onInviteClub={() => void onInviteClub(profileFriend.name, profileFriend.playerId)}
+          onInviteClub={() => {
+            const live = profileFriend.playerId
+              ? friendPresence[profileFriend.playerId]
+              : undefined
+            const code = live?.clubCode || profileFriend.clubCode
+            if (!code) {
+              setAddMsg('Not in a club')
+              return
+            }
+            setPeekClub({ code, name: live?.clubName || profileFriend.clubName })
+          }}
+        />
+      ) : null}
+
+      {peekClub ? (
+        <ClubPeekModal
+          clubCode={peekClub.code}
+          clubName={peekClub.name}
+          onClose={() => setPeekClub(null)}
+          onJoin={(code) => {
+            setPeekClub(null)
+            setSection('clubs')
+            void joinClubVerified(code).then((res) => {
+              setAddMsg(res.message)
+              window.dispatchEvent(new Event('philroyale-club-changed'))
+            })
+          }}
         />
       ) : null}
 
@@ -726,7 +761,11 @@ export function FriendProfileModal({
               Trophies
             </dt>
             <dd className="font-bold text-[#f5d76e]">
-              {presence?.trophies != null ? presence.trophies.toLocaleString() : '—'}
+            {typeof presence?.trophies === 'number'
+              ? presence.trophies.toLocaleString()
+              : typeof friend.trophies === 'number'
+                ? friend.trophies.toLocaleString()
+                : '0'}
             </dd>
           </div>
         </dl>

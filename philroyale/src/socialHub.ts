@@ -95,6 +95,8 @@ export type SocialMessage =
       at: string
       trophies?: number
       inBattle?: boolean
+      clubCode?: string
+      clubName?: string
     }
 
 /** Latest presence snapshot for a friend (from heartbeats). */
@@ -106,6 +108,8 @@ export type FriendPresenceInfo = {
   opponentName?: string
   battleRole?: 'host' | 'guest'
   trophies?: number
+  clubCode?: string
+  clubName?: string
 }
 
 /** How recently a presence ping counts as "online". */
@@ -130,6 +134,8 @@ type DirEntry = {
   seenAt: number
   trophies?: number
   inBattle?: boolean
+  clubCode?: string
+  clubName?: string
 }
 const directoryCache = new Map<string, DirEntry>()
 
@@ -145,7 +151,7 @@ export function rememberDirectoryPing(
   code: string,
   name: string,
   atMs = Date.now(),
-  extra?: { trophies?: number; inBattle?: boolean },
+  extra?: { trophies?: number; inBattle?: boolean; clubCode?: string; clubName?: string },
 ): void {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return
@@ -160,6 +166,8 @@ export function rememberDirectoryPing(
         at: Math.max(prev.at, atMs),
         trophies: extra?.trophies ?? prev.trophies,
         inBattle: extra?.inBattle ?? prev.inBattle,
+        clubCode: extra?.clubCode ?? prev.clubCode,
+        clubName: extra?.clubName ?? prev.clubName,
       })
       return
     }
@@ -171,6 +179,8 @@ export function rememberDirectoryPing(
       seenAt: Date.now(),
       trophies: extra?.trophies ?? prev.trophies,
       inBattle: extra?.inBattle ?? prev.inBattle,
+      clubCode: extra?.clubCode ?? prev.clubCode,
+      clubName: extra?.clubName ?? prev.clubName,
     })
     return
   }
@@ -180,6 +190,8 @@ export function rememberDirectoryPing(
     seenAt: Date.now(),
     trophies: extra?.trophies ?? prev?.trophies,
     inBattle: extra?.inBattle ?? prev?.inBattle,
+    clubCode: extra?.clubCode ?? prev?.clubCode,
+    clubName: extra?.clubName ?? prev?.clubName,
   })
 }
 
@@ -207,6 +219,8 @@ export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null
       inBattle: !!mp.inBattle,
       challengeId: mp.challengeId,
       trophies: mp.trophies,
+      clubCode: directoryCache.get(c)?.clubCode,
+      clubName: directoryCache.get(c)?.clubName,
     }
   }
   const e = directoryCache.get(c)
@@ -216,6 +230,8 @@ export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null
     at: e.seenAt,
     inBattle: !!e.inBattle,
     trophies: e.trophies,
+    clubCode: e.clubCode,
+    clubName: e.clubName,
   }
 }
 
@@ -225,6 +241,8 @@ function handleSocialObject(data: SocialMessage): void {
     rememberDirectoryPing(data.fromPlayerId, data.fromName, Date.parse(data.at) || Date.now(), {
       trophies: data.trophies,
       inBattle: data.inBattle,
+      clubCode: data.clubCode,
+      clubName: data.clubName,
     })
   }
   if (
@@ -254,7 +272,13 @@ function handleSocialObject(data: SocialMessage): void {
 export async function publishDirectory(
   code: string,
   name: string,
-  extra?: { trophies?: number; inBattle?: boolean; challengeId?: string },
+  extra?: {
+    trophies?: number
+    inBattle?: boolean
+    challengeId?: string
+    clubCode?: string
+    clubName?: string
+  },
 ): Promise<boolean> {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return false
@@ -272,6 +296,8 @@ export async function publishDirectory(
     at: new Date().toISOString(),
     trophies: extra?.trophies,
     inBattle: extra?.inBattle,
+    clubCode: extra?.clubCode,
+    clubName: extra?.clubName,
   } satisfies SocialMessage
 
   const cf = await mpPublish({ lobby: true, msg })
