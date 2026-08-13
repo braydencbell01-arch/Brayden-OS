@@ -508,7 +508,7 @@ export const BOBBY_SPECIAL: CharacterDef = {
   blurb: "Spell — Bobby's football special. Double splash, hits harder, lands fast.",
   spellDamage: 615,
   spellRadius: 30,
-  spellTravelMs: 500,
+  spellTravelMs: 1600,
   attacks: [],
 }
 
@@ -751,7 +751,7 @@ export const CHICKEN_BARREL: CharacterDef = {
     'Spell — toss a barrel anywhere. It bursts on landing and three Chickens jump out.',
   spellDamage: 0,
   spellRadius: 7,
-  spellTravelMs: 600,
+  spellTravelMs: 2400,
   spawnCount: 3,
   spawnAsId: 'chicken',
   attacks: [],
