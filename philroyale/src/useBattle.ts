@@ -187,6 +187,7 @@ const JUMP_LEAP_MS = 480
 const DUMBBELL_VFX_MS = 620
 /** Lynne head butt — short so 0.5s cadence feels constant. */
 const HEADBUTT_VFX_MS = 480
+const RAM_VFX_MS = 560
 const LOVE_VFX_MS = 700
 const RANGED_VFX_MS = 520
 const SPLAT_MS = 820
@@ -441,6 +442,7 @@ function makeBattleUnit(
     movingUntil: 0,
     lockKey: null,
     launch: null,
+    hitOnceKeys: [],
     nextSpawnAt: isBuildingCard(char) && everySec > 0 ? t + everySec * 1000 : undefined,
   }
 }
@@ -2043,6 +2045,7 @@ export function useBattle(opts?: {
 
         const me = unitCenter(u)
         const buildingsOnly = !!def.targetsBuildingsOnly
+        const pathBuildings = buildingsOnly || !!def.pathToBuildingsOnly
         const noLock = !!def.noLock
         const foes = nextUnits.filter((o) => {
           if (o.side === u.side || o.hp <= 0 || isAirborne(o)) return false
@@ -2069,7 +2072,7 @@ export function useBattle(opts?: {
           : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
         // Short-range troops: out of range → chase cards within 20, else towers.
         // Skipped for Dave (buildings only) and cards whose attack range is > 20.
-        const useCardChase = !buildingsOnly && attackRange <= CARD_CHASE_RANGE
+        const useCardChase = !pathBuildings && attackRange <= CARD_CHASE_RANGE
         // Long-range / buildings-only: units pull aggro within firing range (floor 12).
         // noLock always sees every foe when not using the 20-tile chase rule.
         const unitAggroRange = useCardChase
@@ -2081,7 +2084,7 @@ export function useBattle(opts?: {
         // Clash Royale: once attacking a target, keep it until death or out of range.
         // Big Mable (noLock): never sticky — always re-pick nearest.
         let best: Target | null = null
-        if (u.lockKey && !noLock) {
+        if (u.lockKey && !noLock && !def.pathToBuildingsOnly) {
           const [kind, id] = u.lockKey.split(':') as ['unit' | 'tower', string]
           if (kind === 'unit') {
             const f = foes.find((x) => x.id === id)
@@ -2194,8 +2197,14 @@ export function useBattle(opts?: {
               const edge = distUnitTileToTower(u.col, u.row, slot)
               const aim = towerFrontEngagePoint(me.col, me.row, slot)
               const path = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
-              const inFront = !noLock && towerInMeleeRange(u.col, u.row, slot, attackRange)
-              const score = inFront ? path - 40 : path
+              const inFront =
+                !noLock &&
+                !def.pathToBuildingsOnly &&
+                towerInMeleeRange(u.col, u.row, slot, attackRange)
+              const rammed =
+                !!def.pathToBuildingsOnly &&
+                (u.hitOnceKeys ?? []).includes(`tower:${tw.id}`)
+              const score = (inFront ? path - 40 : path) + (rammed ? 120 : 0)
               if (!best || score < best.d) {
                 best = {
                   kind: 'tower',
@@ -2207,21 +2216,26 @@ export function useBattle(opts?: {
                 }
               }
             }
-            if (!buildingsOnly) {
+            if (buildingsOnly || def.pathToBuildingsOnly) {
+              // Dave / Hamburger Chicken: path to building cards, never chase troops.
               for (const f of foes) {
+                if (!isBuildingCard(getCharacter(f.charId))) continue
                 const c = unitCenter(f)
                 const edge = dist(me.col, me.row, c.col, c.row)
-                if (edge > unitAggroRange) continue
-                const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
+                const rammed =
+                  !!def.pathToBuildingsOnly &&
+                  (u.hitOnceKeys ?? []).includes(`unit:${f.id}`)
+                const path =
+                  pathCostTo(me.col, me.row, c.col, c.row, openField) + (rammed ? 120 : 0)
                 if (!best || path < best.d) {
                   best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
                 }
               }
             } else {
-              // Dave: also consider building cards among foes.
               for (const f of foes) {
                 const c = unitCenter(f)
                 const edge = dist(me.col, me.row, c.col, c.row)
+                if (edge > unitAggroRange) continue
                 const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
                 if (!best || path < best.d) {
                   best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
@@ -2263,14 +2277,63 @@ export function useBattle(opts?: {
           continue
         }
 
+        let winRamReady = false
+        if (def.pathToBuildingsOnly) {
+          const ramAtk = def.attacks.find((a) => a.id === 'ram')
+          const ramRange = ramAtk?.range ?? 2
+          let ramBest: typeof best | null = null
+          for (const tw of foeTowers) {
+            const hitKey = `tower:${tw.id}`
+            if ((u.hitOnceKeys ?? []).includes(hitKey)) continue
+            const slot = towerSlot(tw.id)
+            if (!slot) continue
+            const edge = distUnitTileToTower(u.col, u.row, slot)
+            if (edge > ramRange) continue
+            const aim = towerFrontEngagePoint(me.col, me.row, slot)
+            const d = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
+            if (!ramBest || d < ramBest.d) {
+              ramBest = {
+                kind: 'tower',
+                id: tw.id,
+                col: aim.col,
+                row: aim.row,
+                d,
+                rangeD: edge,
+              }
+            }
+          }
+          for (const f of foes) {
+            if (!isBuildingCard(getCharacter(f.charId))) continue
+            const hitKey = `unit:${f.id}`
+            if ((u.hitOnceKeys ?? []).includes(hitKey)) continue
+            const c = unitCenter(f)
+            const edge = dist(me.col, me.row, c.col, c.row)
+            if (edge > ramRange) continue
+            const d = pathCostTo(me.col, me.row, c.col, c.row, openField)
+            if (!ramBest || d < ramBest.d) {
+              ramBest = { kind: 'unit', id: f.id, col: c.col, row: c.row, d, rangeD: edge }
+            }
+          }
+          if (ramBest && ramAtk) {
+            best = ramBest
+            const ramIdx = def.attacks.findIndex((a) => a.id === 'ram')
+            if (ramIdx >= 0) u.attackIndex = ramIdx
+            winRamReady = true
+          } else {
+            const whipIdx = def.attacks.findIndex((a) => a.id === 'chickenWhip')
+            if (whipIdx >= 0) u.attackIndex = whipIdx
+          }
+        }
+
         const face = Math.atan2(best.row - me.row, best.col - me.col)
         if (Math.abs(face - u.facing) > 0.04) {
           u.facing = face
           unitsChanged = true
         }
 
-        const inRange =
-          best.kind === 'tower'
+        const inRange = def.pathToBuildingsOnly
+          ? winRamReady
+          : best.kind === 'tower'
             ? (() => {
                 const slot = towerSlot(best.id)
                 return slot ? towerInMeleeRange(u.col, u.row, slot, attackRange) : false
@@ -2280,7 +2343,7 @@ export function useBattle(opts?: {
         // Shields (Dan) walk into contact then idle as a meat wall — never attack.
         if (!inRange) {
           // Out of range: walk to the FRONT engage point (never the back).
-          if (u.burstShot === 0 && u.nextAttackAt !== 0) {
+          if (u.burstShot === 0 && u.nextAttackAt !== 0 && !def.pathToBuildingsOnly) {
             u.nextAttackAt = 0
             unitsChanged = true
           }
@@ -2314,27 +2377,71 @@ export function useBattle(opts?: {
             }
             unitsChanged = true
           }
-          continue
+          if (def.pathToBuildingsOnly && !rooted) {
+            const whipAtk = def.attacks.find((a) => a.id === 'chickenWhip')
+            if (whipAtk && t >= u.nextAttackAt) {
+              let whipBest: typeof best | null = null
+              for (const tw of foeTowers) {
+                const slot = towerSlot(tw.id)
+                if (!slot) continue
+                const edge = distUnitTileToTower(u.col, u.row, slot)
+                if (edge > whipAtk.range) continue
+                const aim = towerFrontEngagePoint(u.col, u.row, slot)
+                if (!whipBest || edge < whipBest.rangeD) {
+                  whipBest = {
+                    kind: 'tower',
+                    id: tw.id,
+                    col: aim.col,
+                    row: aim.row,
+                    d: edge,
+                    rangeD: edge,
+                  }
+                }
+              }
+              for (const f of foes) {
+                const c = unitCenter(f)
+                const edge = dist(u.col, u.row, c.col, c.row)
+                if (edge > whipAtk.range) continue
+                if (!whipBest || edge < whipBest.rangeD) {
+                  whipBest = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: edge, rangeD: edge }
+                }
+              }
+              if (whipBest) {
+                best = whipBest
+                const whipIdx = def.attacks.findIndex((a) => a.id === 'chickenWhip')
+                if (whipIdx >= 0) u.attackIndex = whipIdx
+                u.facing = Math.atan2(best.row - u.row, best.col - u.col)
+                unitsChanged = true
+              } else {
+                continue
+              }
+            } else {
+              continue
+            }
+          } else {
+            continue
+          }
         }
 
         // In range — lock onto this target (CR: no retarget until dead / out of range).
         // noLock troops skip sticky lock entirely.
-        if (!noLock) {
+        // Hamburger Chicken never sticky-locks troops (keeps walking to buildings).
+        if (!noLock && !(def.pathToBuildingsOnly && best.kind === 'unit' && !isBuildingCard(getCharacter(nextUnits.find((x) => x.id === best.id)?.charId ?? '')))) {
           const nextLock = `${best.kind}:${best.id}`
           if (u.lockKey !== nextLock) {
             u.lockKey = nextLock
             unitsChanged = true
           }
-        } else if (u.lockKey) {
+        } else if (u.lockKey && (noLock || def.pathToBuildingsOnly)) {
           u.lockKey = null
           unitsChanged = true
         }
 
         if (noAttack) continue
 
-        if (t < u.nextAttackAt) continue
-
         const attack = def.attacks[u.attackIndex % def.attacks.length]!
+        if (t < u.nextAttackAt && !attack.ignoreAttackDelay) continue
+
         const damage = attack.damage * dmgMult * cardLevelMult(u.level)
         const shotAim =
           best.kind === 'tower'
@@ -2349,7 +2456,9 @@ export function useBattle(opts?: {
         const burstDone = nextBurst >= burstShots
 
         const vfxMs =
-          attack.id === 'chickenWhip'
+          attack.id === 'ram'
+            ? RAM_VFX_MS
+            : attack.id === 'chickenWhip'
             ? WHIP_VFX_MS
             : attack.id === 'flyingKick'
               ? KICK_VFX_MS
@@ -2374,9 +2483,11 @@ export function useBattle(opts?: {
                         : RANGED_VFX_MS
         u.vfx = attack.id
         u.vfxUntil = t + vfxMs
-        u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
+        if (!attack.ignoreAttackDelay) {
+          u.nextAttackAt = t + (burstDone ? def.attackDelaySec : burstGapSec) * 1000
+        }
         u.burstShot = burstDone ? 0 : nextBurst
-        if (burstDone) {
+        if (burstDone && !def.pathToBuildingsOnly) {
           u.attackIndex = (u.attackIndex + 1) % def.attacks.length
         }
         unitsChanged = true
@@ -2590,6 +2701,13 @@ export function useBattle(opts?: {
           }
         }
 
+        if (attack.oncePerTarget) {
+          const key = `${best.kind}:${best.id}`
+          if (!(u.hitOnceKeys ?? []).includes(key)) {
+            u.hitOnceKeys = [...(u.hitOnceKeys ?? []), key]
+          }
+        }
+
         // Melee lunge + impact FX so the strike reads as a real attack.
         if (
           attack.kind === 'whip' ||
@@ -2598,12 +2716,16 @@ export function useBattle(opts?: {
           attack.kind === 'headbutt' ||
           attack.kind === 'hug' ||
           attack.kind === 'uppercut' ||
-          attack.kind === 'launch'
+          attack.kind === 'launch' ||
+          attack.kind === 'ram'
         ) {
           const ang = Math.atan2(shotAim.row - me.row, shotAim.col - me.col)
+          const skipLunge = !!def.pathToBuildingsOnly && attack.kind === 'whip'
           const lunge =
             attack.kind === 'kick'
               ? 1.25
+              : attack.kind === 'ram'
+                ? 1.2
               : attack.kind === 'hug'
                 ? 0.85
                 : attack.kind === 'uppercut'
@@ -2611,16 +2733,18 @@ export function useBattle(opts?: {
                   : attack.kind === 'launch'
                     ? 1.1
                   : 0.65
-          const next = stepUnit(
-            u,
-            Math.cos(ang) * lunge,
-            Math.sin(ang) * lunge,
-            liveIds,
-            openField,
-          )
-          const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
-          u.col = ejected.col
-          u.row = ejected.row
+          if (!skipLunge) {
+            const next = stepUnit(
+              u,
+              Math.cos(ang) * lunge,
+              Math.sin(ang) * lunge,
+              liveIds,
+              openField,
+            )
+            const ejected = ejectFromTowers(next.col, next.row, liveIds, u.side)
+            u.col = ejected.col
+            u.row = ejected.row
+          }
           u.facing = ang
           unitsChanged = true
           nextSplats.push({

@@ -16,6 +16,7 @@ export type AttackId =
   | 'jump'
   | 'pancakeHuck'
   | 'launch'
+  | 'ram'
 
 export type AttackDef = {
   id: AttackId
@@ -41,6 +42,12 @@ export type AttackDef = {
   projectileMs?: number
   /** After this attack resolves, the attacker dies (Clash-style spirits). */
   diesOnAttack?: boolean
+  /** This attack only hits buildings and towers. */
+  buildingsOnly?: boolean
+  /** Never use this attack on the same target twice (Hamburger Chicken Ram). */
+  oncePerTarget?: boolean
+  /** Fire as soon as in range — ignore attackDelaySec (Ram). */
+  ignoreAttackDelay?: boolean
   kind:
     | 'sundae'
     | 'whip'
@@ -59,6 +66,7 @@ export type AttackDef = {
     | 'jump'
     | 'pancake'
     | 'launch'
+    | 'ram'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -125,6 +133,8 @@ export type CharacterDef = {
   spellTravelMs?: number
   /** Only lock / damage enemy buildings and towers (never troops). */
   targetsBuildingsOnly?: boolean
+  /** Path only toward buildings/towers (Hog-style). Other attacks may still hit troops in range. */
+  pathToBuildingsOnly?: boolean
   /** Never sticky-lock — always retarget the nearest opponent. */
   noLock?: boolean
 }
@@ -642,6 +652,45 @@ export const DAVE: CharacterDef = {
   ],
 }
 
+/** Win condition — waddles at buildings; Whip anyone nearby; Ram each building/tower once. */
+export const HAMBURGER_CHICKEN: CharacterDef = {
+  id: 'hamburgerChicken',
+  name: 'Hamburger Chicken',
+  initial: 'Hc',
+  pronoun: 'it',
+  height: "4'2\"",
+  rarity: 'rare',
+  elixir: 4,
+  hp: 630,
+  moveSpeed: 13,
+  attackDelaySec: 1.1,
+  hue: 32,
+  blurb:
+    'Win condition — penguin-waddles at buildings and towers. Whip slams anyone who gets close while it keeps moving. Ram horns into each building or tower once.',
+  pathToBuildingsOnly: true,
+  attacks: [
+    {
+      id: 'chickenWhip',
+      name: 'Whip',
+      range: 14,
+      damage: 220,
+      rootWhileAttacking: false,
+      kind: 'whip',
+    },
+    {
+      id: 'ram',
+      name: 'Ram',
+      range: 2,
+      damage: 505,
+      rootWhileAttacking: true,
+      buildingsOnly: true,
+      oncePerTarget: true,
+      ignoreAttackDelay: true,
+      kind: 'ram',
+    },
+  ],
+}
+
 /** Clash-style spirit — Phil's floating head jumps in and pops. */
 export const PHIL_SPIRIT: CharacterDef = {
   id: 'philSpirit',
@@ -808,6 +857,7 @@ export const CHARACTERS: CharacterDef[] = [
   SCOTT,
   GRETCHIN,
   DAVE,
+  HAMBURGER_CHICKEN,
   PHIL_SPIRIT,
   PETE_SPIRIT,
   JEREMY_SPIRIT,

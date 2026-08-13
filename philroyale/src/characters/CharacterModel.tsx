@@ -26,6 +26,7 @@ import { JeremySpiritModel } from './JeremySpiritModel'
 import { EvilPhilModel } from './EvilPhilModel'
 import { StevesDinerModel } from './StevesDinerModel'
 import { BigMableModel } from './BigMableModel'
+import { HamburgerChickenModel } from './HamburgerChickenModel'
 
 type Props = {
   charId: string
@@ -107,6 +108,10 @@ export function CharacterModel({
   } else if (charId === 'bigMable') {
     model = (
       <BigMableModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
+  } else if (charId === 'hamburgerChicken') {
+    model = (
+      <HamburgerChickenModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
     )
   } else {
     model = (
