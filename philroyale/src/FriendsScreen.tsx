@@ -106,6 +106,27 @@ export function FriendsScreen({
     }
   }, [])
 
+  // Remember last presence ping so "last online" survives after they go offline / reload.
+  useEffect(() => {
+    const current = loadFriendMeta()
+    let changed = false
+    const nextOnline = { ...current.lastOnline }
+    for (const f of friends) {
+      if (!f.playerId) continue
+      const at = friendPresence[f.playerId]?.at
+      if (!at || !Number.isFinite(at)) continue
+      const prev = nextOnline[f.id] ?? 0
+      if (at > prev) {
+        nextOnline[f.id] = at
+        changed = true
+      }
+    }
+    if (!changed) return
+    const next = { ...current, lastOnline: nextOnline }
+    setMeta(next)
+    saveFriendMeta(next)
+  }, [friendPresence, friends])
+
   function persistName(name: string) {
     setPlayerName(name)
     savePlayerName(name)
@@ -402,6 +423,10 @@ export function FriendsScreen({
                 const pinned = !!meta.pinned[f.id]
                 const note = meta.notes[f.id] ?? ''
                 const canInvite = Boolean(f.playerId) && !battling && !isWaiting
+                const lastSeenAt = Math.max(
+                  presence?.at ?? 0,
+                  meta.lastOnline[f.id] ?? 0,
+                )
                 const statusColor = battling ? '#ffb020' : online ? '#3ecf6a' : '#6a5a50'
                 const statusLabel = !f.playerId
                   ? 'Missing account code'
@@ -409,7 +434,7 @@ export function FriendsScreen({
                     ? `In battle${presence?.opponentName ? ` vs ${presence.opponentName}` : ''}`
                     : online
                       ? 'Online — tap Invite for Accept / Decline'
-                      : 'Keep Phil Royale open on both phones to battle'
+                      : formatLastOnlineAgo(lastSeenAt || undefined, now)
                 return (
                   <li
                     key={f.id}
@@ -430,7 +455,13 @@ export function FriendsScreen({
                               background: statusColor,
                               boxShadow: online || battling ? `0 0 6px ${statusColor}` : 'none',
                             }}
-                            title={battling ? 'In battle' : online ? 'Online' : 'Offline'}
+                            title={
+                              battling
+                                ? 'In battle'
+                                : online
+                                  ? 'Online'
+                                  : formatLastOnlineAgo(lastSeenAt || undefined, now)
+                            }
                           />
                           {battling ? (
                             <span className="ml-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#ffb020]">
@@ -539,6 +570,7 @@ export function FriendsScreen({
             profileFriend.playerId ? friendPresence[profileFriend.playerId] : undefined
           }
           now={now}
+          lastOnlineAt={meta.lastOnline[profileFriend.id]}
           note={meta.notes[profileFriend.id] ?? ''}
           pinned={!!meta.pinned[profileFriend.id]}
           onClose={() => setProfileFriend(null)}
@@ -687,10 +719,22 @@ function inBattle(
   return now - info.at < PRESENCE_ONLINE_MS
 }
 
+/**
+ * Round up to whole hours (min 1).
+ * Just left → "1 hour"; between 1–2h → "2 hours".
+ */
+function formatLastOnlineAgo(atMs: number | undefined, nowMs: number): string {
+  if (!atMs || !Number.isFinite(atMs) || atMs <= 0) return 'Last online unknown'
+  const elapsedMs = Math.max(0, nowMs - atMs)
+  const hours = Math.max(1, Math.ceil(elapsedMs / (60 * 60 * 1000)))
+  return hours === 1 ? 'Last online 1 hour ago' : `Last online ${hours} hours ago`
+}
+
 export function FriendProfileModal({
   friend,
   presence,
   now,
+  lastOnlineAt,
   note,
   pinned,
   onClose,
@@ -703,6 +747,7 @@ export function FriendProfileModal({
   friend: Friend
   presence?: FriendPresenceInfo
   now: number
+  lastOnlineAt?: number
   note: string
   pinned: boolean
   onClose: () => void
@@ -714,13 +759,14 @@ export function FriendProfileModal({
 }) {
   const online = !!presence && now - presence.at < PRESENCE_ONLINE_MS
   const battling = online && !!presence?.inBattle && !!presence.challengeId
+  const lastSeen = Math.max(presence?.at ?? 0, lastOnlineAt ?? 0)
   const status = !friend.playerId
     ? 'No account code'
     : battling
       ? 'In battle'
       : online
         ? 'Online'
-        : 'Offline'
+        : formatLastOnlineAgo(lastSeen || undefined, now)
 
   return (
     <div

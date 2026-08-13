@@ -844,6 +844,8 @@ export type FriendMeta = {
   lastBattled: Record<string, string>
   /** friend id → note */
   notes: Record<string, string>
+  /** friend id → last known presence ping (epoch ms) */
+  lastOnline: Record<string, number>
 }
 
 const DEFAULT_PROFILE: PlayerProfile = {
@@ -1227,6 +1229,7 @@ export function loadFriendMeta(): FriendMeta {
     pinned: raw.pinned ?? {},
     lastBattled: raw.lastBattled ?? {},
     notes: raw.notes ?? {},
+    lastOnline: raw.lastOnline ?? {},
   }
 }
 
