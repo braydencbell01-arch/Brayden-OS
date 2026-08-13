@@ -12,10 +12,15 @@ type Props = {
 
 /**
  * Clash Goblin Barrel pose — tilted open keg with the in-game chicken peeking out.
- * Sized so the chicken head + full barrel stay inside the card frame (not clipped).
+ * Kept small enough that the full barrel + chicken head stay inside the card frame.
  */
 export function ChickenBarrelModel({ portrait }: Props) {
   const uid = useId().replace(/:/g, '')
+  // Portrait cards are short — shrink + nudge so nothing clips the frame.
+  const boxW = portrait ? '54%' : '84%'
+  const boxH = portrait ? '64%' : '92%'
+  const top = portrait ? '58%' : '52%'
+  const rot = portrait ? -24 : -30
   return (
     <div
       className="relative h-full w-full overflow-hidden"
@@ -23,11 +28,12 @@ export function ChickenBarrelModel({ portrait }: Props) {
       aria-hidden
     >
       <div
-        className="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
-          width: portrait ? '78%' : '92%',
-          height: portrait ? '88%' : '100%',
-          transform: 'translate(-50%, -50%) rotate(-32deg)',
+          top,
+          width: boxW,
+          height: boxH,
+          transform: `translate(-50%, -50%) rotate(${rot}deg)`,
         }}
       >
         <svg

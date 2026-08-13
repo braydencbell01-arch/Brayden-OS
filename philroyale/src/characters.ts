@@ -906,7 +906,7 @@ export const TRISTAN: CharacterDef = {
   name: 'Tristan',
   initial: 'Tr',
   pronoun: 'he',
-  height: "5'0\"",
+  height: "5'9\"",
   rarity: 'common',
   elixir: 3,
   hp: 440,

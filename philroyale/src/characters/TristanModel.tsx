@@ -24,7 +24,10 @@ export function TristanModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 12%"
+      // Troop cutout on shared card blue — no photo studio plate / halo.
+      portraitSrc={TROOP}
+      objectPos="50% 8%"
+      portraitFilter="brightness(1) saturate(1)"
       gait="run"
       spriteLegs
       attack={anim === 'attack' && attackId === 'cheeseAndCucumbers' ? 'sundae' : 'none'}
