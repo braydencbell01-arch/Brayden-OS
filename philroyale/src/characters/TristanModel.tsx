@@ -24,13 +24,13 @@ export function TristanModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      portraitSrc={TROOP}
-      objectPos="50% 10%"
-      portraitFilter="brightness(1) saturate(1)"
+      // Card art already on shared blue — avoid glitchy troop cutout on portraits.
+      objectPos="50% 12%"
+      portraitFilter="brightness(1) saturate(1.05)"
       gait="run"
       spriteLegs
       attack={anim === 'attack' && attackId === 'cheeseAndCucumbers' ? 'sundae' : 'none'}
-      legColor="#1a1a20"
+      legColor="#1a3a7a"
       shoeColor="#0a0a0c"
     />
   )
