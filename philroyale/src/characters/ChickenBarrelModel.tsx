@@ -16,24 +16,22 @@ type Props = {
  */
 export function ChickenBarrelModel({ portrait }: Props) {
   const uid = useId().replace(/:/g, '')
-  // Portrait cards are short — shrink + nudge so nothing clips the frame.
-  const boxW = portrait ? '54%' : '84%'
-  const boxH = portrait ? '64%' : '92%'
-  const top = portrait ? '58%' : '52%'
-  const rot = portrait ? -24 : -30
+  // Portrait: center the full keg in the middle of the card.
+  const boxW = portrait ? '78%' : '84%'
+  const boxH = portrait ? '86%' : '92%'
+  const rot = portrait ? -12 : -30
   return (
     <div
-      className="relative h-full w-full overflow-hidden"
+      className="relative flex h-full w-full items-center justify-center overflow-hidden"
       style={{ background: portrait ? CARD_PORTRAIT_BG : 'transparent' }}
       aria-hidden
     >
       <div
-        className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+        className="relative"
         style={{
-          top,
           width: boxW,
           height: boxH,
-          transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+          transform: `rotate(${rot}deg)`,
         }}
       >
         <svg
