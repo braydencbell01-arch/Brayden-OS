@@ -19,21 +19,73 @@ export const ARENA_THEME_CSS: Record<string, string> = {
     radial-gradient(ellipse 80% 45% at 50% 0%, #ffffff88 0%, transparent 50%),
     linear-gradient(180deg, #ff9ec8 0%, #e868a0 40%, #8a3060 100%)
   `,
-  "Pete's Pit": `
-    radial-gradient(ellipse 40% 20% at 30% 55%, #e8d0a0aa 0%, transparent 60%),
-    radial-gradient(ellipse 35% 18% at 70% 60%, #d0b08099 0%, transparent 55%),
-    radial-gradient(circle at 25% 40%, #1a1008 0 0.2rem, transparent 0.25rem),
-    radial-gradient(circle at 60% 48%, #1a1008 0 0.15rem, transparent 0.2rem),
-    radial-gradient(circle at 45% 70%, #2a1810 0 0.35rem, transparent 0.4rem),
-    repeating-linear-gradient(0deg, transparent 0 14px, #3a201844 14px 16px),
-    radial-gradient(ellipse 100% 55% at 50% 100%, #1a0c08 0%, transparent 60%),
-    linear-gradient(180deg, #6a4a30 0%, #3a2418 40%, #140a08 100%)
+  "Beans' Battleground": `
+    radial-gradient(circle at 22% 70%, #c8e06055 0 0.5rem, transparent 0.55rem),
+    radial-gradient(circle at 78% 62%, #8fd46a44 0 0.4rem, transparent 0.45rem),
+    repeating-linear-gradient(90deg, transparent 0 16px, #3a6a1888 16px 18px),
+    radial-gradient(ellipse 90% 45% at 50% 100%, #2a5a10cc 0%, transparent 55%),
+    linear-gradient(180deg, #8fd46a 0%, #4a8a28 42%, #1a3a10 100%)
   `,
-  'Jeremy Land': `
+  'Phil Pier': `
+    repeating-linear-gradient(90deg, #1a4a6888 0 10px, #0e3048 10px 20px),
+    radial-gradient(ellipse 80% 40% at 50% 100%, #0a2838 0%, transparent 55%),
+    radial-gradient(ellipse 50% 30% at 70% 20%, #ffe08a44 0%, transparent 50%),
+    linear-gradient(180deg, #7ec8e8 0%, #3a7aa8 40%, #1a3a58 100%)
+  `,
+  "Dave's Dungeon": `
+    radial-gradient(circle at 30% 40%, #e0704033 0 0.4rem, transparent 0.5rem),
+    radial-gradient(ellipse 70% 40% at 50% 100%, #2a1008 0%, transparent 55%),
+    repeating-linear-gradient(0deg, transparent 0 18px, #3a181044 18px 20px),
+    linear-gradient(180deg, #8a4a30 0%, #3a2018 40%, #120808 100%)
+  `,
+  "Kathie's Kitchen": `
+    radial-gradient(circle at 25% 30%, #fff0c8aa 0 0.5rem, transparent 0.55rem),
+    radial-gradient(circle at 72% 58%, #ff8a4a44 0 0.6rem, transparent 0.65rem),
+    repeating-linear-gradient(90deg, #f0c07055 0 12px, #e8a05055 12px 24px),
+    linear-gradient(180deg, #ffe0a0 0%, #d08040 42%, #5a2810 100%)
+  `,
+  'Jacobson Junction': `
+    repeating-linear-gradient(90deg, #4a5460 0 14px, #3a4048 14px 28px),
+    radial-gradient(ellipse 60% 25% at 50% 18%, #f5d76e44 0%, transparent 55%),
+    linear-gradient(180deg, #9aa8b8 0%, #5a6878 40%, #2a3038 100%)
+  `,
+  "Gretchin's Grill": `
+    radial-gradient(circle at 28% 35%, #e8a0ff55 0 0.55rem, transparent 0.6rem),
+    radial-gradient(circle at 70% 65%, #c060c844 0 0.45rem, transparent 0.5rem),
+    linear-gradient(180deg, #d890e0 0%, #803888 40%, #3a1040 100%)
+  `,
+  "Ricky's Diner": `
+    radial-gradient(circle at 20% 28%, #ffd07088 0 0.5rem, transparent 0.55rem),
+    repeating-linear-gradient(135deg, #e8a04055 0 10px, #c8783055 10px 20px),
+    linear-gradient(180deg, #f0b860 0%, #b06020 42%, #3a2010 100%)
+  `,
+  'Scotts Mansion': `
+    radial-gradient(ellipse 70% 30% at 50% 12%, #ffffffcc 0%, transparent 55%),
+    repeating-linear-gradient(90deg, #d0dce8 0 16px, #b8c8d8 16px 32px),
+    linear-gradient(180deg, #e8f0f8 0%, #7a90a8 40%, #2a3848 100%)
+  `,
+  "Jeremy's Junkyard": `
     repeating-linear-gradient(90deg, #0a0e14 0 8px, #121820 8px 16px),
     repeating-linear-gradient(0deg, transparent 0 22px, #1a304855 22px 24px),
     radial-gradient(ellipse 60% 30% at 50% 20%, #3a6a9a66 0%, transparent 55%),
     linear-gradient(180deg, #0c121c 0%, #1a2838 35%, #050810 100%)
+  `,
+  Clucktown: `
+    radial-gradient(circle at 30% 40%, #ff606055 0 0.5rem, transparent 0.55rem),
+    radial-gradient(circle at 68% 62%, #f0d06055 0 0.45rem, transparent 0.5rem),
+    linear-gradient(180deg, #ffe08a 0%, #d08030 42%, #5a3010 100%)
+  `,
+  "Todd's Tavern": `
+    radial-gradient(ellipse 50% 28% at 40% 30%, #e8b86a44 0%, transparent 55%),
+    repeating-linear-gradient(0deg, transparent 0 16px, #4a281844 16px 18px),
+    linear-gradient(180deg, #c07040 0%, #6a3818 42%, #201008 100%)
+  `,
+  'Pete Palace': `
+    radial-gradient(ellipse 40% 20% at 30% 55%, #e8d0a0aa 0%, transparent 60%),
+    radial-gradient(ellipse 35% 18% at 70% 60%, #d0b08099 0%, transparent 55%),
+    repeating-linear-gradient(0deg, transparent 0 14px, #3a201844 14px 16px),
+    radial-gradient(ellipse 100% 55% at 50% 100%, #1a0c08 0%, transparent 60%),
+    linear-gradient(180deg, #6a4a30 0%, #3a2418 40%, #140a08 100%)
   `,
   'Phil Peak': `
     radial-gradient(ellipse 80% 35% at 50% 18%, #ffffffdd 0%, #ffe08acc 35%, transparent 60%),
@@ -42,10 +94,16 @@ export const ARENA_THEME_CSS: Record<string, string> = {
     linear-gradient(180deg, #6ec8ff 0%, #c9a227 38%, #5a3a10 70%, #1a1008 100%)
   `,
   // Legacy
+  "Pete's Pit": `
+    radial-gradient(ellipse 40% 20% at 30% 55%, #e8d0a0aa 0%, transparent 60%),
+    linear-gradient(180deg, #6a4a30 0%, #3a2418 40%, #140a08 100%)
+  `,
+  'Jeremy Land': `
+    repeating-linear-gradient(90deg, #0a0e14 0 8px, #121820 8px 16px),
+    linear-gradient(180deg, #0c121c 0%, #1a2838 35%, #050810 100%)
+  `,
   'Phil Plaza': `
     repeating-linear-gradient(90deg, #0a0e14 0 8px, #121820 8px 16px),
-    repeating-linear-gradient(0deg, transparent 0 22px, #1a304855 22px 24px),
-    radial-gradient(ellipse 60% 30% at 50% 20%, #3a6a9a66 0%, transparent 55%),
     linear-gradient(180deg, #0c121c 0%, #1a2838 35%, #050810 100%)
   `,
   'Goblin Boot': `
