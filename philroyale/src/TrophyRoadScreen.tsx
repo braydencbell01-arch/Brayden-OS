@@ -392,35 +392,6 @@ export function TrophyRoadScreen({
       >
         <div className="relative mx-auto max-w-md py-4 pl-1 pr-1">
           <div className="relative">
-            <div
-              ref={railTrackRef}
-              aria-hidden
-              className="pointer-events-none absolute bottom-2 top-2 z-0 w-[1.15rem] overflow-hidden rounded-full"
-              style={{
-                left: '2.55rem',
-                background:
-                  'linear-gradient(180deg, rgba(210,235,255,0.55) 0%, rgba(120,185,240,0.38) 45%, rgba(70,140,210,0.32) 100%)',
-                boxShadow:
-                  'inset 0 0 0 2px rgba(255,255,255,0.45), inset 0 0 14px rgba(90,170,255,0.35), 0 0 10px rgba(80,160,255,0.25)',
-              }}
-            >
-              <div
-                className="absolute bottom-0 left-0 right-0"
-                style={{
-                  height: railFill.peak,
-                  background: 'linear-gradient(180deg,#9ad0ffaa,#4a8ac888)',
-                }}
-              />
-              <div
-                className="absolute bottom-0 left-0 right-0"
-                style={{
-                  height: railFill.cur,
-                  background: 'linear-gradient(180deg,#c8ecff,#5eb0ff 40%, #2f7fd4)',
-                  boxShadow: 'inset 0 1px 0 #ffffff88, 0 0 8px #6ec8ff88',
-                }}
-              />
-            </div>
-
             <ul ref={listRef} className="relative z-[1] flex flex-col gap-6">
 
             {arenaSections.map((section) => {
@@ -464,9 +435,9 @@ export function TrophyRoadScreen({
                             <button
                               key={f.friend.id}
                               type="button"
-                              className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+                              className="absolute z-40 -translate-x-1/2 -translate-y-1/2"
                               style={{
-                                left: `${2.55 + 0.575 - fi * 0.15}rem`,
+                                left: `${3.35 + 0.575 - fi * 0.15}rem`,
                                 top: `${18 + fi * 18}%`,
                               }}
                               title={`${f.friend.name}: ${f.trophies}`}
@@ -491,7 +462,7 @@ export function TrophyRoadScreen({
 
                           {isYou ? (
                             <div
-                              className="pointer-events-none absolute left-[2.55rem] top-1/2 z-30 -translate-y-1/2"
+                              className="pointer-events-none absolute left-[3.35rem] top-1/2 z-40 -translate-y-1/2"
                               aria-hidden
                             >
                               <span
@@ -508,10 +479,10 @@ export function TrophyRoadScreen({
                           ) : null}
 
                           <div className="relative flex items-center gap-2">
-                            <span className="w-10 shrink-0 text-right text-[0.7rem] font-black tabular-nums text-white drop-shadow">
+                            <span className="w-12 shrink-0 pr-1 text-right text-[0.7rem] font-black tabular-nums text-white drop-shadow">
                               {step.trophies}
                             </span>
-                            <span className="w-5 shrink-0" aria-hidden />
+                            <span className="w-6 shrink-0" aria-hidden />
                             <motion.button
                               type="button"
                               whileTap={{ scale: 0.96 }}
@@ -574,7 +545,7 @@ export function TrophyRoadScreen({
                   </ul>
                   <div
                     data-arena-banner={section.arena}
-                    className="mt-3 ml-2 max-w-[14rem] rounded-xl px-3 py-2"
+                    className="mt-3 ml-auto mr-1 max-w-[14rem] rounded-xl px-3 py-2 text-right"
                     style={{
                       background: `linear-gradient(180deg, ${arenaTone.sky}, ${arenaTone.ground})`,
                       boxShadow: '0 4px 0 #00000055, inset 0 1px 0 #ffffff33',
@@ -588,6 +559,36 @@ export function TrophyRoadScreen({
               )
             })}
           </ul>
+
+            {/* Rail above arena backdrops / cards so it stays visible the full road */}
+            <div
+              ref={railTrackRef}
+              aria-hidden
+              className="pointer-events-none absolute bottom-2 top-2 z-30 w-[1.15rem] overflow-hidden rounded-full"
+              style={{
+                left: '3.35rem',
+                background:
+                  'linear-gradient(180deg, rgba(210,235,255,0.55) 0%, rgba(120,185,240,0.38) 45%, rgba(70,140,210,0.32) 100%)',
+                boxShadow:
+                  'inset 0 0 0 2px rgba(255,255,255,0.45), inset 0 0 14px rgba(90,170,255,0.35), 0 0 10px rgba(80,160,255,0.25)',
+              }}
+            >
+              <div
+                className="absolute bottom-0 left-0 right-0"
+                style={{
+                  height: railFill.peak,
+                  background: 'linear-gradient(180deg,#9ad0ffaa,#4a8ac888)',
+                }}
+              />
+              <div
+                className="absolute bottom-0 left-0 right-0"
+                style={{
+                  height: railFill.cur,
+                  background: 'linear-gradient(180deg,#c8ecff,#5eb0ff 40%, #2f7fd4)',
+                  boxShadow: 'inset 0 1px 0 #ffffff88, 0 0 8px #6ec8ff88',
+                }}
+              />
+            </div>
           </div>
           <p className="mt-4 text-center text-[0.6rem] font-bold text-white/40">
             Max {maxTrophies} trophies
