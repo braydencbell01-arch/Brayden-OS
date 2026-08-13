@@ -67,6 +67,8 @@ export type SyncProjectile = {
     | 'witchcraft'
     | 'pancake'
     | 'barrel'
+    | 'cheese'
+    | 'cucumber'
   fromCol: number
   fromRow: number
   toCol: number

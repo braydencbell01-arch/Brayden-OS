@@ -17,6 +17,7 @@ export type AttackId =
   | 'pancakeHuck'
   | 'launch'
   | 'ram'
+  | 'cheeseAndCucumbers'
 
 export type AttackDef = {
   id: AttackId
@@ -48,6 +49,8 @@ export type AttackDef = {
   oncePerTarget?: boolean
   /** Fire as soon as in range — ignore attackDelaySec (Ram). */
   ignoreAttackDelay?: boolean
+  /** Hit up to this many closest opponents in range (Tristan). */
+  maxTargets?: number
   kind:
     | 'sundae'
     | 'whip'
@@ -67,6 +70,8 @@ export type AttackDef = {
     | 'pancake'
     | 'launch'
     | 'ram'
+    | 'cheese'
+    | 'cucumber'
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -879,6 +884,34 @@ export const EVIL_PHIL: CharacterDef = {
   ],
 }
 
+/** Arsenal kid — lob cheese or cucumbers at up to three closest foes. */
+export const TRISTAN: CharacterDef = {
+  id: 'tristan',
+  name: 'Tristan',
+  initial: 'Tr',
+  pronoun: 'he',
+  height: "5'0\"",
+  rarity: 'common',
+  elixir: 3,
+  hp: 440,
+  moveSpeed: 6.5,
+  attackDelaySec: 1.8,
+  hue: 0,
+  blurb:
+    'Arsenal kit — Cheese and Cucumbers. Throws a random snack at up to three closest foes in range.',
+  attacks: [
+    {
+      id: 'cheeseAndCucumbers',
+      name: 'Cheese and Cucumbers',
+      range: 20,
+      damage: 395,
+      rootWhileAttacking: true,
+      maxTargets: 3,
+      kind: 'cheese',
+    },
+  ],
+}
+
 /** Common inflatable tow-tube — slides, Launch knockback, never sticky-locks. */
 export const BIG_MABLE: CharacterDef = {
   id: 'bigMable',
@@ -937,6 +970,7 @@ export const CHARACTERS: CharacterDef[] = [
   ICE_CREAM,
   FOOTBALL_HUCK,
   BOBBY_SPECIAL,
+  TRISTAN,
   BIG_MABLE,
 ]
 

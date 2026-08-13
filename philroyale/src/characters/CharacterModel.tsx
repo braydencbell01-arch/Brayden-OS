@@ -29,6 +29,7 @@ import { BigMableModel } from './BigMableModel'
 import { HamburgerChickenModel } from './HamburgerChickenModel'
 import { ChickenModel } from './ChickenModel'
 import { ChickenBarrelModel } from './ChickenBarrelModel'
+import { TristanModel } from './TristanModel'
 
 type Props = {
   charId: string
@@ -125,6 +126,10 @@ export function CharacterModel({
     )
   } else if (charId === 'chickenBarrel') {
     model = <ChickenBarrelModel anim={anim} facing={facing} portrait={portrait} />
+  } else if (charId === 'tristan') {
+    model = (
+      <TristanModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
   } else {
     model = (
       <CrUnitModel

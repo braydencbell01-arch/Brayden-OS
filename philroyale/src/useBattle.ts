@@ -1730,6 +1730,24 @@ export function useBattle(opts?: {
             radius: splatRadius,
           })
           splatsChanged = true
+        } else if (p.kind === 'cheese') {
+          nextSplats.push({
+            id: nid('cheese'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'cheese',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'cucumber') {
+          nextSplats.push({
+            id: nid('cuke'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'cucumber',
+          })
+          splatsChanged = true
         }
         if (p.splashRadius != null && p.ownerSide != null && p.splashDamage != null) {
           // Primary hit + separate splash (Cash Gun).
@@ -2610,42 +2628,102 @@ export function useBattle(opts?: {
           attack.kind === 'love' ||
           attack.kind === 'witchcraft' ||
           attack.kind === 'cash' ||
-          attack.kind === 'rocket'
+          attack.kind === 'rocket' ||
+          attack.kind === 'cheese' ||
+          attack.kind === 'cucumber'
         ) {
-          nextProjectiles.push({
-            id: nid('p'),
-            kind: attack.kind,
-            fromCol: me.col,
-            fromRow: me.row,
-            toCol: shotAim.col,
-            toRow: shotAim.row,
-            damage,
-            targetId: best.kind === 'unit' ? best.id : null,
-            targetTowerId: best.kind === 'tower' ? best.id : null,
-            bornAt: t,
-            arriveAt:
-              t +
-              (attack.projectileMs != null
-                ? attack.projectileMs
-                : attack.kind === 'shoot'
-                  ? SHOOT_PROJECTILE_MS
-                  : attack.kind === 'cash'
-                    ? CASH_PROJECTILE_MS
-                    : attack.kind === 'rocket'
-                      ? ROCKET_PROJECTILE_MS
-                      : attack.kind === 'slobber'
-                        ? SLOBBER_PROJECTILE_MS
-                        : attack.kind === 'dumbbell'
-                          ? DUMBBELL_PROJECTILE_MS
-                          : attack.kind === 'love'
-                            ? LOVE_PROJECTILE_MS
-                            : attack.kind === 'witchcraft'
-                              ? WITCHCRAFT_PROJECTILE_MS
-                              : PROJECTILE_MS),
-            ownerSide: u.side,
-            splashRadius: attack.splashRadius,
-            splashDamage: attack.splashDamage,
-          })
+          const maxTargets = Math.max(1, attack.maxTargets ?? 1)
+          const volley: {
+            kind: 'unit' | 'tower'
+            id: string
+            col: number
+            row: number
+            rangeD: number
+          }[] = []
+          if (maxTargets <= 1) {
+            volley.push({
+              kind: best.kind,
+              id: best.id,
+              col: shotAim.col,
+              row: shotAim.row,
+              rangeD: best.rangeD,
+            })
+          } else {
+            for (const f of foes) {
+              const c = unitCenter(f)
+              const edge = dist(me.col, me.row, c.col, c.row)
+              if (edge > attack.range) continue
+              volley.push({ kind: 'unit', id: f.id, col: c.col, row: c.row, rangeD: edge })
+            }
+            for (const tw of foeTowers) {
+              const slot = towerSlot(tw.id)
+              if (!slot || !towerInMeleeRange(u.col, u.row, slot, attack.range)) continue
+              const edge = distUnitTileToTower(u.col, u.row, slot)
+              const aim = towerFrontAimPoint(slot)
+              volley.push({
+                kind: 'tower',
+                id: tw.id,
+                col: aim.col,
+                row: aim.row,
+                rangeD: edge,
+              })
+            }
+            volley.sort((a, b) => a.rangeD - b.rangeD)
+            if (volley.length === 0) {
+              volley.push({
+                kind: best.kind,
+                id: best.id,
+                col: shotAim.col,
+                row: shotAim.row,
+                rangeD: best.rangeD,
+              })
+            }
+          }
+          const hits = volley.slice(0, maxTargets)
+          const snackAttack = attack.id === 'cheeseAndCucumbers'
+          for (const hit of hits) {
+            const projKind = snackAttack
+              ? Math.random() < 0.5
+                ? 'cheese'
+                : 'cucumber'
+              : attack.kind
+            nextProjectiles.push({
+              id: nid('p'),
+              kind: projKind as Projectile['kind'],
+              fromCol: me.col,
+              fromRow: me.row,
+              toCol: hit.col,
+              toRow: hit.row,
+              damage,
+              targetId: hit.kind === 'unit' ? hit.id : null,
+              targetTowerId: hit.kind === 'tower' ? hit.id : null,
+              bornAt: t,
+              arriveAt:
+                t +
+                (attack.projectileMs != null
+                  ? attack.projectileMs
+                  : snackAttack
+                    ? PROJECTILE_MS
+                    : attack.kind === 'shoot'
+                      ? SHOOT_PROJECTILE_MS
+                      : attack.kind === 'cash'
+                        ? CASH_PROJECTILE_MS
+                        : attack.kind === 'rocket'
+                          ? ROCKET_PROJECTILE_MS
+                          : attack.kind === 'slobber'
+                            ? SLOBBER_PROJECTILE_MS
+                            : attack.kind === 'dumbbell'
+                              ? DUMBBELL_PROJECTILE_MS
+                              : attack.kind === 'love'
+                                ? LOVE_PROJECTILE_MS
+                                : attack.kind === 'witchcraft'
+                                  ? WITCHCRAFT_PROJECTILE_MS
+                                  : PROJECTILE_MS),
+              ownerSide: u.side,
+              splashRadius: attack.splashRadius,
+              splashDamage: attack.splashDamage,
+            })
+          }
           projectilesChanged = true
           continue
         }

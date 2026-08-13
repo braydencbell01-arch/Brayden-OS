@@ -65,7 +65,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   // Training Camp 0–100
   { trophies: 0, arena: 'Training Camp', label: 'Journey begins', gold: 50, unlockCard: 'finley' },
   { trophies: 20, arena: 'Training Camp', label: 'x1 Shay', unlockCard: 'shay', gold: 40 },
-  { trophies: 40, arena: 'Training Camp', label: 'Common Chest', chest: 'common', gold: 25 },
+  { trophies: 40, arena: 'Training Camp', label: 'x1 Tristan', unlockCard: 'tristan', gold: 50 },
   { trophies: 60, arena: 'Training Camp', label: 'x1 Dan', unlockCard: 'dan', gold: 40 },
   { trophies: 80, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'pete', gold: 70 },
   // Sundae Strip 100–300

@@ -293,6 +293,72 @@ export function SundaeDot() {
   )
 }
 
+/** Tristan — flying cheese wedge. */
+export function CheeseDot() {
+  const src = `${import.meta.env.BASE_URL}projectiles/cheese.png`
+  return (
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className="pointer-events-none h-10 w-10 object-contain"
+      aria-hidden
+    />
+  )
+}
+
+/** Tristan — flying cucumber slice. */
+export function CucumberDot() {
+  const src = `${import.meta.env.BASE_URL}projectiles/cucumber.png`
+  return (
+    <img
+      src={src}
+      alt=""
+      draggable={false}
+      className="pointer-events-none h-9 w-9 object-contain"
+      aria-hidden
+    />
+  )
+}
+
+export function CheeseSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 700)
+  return (
+    <div
+      className="relative h-10 w-10"
+      style={{ transform: `scale(${0.6 + p * 1.6})`, opacity: 1 - p }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #ffe08a99 0%, #e8a83066 40%, transparent 70%)',
+        }}
+      />
+    </div>
+  )
+}
+
+export function CucumberSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 700)
+  return (
+    <div
+      className="relative h-10 w-10"
+      style={{ transform: `scale(${0.6 + p * 1.6})`, opacity: 1 - p }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #b8f08099 0%, #4a9a3866 40%, transparent 70%)',
+        }}
+      />
+    </div>
+  )
+}
+
 export function SundaeSplat({ ageMs }: { ageMs: number }) {
   const p = Math.min(1, ageMs / 820)
   const scale = 0.55 + p * 2.4

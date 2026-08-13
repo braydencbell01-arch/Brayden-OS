@@ -36,6 +36,10 @@ import {
   PancakeSplat,
   BarrelDot,
   BarrelSplat,
+  CheeseDot,
+  CheeseSplat,
+  CucumberDot,
+  CucumberSplat,
   RocketDot,
   RocketSplat,
   SundaeDot,
@@ -137,6 +141,8 @@ function FlyingShot({
     | 'rocket'
     | 'pancake'
     | 'barrel'
+    | 'cheese'
+    | 'cucumber'
 }) {
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
@@ -187,6 +193,8 @@ function FlyingShot({
             ? p * 360
           : kind === 'barrel'
             ? p * 540
+          : kind === 'cheese' || kind === 'cucumber'
+            ? p * 600
           : 0
   const aimKinds =
     kind === 'rocket' ||
@@ -198,9 +206,11 @@ function FlyingShot({
     kind === 'cash' ||
     kind === 'dumbbell' ||
     kind === 'pancake' ||
-    kind === 'barrel'
+    kind === 'barrel' ||
+    kind === 'cheese' ||
+    kind === 'cucumber'
   const transform = aimKinds
-    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' ? spin : 0)}deg)`
+    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' || kind === 'cheese' || kind === 'cucumber' ? spin : 0)}deg)`
     : undefined
 
   return (
@@ -224,6 +234,8 @@ function FlyingShot({
       {kind === 'dumbbell' ? <DumbbellDot /> : null}
       {kind === 'love' ? <LoveDot /> : null}
       {kind === 'witchcraft' ? <WitchcraftDot /> : null}
+      {kind === 'cheese' ? <CheeseDot /> : null}
+      {kind === 'cucumber' ? <CucumberDot /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
@@ -822,7 +834,9 @@ export function BattleScreen({
             p.kind === 'cash' ||
             p.kind === 'rocket' ||
             p.kind === 'pancake' ||
-            p.kind === 'barrel' ? (
+            p.kind === 'barrel' ||
+            p.kind === 'cheese' ||
+            p.kind === 'cucumber' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -892,6 +906,10 @@ export function BattleScreen({
                   <PancakeSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'barrel' ? (
                   <BarrelSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'cheese' ? (
+                  <CheeseSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'cucumber' ? (
+                  <CucumberSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'melee' ||
                   s.kind === 'whip' ||
                   s.kind === 'bite' ||
