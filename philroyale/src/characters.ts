@@ -673,7 +673,7 @@ export const HAMBURGER_CHICKEN: CharacterDef = {
       id: 'chickenWhip',
       name: 'Whip',
       range: 14,
-      damage: 220,
+      damage: 130,
       rootWhileAttacking: false,
       kind: 'whip',
     },
