@@ -137,6 +137,10 @@ export type CharacterDef = {
   pathToBuildingsOnly?: boolean
   /** Never sticky-lock — always retarget the nearest opponent. */
   noLock?: boolean
+  /** Deploy this many units in a cluster (Chicken Army). */
+  spawnCount?: number
+  /** If set, spawned units use this character id (Chicken Army → chicken). */
+  spawnAsId?: string
 }
 
 export const PHIL: CharacterDef = {
@@ -652,6 +656,15 @@ export const DAVE: CharacterDef = {
   ],
 }
 
+const CHICKEN_WHIP: AttackDef = {
+  id: 'chickenWhip',
+  name: 'Whip',
+  range: 14,
+  damage: 130,
+  rootWhileAttacking: false,
+  kind: 'whip',
+}
+
 /** Win condition — waddles at buildings; Whip anyone nearby; Ram each building/tower once. */
 export const HAMBURGER_CHICKEN: CharacterDef = {
   id: 'hamburgerChicken',
@@ -669,14 +682,7 @@ export const HAMBURGER_CHICKEN: CharacterDef = {
     'Win condition — penguin-waddles at buildings and towers. Whip slams anyone who gets close while it keeps moving. Ram horns into each building or tower once.',
   pathToBuildingsOnly: true,
   attacks: [
-    {
-      id: 'chickenWhip',
-      name: 'Whip',
-      range: 14,
-      damage: 130,
-      rootWhileAttacking: false,
-      kind: 'whip',
-    },
+    CHICKEN_WHIP,
     {
       id: 'ram',
       name: 'Ram',
@@ -689,6 +695,42 @@ export const HAMBURGER_CHICKEN: CharacterDef = {
       kind: 'ram',
     },
   ],
+}
+
+/** Solo fluttering chicken — same Whip as Hamburger Chicken. */
+export const CHICKEN: CharacterDef = {
+  id: 'chicken',
+  name: 'Chicken',
+  initial: 'Ck',
+  pronoun: 'it',
+  height: "1'4\"",
+  rarity: 'common',
+  elixir: 1,
+  hp: 135,
+  moveSpeed: 7.5,
+  attackDelaySec: 1.1,
+  hue: 38,
+  blurb: 'Flutters across the field and slams Whip — same lash as Hamburger Chicken.',
+  attacks: [CHICKEN_WHIP],
+}
+
+/** Five Chickens in a pack, Clash-style swarm. */
+export const CHICKEN_ARMY: CharacterDef = {
+  id: 'chickenArmy',
+  name: 'Chicken Army',
+  initial: 'Ca',
+  pronoun: 'they',
+  height: "1'4\"",
+  rarity: 'common',
+  elixir: 3,
+  hp: 135,
+  moveSpeed: 7.5,
+  attackDelaySec: 1.1,
+  hue: 38,
+  blurb: 'Five Chickens dropped in a pack. Each one flutters and Whips on its own.',
+  spawnCount: 5,
+  spawnAsId: 'chicken',
+  attacks: [CHICKEN_WHIP],
 }
 
 /** Clash-style spirit — Phil's floating head jumps in and pops. */
@@ -858,6 +900,8 @@ export const CHARACTERS: CharacterDef[] = [
   GRETCHIN,
   DAVE,
   HAMBURGER_CHICKEN,
+  CHICKEN,
+  CHICKEN_ARMY,
   PHIL_SPIRIT,
   PETE_SPIRIT,
   JEREMY_SPIRIT,

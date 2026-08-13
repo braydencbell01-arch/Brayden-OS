@@ -471,6 +471,41 @@ function spawnDogFromBuilding(
   return pup
 }
 
+/** Clash-style swarm offsets (Chicken Army = 2-1-2 pack). */
+function swarmOffsets(count: number): { col: number; row: number }[] {
+  if (count <= 1) return [{ col: 0, row: 0 }]
+  const pack = [
+    { col: 0, row: 0 },
+    { col: -1.2, row: -0.55 },
+    { col: 1.2, row: -0.55 },
+    { col: -0.75, row: 1.0 },
+    { col: 0.75, row: 1.0 },
+  ]
+  return pack.slice(0, Math.min(count, pack.length))
+}
+
+function spawnDeployedCard(
+  char: CharacterDef,
+  col: number,
+  row: number,
+  side: Side,
+  t: number,
+  level: number,
+  into: BattleUnit[],
+): BattleUnit[] {
+  const count = Math.max(1, char.spawnCount ?? 1)
+  const spawnDef = (char.spawnAsId ? getCharacter(char.spawnAsId) : null) ?? char
+  const spawned: BattleUnit[] = []
+  for (const o of swarmOffsets(count)) {
+    spawned.push(makeBattleUnit(spawnDef, col + o.col, row + o.row, side, t, level))
+  }
+  into.push(...spawned)
+  if (count === 1 && isBuildingCard(spawnDef) && spawnDef.spawnPool?.length && spawned[0]) {
+    spawnDogFromBuilding(spawned[0], t, into)
+  }
+  return spawned
+}
+
 function kingThrowPoint(side: Side): { col: number; row: number } {
   const id = side === 'ally' ? 'ally-king' : 'enemy-king'
   const king = TOWERS.find((tw) => tw.id === id) ?? TOWERS[0]!
@@ -601,7 +636,7 @@ function tryEnemyAiDeploy(
   mode: GameMode = 'classic',
   deckIds: string[] = [],
 ): {
-  unit: BattleUnit | null
+  units: BattleUnit[]
   elixir: number
   deck: string[]
   projectile?: Projectile | null
@@ -615,7 +650,7 @@ function tryEnemyAiDeploy(
     deckIds.length > 0 ? deckIds.slice() : randomBotDeck()
   const safeSpawns = mode === 'touchdown' ? AI_SAFE_SPAWNS_TOUCHDOWN : AI_SAFE_SPAWNS_CLASSIC
   if (deck.length === 0) {
-    return { unit: null, elixir: enemyElixir, deck }
+    return { units: [], elixir: enemyElixir, deck }
   }
 
   // Clash-style hand = first 4 of the rotating deck queue.
@@ -629,7 +664,7 @@ function tryEnemyAiDeploy(
     return !!char && enemyElixir >= char.elixir
   })
   if (affordable.length === 0) {
-    return { unit: null, elixir: enemyElixir, deck }
+    return { units: [], elixir: enemyElixir, deck }
   }
 
   const order = shuffleInPlace(affordable.slice())
@@ -639,7 +674,7 @@ function tryEnemyAiDeploy(
     if (!char) continue
 
     const finish = (payload: {
-      unit: BattleUnit | null
+      units: BattleUnit[]
       projectile?: Projectile | null
       elixir: number
     }) => {
@@ -655,7 +690,7 @@ function tryEnemyAiDeploy(
       const projectile = makeSpellProjectile(char, 'enemy', target.col, target.row, t, botLevel)
       if (!projectile) continue
       return finish({
-        unit: null,
+        units: [],
         projectile,
         elixir: enemyElixir - char.elixir,
       })
@@ -665,22 +700,26 @@ function tryEnemyAiDeploy(
       const col = colBase + Math.floor(Math.random() * colSpan)
       const row = rowBase + Math.floor(Math.random() * rowSpan)
       if (!canSpawnAt(col, row, 'enemy', towers, live, mode)) continue
+      const spawned: BattleUnit[] = []
+      spawnDeployedCard(char, col, row, 'enemy', t, botLevel, spawned)
       return finish({
-        unit: makeBattleUnit(char, col, row, 'enemy', t, botLevel),
+        units: spawned,
         elixir: enemyElixir - char.elixir,
       })
     }
 
     for (const spot of safeSpawns) {
       if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
+      const spawned: BattleUnit[] = []
+      spawnDeployedCard(char, spot.col, spot.row, 'enemy', t, botLevel, spawned)
       return finish({
-        unit: makeBattleUnit(char, spot.col, spot.row, 'enemy', t, botLevel),
+        units: spawned,
         elixir: enemyElixir - char.elixir,
       })
     }
   }
 
-  return { unit: null, elixir: enemyElixir, deck }
+  return { units: [], elixir: enemyElixir, deck }
 }
 
 /** Move with river + enemy-tower collision — own towers are passable. */
@@ -1140,11 +1179,7 @@ export function useBattle(opts?: {
       } else {
         setUnits((prev) => {
           const next = [...prev]
-          const hut = makeBattleUnit(char, col, row, 'ally', spawnT, level)
-          next.push(hut)
-          if (isBuildingCard(char) && char.spawnPool?.length) {
-            spawnDogFromBuilding(hut, spawnT, next)
-          }
+          spawnDeployedCard(char, col, row, 'ally', spawnT, level, next)
           return next
         })
       }
@@ -1754,18 +1789,15 @@ export function useBattle(opts?: {
           if (!canSpawnAt(hostPos.col, hostPos.row, 'enemy', nextTowers, liveIds, modeRef.current)) {
             continue
           }
-          const hut = makeBattleUnit(
+          spawnDeployedCard(
             char,
             hostPos.col,
             hostPos.row,
             'enemy',
             t,
             botLevelRef.current,
+            nextUnits,
           )
-          nextUnits.push(hut)
-          if (isBuildingCard(char) && char.spawnPool?.length) {
-            spawnDogFromBuilding(hut, t, nextUnits)
-          }
           nextEnemyElixir -= char.elixir
           enemyElixirChanged = true
           unitsChanged = true
@@ -1796,13 +1828,8 @@ export function useBattle(opts?: {
           nextEnemyElixir = ai.elixir
           enemyElixirChanged = true
         }
-        if (ai.unit) {
-          const hut = ai.unit
-          nextUnits.push(hut)
-          const hutDef = getCharacter(hut.charId)
-          if (isBuildingCard(hutDef) && hutDef?.spawnPool?.length) {
-            spawnDogFromBuilding(hut, t, nextUnits)
-          }
+        if (ai.units.length) {
+          nextUnits.push(...ai.units)
           nextEnemyElixir = ai.elixir
           enemyElixirChanged = true
           unitsChanged = true

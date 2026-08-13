@@ -733,6 +733,7 @@ export function BattleScreen({
               let sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
               if (uDef?.cardKind === 'building') sizeScale *= 1.28
               if (u.charId === 'bigMable') sizeScale *= 1.35
+              if (u.charId === 'chicken') sizeScale *= 0.68
               const flight = u.launch
               let drawCol = u.col
               let drawRow = u.row

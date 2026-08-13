@@ -17,7 +17,7 @@ type Props = {
   /** Portrait uses troop cutout (transparent) instead of card art — fixes wrong card backgrounds. */
   portraitSrc?: string
   enraged?: boolean
-  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle'
+  gait?: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle' | 'flutter'
   attack?:
     | 'whip'
     | 'sundae'
@@ -104,6 +104,8 @@ export function PhotoTroop({
             ? 0.48
             : gait === 'waddle'
               ? 0.52
+            : gait === 'flutter'
+              ? 0.36
             : gait === 'limp'
               ? 0.72
               : gait === 'jog'
@@ -301,12 +303,26 @@ export function PhotoTroop({
                           x: [0, 3, 0, -3, 0],
                           scaleY: [1, 0.96, 1, 0.96, 1],
                         }
+                    : gait === 'flutter'
+                      ? {
+                          // Hovering flap — bob in the air, little wing-rock
+                          y: [0, -9, -3, -11, 0],
+                          rotate: [0, 8, -6, 7, 0],
+                          x: [0, 1.5, 0, -1.5, 0],
+                          scaleY: [1, 0.94, 1.06, 0.95, 1],
+                        }
                       : {
                           // Running stride: bounce only (no left/right rotate — that looked two-way)
                           y: [0, -6, -1, -7, 0],
                           scaleY: [1, 0.94, 1, 0.93, 1],
                         }
-              : { y: [0, -1.5, 0] }
+              : gait === 'flutter'
+                ? {
+                    y: [0, -6, -2, -7, 0],
+                    rotate: [0, 5, -4, 4, 0],
+                    scaleY: [1, 0.96, 1.03, 0.97, 1],
+                  }
+                : { y: [0, -1.5, 0] }
         }
         transition={
           attacking
@@ -339,7 +355,9 @@ export function PhotoTroop({
               }
             : walking
               ? { duration, repeat: Infinity, ease: 'easeInOut' }
-              : { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
+              : gait === 'flutter'
+                ? { duration: 0.42, repeat: Infinity, ease: 'easeInOut' }
+                : { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
         }
       >
         {/* Full-body photo troops keep real legs; others clip for SVG runners underneath */}
@@ -412,7 +430,7 @@ function RunLegs({
   legColor,
   shoeColor,
 }: {
-  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle'
+  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle' | 'flutter'
   walking: boolean
   legColor: string
   shoeColor: string

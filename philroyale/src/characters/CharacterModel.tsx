@@ -27,6 +27,7 @@ import { EvilPhilModel } from './EvilPhilModel'
 import { StevesDinerModel } from './StevesDinerModel'
 import { BigMableModel } from './BigMableModel'
 import { HamburgerChickenModel } from './HamburgerChickenModel'
+import { ChickenModel } from './ChickenModel'
 
 type Props = {
   charId: string
@@ -112,6 +113,14 @@ export function CharacterModel({
   } else if (charId === 'hamburgerChicken') {
     model = (
       <HamburgerChickenModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
+  } else if (charId === 'chicken') {
+    model = (
+      <ChickenModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
+  } else if (charId === 'chickenArmy') {
+    model = (
+      <ChickenModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} army />
     )
   } else {
     model = (
