@@ -63,11 +63,11 @@ export function roadStepKey(step: TrophyRoadReward): string {
 /** Clash-style trophy road — 15 arenas, 5 rewards each. */
 export const TROPHY_ROAD: TrophyRoadReward[] = [
   // Training Camp 0–100
-  { trophies: 0, arena: 'Training Camp', label: 'Journey begins', gold: 50, unlockCard: 'finley' },
-  { trophies: 20, arena: 'Training Camp', label: 'x1 Shay', unlockCard: 'shay', gold: 40 },
+  { trophies: 0, arena: 'Training Camp', label: 'Journey begins', gold: 50 },
+  { trophies: 20, arena: 'Training Camp', label: 'x1 Dog Hut', unlockCard: 'dogHut', gold: 40 },
   { trophies: 40, arena: 'Training Camp', label: 'x1 Tristan', unlockCard: 'tristan', gold: 50 },
-  { trophies: 60, arena: 'Training Camp', label: 'x1 Dan', unlockCard: 'dan', gold: 40 },
-  { trophies: 80, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'pete', gold: 70 },
+  { trophies: 60, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'dan', gold: 40 },
+  { trophies: 80, arena: 'Training Camp', label: 'x1 Chuck', unlockCard: 'pete', gold: 70 },
   // Sundae Strip 100–300
   { trophies: 100, arena: 'Sundae Strip', label: 'x1 Dave', unlockCard: 'dave', gold: 80 },
   { trophies: 140, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 35, unlockEmote: 'wave' },
@@ -82,7 +82,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 460, arena: "Beans' Battleground", label: 'Rare Chest', chest: 'rare' },
   // Phil Pier 500–700
   { trophies: 500, arena: 'Phil Pier', label: 'Epic Chest', chest: 'epic', gold: 40 },
-  { trophies: 540, arena: 'Phil Pier', label: 'x1 Chicken', unlockCard: 'chicken', gold: 50 },
+  { trophies: 540, arena: 'Phil Pier', label: 'x1 Baseball Huck', unlockCard: 'footballHuck', gold: 50 },
   { trophies: 580, arena: 'Phil Pier', label: 'x1 Hamburger Chicken', unlockCard: 'hamburgerChicken', gold: 80 },
   { trophies: 620, arena: 'Phil Pier', label: 'x1 Chicken Army', unlockCard: 'chickenArmy', gold: 70 },
   { trophies: 660, arena: 'Phil Pier', label: 'x1 Chicken Barrel', unlockCard: 'chickenBarrel', gold: 80 },
@@ -111,7 +111,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 1840, arena: "Gretchin's Grill", label: 'x12 Mike', cardCopies: { charId: 'mike', copies: 12 } },
   { trophies: 1920, arena: "Gretchin's Grill", label: 'Gold pouch', gold: 100 },
   // Ricky's Diner 2000–2400
-  { trophies: 2000, arena: "Ricky's Diner", label: 'x4 Pete', cardCopies: { charId: 'pete', copies: 4 }, gold: 125 },
+  { trophies: 2000, arena: "Ricky's Diner", label: 'x4 Chuck', cardCopies: { charId: 'pete', copies: 4 }, gold: 125 },
   { trophies: 2080, arena: "Ricky's Diner", label: 'x5 Lynne', cardCopies: { charId: 'lynne', copies: 5 } },
   { trophies: 2160, arena: "Ricky's Diner", label: 'Rare Chest', chest: 'rare', gold: 90 },
   { trophies: 2240, arena: "Ricky's Diner", label: 'Epic Chest', chest: 'epic', gold: 100, unlockEmote: 'emote-pete' },
@@ -127,7 +127,14 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 2900, arena: "Jeremy's Junkyard", label: 'x2 Phil', cardCopies: { charId: 'phil', copies: 2 }, gold: 200 },
   { trophies: 3000, arena: "Jeremy's Junkyard", label: 'x2 Phil Spirit', cardCopies: { charId: 'philSpirit', copies: 2 }, gold: 150 },
   { trophies: 3100, arena: "Jeremy's Junkyard", label: 'x2 Pete Spirit', cardCopies: { charId: 'peteSpirit', copies: 2 }, gold: 150 },
-  { trophies: 3200, arena: "Jeremy's Junkyard", label: 'x8 Jeremy Spirit', cardCopies: { charId: 'jeremySpirit', copies: 8 }, gold: 150 },
+  {
+    trophies: 3200,
+    arena: "Jeremy's Junkyard",
+    label: 'x1 Jeremy Spirit',
+    unlockCard: 'jeremySpirit',
+    cardCopies: { charId: 'jeremySpirit', copies: 8 },
+    gold: 150,
+  },
   // Clucktown 3300–3800
   { trophies: 3300, arena: 'Clucktown', label: "x2 Phil's Car", cardCopies: { charId: 'philsCar', copies: 2 }, gold: 180 },
   { trophies: 3400, arena: 'Clucktown', label: 'x2 Evil Phil', cardCopies: { charId: 'evilPhil', copies: 2 }, gold: 220 },
@@ -144,7 +151,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 4300, arena: 'Pete Palace', label: 'Legendary Chest', chest: 'legendary', gold: 250 },
   { trophies: 4450, arena: 'Pete Palace', label: 'Epic Chest', chest: 'epic', gold: 220 },
   { trophies: 4600, arena: 'Pete Palace', label: 'Rare Chest', chest: 'rare', gold: 200 },
-  { trophies: 4750, arena: 'Pete Palace', label: 'x2 Dan', cardCopies: { charId: 'dan', copies: 2 }, gold: 200 },
+  { trophies: 4750, arena: 'Pete Palace', label: 'x2 Pete', cardCopies: { charId: 'dan', copies: 2 }, gold: 200 },
   { trophies: 4880, arena: 'Pete Palace', label: 'x10 Todd', cardCopies: { charId: 'todd', copies: 10 } },
   // Phil Peak 4900–5000
   { trophies: 4900, arena: 'Phil Peak', label: 'Arena unlocked!', gold: 300 },
@@ -181,18 +188,18 @@ export const ARENA_COLORS: Record<string, { sky: string; ground: string; accent:
 
 /** Exactly 12 starter cards — rest unlock via trophy road / chests. */
 export const STARTER_UNLOCKS = [
+  'kathie',
+  'todd',
+  'mike',
+  'lynne',
+  'stevesDiner',
   'beans',
   'iceCream',
-  'lynne',
-  'jeremy',
-  'todd',
-  'kathie',
-  'footballHuck',
-  'stevesDiner',
-  'mike',
   'bobbySpecial',
-  'jeremySpirit',
-  'dogHut',
+  'jeremy',
+  'shay',
+  'finley',
+  'chicken',
 ]
 
 export function cardLevelMult(level: number): number {

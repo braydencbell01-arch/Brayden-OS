@@ -997,11 +997,11 @@ export const DEFAULT_DECK = [
   KATHIE.id,
   TODD.id,
   MIKE.id,
-  DOG_HUT.id,
-  ICE_CREAM.id,
-  BEANS.id,
   LYNNE.id,
-  JEREMY.id,
+  STEVES_DINER.id,
+  BEANS.id,
+  ICE_CREAM.id,
+  BOBBY_SPECIAL.id,
 ]
 
 /** Fisher–Yates shuffle (in place). */
