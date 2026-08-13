@@ -221,7 +221,7 @@ export const PETE: CharacterDef = {
   elixir: 5,
   hp: 3750,
   moveSpeed: 4,
-  attackDelaySec: 1.2,
+  attackDelaySec: 1.5,
   hue: 220,
   blurb:
     'Human shield — Suplex grabs a troop at range 1 and throws them behind him. They take the hit when they land. On death, drops a purple rage heart.',
