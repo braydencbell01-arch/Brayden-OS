@@ -66,6 +66,7 @@ export type SyncProjectile = {
     | 'rocket'
     | 'witchcraft'
     | 'pancake'
+    | 'barrel'
   fromCol: number
   fromRow: number
   toCol: number
@@ -78,6 +79,9 @@ export type SyncProjectile = {
   ownerSide?: 'ally' | 'enemy'
   splashRadius?: number
   splashDamage?: number
+  spawnAsId?: string
+  spawnCount?: number
+  spawnLevel?: number
 }
 
 export type SyncTower = {

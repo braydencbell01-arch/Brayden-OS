@@ -54,7 +54,10 @@ export function UnitToken({
               ? '5 / 4.6'
               : charId === 'philsCar' || charId === 'stevesDiner' || charId === 'bigMable'
                 ? '5 / 3.4'
-              : charId === 'iceCream' || charId === 'footballHuck' || charId === 'bobbySpecial'
+              : charId === 'iceCream' ||
+                  charId === 'footballHuck' ||
+                  charId === 'bobbySpecial' ||
+                  charId === 'chickenBarrel'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
               ? '4 / 4.85'
@@ -257,6 +260,72 @@ export function FootballDot() {
         className="absolute right-[6%] top-1/2 h-2 w-1.5 -translate-y-1/2 rounded-full opacity-35"
         style={{ background: 'radial-gradient(circle,#3a1a08,#0000)' }}
       />
+    </div>
+  )
+}
+
+/** Flying Chicken Barrel keg. */
+export function BarrelDot() {
+  return (
+    <div
+      className="relative h-7 w-6"
+      style={{
+        borderRadius: '42% / 36%',
+        background:
+          'linear-gradient(90deg,#5a3010 0%,#c48a3a 22%,#e8b86a 50%,#c48a3a 78%,#5a3010 100%)',
+        boxShadow: '0 2px 4px #0009, inset 0 1px 0 #f5d09066',
+      }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-[8%] right-[8%] top-[18%] h-[2px] rounded-full"
+        style={{ background: '#2a1408' }}
+      />
+      <div
+        className="absolute left-[6%] right-[6%] top-1/2 h-[2.5px] -translate-y-1/2 rounded-full"
+        style={{ background: '#2a1408' }}
+      />
+      <div
+        className="absolute left-[8%] right-[8%] bottom-[18%] h-[2px] rounded-full"
+        style={{ background: '#2a1408' }}
+      />
+      <div
+        className="absolute left-1/2 top-[6%] h-[18%] w-[70%] -translate-x-1/2 rounded-full"
+        style={{ background: '#8a5a28', boxShadow: 'inset 0 0 0 1px #3a1a08' }}
+      />
+    </div>
+  )
+}
+
+/** Chicken Barrel burst — wood shards + feathers. */
+export function BarrelSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 900)
+  const scale = 0.45 + p * 2.4
+  const opacity = 1 - p * 0.92
+  return (
+    <div
+      className="relative h-16 w-16"
+      style={{ transform: `scale(${scale})`, opacity }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, #f5d09088 0%, #c48a3a55 35%, #8a5a2844 55%, transparent 72%)',
+        }}
+      />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-2 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-sm"
+          style={{
+            background: deg % 90 === 0 ? '#e8b86a' : '#f0c040',
+            transform: `rotate(${deg}deg) translateY(-${7 + p * 11}px)`,
+            boxShadow: '0 0.5px 0 #3a1a08',
+          }}
+        />
+      ))}
     </div>
   )
 }

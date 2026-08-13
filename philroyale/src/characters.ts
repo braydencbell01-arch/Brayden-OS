@@ -137,9 +137,9 @@ export type CharacterDef = {
   pathToBuildingsOnly?: boolean
   /** Never sticky-lock — always retarget the nearest opponent. */
   noLock?: boolean
-  /** Deploy this many units in a cluster (Chicken Army). */
+  /** Deploy this many units in a cluster (Chicken Army / Chicken Barrel). */
   spawnCount?: number
-  /** If set, spawned units use this character id (Chicken Army → chicken). */
+  /** If set, spawned units use this character id (Chicken Army / Barrel → chicken). */
   spawnAsId?: string
 }
 
@@ -679,7 +679,7 @@ export const HAMBURGER_CHICKEN: CharacterDef = {
   attackDelaySec: 1.1,
   hue: 32,
   blurb:
-    'Win condition — penguin-waddles at buildings and towers. Whip slams anyone who gets close while it keeps moving. Ram horns into each building or tower once.',
+    'Win condition — penguin-waddles at buildings and towers. Ram each building or tower once, then stay there and Whip it. Whip can hit anyone as many times as it wants.',
   pathToBuildingsOnly: true,
   attacks: [
     CHICKEN_WHIP,
@@ -731,6 +731,30 @@ export const CHICKEN_ARMY: CharacterDef = {
   spawnCount: 5,
   spawnAsId: 'chicken',
   attacks: [CHICKEN_WHIP],
+}
+
+/** Clash Goblin Barrel — throw anywhere; three Chickens hop out on land. */
+export const CHICKEN_BARREL: CharacterDef = {
+  id: 'chickenBarrel',
+  name: 'Chicken Barrel',
+  initial: 'Cb',
+  pronoun: 'it',
+  height: "1'4\"",
+  rarity: 'epic',
+  elixir: 3,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 38,
+  cardKind: 'spell',
+  blurb:
+    'Spell — toss a barrel anywhere. It bursts on landing and three Chickens jump out.',
+  spellDamage: 0,
+  spellRadius: 7,
+  spellTravelMs: 1200,
+  spawnCount: 3,
+  spawnAsId: 'chicken',
+  attacks: [],
 }
 
 /** Clash-style spirit — Phil's floating head jumps in and pops. */
@@ -902,6 +926,7 @@ export const CHARACTERS: CharacterDef[] = [
   HAMBURGER_CHICKEN,
   CHICKEN,
   CHICKEN_ARMY,
+  CHICKEN_BARREL,
   PHIL_SPIRIT,
   PETE_SPIRIT,
   JEREMY_SPIRIT,

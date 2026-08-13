@@ -141,6 +141,9 @@ function syncProjectileToBattle(
     ownerSide: flip && p.ownerSide ? flipSide(p.ownerSide) : p.ownerSide,
     splashRadius: p.splashRadius,
     splashDamage: p.splashDamage,
+    spawnAsId: p.spawnAsId,
+    spawnCount: p.spawnCount,
+    spawnLevel: p.spawnLevel,
   }
 }
 
@@ -521,13 +524,20 @@ function makeSpellProjectile(
   level: number,
 ): Projectile | null {
   if (!isSpellCard(char)) return null
+  const spawnOnLand = !!(char.spawnAsId && (char.spawnCount ?? 0) > 0)
   const damage = scaledStat(char.spellDamage ?? 0, level)
   const radius = char.spellRadius ?? 0
-  if (damage <= 0 || radius <= 0) return null
+  if (!spawnOnLand && (damage <= 0 || radius <= 0)) return null
   const from = kingThrowPoint(side)
   const travel = char.spellTravelMs ?? ICE_CREAM_PROJECTILE_MS
   const kind =
-    char.id === 'bobbySpecial' ? 'football' : char.id === 'footballHuck' ? 'baseball' : 'iceCream'
+    char.id === 'bobbySpecial'
+      ? 'football'
+      : char.id === 'footballHuck'
+        ? 'baseball'
+        : char.id === 'chickenBarrel'
+          ? 'barrel'
+          : 'iceCream'
   return {
     id: nid('spell'),
     kind,
@@ -543,6 +553,9 @@ function makeSpellProjectile(
     arriveAt: t + travel,
     ownerSide: side,
     splashRadius: radius,
+    spawnAsId: spawnOnLand ? char.spawnAsId : undefined,
+    spawnCount: spawnOnLand ? char.spawnCount : undefined,
+    spawnLevel: spawnOnLand ? level : undefined,
   }
 }
 
@@ -1108,6 +1121,9 @@ export function useBattle(opts?: {
         ownerSide: p.ownerSide,
         splashRadius: p.splashRadius,
         splashDamage: p.splashDamage,
+        spawnAsId: p.spawnAsId,
+        spawnCount: p.spawnCount,
+        spawnLevel: p.spawnLevel,
       })),
       allyScore: allyScoreRef.current,
       enemyScore: enemyScoreRef.current,
@@ -1505,7 +1521,12 @@ export function useBattle(opts?: {
             continue
           }
           projectilesChanged = true
-          if (p.kind === 'iceCream' || p.kind === 'football' || p.kind === 'baseball') {
+          if (
+            p.kind === 'iceCream' ||
+            p.kind === 'football' ||
+            p.kind === 'baseball' ||
+            p.kind === 'barrel'
+          ) {
             nextSplats.push({
               id: nid('spellfx'),
               col: p.toCol,
@@ -1551,7 +1572,7 @@ export function useBattle(opts?: {
                     ? WITCHCRAFT_SPLAT_MS
                   : s.kind === 'pancake'
                     ? PANCAKE_SPLAT_MS
-                  : s.kind === 'iceCream'
+                  : s.kind === 'iceCream' || s.kind === 'barrel'
                     ? 900
                   : s.kind === 'melee' ||
                       s.kind === 'whip' ||
@@ -1698,6 +1719,16 @@ export function useBattle(opts?: {
             radius: splatRadius,
           })
           splatsChanged = true
+        } else if (p.kind === 'barrel') {
+          nextSplats.push({
+            id: nid('barrel'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'barrel',
+            radius: splatRadius,
+          })
+          splatsChanged = true
         }
         if (p.splashRadius != null && p.ownerSide != null && p.splashDamage != null) {
           // Primary hit + separate splash (Cash Gun).
@@ -1727,7 +1758,7 @@ export function useBattle(opts?: {
           )
           if (splash.unitsChanged) unitsChanged = true
           if (splash.towersChanged) towersChanged = true
-        } else if (p.splashRadius != null && p.ownerSide != null) {
+        } else if (p.splashRadius != null && p.ownerSide != null && p.damage > 0) {
           const splash = applySplashAt(
             nextUnits,
             nextTowers,
@@ -1751,6 +1782,26 @@ export function useBattle(opts?: {
           if (tw) {
             applyTowerDamage(tw, p.damage, t)
             towersChanged = true
+          }
+        }
+        if (p.spawnAsId && (p.spawnCount ?? 0) > 0 && p.ownerSide) {
+          const troop = getCharacter(p.spawnAsId)
+          if (troop) {
+            const count = p.spawnCount ?? 1
+            const level = p.spawnLevel ?? 1
+            for (const o of swarmOffsets(count)) {
+              nextUnits.push(
+                makeBattleUnit(
+                  troop,
+                  p.toCol + o.col,
+                  p.toRow + o.row,
+                  p.ownerSide,
+                  t,
+                  level,
+                ),
+              )
+            }
+            unitsChanged = true
           }
         }
       }
@@ -2108,17 +2159,25 @@ export function useBattle(opts?: {
             ? Infinity
             : Math.max(12, attackRange)
 
+        const rammedStay =
+          !!def.pathToBuildingsOnly &&
+          !!u.lockKey &&
+          (u.hitOnceKeys ?? []).includes(u.lockKey)
+
         // Clash Royale: once attacking a target, keep it until death or out of range.
-        // Big Mable (noLock): never sticky — always re-pick nearest.
+        // After Hamburger Chicken rams a building/tower, stay on it and whip.
         let best: Target | null = null
-        if (u.lockKey && !noLock && !def.pathToBuildingsOnly) {
+        if (u.lockKey && !noLock && (!def.pathToBuildingsOnly || rammedStay)) {
           const [kind, id] = u.lockKey.split(':') as ['unit' | 'tower', string]
+          const stayRange = rammedStay
+            ? (def.attacks.find((a) => a.id === 'chickenWhip')?.range ?? attackRange)
+            : attackRange
           if (kind === 'unit') {
             const f = foes.find((x) => x.id === id)
             if (f && !(buildingsOnly && !isBuildingCard(getCharacter(f.charId)))) {
               const c = unitCenter(f)
               const edge = dist(me.col, me.row, c.col, c.row)
-              if (edge <= attackRange) {
+              if (rammedStay || edge <= stayRange) {
                 best = {
                   kind: 'unit',
                   id: f.id,
@@ -2132,7 +2191,11 @@ export function useBattle(opts?: {
           } else if (kind === 'tower') {
             const tw = foeTowers.find((x) => x.id === id)
             const slot = tw ? towerSlot(tw.id) : null
-            if (tw && slot && towerInMeleeRange(u.col, u.row, slot, attackRange)) {
+            if (
+              tw &&
+              slot &&
+              (rammedStay || towerInMeleeRange(u.col, u.row, slot, stayRange))
+            ) {
               const edge = distUnitTileToTower(u.col, u.row, slot)
               const aim = towerFrontEngagePoint(me.col, me.row, slot)
               best = {
@@ -2228,10 +2291,7 @@ export function useBattle(opts?: {
                 !noLock &&
                 !def.pathToBuildingsOnly &&
                 towerInMeleeRange(u.col, u.row, slot, attackRange)
-              const rammed =
-                !!def.pathToBuildingsOnly &&
-                (u.hitOnceKeys ?? []).includes(`tower:${tw.id}`)
-              const score = (inFront ? path - 40 : path) + (rammed ? 120 : 0)
+              const score = inFront ? path - 40 : path
               if (!best || score < best.d) {
                 best = {
                   kind: 'tower',
@@ -2249,11 +2309,7 @@ export function useBattle(opts?: {
                 if (!isBuildingCard(getCharacter(f.charId))) continue
                 const c = unitCenter(f)
                 const edge = dist(me.col, me.row, c.col, c.row)
-                const rammed =
-                  !!def.pathToBuildingsOnly &&
-                  (u.hitOnceKeys ?? []).includes(`unit:${f.id}`)
-                const path =
-                  pathCostTo(me.col, me.row, c.col, c.row, openField) + (rammed ? 120 : 0)
+                const path = pathCostTo(me.col, me.row, c.col, c.row, openField)
                 if (!best || path < best.d) {
                   best = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: path, rangeD: edge }
                 }
@@ -2306,49 +2362,54 @@ export function useBattle(opts?: {
 
         let winRamReady = false
         if (def.pathToBuildingsOnly) {
-          const ramAtk = def.attacks.find((a) => a.id === 'ram')
-          const ramRange = ramAtk?.range ?? 2
-          let ramBest: typeof best | null = null
-          for (const tw of foeTowers) {
-            const hitKey = `tower:${tw.id}`
-            if ((u.hitOnceKeys ?? []).includes(hitKey)) continue
-            const slot = towerSlot(tw.id)
-            if (!slot) continue
-            const edge = distUnitTileToTower(u.col, u.row, slot)
-            if (edge > ramRange) continue
-            const aim = towerFrontEngagePoint(me.col, me.row, slot)
-            const d = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
-            if (!ramBest || d < ramBest.d) {
-              ramBest = {
-                kind: 'tower',
-                id: tw.id,
-                col: aim.col,
-                row: aim.row,
-                d,
-                rangeD: edge,
-              }
-            }
-          }
-          for (const f of foes) {
-            if (!isBuildingCard(getCharacter(f.charId))) continue
-            const hitKey = `unit:${f.id}`
-            if ((u.hitOnceKeys ?? []).includes(hitKey)) continue
-            const c = unitCenter(f)
-            const edge = dist(me.col, me.row, c.col, c.row)
-            if (edge > ramRange) continue
-            const d = pathCostTo(me.col, me.row, c.col, c.row, openField)
-            if (!ramBest || d < ramBest.d) {
-              ramBest = { kind: 'unit', id: f.id, col: c.col, row: c.row, d, rangeD: edge }
-            }
-          }
-          if (ramBest && ramAtk) {
-            best = ramBest
-            const ramIdx = def.attacks.findIndex((a) => a.id === 'ram')
-            if (ramIdx >= 0) u.attackIndex = ramIdx
-            winRamReady = true
-          } else {
+          if (rammedStay && best) {
             const whipIdx = def.attacks.findIndex((a) => a.id === 'chickenWhip')
             if (whipIdx >= 0) u.attackIndex = whipIdx
+          } else {
+            const ramAtk = def.attacks.find((a) => a.id === 'ram')
+            const ramRange = ramAtk?.range ?? 2
+            let ramBest: typeof best | null = null
+            for (const tw of foeTowers) {
+              const hitKey = `tower:${tw.id}`
+              if ((u.hitOnceKeys ?? []).includes(hitKey)) continue
+              const slot = towerSlot(tw.id)
+              if (!slot) continue
+              const edge = distUnitTileToTower(u.col, u.row, slot)
+              if (edge > ramRange) continue
+              const aim = towerFrontEngagePoint(me.col, me.row, slot)
+              const d = pathCostTo(me.col, me.row, aim.col, aim.row, openField)
+              if (!ramBest || d < ramBest.d) {
+                ramBest = {
+                  kind: 'tower',
+                  id: tw.id,
+                  col: aim.col,
+                  row: aim.row,
+                  d,
+                  rangeD: edge,
+                }
+              }
+            }
+            for (const f of foes) {
+              if (!isBuildingCard(getCharacter(f.charId))) continue
+              const hitKey = `unit:${f.id}`
+              if ((u.hitOnceKeys ?? []).includes(hitKey)) continue
+              const c = unitCenter(f)
+              const edge = dist(me.col, me.row, c.col, c.row)
+              if (edge > ramRange) continue
+              const d = pathCostTo(me.col, me.row, c.col, c.row, openField)
+              if (!ramBest || d < ramBest.d) {
+                ramBest = { kind: 'unit', id: f.id, col: c.col, row: c.row, d, rangeD: edge }
+              }
+            }
+            if (ramBest && ramAtk) {
+              best = ramBest
+              const ramIdx = def.attacks.findIndex((a) => a.id === 'ram')
+              if (ramIdx >= 0) u.attackIndex = ramIdx
+              winRamReady = true
+            } else {
+              const whipIdx = def.attacks.findIndex((a) => a.id === 'chickenWhip')
+              if (whipIdx >= 0) u.attackIndex = whipIdx
+            }
           }
         }
 
@@ -2358,8 +2419,13 @@ export function useBattle(opts?: {
           unitsChanged = true
         }
 
+        const whipRange =
+          def.attacks.find((a) => a.id === 'chickenWhip')?.range ?? attackRange
+        const rammedBest =
+          !!def.pathToBuildingsOnly &&
+          (u.hitOnceKeys ?? []).includes(`${best.kind}:${best.id}`)
         const inRange = def.pathToBuildingsOnly
-          ? winRamReady
+          ? winRamReady || (rammedBest && best.rangeD <= whipRange)
           : best.kind === 'tower'
             ? (() => {
                 const slot = towerSlot(best.id)
@@ -2405,6 +2471,7 @@ export function useBattle(opts?: {
             unitsChanged = true
           }
           if (def.pathToBuildingsOnly && !rooted) {
+            if (rammedStay) continue
             const whipAtk = def.attacks.find((a) => a.id === 'chickenWhip')
             if (whipAtk && t >= u.nextAttackAt) {
               let whipBest: typeof best | null = null
@@ -2459,14 +2526,22 @@ export function useBattle(opts?: {
             u.lockKey = nextLock
             unitsChanged = true
           }
-        } else if (u.lockKey && (noLock || def.pathToBuildingsOnly)) {
+        } else if (
+          u.lockKey &&
+          (noLock || (def.pathToBuildingsOnly && !rammedStay && !rammedBest))
+        ) {
           u.lockKey = null
           unitsChanged = true
         }
 
         if (noAttack) continue
 
-        const attack = def.attacks[u.attackIndex % def.attacks.length]!
+        let attack = def.attacks[u.attackIndex % def.attacks.length]!
+        const onceKey = `${best.kind}:${best.id}`
+        if (attack.oncePerTarget && (u.hitOnceKeys ?? []).includes(onceKey)) {
+          u.attackIndex = (u.attackIndex + 1) % def.attacks.length
+          attack = def.attacks[u.attackIndex % def.attacks.length]!
+        }
         if (t < u.nextAttackAt && !attack.ignoreAttackDelay) continue
 
         const damage = attack.damage * dmgMult * cardLevelMult(u.level)
