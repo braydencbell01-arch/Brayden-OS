@@ -751,7 +751,7 @@ export const CHICKEN_BARREL: CharacterDef = {
     'Spell — toss a barrel anywhere. It bursts on landing and three Chickens jump out.',
   spellDamage: 0,
   spellRadius: 7,
-  spellTravelMs: 1200,
+  spellTravelMs: 600,
   spawnCount: 3,
   spawnAsId: 'chicken',
   attacks: [],
