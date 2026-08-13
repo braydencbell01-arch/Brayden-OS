@@ -1,6 +1,6 @@
 import { CHARACTERS, type Rarity } from './characters'
 
-export const MAX_CARD_LEVEL = 10
+export const MAX_CARD_LEVEL = 15
 /** Each level above 1 adds this fraction to HP and damage. */
 export const LEVEL_STAT_STEP = 0.05
 

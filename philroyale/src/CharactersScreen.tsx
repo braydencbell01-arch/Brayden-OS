@@ -695,7 +695,7 @@ function CardProfile({
               }}
             >
               {maxed
-                ? 'Max level 10'
+                ? 'Max level 15'
                 : !unlocked
                   ? 'Locked'
                   : canUpgrade

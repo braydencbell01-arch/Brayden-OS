@@ -11,7 +11,7 @@ import {
   type EmoteAnim,
   type EmoteDef,
 } from './emoteCatalog'
-import { CHEST_META, type ChestRarity } from './progression'
+import { CHEST_META, MAX_CARD_LEVEL, type ChestRarity } from './progression'
 import {
   GEM_PACKS,
   GOLD_WITH_GEMS_PACKS,
@@ -315,7 +315,7 @@ function DailyDealTile({
   const progress = loadCardProgress()
   const level = c ? (progress.levels[c.id] ?? 1) : 1
   const have = c ? (progress.copies[c.id] ?? 0) : 0
-  const need = c && level < 10 ? copiesToUpgrade(level, c.rarity) : 0
+  const need = c && level < MAX_CARD_LEVEL ? copiesToUpgrade(level, c.rarity) : 0
   const pct = need > 0 ? Math.min(100, (have / need) * 100) : 100
 
   let priceLabel: React.ReactNode = null

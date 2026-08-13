@@ -705,7 +705,7 @@ export type PlayerProfile = {
 }
 
 export type CardProgress = {
-  /** charId → level (1–10) */
+  /** charId → level (1–15) */
   levels: Record<string, number>
   /** charId → owned copies */
   copies: Record<string, number>
@@ -1053,7 +1053,7 @@ export function tryUpgradeCard(charId: string): { ok: boolean; message: string; 
     progress.unlocked.push(charId)
   }
   const level = progress.levels[charId] ?? 1
-  if (level >= MAX_CARD_LEVEL) return { ok: false, message: 'Max level 10', progress }
+  if (level >= MAX_CARD_LEVEL) return { ok: false, message: 'Max level 15', progress }
   const need = copiesToUpgrade(level, char.rarity)
   const cost = goldToUpgrade(level)
   const profile = loadProfile()
