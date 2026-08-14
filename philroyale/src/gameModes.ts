@@ -7,15 +7,25 @@ export type GameMode =
   | 'undraft'
   | 'infiniteElixir'
 
-export const PARTY_MODES: GameMode[] = ['draft', 'undraft', 'infiniteElixir']
+export const PARTY_MODES: GameMode[] = [
+  'touchdown',
+  'draft',
+  'undraft',
+  'infiniteElixir',
+]
 
 export function isPartyMode(mode: GameMode): boolean {
-  return mode === 'draft' || mode === 'undraft' || mode === 'infiniteElixir'
+  return (
+    mode === 'touchdown' ||
+    mode === 'draft' ||
+    mode === 'undraft' ||
+    mode === 'infiniteElixir'
+  )
 }
 
-/** Only classic + touchdown move the trophy ladder. */
+/** Only classic ladder battles move trophies. Party modes never do. */
 export function earnsTrophies(mode: GameMode): boolean {
-  return mode === 'classic' || mode === 'touchdown'
+  return mode === 'classic'
 }
 
 export function modeLabel(mode: GameMode): string {

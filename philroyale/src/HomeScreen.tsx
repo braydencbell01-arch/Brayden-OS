@@ -44,7 +44,6 @@ import { CARD_PORTRAIT_BG } from './characters/cardArt'
 
 type Props = {
   onPlay: (opponentName?: string | null) => void
-  onPlayTouchdown: () => void
   onRequestBattle: (
     friendName: string,
     opts?: { mode?: GameMode; playerId?: string },
@@ -66,7 +65,6 @@ function formatRemain(ms: number): string {
 
 export function HomeScreen({
   onPlay,
-  onPlayTouchdown,
   onRequestBattle,
   onOpenRoad,
   onOpenEvents,
@@ -351,19 +349,6 @@ export function HomeScreen({
           vs {botName}
         </p>
 
-        <motion.button
-          type="button"
-          onClick={onPlayTouchdown}
-          whileTap={{ scale: 0.97 }}
-          className="mt-2 w-full max-w-md self-center rounded-xl px-4 py-3.5 text-lg font-extrabold uppercase tracking-wider text-white"
-          style={{
-            background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)',
-            boxShadow: '0 6px 0 #1d4a86, 0 12px 24px #00000044',
-          }}
-        >
-          Touchdown
-        </motion.button>
-
         {/* Chest slots */}
         <section className="mt-4 w-full max-w-md self-center">
           <p className="mb-1.5 text-center text-[0.65rem] font-extrabold uppercase tracking-wide text-white/80">
@@ -635,7 +620,7 @@ export function HomeScreen({
               className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
               style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
             >
-              Touchdown
+              Touchdown · party
             </button>
             <button
               type="button"

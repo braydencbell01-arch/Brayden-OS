@@ -38,7 +38,8 @@ export function EventsScreen({ onPlay }: Props) {
         >
           <p className="text-xs font-extrabold uppercase text-[#f5d76e]/85">Game modes</p>
           <p className="text-sm font-semibold text-white/80">
-            Only two modes — classic towers or touchdown football.
+            Ladder Classic earns trophies. Party modes (Touchdown, Draft, Undraft, Infinite
+            Elixir) are friend-invite only — no trophies.
           </p>
           <div className="mt-2 grid grid-cols-1 gap-2">
             <button
@@ -46,21 +47,18 @@ export function EventsScreen({ onPlay }: Props) {
               onClick={() => onPlay(null, 'classic')}
               className="rounded-lg bg-[#221610] px-3 py-3 text-left ring-1 ring-white/10"
             >
-              <p className="text-sm font-extrabold text-white">Normal</p>
+              <p className="text-sm font-extrabold text-white">Classic</p>
               <p className="text-xs font-semibold text-white/55">
-                Classic 1v1 · destroy towers · {profile.trophies} trophies
+                1v1 towers · {profile.trophies} trophies
               </p>
             </button>
-            <button
-              type="button"
-              onClick={() => onPlay(null, 'touchdown')}
-              className="rounded-lg bg-[#221610] px-3 py-3 text-left ring-1 ring-white/10"
-            >
-              <p className="text-sm font-extrabold text-white">Touchdown</p>
+            <div className="rounded-lg bg-[#221610] px-3 py-3 text-left ring-1 ring-white/10">
+              <p className="text-sm font-extrabold text-white">Party modes</p>
               <p className="text-xs font-semibold text-white/55">
-                Football field · score in the end zone · draft a deck first
+                Touchdown · Draft · Undraft · Infinite Elixir — invite a friend from Social /
+                Friends (no trophies).
               </p>
-            </button>
+            </div>
           </div>
         </section>
       </div>

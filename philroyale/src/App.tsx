@@ -248,18 +248,18 @@ export default function App() {
       setOutgoingChallenge(null)
       clearOutgoingChallenge()
 
-      if (mode === 'touchdown') {
-        setDraftingTouchdown(true)
-        setDraftingParty(false)
-        setTouchdownDeck(null)
-        setPartyDeck(null)
-        setBattle(false)
-        return
-      }
-
       if (isPartyMode(mode)) {
         if (!room) {
-          flashFriend('Draft / Undraft / Infinite Elixir need a friend invite.')
+          flashFriend('Party modes need a friend invite — no trophies.')
+          return
+        }
+        // Touchdown keeps its own draft UI; other party modes share PartyModeLobby.
+        if (mode === 'touchdown') {
+          setDraftingTouchdown(true)
+          setDraftingParty(false)
+          setTouchdownDeck(null)
+          setPartyDeck(null)
+          setBattle(false)
           return
         }
         setDraftingParty(true)
@@ -1592,7 +1592,6 @@ export default function App() {
             {tab === 'home' ? (
               <HomeScreen
                 onPlay={(name) => startMatch(name, 'classic')}
-                onPlayTouchdown={() => startMatch(null, 'touchdown')}
                 onRequestBattle={requestBattle}
                 onOpenRoad={() => setShowRoad(true)}
                 onOpenEvents={() => setShowEvents(true)}

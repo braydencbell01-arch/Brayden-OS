@@ -34,8 +34,8 @@ export function TouchdownDraft({ onReady, onCancel }: Props) {
         Touchdown draft
       </h1>
       <p className="mt-1 text-sm font-semibold text-white/75">
-        Pick {DRAFT_SIZE} from your unlocked cards only. Place them in your third — first to score
-        3 touchdowns wins.
+        Party mode (no trophies). Pick {DRAFT_SIZE} from your unlocked cards. Place them in your
+        third — first to score 3 touchdowns wins.
       </p>
       {pool.length < DRAFT_SIZE ? (
         <p className="mt-2 text-sm font-bold text-[#ff8a7a]">

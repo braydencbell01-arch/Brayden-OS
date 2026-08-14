@@ -73,7 +73,7 @@ const TIPS = [
   'Place troops behind the bridge for a stronger push.',
   'Climb the Trophy Road to unlock new cards.',
   'Build five decks — they save automatically.',
-  'Touchdown mode uses a fresh draft each match.',
+  'Touchdown is a party mode — invite a friend (no trophies).',
 ]
 
 type Phase = 'supercell' | 'loading' | 'done'

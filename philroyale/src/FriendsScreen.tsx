@@ -655,7 +655,7 @@ export function FriendsScreen({
               className="mt-2 w-full rounded-lg py-3 text-sm font-extrabold text-white"
               style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
             >
-              Touchdown
+              Touchdown · party
             </button>
             <button
               type="button"
