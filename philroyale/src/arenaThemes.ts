@@ -1,4 +1,29 @@
-/** Rich arena backdrops for home island + trophy road (not flat color alone). */
+/** Arena art for home island + trophy road (photo backdrops + CSS fallback). */
+
+const ARENA_IMAGE_SLUG: Record<string, string> = {
+  'Training Camp': 'training-camp',
+  'Sundae Strip': 'sundae-strip',
+  "Beans' Battleground": 'beans-battleground',
+  'Phil Pier': 'phil-pier',
+  "Dave's Dungeon": 'daves-dungeon',
+  "Kathie's Kitchen": 'kathies-kitchen',
+  'Jacobson Junction': 'jacobson-junction',
+  "Gretchin's Grill": 'gretchins-grill',
+  "Ricky's Diner": 'rickys-diner',
+  'Scotts Mansion': 'scotts-mansion',
+  "Jeremy's Junkyard": 'jeremys-junkyard',
+  Clucktown: 'clucktown',
+  "Todd's Tavern": 'todds-tavern',
+  'Pete Palace': 'pete-palace',
+  'Phil Peak': 'phil-peak',
+  // Legacy aliases
+  "Pete's Pit": 'pete-palace',
+  'Jeremy Land': 'jeremys-junkyard',
+  'Phil Plaza': 'phil-pier',
+  'Goblin Boot': 'training-camp',
+  'Bone Bridge': 'pete-palace',
+  'Royal Yard': 'phil-peak',
+}
 
 export const ARENA_THEME_CSS: Record<string, string> = {
   'Training Camp': `
@@ -93,7 +118,6 @@ export const ARENA_THEME_CSS: Record<string, string> = {
     radial-gradient(ellipse 45% 22% at 70% 50%, #fff6c8aa 0%, transparent 50%),
     linear-gradient(180deg, #6ec8ff 0%, #c9a227 38%, #5a3a10 70%, #1a1008 100%)
   `,
-  // Legacy
   "Pete's Pit": `
     radial-gradient(ellipse 40% 20% at 30% 55%, #e8d0a0aa 0%, transparent 60%),
     linear-gradient(180deg, #6a4a30 0%, #3a2418 40%, #140a08 100%)
@@ -120,9 +144,22 @@ export const ARENA_THEME_CSS: Record<string, string> = {
   `,
 }
 
+export function arenaThemeImageUrl(arena: string): string | undefined {
+  const slug = ARENA_IMAGE_SLUG[arena]
+  if (!slug) return undefined
+  const base = import.meta.env.BASE_URL || './'
+  return `${base}arenas/${slug}.jpg`
+}
+
+/** CSS `background` value — photo cover when available, otherwise painted theme. */
 export function arenaThemeBackground(arena: string): string {
-  return (
-    ARENA_THEME_CSS[arena] ??
-    ARENA_THEME_CSS['Training Camp']!
-  )
+  const fallback =
+    ARENA_THEME_CSS[arena] ?? ARENA_THEME_CSS['Training Camp']!
+  const img = arenaThemeImageUrl(arena)
+  if (!img) return fallback
+  return [
+    'linear-gradient(180deg, #0a060488 0%, #0a060466 42%, #0a0604aa 100%)',
+    `url(${JSON.stringify(img)}) center / cover no-repeat`,
+    fallback,
+  ].join(', ')
 }

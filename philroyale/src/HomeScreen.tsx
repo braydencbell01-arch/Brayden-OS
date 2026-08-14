@@ -256,17 +256,24 @@ export function HomeScreen({
           ) : null}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-40"
+            className="pointer-events-none absolute inset-0"
             style={{
               background: `
-                radial-gradient(ellipse 80% 55% at 50% 40%, ${arenaColors.accent}66 0%, transparent 65%)
+                linear-gradient(180deg, #00000055 0%, transparent 38%, #00000099 100%),
+                radial-gradient(ellipse 80% 55% at 50% 40%, ${arenaColors.accent}33 0%, transparent 65%)
               `,
             }}
           />
-          <p className="relative font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e] drop-shadow-[0_2px_4px_#000]">
+          <p
+            className="relative font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]"
+            style={{ textShadow: '0 2px 6px #000, 0 0 14px #000000cc' }}
+          >
             {arena}
           </p>
-          <p className="relative text-xs font-bold text-white/90 drop-shadow-[0_1px_2px_#000]">
+          <p
+            className="relative text-xs font-bold text-white"
+            style={{ textShadow: '0 1px 3px #000, 0 0 8px #000000aa' }}
+          >
             Tap for Trophy Road
           </p>
         </motion.button>
