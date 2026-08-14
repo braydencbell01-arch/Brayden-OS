@@ -303,26 +303,18 @@ export function BootFlow({ children }: { children: ReactNode }) {
             }}
           />
 
-          <div className="relative flex min-h-0 flex-1 flex-col items-center px-2 pt-8 sm:pt-10">
+          <div className="relative flex min-h-0 flex-1 flex-col items-center px-2 pt-6 sm:pt-8">
             <div className="relative z-20 shrink-0 text-center">
-              <div
-                aria-hidden
-                className="mx-auto mb-1 flex h-10 w-10 items-center justify-center rounded-full"
+              <img
+                src={`${import.meta.env.BASE_URL}philroyale-logo-512.jpg`}
+                alt="Phil Royale"
+                className="mx-auto h-auto w-[min(72vw,17rem)] select-none object-contain"
                 style={{
-                  background: 'linear-gradient(180deg,#4a9eff,#1d4a86)',
-                  boxShadow: '0 3px 0 #0a2040, inset 0 1px 0 #ffffff55',
+                  filter: 'drop-shadow(0 6px 0 #0a204088) drop-shadow(0 14px 28px #00000099)',
                 }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path fill="#f5d76e" d="M5 18h14l-1.5-9-4 3L12 6l-1.5 6-4-3L5 18z" />
-                </svg>
-              </div>
-              <h1
-                className="font-[family-name:var(--font-display)] text-[clamp(2.1rem,11vw,3.6rem)] tracking-wide text-[#f5d76e]"
-                style={{ textShadow: '0 4px 0 #8a6a12, 0 10px 28px #00000088' }}
-              >
-                Phil Royale
-              </h1>
+                draggable={false}
+              />
+              <h1 className="sr-only">Phil Royale</h1>
             </div>
 
             <div className="relative mt-0 w-full max-w-xl flex-1 min-h-[min(68vh,560px)]">

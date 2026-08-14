@@ -1366,6 +1366,12 @@ export default function App() {
             boxShadow: '0 12px 40px #00000088, inset 0 1px 0 #c9a22744',
           }}
         >
+          <img
+            src={`${import.meta.env.BASE_URL}philroyale-logo-256.jpg`}
+            alt=""
+            className="mx-auto mb-3 h-20 w-20 rounded-2xl object-cover"
+            style={{ boxShadow: '0 4px 0 #0a204066, 0 10px 24px #00000088' }}
+          />
           <h1 className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
             Welcome to Phil Royale
           </h1>
