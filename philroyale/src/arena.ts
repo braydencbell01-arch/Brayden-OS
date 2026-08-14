@@ -216,10 +216,16 @@ export function bridgeSteerDir(
   const mid = bestBridgeMidForPath(col, row, _targetCol, targetRow)
   if (!isOnBridgeLane(col)) {
     const dx = mid - col
-    if (Math.abs(dx) > 0.15) return { dCol: Math.sign(dx), dRow: 0 }
+    // Walk sideways onto the lane first (pure lateral) — no forward wiggle yet.
+    if (Math.abs(dx) > 0.35) return { dCol: Math.sign(dx), dRow: 0 }
   }
+  // On the dirt/bridge path: march straight across. Do NOT keep a continuous
+  // lateral pull toward mid — that overshoots and flips facing every frame.
   const dy = Math.sign(targetRow - row) || (row > RIVER_MAX ? -1 : 1)
-  const dx = Math.sign(mid - col) * 0.35
+  let dx = 0
+  const off = mid - col
+  // Only recenter if drifting near the outer edge of the lane.
+  if (Math.abs(off) > 4) dx = Math.sign(off) * 0.15
   const len = Math.hypot(dx, dy) || 1
   return { dCol: dx / len, dRow: dy / len }
 }

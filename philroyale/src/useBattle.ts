@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ARENA_COLS,
   ARENA_ROWS,
+  RIVER_MAX,
+  RIVER_MIN,
   TOUCHDOWN_ZONE_ROWS,
   TOUCHDOWN_WIN_SCORE,
   TOWERS,
@@ -14,10 +16,12 @@ import {
   towerFrontAimPoint,
   towerFrontEngagePoint,
   isInsideTower,
+  isOnBridgeLane,
   isOnTowerFrontSide,
   isRiverTile,
   isWalkableTile,
   nearestBridgeMidCol,
+  needsRiverCrossing,
   pathCostTo,
   steerTowardGoal,
   type Side,
@@ -348,6 +352,18 @@ function updateFacingFromMove(u: BattleUnit, prevCol: number, prevRow: number): 
   const dCol = u.col - prevCol
   const dRow = u.row - prevRow
   if (Math.hypot(dCol, dRow) < 0.001) return
+
+  // On the dirt/bridge path approaching or crossing the river: lock march facing
+  // so tiny left/right recenters don't flip the sprite every frame.
+  const onPath = isOnBridgeLane(u.col + 0.5)
+  const nearRiverBand =
+    u.row >= RIVER_MIN - 28 && u.row <= RIVER_MAX + 28
+  if (onPath && nearRiverBand) {
+    const march = u.side === 'ally' ? -Math.PI / 2 : Math.PI / 2
+    u.facing = lerpAngle(u.facing, march, 0.65)
+    return
+  }
+
   const moveFacing = Math.atan2(dRow, dCol)
   const turn = Math.abs(Math.atan2(Math.sin(moveFacing - u.facing), Math.cos(moveFacing - u.facing)))
   // Snap on real turns so every troop faces the way it is moving.
@@ -2715,10 +2731,6 @@ export function useBattle(opts?: {
         }
 
         const face = Math.atan2(best.row - me.row, best.col - me.col)
-        if (Math.abs(face - u.facing) > 0.04) {
-          u.facing = face
-          unitsChanged = true
-        }
 
         const whipRange =
           def.attacks.find((a) => a.id === 'chickenWhip')?.range ?? attackRange
@@ -2733,6 +2745,18 @@ export function useBattle(opts?: {
                 return slot ? towerInMeleeRange(u.col, u.row, slot, attackRange) : false
               })()
             : best.rangeD <= attackRange
+
+        // Face the target when fighting. While still bridge-pathing out of range,
+        // leave facing to march direction (updateFacingFromMove) — otherwise the
+        // sprite flips left/right every frame on the dirt lane.
+        const bridgingPath =
+          !inRange &&
+          isOnBridgeLane(u.col + 0.5) &&
+          needsRiverCrossing(u.row, best.row)
+        if (!bridgingPath && Math.abs(face - u.facing) > 0.04) {
+          u.facing = face
+          unitsChanged = true
+        }
 
         // Shields (Dan) walk into contact then idle as a meat wall — never attack.
         if (!inRange) {
