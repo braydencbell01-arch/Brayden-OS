@@ -88,7 +88,6 @@ async function preloadBootAssets(
   const urls = Array.from(
     new Set([
       `${root}loading-screen.jpg`,
-      `${root}philroyale-logo-512.jpg`,
       ...CHARACTERS.flatMap((c) => charAssetUrls(c.id)),
     ]),
   )
@@ -223,22 +222,11 @@ export function BootFlow({ children }: { children: ReactNode }) {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                'linear-gradient(180deg, #00000066 0%, transparent 22%, transparent 58%, #000000aa 78%, #000000dd 100%)',
+                'linear-gradient(180deg, #00000033 0%, transparent 28%, transparent 58%, #000000aa 78%, #000000dd 100%)',
             }}
           />
-
-          <div className="relative z-20 flex min-h-0 flex-1 flex-col items-center px-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
-            <img
-              src={`${import.meta.env.BASE_URL}philroyale-logo-512.jpg`}
-              alt="Phil Royale"
-              className="mx-auto h-auto w-[min(58vw,13.5rem)] select-none object-contain"
-              style={{
-                filter: 'drop-shadow(0 4px 0 #0a204088) drop-shadow(0 10px 22px #000000aa)',
-              }}
-              draggable={false}
-            />
-            <h1 className="sr-only">Phil Royale</h1>
-          </div>
+          <h1 className="sr-only">Phil Royale</h1>
+          <div className="relative z-20 min-h-0 flex-1" />
 
           <div className="relative z-30 shrink-0 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
             <p className="mb-2 text-center text-sm font-bold text-white drop-shadow-[0_1px_3px_#000]">
