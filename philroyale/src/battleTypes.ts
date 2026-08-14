@@ -107,6 +107,12 @@ export type Projectile = {
   spawnCount?: number
   spawnLevel?: number
   spawnEvolved?: boolean
+  /** Shay Love bounce — remaining chain hits after this impact. */
+  bounceLeft?: number
+  /** Max distance from owner for bounce eligibility (Shay attack range). */
+  bounceRange?: number
+  /** Unit / tower ids already hit in this bounce chain. */
+  bounceHitIds?: string[]
 }
 
 /** Impact FX — sundae splat, slobber explode, bullet boom, or melee strike. */

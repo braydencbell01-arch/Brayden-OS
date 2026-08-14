@@ -90,6 +90,9 @@ export type SyncProjectile = {
   spawnAsId?: string
   spawnCount?: number
   spawnLevel?: number
+  bounceLeft?: number
+  bounceRange?: number
+  bounceHitIds?: string[]
 }
 
 export type SyncTower = {

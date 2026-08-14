@@ -55,6 +55,11 @@ export type AttackDef = {
   ignoreAttackDelay?: boolean
   /** Hit up to this many closest opponents in range (Tristan). */
   maxTargets?: number
+  /**
+   * Jessie-style bounce: after impact, chain to another foe still inside the
+   * attacker's range (never the same target twice). Total hits = bounceTargets.
+   */
+  bounceTargets?: number
   kind:
     | 'sundae'
     | 'whip'
@@ -316,7 +321,8 @@ export const SHAY: CharacterDef = {
   moveSpeed: 5.5,
   attackDelaySec: 1.75,
   hue: 40,
-  blurb: 'Border collie × black lab mix. Stops and sends a slow Love heart.',
+  blurb:
+    'Border collie × black lab mix. Love heart bounces to other foes in range — up to 5 hits.',
   attacks: [
     {
       id: 'love',
@@ -324,6 +330,7 @@ export const SHAY: CharacterDef = {
       range: 22,
       damage: 125,
       rootWhileAttacking: true,
+      bounceTargets: 5,
       kind: 'love',
     },
   ],
@@ -953,7 +960,7 @@ export const BERRY: CharacterDef = {
   hue: 200,
   auraOnKill: true,
   auraAttackDelaySec: 1.3,
-  auraDamage: 805,
+  auraDamage: 715,
   auraProjectileMs: 220,
   blurb:
     'Legendary juice lobber. Aura after a kill — blue flames, faster bigger juice, harder splash.',
@@ -962,7 +969,7 @@ export const BERRY: CharacterDef = {
       id: 'aura',
       name: 'Aura',
       range: 27,
-      damage: 505,
+      damage: 415,
       rootWhileAttacking: true,
       splashRadius: 9,
       projectileMs: 1100,

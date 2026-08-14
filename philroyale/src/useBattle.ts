@@ -146,6 +146,9 @@ function syncProjectileToBattle(
     spawnAsId: p.spawnAsId,
     spawnCount: p.spawnCount,
     spawnLevel: p.spawnLevel,
+    bounceLeft: p.bounceLeft,
+    bounceRange: p.bounceRange,
+    bounceHitIds: p.bounceHitIds,
   }
 }
 
@@ -1309,6 +1312,9 @@ export function useBattle(opts?: {
         spawnAsId: p.spawnAsId,
         spawnCount: p.spawnCount,
         spawnLevel: p.spawnLevel,
+        bounceLeft: p.bounceLeft,
+        bounceRange: p.bounceRange,
+        bounceHitIds: p.bounceHitIds,
       })),
       allyScore: allyScoreRef.current,
       enemyScore: enemyScoreRef.current,
@@ -2006,6 +2012,54 @@ export function useBattle(opts?: {
           if (tw) {
             applyTowerDamage(tw, p.damage, t)
             towersChanged = true
+          }
+        }
+        // Shay Love — Jessie-style bounce to another foe still in Shay's range.
+        if (
+          p.kind === 'love' &&
+          (p.bounceLeft ?? 0) > 0 &&
+          p.ownerUnitId &&
+          p.ownerSide
+        ) {
+          const owner = nextUnits.find((x) => x.id === p.ownerUnitId && x.hp > 0)
+          if (owner) {
+            const hitIds = new Set(p.bounceHitIds ?? [])
+            if (p.targetId) hitIds.add(p.targetId)
+            if (p.targetTowerId) hitIds.add(`tower:${p.targetTowerId}`)
+            const range = p.bounceRange ?? 22
+            const oc = unitCenter(owner)
+            let best: { id: string; col: number; row: number; d: number } | null = null
+            for (const f of nextUnits) {
+              if (f.side === owner.side || f.hp <= 0 || hitIds.has(f.id)) continue
+              if (isAirborne(f)) continue
+              const c = unitCenter(f)
+              if (dist(oc.col, oc.row, c.col, c.row) > range) continue
+              const dImpact = dist(p.toCol, p.toRow, c.col, c.row)
+              if (!best || dImpact < best.d) {
+                best = { id: f.id, col: c.col, row: c.row, d: dImpact }
+              }
+            }
+            if (best) {
+              const bounceMs = Math.max(320, Math.round(LOVE_PROJECTILE_MS * 0.45))
+              stillFlying.push({
+                id: nid('p'),
+                kind: 'love',
+                fromCol: p.toCol,
+                fromRow: p.toRow,
+                toCol: best.col,
+                toRow: best.row,
+                damage: p.damage,
+                targetId: best.id,
+                targetTowerId: null,
+                bornAt: t,
+                arriveAt: t + bounceMs,
+                ownerSide: p.ownerSide,
+                ownerUnitId: p.ownerUnitId,
+                bounceLeft: (p.bounceLeft ?? 1) - 1,
+                bounceRange: range,
+                bounceHitIds: [...hitIds],
+              })
+            }
           }
         }
         if (berrySnapUnits && berrySnapTowers && p.ownerUnitId) {
@@ -2962,9 +3016,16 @@ export function useBattle(opts?: {
                                   ? WITCHCRAFT_PROJECTILE_MS
                                   : PROJECTILE_MS),
               ownerSide: u.side,
-              ownerUnitId: berryAttack ? u.id : undefined,
+              ownerUnitId: berryAttack || attack.kind === 'love' ? u.id : undefined,
               splashRadius: attack.splashRadius,
               splashDamage: attack.splashDamage,
+              ...(attack.kind === 'love' && (attack.bounceTargets ?? 0) > 1
+                ? {
+                    bounceLeft: (attack.bounceTargets ?? 1) - 1,
+                    bounceRange: attack.range,
+                    bounceHitIds: [] as string[],
+                  }
+                : {}),
             })
           }
           projectilesChanged = true
