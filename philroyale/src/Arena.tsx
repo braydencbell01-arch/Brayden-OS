@@ -554,9 +554,8 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
           <div
             className="pointer-events-none absolute inset-0 z-[6]"
             style={{
-              background:
-                'radial-gradient(ellipse 80% 70% at 50% 50%, #2a9ad844 0%, #0d5a9a22 55%, transparent 75%)',
-              boxShadow: 'inset 0 0 0 2px #4a9eff66',
+              // Soft cyan edge only — never darken the battlefield when a spell is selected.
+              boxShadow: 'inset 0 0 0 2px #4a9eff55',
             }}
             aria-hidden
           />

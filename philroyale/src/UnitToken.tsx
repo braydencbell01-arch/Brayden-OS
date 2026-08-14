@@ -37,8 +37,8 @@ export function UnitToken({
   const anim: CharacterAnim = vfx ? 'attack' : moving ? 'walk' : 'idle'
   const face =
     facing ?? (side === 'ally' ? -Math.PI / 2 : Math.PI / 2)
-  const leanX = Math.cos(face) * 4
-  const leanRot = Math.cos(face) * 6
+  const leanX = Math.cos(face) * 2
+  const leanRot = Math.cos(face) * 3
 
   return (
     <div

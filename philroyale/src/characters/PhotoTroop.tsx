@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { CARD_PORTRAIT_BG } from './cardArt'
 import type { CharacterAnim } from './PhilModel'
@@ -71,24 +70,12 @@ export function PhotoTroop({
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
 }: Props) {
-  // Mild hysteresis — still flip promptly so troops face the way they walk.
-  const flipRef = useRef(1)
-  const backRef = useRef(false)
+  // Face the way the unit is moving — snap flip; back only when clearly marching up.
   const cosF = Math.cos(facing)
   const sinF = Math.sin(facing)
-  // Left/right from movement facing (all PhotoTroop cards).
-  if (cosF < -0.1) flipRef.current = -1
-  else if (cosF > 0.1) flipRef.current = 1
-  if (troopBackSrc) {
-    // Screen-up (−Y) ⇒ back of character (your troops marching toward the enemy).
-    // Screen-down (+Y) ⇒ front (enemies coming at you).
-    if (sinF < -0.12) backRef.current = true
-    else if (sinF > 0.12) backRef.current = false
-  } else {
-    backRef.current = false
-  }
-  const flip = flipRef.current
-  const showBack = backRef.current
+  const flip = cosF < 0 ? -1 : 1
+  // Distinct back art only; avoid thrashing when pathing (same cutout + flip = glitch).
+  const showBack = Boolean(troopBackSrc && troopBackSrc !== troopSrc && sinF < -0.45)
   const src = showBack && troopBackSrc ? troopBackSrc : troopSrc
 
   const walking = anim === 'walk'

@@ -979,8 +979,7 @@ export function recordMatchResult(
     saveDaily(daily)
   }
 
-  // Auto-claim trophy road steps the player has reached
-  claimAvailableRoadRewards()
+  // Auto-claim removed — players claim trophy-road rewards manually (or Claim all).
   return loadProfile()
 }
 
@@ -1857,9 +1856,10 @@ export function buyShopOffer(offerId: string): { ok: boolean; message: string } 
 
 export function grantBattleChest(result: 'victory' | 'defeat' | 'draw'): void {
   if (result !== 'victory') return
+  // One chest per win: common 55% · rare 30% · epic 12% · legendary 3%
   const roll = Math.random()
   const rarity: ChestRarity =
-    roll < 0.05 ? 'legendary' : roll < 0.2 ? 'epic' : roll < 0.55 ? 'rare' : 'common'
+    roll < 0.03 ? 'legendary' : roll < 0.15 ? 'epic' : roll < 0.45 ? 'rare' : 'common'
   addChest(rarity)
 }
 
