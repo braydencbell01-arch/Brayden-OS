@@ -35,6 +35,28 @@ const RARITY_PILL: Record<Rarity, string> = {
   legendary: '#f5d76e',
 }
 
+const RARITY_OPTIONS: Rarity[] = ['common', 'rare', 'epic', 'legendary']
+
+type CardFilters = {
+  name: string
+  elixir: number | 'all'
+  rarity: Rarity | 'all'
+}
+
+const EMPTY_FILTERS: CardFilters = { name: '', elixir: 'all', rarity: 'all' }
+
+function matchesCardFilters(c: CharacterDef, f: CardFilters): boolean {
+  if (f.elixir !== 'all' && c.elixir !== f.elixir) return false
+  if (f.rarity !== 'all' && c.rarity !== f.rarity) return false
+  const q = f.name.trim().toLowerCase()
+  if (q && !c.name.toLowerCase().includes(q)) return false
+  return true
+}
+
+function filtersActive(f: CardFilters): boolean {
+  return f.name.trim() !== '' || f.elixir !== 'all' || f.rarity !== 'all'
+}
+
 export function CharactersScreen() {
   const [pane, setPane] = useState<Pane>('decks')
   const [decks, setDecks] = useState<string[][]>(() => loadDecks())
@@ -44,7 +66,14 @@ export function CharactersScreen() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [pickSlot, setPickSlot] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [filters, setFilters] = useState<CardFilters>(EMPTY_FILTERS)
+  const [filterOpen, setFilterOpen] = useState(false)
   const deck = decks[activeIdx] ?? []
+
+  const elixirOptions = useMemo(() => {
+    const set = new Set(CHARACTERS.map((c) => c.elixir))
+    return [...set].sort((a, b) => a - b)
+  }, [])
 
   useEffect(() => {
     saveDecks(decks)
@@ -71,6 +100,20 @@ export function CharactersScreen() {
     locked.sort(sortFn)
     return { unlocked, locked, found: progress.unlocked.length, total: CHARACTERS.length }
   }, [progress])
+
+  const filteredUnlocked = useMemo(
+    () => collection.unlocked.filter((c) => matchesCardFilters(c, filters)),
+    [collection.unlocked, filters],
+  )
+  const filteredLocked = useMemo(
+    () => collection.locked.filter((c) => matchesCardFilters(c, filters)),
+    [collection.locked, filters],
+  )
+  const filteredAll = useMemo(
+    () => [...filteredUnlocked, ...filteredLocked],
+    [filteredUnlocked, filteredLocked],
+  )
+  const filtering = filtersActive(filters)
 
   function flash(msg: string) {
     setToast(msg)
@@ -327,37 +370,64 @@ export function CharactersScreen() {
           </div>
 
           <div className="mx-auto mt-4 max-w-md">
-            <p className="mb-2 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-[#7dff9a]">
-              Found · {collection.found}/{collection.total}
-            </p>
-            <ul className="grid grid-cols-4 gap-2">
-              {collection.unlocked.map((c) => (
-                <CollectionTile
-                  key={c.id}
-                  character={c}
-                  level={progress.levels[c.id] ?? 1}
-                  copies={progress.copies[c.id] ?? 0}
-                  locked={false}
-                  onClick={() => {
-                    if (pickSlot != null) {
-                      addToDeck(c.id)
-                    } else {
-                      setProfileId(c.id)
-                    }
-                  }}
-                />
-              ))}
-            </ul>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-[0.7rem] font-extrabold uppercase tracking-wide text-[#7dff9a]">
+                {filtering
+                  ? `Found · ${filteredUnlocked.length} shown / ${collection.found}`
+                  : `Found · ${collection.found}/${collection.total}`}
+              </p>
+              <FilterButton
+                active={filtering}
+                open={filterOpen}
+                onClick={() => setFilterOpen((v) => !v)}
+              />
+            </div>
+            {filterOpen ? (
+              <CardFilterPanel
+                filters={filters}
+                elixirOptions={elixirOptions}
+                onChange={setFilters}
+                onClear={() => setFilters(EMPTY_FILTERS)}
+              />
+            ) : null}
+            {filteredUnlocked.length === 0 ? (
+              <p className="mb-3 text-center text-xs font-semibold text-white/45">
+                No found cards match these filters
+              </p>
+            ) : (
+              <ul className="grid grid-cols-4 gap-2">
+                {filteredUnlocked.map((c) => (
+                  <CollectionTile
+                    key={c.id}
+                    character={c}
+                    level={progress.levels[c.id] ?? 1}
+                    copies={progress.copies[c.id] ?? 0}
+                    locked={false}
+                    onClick={() => {
+                      if (pickSlot != null) {
+                        addToDeck(c.id)
+                      } else {
+                        setProfileId(c.id)
+                      }
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
             <p className="mb-2 mt-4 text-center text-[0.7rem] font-extrabold uppercase tracking-wide text-white/55">
-              Not found · {collection.locked.length}/{collection.total}
+              {filtering
+                ? `Not found · ${filteredLocked.length} shown / ${collection.locked.length}`
+                : `Not found · ${collection.locked.length}/${collection.total}`}
             </p>
-            {collection.locked.length === 0 ? (
+            {filteredLocked.length === 0 ? (
               <p className="pb-4 text-center text-xs font-semibold text-white/40">
-                0/{collection.total} — you&apos;ve found them all
+                {collection.locked.length === 0
+                  ? `0/${collection.total} — you've found them all`
+                  : 'No locked cards match these filters'}
               </p>
             ) : (
               <ul className="grid grid-cols-4 gap-2 pb-4">
-                {collection.locked.map((c) => (
+                {filteredLocked.map((c) => (
                   <CollectionTile
                     key={c.id}
                     character={c}
@@ -374,29 +444,52 @@ export function CharactersScreen() {
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-24">
           <div className="mx-auto max-w-md">
-            <div className="mb-2">
-              <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-white">
-                Card Collection
-              </h2>
-              <p className="text-xs font-bold text-white/70">
-                All cards · Found {collection.found}/{collection.total}
-              </p>
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <div>
+                <h2 className="font-[family-name:var(--font-display)] text-lg tracking-wide text-white">
+                  Card Collection
+                </h2>
+                <p className="text-xs font-bold text-white/70">
+                  {filtering
+                    ? `Showing ${filteredAll.length} · Found ${collection.found}/${collection.total}`
+                    : `All cards · Found ${collection.found}/${collection.total}`}
+                </p>
+              </div>
+              <FilterButton
+                active={filtering}
+                open={filterOpen}
+                onClick={() => setFilterOpen((v) => !v)}
+              />
             </div>
-            <ul className="grid grid-cols-4 gap-2">
-              {[...collection.unlocked, ...collection.locked].map((c) => {
-                const locked = !progress.unlocked.includes(c.id)
-                return (
-                  <CollectionTile
-                    key={c.id}
-                    character={c}
-                    level={progress.levels[c.id] ?? 1}
-                    copies={progress.copies[c.id] ?? 0}
-                    locked={locked}
-                    onClick={() => setProfileId(c.id)}
-                  />
-                )
-              })}
-            </ul>
+            {filterOpen ? (
+              <CardFilterPanel
+                filters={filters}
+                elixirOptions={elixirOptions}
+                onChange={setFilters}
+                onClear={() => setFilters(EMPTY_FILTERS)}
+              />
+            ) : null}
+            {filteredAll.length === 0 ? (
+              <p className="py-8 text-center text-xs font-semibold text-white/45">
+                No cards match these filters
+              </p>
+            ) : (
+              <ul className="grid grid-cols-4 gap-2">
+                {filteredAll.map((c) => {
+                  const locked = !progress.unlocked.includes(c.id)
+                  return (
+                    <CollectionTile
+                      key={c.id}
+                      character={c}
+                      level={progress.levels[c.id] ?? 1}
+                      copies={progress.copies[c.id] ?? 0}
+                      locked={locked}
+                      onClick={() => setProfileId(c.id)}
+                    />
+                  )
+                })}
+              </ul>
+            )}
           </div>
         </div>
       )}
@@ -409,6 +502,148 @@ export function CharactersScreen() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+function FilterButton({
+  active,
+  open,
+  onClick,
+}: {
+  active: boolean
+  open: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      className="shrink-0 rounded-lg px-3 py-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-white"
+      style={{
+        background: open || active
+          ? 'linear-gradient(180deg,#7eb8ff,#3a7fd4)'
+          : 'linear-gradient(180deg,#3a5a88,#2a4068)',
+        boxShadow: active ? '0 0 0 1px #ffe08a88' : 'inset 0 0 0 1px #ffffff22',
+      }}
+    >
+      {active ? 'Filter · on' : 'Filter'}
+    </button>
+  )
+}
+
+function CardFilterPanel({
+  filters,
+  elixirOptions,
+  onChange,
+  onClear,
+}: {
+  filters: CardFilters
+  elixirOptions: number[]
+  onChange: (next: CardFilters) => void
+  onClear: () => void
+}) {
+  return (
+    <div
+      className="mb-3 rounded-xl p-3"
+      style={{
+        background: 'linear-gradient(180deg,#2a4068,#1a2848)',
+        boxShadow: 'inset 0 1px 0 #ffffff22, 0 4px 12px #00000044',
+      }}
+    >
+      <label className="block">
+        <span className="mb-1 block text-[0.6rem] font-extrabold uppercase tracking-wide text-white/60">
+          Name
+        </span>
+        <input
+          type="search"
+          value={filters.name}
+          onChange={(e) => onChange({ ...filters, name: e.target.value })}
+          placeholder="Search cards…"
+          className="w-full rounded-lg border-0 bg-[#0e1a30] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35 focus:ring-[#4a9eff]"
+        />
+      </label>
+
+      <p className="mb-1.5 mt-3 text-[0.6rem] font-extrabold uppercase tracking-wide text-white/60">
+        Elixir
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        <FilterChip
+          label="Any"
+          selected={filters.elixir === 'all'}
+          onClick={() => onChange({ ...filters, elixir: 'all' })}
+        />
+        {elixirOptions.map((n) => (
+          <FilterChip
+            key={n}
+            label={String(n)}
+            selected={filters.elixir === n}
+            onClick={() => onChange({ ...filters, elixir: n })}
+          />
+        ))}
+      </div>
+
+      <p className="mb-1.5 mt-3 text-[0.6rem] font-extrabold uppercase tracking-wide text-white/60">
+        Rarity
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        <FilterChip
+          label="Any"
+          selected={filters.rarity === 'all'}
+          onClick={() => onChange({ ...filters, rarity: 'all' })}
+        />
+        {RARITY_OPTIONS.map((r) => (
+          <FilterChip
+            key={r}
+            label={RARITY_LABEL[r]}
+            selected={filters.rarity === r}
+            accent={RARITY_PILL[r]}
+            onClick={() => onChange({ ...filters, rarity: r })}
+          />
+        ))}
+      </div>
+
+      {filtersActive(filters) ? (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-3 w-full rounded-lg bg-[#2a1a12] py-2 text-xs font-extrabold uppercase tracking-wide text-white/75 ring-1 ring-white/15"
+        >
+          Clear filters
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+function FilterChip({
+  label,
+  selected,
+  onClick,
+  accent,
+}: {
+  label: string
+  selected: boolean
+  onClick: () => void
+  accent?: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-md px-2.5 py-1 text-[0.65rem] font-extrabold uppercase tracking-wide"
+      style={{
+        background: selected
+          ? accent
+            ? `linear-gradient(180deg,${accent},${accent}cc)`
+            : 'linear-gradient(180deg,#ffe08a,#c9a227)'
+          : '#152238',
+        color: selected && !accent ? '#1a1410' : selected ? '#0a0a0c' : '#fff',
+        boxShadow: selected ? '0 0 0 1px #ffffff55' : 'inset 0 0 0 1px #ffffff18',
+      }}
+    >
+      {label}
+    </button>
   )
 }
 
