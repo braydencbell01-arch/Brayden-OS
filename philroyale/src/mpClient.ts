@@ -26,6 +26,8 @@ let wantOpen = false
 const msgHandlers = new Set<MsgHandler>()
 const presenceHandlers = new Set<PresenceHandler>()
 let lastPresence: Record<string, MpPresence> = {}
+/** Last known ping per code even after they drop out of the live presence snapshot. */
+const stickyLastSeen: Record<string, number> = {}
 let trophies = 0
 let inBattle = false
 let challengeId: string | undefined
@@ -82,6 +84,12 @@ function emitMsg(msg: unknown) {
 }
 
 function emitPresence(players: Record<string, MpPresence>) {
+  for (const [code, p] of Object.entries(lastPresence)) {
+    if (p?.at) stickyLastSeen[code] = Math.max(stickyLastSeen[code] ?? 0, p.at)
+  }
+  for (const [code, p] of Object.entries(players)) {
+    if (p?.at) stickyLastSeen[code] = Math.max(stickyLastSeen[code] ?? 0, p.at)
+  }
   lastPresence = players
   for (const h of presenceHandlers) {
     try {
@@ -226,6 +234,16 @@ export function mpOnPresence(handler: PresenceHandler): () => void {
 
 export function mpLastPresence(): Record<string, MpPresence> {
   return lastPresence
+}
+
+/** Last known presence time for a code (includes players who since went offline). */
+export function mpPeekLastSeen(code: string): number | null {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  if (!c) return null
+  const live = lastPresence[c]?.at ?? 0
+  const sticky = stickyLastSeen[c] ?? 0
+  const best = Math.max(live, sticky)
+  return best > 0 ? best : null
 }
 
 /** Publish a directed social message (and optional lobby fanout). */

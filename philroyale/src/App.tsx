@@ -15,7 +15,7 @@ import type { BattleNet } from './battleSync'
 import { publishBattle, subscribeBattle } from './battleSync'
 import { isPartyMode, modeLabel } from './gameModes'
 import { joinClubVerified, startClubSync } from './clubSync'
-import { mpConnect, mpReady, mpSetStatus } from './mpClient'
+import { mpConnect, mpOnPresence, mpReady, mpSetStatus } from './mpClient'
 import {
   DIRECTORY_HEARTBEAT_MS,
   PRESENCE_HEARTBEAT_MS,
@@ -74,6 +74,7 @@ import {
   upsertFriend,
   saveFriendTrophies,
   saveFriendClub,
+  touchFriendLastOnline,
   type BattleChallenge,
   type BattleChannelMessage,
   type ClubInviteIncoming,
@@ -837,6 +838,7 @@ export default function App() {
         const at = Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
         if (msg.clubCode) saveFriendClub(msg.fromPlayerId, { clubCode: msg.clubCode, clubName: msg.clubName })
+        touchFriendLastOnline(msg.fromPlayerId, at)
         setFriendPresence((prev) => ({
           ...prev,
           [msg.fromPlayerId]: {
@@ -857,6 +859,7 @@ export default function App() {
         if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const at = Date.parse(msg.at) || Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
+        touchFriendLastOnline(msg.fromPlayerId, at)
         setFriendPresence((prev) => ({
           ...prev,
           [msg.fromPlayerId]: {
@@ -1010,7 +1013,23 @@ export default function App() {
       unsub = mpConnect(myId, me)
       mpSetStatus({ name: me, trophies: loadProfile().trophies })
     })
-    return () => unsub()
+    const unsubPres = mpOnPresence((players) => {
+      const friendIds = new Set(
+        loadFriends()
+          .map((f) => f.playerId)
+          .filter(Boolean) as string[],
+      )
+      for (const [code, p] of Object.entries(players)) {
+        if (!p?.at) continue
+        if (friendIds.has(code) || [...friendIds].some((id) => id.replace(/\D/g, '').slice(0, 6) === code)) {
+          touchFriendLastOnline(code, p.at)
+        }
+      }
+    })
+    return () => {
+      unsub()
+      unsubPres()
+    }
   }, [needsName, playerName])
 
   // Merge lobby presence into friend online dots often.
@@ -1024,6 +1043,7 @@ export default function App() {
           if (!f.playerId) continue
           const dir = lookupDirectoryPresence(f.playerId)
           if (!dir) continue
+          touchFriendLastOnline(f.playerId, dir.at)
           const older = next[f.playerId]
           if (!older || dir.at >= (older.at ?? 0)) {
             next[f.playerId] = {
@@ -1042,6 +1062,13 @@ export default function App() {
     const id = window.setInterval(merge, 2000)
     return () => window.clearInterval(id)
   }, [needsName, friendsTick])
+
+  // Persist any in-memory presence timestamps even when Social tab is closed.
+  useEffect(() => {
+    for (const [pid, info] of Object.entries(friendPresence)) {
+      if (info?.at) touchFriendLastOnline(pid, info.at)
+    }
+  }, [friendPresence])
 
   // Heartbeat: lobby ping only (online status). Don't spam every friend's topic.
   useEffect(() => {
@@ -1083,6 +1110,7 @@ export default function App() {
           if (!f.playerId) continue
           const dir = lookupDirectoryPresence(f.playerId)
           if (!dir) continue
+          touchFriendLastOnline(f.playerId, dir.at)
           const older = next[f.playerId]
           if (!older || dir.at >= older.at) {
             next[f.playerId] = {

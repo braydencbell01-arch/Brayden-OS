@@ -691,7 +691,12 @@ export function TrophyRoadScreen({
             profileFriend.playerId ? friendPresence[profileFriend.playerId] : undefined
           }
           now={now}
-          lastOnlineAt={meta.lastOnline[profileFriend.id]}
+          lastOnlineAt={Math.max(
+            meta.lastOnline[profileFriend.id] ?? 0,
+            profileFriend.playerId
+              ? (meta.lastOnline[profileFriend.playerId] ?? 0)
+              : 0,
+          )}
           note={meta.notes[profileFriend.id] ?? ''}
           pinned={!!meta.pinned[profileFriend.id]}
           onClose={() => setProfileFriend(null)}

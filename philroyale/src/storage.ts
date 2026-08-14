@@ -1236,10 +1236,47 @@ export function saveFriendMeta(meta: FriendMeta): void {
   localStorage.setItem(FRIEND_META_KEY, JSON.stringify(meta))
 }
 
+/** Persist last presence ping for a friend code (survives offline + reload). */
+export function touchFriendLastOnline(playerId: string, atMs: number): void {
+  const code = normalizeFriendCode(playerId)
+  if (!code || !Number.isFinite(atMs) || atMs <= 0) return
+  const meta = loadFriendMeta()
+  const next = { ...meta.lastOnline }
+  let changed = false
+  if (atMs > (next[code] ?? 0)) {
+    next[code] = atMs
+    changed = true
+  }
+  for (const f of loadFriends()) {
+    const pid = f.playerId ? normalizeFriendCode(f.playerId) : ''
+    if (pid !== code && f.id !== code) continue
+    if (atMs > (next[f.id] ?? 0)) {
+      next[f.id] = atMs
+      changed = true
+    }
+  }
+  if (!changed) return
+  saveFriendMeta({ ...meta, lastOnline: next })
+  try {
+    window.dispatchEvent(new Event('philroyale-friend-meta-changed'))
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Best stored last-online timestamp for a friend (by id or account code). */
+export function getFriendLastOnlineAt(friend: { id: string; playerId?: string }): number {
+  const meta = loadFriendMeta()
+  const code = friend.playerId ? normalizeFriendCode(friend.playerId) : ''
+  return Math.max(meta.lastOnline[friend.id] ?? 0, code ? (meta.lastOnline[code] ?? 0) : 0)
+}
+
 export function markFriendBattled(friendId: string): void {
   const meta = loadFriendMeta()
   meta.lastBattled[friendId] = new Date().toISOString()
   saveFriendMeta(meta)
+  const friend = loadFriends().find((f) => f.id === friendId)
+  if (friend?.playerId) touchFriendLastOnline(friend.playerId, Date.now())
 }
 
 /* ——— Chests ——— */

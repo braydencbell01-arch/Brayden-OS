@@ -3,11 +3,13 @@ import { ClubPeekModal, ClubScreen } from './ClubScreen'
 import { joinClubVerified } from './clubSync'
 import {
   PRESENCE_ONLINE_MS,
+  peekDirectoryLastSeen,
   type FriendPresenceInfo,
 } from './socialHub'
 import {
   formatAccountCode,
   friendInviteUrl,
+  getFriendLastOnlineAt,
   loadAccountCode,
   loadFriendMeta,
   loadFriends,
@@ -113,12 +115,16 @@ export function FriendsScreen({
     const nextOnline = { ...current.lastOnline }
     for (const f of friends) {
       if (!f.playerId) continue
-      const at = friendPresence[f.playerId]?.at
+      const code = normalizeFriendCode(f.playerId)
+      const live = friendPresence[f.playerId]?.at ?? 0
+      const peeked = peekDirectoryLastSeen(f.playerId) ?? 0
+      const at = Math.max(live, peeked)
       if (!at || !Number.isFinite(at)) continue
-      const prev = nextOnline[f.id] ?? 0
-      if (at > prev) {
-        nextOnline[f.id] = at
-        changed = true
+      for (const key of [f.id, code].filter(Boolean)) {
+        if (at > (nextOnline[key] ?? 0)) {
+          nextOnline[key] = at
+          changed = true
+        }
       }
     }
     if (!changed) return
@@ -126,6 +132,12 @@ export function FriendsScreen({
     setMeta(next)
     saveFriendMeta(next)
   }, [friendPresence, friends])
+
+  useEffect(() => {
+    const onMeta = () => setMeta(loadFriendMeta())
+    window.addEventListener('philroyale-friend-meta-changed', onMeta)
+    return () => window.removeEventListener('philroyale-friend-meta-changed', onMeta)
+  }, [])
 
   function persistName(name: string) {
     setPlayerName(name)
@@ -423,9 +435,16 @@ export function FriendsScreen({
                 const pinned = !!meta.pinned[f.id]
                 const note = meta.notes[f.id] ?? ''
                 const canInvite = Boolean(f.playerId) && !battling && !isWaiting
+                const battledMs = last ? Date.parse(last) || 0 : 0
                 const lastSeenAt = Math.max(
                   presence?.at ?? 0,
+                  peekDirectoryLastSeen(f.playerId || '') ?? 0,
+                  getFriendLastOnlineAt(f),
                   meta.lastOnline[f.id] ?? 0,
+                  f.playerId
+                    ? (meta.lastOnline[normalizeFriendCode(f.playerId)] ?? 0)
+                    : 0,
+                  Number.isFinite(battledMs) ? battledMs : 0,
                 )
                 const statusColor = battling ? '#ffb020' : online ? '#3ecf6a' : '#6a5a50'
                 const statusLabel = !f.playerId
@@ -570,7 +589,11 @@ export function FriendsScreen({
             profileFriend.playerId ? friendPresence[profileFriend.playerId] : undefined
           }
           now={now}
-          lastOnlineAt={meta.lastOnline[profileFriend.id]}
+          lastOnlineAt={Math.max(
+            meta.lastOnline[profileFriend.id] ?? 0,
+            getFriendLastOnlineAt(profileFriend),
+            peekDirectoryLastSeen(profileFriend.playerId || '') ?? 0,
+          )}
           note={meta.notes[profileFriend.id] ?? ''}
           pinned={!!meta.pinned[profileFriend.id]}
           onClose={() => setProfileFriend(null)}

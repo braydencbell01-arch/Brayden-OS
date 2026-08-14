@@ -10,6 +10,7 @@ import {
   mpLastPresence,
   mpOnMessage,
   mpOnPresence,
+  mpPeekLastSeen,
   mpPollInbox,
   mpPublish,
   mpSetStatus,
@@ -233,6 +234,23 @@ export function lookupDirectoryPresence(code: string): FriendPresenceInfo | null
     clubCode: e.clubCode,
     clubName: e.clubName,
   }
+}
+
+/**
+ * Last known ping time even after they go offline (in-memory directory / MP).
+ * Prefer persisted friend meta for cross-reload; this helps within a session.
+ */
+export function peekDirectoryLastSeen(code: string): number | null {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  if (c.length !== 6) return null
+  let best = 0
+  const mpSticky = mpPeekLastSeen(c)
+  if (mpSticky) best = Math.max(best, mpSticky)
+  const mp = mpLastPresence()[c]
+  if (mp?.at) best = Math.max(best, mp.at)
+  const e = directoryCache.get(c)
+  if (e) best = Math.max(best, e.at || 0, e.seenAt || 0)
+  return best > 0 ? best : null
 }
 
 function handleSocialObject(data: SocialMessage): void {
