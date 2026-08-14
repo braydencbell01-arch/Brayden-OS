@@ -549,7 +549,8 @@ export function BattleScreen({
       opponentTrophies: isPvp ? opponentTrophies : undefined,
       awardsTrophies: earnsTrophies(mode),
     })
-    grantBattleChest(result)
+    // Battle chest only on wins (never loss / draw).
+    if (result === 'victory') grantBattleChest(result)
   }, [result, isSpectating, net, opponentTrophies, towers, mode])
 
   function cycleAfterDeploy(playedId: string) {
@@ -1165,10 +1166,10 @@ export function BattleScreen({
                 : !earnsTrophies(mode)
                   ? 'Party mode — gold only, no trophies'
                   : result === 'victory'
-                    ? '+25–30 trophies · +50 gold · chest chance'
+                    ? '+25–30 trophies · +50 gold · +chest'
                     : result === 'defeat'
-                      ? '−15–20 trophies · +15 gold'
-                      : '+3–8 trophies · +25 gold'}
+                      ? '−15–20 trophies · +15 gold · no chest'
+                      : '+3–8 trophies · +25 gold · no chest'}
             </p>
             <button
               type="button"
