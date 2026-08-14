@@ -229,7 +229,7 @@ export const PETE: CharacterDef = {
   height: "6'2\"",
   rarity: 'epic',
   elixir: 5,
-  hp: 3750,
+  hp: 3345,
   moveSpeed: 4,
   attackDelaySec: 1.5,
   hue: 220,

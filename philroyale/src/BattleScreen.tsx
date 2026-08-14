@@ -228,7 +228,8 @@ function FlyingShot({
       }}
       aria-hidden
     >
-      {kind === 'sundae' || kind === 'iceCream' ? <SundaeDot /> : null}
+      {kind === 'sundae' ? <SundaeDot compact /> : null}
+      {kind === 'iceCream' ? <SundaeDot /> : null}
       {kind === 'pancake' ? <PancakeDot /> : null}
       {kind === 'barrel' ? <BarrelDot /> : null}
       {kind === 'football' ? <FootballDot /> : null}

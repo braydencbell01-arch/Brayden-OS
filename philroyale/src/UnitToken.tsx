@@ -300,15 +300,19 @@ export function BarrelSplat({ ageMs }: { ageMs: number }) {
   )
 }
 
-/** Flying ice cream sundae for Sundae Huck / Sundae spell. */
-export function SundaeDot() {
+/** Flying ice cream sundae — full size for Sundae spell; compact for Phil / Evil Phil. */
+export function SundaeDot({ compact }: { compact?: boolean } = {}) {
   const src = `${import.meta.env.BASE_URL}projectiles/sundae.png`
   return (
     <img
       src={src}
       alt=""
       draggable={false}
-      className="pointer-events-none h-14 w-11 object-contain"
+      className={
+        compact
+          ? 'pointer-events-none h-8 w-6 object-contain'
+          : 'pointer-events-none h-14 w-11 object-contain'
+      }
       aria-hidden
     />
   )
