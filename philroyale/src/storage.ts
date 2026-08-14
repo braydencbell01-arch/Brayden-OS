@@ -1854,6 +1854,7 @@ export function buyShopOffer(offerId: string): { ok: boolean; message: string } 
   return { ok: true, message: offer.free ? 'Free deal claimed!' : 'Purchased!' }
 }
 
+/** One chest slot fill after a win only — never on defeat or draw. */
 export function grantBattleChest(result: 'victory' | 'defeat' | 'draw'): void {
   if (result !== 'victory') return
   // One chest per win: common 55% · rare 30% · epic 12% · legendary 3%
