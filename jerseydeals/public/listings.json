@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-08-14T18:10:20Z",
+  "syncedAt": "2026-08-14T18:18:39Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 73,
+  "count": 74,
   "listings": [
     {
       "id": "N6UZIJJ7VXPDHKXZOXA7SRYB",
@@ -2283,6 +2283,36 @@
       "conditionId": "1000"
     },
     {
+      "id": "DPZ2ZTZCKZJ3AI7TL3L6C5RF",
+      "itemId": "4GBILRUWOVOFXQKLQFEDZEXE",
+      "sku": "ebay:800508178173",
+      "title": "Purple Nike T-Shirt M Medium",
+      "price": 14.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/purple-nike-t-shirt-m-medium/4GBILRUWOVOFXQKLQFEDZEXE",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/q6gAAeSwj-Vqf09t/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/q6gAAeSwj-Vqf09t/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qWwAAeSwJHdqf09u/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pxsAAeSwC-Fqf09v/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pakAAeSwtGBqf09u/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/mtkAAeSwbEhqf09u/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Apparel",
+      "note": "Size M",
+      "size": "M",
+      "brand": "Nike",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/8wQqBoq2",
+      "checkoutUrlDiscounted": "https://square.link/u/4uWywAiO",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
+    },
+    {
       "id": "XNHNL2WTQEIFBDPIAMDP4AVH",
       "itemId": "DH3ECCJONSTXEWEEZOUZZM6I",
       "sku": "ebay:800482084611",
@@ -2473,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-14T17:37:02Z"
+  "ebayDetailsSyncedAt": "2026-08-14T18:18:39Z"
 }

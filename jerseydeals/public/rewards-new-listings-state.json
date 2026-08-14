@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-14T17:37:06Z",
+  "updatedAt": "2026-08-14T18:18:44Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -139,9 +139,18 @@
     "ebay:800508096052",
     "ebay:800508119822",
     "ebay:800508145574",
-    "ebay:800508173053"
+    "ebay:800508173053",
+    "ebay:800508178173"
   ],
-  "pending": [],
+  "pending": [
+    {
+      "id": "ebay:800508178173",
+      "title": "Purple Nike T-Shirt M Medium",
+      "url": "https://jerseydealsofficial.square.site/product/purple-nike-t-shirt-m-medium/4GBILRUWOVOFXQKLQFEDZEXE",
+      "price": 14.99,
+      "seenAt": "2026-08-14T18:18:44Z"
+    }
+  ],
   "lastEmailedAt": "2026-08-14T17:37:12Z",
   "lastEmailedDay": "2026-08-14",
   "lastEmailedIds": [

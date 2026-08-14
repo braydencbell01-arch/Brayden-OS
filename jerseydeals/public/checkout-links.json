@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-08-14T18:10:20Z",
+  "syncedAt": "2026-08-14T18:16:51Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 147,
+  "count": 148,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1917,6 +1917,19 @@
       "discountPaymentLinkId": "XXLKARDQYEQOADLH",
       "discountUrl": "https://square.link/u/BNN6SyrM",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YP7jOXUNWUPUnLmpLdBh9eTr7eRZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "4GBILRUWOVOFXQKLQFEDZEXE",
+      "variationId": "DPZ2ZTZCKZJ3AI7TL3L6C5RF",
+      "title": "Purple Nike T-Shirt M Medium",
+      "sku": "ebay:800508178173",
+      "paymentLinkId": "HPWQS7SHKPPNZLWW",
+      "url": "https://square.link/u/8wQqBoq2",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/orjMbRN9QUCjx5gaMw3x0glnRaSZY",
+      "discountPaymentLinkId": "D655IU4KJX5OUF4K",
+      "discountUrl": "https://square.link/u/4uWywAiO",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4Xd4jRY9vH65x3n99DjLl5msqJIZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
