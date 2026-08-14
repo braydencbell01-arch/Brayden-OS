@@ -92,6 +92,7 @@ import { captureSoldReturnFromUrl,
   readLocalSoldOutIds,
   rememberSoldOutIds,
 } from './soldOut'
+import { isListingHidden } from './hiddenListings'
 import {
   clubsInStock,
   conditionLabel,
@@ -1145,7 +1146,9 @@ export default function App() {
   const ebayShop = catalog?.source === 'square' ? EBAY_SHOP_URL : catalog?.shopUrl ?? EBAY_SHOP_URL
   const ebaySeller = catalog?.source === 'square' ? EBAY_SELLER_URL : catalog?.sellerUrl ?? EBAY_SELLER_URL
   const listings = useMemo(() => {
-    const rows = (catalog?.listings ?? []).filter((item) => !isListingSoldOut(item, soldIds))
+    const rows = (catalog?.listings ?? []).filter(
+      (item) => !isListingSoldOut(item, soldIds) && !isListingHidden(item),
+    )
     return dedupeListingsByTitle(rows)
   }, [catalog, soldIds])
   const itemProfile = useMemo(() => {
@@ -1936,15 +1939,15 @@ export default function App() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#6e0c12]/35 via-transparent to-[#d7282f]/16" />
           </div>
 
-          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 py-5 md:px-8 md:py-10">
-            <div className="flex min-h-0 flex-1 flex-col justify-start overflow-hidden pt-1 md:justify-center md:pt-0">
+          <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col px-5 py-4 md:px-8 md:py-10">
+            <div className="flex min-h-0 flex-1 flex-col justify-start pt-1 md:justify-center md:pt-0">
               <motion.div
-                className="w-full max-w-2xl md:max-w-3xl"
+                className="flex w-full max-w-2xl min-h-0 flex-col md:max-w-3xl"
                 initial={reduce ? false : { opacity: 0.001, y: 26 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease }}
               >
-                <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
+                <div className="mb-3 flex shrink-0 flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                   <p className="inline-flex items-center gap-2.5 font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/90 sm:text-[0.7rem]">
                     <span className="h-px w-5 shrink-0 bg-[#f0d45a]" aria-hidden />
                     Premier League kicks off 8/21
@@ -1954,14 +1957,15 @@ export default function App() {
                     Shop our Premier League sale
                   </p>
                 </div>
-                <h1 className="max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
+                <h1 className="max-w-xl shrink-0 font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
                   Jersey Deals
                 </h1>
-                <p className="mt-3 max-w-md font-brand text-sm font-semibold leading-snug text-cream/90 sm:mt-4 sm:max-w-lg md:text-[0.95rem]">
+                <p className="mt-3 max-w-md shrink-0 font-brand text-sm font-semibold leading-snug text-cream/90 sm:mt-4 sm:max-w-lg md:text-[0.95rem]">
                   Hi, welcome to JerseyDeals. We sell top quality jerseys from top quality brands, for the lowest
                   prices you’ll find! EVERYTHING we sell is NEW and AUTHENTIC!
                 </p>
-                <div className="mt-6 flex w-full max-w-md flex-col items-stretch gap-3 sm:mt-8 sm:max-w-lg">
+                {/* CTAs stay shrink-0 so the sticky free-shipping dock never clips them */}
+                <div className="mt-5 flex w-full max-w-md shrink-0 flex-col items-stretch gap-3 pb-1 sm:mt-8 sm:max-w-lg">
                   <motion.button
                     type="button"
                     onClick={() => {
@@ -1980,7 +1984,7 @@ export default function App() {
                       track('cta_click', { place: 'hero_shop_all' })
                       goInventory({ reset: true })
                     }}
-                    className="inline-flex w-full items-center justify-center border border-white/70 bg-transparent px-8 py-3 font-brand text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10"
+                    className="inline-flex w-full items-center justify-center border-2 border-white/80 bg-transparent px-8 py-3.5 font-brand text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-white/10"
                   >
                     Shop all gear
                   </button>
@@ -1990,7 +1994,7 @@ export default function App() {
 
             <ul
               aria-label="Why shop with us"
-              className="mt-4 flex shrink-0 flex-col items-start gap-1.5 pb-1 font-brand text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-cream sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2 sm:pb-2 sm:text-[0.72rem] md:gap-x-12"
+              className="mt-3 flex shrink-0 flex-col items-start gap-1.5 pb-2 font-brand text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-cream sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2 sm:pb-2 sm:text-[0.72rem] md:gap-x-12"
             >
               {[
                 `Free shipping over $${FREE_SHIPPING_THRESHOLD}`,

@@ -735,27 +735,51 @@ export function ItemProfileScreen({
           </div>
           <div className="mx-auto mt-6 max-w-lg">
             {reviews[reviewIndex] ? (
-              <article className="border border-navy/10 bg-cream px-5 py-5 text-left">
-                <p className="text-[#e85d04]" aria-label="5 stars">
-                  {'★★★★★'}
-                </p>
-                <p className="mt-2 font-display text-sm font-bold uppercase tracking-wide text-navy">
-                  {reviews[reviewIndex].productLabel}
-                </p>
-                <p className="mt-2 font-brand text-sm leading-relaxed text-navy/80">
-                  {reviews[reviewIndex].body}
-                </p>
-                <p className="mt-4 flex flex-wrap items-center gap-2 font-brand text-xs font-bold uppercase tracking-[0.12em] text-navy">
-                  {reviews[reviewIndex].reviewer}
-                  <span className="inline-flex items-center gap-1 text-emerald-700">
-                    <span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-600 text-[0.55rem] text-white">
-                      ✓
-                    </span>
-                    Verified customer
+              <div className="relative flex items-stretch gap-2">
+                <button
+                  type="button"
+                  aria-label="Previous review"
+                  onClick={() =>
+                    setReviewIndex((i) => (i - 1 + reviews.length) % reviews.length)
+                  }
+                  className="my-auto grid h-10 w-10 shrink-0 place-items-center border border-navy/15 bg-cream text-navy transition hover:border-crimson hover:text-crimson"
+                >
+                  <span className="font-display text-lg leading-none" aria-hidden>
+                    ‹
                   </span>
-                </p>
-                <p className="mt-2 text-[0.65rem] text-muted">From eBay · @{EBAY_SELLER}</p>
-              </article>
+                </button>
+                <article className="min-w-0 flex-1 border border-navy/10 bg-cream px-5 py-5 text-left">
+                  <p className="text-[#e85d04]" aria-label="5 stars">
+                    {'★★★★★'}
+                  </p>
+                  <p className="mt-2 font-display text-sm font-bold uppercase tracking-wide text-navy">
+                    {reviews[reviewIndex].productLabel}
+                  </p>
+                  <p className="mt-2 font-brand text-sm leading-relaxed text-navy/80">
+                    {reviews[reviewIndex].body}
+                  </p>
+                  <p className="mt-4 flex flex-wrap items-center gap-2 font-brand text-xs font-bold uppercase tracking-[0.12em] text-navy">
+                    {reviews[reviewIndex].reviewer}
+                    <span className="inline-flex items-center gap-1 text-emerald-700">
+                      <span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-600 text-[0.55rem] text-white">
+                        ✓
+                      </span>
+                      Verified customer
+                    </span>
+                  </p>
+                  <p className="mt-2 text-[0.65rem] text-muted">From eBay · @{EBAY_SELLER}</p>
+                </article>
+                <button
+                  type="button"
+                  aria-label="Next review"
+                  onClick={() => setReviewIndex((i) => (i + 1) % reviews.length)}
+                  className="my-auto grid h-10 w-10 shrink-0 place-items-center border border-navy/15 bg-cream text-navy transition hover:border-crimson hover:text-crimson"
+                >
+                  <span className="font-display text-lg leading-none" aria-hidden>
+                    ›
+                  </span>
+                </button>
+              </div>
             ) : null}
             {reviews.length > 1 ? (
               <div className="mt-3 flex justify-center gap-2">
