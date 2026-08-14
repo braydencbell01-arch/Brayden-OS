@@ -71,19 +71,19 @@ export function PhotoTroop({
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
 }: Props) {
-  // Hysteresis stops flip/back thrashing when pathing around towers (looked like two directions).
+  // Mild hysteresis — still flip promptly so troops face the way they walk.
   const flipRef = useRef(1)
   const backRef = useRef(false)
   const cosF = Math.cos(facing)
   const sinF = Math.sin(facing)
-  // Left/right: commit only when clearly sideways so sprites don't shimmer.
-  if (cosF < -0.42) flipRef.current = -1
-  else if (cosF > 0.42) flipRef.current = 1
+  // Left/right from movement facing (all PhotoTroop cards).
+  if (cosF < -0.1) flipRef.current = -1
+  else if (cosF > 0.1) flipRef.current = 1
   if (troopBackSrc) {
     // Screen-up (−Y) ⇒ back of character (your troops marching toward the enemy).
     // Screen-down (+Y) ⇒ front (enemies coming at you).
-    if (sinF < -0.38) backRef.current = true
-    else if (sinF > 0.38) backRef.current = false
+    if (sinF < -0.12) backRef.current = true
+    else if (sinF > 0.12) backRef.current = false
   } else {
     backRef.current = false
   }

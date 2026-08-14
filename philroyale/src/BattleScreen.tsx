@@ -766,7 +766,7 @@ export function BattleScreen({
               if (uDef?.cardKind === 'building') sizeScale *= 1.28
               if (u.charId === 'bigMable') sizeScale *= 1.35
               if (u.charId === 'chicken') sizeScale *= 0.68
-              if (u.charId === 'tristan') sizeScale *= 0.72
+              if (u.charId === 'tristan') sizeScale *= 0.95
               const flight = u.launch
               let drawCol = u.col
               let drawRow = u.row

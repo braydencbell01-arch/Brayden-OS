@@ -930,7 +930,7 @@ export const TRISTAN: CharacterDef = {
       id: 'cheeseAndCucumbers',
       name: 'Cheese and Cucumbers',
       range: 20,
-      damage: 395,
+      damage: 305,
       rootWhileAttacking: true,
       maxTargets: 3,
       kind: 'cheese',

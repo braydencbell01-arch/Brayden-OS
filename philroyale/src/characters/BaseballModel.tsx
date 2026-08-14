@@ -20,6 +20,8 @@ export function BaseballModel({ anim, facing, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      // Transparent troop on shared studio blue — avoids mismatched card plate glow.
+      portraitSrc={TROOP}
       objectPos="50% 50%"
       gait="stiff"
       attack="none"

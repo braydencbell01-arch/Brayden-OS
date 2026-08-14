@@ -42,7 +42,7 @@ export function CrUnitModel({
   prop = 'none',
 }: Props) {
   const uid = useId().replace(/:/g, '')
-  const flip = Math.cos(facing) < -0.15 ? -1 : 1
+  const flip = Math.cos(facing) < 0 ? -1 : 1
   const walking = anim === 'walk'
   const attacking = anim === 'attack'
   const scale = build === 'hulk' ? 1.08 : build === 'small' ? 0.82 : 1

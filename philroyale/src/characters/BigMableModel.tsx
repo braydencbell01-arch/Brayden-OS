@@ -15,7 +15,7 @@ type Props = {
  */
 export function BigMableModel({ anim, facing, attackId, portrait }: Props) {
   const uid = useId().replace(/:/g, '')
-  const flip = Math.cos(facing) < -0.15 ? -1 : 1
+  const flip = Math.cos(facing) < 0 ? -1 : 1
   const walking = anim === 'walk'
   const attacking = anim === 'attack' && attackId === 'launch'
   const vb = portrait ? '0 6 120 78' : '0 0 120 92'

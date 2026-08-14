@@ -220,7 +220,7 @@ const KING_WAKE_DELAY_MS = 3000
 const CARD_CHASE_RANGE = 20
 /** Soft collision radius (tiles) for CR-style unit push / bunching. */
 const UNIT_RADIUS = 0.85
-const FACING_TURN_HARD_RAD = 0.4
+const FACING_TURN_HARD_RAD = 0.28
 
 /** Guaranteed-valid enemy spawn tiles (classic half / touchdown third). */
 const AI_SAFE_SPAWNS_CLASSIC: { col: number; row: number }[] = [
@@ -347,7 +347,8 @@ function updateFacingFromMove(u: BattleUnit, prevCol: number, prevRow: number): 
   if (Math.hypot(dCol, dRow) < 0.001) return
   const moveFacing = Math.atan2(dRow, dCol)
   const turn = Math.abs(Math.atan2(Math.sin(moveFacing - u.facing), Math.cos(moveFacing - u.facing)))
-  u.facing = turn > FACING_TURN_HARD_RAD ? moveFacing : lerpAngle(u.facing, moveFacing, 0.45)
+  // Snap on real turns so every troop faces the way it is moving.
+  u.facing = turn > FACING_TURN_HARD_RAD ? moveFacing : lerpAngle(u.facing, moveFacing, 0.72)
 }
 
 /**
