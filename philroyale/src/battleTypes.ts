@@ -57,7 +57,7 @@ export type BattleUnit = {
   launch?: LaunchFlight | null
   /** Ram (once-per-target) keys already hit: `unit:id` / `tower:id`. */
   hitOnceKeys?: string[]
-  /** Berry Aura — blue smoke after a kill; stronger / faster juice. */
+  /** Berry Aura — blue flames after a kill; stronger / faster juice. */
   auraActive?: boolean
   /** Evolution form — +30% HP / damage / speed. */
   evolved?: boolean
