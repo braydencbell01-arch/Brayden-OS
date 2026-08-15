@@ -63,6 +63,7 @@ import {
   grantBattleChest,
   loadActiveEmotes,
   loadDeck,
+  loadPlayerId,
   loadProfile,
   noteCardDeployed,
   recordMatchResult,
@@ -70,6 +71,7 @@ import {
 import { getEmoteById, PHIL_EMOTE_SRC, type EmoteDef } from './emoteCatalog'
 import { CharacterModel } from './characters/CharacterModel'
 import type { BattleNet } from './battleSync'
+import { publishBattle, subscribeBattle } from './battleSync'
 import { useBattle } from './useBattle'
 import { sfx } from './audio'
 
@@ -106,12 +108,41 @@ type DragState = {
 
 type MatchResult = 'victory' | 'defeat' | 'draw'
 
-type ActiveEmote = { key: number; option: EmoteDef }
+type ActiveEmote = { key: number; option: EmoteDef; side: 'ally' | 'enemy' }
 
 function emoteOptionsFromActive(): EmoteDef[] {
   return loadActiveEmotes()
     .map((id) => getEmoteById(id))
     .filter((e): e is EmoteDef => !!e)
+}
+
+function EmoteBubble({ option }: { option: EmoteDef }) {
+  return (
+    <div
+      className="relative rounded-2xl bg-white px-2.5 py-2 shadow-[0_4px_14px_#00000055]"
+      style={{ border: '2px solid #e8e4dc' }}
+    >
+      {option.kind === 'phil' ? (
+        <img src={PHIL_EMOTE_SRC} alt="Phil" className="h-14 w-14 rounded-full object-cover" />
+      ) : option.kind === 'photo' && option.src ? (
+        <img
+          src={option.src}
+          alt={option.label}
+          className="h-14 w-14 rounded-full object-cover"
+        />
+      ) : option.kind === 'character' && option.charId ? (
+        <div className="h-14 w-14 overflow-hidden rounded-full">
+          <CharacterModel charId={option.charId} anim="idle" facing={1} portrait />
+        </div>
+      ) : (
+        <span className="block text-4xl leading-none">{option.emoji}</span>
+      )}
+      <div
+        className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 bg-white"
+        style={{ borderRight: '2px solid #e8e4dc', borderBottom: '2px solid #e8e4dc' }}
+      />
+    </div>
+  )
 }
 
 function FlyingShot({
@@ -347,7 +378,8 @@ export function BattleScreen({
   const [drag, setDrag] = useState<DragState | null>(null)
   const [draggingActive, setDraggingActive] = useState(false)
   const [emotePickerOpen, setEmotePickerOpen] = useState(false)
-  const [activeEmote, setActiveEmote] = useState<ActiveEmote | null>(null)
+  const [allyEmote, setAllyEmote] = useState<ActiveEmote | null>(null)
+  const [enemyEmote, setEnemyEmote] = useState<ActiveEmote | null>(null)
   const emoteKeyRef = useRef(0)
   const emoteOptions = useMemo(() => emoteOptionsFromActive(), [emotePickerOpen])
   const [result, setResult] = useState<MatchResult | null>(null)
@@ -711,14 +743,56 @@ export function BattleScreen({
     }
   }
 
-  function pickEmote(option: EmoteDef) {
+  function showEmote(option: EmoteDef, side: 'ally' | 'enemy') {
     const key = ++emoteKeyRef.current
-    setActiveEmote({ key, option })
-    setEmotePickerOpen(false)
+    const next: ActiveEmote = { key, option, side }
+    if (side === 'ally') setAllyEmote(next)
+    else setEnemyEmote(next)
     window.setTimeout(() => {
-      setActiveEmote((cur) => (cur?.key === key ? null : cur))
+      if (side === 'ally') {
+        setAllyEmote((cur) => (cur?.key === key ? null : cur))
+      } else {
+        setEnemyEmote((cur) => (cur?.key === key ? null : cur))
+      }
     }, 2200)
   }
+
+  function pickEmote(option: EmoteDef) {
+    showEmote(option, 'ally')
+    setEmotePickerOpen(false)
+    if (net && (net.role === 'host' || net.role === 'guest')) {
+      void publishBattle(net.challengeId, {
+        type: 'battle_emote',
+        challengeId: net.challengeId,
+        emoteId: option.id,
+        fromRole: net.role,
+        fromPlayerId: loadPlayerId(),
+        at: Date.now(),
+      })
+    }
+  }
+
+  // Peer / spectator: show opponent (and host/guest) emotes from the battle room.
+  useEffect(() => {
+    if (!net?.challengeId) return
+    const myId = loadPlayerId()
+    const myRole = net.role
+    const viewAs = net.viewAs ?? (myRole === 'guest' ? 'guest' : 'host')
+    return subscribeBattle(net.challengeId, (msg) => {
+      if (msg.type !== 'battle_emote') return
+      if (msg.fromPlayerId && msg.fromPlayerId === myId) return
+      if (myRole !== 'spectator' && msg.fromRole === myRole) return
+      const option = getEmoteById(msg.emoteId)
+      if (!option) return
+      const side: 'ally' | 'enemy' =
+        myRole === 'spectator'
+          ? msg.fromRole === viewAs
+            ? 'ally'
+            : 'enemy'
+          : 'enemy'
+      showEmote(option, side)
+    })
+  }, [net?.challengeId, net?.role, net?.viewAs])
 
   const mm = String(Math.floor(seconds / 60))
   const ss = String(seconds % 60).padStart(2, '0')
@@ -1108,47 +1182,26 @@ export function BattleScreen({
       </header>
 
       <AnimatePresence>
-        {activeEmote ? (
+        {enemyEmote ? (
           <motion.div
-            key={activeEmote.key}
+            key={`enemy-${enemyEmote.key}`}
+            initial={{ opacity: 0, y: -16, scale: 0.75 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="pointer-events-none absolute right-3 top-[4.5rem] z-40"
+          >
+            <EmoteBubble option={enemyEmote.option} />
+          </motion.div>
+        ) : null}
+        {allyEmote ? (
+          <motion.div
+            key={`ally-${allyEmote.key}`}
             initial={{ opacity: 0, y: 16, scale: 0.75 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10 }}
             className="pointer-events-none absolute bottom-[6.4rem] left-3 z-40"
           >
-            <div
-              className="relative rounded-2xl bg-white px-2.5 py-2 shadow-[0_4px_14px_#00000055]"
-              style={{ border: '2px solid #e8e4dc' }}
-            >
-              {activeEmote.option.kind === 'phil' ? (
-                <img
-                  src={PHIL_EMOTE_SRC}
-                  alt="Phil"
-                  className="h-14 w-14 rounded-full object-cover"
-                />
-              ) : activeEmote.option.kind === 'photo' && activeEmote.option.src ? (
-                <img
-                  src={activeEmote.option.src}
-                  alt={activeEmote.option.label}
-                  className="h-14 w-14 rounded-full object-cover"
-                />
-              ) : activeEmote.option.kind === 'character' && activeEmote.option.charId ? (
-                <div className="h-14 w-14 overflow-hidden rounded-full">
-                  <CharacterModel
-                    charId={activeEmote.option.charId}
-                    anim="idle"
-                    facing={1}
-                    portrait
-                  />
-                </div>
-              ) : (
-                <span className="block text-4xl leading-none">{activeEmote.option.emoji}</span>
-              )}
-              <div
-                className="absolute -bottom-2 left-5 h-3 w-3 rotate-45 bg-white"
-                style={{ borderRight: '2px solid #e8e4dc', borderBottom: '2px solid #e8e4dc' }}
-              />
-            </div>
+            <EmoteBubble option={allyEmote.option} />
           </motion.div>
         ) : null}
       </AnimatePresence>

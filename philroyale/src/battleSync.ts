@@ -183,6 +183,15 @@ export type BattleRoomMessage =
       deckIds: string[]
       at: number
     }
+  | {
+      /** Battle emote — show on both phones. */
+      type: 'battle_emote'
+      challengeId: string
+      emoteId: string
+      fromRole: 'host' | 'guest'
+      fromPlayerId?: string
+      at: number
+    }
 
 export type BattleNet = {
   challengeId: string
@@ -233,7 +242,9 @@ export function subscribeBattle(
           ? `dep:${data.at}:${data.charId}`
           : data.type === 'battle_lag'
             ? `lag:${data.at}:${data.lagging}`
-            : `${data.type}:${'at' in data ? data.at : ''}`
+            : data.type === 'battle_emote'
+              ? `emote:${data.at}:${data.emoteId}:${data.fromRole}`
+              : `${data.type}:${'at' in data ? data.at : ''}`
     if (seen.has(key)) return
     seen.add(key)
     if (seen.size > 300) {
