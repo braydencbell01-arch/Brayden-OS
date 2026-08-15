@@ -75,6 +75,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 180, arena: 'Sundae Strip', label: 'x1 Gretchin', unlockCard: 'gretchin', gold: 70 },
   { trophies: 220, arena: 'Sundae Strip', label: 'x8 Lynne', cardCopies: { charId: 'lynne', copies: 8 }, gold: 100 },
   { trophies: 260, arena: 'Sundae Strip', label: 'x1 Berry', unlockCard: 'berry', gold: 90 },
+  { trophies: 280, arena: 'Sundae Strip', label: 'x1 Susan', unlockCard: 'susan', gold: 85 },
   // Beans' Battleground 300–500
   { trophies: 300, arena: "Beans' Battleground", label: 'x5 Beans', cardCopies: { charId: 'beans', copies: 5 }, gold: 50 },
   { trophies: 340, arena: "Beans' Battleground", label: 'x1 Phil Spirit', unlockCard: 'philSpirit', gold: 80 },

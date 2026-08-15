@@ -214,6 +214,10 @@ const POOP_THROW_DELAY_MS = 2100
 const POOP_STAIN_MS = 10_000
 const POOP_STAIN_TICK_MS = 1000
 const POOP_STAIN_DAMAGE = 25
+/** Berry / Susan juice — charge in hands then lob. */
+const BERRY_JUICE_VFX_MS = 900
+/** Projectile leaves after the grow keyframe (~0.65 of charge). */
+const BERRY_JUICE_THROW_DELAY_MS = 580
 const SPLAT_MS = 820
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 420
@@ -2481,9 +2485,11 @@ export function useBattle(opts?: {
           unitsChanged = true
         }
 
+        const auraOn = !!u.auraActive && !!def.auraOnKill
         const moveSpeed =
           def.moveSpeed *
           (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1) *
+          (auraOn ? (def.auraMoveMult ?? 1) : 1) *
           evoStatMult(!!u.evolved)
         const dmgMult =
           (u.enraged ? (def.rageDamageMult ?? RAGE_DAMAGE_MULT) : 1) *
@@ -2923,9 +2929,12 @@ export function useBattle(opts?: {
         }
         if (t < u.nextAttackAt && !attack.ignoreAttackDelay) continue
 
-        const auraOn = !!u.auraActive && !!def.auraOnKill
         const attackDamage =
-          auraOn && def.auraDamage != null ? def.auraDamage : attack.damage
+          auraOn && def.auraDamage != null
+            ? def.auraDamage
+            : auraOn && def.auraDamageMult != null
+              ? attack.damage * def.auraDamageMult
+              : attack.damage
         const damage = attackDamage * dmgMult * cardLevelMult(u.level)
         const shotAim =
           best.kind === 'tower'
@@ -2962,6 +2971,8 @@ export function useBattle(opts?: {
                             ? JUMP_LEAP_MS
                             : attack.id === 'shortTemper'
                               ? SHORT_TEMPER_VFX_MS
+                            : attack.id === 'aura' || attack.id === 'miniAura'
+                              ? BERRY_JUICE_VFX_MS
                             : attack.id === 'launch' || attack.id === 'suplex'
                               ? 480
                       : attack.rootWhileAttacking
@@ -2973,7 +2984,9 @@ export function useBattle(opts?: {
           const delaySec = burstDone
             ? auraOn && def.auraAttackDelaySec != null
               ? def.auraAttackDelaySec
-              : def.attackDelaySec
+              : auraOn && def.auraAttackDelayMult != null
+                ? def.attackDelaySec * def.auraAttackDelayMult
+                : def.attackDelaySec
             : burstGapSec
           u.nextAttackAt = t + delaySec * 1000
         }
@@ -3055,7 +3068,12 @@ export function useBattle(opts?: {
             berryAttack && auraOn && def.auraProjectileMs != null
               ? def.auraProjectileMs
               : attack.projectileMs
-          const throwDelay = attack.kind === 'poop' ? POOP_THROW_DELAY_MS : 0
+          const throwDelay =
+            attack.kind === 'poop'
+              ? POOP_THROW_DELAY_MS
+              : attack.kind === 'berryJuice'
+                ? BERRY_JUICE_THROW_DELAY_MS
+                : 0
           for (const hit of hits) {
             const projKind = snackAttack
               ? Math.random() < 0.5
@@ -3425,7 +3443,11 @@ export function useBattle(opts?: {
           (u) => {
             const def = getCharacter(u.charId)
             if (!def) return 0
-            return def.moveSpeed * (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1)
+            return (
+              def.moveSpeed *
+              (u.enraged ? (def.rageMoveMult ?? RAGE_MOVE_MULT) : 1) *
+              (u.auraActive && def.auraOnKill ? (def.auraMoveMult ?? 1) : 1)
+            )
           },
           liveIds,
           t,

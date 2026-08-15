@@ -20,6 +20,7 @@ type Props = {
   attack?:
     | 'whip'
     | 'sundae'
+    | 'berryJuice'
     | 'shoot'
     | 'bite'
     | 'hug'
@@ -170,6 +171,15 @@ export function PhotoTroop({
                     rotate: [0, -12, 8, 4, 0],
                     scale: [1, 0.98, 1.06, 1, 1],
                   }
+                : attack === 'berryJuice'
+                  ? {
+                      // Gather juice in hands → grow → fling
+                      y: [0, 4, 2, -6, 0],
+                      x: [0, -2, -1, 10, 0],
+                      rotate: [0, -6, -4, 14, 0],
+                      scaleY: [1, 0.94, 0.96, 1.06, 1],
+                      scaleX: [1, 1.04, 1.02, 0.98, 1],
+                    }
                 : attack === 'shoot'
                   ? {
                       y: [0, -1, 0, -1, 0],
@@ -337,8 +347,8 @@ export function PhotoTroop({
                         ? 0.4
                         : attack === 'whip' || attack === 'hug'
                           ? 0.72
-                          : attack === 'slobber' || attack === 'sundae'
-                            ? 0.55
+                          : attack === 'slobber' || attack === 'sundae' || attack === 'berryJuice'
+                            ? 0.9
                             : attack === 'jump'
                               ? 0.48
                             : 0.36,
@@ -350,6 +360,8 @@ export function PhotoTroop({
                     ? [0, 0.18, 0.42, 0.72, 1]
                     : attack === 'poop'
                       ? [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1]
+                    : attack === 'berryJuice'
+                      ? [0, 0.2, 0.45, 0.72, 1]
                     : attack === 'jump'
                       ? [0, 0.12, 0.42, 0.72, 1]
                     : undefined,
@@ -397,6 +409,7 @@ export function PhotoTroop({
         {attacking && attack === 'shoot' ? <GunOverlay /> : null}
         {attacking && attack === 'whip' ? <WhipOverlay /> : null}
         {attacking && attack === 'sundae' ? <SundaeThrowOverlay /> : null}
+        {attacking && attack === 'berryJuice' ? <BerryJuiceChargeOverlay /> : null}
         {attacking && attack === 'bite' ? <BiteOverlay enraged={enraged} /> : null}
         {attacking && attack === 'hug' ? <HugOverlay /> : null}
         {attacking && attack === 'slobber' ? <SlobberSpitOverlay /> : null}
@@ -777,6 +790,79 @@ function ShortTemperOverlay() {
           strokeLinecap="round"
         />
       </motion.g>
+    </svg>
+  )
+}
+
+/** Berry / Susan — blue juice grows in hands, then lobbed. */
+function BerryJuiceChargeOverlay() {
+  return (
+    <svg
+      viewBox="0 0 80 118"
+      className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+      aria-hidden
+    >
+      <motion.g
+        initial={{ opacity: 0, scale: 0.15 }}
+        animate={{
+          opacity: [0, 1, 1, 1, 0],
+          scale: [0.15, 0.55, 1.05, 1.15, 0.55],
+          x: [0, 0, 0, 14, 36],
+          y: [0, 2, -2, -18, -42],
+        }}
+        transition={{ duration: 0.9, times: [0, 0.2, 0.5, 0.72, 1] }}
+        style={{ transformOrigin: '40px 58px' }}
+      >
+        <ellipse
+          cx="40"
+          cy="58"
+          rx="11"
+          ry="9"
+          fill="url(#berryJuiceGrad)"
+          opacity="0.95"
+        />
+        <ellipse cx="36" cy="54" rx="3.5" ry="2.8" fill="#e8f8ffcc" />
+        <ellipse cx="44" cy="60" rx="2.2" ry="1.8" fill="#80d8ff88" />
+      </motion.g>
+      {/* Hands cupping the blob */}
+      <motion.g
+        animate={{
+          rotate: [-8, -4, 0, 18, 8],
+          y: [2, 1, 0, -8, -2],
+        }}
+        transition={{ duration: 0.9, times: [0, 0.2, 0.5, 0.72, 1] }}
+        style={{ transformOrigin: '34px 62px' }}
+      >
+        <path
+          d="M28 58 Q24 66 28 72 L36 70 Q34 64 34 58 Z"
+          fill="#e8b888"
+          stroke="#c48a5a"
+          strokeWidth="0.5"
+        />
+      </motion.g>
+      <motion.g
+        animate={{
+          rotate: [8, 4, 0, -12, -6],
+          y: [2, 1, 0, -8, -2],
+        }}
+        transition={{ duration: 0.9, times: [0, 0.2, 0.5, 0.72, 1] }}
+        style={{ transformOrigin: '46px 62px' }}
+      >
+        <path
+          d="M52 58 Q56 66 52 72 L44 70 Q46 64 46 58 Z"
+          fill="#e8b888"
+          stroke="#c48a5a"
+          strokeWidth="0.5"
+        />
+      </motion.g>
+      <defs>
+        <radialGradient id="berryJuiceGrad" cx="40%" cy="35%" r="65%">
+          <stop offset="0%" stopColor="#e8f8ff" />
+          <stop offset="35%" stopColor="#60c8ff" />
+          <stop offset="75%" stopColor="#1878e0" />
+          <stop offset="100%" stopColor="#0a4090" />
+        </radialGradient>
+      </defs>
     </svg>
   )
 }

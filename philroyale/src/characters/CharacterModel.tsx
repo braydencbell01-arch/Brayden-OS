@@ -32,6 +32,7 @@ import { ChickenBarrelModel } from './ChickenBarrelModel'
 import { TristanModel } from './TristanModel'
 import { BerryModel } from './BerryModel'
 import { FaggolModel } from './FaggolModel'
+import { SusanModel } from './SusanModel'
 
 type Props = {
   charId: string
@@ -139,6 +140,16 @@ export function CharacterModel({
   } else if (charId === 'berry') {
     model = (
       <BerryModel
+        anim={anim}
+        facing={facing}
+        attackId={attackId}
+        portrait={portrait}
+        auraActive={auraActive}
+      />
+    )
+  } else if (charId === 'susan') {
+    model = (
+      <SusanModel
         anim={anim}
         facing={facing}
         attackId={attackId}

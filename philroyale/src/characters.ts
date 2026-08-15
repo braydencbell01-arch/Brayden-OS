@@ -20,6 +20,7 @@ export type AttackId =
   | 'cheeseAndCucumbers'
   | 'suplex'
   | 'aura'
+  | 'miniAura'
   | 'shortTemper'
 
 export type AttackDef = {
@@ -161,12 +162,18 @@ export type CharacterDef = {
   spawnCount?: number
   /** If set, spawned units use this character id (Chicken Army / Barrel → chicken). */
   spawnAsId?: string
-  /** After this unit kills anything, enter aura mode (Berry). */
+  /** After this unit kills anything, enter aura mode (Berry / Susan). */
   auraOnKill?: boolean
-  /** Attack delay while aura is active. */
+  /** Attack delay while aura is active (absolute; Berry). */
   auraAttackDelaySec?: number
-  /** Damage while aura is active (Berry empowered juice). */
+  /** Damage while aura is active (absolute; Berry). */
   auraDamage?: number
+  /** Multiply attack damage while aura is active (Susan 1.2). */
+  auraDamageMult?: number
+  /** Multiply attack delay while aura is active (Susan 0.8 = 20% faster). */
+  auraAttackDelayMult?: number
+  /** Multiply move speed while aura is active (Susan 1.2). */
+  auraMoveMult?: number
   /** Projectile flight ms while aura is active. */
   auraProjectileMs?: number
 }
@@ -982,6 +989,40 @@ export const BERRY: CharacterDef = {
   ],
 }
 
+/** Epic mini-Berry — smaller juice splash; Mini Aura after a kill (+20% damage / speed / attack rate). */
+export const SUSAN: CharacterDef = {
+  id: 'susan',
+  name: 'Susan',
+  initial: 'Su',
+  pronoun: 'she',
+  height: "5'5\"",
+  rarity: 'epic',
+  elixir: 4,
+  hp: 590,
+  moveSpeed: 4.8,
+  attackDelaySec: 1.7,
+  hue: 195,
+  auraOnKill: true,
+  auraDamageMult: 1.2,
+  auraAttackDelayMult: 0.8,
+  auraMoveMult: 1.2,
+  auraProjectileMs: 220,
+  blurb:
+    'Epic juice lobber. Mini Aura after a kill — +20% damage, attack rate, and move speed.',
+  attacks: [
+    {
+      id: 'miniAura',
+      name: 'Mini Aura',
+      range: 27,
+      damage: 230,
+      rootWhileAttacking: true,
+      splashRadius: 9,
+      projectileMs: 1100,
+      kind: 'berryJuice',
+    },
+  ],
+}
+
 /** Uncommon short fuse — rages, crouches to poop, then lobs the mess. */
 export const FAGGOL: CharacterDef = {
   id: 'faggol',
@@ -1072,6 +1113,7 @@ export const CHARACTERS: CharacterDef[] = [
   BOBBY_SPECIAL,
   TRISTAN,
   BERRY,
+  SUSAN,
   FAGGOL,
   BIG_MABLE,
 ]
