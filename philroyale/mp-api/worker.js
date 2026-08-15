@@ -81,6 +81,16 @@ export default {
       return lobbyStub(env).fetch(new Request('https://do/leaderboard', { method: 'GET' }))
     }
 
+    if (path === '/leaderboard/report' && request.method === 'POST') {
+      return lobbyStub(env).fetch(
+        new Request('https://do/leaderboard/report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: await request.text(),
+        }),
+      )
+    }
+
     if (path === '/poll' && request.method === 'GET') {
       const code = cleanCode(url.searchParams.get('code'))
       const since = url.searchParams.get('since') || '0'
@@ -154,7 +164,6 @@ export class LobbyDO {
     /** @type {Array<{ id: string, to: string, at: number, msg: unknown }>} */
     this.inbox = []
     this._boardDirty = false
-    this._boardFlush = null
     this.state.blockConcurrencyWhile(async () => {
       const raw = (await this.state.storage.get('leaderboard')) || {}
       if (raw && typeof raw === 'object') {
@@ -220,6 +229,21 @@ export class LobbyDO {
         }))
         .sort((a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name))
       return json({ ok: true, players: rows, now: Date.now() })
+    }
+
+    if (path === '/leaderboard/report' && request.method === 'POST') {
+      const raw = await request.json().catch(() => null)
+      const list = Array.isArray(raw?.players) ? raw.players : Array.isArray(raw) ? raw : []
+      let n = 0
+      for (const row of list) {
+        if (!row || typeof row !== 'object') continue
+        const code = cleanCode(row.code || row.playerId || '')
+        if (code.length !== 6) continue
+        this.upsertLeaderboard(code, row.name || 'Player', row.trophies)
+        n++
+      }
+      await this.flushLeaderboard()
+      return json({ ok: true, upserted: n, total: this.leaderboard.size })
     }
 
     if (path === '/poll') {
@@ -359,35 +383,31 @@ export class LobbyDO {
   upsertLeaderboard(code, name, trophies) {
     if (code.length !== 6) return
     const prev = this.leaderboard.get(code)
-    const t =
+    // Reports / pings only raise trophies (never wipe a higher score with a stale 0).
+    const finalT =
       typeof trophies === 'number' && Number.isFinite(trophies)
-        ? Math.max(0, Math.floor(trophies))
+        ? Math.max(prev?.trophies ?? 0, Math.max(0, Math.floor(trophies)))
         : (prev?.trophies ?? 0)
+    const nextName = String(name || prev?.name || 'Player').slice(0, 32)
     this.leaderboard.set(code, {
-      name: String(name || prev?.name || 'Player').slice(0, 32),
-      trophies: t,
+      name: nextName,
+      trophies: finalT,
       updatedAt: Date.now(),
     })
-    // Cap board size — keep highest trophies.
-    if (this.leaderboard.size > 2500) {
+    if (this.leaderboard.size > 5000) {
       const ranked = [...this.leaderboard.entries()].sort(
         (a, b) => b[1].trophies - a[1].trophies || b[1].updatedAt - a[1].updatedAt,
       )
-      this.leaderboard = new Map(ranked.slice(0, 2000))
+      this.leaderboard = new Map(ranked.slice(0, 4000))
     }
-    this.scheduleLeaderboardFlush()
+    this._boardDirty = true
+    void this.flushLeaderboard()
   }
 
-  scheduleLeaderboardFlush() {
-    this._boardDirty = true
-    if (this._boardFlush) return
-    this._boardFlush = setTimeout(() => {
-      this._boardFlush = null
-      if (!this._boardDirty) return
-      this._boardDirty = false
-      const obj = Object.fromEntries(this.leaderboard)
-      void this.state.storage.put('leaderboard', obj)
-    }, 400)
+  async flushLeaderboard() {
+    if (!this._boardDirty) return
+    this._boardDirty = false
+    await this.state.storage.put('leaderboard', Object.fromEntries(this.leaderboard))
   }
 
   prunePresence() {

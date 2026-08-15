@@ -15,6 +15,7 @@ import {
   mpPublish,
   mpSetStatus,
 } from './mpClient'
+import { noteSeenLeaderboardPlayer } from './storage'
 import { ntfyPublish, ntfySubscribe } from './ntfyTransport'
 
 import type { GameMode } from './gameModes'
@@ -156,6 +157,7 @@ export function rememberDirectoryPing(
 ): void {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return
+  noteSeenLeaderboardPlayer(c, name, extra?.trophies)
   const cleaned = name.trim()
   if (!cleaned || isPlaceholderName(cleaned)) {
     // Don't overwrite a real name with a placeholder ping.

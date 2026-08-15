@@ -9,7 +9,7 @@ import {
   PHIL_EMOTE_SRC,
   type EmoteDef,
 } from './emoteCatalog'
-import { mpFetchLeaderboard, mpLastPresence, type MpLeaderboardRow } from './mpClient'
+import { mpFetchLeaderboard, mpLastPresence, mpReportLeaderboard, type MpLeaderboardRow } from './mpClient'
 import {
   formatAccountCode,
   loadAccountCode,
@@ -21,6 +21,8 @@ import {
   loadPlayerId,
   loadPlayerName,
   loadProfile,
+  loadSeenLeaderboardPlayers,
+  noteSeenLeaderboardPlayer,
   saveAvatarId,
   savePlayerName,
   toggleActiveEmote,
@@ -81,6 +83,20 @@ function mergeBoard(
     })
   }
 
+  // Local all-time seen registry (this device)
+  for (const row of loadSeenLeaderboardPlayers()) {
+    const prev = map.get(row.code)
+    const p = live[row.code]
+    map.set(row.code, {
+      code: row.code,
+      name: row.name || prev?.name || `Player ${row.code}`,
+      trophies: Math.max(prev?.trophies ?? 0, row.trophies),
+      online: !!(prev?.online || (p && Date.now() - p.at < 90_000)),
+      inBattle: !!(prev?.inBattle || p?.inBattle),
+      isYou: row.code === myCode,
+    })
+  }
+
   // Friends with known trophies (in case not on server board yet)
   for (const f of loadFriends()) {
     if (!f.playerId) continue
@@ -88,12 +104,11 @@ function mergeBoard(
     if (code.length !== 6) continue
     const p = live[code]
     const prev = map.get(code)
-    const trophies =
-      typeof f.trophies === 'number'
-        ? f.trophies
-        : typeof p?.trophies === 'number'
-          ? p.trophies
-          : (prev?.trophies ?? 0)
+    const trophies = Math.max(
+      prev?.trophies ?? 0,
+      typeof f.trophies === 'number' ? f.trophies : 0,
+      typeof p?.trophies === 'number' ? p.trophies : 0,
+    )
     map.set(code, {
       code,
       name: f.name || prev?.name || `Player ${code}`,
@@ -112,7 +127,9 @@ function mergeBoard(
       code,
       name: p.name || prev?.name || `Player ${code}`,
       trophies:
-        typeof p.trophies === 'number' ? p.trophies : (prev?.trophies ?? 0),
+        typeof p.trophies === 'number'
+          ? Math.max(prev?.trophies ?? 0, p.trophies)
+          : (prev?.trophies ?? 0),
       online: Date.now() - p.at < 90_000,
       inBattle: !!p.inBattle,
       isYou: code === myCode,
@@ -125,7 +142,7 @@ function mergeBoard(
     map.set(myCode, {
       code: myCode,
       name: myName || prev?.name || 'You',
-      trophies: myTrophies,
+      trophies: Math.max(myTrophies, prev?.trophies ?? 0),
       online: true,
       inBattle: prev?.inBattle ?? false,
       isYou: true,
@@ -243,7 +260,6 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
   const [active, setActive] = useState(() => loadActiveEmotes())
   const [emoteMsg, setEmoteMsg] = useState<string | null>(null)
   const [remoteBoard, setRemoteBoard] = useState<MpLeaderboardRow[]>([])
-  const [boardMsg, setBoardMsg] = useState<string | null>(null)
   const [selected, setSelected] = useState<BoardRow | null>(null)
   const [actionMsg, setActionMsg] = useState<string | null>(null)
   const profile = useMemo(() => loadProfile(), [avatarId, name, remoteBoard])
@@ -257,11 +273,32 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
   )
 
   const refreshBoard = useCallback(async () => {
+    const myCode = loadPlayerId().replace(/\D/g, '').slice(0, 6)
+    const me = loadPlayerName().trim() || 'Player'
+    const myTrophies = loadProfile().trophies
+    noteSeenLeaderboardPlayer(myCode, me, myTrophies)
+
+    const payload: { code: string; name: string; trophies?: number }[] = [
+      { code: myCode, name: me, trophies: myTrophies },
+    ]
+    for (const f of loadFriends()) {
+      if (!f.playerId) continue
+      const code = f.playerId.replace(/\D/g, '').slice(0, 6)
+      if (code.length !== 6) continue
+      noteSeenLeaderboardPlayer(code, f.name, f.trophies)
+      payload.push({ code, name: f.name, trophies: f.trophies })
+    }
+    for (const row of loadSeenLeaderboardPlayers()) {
+      payload.push({ code: row.code, name: row.name, trophies: row.trophies })
+    }
+    // Dedupe by code (last write wins)
+    const uniq = new Map(payload.map((p) => [p.code, p]))
+    await mpReportLeaderboard([...uniq.values()])
     const rows = await mpFetchLeaderboard()
     setRemoteBoard(rows)
-    if (!rows.length) {
-      // Presence-only fallback still builds a board in mergeBoard
-      setBoardMsg(null)
+    // Mirror server rows into local all-time cache
+    for (const row of rows) {
+      noteSeenLeaderboardPlayer(row.code, row.name, row.trophies)
     }
   }, [])
 
@@ -365,7 +402,7 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
                 Leaderboard
               </p>
               <p className="text-xs font-semibold text-white/55">
-                All real players · tap a name for their profile
+                Everyone who has played · grows as players open Phil Royale
               </p>
             </div>
             <button
@@ -376,11 +413,8 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
               Refresh
             </button>
           </div>
-          {boardMsg ? (
-            <p className="mb-2 text-xs font-semibold text-white/50">{boardMsg}</p>
-          ) : null}
           <ul
-            className="max-h-[min(22rem,50vh)] overflow-y-auto rounded-xl"
+            className="max-h-[min(28rem,55vh)] overflow-y-auto rounded-xl"
             style={{
               background: 'linear-gradient(180deg,#2a1a12,#140e0a)',
               boxShadow: 'inset 0 0 0 1px #c9a22733',

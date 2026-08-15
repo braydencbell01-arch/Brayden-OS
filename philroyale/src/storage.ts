@@ -259,6 +259,60 @@ export function saveFriendTrophies(playerId: string, trophies: number): void {
   if (changed) saveFriends(friends)
 }
 
+const LEADERBOARD_SEEN_KEY = 'philroyale.leaderboardSeen.v1'
+
+export type SeenLeaderboardPlayer = {
+  code: string
+  name: string
+  trophies: number
+  updatedAt: number
+}
+
+/** All-time local registry of Phil Royale players this device has seen. */
+export function loadSeenLeaderboardPlayers(): SeenLeaderboardPlayer[] {
+  const raw = readJson<Record<string, Partial<SeenLeaderboardPlayer>>>(LEADERBOARD_SEEN_KEY, {})
+  const out: SeenLeaderboardPlayer[] = []
+  for (const [code, row] of Object.entries(raw)) {
+    const c = code.replace(/\D/g, '').slice(0, 6)
+    if (c.length !== 6 || !row) continue
+    out.push({
+      code: c,
+      name: String(row.name || `Player ${c}`).slice(0, 32),
+      trophies: Math.max(0, Number(row.trophies) || 0),
+      updatedAt: Number(row.updatedAt) || 0,
+    })
+  }
+  return out
+}
+
+/** Remember a player forever on this device (feeds the global board via report). */
+export function noteSeenLeaderboardPlayer(
+  code: string,
+  name: string,
+  trophies?: number,
+): void {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  if (c.length !== 6) return
+  const all = readJson<Record<string, SeenLeaderboardPlayer>>(LEADERBOARD_SEEN_KEY, {})
+  const prev = all[c]
+  const cleaned = (name || '').trim().slice(0, 32)
+  const nextT =
+    typeof trophies === 'number' && Number.isFinite(trophies)
+      ? Math.max(prev?.trophies ?? 0, Math.max(0, Math.floor(trophies)))
+      : (prev?.trophies ?? 0)
+  all[c] = {
+    code: c,
+    name: cleaned || prev?.name || `Player ${c}`,
+    trophies: nextT,
+    updatedAt: Date.now(),
+  }
+  try {
+    localStorage.setItem(LEADERBOARD_SEEN_KEY, JSON.stringify(all))
+  } catch {
+    /* quota */
+  }
+}
+
 /** Persist a friend's last-known club for profile → view club. */
 export function saveFriendClub(
   playerId: string,

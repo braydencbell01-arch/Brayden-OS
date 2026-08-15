@@ -322,6 +322,26 @@ export async function mpFetchLeaderboard(): Promise<MpLeaderboardRow[]> {
   }
 }
 
+/** Push known players onto the global board (friends / seen / self). */
+export async function mpReportLeaderboard(
+  players: { code: string; name: string; trophies?: number }[],
+): Promise<number> {
+  const base = await resolveBase()
+  if (!base || !players.length) return 0
+  try {
+    const res = await fetch(`${base}/leaderboard/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ players }),
+    })
+    if (!res.ok) return 0
+    const data = (await res.json()) as { total?: number }
+    return typeof data.total === 'number' ? data.total : players.length
+  } catch {
+    return 0
+  }
+}
+
 /** Poll inbox for a code (backup if WebSocket missed messages). */
 export async function mpPollInbox(
   code: string,
