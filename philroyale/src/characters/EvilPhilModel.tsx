@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Evil Phil — Phil kit in black with purple mist and an evil grin. */
+/** Evil Phil — purple-mist coach crouch; sundae + whip overlays. */
 export function EvilPhilModel({ anim, facing, attackId, portrait }: Props) {
   const attack =
     anim === 'attack' && attackId === 'chickenWhip'
@@ -32,12 +32,10 @@ export function EvilPhilModel({ anim, facing, attackId, portrait }: Props) {
         anim={anim}
         facing={facing}
         portrait={portrait}
-        objectPos="50% 22%"
+        objectPos="50% 16%"
         gait="jog"
         attack={attack}
-        spriteLegs
-        legColor="#1a1a22"
-        shoeColor="#0a0a10"
+        spriteLegs={false}
       />
       {/* Soft animated purple mist on top of baked-in aura */}
       <div
