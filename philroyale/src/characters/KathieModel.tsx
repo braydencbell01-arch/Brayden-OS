@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Kathie — grandma cool pose; jog + Chicken Whip. */
+/** Kathie — athletic crouch card (no weapons); jog + Chicken Whip. */
 export function KathieModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,12 +24,10 @@ export function KathieModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 22%"
+      objectPos="50% 18%"
       gait="jog"
       attack={anim === 'attack' && attackId === 'chickenWhip' ? 'whip' : 'none'}
-      spriteLegs
-      legColor="#6a3a7a"
-      shoeColor="#2a1a30"
+      spriteLegs={false}
     />
   )
 }
