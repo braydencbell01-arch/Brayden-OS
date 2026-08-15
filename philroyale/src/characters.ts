@@ -410,8 +410,8 @@ export const TODD: CharacterDef = {
 
 export const MIKE: CharacterDef = {
   id: 'mike',
-  name: 'Michael',
-  initial: 'M',
+  name: 'Jacobson',
+  initial: 'J',
   pronoun: 'he',
   height: "6'0\"",
   rarity: 'epic',

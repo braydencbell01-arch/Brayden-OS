@@ -97,7 +97,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 940, arena: "Dave's Dungeon", label: 'x1 Phil', unlockCard: 'phil', gold: 110 },
   // Kathie's Kitchen 1000–1300
   { trophies: 1000, arena: "Kathie's Kitchen", label: 'Legendary Chest', chest: 'legendary', gold: 75, unlockEmote: 'cool' },
-  { trophies: 1060, arena: "Kathie's Kitchen", label: 'x6 Michael', cardCopies: { charId: 'mike', copies: 6 }, gold: 150 },
+  { trophies: 1060, arena: "Kathie's Kitchen", label: 'x6 Jacobson', cardCopies: { charId: 'mike', copies: 6 }, gold: 150 },
   { trophies: 1120, arena: "Kathie's Kitchen", label: 'Rare Chest', chest: 'rare', gold: 70 },
   { trophies: 1180, arena: "Kathie's Kitchen", label: 'x5 Baseball Huck', cardCopies: { charId: 'footballHuck', copies: 5 }, gold: 70 },
   { trophies: 1240, arena: "Kathie's Kitchen", label: "x4 Steve's Diner", cardCopies: { charId: 'stevesDiner', copies: 4 }, gold: 65 },
@@ -111,7 +111,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 1600, arena: "Gretchin's Grill", label: 'x5 Gretchin', cardCopies: { charId: 'gretchin', copies: 5 }, gold: 90 },
   { trophies: 1680, arena: "Gretchin's Grill", label: 'Common Chest', chest: 'common', gold: 80 },
   { trophies: 1760, arena: "Gretchin's Grill", label: 'Epic Chest', chest: 'epic', gold: 80, unlockEmote: 'skull' },
-  { trophies: 1840, arena: "Gretchin's Grill", label: 'x12 Mike', cardCopies: { charId: 'mike', copies: 12 } },
+  { trophies: 1840, arena: "Gretchin's Grill", label: 'x12 Jacobson', cardCopies: { charId: 'mike', copies: 12 } },
   { trophies: 1920, arena: "Gretchin's Grill", label: 'Gold pouch', gold: 100 },
   // Ricky's Diner 2000–2400
   { trophies: 2000, arena: "Ricky's Diner", label: 'x4 Chuck', cardCopies: { charId: 'pete', copies: 4 }, gold: 125 },

@@ -54,7 +54,7 @@ export const EMOTE_CATALOG: EmoteDef[] = [
   { id: 'emote-jeremy', label: 'Jeremy', kind: 'character', charId: 'jeremy', priceGems: 80, anim: 'wiggle' },
   { id: 'emote-kathie', label: 'Kathie', kind: 'character', charId: 'kathie', priceGems: 80, anim: 'bounce' },
   { id: 'emote-todd', label: 'Todd', kind: 'character', charId: 'todd', priceGems: 60, anim: 'bob' },
-  { id: 'emote-mike', label: 'Mike', kind: 'character', charId: 'mike', priceGems: 60, anim: 'wiggle' },
+  { id: 'emote-mike', label: 'Jacobson', kind: 'character', charId: 'mike', priceGems: 60, anim: 'wiggle' },
   { id: 'emote-beans', label: 'Beans', kind: 'character', charId: 'beans', priceGems: 60, anim: 'bounce' },
   { id: 'emote-lynne', label: 'Lynne', kind: 'character', charId: 'lynne', priceGems: 70, anim: 'bob' },
   { id: 'emote-evilPhil', label: 'Evil Phil', kind: 'character', charId: 'evilPhil', priceGems: 120, anim: 'wiggle' },
