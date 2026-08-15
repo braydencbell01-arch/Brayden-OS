@@ -13,21 +13,23 @@ type Props = {
   portrait?: boolean
 }
 
-/** Chuck — seated lawn-chair card; standing crossed-arms troop (no chair). */
+/** Pete — elderly white hair, glasses, navy suit; limps; Death Hug. */
 export function PeteModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
       cardSrc={PETE_CARD}
       troopSrc={PETE_TROOP}
       troopBackSrc={PETE_BACK}
-      alt="Chuck"
+      alt="Pete"
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 18%"
+      objectPos="50% 14%"
       gait="limp"
-      attack={anim === 'attack' && attackId === 'suplex' ? 'hug' : 'none'}
-      spriteLegs={false}
+      attack={anim === 'attack' && attackId === 'deathHug' ? 'hug' : 'none'}
+      spriteLegs
+      legColor="#1e2a4a"
+      shoeColor="#3a2410"
     />
   )
 }

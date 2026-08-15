@@ -14,7 +14,7 @@ type Props = {
   enraged?: boolean
 }
 
-/** Chuck — human shield; Suplex throws troops behind him. */
+/** Chuck — seated lawn-chair card; standing crossed-arms troop (no chair). */
 export function DanModel({ anim, facing, attackId, portrait, enraged }: Props) {
   const suplex = anim === 'attack' && attackId === 'suplex'
   return (
@@ -26,13 +26,11 @@ export function DanModel({ anim, facing, attackId, portrait, enraged }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 12%"
-      gait="jog"
+      objectPos="50% 18%"
+      gait="limp"
       attack={suplex ? 'hug' : 'none'}
       enraged={enraged}
-      spriteLegs
-      legColor="#2a2a36"
-      shoeColor="#0a0a0c"
+      spriteLegs={false}
     />
   )
 }
