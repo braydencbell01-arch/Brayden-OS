@@ -991,8 +991,8 @@ export const FAGGOL: CharacterDef = {
   height: "4'2\"",
   rarity: 'uncommon',
   elixir: 2,
-  hp: 100,
-  moveSpeed: 20,
+  hp: 395,
+  moveSpeed: 11.1,
   attackDelaySec: 2.6,
   /** Rages on contact with the fight (Short Temper). */
   rageAfterSec: 0,
