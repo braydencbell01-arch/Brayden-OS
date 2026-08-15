@@ -33,6 +33,7 @@ import { TristanModel } from './TristanModel'
 import { BerryModel } from './BerryModel'
 import { SusanModel } from './SusanModel'
 import { PhilsRocketModel } from './PhilsRocketModel'
+import { CoachGrafModel } from './CoachGrafModel'
 
 type Props = {
   charId: string
@@ -89,6 +90,10 @@ export function CharacterModel({
     model = <GretchinModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'dave') {
     model = <DaveModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+  } else if (charId === 'coachGraf') {
+    model = (
+      <CoachGrafModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
+    )
   } else if (charId === 'philSpirit') {
     model = <PhilSpiritModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
   } else if (charId === 'peteSpirit') {

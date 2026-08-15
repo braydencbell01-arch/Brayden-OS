@@ -22,6 +22,8 @@ export type AttackId =
   | 'aura'
   | 'miniAura'
   | 'shortTemper'
+  | 'knuckleSandwich'
+  | 'selfDestruct'
 
 export type AttackDef = {
   id: AttackId
@@ -57,6 +59,8 @@ export type AttackDef = {
   ignoreAttackDelay?: boolean
   /** Hit up to this many closest opponents in range (Tristan). */
   maxTargets?: number
+  /** Listed on the card only — never used as an in-combat attack (death passives). */
+  onDeathOnly?: boolean
   /**
    * Jessie-style bounce: after impact, chain to another foe still inside the
    * attacker's range (never the same target twice). Total hits = bounceTargets.
@@ -136,6 +140,10 @@ export type CharacterDef = {
   rageDamageMult?: number
   /** On death, drop a heart that grants Finley-style rage (Dan). */
   dropsRageHeart?: boolean
+  /** On death, deal this damage in deathSplashRadius (Coach Graf Self Destruct). */
+  deathDamage?: number
+  /** Blocks radius for deathDamage (diameter = 2×). */
+  deathSplashRadius?: number
   /** Building: spawn these troop ids on a timer (and often on death). */
   spawnPool?: string[]
   /** Building: seconds between spawns (first spawn is on place). */
@@ -1046,6 +1054,46 @@ export const SUSAN: CharacterDef = {
   ],
 }
 
+/** Rare win-con coach — buildings only; Knuckle Sandwich; Self Destruct on death. */
+export const COACH_GRAF: CharacterDef = {
+  id: 'coachGraf',
+  name: 'Coach Graf',
+  initial: 'CG',
+  pronoun: 'he',
+  height: "5'11\"",
+  rarity: 'rare',
+  elixir: 3,
+  hp: 845,
+  moveSpeed: 3.2,
+  attackDelaySec: 2.1,
+  hue: 210,
+  targetsBuildingsOnly: true,
+  deathDamage: 260,
+  deathSplashRadius: 3.5,
+  blurb:
+    'Win condition — sprints hard at buildings (slow). Knuckle Sandwich punches towers. Self Destruct: 260 splash (diameter 7) where he dies.',
+  attacks: [
+    {
+      id: 'knuckleSandwich',
+      name: 'Knuckle Sandwich',
+      range: 3,
+      damage: 520,
+      rootWhileAttacking: true,
+      kind: 'uppercut',
+    },
+    {
+      id: 'selfDestruct',
+      name: 'Self Destruct',
+      range: 3.5,
+      damage: 260,
+      rootWhileAttacking: false,
+      splashRadius: 3.5,
+      onDeathOnly: true,
+      kind: 'uppercut',
+    },
+  ],
+}
+
 /** Common inflatable tow-tube — slides, Launch knockback, never sticky-locks. */
 export const BIG_MABLE: CharacterDef = {
   id: 'bigMable',
@@ -1108,6 +1156,7 @@ export const CHARACTERS: CharacterDef[] = [
   TRISTAN,
   BERRY,
   SUSAN,
+  COACH_GRAF,
   BIG_MABLE,
 ]
 
@@ -1213,6 +1262,11 @@ export function pickSpawnFromPool(pool: string[] | undefined): string | null {
 
 export function getCharacter(id: string): CharacterDef | undefined {
   return CHARACTERS.find((c) => c.id === id)
+}
+
+/** Attacks usable in combat (excludes death-only kit like Self Destruct). */
+export function combatAttacks(def: CharacterDef): AttackDef[] {
+  return def.attacks.filter((a) => !a.onDeathOnly)
 }
 
 /** Parse display height like 6'3" into total inches. */

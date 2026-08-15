@@ -36,6 +36,7 @@ import {
 import {
   DECK_SIZE,
   getCharacter,
+  combatAttacks,
   randomBotDeck,
   uniqueDeckFrom,
   isBuildingCard,
@@ -2521,10 +2522,11 @@ export function useBattle(opts?: {
         }
 
         const rooted = t < u.rootedUntil
-        const noAttack = def.attacks.length === 0
+        const kitForRange = combatAttacks(def)
+        const noAttack = kitForRange.length === 0
         const attackRange = noAttack
           ? 2
-          : Math.max(2, def.attacks[u.attackIndex % def.attacks.length]!.range)
+          : Math.max(2, kitForRange[u.attackIndex % kitForRange.length]!.range)
         // Short-range troops: out of range → chase cards within 20, else towers.
         // Skipped for Dave (buildings only) and cards whose attack range is > 20.
         const useCardChase = !pathBuildings && attackRange <= CARD_CHASE_RANGE
@@ -2924,11 +2926,13 @@ export function useBattle(opts?: {
 
         if (noAttack) continue
 
-        let attack = def.attacks[u.attackIndex % def.attacks.length]!
+        const kit = combatAttacks(def)
+        if (kit.length === 0) continue
+        let attack = kit[u.attackIndex % kit.length]!
         const onceKey = `${best.kind}:${best.id}`
         if (attack.oncePerTarget && (u.hitOnceKeys ?? []).includes(onceKey)) {
-          u.attackIndex = (u.attackIndex + 1) % def.attacks.length
-          attack = def.attacks[u.attackIndex % def.attacks.length]!
+          u.attackIndex = (u.attackIndex + 1) % kit.length
+          attack = kit[u.attackIndex % kit.length]!
         }
         if (t < u.nextAttackAt && !attack.ignoreAttackDelay) continue
 
@@ -2968,7 +2972,7 @@ export function useBattle(opts?: {
                       ? LOVE_VFX_MS
                       : attack.id === 'witchcraft'
                         ? WITCHCRAFT_VFX_MS
-                        : attack.id === 'uppercut'
+                        : attack.id === 'uppercut' || attack.id === 'knuckleSandwich'
                           ? 720
                           : attack.id === 'jump'
                             ? JUMP_LEAP_MS
@@ -2995,7 +2999,7 @@ export function useBattle(opts?: {
         }
         u.burstShot = burstDone ? 0 : nextBurst
         if (burstDone && !def.pathToBuildingsOnly) {
-          u.attackIndex = (u.attackIndex + 1) % def.attacks.length
+          u.attackIndex = (u.attackIndex + 1) % Math.max(1, combatAttacks(def).length)
         }
         unitsChanged = true
 
@@ -3363,6 +3367,16 @@ export function useBattle(opts?: {
                         : 'melee',
           })
           splatsChanged = true
+          if (attack.id === 'knuckleSandwich') {
+            nextSplats.push({
+              id: nid('knuckle'),
+              col: shotAim.col,
+              row: shotAim.row,
+              bornAt: t,
+              kind: 'boom',
+              radius: 2,
+            })
+          }
         }
       }
 
@@ -3459,13 +3473,43 @@ export function useBattle(opts?: {
         unitsChanged = true
       }
 
-      // Building death spawn + Dan death hearts.
+      // Building death spawn + Dan death hearts + Coach Graf Self Destruct.
       for (const u of nextUnits) {
         if (u.hp > 0) continue
         const deadDef = getCharacter(u.charId)
         if (isBuildingCard(deadDef) && deadDef?.spawnOnDeath) {
           spawnDogFromBuilding(u, t, nextUnits)
           unitsChanged = true
+        }
+        if (
+          deadDef?.deathDamage != null &&
+          deadDef.deathDamage > 0 &&
+          deadDef.deathSplashRadius != null &&
+          deadDef.deathSplashRadius > 0
+        ) {
+          const deathDmg = scaledStat(deadDef.deathDamage, u.level)
+          const splash = applySplashAt(
+            nextUnits,
+            nextTowers,
+            u.side,
+            u.col,
+            u.row,
+            deadDef.deathSplashRadius,
+            deathDmg,
+            t,
+            { excludeUnitId: u.id },
+          )
+          if (splash.unitsChanged) unitsChanged = true
+          if (splash.towersChanged) towersChanged = true
+          nextSplats.push({
+            id: nid('selfdestruct'),
+            col: u.col,
+            row: u.row,
+            bornAt: t,
+            kind: 'boom',
+            radius: deadDef.deathSplashRadius,
+          })
+          splatsChanged = true
         }
         if (!deadDef?.dropsRageHeart) continue
         nextHearts.push({
