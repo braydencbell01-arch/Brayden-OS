@@ -45,6 +45,8 @@ type Props = {
   /** Pants / fur color for running leg overlays */
   legColor?: string
   shoeColor?: string
+  /** Troop art already has pistols — show muzzle flashes only (no SVG guns). */
+  gunsInSprite?: boolean
 }
 
 /**
@@ -71,6 +73,7 @@ export function PhotoTroop({
   spriteLegs = true,
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
+  gunsInSprite = false,
 }: Props) {
   // Face the way the unit is moving — snap flip; back only when clearly marching up.
   const cosF = Math.cos(facing)
@@ -406,7 +409,9 @@ export function PhotoTroop({
         ) : null}
 
         {/* Attack props */}
-        {attacking && attack === 'shoot' ? <GunOverlay /> : null}
+        {attacking && attack === 'shoot' ? (
+          <GunOverlay muzzleOnly={gunsInSprite} />
+        ) : null}
         {attacking && attack === 'whip' ? <WhipOverlay /> : null}
         {attacking && attack === 'sundae' ? <SundaeThrowOverlay /> : null}
         {attacking && attack === 'berryJuice' ? <BerryJuiceChargeOverlay /> : null}
@@ -610,7 +615,7 @@ function HugOverlay() {
   )
 }
 
-function GunOverlay() {
+function GunOverlay({ muzzleOnly = false }: { muzzleOnly?: boolean }) {
   // Both barrels aim local +X (same way). PhotoTroop scaleX-flips with facing,
   // so after flip they both point at the enemy — not at each other.
   return (
@@ -622,9 +627,13 @@ function GunOverlay() {
         transition={{ duration: 0.35 }}
         style={{ transformOrigin: '16px 56px' }}
       >
-        <rect x="8" y="52" width="18" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
-        <rect x="22" y="50.5" width="12" height="4" rx="1" fill="#4a4a52" />
-        <rect x="6" y="56" width="5" height="9" rx="1" fill="#1a1a20" />
+        {!muzzleOnly ? (
+          <>
+            <rect x="8" y="52" width="18" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
+            <rect x="22" y="50.5" width="12" height="4" rx="1" fill="#4a4a52" />
+            <rect x="6" y="56" width="5" height="9" rx="1" fill="#1a1a20" />
+          </>
+        ) : null}
         <motion.circle
           cx="36"
           cy="52.5"
@@ -649,9 +658,13 @@ function GunOverlay() {
         transition={{ duration: 0.35, delay: 0.12 }}
         style={{ transformOrigin: '44px 56px' }}
       >
-        <rect x="36" y="52" width="18" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
-        <rect x="50" y="50.5" width="12" height="4" rx="1" fill="#4a4a52" />
-        <rect x="34" y="56" width="5" height="9" rx="1" fill="#1a1a20" />
+        {!muzzleOnly ? (
+          <>
+            <rect x="36" y="52" width="18" height="5" rx="1.2" fill="#2a2a30" stroke="#0a0a0c" strokeWidth="0.6" />
+            <rect x="50" y="50.5" width="12" height="4" rx="1" fill="#4a4a52" />
+            <rect x="34" y="56" width="5" height="9" rx="1" fill="#1a1a20" />
+          </>
+        ) : null}
         <motion.circle
           cx="64"
           cy="52.5"

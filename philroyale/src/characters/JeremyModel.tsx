@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Jeremy — card art; front/back 3D suit troop with dual-gun fire overlay. */
+/** Jeremy — dual-pistol suit crouch; Shoot fires those guns with muzzle flash. */
 export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,12 +24,11 @@ export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 12%"
+      objectPos="50% 14%"
       gait="run"
       attack={anim === 'attack' && attackId === 'shoot' ? 'shoot' : 'none'}
-      spriteLegs
-      legColor="#2a2a32"
-      shoeColor="#0a0a0c"
+      spriteLegs={false}
+      gunsInSprite
     />
   )
 }
