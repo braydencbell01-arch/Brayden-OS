@@ -35,8 +35,8 @@ export type SyncUnit = {
   enraged: boolean
   /** Berry Aura after a kill. */
   auraActive?: boolean
-  /** Faggol Short Temper stain until death. */
-  poopStain?: boolean
+  /** Faggol stain DoT expiry (host performance.now). */
+  poopStainUntil?: number
   /** @deprecated use movingUntil — kept for older hosts */
   moving?: boolean
   level: number

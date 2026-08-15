@@ -812,7 +812,7 @@ export function BattleScreen({
                   vfx={u.vfx}
                   enraged={u.enraged}
                   auraActive={u.auraActive}
-                  poopStain={u.poopStain}
+                  poopStain={!!u.poopStainUntil && now < u.poopStainUntil}
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
                   evolved={u.evolved}

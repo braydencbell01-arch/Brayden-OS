@@ -993,17 +993,17 @@ export const FAGGOL: CharacterDef = {
   elixir: 2,
   hp: 395,
   moveSpeed: 11.1,
-  attackDelaySec: 2.6,
+  attackDelaySec: 3.8,
   /** Rages on contact with the fight (Short Temper). */
   rageAfterSec: 0,
   hue: 210,
   blurb:
-    'Tiny short-temper. Rages, crouches to poop, spins, scoops it up, and chucks — stains stick until they die.',
+    'Tiny short-temper. Rages, slowly crouches to poop, turns, scoops it up, and chucks — stains deal 25/sec for 10s.',
   attacks: [
     {
       id: 'shortTemper',
       name: 'Short Temper',
-      range: 14,
+      range: 19,
       damage: 95,
       rootWhileAttacking: true,
       projectileMs: 520,

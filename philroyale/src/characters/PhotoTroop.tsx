@@ -332,7 +332,7 @@ export function PhotoTroop({
                       : attack === 'ram'
                         ? 0.52
                       : attack === 'poop'
-                        ? 1.85
+                        ? 3.4
                       : attack === 'headbutt'
                         ? 0.4
                         : attack === 'whip' || attack === 'hug'
@@ -729,7 +729,7 @@ function ShortTemperOverlay() {
           x: [0, 0, 0, 0, 6, 28, 40],
           y: [0, 0, 0, -4, -18, -36, -48],
         }}
-        transition={{ duration: 1.85, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
+        transition={{ duration: 3.4, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
         style={{ transformOrigin: '40px 102px' }}
       >
         <ellipse cx="40" cy="104" rx="7" ry="4.2" fill="#5c3a18" />
@@ -746,7 +746,7 @@ function ShortTemperOverlay() {
           x: [0, 0, 0, 2, 8, 18, 10],
           y: [0, 0, 0, 4, -6, -20, -8],
         }}
-        transition={{ duration: 1.85, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
+        transition={{ duration: 3.4, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
         style={{ transformOrigin: '52px 78px' }}
       >
         <path
@@ -760,7 +760,7 @@ function ShortTemperOverlay() {
       <motion.g
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 0, 0.85, 0.7, 0.2, 0, 0], y: [0, 0, -2, -8, -14, -18, -18] }}
-        transition={{ duration: 1.85, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
+        transition={{ duration: 3.4, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
       >
         <path
           d="M36 96 Q34 90 37 86"

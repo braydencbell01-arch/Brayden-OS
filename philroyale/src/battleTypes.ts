@@ -59,8 +59,10 @@ export type BattleUnit = {
   hitOnceKeys?: string[]
   /** Berry Aura — blue flames after a kill; stronger / faster juice. */
   auraActive?: boolean
-  /** Faggol Short Temper — brown stain until death. */
-  poopStain?: boolean
+  /** Faggol Short Temper — stain DoT until this performance.now. */
+  poopStainUntil?: number
+  /** Next 25-damage tick for poop stain. */
+  poopStainNextAt?: number
   /** Evolution form — +30% HP / damage / speed. */
   evolved?: boolean
 }

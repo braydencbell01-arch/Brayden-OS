@@ -114,7 +114,10 @@ function syncUnitToBattle(u: SyncUnit, flip: boolean, guestNow: number, hostNow:
     spawnedAt: mapTime(u.spawnedAt, guestNow),
     enraged: !!u.enraged,
     auraActive: !!u.auraActive,
-    poopStain: !!u.poopStain,
+    poopStainUntil:
+      u.poopStainUntil != null && u.poopStainUntil > 0
+        ? mapTime(u.poopStainUntil, guestNow)
+        : 0,
     movingUntil,
     lockKey: null,
     launch,
@@ -203,10 +206,14 @@ const HEADBUTT_VFX_MS = 480
 const RAM_VFX_MS = 560
 const LOVE_VFX_MS = 700
 const RANGED_VFX_MS = 520
-/** Faggol Short Temper — crouch / dump / spin / scoop / throw. */
-const SHORT_TEMPER_VFX_MS = 1900
+/** Faggol Short Temper — crouch / dump / spin / scoop / throw (slow wind-up). */
+const SHORT_TEMPER_VFX_MS = 3400
 /** Delay before the poop projectile leaves his hand (matches PhotoTroop throw keyframe). */
-const POOP_THROW_DELAY_MS = 1150
+const POOP_THROW_DELAY_MS = 2100
+/** Poop stain DoT — 25 damage each second for 10 seconds. */
+const POOP_STAIN_MS = 10_000
+const POOP_STAIN_TICK_MS = 1000
+const POOP_STAIN_DAMAGE = 25
 const SPLAT_MS = 820
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 420
@@ -474,7 +481,8 @@ function makeBattleUnit(
     spawnedAt: t,
     enraged: false,
     auraActive: false,
-    poopStain: false,
+    poopStainUntil: 0,
+    poopStainNextAt: 0,
     movingUntil: 0,
     lockKey: null,
     launch: null,
@@ -1295,7 +1303,7 @@ export function useBattle(opts?: {
         vfx: u.vfx,
         enraged: u.enraged,
         auraActive: u.auraActive,
-        poopStain: u.poopStain,
+        poopStainUntil: u.poopStainUntil && u.poopStainUntil > t ? u.poopStainUntil : 0,
         movingUntil: u.movingUntil > t ? u.movingUntil : 0,
         level: u.level,
         evolved: u.evolved,
@@ -1998,7 +2006,10 @@ export function useBattle(opts?: {
             const target = nextUnits.find((u) => u.id === p.targetId)
             if (target && !isAirborne(target)) {
               target.hp -= p.damage
-              if (p.kind === 'poop') target.poopStain = true
+              if (p.kind === 'poop') {
+                target.poopStainUntil = t + POOP_STAIN_MS
+                target.poopStainNextAt = t + POOP_STAIN_TICK_MS
+              }
               unitsChanged = true
             }
           } else if (p.targetTowerId) {
@@ -2038,7 +2049,10 @@ export function useBattle(opts?: {
           const target = nextUnits.find((u) => u.id === p.targetId)
           if (target && !isAirborne(target)) {
             target.hp -= p.damage
-            if (p.kind === 'poop') target.poopStain = true
+            if (p.kind === 'poop') {
+              target.poopStainUntil = t + POOP_STAIN_MS
+              target.poopStainNextAt = t + POOP_STAIN_TICK_MS
+            }
             unitsChanged = true
           }
         } else if (p.targetTowerId) {
@@ -2224,6 +2238,25 @@ export function useBattle(opts?: {
         if (u.vfx && t >= u.vfxUntil) {
           u.vfx = null
           unitsChanged = true
+        }
+
+        // Faggol Short Temper stain — 25 damage / sec for 10s.
+        if (u.poopStainUntil && u.poopStainUntil > 0) {
+          if (t >= u.poopStainUntil) {
+            u.poopStainUntil = 0
+            u.poopStainNextAt = 0
+            unitsChanged = true
+          } else {
+            let nextAt = u.poopStainNextAt ?? 0
+            while (nextAt > 0 && t >= nextAt && nextAt <= u.poopStainUntil) {
+              u.hp -= POOP_STAIN_DAMAGE
+              nextAt += POOP_STAIN_TICK_MS
+              unitsChanged = true
+              if (u.hp <= 0) break
+            }
+            u.poopStainNextAt = nextAt
+            if (u.hp <= 0) continue
+          }
         }
 
         // Big Mable Launch / Spirit Jump: fly first, resolve on landing.
