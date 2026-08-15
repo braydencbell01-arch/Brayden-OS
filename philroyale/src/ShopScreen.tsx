@@ -36,6 +36,7 @@ const CHEST_ORDER: ChestRarity[] = ['common', 'rare', 'epic', 'legendary']
 
 const RARITY_TEXT: Record<Rarity, string> = {
   common: '#dfe6ee',
+  uncommon: '#8aefb0',
   rare: '#ffb347',
   epic: '#d48af0',
   legendary: '#fff3a8',

@@ -21,6 +21,12 @@ const RARITY_FRAME: Record<
     top: '#dfe6ee',
     bottom: '#6d7684',
   },
+  uncommon: {
+    border: '#3ecf6a',
+    glow: '#2a9a4a',
+    top: '#8aefb0',
+    bottom: '#1a6b38',
+  },
   rare: {
     border: '#e67e22',
     glow: '#c45f0c',

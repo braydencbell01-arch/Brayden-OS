@@ -59,6 +59,8 @@ export type BattleUnit = {
   hitOnceKeys?: string[]
   /** Berry Aura — blue flames after a kill; stronger / faster juice. */
   auraActive?: boolean
+  /** Faggol Short Temper — brown stain until death. */
+  poopStain?: boolean
   /** Evolution form — +30% HP / damage / speed. */
   evolved?: boolean
 }
@@ -85,6 +87,7 @@ export type Projectile = {
     | 'cheese'
     | 'cucumber'
     | 'berryJuice'
+    | 'poop'
   fromCol: number
   fromRow: number
   toCol: number
@@ -147,6 +150,7 @@ export type SplatFx = {
     | 'cheese'
     | 'cucumber'
     | 'berryJuice'
+    | 'poop'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

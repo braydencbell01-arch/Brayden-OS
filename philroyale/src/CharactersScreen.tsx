@@ -30,12 +30,13 @@ type Pane = 'decks' | 'collection'
 const DECK_SLOTS = 5
 const RARITY_PILL: Record<Rarity, string> = {
   common: '#b8c0cc',
+  uncommon: '#3ecf6a',
   rare: '#e67e22',
   epic: '#b14fd6',
   legendary: '#f5d76e',
 }
 
-const RARITY_OPTIONS: Rarity[] = ['common', 'rare', 'epic', 'legendary']
+const RARITY_OPTIONS: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary']
 
 type CardFilters = {
   name: string

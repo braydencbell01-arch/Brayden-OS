@@ -66,6 +66,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 0, arena: 'Training Camp', label: 'Journey begins', gold: 50 },
   { trophies: 20, arena: 'Training Camp', label: 'x1 Dog Hut', unlockCard: 'dogHut', gold: 40 },
   { trophies: 40, arena: 'Training Camp', label: 'x1 Tristan', unlockCard: 'tristan', gold: 50 },
+  { trophies: 50, arena: 'Training Camp', label: 'x1 Faggol', unlockCard: 'faggol', gold: 45 },
   { trophies: 60, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'dan', gold: 40 },
   { trophies: 80, arena: 'Training Camp', label: 'x1 Chuck', unlockCard: 'pete', gold: 70 },
   // Sundae Strip 100–300
@@ -297,12 +298,21 @@ function cardCopiesForRarity(rarity: Rarity): number {
   if (rarity === 'legendary') return 1
   if (rarity === 'epic') return 2
   if (rarity === 'rare') return 4
+  if (rarity === 'uncommon') return 6
   return 8
 }
 
 function goldPriceForRarity(rarity: Rarity, seed: number): number {
   const base =
-    rarity === 'legendary' ? 1200 : rarity === 'epic' ? 500 : rarity === 'rare' ? 200 : 80
+    rarity === 'legendary'
+      ? 1200
+      : rarity === 'epic'
+        ? 500
+        : rarity === 'rare'
+          ? 200
+          : rarity === 'uncommon'
+            ? 120
+            : 80
   return base + (seed % 40)
 }
 
@@ -331,7 +341,7 @@ export function dailyShopOffers(dayKey: string): ShopOffer[] {
     charId: gemChar.id,
     copies: cardCopiesForRarity(gemChar.rarity),
     priceGems:
-      gemChar.rarity === 'legendary' ? 40 : gemChar.rarity === 'epic' ? 20 : gemChar.rarity === 'rare' ? 10 : 6,
+      gemChar.rarity === 'legendary' ? 40 : gemChar.rarity === 'epic' ? 20 : gemChar.rarity === 'rare' ? 10 : gemChar.rarity === 'uncommon' ? 8 : 6,
   })
 
   for (let i = 0; i < 4; i++) {
@@ -380,7 +390,10 @@ export function rollChestLoot(rarity: ChestRarity): {
       gems: chance(0.6) ? randInt(4, 10) : 0,
       cards: [
         { charId: pick(pool('common')).id, copies: randInt(1, 3) },
-        ...(chance(0.7) ? [{ charId: pick(pool('rare')).id, copies: 1 }] : []),
+        ...(chance(0.55)
+          ? [{ charId: pick(pool('uncommon')).id, copies: randInt(1, 2) }]
+          : []),
+        ...(chance(0.45) ? [{ charId: pick(pool('rare')).id, copies: 1 }] : []),
       ],
       evoShards: [],
     }

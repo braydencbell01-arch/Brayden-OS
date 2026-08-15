@@ -32,6 +32,7 @@ type Props = {
     | 'uppercut'
     | 'jump'
     | 'ram'
+    | 'poop'
     | 'none'
   /** Persistent hand prop (Michael curls a dumbbell until he throws it). */
   carry?: 'dumbbell' | 'none'
@@ -228,6 +229,15 @@ export function PhotoTroop({
                                   scaleY: [1, 0.88, 1.14, 1.04, 1],
                                   scaleX: [1, 1.08, 0.9, 1, 1],
                                 }
+                              : attack === 'poop'
+                                ? {
+                                    // Crouch → dump → spin/turn → scoop → throw
+                                    y: [0, 10, 12, 8, 4, -2, 0],
+                                    x: [0, 0, 0, -2, 4, 10, 0],
+                                    rotate: [0, 4, 6, 170, 185, 12, 0],
+                                    scaleY: [1, 0.72, 0.68, 0.9, 0.95, 1.08, 1],
+                                    scaleX: [1, 1.06, 1.08, 0.92, 0.95, 1.04, 1],
+                                  }
                               : attack === 'witchcraft'
                                 ? {
                                     y: [0, -2, -6, -2, 0],
@@ -321,6 +331,8 @@ export function PhotoTroop({
                       ? 0.55
                       : attack === 'ram'
                         ? 0.52
+                      : attack === 'poop'
+                        ? 1.85
                       : attack === 'headbutt'
                         ? 0.4
                         : attack === 'whip' || attack === 'hug'
@@ -336,6 +348,8 @@ export function PhotoTroop({
                   attack === 'headbutt' ||
                   attack === 'ram'
                     ? [0, 0.18, 0.42, 0.72, 1]
+                    : attack === 'poop'
+                      ? [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1]
                     : attack === 'jump'
                       ? [0, 0.12, 0.42, 0.72, 1]
                     : undefined,
@@ -394,6 +408,7 @@ export function PhotoTroop({
         {attacking && attack === 'witchcraft' ? <WitchcraftOverlay /> : null}
         {attacking && attack === 'uppercut' ? <UppercutOverlay /> : null}
         {attacking && attack === 'jump' ? <JumpOverlay /> : null}
+        {attacking && attack === 'poop' ? <ShortTemperOverlay /> : null}
         {!attacking && carry === 'dumbbell' ? <DumbbellCurlOverlay walking={walking} /> : null}
 
         {enraged ? (
@@ -693,6 +708,75 @@ function WhipOverlay() {
         />
       </motion.g>
       <circle cx="42" cy="54" r="5" fill="#e8b888" stroke="#a86838" strokeWidth="0.8" />
+    </svg>
+  )
+}
+
+/** Faggol Short Temper — dump → scoop → lob (body crouch/spin is on the troop). */
+function ShortTemperOverlay() {
+  return (
+    <svg
+      viewBox="0 0 80 118"
+      className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+      aria-hidden
+    >
+      {/* Fresh pile at the heels while crouched */}
+      <motion.g
+        initial={{ opacity: 0, scale: 0.2, y: 0 }}
+        animate={{
+          opacity: [0, 0, 1, 1, 1, 0, 0],
+          scale: [0.2, 0.2, 1, 1.05, 0.95, 0.4, 0.2],
+          x: [0, 0, 0, 0, 6, 28, 40],
+          y: [0, 0, 0, -4, -18, -36, -48],
+        }}
+        transition={{ duration: 1.85, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
+        style={{ transformOrigin: '40px 102px' }}
+      >
+        <ellipse cx="40" cy="104" rx="7" ry="4.2" fill="#5c3a18" />
+        <ellipse cx="37" cy="101" rx="4.2" ry="3.4" fill="#6e4a22" />
+        <ellipse cx="44" cy="100" rx="3.6" ry="3" fill="#4a2e12" />
+        <ellipse cx="40" cy="98" rx="3.2" ry="2.6" fill="#7a5530" />
+      </motion.g>
+      {/* Scoop hand swipe toward the pile, then fling */}
+      <motion.g
+        initial={{ rotate: 20, opacity: 0 }}
+        animate={{
+          rotate: [20, 20, 20, -8, -40, -70, -20],
+          opacity: [0, 0, 0, 1, 1, 0.6, 0],
+          x: [0, 0, 0, 2, 8, 18, 10],
+          y: [0, 0, 0, 4, -6, -20, -8],
+        }}
+        transition={{ duration: 1.85, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
+        style={{ transformOrigin: '52px 78px' }}
+      >
+        <path
+          d="M48 72 Q56 78 58 90 L52 92 Q48 82 46 74 Z"
+          fill="#e8b888"
+          stroke="#c48a5a"
+          strokeWidth="0.6"
+        />
+      </motion.g>
+      {/* Steam / stink while dumping */}
+      <motion.g
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 0, 0.85, 0.7, 0.2, 0, 0], y: [0, 0, -2, -8, -14, -18, -18] }}
+        transition={{ duration: 1.85, times: [0, 0.14, 0.28, 0.48, 0.62, 0.82, 1] }}
+      >
+        <path
+          d="M36 96 Q34 90 37 86"
+          fill="none"
+          stroke="#9aaa6a88"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M44 95 Q46 89 43 84"
+          fill="none"
+          stroke="#9aaa6a66"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+      </motion.g>
     </svg>
   )
 }

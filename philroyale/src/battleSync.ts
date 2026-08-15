@@ -35,6 +35,8 @@ export type SyncUnit = {
   enraged: boolean
   /** Berry Aura after a kill. */
   auraActive?: boolean
+  /** Faggol Short Temper stain until death. */
+  poopStain?: boolean
   /** @deprecated use movingUntil — kept for older hosts */
   moving?: boolean
   level: number
@@ -74,6 +76,7 @@ export type SyncProjectile = {
     | 'cheese'
     | 'cucumber'
     | 'berryJuice'
+    | 'poop'
   fromCol: number
   fromRow: number
   toCol: number

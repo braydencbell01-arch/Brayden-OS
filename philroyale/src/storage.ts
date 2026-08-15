@@ -1107,6 +1107,7 @@ export function startingCopiesFor(rarity: string): number {
   if (rarity === 'legendary') return 2
   if (rarity === 'epic') return 3
   if (rarity === 'rare') return 4
+  if (rarity === 'uncommon') return 5
   return 5
 }
 

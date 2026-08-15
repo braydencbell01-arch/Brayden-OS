@@ -20,6 +20,7 @@ export type AttackId =
   | 'cheeseAndCucumbers'
   | 'suplex'
   | 'aura'
+  | 'shortTemper'
 
 export type AttackDef = {
   id: AttackId
@@ -83,19 +84,22 @@ export type AttackDef = {
     | 'cucumber'
     | 'suplex'
     | 'berryJuice'
+    | 'poop'
 }
 
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary'
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
 
 export const RARITY_RANK: Record<Rarity, number> = {
   common: 0,
-  rare: 1,
-  epic: 2,
-  legendary: 3,
+  uncommon: 1,
+  rare: 2,
+  epic: 3,
+  legendary: 4,
 }
 
 export const RARITY_LABEL: Record<Rarity, string> = {
   common: 'Common',
+  uncommon: 'Uncommon',
   rare: 'Rare',
   epic: 'Epic',
   legendary: 'Legendary',
@@ -978,6 +982,36 @@ export const BERRY: CharacterDef = {
   ],
 }
 
+/** Uncommon short fuse — rages, crouches to poop, then lobs the mess. */
+export const FAGGOL: CharacterDef = {
+  id: 'faggol',
+  name: 'Faggol',
+  initial: 'F',
+  pronoun: 'he',
+  height: "4'2\"",
+  rarity: 'uncommon',
+  elixir: 2,
+  hp: 100,
+  moveSpeed: 20,
+  attackDelaySec: 2.6,
+  /** Rages on contact with the fight (Short Temper). */
+  rageAfterSec: 0,
+  hue: 210,
+  blurb:
+    'Tiny short-temper. Rages, crouches to poop, spins, scoops it up, and chucks — stains stick until they die.',
+  attacks: [
+    {
+      id: 'shortTemper',
+      name: 'Short Temper',
+      range: 14,
+      damage: 95,
+      rootWhileAttacking: true,
+      projectileMs: 520,
+      kind: 'poop',
+    },
+  ],
+}
+
 /** Common inflatable tow-tube — slides, Launch knockback, never sticky-locks. */
 export const BIG_MABLE: CharacterDef = {
   id: 'bigMable',
@@ -1038,6 +1072,7 @@ export const CHARACTERS: CharacterDef[] = [
   BOBBY_SPECIAL,
   TRISTAN,
   BERRY,
+  FAGGOL,
   BIG_MABLE,
 ]
 
@@ -1162,6 +1197,10 @@ export function battlefieldScaleForHeight(height: string): number {
   if (inches < 40) {
     // Pets — readable, a touch larger on the field
     return Math.min(0.98, Math.max(0.88, 0.86 + inches * 0.004))
+  }
+  if (inches < 58) {
+    // Short humans / kids — clearly smaller (4'2" ≈ 0.83)
+    return Math.min(0.9, Math.max(0.72, 0.72 + (inches - 40) * 0.011))
   }
   // Adults: Kathie ~0.93 … Phil 1.0 … Mike ~1.09 … Dan ~1.13 … Jeremy ~1.14
   return Math.min(1.22, Math.max(0.95, 1 + (inches - ref) * 0.018))

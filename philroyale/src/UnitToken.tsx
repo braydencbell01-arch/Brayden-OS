@@ -12,6 +12,7 @@ type Props = {
   vfx: AttackId | null
   enraged?: boolean
   auraActive?: boolean
+  poopStain?: boolean
   facing?: number
   moving?: boolean
   evolved?: boolean
@@ -26,6 +27,7 @@ export function UnitToken({
   vfx,
   enraged,
   auraActive,
+  poopStain,
   facing,
   moving,
   evolved,
@@ -90,6 +92,8 @@ export function UnitToken({
                               ? '3 / 4.9'
                               : charId === 'tristan'
                                 ? '3 / 4.85'
+                              : charId === 'faggol'
+                                ? '3 / 4.4'
                               : '3 / 4.9',
         }}
       >
@@ -117,6 +121,18 @@ export function UnitToken({
           enraged={enraged}
           auraActive={auraActive}
         />
+        {poopStain ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-10"
+            aria-hidden
+            style={{
+              background:
+                'radial-gradient(ellipse 42% 28% at 38% 62%, #5c3a18cc 0%, transparent 70%), radial-gradient(ellipse 36% 24% at 62% 70%, #3a2410aa 0%, transparent 72%), radial-gradient(ellipse 28% 18% at 48% 48%, #6e4a2288 0%, transparent 75%)',
+              mixBlendMode: 'multiply',
+              opacity: 0.85,
+            }}
+          />
+        ) : null}
       </div>
       {/* Unit HP at feet — CR-style */}
       <div className="relative mt-0.5 h-[0.5rem] w-[85%] overflow-hidden rounded-[2px] bg-black/70 ring-1 ring-black/40">
@@ -468,6 +484,64 @@ export function BerryJuiceSplat({ ageMs }: { ageMs: number }) {
           borderRadius: '45% 55% 40% 60%',
           background: '#80c8ff44',
           filter: 'blur(0.5px)',
+        }}
+      />
+    </div>
+  )
+}
+
+/** Faggol Short Temper — flying turd. */
+export function PoopDot() {
+  return (
+    <div className="relative h-4 w-4" aria-hidden>
+      <div
+        className="absolute inset-0"
+        style={{
+          borderRadius: '55% 45% 50% 50% / 60% 55% 45% 40%',
+          background:
+            'radial-gradient(ellipse 65% 60% at 40% 35%, #8a6038 0%, #5c3a18 45%, #3a2410 100%)',
+          boxShadow: '0 1px 2px #0006',
+        }}
+      />
+      <div
+        className="absolute left-[18%] top-[8%] h-1.5 w-2"
+        style={{
+          borderRadius: '50%',
+          background: '#6e4a22',
+        }}
+      />
+    </div>
+  )
+}
+
+export function PoopSplat({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 780)
+  return (
+    <div
+      className="relative h-9 w-10"
+      style={{ transform: `scale(${0.5 + p * 1.7})`, opacity: 1 - p * 0.9 }}
+      aria-hidden
+    >
+      <div
+        className="absolute left-1/2 top-1/2 h-5 w-7 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          borderRadius: '62% 38% 55% 45% / 48% 58% 42% 52%',
+          background:
+            'radial-gradient(ellipse, #6e4a22cc 0%, #4a2e1288 40%, #2a180855 60%, transparent 75%)',
+        }}
+      />
+      <div
+        className="absolute left-[10%] top-[30%] h-2 w-2.5"
+        style={{
+          borderRadius: '55% 45%',
+          background: '#5c3a1888',
+        }}
+      />
+      <div
+        className="absolute right-[12%] top-[40%] h-1.5 w-2"
+        style={{
+          borderRadius: '50%',
+          background: '#3a241066',
         }}
       />
     </div>

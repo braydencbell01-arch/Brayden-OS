@@ -42,6 +42,8 @@ import {
   CucumberSplat,
   BerryJuiceDot,
   BerryJuiceSplat,
+  PoopDot,
+  PoopSplat,
   RocketDot,
   RocketSplat,
   SundaeDot,
@@ -148,7 +150,9 @@ function FlyingShot({
     | 'cheese'
     | 'cucumber'
     | 'berryJuice'
+    | 'poop'
 }) {
+  if (now < bornAt) return null
   const dur = Math.max(1, arriveAt - bornAt)
   const p = Math.min(1, Math.max(0, (now - bornAt) / dur))
   const col = fromCol + (toCol - fromCol) * p
@@ -183,6 +187,8 @@ function FlyingShot({
                           ? 8
                         : kind === 'barrel'
                           ? 10
+                        : kind === 'poop'
+                          ? 6.5
                         : 4)
   const style = unitStyle(col, row - arc)
   const travelAngle =
@@ -198,7 +204,7 @@ function FlyingShot({
             ? p * 360
           : kind === 'barrel'
             ? p * 540
-          : kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice'
+          : kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice' || kind === 'poop'
             ? p * 600
           : 0
   const aimKinds =
@@ -214,9 +220,10 @@ function FlyingShot({
     kind === 'barrel' ||
     kind === 'cheese' ||
     kind === 'cucumber' ||
-    kind === 'berryJuice'
+    kind === 'berryJuice' ||
+    kind === 'poop'
   const transform = aimKinds
-    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' || kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice' ? spin : 0)}deg)`
+    ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' || kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice' || kind === 'poop' ? spin : 0)}deg)`
     : undefined
 
   return (
@@ -244,6 +251,7 @@ function FlyingShot({
       {kind === 'cheese' ? <CheeseDot /> : null}
       {kind === 'cucumber' ? <CucumberDot /> : null}
       {kind === 'berryJuice' ? <BerryJuiceDot empowered={dur < 500} /> : null}
+      {kind === 'poop' ? <PoopDot /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
@@ -804,6 +812,7 @@ export function BattleScreen({
                   vfx={u.vfx}
                   enraged={u.enraged}
                   auraActive={u.auraActive}
+                  poopStain={u.poopStain}
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
                   evolved={u.evolved}
@@ -853,7 +862,8 @@ export function BattleScreen({
             p.kind === 'barrel' ||
             p.kind === 'cheese' ||
             p.kind === 'cucumber' ||
-            p.kind === 'berryJuice' ? (
+            p.kind === 'berryJuice' ||
+            p.kind === 'poop' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
@@ -929,6 +939,8 @@ export function BattleScreen({
                   <CucumberSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'berryJuice' ? (
                   <BerryJuiceSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'poop' ? (
+                  <PoopSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'melee' ||
                   s.kind === 'whip' ||
                   s.kind === 'bite' ||

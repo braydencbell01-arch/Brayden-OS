@@ -114,6 +114,7 @@ function syncUnitToBattle(u: SyncUnit, flip: boolean, guestNow: number, hostNow:
     spawnedAt: mapTime(u.spawnedAt, guestNow),
     enraged: !!u.enraged,
     auraActive: !!u.auraActive,
+    poopStain: !!u.poopStain,
     movingUntil,
     lockKey: null,
     launch,
@@ -202,6 +203,10 @@ const HEADBUTT_VFX_MS = 480
 const RAM_VFX_MS = 560
 const LOVE_VFX_MS = 700
 const RANGED_VFX_MS = 520
+/** Faggol Short Temper — crouch / dump / spin / scoop / throw. */
+const SHORT_TEMPER_VFX_MS = 1900
+/** Delay before the poop projectile leaves his hand (matches PhotoTroop throw keyframe). */
+const POOP_THROW_DELAY_MS = 1150
 const SPLAT_MS = 820
 const SLOBBER_SPLAT_MS = 780
 const BOOM_MS = 420
@@ -469,6 +474,7 @@ function makeBattleUnit(
     spawnedAt: t,
     enraged: false,
     auraActive: false,
+    poopStain: false,
     movingUntil: 0,
     lockKey: null,
     launch: null,
@@ -1289,6 +1295,7 @@ export function useBattle(opts?: {
         vfx: u.vfx,
         enraged: u.enraged,
         auraActive: u.auraActive,
+        poopStain: u.poopStain,
         movingUntil: u.movingUntil > t ? u.movingUntil : 0,
         level: u.level,
         evolved: u.evolved,
@@ -1967,6 +1974,15 @@ export function useBattle(opts?: {
             radius: splatRadius,
           })
           splatsChanged = true
+        } else if (p.kind === 'poop') {
+          nextSplats.push({
+            id: nid('poop'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'poop',
+          })
+          splatsChanged = true
         }
         const berrySnapUnits =
           p.kind === 'berryJuice' && p.ownerUnitId
@@ -1982,6 +1998,7 @@ export function useBattle(opts?: {
             const target = nextUnits.find((u) => u.id === p.targetId)
             if (target && !isAirborne(target)) {
               target.hp -= p.damage
+              if (p.kind === 'poop') target.poopStain = true
               unitsChanged = true
             }
           } else if (p.targetTowerId) {
@@ -2021,6 +2038,7 @@ export function useBattle(opts?: {
           const target = nextUnits.find((u) => u.id === p.targetId)
           if (target && !isAirborne(target)) {
             target.hp -= p.damage
+            if (p.kind === 'poop') target.poopStain = true
             unitsChanged = true
           }
         } else if (p.targetTowerId) {
@@ -2909,6 +2927,8 @@ export function useBattle(opts?: {
                           ? 720
                           : attack.id === 'jump'
                             ? JUMP_LEAP_MS
+                            : attack.id === 'shortTemper'
+                              ? SHORT_TEMPER_VFX_MS
                             : attack.id === 'launch' || attack.id === 'suplex'
                               ? 480
                       : attack.rootWhileAttacking
@@ -2945,7 +2965,8 @@ export function useBattle(opts?: {
           attack.kind === 'rocket' ||
           attack.kind === 'cheese' ||
           attack.kind === 'cucumber' ||
-          attack.kind === 'berryJuice'
+          attack.kind === 'berryJuice' ||
+          attack.kind === 'poop'
         ) {
           const maxTargets = Math.max(1, attack.maxTargets ?? 1)
           const volley: {
@@ -3001,12 +3022,35 @@ export function useBattle(opts?: {
             berryAttack && auraOn && def.auraProjectileMs != null
               ? def.auraProjectileMs
               : attack.projectileMs
+          const throwDelay = attack.kind === 'poop' ? POOP_THROW_DELAY_MS : 0
           for (const hit of hits) {
             const projKind = snackAttack
               ? Math.random() < 0.5
                 ? 'cheese'
                 : 'cucumber'
               : attack.kind
+            const flightMs =
+              berryFlight != null
+                ? berryFlight
+                : snackAttack
+                  ? PROJECTILE_MS
+                  : attack.kind === 'shoot'
+                    ? SHOOT_PROJECTILE_MS
+                    : attack.kind === 'cash'
+                      ? CASH_PROJECTILE_MS
+                      : attack.kind === 'rocket'
+                        ? ROCKET_PROJECTILE_MS
+                        : attack.kind === 'slobber'
+                          ? SLOBBER_PROJECTILE_MS
+                          : attack.kind === 'dumbbell'
+                            ? DUMBBELL_PROJECTILE_MS
+                            : attack.kind === 'love'
+                              ? LOVE_PROJECTILE_MS
+                              : attack.kind === 'witchcraft'
+                                ? WITCHCRAFT_PROJECTILE_MS
+                                : attack.kind === 'poop'
+                                  ? attack.projectileMs ?? PROJECTILE_MS
+                                  : PROJECTILE_MS
             nextProjectiles.push({
               id: nid('p'),
               kind: projKind as Projectile['kind'],
@@ -3017,28 +3061,8 @@ export function useBattle(opts?: {
               damage,
               targetId: hit.kind === 'unit' ? hit.id : null,
               targetTowerId: hit.kind === 'tower' ? hit.id : null,
-              bornAt: t,
-              arriveAt:
-                t +
-                (berryFlight != null
-                  ? berryFlight
-                  : snackAttack
-                    ? PROJECTILE_MS
-                    : attack.kind === 'shoot'
-                      ? SHOOT_PROJECTILE_MS
-                      : attack.kind === 'cash'
-                        ? CASH_PROJECTILE_MS
-                        : attack.kind === 'rocket'
-                          ? ROCKET_PROJECTILE_MS
-                          : attack.kind === 'slobber'
-                            ? SLOBBER_PROJECTILE_MS
-                            : attack.kind === 'dumbbell'
-                              ? DUMBBELL_PROJECTILE_MS
-                              : attack.kind === 'love'
-                                ? LOVE_PROJECTILE_MS
-                                : attack.kind === 'witchcraft'
-                                  ? WITCHCRAFT_PROJECTILE_MS
-                                  : PROJECTILE_MS),
+              bornAt: t + throwDelay,
+              arriveAt: t + throwDelay + flightMs,
               ownerSide: u.side,
               ownerUnitId: berryAttack || attack.kind === 'love' ? u.id : undefined,
               splashRadius: attack.splashRadius,
