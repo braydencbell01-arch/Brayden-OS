@@ -6,6 +6,7 @@
  *   GET  /ws?code=123456&name=Brayden   → WebSocket (presence + inbox)
  *   POST /publish                       → { to?: code, room?: challengeId, msg }
  *   GET  /presence                      → { players: { code: { name, at, ... } } }
+ *   GET  /leaderboard                   → { players: [{ code, name, trophies, ... }] }
  *   GET  /poll?code=123456&since=ms     → missed inbox messages
  *   GET  /ws/battle?room=id&code=…      → WebSocket battle room relay
  *
@@ -76,6 +77,10 @@ export default {
       return lobbyStub(env).fetch(new Request('https://do/presence', { method: 'GET' }))
     }
 
+    if (path === '/leaderboard' && request.method === 'GET') {
+      return lobbyStub(env).fetch(new Request('https://do/leaderboard', { method: 'GET' }))
+    }
+
     if (path === '/poll' && request.method === 'GET') {
       const code = cleanCode(url.searchParams.get('code'))
       const since = url.searchParams.get('since') || '0'
@@ -143,8 +148,26 @@ export class LobbyDO {
     this.sockets = new Map()
     /** @type {Map<string, { name: string, at: number, trophies?: number, inBattle?: boolean, challengeId?: string }>} */
     this.presence = new Map()
+    /** Persistent trophy board — all players who have ever pinged. */
+    /** @type {Map<string, { name: string, trophies: number, updatedAt: number }>} */
+    this.leaderboard = new Map()
     /** @type {Array<{ id: string, to: string, at: number, msg: unknown }>} */
     this.inbox = []
+    this._boardDirty = false
+    this._boardFlush = null
+    this.state.blockConcurrencyWhile(async () => {
+      const raw = (await this.state.storage.get('leaderboard')) || {}
+      if (raw && typeof raw === 'object') {
+        for (const [code, row] of Object.entries(raw)) {
+          if (!row || typeof row !== 'object') continue
+          this.leaderboard.set(code, {
+            name: String(row.name || 'Player').slice(0, 32),
+            trophies: Math.max(0, Number(row.trophies) || 0),
+            updatedAt: Number(row.updatedAt) || Date.now(),
+          })
+        }
+      }
+    })
     this.state.getWebSockets().forEach((ws) => {
       const code = ws.deserializeAttachment()?.code
       if (!code) {
@@ -177,6 +200,26 @@ export class LobbyDO {
         players[code] = p
       }
       return json({ ok: true, players })
+    }
+
+    if (path === '/leaderboard') {
+      const rows = [...this.leaderboard.entries()]
+        .map(([code, row]) => ({
+          code,
+          name: row.name,
+          trophies: row.trophies,
+          updatedAt: row.updatedAt,
+          online: (() => {
+            const p = this.presence.get(code)
+            return !!(p && Date.now() - p.at <= ONLINE_MS)
+          })(),
+          inBattle: (() => {
+            const p = this.presence.get(code)
+            return !!(p && Date.now() - p.at <= ONLINE_MS && p.inBattle)
+          })(),
+        }))
+        .sort((a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name))
+      return json({ ok: true, players: rows, now: Date.now() })
     }
 
     if (path === '/poll') {
@@ -297,13 +340,54 @@ export class LobbyDO {
   touchPresence(code, name, extra) {
     if (code.length !== 6) return
     const prev = this.presence.get(code) || {}
-    this.presence.set(code, {
+    const next = {
       name: String(name || prev.name || 'Player').slice(0, 32),
       at: Date.now(),
       trophies: extra.trophies ?? prev.trophies,
       inBattle: extra.inBattle ?? prev.inBattle ?? false,
       challengeId: extra.challengeId ?? prev.challengeId,
+    }
+    this.presence.set(code, next)
+    this.upsertLeaderboard(code, next.name, next.trophies)
+  }
+
+  /**
+   * @param {string} code
+   * @param {string} name
+   * @param {number|undefined} trophies
+   */
+  upsertLeaderboard(code, name, trophies) {
+    if (code.length !== 6) return
+    const prev = this.leaderboard.get(code)
+    const t =
+      typeof trophies === 'number' && Number.isFinite(trophies)
+        ? Math.max(0, Math.floor(trophies))
+        : (prev?.trophies ?? 0)
+    this.leaderboard.set(code, {
+      name: String(name || prev?.name || 'Player').slice(0, 32),
+      trophies: t,
+      updatedAt: Date.now(),
     })
+    // Cap board size — keep highest trophies.
+    if (this.leaderboard.size > 2500) {
+      const ranked = [...this.leaderboard.entries()].sort(
+        (a, b) => b[1].trophies - a[1].trophies || b[1].updatedAt - a[1].updatedAt,
+      )
+      this.leaderboard = new Map(ranked.slice(0, 2000))
+    }
+    this.scheduleLeaderboardFlush()
+  }
+
+  scheduleLeaderboardFlush() {
+    this._boardDirty = true
+    if (this._boardFlush) return
+    this._boardFlush = setTimeout(() => {
+      this._boardFlush = null
+      if (!this._boardDirty) return
+      this._boardDirty = false
+      const obj = Object.fromEntries(this.leaderboard)
+      void this.state.storage.put('leaderboard', obj)
+    }, 400)
   }
 
   prunePresence() {

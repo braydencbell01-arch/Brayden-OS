@@ -11,6 +11,15 @@ export type MpPresence = {
   challengeId?: string
 }
 
+export type MpLeaderboardRow = {
+  code: string
+  name: string
+  trophies: number
+  updatedAt?: number
+  online?: boolean
+  inBattle?: boolean
+}
+
 type MsgHandler = (msg: unknown) => void
 type PresenceHandler = (players: Record<string, MpPresence>) => void
 
@@ -296,6 +305,20 @@ export async function mpFetchPresence(): Promise<Record<string, MpPresence>> {
     return data.players || {}
   } catch {
     return {}
+  }
+}
+
+/** Global trophy leaderboard (all real players who have pinged the lobby). */
+export async function mpFetchLeaderboard(): Promise<MpLeaderboardRow[]> {
+  const base = await resolveBase()
+  if (!base) return []
+  try {
+    const res = await fetch(`${base}/leaderboard`, { cache: 'no-store' })
+    if (!res.ok) return []
+    const data = (await res.json()) as { players?: MpLeaderboardRow[] }
+    return Array.isArray(data.players) ? data.players : []
+  } catch {
+    return []
   }
 }
 
