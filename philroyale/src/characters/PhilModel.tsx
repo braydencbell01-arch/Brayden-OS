@@ -14,7 +14,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Phil — card art; front/back 3D troop with sundae throw + whip overlays. */
+/** Phil — coach crouch with backpack; sundae throw + whip overlays. */
 export function PhilModel({ anim, facing, attackId, portrait }: Props) {
   const attack =
     anim === 'attack' && attackId === 'chickenWhip'
@@ -31,12 +31,10 @@ export function PhilModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 22%"
+      objectPos="50% 16%"
       gait="jog"
       attack={attack}
-      spriteLegs
-      legColor="#c4a06a"
-      shoeColor="#1e3a6e"
+      spriteLegs={false}
     />
   )
 }
