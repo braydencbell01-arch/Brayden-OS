@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Lynne — blitz gait; stops to rapid Head Butt. */
+/** Lynne — athletic light-blue kit; blitz gait; stops to rapid Head Butt. */
 export function LynneModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,13 +24,11 @@ export function LynneModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 12%"
+      objectPos="50% 14%"
       portraitFilter="brightness(1) saturate(1.05)"
       gait="blitz"
-      spriteLegs
+      spriteLegs={false}
       attack={anim === 'attack' && attackId === 'headButt' ? 'headbutt' : 'none'}
-      legColor="#3a6a9a"
-      shoeColor="#0a0a0c"
     />
   )
 }
