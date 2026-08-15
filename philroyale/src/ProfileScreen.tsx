@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CHARACTERS } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
@@ -9,13 +9,16 @@ import {
   PHIL_EMOTE_SRC,
   type EmoteDef,
 } from './emoteCatalog'
+import { mpFetchLeaderboard, mpLastPresence, type MpLeaderboardRow } from './mpClient'
 import {
   formatAccountCode,
   loadAccountCode,
   loadActiveEmotes,
   loadAvatarId,
   loadCardProgress,
+  loadFriends,
   loadOwnedEmotes,
+  loadPlayerId,
   loadPlayerName,
   loadProfile,
   saveAvatarId,
@@ -25,6 +28,17 @@ import {
 
 type Props = {
   onOpenSocial?: () => void
+  onAddByCode?: (code: string) => Promise<{ ok: boolean; message: string }>
+  onRequestBattle?: (playerId: string, name: string) => void
+}
+
+type BoardRow = {
+  code: string
+  name: string
+  trophies: number
+  online: boolean
+  inBattle: boolean
+  isYou: boolean
 }
 
 function EmoteThumb({ emote }: { emote: EmoteDef }) {
@@ -44,20 +58,231 @@ function EmoteThumb({ emote }: { emote: EmoteDef }) {
   return <span className="text-2xl leading-none">{emote.emoji}</span>
 }
 
-export function ProfileScreen({ onOpenSocial }: Props) {
+function mergeBoard(
+  remote: MpLeaderboardRow[],
+  myCode: string,
+  myName: string,
+  myTrophies: number,
+): BoardRow[] {
+  const map = new Map<string, BoardRow>()
+  const live = mpLastPresence()
+
+  for (const row of remote) {
+    const code = String(row.code || '').replace(/\D/g, '').slice(0, 6)
+    if (code.length !== 6) continue
+    const p = live[code]
+    map.set(code, {
+      code,
+      name: row.name || `Player ${code}`,
+      trophies: Math.max(0, Number(row.trophies) || 0),
+      online: !!(row.online || (p && Date.now() - p.at < 90_000)),
+      inBattle: !!(row.inBattle || p?.inBattle),
+      isYou: code === myCode,
+    })
+  }
+
+  // Friends with known trophies (in case not on server board yet)
+  for (const f of loadFriends()) {
+    if (!f.playerId) continue
+    const code = f.playerId.replace(/\D/g, '').slice(0, 6)
+    if (code.length !== 6) continue
+    const p = live[code]
+    const prev = map.get(code)
+    const trophies =
+      typeof f.trophies === 'number'
+        ? f.trophies
+        : typeof p?.trophies === 'number'
+          ? p.trophies
+          : (prev?.trophies ?? 0)
+    map.set(code, {
+      code,
+      name: f.name || prev?.name || `Player ${code}`,
+      trophies,
+      online: !!(prev?.online || (p && Date.now() - p.at < 90_000)),
+      inBattle: !!(prev?.inBattle || p?.inBattle),
+      isYou: code === myCode,
+    })
+  }
+
+  // Live presence fill
+  for (const [code, p] of Object.entries(live)) {
+    if (!p || code.length !== 6) continue
+    const prev = map.get(code)
+    map.set(code, {
+      code,
+      name: p.name || prev?.name || `Player ${code}`,
+      trophies:
+        typeof p.trophies === 'number' ? p.trophies : (prev?.trophies ?? 0),
+      online: Date.now() - p.at < 90_000,
+      inBattle: !!p.inBattle,
+      isYou: code === myCode,
+    })
+  }
+
+  // Always include you
+  if (myCode.length === 6) {
+    const prev = map.get(myCode)
+    map.set(myCode, {
+      code: myCode,
+      name: myName || prev?.name || 'You',
+      trophies: myTrophies,
+      online: true,
+      inBattle: prev?.inBattle ?? false,
+      isYou: true,
+    })
+  }
+
+  return [...map.values()].sort(
+    (a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name),
+  )
+}
+
+function PlayerProfileModal({
+  row,
+  rank,
+  onClose,
+  onAddFriend,
+  onBattle,
+}: {
+  row: BoardRow
+  rank: number
+  onClose: () => void
+  onAddFriend?: () => void
+  onBattle?: () => void
+}) {
+  const alreadyFriend = loadFriends().some(
+    (f) => f.playerId?.replace(/\D/g, '').slice(0, 6) === row.code,
+  )
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="lb-profile-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-xl p-5"
+        style={{
+          background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+          boxShadow: '0 12px 40px #00000088',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">
+          Rank #{rank}
+          {row.isYou ? ' · You' : ''}
+        </p>
+        <h2
+          id="lb-profile-title"
+          className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]"
+        >
+          {row.name}
+        </h2>
+        <p className="mt-1 text-sm font-extrabold uppercase tracking-wide text-white/55">
+          {row.inBattle ? 'In battle' : row.online ? 'Online' : 'Offline'}
+        </p>
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">
+              Code
+            </dt>
+            <dd className="font-bold tracking-wider text-white">
+              {formatAccountCode(row.code)}
+            </dd>
+          </div>
+          <div className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
+            <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">
+              Trophies
+            </dt>
+            <dd className="font-bold text-[#f5d76e]">{row.trophies.toLocaleString()}</dd>
+          </div>
+        </dl>
+        <div className="mt-4 flex flex-col gap-2">
+          {!row.isYou && onBattle ? (
+            <button
+              type="button"
+              disabled={!row.online || row.inBattle}
+              onClick={onBattle}
+              className="w-full rounded-lg py-3 text-sm font-extrabold text-[#1a1410] disabled:opacity-45"
+              style={{ background: 'linear-gradient(180deg,#7dff9a,#3ecf6a)' }}
+            >
+              Invite to battle
+            </button>
+          ) : null}
+          {!row.isYou && onAddFriend && !alreadyFriend ? (
+            <button
+              type="button"
+              onClick={onAddFriend}
+              className="w-full rounded-lg py-2.5 text-sm font-extrabold text-white"
+              style={{ background: 'linear-gradient(180deg,#4a9eff,#2f6fbf)' }}
+            >
+              Add friend
+            </button>
+          ) : null}
+          {!row.isYou && alreadyFriend ? (
+            <p className="text-center text-xs font-bold text-[#7dff9a]">Already friends</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full rounded-lg bg-[#2a1a12] py-2.5 text-xs font-extrabold text-white/80 ring-1 ring-white/15"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Props) {
   const [name, setName] = useState(() => loadPlayerName())
   const [avatarId, setAvatarId] = useState(() => loadAvatarId())
   const [owned, setOwned] = useState(() => loadOwnedEmotes())
   const [active, setActive] = useState(() => loadActiveEmotes())
   const [emoteMsg, setEmoteMsg] = useState<string | null>(null)
-  const profile = useMemo(() => loadProfile(), [avatarId, name])
+  const [remoteBoard, setRemoteBoard] = useState<MpLeaderboardRow[]>([])
+  const [boardMsg, setBoardMsg] = useState<string | null>(null)
+  const [selected, setSelected] = useState<BoardRow | null>(null)
+  const [actionMsg, setActionMsg] = useState<string | null>(null)
+  const profile = useMemo(() => loadProfile(), [avatarId, name, remoteBoard])
   const progress = useMemo(() => loadCardProgress(), [])
   const code = useMemo(() => loadAccountCode(), [])
+  const myId = useMemo(() => loadPlayerId(), [])
   const level = playerLevelFromXp(profile.xp)
   const unlocked = useMemo(
     () => CHARACTERS.filter((c) => progress.unlocked.includes(c.id)),
     [progress],
   )
+
+  const refreshBoard = useCallback(async () => {
+    const rows = await mpFetchLeaderboard()
+    setRemoteBoard(rows)
+    if (!rows.length) {
+      // Presence-only fallback still builds a board in mergeBoard
+      setBoardMsg(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    void refreshBoard()
+    const id = window.setInterval(() => void refreshBoard(), 12_000)
+    return () => window.clearInterval(id)
+  }, [refreshBoard])
+
+  const board = useMemo(
+    () =>
+      mergeBoard(
+        remoteBoard,
+        myId.replace(/\D/g, '').slice(0, 6),
+        name.trim() || 'You',
+        profile.trophies,
+      ),
+    [remoteBoard, myId, name, profile.trophies],
+  )
+
+  const myRank = board.findIndex((r) => r.isYou) + 1
 
   function persistName(v: string) {
     setName(v)
@@ -75,6 +300,13 @@ export function ProfileScreen({ onOpenSocial }: Props) {
     setActive(res.active)
     setEmoteMsg(res.message)
     window.setTimeout(() => setEmoteMsg(null), 1800)
+  }
+
+  async function addSelectedFriend() {
+    if (!selected || !onAddByCode) return
+    const res = await onAddByCode(selected.code)
+    setActionMsg(res.message)
+    window.setTimeout(() => setActionMsg(null), 2200)
   }
 
   return (
@@ -121,8 +353,95 @@ export function ProfileScreen({ onOpenSocial }: Props) {
             </p>
             <p className="text-xs font-extrabold text-[#f5d76e]/85">
               Level {level.level} · Friend code {formatAccountCode(code)}
+              {myRank > 0 ? ` · Rank #${myRank}` : ''}
             </p>
           </div>
+        </section>
+
+        <section className="mt-5">
+          <div className="mb-2 flex items-end justify-between gap-2">
+            <div>
+              <p className="text-[0.7rem] font-extrabold uppercase tracking-wide text-white/75">
+                Leaderboard
+              </p>
+              <p className="text-xs font-semibold text-white/55">
+                All real players · tap a name for their profile
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void refreshBoard()}
+              className="rounded-lg bg-[#2a1a12] px-2.5 py-1 text-[0.65rem] font-extrabold text-[#f5d76e] ring-1 ring-white/15"
+            >
+              Refresh
+            </button>
+          </div>
+          {boardMsg ? (
+            <p className="mb-2 text-xs font-semibold text-white/50">{boardMsg}</p>
+          ) : null}
+          <ul
+            className="max-h-[min(22rem,50vh)] overflow-y-auto rounded-xl"
+            style={{
+              background: 'linear-gradient(180deg,#2a1a12,#140e0a)',
+              boxShadow: 'inset 0 0 0 1px #c9a22733',
+            }}
+          >
+            {board.length === 0 ? (
+              <li className="px-3 py-4 text-center text-sm font-semibold text-white/50">
+                No players yet — keep Phil Royale open to join the board.
+              </li>
+            ) : (
+              board.map((row, i) => {
+                const rank = i + 1
+                return (
+                  <li key={row.code}>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(row)}
+                      className="flex w-full items-center gap-2 px-2.5 py-2 text-left transition-colors hover:bg-white/5"
+                      style={
+                        row.isYou
+                          ? {
+                              background:
+                                'linear-gradient(90deg,#f5d76e33 0%, #f5d76e14 55%, transparent 100%)',
+                              boxShadow: 'inset 3px 0 0 #f5d76e',
+                            }
+                          : undefined
+                      }
+                    >
+                      <span
+                        className={`w-7 shrink-0 text-center text-xs font-black ${
+                          rank <= 3 ? 'text-[#f5d76e]' : 'text-white/45'
+                        }`}
+                      >
+                        {rank}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-white">
+                        {row.name}
+                        {row.isYou ? (
+                          <span className="ml-1 text-[0.65rem] font-black uppercase text-[#f5d76e]">
+                            you
+                          </span>
+                        ) : null}
+                      </span>
+                      <span
+                        className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                          row.online ? 'bg-[#7dff9a]' : 'bg-white/25'
+                        }`}
+                        title={row.online ? 'Online' : 'Offline'}
+                      />
+                      <span className="shrink-0 text-sm font-extrabold tabular-nums text-[#f5d76e]">
+                        {row.trophies.toLocaleString()}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })
+            )}
+          </ul>
+          {actionMsg ? (
+            <p className="mt-1.5 text-xs font-bold text-[#7dff9a]">{actionMsg}</p>
+          ) : null}
         </section>
 
         <section className="mt-4">
@@ -226,6 +545,23 @@ export function ProfileScreen({ onOpenSocial }: Props) {
           </button>
         ) : null}
       </main>
+
+      {selected ? (
+        <PlayerProfileModal
+          row={selected}
+          rank={Math.max(1, board.findIndex((r) => r.code === selected.code) + 1)}
+          onClose={() => setSelected(null)}
+          onAddFriend={onAddByCode ? () => void addSelectedFriend() : undefined}
+          onBattle={
+            onRequestBattle
+              ? () => {
+                  onRequestBattle(selected.code, selected.name)
+                  setSelected(null)
+                }
+              : undefined
+          }
+        />
+      ) : null}
     </div>
   )
 }

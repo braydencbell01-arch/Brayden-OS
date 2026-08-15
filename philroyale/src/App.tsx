@@ -1648,7 +1648,13 @@ export default function App() {
               />
             ) : null}
             {tab === 'profile' ? (
-              <ProfileScreen onOpenSocial={() => setTab('social')} />
+              <ProfileScreen
+                onOpenSocial={() => setTab('social')}
+                onAddByCode={addFriendByCode}
+                onRequestBattle={(playerId, playerName) =>
+                  void requestBattle(playerName, { playerId })
+                }
+              />
             ) : null}
           </motion.div>
         </AnimatePresence>
