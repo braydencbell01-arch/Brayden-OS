@@ -14,7 +14,7 @@ type Props = {
   auraActive?: boolean
 }
 
-/** Berry — sombrero juice lobber; blue Aura flames after a kill. */
+/** Berry — straw hat juice lobber; blue Aura flames after a kill. */
 export function BerryModel({ anim, facing, attackId, portrait, auraActive }: Props) {
   return (
     <div className="relative h-full w-full">
@@ -26,13 +26,11 @@ export function BerryModel({ anim, facing, attackId, portrait, auraActive }: Pro
         anim={anim}
         facing={facing}
         portrait={portrait}
-        objectPos="50% 12%"
+        objectPos="50% 14%"
         portraitFilter="brightness(1) saturate(1.05)"
         gait="jog"
-        spriteLegs
+        spriteLegs={false}
         attack={anim === 'attack' && attackId === 'aura' ? 'berryJuice' : 'none'}
-        legColor="#3a3a42"
-        shoeColor="#1a1a20"
       />
       {auraActive && !portrait ? (
         <>
