@@ -589,7 +589,9 @@ function makeSpellProjectile(
         ? 'baseball'
         : char.id === 'chickenBarrel'
           ? 'barrel'
-          : 'iceCream'
+          : char.id === 'philsRocket'
+            ? 'rocket'
+            : 'iceCream'
   return {
     id: nid('spell'),
     kind,
@@ -1754,7 +1756,8 @@ export function useBattle(opts?: {
             p.kind === 'iceCream' ||
             p.kind === 'football' ||
             p.kind === 'baseball' ||
-            p.kind === 'barrel'
+            p.kind === 'barrel' ||
+            p.kind === 'rocket'
           ) {
             nextSplats.push({
               id: nid('spellfx'),

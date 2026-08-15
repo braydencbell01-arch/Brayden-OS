@@ -614,10 +614,33 @@ export const PHILS_CAR: CharacterDef = {
       range: 80,
       damage: 150,
       rootWhileAttacking: true,
+      splashRadius: 5,
       projectileMs: 5000,
       kind: 'rocket',
     },
   ],
+}
+
+/** Legendary spell — same Phil's Rocket as the car: 150 dmg, 5s travel, diameter-10 splash. */
+export const PHILS_ROCKET: CharacterDef = {
+  id: 'philsRocket',
+  name: "Phil's Rocket",
+  initial: 'PR',
+  pronoun: 'it',
+  height: "1'0\"",
+  rarity: 'legendary',
+  elixir: 1,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 25,
+  cardKind: 'spell',
+  blurb:
+    "Spell — fire Phil's Rocket from your king. Same hit as the car: 5s flight, splash diameter 10.",
+  spellDamage: 150,
+  spellRadius: 5,
+  spellTravelMs: 5000,
+  attacks: [],
 }
 
 /** Rare diner turret — Pancake Huck splash lob. */
@@ -956,14 +979,14 @@ export const TRISTAN: CharacterDef = {
   ],
 }
 
-/** Sombrero legend — blue juice splash; kills empower Aura mode. */
+/** Sombrero epic — blue juice splash; kills empower Aura mode. */
 export const BERRY: CharacterDef = {
   id: 'berry',
   name: 'Berry',
   initial: 'Be',
   pronoun: 'he',
   height: "5'10\"",
-  rarity: 'legendary',
+  rarity: 'epic',
   elixir: 7,
   hp: 1470,
   moveSpeed: 7.25,
@@ -974,7 +997,7 @@ export const BERRY: CharacterDef = {
   auraDamage: 605,
   auraProjectileMs: 220,
   blurb:
-    'Legendary juice lobber. Aura after a kill — blue flames, faster bigger juice, harder splash.',
+    'Epic juice lobber. Aura after a kill — blue flames, faster bigger juice, harder splash.',
   attacks: [
     {
       id: 'aura',
@@ -1019,36 +1042,6 @@ export const SUSAN: CharacterDef = {
       splashRadius: 9,
       projectileMs: 1100,
       kind: 'berryJuice',
-    },
-  ],
-}
-
-/** Uncommon short fuse — rages, crouches to poop, then lobs the mess. */
-export const FAGGOL: CharacterDef = {
-  id: 'faggol',
-  name: 'Faggol',
-  initial: 'F',
-  pronoun: 'he',
-  height: "4'2\"",
-  rarity: 'uncommon',
-  elixir: 2,
-  hp: 395,
-  moveSpeed: 11.1,
-  attackDelaySec: 3.8,
-  /** Rages on contact with the fight (Short Temper). */
-  rageAfterSec: 0,
-  hue: 210,
-  blurb:
-    'Tiny short-temper. Rages, slowly crouches to poop, turns, scoops it up, and chucks — stains deal 25/sec for 10s.',
-  attacks: [
-    {
-      id: 'shortTemper',
-      name: 'Short Temper',
-      range: 31,
-      damage: 95,
-      rootWhileAttacking: true,
-      projectileMs: 520,
-      kind: 'poop',
     },
   ],
 }
@@ -1107,6 +1100,7 @@ export const CHARACTERS: CharacterDef[] = [
   EVIL_PHIL,
   DOG_HUT,
   PHILS_CAR,
+  PHILS_ROCKET,
   STEVES_DINER,
   ICE_CREAM,
   FOOTBALL_HUCK,
@@ -1114,7 +1108,6 @@ export const CHARACTERS: CharacterDef[] = [
   TRISTAN,
   BERRY,
   SUSAN,
-  FAGGOL,
   BIG_MABLE,
 ]
 

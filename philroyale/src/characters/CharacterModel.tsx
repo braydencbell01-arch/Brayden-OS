@@ -31,8 +31,8 @@ import { ChickenModel } from './ChickenModel'
 import { ChickenBarrelModel } from './ChickenBarrelModel'
 import { TristanModel } from './TristanModel'
 import { BerryModel } from './BerryModel'
-import { FaggolModel } from './FaggolModel'
 import { SusanModel } from './SusanModel'
+import { PhilsRocketModel } from './PhilsRocketModel'
 
 type Props = {
   charId: string
@@ -105,6 +105,8 @@ export function CharacterModel({
     model = (
       <PhilsCarModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
     )
+  } else if (charId === 'philsRocket') {
+    model = <PhilsRocketModel anim={anim} facing={facing} portrait={portrait} />
   } else if (charId === 'stevesDiner') {
     model = (
       <StevesDinerModel anim={anim} facing={facing} attackId={attackId} portrait={portrait} />
@@ -155,16 +157,6 @@ export function CharacterModel({
         attackId={attackId}
         portrait={portrait}
         auraActive={auraActive}
-      />
-    )
-  } else if (charId === 'faggol') {
-    model = (
-      <FaggolModel
-        anim={anim}
-        facing={facing}
-        attackId={attackId}
-        portrait={portrait}
-        enraged={enraged}
       />
     )
   } else {

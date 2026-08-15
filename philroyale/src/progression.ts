@@ -66,7 +66,6 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 0, arena: 'Training Camp', label: 'Journey begins', gold: 50 },
   { trophies: 20, arena: 'Training Camp', label: 'x1 Dog Hut', unlockCard: 'dogHut', gold: 40 },
   { trophies: 40, arena: 'Training Camp', label: 'x1 Tristan', unlockCard: 'tristan', gold: 50 },
-  { trophies: 50, arena: 'Training Camp', label: 'x1 Faggol', unlockCard: 'faggol', gold: 45 },
   { trophies: 60, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'dan', gold: 40 },
   { trophies: 80, arena: 'Training Camp', label: 'x1 Chuck', unlockCard: 'pete', gold: 70 },
   // Sundae Strip 100–300
@@ -92,6 +91,7 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 700, arena: "Dave's Dungeon", label: 'x1 Scott', unlockCard: 'scott', gold: 60 },
   { trophies: 760, arena: "Dave's Dungeon", label: 'x1 Big Mable', unlockCard: 'bigMable', gold: 80, unlockEmote: 'party' },
   { trophies: 820, arena: "Dave's Dungeon", label: "x1 Phil's Car", unlockCard: 'philsCar', gold: 90 },
+  { trophies: 850, arena: "Dave's Dungeon", label: "x1 Phil's Rocket", unlockCard: 'philsRocket', gold: 70 },
   { trophies: 880, arena: "Dave's Dungeon", label: 'x1 Evil Phil', unlockCard: 'evilPhil', gold: 100 },
   { trophies: 940, arena: "Dave's Dungeon", label: 'x1 Phil', unlockCard: 'phil', gold: 110 },
   // Kathie's Kitchen 1000–1300
