@@ -1003,7 +1003,7 @@ export const FAGGOL: CharacterDef = {
     {
       id: 'shortTemper',
       name: 'Short Temper',
-      range: 19,
+      range: 31,
       damage: 95,
       rootWhileAttacking: true,
       projectileMs: 520,
