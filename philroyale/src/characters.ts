@@ -711,7 +711,7 @@ export const GRETCHIN: CharacterDef = {
 /** Building basher — Uppercut only hits buildings and towers. */
 export const DAVE: CharacterDef = {
   id: 'dave',
-  name: 'Dave',
+  name: 'D',
   initial: 'D',
   pronoun: 'he',
   height: "5'11\"",
