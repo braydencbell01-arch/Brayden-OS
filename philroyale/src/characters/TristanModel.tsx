@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Tristan — Arsenal kit; stops to lob cheese or cucumbers. */
+/** Tristan — grey tee + green sneakers; stops to lob cheese or cucumbers. */
 export function TristanModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,14 +24,11 @@ export function TristanModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      // Card art already on shared blue — avoid glitchy troop cutout on portraits.
-      objectPos="50% 12%"
+      objectPos="50% 14%"
       portraitFilter="brightness(1) saturate(1.05)"
       gait="run"
-      spriteLegs
+      spriteLegs={false}
       attack={anim === 'attack' && attackId === 'cheeseAndCucumbers' ? 'sundae' : 'none'}
-      legColor="#1a3a7a"
-      shoeColor="#0a0a0c"
     />
   )
 }
