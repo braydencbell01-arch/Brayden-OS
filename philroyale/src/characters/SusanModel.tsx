@@ -14,7 +14,7 @@ type Props = {
   auraActive?: boolean
 }
 
-/** Susan — Mini Aura juice lobber; blue flames after a kill. */
+/** Susan — hiking kit Mini Aura juice lobber; blue flames after a kill. */
 export function SusanModel({ anim, facing, attackId, portrait, auraActive }: Props) {
   return (
     <div className="relative h-full w-full">
@@ -22,19 +22,17 @@ export function SusanModel({ anim, facing, attackId, portrait, auraActive }: Pro
         cardSrc={CARD}
         troopSrc={TROOP}
         troopBackSrc={BACK}
-        portraitSrc={TROOP}
+        
         alt="Susan"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        objectPos="50% 12%"
+        objectPos="50% 14%"
         portraitFilter="brightness(1.02) saturate(1.05)"
         gait="jog"
-        spriteLegs
+        spriteLegs={false}
         attack={anim === 'attack' && attackId === 'miniAura' ? 'berryJuice' : 'none'}
-        legColor="#3a3a42"
-        shoeColor="#f0f0f4"
-      />
+              />
       {auraActive && !portrait ? (
         <>
           <div
