@@ -20,7 +20,7 @@ export function DaveModel({ anim, facing, attackId, portrait }: Props) {
       cardSrc={CARD}
       troopSrc={TROOP}
       troopBackSrc={BACK}
-      alt="Dave"
+      alt="D"
       anim={anim}
       facing={facing}
       portrait={portrait}
