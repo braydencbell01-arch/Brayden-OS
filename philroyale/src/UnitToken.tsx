@@ -64,37 +64,42 @@ export function UnitToken({
               : charId === 'iceCream' ||
                   charId === 'footballHuck' ||
                   charId === 'bobbySpecial' ||
-                  charId === 'chickenBarrel'
+                  charId === 'chickenBarrel' ||
+                  charId === 'philsRocket'
                 ? '3 / 4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
-              ? '4 / 4.85'
+              ? '4 / 4.6'
               : charId === 'jeremy'
-                ? '3 / 6.1'
+                ? '3 / 5.5'
                 : charId === 'pete' || charId === 'scott'
-                  ? '3 / 5.9'
+                  ? '3 / 5.45'
                   : charId === 'mike'
-                    ? '3 / 5.55'
+                    ? '3 / 5.35'
                     : charId === 'dan'
-                      ? '3 / 4.85'
+                      ? '3 / 5.2'
                       : charId === 'kathie'
-                        ? '3 / 4.45'
+                        ? '3 / 5.15'
                         : charId === 'todd'
-                          ? '3 / 4.85'
+                          ? '3 / 5.25'
                           : charId === 'lynne'
-                            ? '3 / 4.9'
+                            ? '3 / 5.2'
                             : charId === 'phil' || charId === 'gretchin' || charId === 'dave'
-                              ? '3 / 4.9'
+                              ? '3 / 5.25'
                               : charId === 'philSpirit' ||
                                   charId === 'peteSpirit' ||
                                   charId === 'jeremySpirit'
                                 ? '1 / 1'
                               : charId === 'evilPhil'
-                              ? '3 / 4.9'
+                              ? '3 / 5.25'
                               : charId === 'tristan'
-                                ? '3 / 4.85'
+                                ? '3 / 5.2'
                               : charId === 'susan' || charId === 'berry'
-                                ? '3 / 4.85'
-                              : '3 / 4.9',
+                                ? '3 / 5.2'
+                              : charId === 'coachGraf'
+                                ? '3 / 5.3'
+                              : charId === 'hamburgerChicken' || charId === 'chicken' || charId === 'chickenArmy'
+                                ? '3 / 4.6'
+                              : '3 / 5.2',
         }}
       >
         {evolved ? (

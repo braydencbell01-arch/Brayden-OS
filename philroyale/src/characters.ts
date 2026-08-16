@@ -1277,20 +1277,20 @@ export function heightToInches(height: string): number | null {
 }
 
 /**
- * Soft battlefield size from height. Dogs stay readable (not tiny);
- * taller humans (Jeremy/Dan) read a bit bigger. Mid ~5'7" = 1.
+ * Soft battlefield size from height. Tuned so mid/tall humans read like
+ * Jacobson (mike) — big, wide, easy to spot Clash Royale–style.
  */
 export function battlefieldScaleForHeight(height: string): number {
   const inches = heightToInches(height) ?? 67
   const ref = 67 // 5'7"
   if (inches < 40) {
     // Pets — readable, a touch larger on the field
-    return Math.min(0.98, Math.max(0.88, 0.86 + inches * 0.004))
+    return Math.min(1.08, Math.max(0.94, 0.92 + inches * 0.0045))
   }
   if (inches < 58) {
-    // Short humans / kids — clearly smaller (4'2" ≈ 0.83)
-    return Math.min(0.9, Math.max(0.72, 0.72 + (inches - 40) * 0.011))
+    // Short humans / kids — still clearly smaller, but not hard to see
+    return Math.min(1.02, Math.max(0.86, 0.84 + (inches - 40) * 0.012))
   }
-  // Adults: Kathie ~0.93 … Phil 1.0 … Mike ~1.09 … Dan ~1.13 … Jeremy ~1.14
-  return Math.min(1.22, Math.max(0.95, 1 + (inches - ref) * 0.018))
+  // Adults: Kathie ~1.08 … Phil ~1.12 … Mike ~1.2 … tall ~1.26
+  return Math.min(1.28, Math.max(1.06, 1.12 + (inches - ref) * 0.016))
 }

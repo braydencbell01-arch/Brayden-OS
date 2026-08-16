@@ -47,6 +47,10 @@ type Props = {
   shoeColor?: string
   /** Troop art already has pistols — show muzzle flashes only (no SVG guns). */
   gunsInSprite?: boolean
+  /** Extra zoom on card portrait (humans ~1.28; dogs/spells leave default). */
+  portraitScale?: number
+  /** Extra zoom on battlefield troop sprite. */
+  troopScale?: number
 }
 
 /**
@@ -74,6 +78,8 @@ export function PhotoTroop({
   legColor = '#2a2a32',
   shoeColor = '#1a1a20',
   gunsInSprite = false,
+  portraitScale = 1.26,
+  troopScale = 1.18,
 }: Props) {
   // Face the way the unit is moving — snap flip; back only when clearly marching up.
   const cosF = Math.cos(facing)
@@ -117,7 +123,7 @@ export function PhotoTroop({
           className="h-full w-full object-cover"
           style={{
             objectPosition: _objectPos,
-            transform: 'scale(1.12)',
+            transform: `scale(${portraitScale})`,
             transformOrigin: '50% 45%',
             filter: portraitFilter ?? 'brightness(1.05) saturate(1.08)',
           }}
@@ -396,7 +402,7 @@ export function PhotoTroop({
             className="h-full w-full object-contain object-bottom"
             style={{
               objectPosition: '50% 100%',
-              transform: 'scale(1.02)',
+              transform: `scale(${troopScale})`,
               transformOrigin: '50% 100%',
               mixBlendMode: 'normal',
               filter: enraged

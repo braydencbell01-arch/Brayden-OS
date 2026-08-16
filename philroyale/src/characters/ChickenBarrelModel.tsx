@@ -24,6 +24,7 @@ export function ChickenBarrelModel({ anim, facing, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.1}
       objectPos="50% 48%"
       gait="stiff"
       attack="none"

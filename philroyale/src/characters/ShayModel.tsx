@@ -22,6 +22,7 @@ export function ShayModel({ anim, facing, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.1}
       portraitFilter={portrait ? 'brightness(1.12) contrast(1.05)' : undefined}
       objectPos="50% 45%"
       gait="dog"

@@ -597,5 +597,6 @@ export function oneTileWidthPct(): string {
 
 /** Visual character width — CR-readable troop size; hitbox stays 1 tile. */
 export function unitVisualWidthPct(scale = 1): string {
-  return `${(FIELD_W / ARENA_COLS) * 9.5 * scale * 100}%`
+  // ~11.8 tile-widths so troops read like Jacobson: big + easy to spot.
+  return `${(FIELD_W / ARENA_COLS) * 11.8 * scale * 100}%`
 }

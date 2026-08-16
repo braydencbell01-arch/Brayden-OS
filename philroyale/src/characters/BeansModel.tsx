@@ -24,6 +24,7 @@ export function BeansModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.1}
       objectPos="50% 45%"
       gait="dog"
       attack={anim === 'attack' && attackId === 'slobber' ? 'slobber' : 'none'}

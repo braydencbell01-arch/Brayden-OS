@@ -24,6 +24,7 @@ export function PeteModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.3}
       objectPos="50% 14%"
       gait="limp"
       attack={anim === 'attack' && attackId === 'deathHug' ? 'hug' : 'none'}

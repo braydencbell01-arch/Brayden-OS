@@ -24,6 +24,7 @@ export function StevesDinerModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.1}
       objectPos="50% 85%"
       gait="stiff"
       attack={anim === 'attack' && attackId === 'pancakeHuck' ? 'sundae' : 'none'}

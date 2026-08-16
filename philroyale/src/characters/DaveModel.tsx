@@ -24,6 +24,7 @@ export function DaveModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.3}
       objectPos="50% 12%"
       gait="stiff"
       spriteLegs

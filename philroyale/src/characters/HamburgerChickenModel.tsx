@@ -26,6 +26,7 @@ export function HamburgerChickenModel({ anim, facing, attackId, portrait }: Prop
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.3}
       objectPos="50% 18%"
       gait="waddle"
       spriteLegs

@@ -32,6 +32,7 @@ export function BigMableModel({ anim, facing, attackId, portrait }: Props) {
         anim={anim}
         facing={facing}
         portrait
+        portraitScale={1.12}
         objectPos="50% 48%"
         gait="stiff"
         attack="none"

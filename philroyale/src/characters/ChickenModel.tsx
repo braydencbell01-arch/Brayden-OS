@@ -27,6 +27,7 @@ export function ChickenModel({ anim, facing, attackId, portrait, army }: Props) 
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.3}
       objectPos="50% 42%"
       gait="flutter"
       spriteLegs

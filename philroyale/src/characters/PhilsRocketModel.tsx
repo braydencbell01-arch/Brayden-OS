@@ -20,6 +20,7 @@ export function PhilsRocketModel({ anim, facing, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
+      portraitScale={1.1}
       objectPos="50% 50%"
       gait="stiff"
       attack="none"
