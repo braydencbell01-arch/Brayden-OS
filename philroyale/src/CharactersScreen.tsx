@@ -99,7 +99,7 @@ export function CharactersScreen() {
       RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity] || a.name.localeCompare(b.name)
     unlocked.sort(sortFn)
     locked.sort(sortFn)
-    return { unlocked, locked, found: progress.unlocked.length, total: CHARACTERS.length }
+    return { unlocked, locked, found: unlocked.length, total: CHARACTERS.length }
   }, [progress])
 
   const filteredUnlocked = useMemo(

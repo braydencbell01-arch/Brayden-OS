@@ -1084,7 +1084,7 @@ export function loadCardProgress(): CardProgress {
     levels,
     copies,
     favorites: (raw.favorites ?? []).filter((id) => CHARACTERS.some((c) => c.id === id)),
-    unlocked: [...unlockedSet],
+    unlocked: [...unlockedSet].filter((id) => CHARACTERS.some((c) => c.id === id)),
     evoShards,
     evolutions,
   }
