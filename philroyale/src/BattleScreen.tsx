@@ -858,7 +858,10 @@ export function BattleScreen({
                 u.charId === 'peteSpirit' ||
                 u.charId === 'jeremySpirit'
               ) {
-                sizeScale *= 1.15
+                sizeScale *= 0.52
+              }
+              if (u.charId === 'shay' || u.charId === 'beans' || u.charId === 'finley') {
+                sizeScale *= 0.82
               }
               const flight = u.launch
               let drawCol = u.col
