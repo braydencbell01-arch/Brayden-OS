@@ -53,7 +53,7 @@ import {
 } from './UnitToken'
 import { ARENA_TILT_DEG } from './camera'
 import {
-  battlefieldScaleForHeight,
+  battlefieldScaleForCard,
   getCharacter,
   isSpellCard,
   randomBotDeck,
@@ -846,23 +846,9 @@ export function BattleScreen({
             .sort((a, b) => a.row - b.row)
             .map((u) => {
               const uDef = getCharacter(u.charId)
-              let sizeScale = battlefieldScaleForHeight(uDef?.height ?? "5'7\"")
-              if (uDef?.cardKind === 'building') sizeScale *= 1.28
-              if (u.charId === 'bigMable') sizeScale *= 1.35
-              if (u.charId === 'chicken') sizeScale *= 0.7
-              if (u.charId === 'tristan') sizeScale *= 1.0
-              if (u.charId === 'chickenArmy') sizeScale *= 0.78
-              if (u.charId === 'hamburgerChicken') sizeScale *= 1.05
-              if (
-                u.charId === 'philSpirit' ||
-                u.charId === 'peteSpirit' ||
-                u.charId === 'jeremySpirit'
-              ) {
-                sizeScale *= 0.52
-              }
-              if (u.charId === 'shay' || u.charId === 'beans' || u.charId === 'finley') {
-                sizeScale *= 0.82
-              }
+              const sizeScale = battlefieldScaleForCard(
+                uDef ?? { height: "5'7\"", battlefieldSize: 6 },
+              )
               const flight = u.launch
               let drawCol = u.col
               let drawRow = u.row
@@ -1083,10 +1069,7 @@ export function BattleScreen({
               className="absolute -translate-x-1/2 -translate-y-[92%]"
               style={{
                 ...unitStyle(drag.col, drag.row),
-                width: unitVisualWidthPct(
-                  battlefieldScaleForHeight(dragChar.height) *
-                    (dragChar.cardKind === 'building' ? 1.28 : 1),
-                ),
+                width: unitVisualWidthPct(battlefieldScaleForCard(dragChar)),
                 zIndex: 40,
                 opacity: drag.valid ? 0.9 : 0.45,
                 filter: drag.valid ? undefined : 'grayscale(1)',

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { motion } from 'framer-motion'
 import { CARD_PORTRAIT_BG } from './cardArt'
 import type { CharacterAnim } from './PhilModel'
@@ -84,13 +85,22 @@ export function PhotoTroop({
   // Face the way the unit is moving — snap flip; back only when clearly marching up.
   const cosF = Math.cos(facing)
   const sinF = Math.sin(facing)
-  const flip = cosF < 0 ? -1 : 1
+  const flipRaw = cosF < 0 ? -1 : 1
   // Distinct back art only; avoid thrashing when pathing (same cutout + flip = glitch).
-  const showBack = Boolean(troopBackSrc && troopBackSrc !== troopSrc && sinF < -0.45)
-  const src = showBack && troopBackSrc ? troopBackSrc : troopSrc
-
+  const showBackRaw = Boolean(troopBackSrc && troopBackSrc !== troopSrc && sinF < -0.45)
   const walking = anim === 'walk'
   const attacking = anim === 'attack'
+  // Freeze facing/back while attacking so shoot/kick don't flip or remount mid-anim.
+  const frozenFlip = useRef(flipRaw)
+  const frozenBack = useRef(showBackRaw)
+  if (!attacking) {
+    frozenFlip.current = flipRaw
+    frozenBack.current = showBackRaw
+  }
+  const flip = attacking ? frozenFlip.current : flipRaw
+  const showBack = attacking ? frozenBack.current : showBackRaw
+  const src = showBack && troopBackSrc ? troopBackSrc : troopSrc
+
   // Slow CR-readable cadence — near Jacobson (stiff) / Chuck (limp), sometimes slower.
   const duration = gaitWalkDuration(gait)
 
@@ -177,10 +187,10 @@ export function PhotoTroop({
                     }
                 : attack === 'shoot'
                   ? {
+                      // Subtle recoil only — no scale (scale fought scaleX flip and glitched).
                       y: [0, -1, 0, -1, 0],
-                      x: [0, -3, 2, -2, 0],
-                      rotate: [0, -4, 3, -2, 0],
-                      scale: [1, 0.97, 1.03, 0.99, 1],
+                      x: [0, -2, 1, -1, 0],
+                      rotate: [0, -2, 1, -1, 0],
                     }
                   : attack === 'bite'
                     ? {
@@ -378,7 +388,6 @@ export function PhotoTroop({
           }}
         >
           <img
-            key={src}
             src={src}
             alt=""
             draggable={false}

@@ -921,6 +921,9 @@ function CardProfile({
                   }
                 />
                 <Stat label="Height" value={character.height} />
+                {character.battlefieldSize != null ? (
+                  <Stat label="Size" value={`${character.battlefieldSize}`} />
+                ) : null}
                 {damageRows.map((row) => (
                   <Stat
                     key={row.label}

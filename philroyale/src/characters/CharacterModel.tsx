@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { AttackId } from '../characters'
+import { getCharacter, isHumanBattlefieldCard } from '../characters'
 import { BeansModel } from './BeansModel'
 import { CrUnitModel } from './CrUnitModel'
 import { DanModel } from './DanModel'
@@ -182,7 +183,23 @@ export function CharacterModel({
   }
 
   // Rage lasts until death. Every troop turns clearly purple while enraged.
-  if (!enraged) return model
+  const def = getCharacter(charId)
+  const thicker =
+    !portrait && isHumanBattlefieldCard(charId, def?.cardKind)
+  let out: ReactNode = thicker ? (
+    <div
+      className="relative h-full w-full"
+      style={{
+        transform: 'scaleX(1.28)',
+        transformOrigin: '50% 100%',
+      }}
+    >
+      {model}
+    </div>
+  ) : (
+    model
+  )
+  if (!enraged) return out
   return (
     <div
       className="relative h-full w-full"
@@ -190,7 +207,7 @@ export function CharacterModel({
         filter: 'hue-rotate(270deg) saturate(1.9) brightness(1.08) contrast(1.1)',
       }}
     >
-      {model}
+      {out}
       <div
         className="pointer-events-none absolute inset-0"
         style={{

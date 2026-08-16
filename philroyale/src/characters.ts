@@ -121,6 +121,11 @@ export type CharacterDef = {
   pronoun: string
   /** Display height, e.g. 6'3". */
   height: string
+  /**
+   * Battlefield visual size 1–10 (troops, buildings, spirits only — not spells).
+   * 1 ≈ current spirit size; 10 ≈ a bit larger than the previous biggest unit.
+   */
+  battlefieldSize?: number
   rarity: Rarity
   elixir: number
   hp: number
@@ -192,6 +197,7 @@ export const PHIL: CharacterDef = {
   initial: 'P',
   pronoun: 'he',
   height: "5'7\"",
+  battlefieldSize: 6,
   rarity: 'legendary',
   elixir: 4,
   hp: 1000,
@@ -225,6 +231,7 @@ export const KATHIE: CharacterDef = {
   initial: 'K',
   pronoun: 'she',
   height: "5'2\"",
+  battlefieldSize: 4,
   rarity: 'rare',
   elixir: 3,
   hp: 1000,
@@ -251,6 +258,7 @@ export const PETE: CharacterDef = {
   initial: 'C',
   pronoun: 'he',
   height: "6'2\"",
+  battlefieldSize: 7,
   rarity: 'epic',
   elixir: 5,
   hp: 3345,
@@ -280,6 +288,7 @@ export const BEANS: CharacterDef = {
   initial: 'B',
   pronoun: 'he',
   height: "1'3\"",
+  battlefieldSize: 4,
   rarity: 'common',
   elixir: 2,
   hp: 300,
@@ -306,6 +315,7 @@ export const FINLEY: CharacterDef = {
   initial: 'F',
   pronoun: 'he',
   height: "2'2\"",
+  battlefieldSize: 4,
   rarity: 'common',
   elixir: 2,
   hp: 300,
@@ -334,6 +344,7 @@ export const SHAY: CharacterDef = {
   initial: 'S',
   pronoun: 'he',
   height: "2'0\"",
+  battlefieldSize: 4,
   rarity: 'common',
   elixir: 2,
   hp: 325,
@@ -361,6 +372,7 @@ export const JEREMY: CharacterDef = {
   initial: 'J',
   pronoun: 'he',
   height: "6'3\"",
+  battlefieldSize: 7,
   rarity: 'rare',
   elixir: 5,
   hp: 1000,
@@ -388,6 +400,7 @@ export const TODD: CharacterDef = {
   initial: 'T',
   pronoun: 'he',
   height: "5'7\"",
+  battlefieldSize: 6,
   rarity: 'rare',
   elixir: 6,
   hp: 1545,
@@ -414,6 +427,7 @@ export const MIKE: CharacterDef = {
   initial: 'J',
   pronoun: 'he',
   height: "6'0\"",
+  battlefieldSize: 8,
   rarity: 'epic',
   elixir: 3,
   hp: 1300,
@@ -439,6 +453,7 @@ export const LYNNE: CharacterDef = {
   initial: 'L',
   pronoun: 'she',
   height: "5'5\"",
+  battlefieldSize: 5,
   rarity: 'common',
   elixir: 5,
   hp: 650,
@@ -465,6 +480,7 @@ export const DAN: CharacterDef = {
   initial: 'Pe',
   pronoun: 'he',
   height: "5'8\"",
+  battlefieldSize: 6,
   rarity: 'epic',
   elixir: 5,
   hp: 2000,
@@ -492,6 +508,7 @@ export const DOG_HUT: CharacterDef = {
   initial: 'H',
   pronoun: 'it',
   height: "4'0\"",
+  battlefieldSize: 9,
   rarity: 'rare',
   elixir: 7,
   hp: 1250,
@@ -576,6 +593,7 @@ export const SCOTT: CharacterDef = {
   initial: 'Sc',
   pronoun: 'he',
   height: "5'11\"",
+  battlefieldSize: 5,
   rarity: 'rare',
   elixir: 4,
   hp: 450,
@@ -605,6 +623,7 @@ export const PHILS_CAR: CharacterDef = {
   initial: 'SUV',
   pronoun: 'it',
   height: "5'0\"",
+  battlefieldSize: 9,
   rarity: 'legendary',
   elixir: 4,
   hp: 1850,
@@ -658,6 +677,7 @@ export const STEVES_DINER: CharacterDef = {
   initial: 'SD',
   pronoun: 'it',
   height: "4'6\"",
+  battlefieldSize: 10,
   rarity: 'common',
   elixir: 2,
   hp: 485,
@@ -689,6 +709,7 @@ export const GRETCHIN: CharacterDef = {
   initial: 'G',
   pronoun: 'she',
   height: "5'8\"",
+  battlefieldSize: 5,
   rarity: 'epic',
   elixir: 3,
   hp: 590,
@@ -715,6 +736,7 @@ export const DAVE: CharacterDef = {
   initial: 'D',
   pronoun: 'he',
   height: "5'11\"",
+  battlefieldSize: 9,
   rarity: 'common',
   elixir: 8,
   hp: 5000,
@@ -752,6 +774,7 @@ export const HAMBURGER_CHICKEN: CharacterDef = {
   initial: 'Hc',
   pronoun: 'it',
   height: "4'2\"",
+  battlefieldSize: 8,
   rarity: 'rare',
   elixir: 4,
   hp: 630,
@@ -784,6 +807,7 @@ export const CHICKEN: CharacterDef = {
   initial: 'Ck',
   pronoun: 'it',
   height: "1'4\"",
+  battlefieldSize: 2,
   rarity: 'common',
   elixir: 1,
   hp: 135,
@@ -801,6 +825,7 @@ export const CHICKEN_ARMY: CharacterDef = {
   initial: 'Ca',
   pronoun: 'they',
   height: "1'4\"",
+  battlefieldSize: 2,
   rarity: 'common',
   elixir: 3,
   hp: 135,
@@ -844,6 +869,7 @@ export const PHIL_SPIRIT: CharacterDef = {
   initial: 'Ps',
   pronoun: 'he',
   height: "1'0\"",
+  battlefieldSize: 1,
   rarity: 'legendary',
   elixir: 1,
   hp: 125,
@@ -873,6 +899,7 @@ export const PETE_SPIRIT: CharacterDef = {
   initial: 'Pe',
   pronoun: 'he',
   height: "1'0\"",
+  battlefieldSize: 1,
   rarity: 'epic',
   elixir: 1,
   hp: 125,
@@ -902,6 +929,7 @@ export const JEREMY_SPIRIT: CharacterDef = {
   initial: 'Js',
   pronoun: 'he',
   height: "1'0\"",
+  battlefieldSize: 1,
   rarity: 'rare',
   elixir: 1,
   hp: 125,
@@ -931,6 +959,7 @@ export const EVIL_PHIL: CharacterDef = {
   initial: 'EP',
   pronoun: 'he',
   height: "5'7\"",
+  battlefieldSize: 6,
   rarity: 'legendary',
   elixir: 5,
   hp: 1200,
@@ -966,6 +995,7 @@ export const TRISTAN: CharacterDef = {
   initial: 'Tr',
   pronoun: 'he',
   height: "5'9\"",
+  battlefieldSize: 5,
   rarity: 'common',
   elixir: 3,
   hp: 440,
@@ -994,6 +1024,7 @@ export const BERRY: CharacterDef = {
   initial: 'Be',
   pronoun: 'he',
   height: "5'10\"",
+  battlefieldSize: 6,
   rarity: 'epic',
   elixir: 7,
   hp: 1470,
@@ -1027,6 +1058,7 @@ export const SUSAN: CharacterDef = {
   initial: 'Su',
   pronoun: 'she',
   height: "5'5\"",
+  battlefieldSize: 4,
   rarity: 'epic',
   elixir: 4,
   hp: 590,
@@ -1061,6 +1093,7 @@ export const COACH_GRAF: CharacterDef = {
   initial: 'CG',
   pronoun: 'he',
   height: "5'11\"",
+  battlefieldSize: 7,
   rarity: 'rare',
   elixir: 3,
   hp: 845,
@@ -1101,6 +1134,7 @@ export const BIG_MABLE: CharacterDef = {
   initial: 'BM',
   pronoun: 'it',
   height: "4'6\"",
+  battlefieldSize: 8,
   rarity: 'common',
   elixir: 6,
   hp: 2925,
@@ -1277,20 +1311,61 @@ export function heightToInches(height: string): number | null {
 }
 
 /**
- * Soft battlefield size from height. Tuned so mid/tall humans read like
- * Jacobson (mike) — big, wide, easy to spot Clash Royale–style.
+ * Soft battlefield size from height — kept for spells / fallback only.
  */
 export function battlefieldScaleForHeight(height: string): number {
   const inches = heightToInches(height) ?? 67
   const ref = 67 // 5'7"
   if (inches < 40) {
-    // Pets — readable, a touch larger on the field
     return Math.min(1.08, Math.max(0.94, 0.92 + inches * 0.0045))
   }
   if (inches < 58) {
-    // Short humans / kids — still clearly smaller, but not hard to see
     return Math.min(1.02, Math.max(0.86, 0.84 + (inches - 40) * 0.012))
   }
-  // Adults: Kathie ~1.08 … Phil ~1.12 … Mike ~1.2 … tall ~1.26
   return Math.min(1.28, Math.max(1.06, 1.12 + (inches - ref) * 0.016))
+}
+
+/**
+ * Map battlefieldSize 1–10 → visual scale.
+ * 1 = current spirit size (~0.52); 10 = a bit bigger than prior largest (~1.60).
+ */
+export function battlefieldScaleForSize(size: number): number {
+  const s = Math.max(1, Math.min(10, size))
+  return 0.52 + ((s - 1) / 9) * (1.6 - 0.52)
+}
+
+/** Troops / buildings / spirits use battlefieldSize; spells keep height-based sizing. */
+export function battlefieldScaleForCard(def: {
+  height: string
+  cardKind?: CardKind
+  battlefieldSize?: number
+}): number {
+  if (def.cardKind === 'spell') {
+    return battlefieldScaleForHeight(def.height)
+  }
+  if (def.battlefieldSize != null) {
+    return battlefieldScaleForSize(def.battlefieldSize)
+  }
+  return battlefieldScaleForHeight(def.height)
+}
+
+const NON_HUMAN_TROOP_IDS = new Set([
+  'shay',
+  'beans',
+  'finley',
+  'chicken',
+  'chickenArmy',
+  'hamburgerChicken',
+  'philSpirit',
+  'peteSpirit',
+  'jeremySpirit',
+  'bigMable',
+])
+
+/** Humans get a thicker battlefield sprite; pets/buildings/spells/spirits do not. */
+export function isHumanBattlefieldCard(charId: string, cardKind?: CardKind): boolean {
+  if (cardKind === 'spell' || cardKind === 'building') return false
+  if (NON_HUMAN_TROOP_IDS.has(charId)) return false
+  if (/spirit/i.test(charId)) return false
+  return true
 }
