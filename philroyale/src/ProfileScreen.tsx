@@ -10,7 +10,7 @@ import {
   type EmoteDef,
 } from './emoteCatalog'
 import { mpFetchLeaderboard, mpLastPresence, mpReportLeaderboard, type MpLeaderboardRow } from './mpClient'
-import { lookupDirectory } from './socialHub'
+import { lookupDirectory, resolvePlayerName } from './socialHub'
 import {
   formatAccountCode,
   isPlaceholderFriendName,
@@ -26,6 +26,7 @@ import {
   loadSeenLeaderboardPlayers,
   noteSeenLeaderboardPlayer,
   preferRealPlayerName,
+  leaderboardDisplayName,
   saveAvatarId,
   savePlayerName,
   toggleActiveEmote,
@@ -79,7 +80,7 @@ function mergeBoard(
     const dir = lookupDirectory(code)
     map.set(code, {
       code,
-      name: preferRealPlayerName(row.name, p?.name, dir || undefined) || `Player ${code}`,
+      name: leaderboardDisplayName(code, row.name, p?.name, dir || undefined),
       trophies: Math.max(0, Number(row.trophies) || 0),
       online: !!(row.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(row.inBattle || p?.inBattle),
@@ -94,10 +95,13 @@ function mergeBoard(
     const dir = lookupDirectory(row.code)
     map.set(row.code, {
       code: row.code,
-      name:
-        preferRealPlayerName(row.name, prev?.name, p?.name, dir || undefined) ||
-        prev?.name ||
-        `Player ${row.code}`,
+      name: leaderboardDisplayName(
+        row.code,
+        row.name,
+        prev?.name,
+        p?.name,
+        dir || undefined,
+      ),
       trophies: Math.max(prev?.trophies ?? 0, row.trophies),
       online: !!(prev?.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(prev?.inBattle || p?.inBattle),
@@ -120,11 +124,7 @@ function mergeBoard(
     )
     map.set(code, {
       code,
-      name:
-        preferRealPlayerName(prev?.name, f.name, p?.name, dir || undefined) ||
-        prev?.name ||
-        f.name ||
-        `Player ${code}`,
+      name: leaderboardDisplayName(code, prev?.name, f.name, p?.name, dir || undefined),
       trophies,
       online: !!(prev?.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(prev?.inBattle || p?.inBattle),
@@ -139,11 +139,7 @@ function mergeBoard(
     const dir = lookupDirectory(code)
     map.set(code, {
       code,
-      name:
-        preferRealPlayerName(prev?.name, p.name, dir || undefined) ||
-        prev?.name ||
-        p.name ||
-        `Player ${code}`,
+      name: leaderboardDisplayName(code, prev?.name, p.name, dir || undefined),
       trophies:
         typeof p.trophies === 'number'
           ? Math.max(prev?.trophies ?? 0, p.trophies)
@@ -331,9 +327,31 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
     // Dedupe by code (last write wins)
     const uniq = new Map(payload.map((p) => [p.code, p]))
     await mpReportLeaderboard([...uniq.values()])
-    const rows = await mpFetchLeaderboard()
+    let rows = await mpFetchLeaderboard()
+    // Try to resolve placeholder rows to real names (online directory / lobby).
+    const needNames = rows
+      .filter((r) => isPlaceholderFriendName(r.name || ''))
+      .slice(0, 12)
+    if (needNames.length) {
+      const healed: { code: string; name: string; trophies?: number }[] = []
+      await Promise.all(
+        needNames.map(async (r) => {
+          const code = String(r.code || '').replace(/\D/g, '').slice(0, 6)
+          if (code.length !== 6) return
+          const resolved = await resolvePlayerName(code, 2_500)
+          const best = preferRealPlayerName(resolved, lookupDirectory(code) || undefined)
+          if (!best) return
+          noteSeenLeaderboardPlayer(code, best, r.trophies)
+          healed.push({ code, name: best, trophies: r.trophies })
+        }),
+      )
+      if (healed.length) {
+        await mpReportLeaderboard(healed)
+        rows = await mpFetchLeaderboard()
+      }
+    }
     setRemoteBoard(rows)
-    // Mirror server rows into local all-time cache (noteSeen ignores placeholder wipes)
+    // Mirror server rows into local all-time cache (noteSeen keeps real names)
     for (const row of rows) {
       const dir = lookupDirectory(row.code)
       const liveName = live[row.code]?.name

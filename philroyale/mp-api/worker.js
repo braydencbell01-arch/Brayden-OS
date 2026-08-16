@@ -179,7 +179,11 @@ export class LobbyDO {
         for (const [code, row] of Object.entries(raw)) {
           if (!row || typeof row !== 'object') continue
           this.leaderboard.set(code, {
-            name: String(row.name || 'Player').slice(0, 32),
+            name: (() => {
+              const n = String(row.name || '').trim().slice(0, 32)
+              if (n && !isPlaceholderName(n)) return n
+              return `Player ${code}`
+            })(),
             trophies: Math.max(0, Number(row.trophies) || 0),
             updatedAt: Number(row.updatedAt) || Date.now(),
           })
@@ -221,21 +225,36 @@ export class LobbyDO {
     }
 
     if (path === '/leaderboard') {
+      // Heal placeholder names from live presence when that player is online.
+      for (const [code, p] of this.presence) {
+        if (!p?.name || isPlaceholderName(p.name)) continue
+        if (Date.now() - p.at > ONLINE_MS) continue
+        const prev = this.leaderboard.get(code)
+        if (!prev || isPlaceholderName(prev.name)) {
+          this.upsertLeaderboard(code, p.name, p.trophies)
+        } else if (prev.name !== p.name) {
+          // Prefer the live presence name when they ping with a real name.
+          this.upsertLeaderboard(code, p.name, p.trophies)
+        }
+      }
       const rows = [...this.leaderboard.entries()]
-        .map(([code, row]) => ({
-          code,
-          name: row.name,
-          trophies: row.trophies,
-          updatedAt: row.updatedAt,
-          online: (() => {
-            const p = this.presence.get(code)
-            return !!(p && Date.now() - p.at <= ONLINE_MS)
-          })(),
-          inBattle: (() => {
-            const p = this.presence.get(code)
-            return !!(p && Date.now() - p.at <= ONLINE_MS && p.inBattle)
-          })(),
-        }))
+        .map(([code, row]) => {
+          const p = this.presence.get(code)
+          const liveOk = !!(p && Date.now() - p.at <= ONLINE_MS)
+          const liveName =
+            liveOk && p.name && !isPlaceholderName(p.name) ? p.name : null
+          const name =
+            liveName ||
+            (row.name && !isPlaceholderName(row.name) ? row.name : `Player ${code}`)
+          return {
+            code,
+            name,
+            trophies: row.trophies,
+            updatedAt: row.updatedAt,
+            online: liveOk,
+            inBattle: !!(liveOk && p.inBattle),
+          }
+        })
         .sort((a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name))
       return json({ ok: true, players: rows, now: Date.now() })
     }

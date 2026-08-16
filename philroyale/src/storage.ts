@@ -300,11 +300,13 @@ export function noteSeenLeaderboardPlayer(
     typeof trophies === 'number' && Number.isFinite(trophies)
       ? Math.max(prev?.trophies ?? 0, Math.max(0, Math.floor(trophies)))
       : (prev?.trophies ?? 0)
-  // Never let "Player 482913" wipe a real name we already know.
+  // Prefer real names; never store bare "Player" — use Player + code.
   const nextName =
-    cleaned && !(isPlaceholderFriendName(cleaned) && prev?.name && !isPlaceholderFriendName(prev.name))
+    cleaned && !isPlaceholderFriendName(cleaned)
       ? cleaned
-      : prev?.name || cleaned || `Player ${c}`
+      : prev?.name && !isPlaceholderFriendName(prev.name)
+        ? prev.name
+        : `Player ${c}`
   all[c] = {
     code: c,
     name: nextName,
@@ -318,14 +320,21 @@ export function noteSeenLeaderboardPlayer(
   }
 }
 
-/** Best non-placeholder display name from candidates (then any non-empty). */
+/** Best non-placeholder display name from candidates. */
 export function preferRealPlayerName(
   ...candidates: Array<string | undefined | null>
 ): string | undefined {
   const trimmed = candidates.map((n) => (n || '').trim()).filter(Boolean)
-  const real = trimmed.find((n) => !isPlaceholderFriendName(n))
-  if (real) return real
-  return trimmed[0]
+  return trimmed.find((n) => !isPlaceholderFriendName(n))
+}
+
+/** Leaderboard label: real name, or Player + friend code (never bare "Player"). */
+export function leaderboardDisplayName(
+  code: string,
+  ...candidates: Array<string | undefined | null>
+): string {
+  const c = String(code || '').replace(/\D/g, '').slice(0, 6)
+  return preferRealPlayerName(...candidates) || (c.length === 6 ? `Player ${c}` : 'Player')
 }
 
 /** Persist a friend's last-known club for profile → view club. */
