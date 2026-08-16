@@ -30,7 +30,7 @@ export function CoachGrafModel({ anim, facing, attackId, portrait }: Props) {
       attack={
         anim === 'attack' && attackId === 'knuckleSandwich' ? 'uppercut' : 'none'
       }
-      spriteLegs={false}
+      spriteLegs
     />
   )
 }

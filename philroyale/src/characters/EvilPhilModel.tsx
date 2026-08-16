@@ -36,7 +36,7 @@ export function EvilPhilModel({ anim, facing, attackId, portrait }: Props) {
         objectPos="50% 22%"
         gait="jog"
         attack={attack}
-        spriteLegs={false}
+        spriteLegs
       />
       {/* Soft animated purple mist on top of baked-in aura */}
       <div

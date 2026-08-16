@@ -28,7 +28,7 @@ export function ScottModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 22%"
       gait="jog"
       attack={anim === 'attack' && attackId === 'cashGun' ? 'shoot' : 'none'}
-      spriteLegs={false}
+      spriteLegs
       gunsInSprite
     />
   )

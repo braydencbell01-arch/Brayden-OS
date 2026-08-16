@@ -31,7 +31,7 @@ export function SusanModel({ anim, facing, attackId, portrait, auraActive }: Pro
         objectPos="50% 22%"
         portraitFilter="brightness(1.02) saturate(1.05)"
         gait="jog"
-        spriteLegs={false}
+        spriteLegs
         attack={anim === 'attack' && attackId === 'miniAura' ? 'berryJuice' : 'none'}
               />
       {auraActive && !portrait ? (

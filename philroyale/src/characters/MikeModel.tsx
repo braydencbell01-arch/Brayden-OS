@@ -29,7 +29,7 @@ export function MikeModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 22%"
       gait="stiff"
       carry="none"
-      spriteLegs={false}
+      spriteLegs
       attack={throwing ? 'dumbbell' : 'none'}
     />
   )

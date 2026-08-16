@@ -36,7 +36,7 @@ export function BigMableModel({ anim, facing, attackId, portrait }: Props) {
         objectPos="50% 48%"
         gait="stiff"
         attack="none"
-        spriteLegs={false}
+        spriteLegs
       />
     )
   }

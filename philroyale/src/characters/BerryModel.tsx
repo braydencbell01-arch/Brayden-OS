@@ -30,7 +30,7 @@ export function BerryModel({ anim, facing, attackId, portrait, auraActive }: Pro
         objectPos="50% 22%"
         portraitFilter="brightness(1) saturate(1.05)"
         gait="jog"
-        spriteLegs={false}
+        spriteLegs
         attack={anim === 'attack' && attackId === 'aura' ? 'berryJuice' : 'none'}
       />
       {auraActive && !portrait ? (

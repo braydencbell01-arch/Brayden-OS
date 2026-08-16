@@ -28,7 +28,7 @@ export function JeremyModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 22%"
       gait="run"
       attack={anim === 'attack' && attackId === 'shoot' ? 'shoot' : 'none'}
-      spriteLegs={false}
+      spriteLegs
       gunsInSprite
     />
   )

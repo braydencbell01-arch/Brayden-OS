@@ -31,7 +31,7 @@ export function DanModel({ anim, facing, attackId, portrait, enraged }: Props) {
       gait="limp"
       attack={suplex ? 'hug' : 'none'}
       enraged={enraged}
-      spriteLegs={false}
+      spriteLegs
     />
   )
 }

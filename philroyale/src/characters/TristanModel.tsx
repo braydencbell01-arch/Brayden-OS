@@ -28,7 +28,7 @@ export function TristanModel({ anim, facing, attackId, portrait }: Props) {
       objectPos="50% 22%"
       portraitFilter="brightness(1) saturate(1.05)"
       gait="run"
-      spriteLegs={false}
+      spriteLegs
       attack={anim === 'attack' && attackId === 'cheeseAndCucumbers' ? 'sundae' : 'none'}
     />
   )
