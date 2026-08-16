@@ -174,6 +174,8 @@ export function rememberDirectoryPing(
       })
       return
     }
+    // Still refresh trophies/seen for unknown placeholders without inventing a worse name.
+    if (!cleaned) return
   }
   const prev = directoryCache.get(c)
   if (prev && prev.at > atMs && !isPlaceholderName(prev.name)) {
