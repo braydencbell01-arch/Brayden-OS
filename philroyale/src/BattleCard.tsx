@@ -96,26 +96,25 @@ export function BattleCard({
           background: CARD_PORTRAIT_BG,
         }}
       >
-        <div className="relative flex min-h-0 flex-1 items-end justify-center overflow-hidden">
-          <div className="absolute inset-x-0 top-0 bottom-[20%]">
-            <CharacterModel
-              charId={character.id}
-              anim="idle"
-              facing={-Math.PI / 2}
-              portrait
-              hue={character.hue}
-              initial={character.initial}
-            />
-          </div>
-          {!next ? (
-            <span
-              className={`absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/85 via-black/40 to-transparent px-0.5 pb-[2px] pt-2.5 text-center font-extrabold leading-none text-white ${collection ? 'text-[0.62rem]' : 'text-[0.48rem]'}`}
-              style={{ textShadow: '0 1px 2px #000' }}
-            >
-              {character.name}
-            </span>
-          ) : null}
+        {/* Full-bleed portrait — art fills the whole inner card; name overlays it. */}
+        <div className="absolute inset-0 overflow-hidden">
+          <CharacterModel
+            charId={character.id}
+            anim="idle"
+            facing={-Math.PI / 2}
+            portrait
+            hue={character.hue}
+            initial={character.initial}
+          />
         </div>
+        {!next ? (
+          <span
+            className={`pointer-events-none absolute inset-x-0 bottom-0 z-[1] bg-gradient-to-t from-black/80 via-black/35 to-transparent px-0.5 pb-[2px] pt-3 text-center font-extrabold leading-none text-white ${collection ? 'text-[0.62rem]' : 'text-[0.48rem]'}`}
+            style={{ textShadow: '0 1px 2px #000' }}
+          >
+            {character.name}
+          </span>
+        ) : null}
 
         <div
           className={`absolute ${next ? 'left-0.5 top-0.5 h-3 w-3 text-[0.45rem]' : collection ? 'left-1 top-1 h-[1.15rem] w-[1.15rem] text-[0.7rem]' : 'left-0.5 top-0.5 h-3.5 w-3.5 text-[0.5rem]'} z-[2] flex items-center justify-center font-extrabold text-white`}
