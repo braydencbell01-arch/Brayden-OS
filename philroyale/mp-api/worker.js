@@ -39,6 +39,15 @@ function cleanCode(raw) {
     .slice(0, 6)
 }
 
+/** "Player 123456" / bare "Player" — never let these wipe a real name. */
+function isPlaceholderName(name) {
+  const n = String(name || '').trim()
+  if (!n) return true
+  if (/^player(\s|#|-)?\d*$/i.test(n)) return true
+  if (/^player\s+\d{3,6}$/i.test(n)) return true
+  return false
+}
+
 function cleanRoom(raw) {
   return String(raw || '')
     .replace(/[^a-zA-Z0-9_-]/g, '')
@@ -364,8 +373,15 @@ export class LobbyDO {
   touchPresence(code, name, extra) {
     if (code.length !== 6) return
     const prev = this.presence.get(code) || {}
+    const incoming = String(name || '').trim().slice(0, 32)
+    const keptName =
+      incoming && !isPlaceholderName(incoming)
+        ? incoming
+        : prev.name && !isPlaceholderName(prev.name)
+          ? prev.name
+          : incoming || prev.name || `Player ${code}`
     const next = {
-      name: String(name || prev.name || 'Player').slice(0, 32),
+      name: keptName,
       at: Date.now(),
       trophies: extra.trophies ?? prev.trophies,
       inBattle: extra.inBattle ?? prev.inBattle ?? false,
@@ -388,7 +404,14 @@ export class LobbyDO {
       typeof trophies === 'number' && Number.isFinite(trophies)
         ? Math.max(prev?.trophies ?? 0, Math.max(0, Math.floor(trophies)))
         : (prev?.trophies ?? 0)
-    const nextName = String(name || prev?.name || 'Player').slice(0, 32)
+    const incoming = String(name || '').trim().slice(0, 32)
+    // Never replace a real name with "Player ######".
+    const nextName =
+      incoming && !isPlaceholderName(incoming)
+        ? incoming
+        : prev?.name && !isPlaceholderName(prev.name)
+          ? prev.name
+          : incoming || prev?.name || `Player ${code}`
     this.leaderboard.set(code, {
       name: nextName,
       trophies: finalT,

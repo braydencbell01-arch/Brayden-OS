@@ -484,10 +484,13 @@ export function loadLegacyPlayerIds(): string[] {
 function isPlaceholderFriendName(name: string): boolean {
   const n = name.trim()
   if (!n) return true
-  if (/^player(\s|-)/i.test(n)) return true
+  if (/^player(\s|-|#)?\d*$/i.test(n)) return true
+  if (/^player\s+\d{3,6}$/i.test(n)) return true
   if (n === 'Friend' || n === 'New friend' || n === 'Adding…') return true
   return false
 }
+
+export { isPlaceholderFriendName }
 
 export function upsertFriend(friend: {
   name: string
