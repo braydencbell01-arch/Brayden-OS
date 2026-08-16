@@ -58,10 +58,12 @@ import {
   loadPlayerName,
   loadProfile,
   loadRichClub,
+  loadSeenLeaderboardPlayers,
   normalizeFriendCode,
   parseBattleChallengeFromUrl,
   parseFriendInviteFromUrl,
   postBattleMessage,
+  preferRealPlayerName,
   repairBrokenLocalClub,
   saveBattleAccepted,
   saveIncomingChallenge,
@@ -545,8 +547,12 @@ export default function App() {
       if (code === myId) return { ok: false, message: "That's your own code." }
 
       // Instant add — never block the UI for a long name lookup.
+      // Prefer a real name already on this device (directory / leaderboard seen).
       const cached = lookupDirectory(code)
-      upsertFriend({ name: cached || `Player ${code}`, playerId: code })
+      const seenName = loadSeenLeaderboardPlayers().find((r) => r.code === code)?.name
+      const seedName =
+        preferRealPlayerName(cached, seenName) || cached || seenName || `Player ${code}`
+      upsertFriend({ name: seedName, playerId: code })
       window.dispatchEvent(new Event('philroyale-friends-changed'))
 
       const trophies = loadProfile().trophies
@@ -580,17 +586,18 @@ export default function App() {
 
       // Background: pull real name and update the list (no waiting here).
       void (async () => {
-        const name = cached || (await resolvePlayerName(code, 8_000))
+        const resolved = cached || (await resolvePlayerName(code, 8_000))
+        const name = preferRealPlayerName(resolved, seenName, seedName)
         if (!name) return
         upsertFriend({ name, playerId: code })
         window.dispatchEvent(new Event('philroyale-friends-changed'))
-        if (!cached) flashFriend(`Friend name: ${name}`)
+        if (resolved && resolved !== seedName) flashFriend(`Friend name: ${resolved}`)
       })()
 
       return {
         ok: true,
-        message: cached
-          ? `Added ${cached}!`
+        message: preferRealPlayerName(cached, seenName)
+          ? `Added ${preferRealPlayerName(cached, seenName)}!`
           : `Added — looking up their name now (keep both apps open).`,
       }
     },

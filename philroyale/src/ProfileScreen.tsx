@@ -23,6 +23,7 @@ import {
   loadProfile,
   loadSeenLeaderboardPlayers,
   noteSeenLeaderboardPlayer,
+  preferRealPlayerName,
   saveAvatarId,
   savePlayerName,
   toggleActiveEmote,
@@ -75,7 +76,7 @@ function mergeBoard(
     const p = live[code]
     map.set(code, {
       code,
-      name: row.name || `Player ${code}`,
+      name: preferRealPlayerName(row.name, p?.name) || `Player ${code}`,
       trophies: Math.max(0, Number(row.trophies) || 0),
       online: !!(row.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(row.inBattle || p?.inBattle),
@@ -89,7 +90,10 @@ function mergeBoard(
     const p = live[row.code]
     map.set(row.code, {
       code: row.code,
-      name: row.name || prev?.name || `Player ${row.code}`,
+      name:
+        preferRealPlayerName(row.name, prev?.name, p?.name) ||
+        prev?.name ||
+        `Player ${row.code}`,
       trophies: Math.max(prev?.trophies ?? 0, row.trophies),
       online: !!(prev?.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(prev?.inBattle || p?.inBattle),
@@ -111,7 +115,11 @@ function mergeBoard(
     )
     map.set(code, {
       code,
-      name: f.name || prev?.name || `Player ${code}`,
+      name:
+        preferRealPlayerName(prev?.name, f.name, p?.name) ||
+        prev?.name ||
+        f.name ||
+        `Player ${code}`,
       trophies,
       online: !!(prev?.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(prev?.inBattle || p?.inBattle),
@@ -125,7 +133,8 @@ function mergeBoard(
     const prev = map.get(code)
     map.set(code, {
       code,
-      name: p.name || prev?.name || `Player ${code}`,
+      name:
+        preferRealPlayerName(prev?.name, p.name) || prev?.name || p.name || `Player ${code}`,
       trophies:
         typeof p.trophies === 'number'
           ? Math.max(prev?.trophies ?? 0, p.trophies)

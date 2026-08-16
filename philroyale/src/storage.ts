@@ -300,9 +300,14 @@ export function noteSeenLeaderboardPlayer(
     typeof trophies === 'number' && Number.isFinite(trophies)
       ? Math.max(prev?.trophies ?? 0, Math.max(0, Math.floor(trophies)))
       : (prev?.trophies ?? 0)
+  // Never let "Player 482913" wipe a real name we already know.
+  const nextName =
+    cleaned && !(isPlaceholderFriendName(cleaned) && prev?.name && !isPlaceholderFriendName(prev.name))
+      ? cleaned
+      : prev?.name || cleaned || `Player ${c}`
   all[c] = {
     code: c,
-    name: cleaned || prev?.name || `Player ${c}`,
+    name: nextName,
     trophies: nextT,
     updatedAt: Date.now(),
   }
@@ -311,6 +316,16 @@ export function noteSeenLeaderboardPlayer(
   } catch {
     /* quota */
   }
+}
+
+/** Best non-placeholder display name from candidates (then any non-empty). */
+export function preferRealPlayerName(
+  ...candidates: Array<string | undefined | null>
+): string | undefined {
+  const trimmed = candidates.map((n) => (n || '').trim()).filter(Boolean)
+  const real = trimmed.find((n) => !isPlaceholderFriendName(n))
+  if (real) return real
+  return trimmed[0]
 }
 
 /** Persist a friend's last-known club for profile → view club. */
