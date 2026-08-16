@@ -36,7 +36,7 @@ export function EvilPhilModel({ anim, facing, attackId, portrait }: Props) {
         objectPos="50% 22%"
         gait="jog"
         attack={attack}
-        spriteLegs={false}
+        spriteLegs
       />
       {/* Compact purple mist/flame — battlefield only, much smaller than old full-body aura */}
       {!portrait ? (

@@ -692,7 +692,7 @@ export const STEVES_DINER: CharacterDef = {
     {
       id: 'pancakeHuck',
       name: 'Pancake Huck',
-      range: 22,
+      range: 28,
       damage: 215,
       rootWhileAttacking: true,
       splashRadius: 6.5,
