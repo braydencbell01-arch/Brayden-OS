@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Todd — sprint gait; Flying Kick jump + strike. */
+/** Todd — Barça kit arms crossed; sprint gait; Flying Kick. */
 export function ToddModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,12 +24,10 @@ export function ToddModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 14%"
+      objectPos="50% 18%"
       gait="sprint"
       attack={anim === 'attack' && attackId === 'flyingKick' ? 'kick' : 'none'}
-      spriteLegs
-      legColor="#2a2a32"
-      shoeColor="#0a0a0c"
+      spriteLegs={false}
     />
   )
 }
