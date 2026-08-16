@@ -13,7 +13,7 @@ type Props = {
   portrait?: boolean
 }
 
-/** Scott — skinny rich guy; Cash Gun money launcher. */
+/** Scott — navy suit Cash Gun; sprite gun matches battlefield bills. */
 export function ScottModel({ anim, facing, attackId, portrait }: Props) {
   return (
     <PhotoTroop
@@ -24,12 +24,11 @@ export function ScottModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      objectPos="50% 12%"
+      objectPos="50% 14%"
       gait="jog"
       attack={anim === 'attack' && attackId === 'cashGun' ? 'shoot' : 'none'}
-      spriteLegs
-      legColor="#1e2a4a"
-      shoeColor="#2a1810"
+      spriteLegs={false}
+      gunsInSprite
     />
   )
 }
