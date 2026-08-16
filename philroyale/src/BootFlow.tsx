@@ -57,7 +57,7 @@ function charAssetUrls(charId: string): string[] {
                       : charId === 'chickenArmy'
                         ? 'chicken'
                         : charId === 'chickenBarrel'
-                          ? 'chicken'
+                          ? 'chicken-barrel'
                           : charId === 'philSpirit'
                             ? 'phil-spirit'
                             : charId === 'peteSpirit'
