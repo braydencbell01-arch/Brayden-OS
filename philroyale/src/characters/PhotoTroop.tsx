@@ -91,24 +91,8 @@ export function PhotoTroop({
 
   const walking = anim === 'walk'
   const attacking = anim === 'attack'
-  const duration =
-    gait === 'dog'
-      ? 0.28
-      : gait === 'blitz'
-        ? 0.18
-        : gait === 'sprint'
-          ? 0.26
-          : gait === 'stiff'
-            ? 0.48
-            : gait === 'waddle'
-              ? 0.52
-            : gait === 'flutter'
-              ? 0.36
-            : gait === 'limp'
-              ? 0.72
-              : gait === 'jog'
-                ? 0.36
-                : 0.4
+  // Slow CR-readable cadence — near Jacobson (stiff) / Chuck (limp), sometimes slower.
+  const duration = gaitWalkDuration(gait)
 
   if (portrait) {
     // Full-bleed card art — cover + slight zoom so the blue well never shows.
@@ -294,17 +278,17 @@ export function PhotoTroop({
                   }
                 : gait === 'blitz'
                   ? {
-                      // Ultra-fast dash — tiny furious bounce
-                      y: [0, -5, 0, -6, 0],
-                      scaleY: [1, 0.92, 1, 0.9, 1],
-                      x: [0, 0.5, 0, -0.5, 0],
+                      // Dash bounce — slower cadence, modest hop
+                      y: [0, -4, 0, -4.5, 0],
+                      scaleY: [1, 0.94, 1, 0.93, 1],
+                      x: [0, 0.4, 0, -0.4, 0],
                     }
                   : gait === 'sprint'
                     ? {
-                        // Fast sprint bounce — bigger stride, quicker cadence
-                        y: [0, -8, -1, -9, 0],
-                        scaleY: [1, 0.9, 1, 0.88, 1],
-                        x: [0, 1, 0, -1, 0],
+                        // Steady sprint bounce — bigger stride, slow cadence
+                        y: [0, -5, -1, -5.5, 0],
+                        scaleY: [1, 0.94, 1, 0.93, 1],
+                        x: [0, 0.8, 0, -0.8, 0],
                       }
                     : gait === 'stiff'
                       ? {
@@ -380,8 +364,8 @@ export function PhotoTroop({
             : walking
               ? { duration, repeat: Infinity, ease: 'easeInOut' }
               : gait === 'flutter'
-                ? { duration: 0.42, repeat: Infinity, ease: 'easeInOut' }
-                : { duration: 1.3, repeat: Infinity, ease: 'easeInOut' }
+                ? { duration: 0.85, repeat: Infinity, ease: 'easeInOut' }
+                : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
         }
       >
         {/* Full-body photo troops keep real legs; others clip for SVG runners underneath */}
@@ -452,6 +436,33 @@ export function PhotoTroop({
   )
 }
 
+function gaitWalkDuration(
+  gait: 'jog' | 'run' | 'dog' | 'limp' | 'sprint' | 'blitz' | 'stiff' | 'waddle' | 'flutter',
+): number {
+  // Seconds per leg cycle. Tuned to Jacobson/Chuck (or slower) — no frantic spinning legs.
+  switch (gait) {
+    case 'blitz':
+      return 0.62
+    case 'sprint':
+      return 0.72
+    case 'dog':
+      return 0.7
+    case 'jog':
+    case 'run':
+      return 0.82
+    case 'flutter':
+      return 0.78
+    case 'waddle':
+      return 0.95
+    case 'stiff':
+      return 0.95
+    case 'limp':
+      return 1.15
+    default:
+      return 0.85
+  }
+}
+
 function RunLegs({
   gait,
   walking,
@@ -464,20 +475,7 @@ function RunLegs({
   shoeColor: string
 }) {
   if (!walking) return null
-  const dur =
-    gait === 'dog'
-      ? 0.28
-      : gait === 'blitz'
-        ? 0.18
-        : gait === 'sprint'
-          ? 0.26
-          : gait === 'stiff'
-            ? 0.48
-            : gait === 'limp'
-              ? 0.72
-              : gait === 'jog'
-                ? 0.36
-                : 0.4
+  const dur = gaitWalkDuration(gait)
   const dog = gait === 'dog'
   const limp = gait === 'limp'
   const sprint = gait === 'sprint'
@@ -501,7 +499,7 @@ function RunLegs({
             key={i}
             animate={
               walking
-                ? { rotate: [18, -22, 18], y: [0, 2, 0] }
+                ? { rotate: [14, -16, 14], y: [0, 1.5, 0] }
                 : { rotate: 0 }
             }
             transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut', delay: leg.phase * dur } : undefined}
@@ -526,12 +524,12 @@ function RunLegs({
             ? limp
               ? { rotate: [8, -6, 8, -18, 8], y: [0, 0, 0, 3, 0] }
               : blitz
-                ? { rotate: [48, -52, 48] }
+                ? { rotate: [28, -30, 28] }
                 : sprint
-                  ? { rotate: [38, -42, 38] }
+                  ? { rotate: [24, -26, 24] }
                   : stiff
-                    ? { rotate: [10, -12, 10] }
-                    : { rotate: [28, -32, 28] }
+                    ? { rotate: [8, -10, 8] }
+                    : { rotate: [18, -20, 18] }
             : { rotate: 6 }
         }
         transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -546,19 +544,23 @@ function RunLegs({
             ? limp
               ? { rotate: [-6, 10, -6, 22, -6], y: [0, 1, 0, 0, 0] }
               : blitz
-                ? { rotate: [-52, 48, -52] }
+                ? { rotate: [-30, 28, -30] }
                 : sprint
-                  ? { rotate: [-42, 38, -42] }
+                  ? { rotate: [-26, 24, -26] }
                   : stiff
-                    ? { rotate: [-12, 10, -12] }
-                    : { rotate: [-32, 28, -32] }
+                    ? { rotate: [-10, 8, -10] }
+                    : { rotate: [-20, 18, -20] }
             : { rotate: -6 }
         }
-        transition={walking ? { duration: dur, repeat: Infinity, ease: 'easeInOut' } : undefined}
-        style={{ transformOrigin: '46px 6px' }}
+        transition={
+          walking
+            ? { duration: dur, repeat: Infinity, ease: 'easeInOut', delay: dur * 0.5 }
+            : undefined
+        }
+        style={{ transformOrigin: '50px 6px' }}
       >
-        <path d="M42 4 Q44 22 43 36 L51 36 Q52 20 50 4 Z" fill={color} />
-        <ellipse cx="47" cy="38" rx="7" ry="3" fill={accent} />
+        <path d="M46 4 Q48 22 47 36 L55 36 Q56 20 54 4 Z" fill={color} />
+        <ellipse cx="51" cy="38" rx="7" ry="3" fill={accent} />
       </motion.g>
     </svg>
   )
