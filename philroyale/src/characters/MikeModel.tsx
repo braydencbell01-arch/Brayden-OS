@@ -25,8 +25,8 @@ export function MikeModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      portraitScale={1.22}
-      objectPos="50% 14%"
+      portraitScale={1.2}
+      objectPos="50% 22%"
       gait="stiff"
       carry="none"
       spriteLegs={false}
