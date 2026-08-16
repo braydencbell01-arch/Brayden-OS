@@ -10,8 +10,10 @@ import {
   type EmoteDef,
 } from './emoteCatalog'
 import { mpFetchLeaderboard, mpLastPresence, mpReportLeaderboard, type MpLeaderboardRow } from './mpClient'
+import { lookupDirectory } from './socialHub'
 import {
   formatAccountCode,
+  isPlaceholderFriendName,
   loadAccountCode,
   loadActiveEmotes,
   loadAvatarId,
@@ -74,9 +76,10 @@ function mergeBoard(
     const code = String(row.code || '').replace(/\D/g, '').slice(0, 6)
     if (code.length !== 6) continue
     const p = live[code]
+    const dir = lookupDirectory(code)
     map.set(code, {
       code,
-      name: preferRealPlayerName(row.name, p?.name) || `Player ${code}`,
+      name: preferRealPlayerName(row.name, p?.name, dir || undefined) || `Player ${code}`,
       trophies: Math.max(0, Number(row.trophies) || 0),
       online: !!(row.online || (p && Date.now() - p.at < 90_000)),
       inBattle: !!(row.inBattle || p?.inBattle),
@@ -88,10 +91,11 @@ function mergeBoard(
   for (const row of loadSeenLeaderboardPlayers()) {
     const prev = map.get(row.code)
     const p = live[row.code]
+    const dir = lookupDirectory(row.code)
     map.set(row.code, {
       code: row.code,
       name:
-        preferRealPlayerName(row.name, prev?.name, p?.name) ||
+        preferRealPlayerName(row.name, prev?.name, p?.name, dir || undefined) ||
         prev?.name ||
         `Player ${row.code}`,
       trophies: Math.max(prev?.trophies ?? 0, row.trophies),
@@ -108,6 +112,7 @@ function mergeBoard(
     if (code.length !== 6) continue
     const p = live[code]
     const prev = map.get(code)
+    const dir = lookupDirectory(code)
     const trophies = Math.max(
       prev?.trophies ?? 0,
       typeof f.trophies === 'number' ? f.trophies : 0,
@@ -116,7 +121,7 @@ function mergeBoard(
     map.set(code, {
       code,
       name:
-        preferRealPlayerName(prev?.name, f.name, p?.name) ||
+        preferRealPlayerName(prev?.name, f.name, p?.name, dir || undefined) ||
         prev?.name ||
         f.name ||
         `Player ${code}`,
@@ -131,10 +136,14 @@ function mergeBoard(
   for (const [code, p] of Object.entries(live)) {
     if (!p || code.length !== 6) continue
     const prev = map.get(code)
+    const dir = lookupDirectory(code)
     map.set(code, {
       code,
       name:
-        preferRealPlayerName(prev?.name, p.name) || prev?.name || p.name || `Player ${code}`,
+        preferRealPlayerName(prev?.name, p.name, dir || undefined) ||
+        prev?.name ||
+        p.name ||
+        `Player ${code}`,
       trophies:
         typeof p.trophies === 'number'
           ? Math.max(prev?.trophies ?? 0, p.trophies)
@@ -287,27 +296,49 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
     const myTrophies = loadProfile().trophies
     noteSeenLeaderboardPlayer(myCode, me, myTrophies)
 
+    const live = mpLastPresence()
     const payload: { code: string; name: string; trophies?: number }[] = [
       { code: myCode, name: me, trophies: myTrophies },
     ]
+
+    const pushRow = (code: string, name: string | undefined, trophies?: number) => {
+      if (code.length !== 6) return
+      const dir = lookupDirectory(code)
+      const liveName = live[code]?.name
+      const best =
+        preferRealPlayerName(name, dir || undefined, liveName) || name || dir || liveName || ''
+      // Only report a real name — placeholders must not overwrite the server board.
+      if (best && !isPlaceholderFriendName(best)) {
+        noteSeenLeaderboardPlayer(code, best, trophies)
+        payload.push({ code, name: best, trophies })
+      } else if (typeof trophies === 'number') {
+        payload.push({ code, name: '', trophies })
+      }
+    }
+
     for (const f of loadFriends()) {
       if (!f.playerId) continue
       const code = f.playerId.replace(/\D/g, '').slice(0, 6)
-      if (code.length !== 6) continue
-      noteSeenLeaderboardPlayer(code, f.name, f.trophies)
-      payload.push({ code, name: f.name, trophies: f.trophies })
+      pushRow(code, f.name, f.trophies)
     }
     for (const row of loadSeenLeaderboardPlayers()) {
-      payload.push({ code: row.code, name: row.name, trophies: row.trophies })
+      pushRow(row.code, row.name, row.trophies)
+    }
+    for (const [code, p] of Object.entries(live)) {
+      if (!p?.name) continue
+      pushRow(code, p.name, p.trophies)
     }
     // Dedupe by code (last write wins)
     const uniq = new Map(payload.map((p) => [p.code, p]))
     await mpReportLeaderboard([...uniq.values()])
     const rows = await mpFetchLeaderboard()
     setRemoteBoard(rows)
-    // Mirror server rows into local all-time cache
+    // Mirror server rows into local all-time cache (noteSeen ignores placeholder wipes)
     for (const row of rows) {
-      noteSeenLeaderboardPlayer(row.code, row.name, row.trophies)
+      const dir = lookupDirectory(row.code)
+      const liveName = live[row.code]?.name
+      const best = preferRealPlayerName(row.name, dir || undefined, liveName) || row.name
+      noteSeenLeaderboardPlayer(row.code, best, row.trophies)
     }
   }, [])
 
