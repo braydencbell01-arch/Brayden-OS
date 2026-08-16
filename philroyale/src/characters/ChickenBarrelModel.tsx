@@ -1,8 +1,8 @@
 import { useId } from 'react'
-import { CARD_PORTRAIT_BG } from './cardArt'
 import type { CharacterAnim } from './PhilModel'
 
 const CHICKEN = `${import.meta.env.BASE_URL}characters/chicken-troop.png`
+const CARD_BG = `${import.meta.env.BASE_URL}characters/chicken-barrel-card-bg.png`
 
 type Props = {
   anim: CharacterAnim
@@ -17,22 +17,31 @@ type Props = {
 export function ChickenBarrelModel({ portrait }: Props) {
   const uid = useId().replace(/:/g, '')
   // Portrait: leave headroom above the comb; battlefield can lean harder.
-  const boxW = portrait ? '68%' : '84%'
-  const boxH = portrait ? '82%' : '92%'
+  const boxW = portrait ? '78%' : '84%'
+  const boxH = portrait ? '88%' : '92%'
   const rot = portrait ? -8 : -30
   return (
     <div
       className="relative flex h-full w-full items-center justify-center overflow-hidden"
-      style={{ background: portrait ? CARD_PORTRAIT_BG : 'transparent' }}
+      style={{ background: portrait ? undefined : 'transparent' }}
       aria-hidden
     >
+      {portrait ? (
+        <img
+          src={CARD_BG}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ transform: 'scale(1.08)' }}
+          draggable={false}
+        />
+      ) : null}
       <div
         className="relative"
         style={{
           width: boxW,
           height: boxH,
           transform: portrait
-            ? `translateY(4%) scale(0.92) rotate(${rot}deg)`
+            ? `translateY(2%) scale(1.05) rotate(${rot}deg)`
             : `rotate(${rot}deg)`,
           transformOrigin: '50% 55%',
         }}

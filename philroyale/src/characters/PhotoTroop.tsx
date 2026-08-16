@@ -105,7 +105,7 @@ export function PhotoTroop({
                 : 0.4
 
   if (portrait) {
-    // Card art — contain so heads/feet aren't cropped out of the frame.
+    // Full-bleed card art — cover + slight zoom so the blue well never shows.
     return (
       <div
         className="relative h-full w-full overflow-hidden"
@@ -114,9 +114,11 @@ export function PhotoTroop({
         <img
           src={portraitSrc ?? cardSrc ?? troopSrc}
           alt={alt}
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover"
           style={{
             objectPosition: _objectPos,
+            transform: 'scale(1.12)',
+            transformOrigin: '50% 45%',
             filter: portraitFilter ?? 'brightness(1.05) saturate(1.08)',
           }}
           draggable={false}

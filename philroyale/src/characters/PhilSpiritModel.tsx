@@ -24,8 +24,7 @@ export function PhilSpiritModel({ anim, facing, attackId, portrait }: Props) {
       anim={anim}
       facing={facing}
       portrait={portrait}
-      portraitSrc={TROOP}
-      objectPos="50% 45%"
+      objectPos="50% 42%"
       gait="blitz"
       spriteLegs
       attack={anim === 'attack' && attackId === 'jump' ? 'jump' : 'none'}
