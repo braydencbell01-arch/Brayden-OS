@@ -70,6 +70,8 @@ import {
 } from './storage'
 import { getEmoteById, PHIL_EMOTE_SRC, type EmoteDef } from './emoteCatalog'
 import { CharacterModel } from './characters/CharacterModel'
+import { ProfileChip } from './ProfileChip'
+import { getTitle } from './cosmeticsCatalog'
 import type { BattleNet } from './battleSync'
 import { publishBattle, subscribeBattle } from './battleSync'
 import { useBattle } from './useBattle'
@@ -80,6 +82,9 @@ type Props = {
   opponentName?: string | null
   opponentClanName?: string | null
   opponentTrophies?: number
+  opponentAvatarId?: string | null
+  opponentTitleId?: string | null
+  opponentFrameId?: string | null
   allyLevels?: Record<string, number>
   /** Card ids with evolution unlocked */
   allyEvolutions?: string[]
@@ -354,6 +359,9 @@ export function BattleScreen({
   opponentName,
   opponentClanName = null,
   opponentTrophies = 3200,
+  opponentAvatarId = null,
+  opponentTitleId = null,
+  opponentFrameId = null,
   allyLevels,
   allyEvolutions,
   botLevel = 1,
@@ -794,6 +802,33 @@ export function BattleScreen({
     })
   }, [net?.challengeId, net?.role, net?.viewAs])
 
+  const [peerLook, setPeerLook] = useState({
+    avatarId: opponentAvatarId || undefined,
+    titleId: opponentTitleId || undefined,
+    frameId: opponentFrameId || undefined,
+  })
+  useEffect(() => {
+    setPeerLook({
+      avatarId: opponentAvatarId || undefined,
+      titleId: opponentTitleId || undefined,
+      frameId: opponentFrameId || undefined,
+    })
+  }, [opponentAvatarId, opponentTitleId, opponentFrameId])
+  useEffect(() => {
+    if (!net?.challengeId) return
+    const myRole = net.role
+    return subscribeBattle(net.challengeId, (msg) => {
+      if (msg.type !== 'battle_ready') return
+      if (msg.role === myRole) return
+      if (!msg.avatarId && !msg.titleId && !msg.frameId) return
+      setPeerLook({
+        avatarId: msg.avatarId || undefined,
+        titleId: msg.titleId || undefined,
+        frameId: msg.frameId || undefined,
+      })
+    })
+  }, [net?.challengeId, net?.role])
+
   const mm = String(Math.floor(seconds / 60))
   const ss = String(seconds % 60).padStart(2, '0')
   const elixirDisplay = Math.floor(elixir)
@@ -1099,15 +1134,12 @@ export function BattleScreen({
       {/* HUD — CR-style: compact opponent (no panel), timer pill top-right. */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between px-1.5 pt-[max(0.2rem,env(safe-area-inset-top))]">
         <div className="pointer-events-auto flex items-center gap-1.5 pl-0.5">
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.75rem] font-extrabold text-white"
-            style={{
-              background: 'linear-gradient(160deg,#ff9a7a,#c63c2e)',
-              boxShadow: '0 0 0 2px #f5d76e, 0 1px 4px #00000088',
-            }}
-          >
-            {foeName.slice(0, 1).toUpperCase()}
-          </div>
+          <ProfileChip
+            avatarId={peerLook.avatarId}
+            titleId={peerLook.titleId}
+            frameId={peerLook.frameId}
+            size="xs"
+          />
           <div className="min-w-0 leading-tight">
             <p
               className="max-w-[5.5rem] truncate text-[0.62rem] font-extrabold drop-shadow-[0_1px_1px_#000]"
@@ -1115,6 +1147,14 @@ export function BattleScreen({
             >
               {foeName}
             </p>
+            {getTitle(peerLook.titleId).text ? (
+              <p
+                className="max-w-[5.5rem] truncate text-[0.42rem] font-extrabold uppercase tracking-wide drop-shadow-[0_1px_1px_#000]"
+                style={{ color: getTitle(peerLook.titleId).color }}
+              >
+                {getTitle(peerLook.titleId).text}
+              </p>
+            ) : null}
             {clanLine ? (
               <p className="max-w-[5.5rem] truncate text-[0.48rem] font-bold text-white drop-shadow-[0_1px_1px_#000]">
                 {clanLine}

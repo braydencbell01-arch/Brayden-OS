@@ -186,6 +186,9 @@ export class LobbyDO {
             })(),
             trophies: Math.max(0, Number(row.trophies) || 0),
             updatedAt: Number(row.updatedAt) || Date.now(),
+            avatarId: String(row.avatarId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32),
+            titleId: String(row.titleId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32),
+            frameId: String(row.frameId || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32),
           })
         }
       }
@@ -253,6 +256,9 @@ export class LobbyDO {
             updatedAt: row.updatedAt,
             online: liveOk,
             inBattle: !!(liveOk && p.inBattle),
+            avatarId: (liveOk && p.avatarId) || row.avatarId || undefined,
+            titleId: (liveOk && p.titleId) || row.titleId || undefined,
+            frameId: (liveOk && p.frameId) || row.frameId || undefined,
           }
         })
         .sort((a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name))
@@ -267,7 +273,11 @@ export class LobbyDO {
         if (!row || typeof row !== 'object') continue
         const code = cleanCode(row.code || row.playerId || '')
         if (code.length !== 6) continue
-        this.upsertLeaderboard(code, row.name || 'Player', row.trophies)
+        this.upsertLeaderboard(code, row.name || 'Player', row.trophies, {
+          avatarId: row.avatarId,
+          titleId: row.titleId,
+          frameId: row.frameId,
+        })
         n++
       }
       await this.flushLeaderboard()
@@ -349,6 +359,9 @@ export class LobbyDO {
         trophies: data.trophies,
         inBattle: data.inBattle,
         challengeId: data.challengeId,
+        avatarId: data.avatarId,
+        titleId: data.titleId,
+        frameId: data.frameId,
       })
       att.name = data.name || att.name
       ws.serializeAttachment(att)
@@ -405,9 +418,16 @@ export class LobbyDO {
       trophies: extra.trophies ?? prev.trophies,
       inBattle: extra.inBattle ?? prev.inBattle ?? false,
       challengeId: extra.challengeId ?? prev.challengeId,
+      avatarId: extra.avatarId || prev.avatarId,
+      titleId: extra.titleId || prev.titleId,
+      frameId: extra.frameId || prev.frameId,
     }
     this.presence.set(code, next)
-    this.upsertLeaderboard(code, next.name, next.trophies)
+    this.upsertLeaderboard(code, next.name, next.trophies, {
+      avatarId: next.avatarId,
+      titleId: next.titleId,
+      frameId: next.frameId,
+    })
   }
 
   /**
@@ -415,7 +435,7 @@ export class LobbyDO {
    * @param {string} name
    * @param {number|undefined} trophies
    */
-  upsertLeaderboard(code, name, trophies) {
+  upsertLeaderboard(code, name, trophies, cosmetics) {
     if (code.length !== 6) return
     const prev = this.leaderboard.get(code)
     // Reports / pings only raise trophies (never wipe a higher score with a stale 0).
@@ -431,10 +451,14 @@ export class LobbyDO {
         : prev?.name && !isPlaceholderName(prev.name)
           ? prev.name
           : incoming || prev?.name || `Player ${code}`
+    const clean = (v) => String(v || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32)
     this.leaderboard.set(code, {
       name: nextName,
       trophies: finalT,
       updatedAt: Date.now(),
+      avatarId: clean(cosmetics?.avatarId) || prev?.avatarId || '',
+      titleId: clean(cosmetics?.titleId) || prev?.titleId || '',
+      frameId: clean(cosmetics?.frameId) || prev?.frameId || '',
     })
     if (this.leaderboard.size > 5000) {
       const ranked = [...this.leaderboard.entries()].sort(

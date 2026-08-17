@@ -13,6 +13,11 @@ import {
 } from './emoteCatalog'
 import { CHEST_META, MAX_CARD_LEVEL, type ChestRarity } from './progression'
 import {
+  shopFrames,
+  shopTitles,
+  type FrameDef,
+} from './cosmeticsCatalog'
+import {
   GEM_PACKS,
   GOLD_WITH_GEMS_PACKS,
   REAL_MONEY_OFFERS,
@@ -22,12 +27,15 @@ import {
 import {
   beginUsdCheckout,
   buyEmote,
+  buyFrame,
   buyGoldWithGems,
   buyShopOffer,
+  buyTitle,
   claimPaidShopSku,
   copiesToUpgrade,
   getShopOffers,
   loadCardProgress,
+  loadCosmetics,
   loadOwnedEmotes,
   loadShopBoughtToday,
 } from './storage'
@@ -220,6 +228,82 @@ function EmoteTile({
   )
 }
 
+function CosmeticBuyTile({
+  label,
+  color,
+  price,
+  owned,
+  onBuy,
+}: {
+  label: string
+  color: string
+  price: number
+  owned: boolean
+  onBuy: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={owned}
+      onClick={onBuy}
+      className="rounded-lg px-2 py-2 text-left disabled:opacity-70"
+      style={{
+        background: 'linear-gradient(180deg,#2a1a12,#140e0a)',
+        boxShadow: `inset 0 0 0 2px ${color}88`,
+      }}
+    >
+      <p className="truncate text-[0.7rem] font-extrabold" style={{ color }}>
+        {label}
+      </p>
+      <p className="mt-1 flex items-center gap-0.5 text-[0.65rem] font-black text-white">
+        {owned ? (
+          'Owned'
+        ) : (
+          <>
+            <GemIcon className="h-3 w-3" />
+            {price}
+          </>
+        )}
+      </p>
+    </button>
+  )
+}
+
+function FrameBuyTile({
+  frame,
+  owned,
+  onBuy,
+}: {
+  frame: FrameDef
+  owned: boolean
+  onBuy: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={owned}
+      onClick={onBuy}
+      className="flex flex-col items-center gap-1 disabled:opacity-70"
+    >
+      <div
+        className="h-12 w-12 overflow-hidden rounded-xl"
+        style={{ background: frame.bg, boxShadow: frame.ring }}
+      />
+      <span className="text-center text-[0.55rem] font-extrabold text-white">{frame.label}</span>
+      <span className="flex items-center gap-0.5 text-[0.6rem] font-black text-white">
+        {owned ? (
+          'Owned'
+        ) : (
+          <>
+            <GemIcon className="h-3 w-3" />
+            {frame.priceGems}
+          </>
+        )}
+      </span>
+    </button>
+  )
+}
+
 function OfferEndsLabel({ hours }: { hours: number }) {
   const label = useCountdown(() => offerEndsMs(hours))
   return <>Ends in {label}</>
@@ -394,6 +478,7 @@ function DailyDealTile({
 export function ShopScreen() {
   const [bought, setBought] = useState(() => loadShopBoughtToday())
   const [ownedEmotes, setOwnedEmotes] = useState(() => loadOwnedEmotes())
+  const [cosmetics, setCosmetics] = useState(() => loadCosmetics())
   const [toast, setToast] = useState<string | null>(null)
 
   const offers = useMemo(() => getShopOffers(), [])
@@ -406,6 +491,7 @@ export function ShopScreen() {
   function refresh() {
     setBought(loadShopBoughtToday())
     setOwnedEmotes(loadOwnedEmotes())
+    setCosmetics(loadCosmetics())
     window.dispatchEvent(new Event('philroyale-profile-changed'))
   }
 
@@ -479,6 +565,47 @@ export function ShopScreen() {
                   emote={emote}
                   owned={ownedEmotes.includes(emote.id)}
                   onBuy={() => handle(buyEmote(emote.id))}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Cosmetics */}
+        <section className="mb-5">
+          <Ribbon label="Titles & Frames" tone="gold" />
+          <div
+            className="rounded-2xl p-3"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: 'inset 0 0 0 3px #c9a22755, 0 4px 0 #00000066',
+            }}
+          >
+            <p className="mb-2 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
+              Titles · gems
+            </p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {shopTitles().map((title) => (
+                <CosmeticBuyTile
+                  key={title.id}
+                  label={title.label}
+                  color={title.color}
+                  price={title.priceGems}
+                  owned={cosmetics.ownedTitles.includes(title.id)}
+                  onBuy={() => handle(buyTitle(title.id))}
+                />
+              ))}
+            </div>
+            <p className="mb-2 mt-3 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
+              Frames · gems
+            </p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {shopFrames().map((frame) => (
+                <FrameBuyTile
+                  key={frame.id}
+                  frame={frame}
+                  owned={cosmetics.ownedFrames.includes(frame.id)}
+                  onBuy={() => handle(buyFrame(frame.id))}
                 />
               ))}
             </div>

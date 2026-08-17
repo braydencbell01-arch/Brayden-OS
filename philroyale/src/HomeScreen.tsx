@@ -25,6 +25,7 @@ import {
   loadAccountCode,
   loadAvatarId,
   loadChests,
+  loadCosmetics,
   loadDaily,
   loadFriends,
   loadPlayerName,
@@ -39,8 +40,8 @@ import {
   type OwnedChest,
   type PlayerProfile,
 } from './storage'
-import { CharacterModel } from './characters/CharacterModel'
-import { CARD_PORTRAIT_BG } from './characters/cardArt'
+import { ProfileChip } from './ProfileChip'
+import { getTitle } from './cosmeticsCatalog'
 
 type Props = {
   onPlay: (opponentName?: string | null) => void
@@ -74,11 +75,12 @@ export function HomeScreen({
 }: Props) {
   const [friends, setFriends] = useState<Friend[]>(() => loadFriends())
   const myCode = useMemo(() => loadAccountCode(), [])
-  const avatarId = useMemo(() => loadAvatarId(), [])
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteFriend, setInviteFriend] = useState<Friend | null>(null)
   const [playerName, setPlayerName] = useState(() => loadPlayerName())
   const [profile, setProfile] = useState<PlayerProfile>(() => loadProfile())
+  const avatarId = useMemo(() => loadAvatarId(), [profile])
+  const cosmetics = useMemo(() => loadCosmetics(), [profile])
   const [daily, setDaily] = useState<DailyState>(() => loadDaily())
   const [chests, setChests] = useState<OwnedChest[]>(() => loadChests())
   const [now, setNow] = useState(() => Date.now())
@@ -91,10 +93,13 @@ export function HomeScreen({
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 1000)
     const onFriends = () => setFriends(loadFriends())
+    const onProfile = () => setProfile(loadProfile())
     window.addEventListener('philroyale-friends-changed', onFriends)
+    window.addEventListener('philroyale-profile-changed', onProfile)
     return () => {
       window.clearInterval(id)
       window.removeEventListener('philroyale-friends-changed', onFriends)
+      window.removeEventListener('philroyale-profile-changed', onProfile)
     }
   }, [])
 
@@ -220,18 +225,28 @@ export function HomeScreen({
             boxShadow: 'inset 0 1px 0 #c9a22744',
           }}
         >
-          <div
-            className="h-9 w-9 shrink-0 overflow-hidden rounded-lg"
-            style={{ background: CARD_PORTRAIT_BG }}
-          >
-            <CharacterModel charId={avatarId} anim="idle" facing={-Math.PI / 2} portrait />
-          </div>
-          <input
-            value={playerName}
-            onChange={(e) => persistName(e.target.value)}
-            placeholder="Name"
-            className="min-w-0 flex-1 bg-transparent text-sm font-extrabold text-white outline-none placeholder:text-white/35"
+          <ProfileChip
+            avatarId={avatarId}
+            titleId={cosmetics.titleId}
+            frameId={cosmetics.frameId}
+            size="sm"
           />
+          <div className="min-w-0 flex-1">
+            <input
+              value={playerName}
+              onChange={(e) => persistName(e.target.value)}
+              placeholder="Name"
+              className="w-full min-w-0 bg-transparent text-sm font-extrabold text-white outline-none placeholder:text-white/35"
+            />
+            {getTitle(cosmetics.titleId).text ? (
+              <p
+                className="truncate text-[0.58rem] font-extrabold uppercase tracking-wide"
+                style={{ color: getTitle(cosmetics.titleId).color }}
+              >
+                {getTitle(cosmetics.titleId).text}
+              </p>
+            ) : null}
+          </div>
           <span className="shrink-0 text-sm font-black tabular-nums text-[#f5d76e]">
             {profile.trophies} ★
           </span>

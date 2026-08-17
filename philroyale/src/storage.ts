@@ -55,6 +55,14 @@ import {
   getGoldWithGemsPack,
   getRealMoneyOffer,
 } from './shopCatalog'
+import {
+  DEFAULT_FRAME_ID,
+  DEFAULT_TITLE_ID,
+  FRAME_CATALOG,
+  TITLE_CATALOG,
+  sanitizeFrameId,
+  sanitizeTitleId,
+} from './cosmeticsCatalog'
 
 export type { GameMode } from './gameModes'
 export { parseGameMode, earnsTrophies, isPartyMode, modeLabel } from './gameModes'
@@ -122,6 +130,9 @@ export type Friend = {
   /** Last known club (from presence) — profile → view their club. */
   clubCode?: string
   clubName?: string
+  avatarId?: string
+  titleId?: string
+  frameId?: string
   /** When they joined via your invite link */
   addedAt: string
 }
@@ -260,6 +271,34 @@ export function saveFriendTrophies(playerId: string, trophies: number): void {
   if (changed) saveFriends(friends)
 }
 
+export function saveFriendCosmetics(
+  playerId: string,
+  cosmetics: { avatarId?: string; titleId?: string; frameId?: string },
+): void {
+  const id = playerId.trim()
+  if (!id) return
+  const friends = loadFriends()
+  let changed = false
+  for (const f of friends) {
+    const code = (f.playerId || f.id || '').replace(/\D/g, '').slice(0, 6)
+    const want = id.replace(/\D/g, '').slice(0, 6)
+    if (f.playerId !== id && f.id !== id && !(want.length === 6 && code === want)) continue
+    if (cosmetics.avatarId && f.avatarId !== cosmetics.avatarId) {
+      f.avatarId = cosmetics.avatarId
+      changed = true
+    }
+    if (cosmetics.titleId && f.titleId !== cosmetics.titleId) {
+      f.titleId = cosmetics.titleId
+      changed = true
+    }
+    if (cosmetics.frameId && f.frameId !== cosmetics.frameId) {
+      f.frameId = cosmetics.frameId
+      changed = true
+    }
+  }
+  if (changed) saveFriends(friends)
+}
+
 const LEADERBOARD_SEEN_KEY = 'philroyale.leaderboardSeen.v1'
 
 export type SeenLeaderboardPlayer = {
@@ -267,6 +306,9 @@ export type SeenLeaderboardPlayer = {
   name: string
   trophies: number
   updatedAt: number
+  avatarId?: string
+  titleId?: string
+  frameId?: string
 }
 
 /** All-time local registry of Phil Royale players this device has seen. */
@@ -281,6 +323,9 @@ export function loadSeenLeaderboardPlayers(): SeenLeaderboardPlayer[] {
       name: String(row.name || `Player ${c}`).slice(0, 32),
       trophies: Math.max(0, Number(row.trophies) || 0),
       updatedAt: Number(row.updatedAt) || 0,
+      avatarId: typeof row.avatarId === 'string' ? row.avatarId : undefined,
+      titleId: typeof row.titleId === 'string' ? row.titleId : undefined,
+      frameId: typeof row.frameId === 'string' ? row.frameId : undefined,
     })
   }
   return out
@@ -291,6 +336,7 @@ export function noteSeenLeaderboardPlayer(
   code: string,
   name: string,
   trophies?: number,
+  cosmetics?: { avatarId?: string; titleId?: string; frameId?: string },
 ): void {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
   if (c.length !== 6) return
@@ -313,6 +359,9 @@ export function noteSeenLeaderboardPlayer(
     name: nextName,
     trophies: nextT,
     updatedAt: Date.now(),
+    avatarId: cosmetics?.avatarId || prev?.avatarId,
+    titleId: cosmetics?.titleId || prev?.titleId,
+    frameId: cosmetics?.frameId || prev?.frameId,
   }
   try {
     localStorage.setItem(LEADERBOARD_SEEN_KEY, JSON.stringify(all))
@@ -766,6 +815,7 @@ const EMOTES_KEY = 'philroyale.emotes.v1'
 const ACTIVE_EMOTES_KEY = 'philroyale.activeEmotes.v1'
 /** One-shot: strip formerly-free photo pack so they must be bought with gems. */
 const PHOTO_PACK_PAID_MIGRATION_KEY = 'philroyale.emotes.photoPackPaid.v1'
+const COSMETICS_KEY = 'philroyale.cosmetics.v1'
 
 export type PlayerProfile = {
   trophies: number
@@ -2934,6 +2984,113 @@ export function saveAvatarId(avatarId: string): void {
   const p = loadProfile()
   p.avatarId = CHARACTERS.some((c) => c.id === avatarId) ? avatarId : 'phil'
   saveProfile(p)
+}
+
+export type CosmeticsState = {
+  ownedTitles: string[]
+  ownedFrames: string[]
+  titleId: string
+  frameId: string
+}
+
+function defaultCosmetics(): CosmeticsState {
+  return {
+    ownedTitles: TITLE_CATALOG.filter((t) => t.starter || t.priceGems <= 0).map((t) => t.id),
+    ownedFrames: FRAME_CATALOG.filter((f) => f.starter || f.priceGems <= 0).map((f) => f.id),
+    titleId: DEFAULT_TITLE_ID,
+    frameId: DEFAULT_FRAME_ID,
+  }
+}
+
+export function loadCosmetics(): CosmeticsState {
+  const raw = readJson<Partial<CosmeticsState> | null>(COSMETICS_KEY, null)
+  const base = defaultCosmetics()
+  const ownedTitles = new Set([
+    ...base.ownedTitles,
+    ...(Array.isArray(raw?.ownedTitles) ? raw.ownedTitles : []),
+  ])
+  const ownedFrames = new Set([
+    ...base.ownedFrames,
+    ...(Array.isArray(raw?.ownedFrames) ? raw.ownedFrames : []),
+  ])
+  const titleId = sanitizeTitleId(raw?.titleId)
+  const frameId = sanitizeFrameId(raw?.frameId)
+  const next: CosmeticsState = {
+    ownedTitles: [...ownedTitles],
+    ownedFrames: [...ownedFrames],
+    titleId: ownedTitles.has(titleId) ? titleId : DEFAULT_TITLE_ID,
+    frameId: ownedFrames.has(frameId) ? frameId : DEFAULT_FRAME_ID,
+  }
+  return next
+}
+
+function saveCosmetics(state: CosmeticsState): void {
+  localStorage.setItem(COSMETICS_KEY, JSON.stringify(state))
+}
+
+export function loadEquippedTitleId(): string {
+  return loadCosmetics().titleId
+}
+
+export function loadEquippedFrameId(): string {
+  return loadCosmetics().frameId
+}
+
+export function equipTitle(id: string): { ok: boolean; message: string } {
+  const state = loadCosmetics()
+  const next = sanitizeTitleId(id)
+  if (!state.ownedTitles.includes(next)) return { ok: false, message: 'Title locked' }
+  state.titleId = next
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: 'Title equipped' }
+}
+
+export function equipFrame(id: string): { ok: boolean; message: string } {
+  const state = loadCosmetics()
+  const next = sanitizeFrameId(id)
+  if (!state.ownedFrames.includes(next)) return { ok: false, message: 'Frame locked' }
+  state.frameId = next
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: 'Frame equipped' }
+}
+
+export function buyTitle(id: string): { ok: boolean; message: string } {
+  const def = TITLE_CATALOG.find((t) => t.id === id)
+  if (!def || def.priceGems <= 0) return { ok: false, message: 'Title not for sale' }
+  const state = loadCosmetics()
+  if (state.ownedTitles.includes(def.id)) return { ok: false, message: 'Already owned' }
+  const profile = loadProfile()
+  if (profile.gems < def.priceGems) return { ok: false, message: `Need ${def.priceGems} gems` }
+  profile.gems -= def.priceGems
+  state.ownedTitles.push(def.id)
+  state.titleId = def.id
+  saveProfile(profile)
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: `${def.label} unlocked!` }
+}
+
+export function buyFrame(id: string): { ok: boolean; message: string } {
+  const def = FRAME_CATALOG.find((f) => f.id === id)
+  if (!def || def.priceGems <= 0) return { ok: false, message: 'Frame not for sale' }
+  const state = loadCosmetics()
+  if (state.ownedFrames.includes(def.id)) return { ok: false, message: 'Already owned' }
+  const profile = loadProfile()
+  if (profile.gems < def.priceGems) return { ok: false, message: `Need ${def.priceGems} gems` }
+  profile.gems -= def.priceGems
+  state.ownedFrames.push(def.id)
+  state.frameId = def.id
+  saveProfile(profile)
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: `${def.label} unlocked!` }
+}
+
+export function cosmeticsPayload(): { avatarId: string; titleId: string; frameId: string } {
+  const c = loadCosmetics()
+  return { avatarId: loadAvatarId(), titleId: c.titleId, frameId: c.frameId }
 }
 
 /* ——— Events ——— */

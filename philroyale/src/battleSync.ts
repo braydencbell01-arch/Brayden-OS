@@ -154,6 +154,9 @@ export type BattleRoomMessage =
       role: BattleRole
       name: string
       at: string
+      avatarId?: string
+      titleId?: string
+      frameId?: string
     }
   | {
       /** Guest accepted — host can leave Waiting and start hosting. */
