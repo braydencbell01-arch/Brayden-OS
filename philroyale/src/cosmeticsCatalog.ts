@@ -62,6 +62,7 @@ export const TITLE_CATALOG: TitleDef[] = [
   { id: 'title-sundae', label: 'Sundae Slayer', text: 'Sundae Slayer', priceGems: 80, rarity: 'rare' },
   { id: 'title-gym', label: 'Gym Rat', text: 'Gym Rat', priceGems: 80, rarity: 'rare' },
   { id: 'title-love-phil', label: 'I ❤️ Phil', text: 'I ❤️ Phil', priceGems: 80, rarity: 'rare' },
+  { id: 'title-mighty-phil', label: 'The Mighty Phil', text: 'The Mighty Phil', priceGems: 80, rarity: 'rare' },
   { id: 'title-pete-sake', label: "For Pete's Sake", text: "For Pete's Sake", priceGems: 80, rarity: 'rare' },
   { id: 'title-hunter', label: 'Trophy Hunter', text: 'Trophy Hunter', priceGems: 110, rarity: 'epic' },
   { id: 'title-cluck', label: 'Clucktown Champ', text: 'Clucktown Champ', priceGems: 110, rarity: 'epic' },
