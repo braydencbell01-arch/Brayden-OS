@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CHARACTERS } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
-import { ProfileChip } from './ProfileChip'
-import { FRAME_CATALOG, TITLE_CATALOG } from './cosmeticsCatalog'
+import { FRAME_CATALOG, TITLE_CATALOG, getTitle, titleColor } from './cosmeticsCatalog'
+import { FramePreview, NameWithTitle, ProfileChip } from './ProfileChip'
 import { playerLevelFromXp } from './clubMeta'
 import {
   EMOTE_CATALOG,
@@ -251,6 +251,7 @@ function PlayerProfileModal({
         >
           {row.name}
         </h2>
+        <NameWithTitle titleId={row.titleId} titleClass="mt-0.5 text-[0.75rem] font-extrabold tracking-wide" />
         <p className="mt-1 text-sm font-extrabold uppercase tracking-wide text-white/55">
           {row.inBattle ? 'In battle' : row.online ? 'Online' : 'Offline'}
         </p>
@@ -494,14 +495,17 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
               maxLength={20}
               className="w-full rounded-lg bg-[#140e0a] px-2.5 py-1.5 text-base font-extrabold text-white outline-none ring-1 ring-white/15"
             />
+            {getTitle(cosmetics.titleId).text ? (
+              <p
+                className="mt-0.5 text-[0.7rem] font-extrabold tracking-wide"
+                style={{ color: titleColor(getTitle(cosmetics.titleId)) }}
+              >
+                {getTitle(cosmetics.titleId).text}
+              </p>
+            ) : null}
             <p className="mt-1 text-sm font-bold text-white/80">
               {profile.trophies} trophies · Peak {profile.peakTrophies}
             </p>
-            {cosmetics.titleId && cosmetics.titleId !== 'title-none' ? (
-              <p className="text-[0.7rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
-                {TITLE_CATALOG.find((t) => t.id === cosmetics.titleId)?.text}
-              </p>
-            ) : null}
             <p className="text-xs font-extrabold text-[#f5d76e]/85">
               Level {level.level} · Friend code {formatAccountCode(code)}
               {myRank > 0 ? ` · Rank #${myRank}` : ''}
@@ -566,18 +570,17 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
                       </span>
                       <ProfileChip
                         avatarId={row.isYou ? avatarId : row.avatarId}
-                        titleId={row.isYou ? cosmetics.titleId : row.titleId}
                         frameId={row.isYou ? cosmetics.frameId : row.frameId}
                         size="xs"
                       />
-                      <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-white">
-                        {row.name}
-                        {row.isYou ? (
-                          <span className="ml-1 text-[0.65rem] font-black uppercase text-[#f5d76e]">
-                            you
-                          </span>
-                        ) : null}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <NameWithTitle
+                          name={row.name}
+                          titleId={row.isYou ? cosmetics.titleId : row.titleId}
+                          you={row.isYou}
+                          nameClass="truncate text-sm font-extrabold text-white"
+                        />
+                      </div>
                       <span
                         className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                           row.online ? 'bg-[#7dff9a]' : 'bg-white/25'
@@ -615,9 +618,9 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
                     }}
                     className="rounded-full px-2.5 py-1 text-[0.65rem] font-extrabold"
                     style={{
-                      color: t.color,
+                      color: titleColor(t),
                       background: on ? '#2a1a12' : '#140e0a',
-                      boxShadow: on ? `inset 0 0 0 2px ${t.color}` : 'inset 0 0 0 1px #ffffff22',
+                      boxShadow: on ? `inset 0 0 0 2px ${titleColor(t)}` : 'inset 0 0 0 1px #ffffff22',
                     }}
                   >
                     {t.text || 'None'}
@@ -640,13 +643,12 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
                       equipFrame(f.id)
                       setCosmetics(loadCosmetics())
                     }}
-                    className="h-9 w-9 rounded-lg"
-                    style={{
-                      background: f.bg,
-                      boxShadow: on ? `${f.ring}, 0 0 0 2px #fff` : f.ring,
-                    }}
+                    className="rounded-md p-0.5"
+                    style={{ boxShadow: on ? '0 0 0 2px #fff' : 'none' }}
                     aria-label={f.label}
-                  />
+                  >
+                    <FramePreview frameId={f.id} className="h-9 w-9" />
+                  </button>
                 </li>
               )
             })}

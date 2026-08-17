@@ -13,10 +13,13 @@ import {
 } from './emoteCatalog'
 import { CHEST_META, MAX_CARD_LEVEL, type ChestRarity } from './progression'
 import {
+  TITLE_RARITY_LABEL,
   shopFrames,
   shopTitles,
+  titleColor,
   type FrameDef,
 } from './cosmeticsCatalog'
+import { FramePreview } from './ProfileChip'
 import {
   GEM_PACKS,
   GOLD_WITH_GEMS_PACKS,
@@ -231,12 +234,14 @@ function EmoteTile({
 function CosmeticBuyTile({
   label,
   color,
+  rarity,
   price,
   owned,
   onBuy,
 }: {
   label: string
   color: string
+  rarity: string
   price: number
   owned: boolean
   onBuy: () => void
@@ -254,6 +259,9 @@ function CosmeticBuyTile({
     >
       <p className="truncate text-[0.7rem] font-extrabold" style={{ color }}>
         {label}
+      </p>
+      <p className="text-[0.5rem] font-extrabold uppercase tracking-wide" style={{ color }}>
+        {rarity}
       </p>
       <p className="mt-1 flex items-center gap-0.5 text-[0.65rem] font-black text-white">
         {owned ? (
@@ -285,10 +293,7 @@ function FrameBuyTile({
       onClick={onBuy}
       className="flex flex-col items-center gap-1 disabled:opacity-70"
     >
-      <div
-        className="h-12 w-12 overflow-hidden rounded-xl"
-        style={{ background: frame.bg, boxShadow: frame.ring }}
-      />
+      <FramePreview frameId={frame.id} className="h-12 w-12" />
       <span className="text-center text-[0.55rem] font-extrabold text-white">{frame.label}</span>
       <span className="flex items-center gap-0.5 text-[0.6rem] font-black text-white">
         {owned ? (
@@ -589,7 +594,8 @@ export function ShopScreen() {
                 <CosmeticBuyTile
                   key={title.id}
                   label={title.label}
-                  color={title.color}
+                  color={titleColor(title)}
+                  rarity={TITLE_RARITY_LABEL[title.rarity]}
                   price={title.priceGems}
                   owned={cosmetics.ownedTitles.includes(title.id)}
                   onBuy={() => handle(buyTitle(title.id))}

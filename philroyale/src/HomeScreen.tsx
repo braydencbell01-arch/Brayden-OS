@@ -40,8 +40,8 @@ import {
   type OwnedChest,
   type PlayerProfile,
 } from './storage'
-import { ProfileChip } from './ProfileChip'
-import { getTitle } from './cosmeticsCatalog'
+import { NameWithTitle, ProfileChip } from './ProfileChip'
+import { getTitle, titleColor } from './cosmeticsCatalog'
 
 type Props = {
   onPlay: (opponentName?: string | null) => void
@@ -240,8 +240,8 @@ export function HomeScreen({
             />
             {getTitle(cosmetics.titleId).text ? (
               <p
-                className="truncate text-[0.58rem] font-extrabold uppercase tracking-wide"
-                style={{ color: getTitle(cosmetics.titleId).color }}
+                className="truncate text-[0.58rem] font-extrabold tracking-wide"
+                style={{ color: titleColor(getTitle(cosmetics.titleId)) }}
               >
                 {getTitle(cosmetics.titleId).text}
               </p>
@@ -578,14 +578,18 @@ export function HomeScreen({
                         }}
                         className="flex w-full items-center justify-between rounded-lg bg-[#2a1a12] px-3 py-2.5 text-left ring-1 ring-white/10 disabled:opacity-45"
                       >
-                        <span className="flex items-center gap-2 font-bold text-white">
+                        <span className="flex min-w-0 items-center gap-2">
                           <span
-                            className={`inline-block h-2 w-2 rounded-full ${
+                            className={`inline-block h-2 w-2 shrink-0 rounded-full ${
                               online ? 'bg-[#7dff9a]' : 'bg-white/25'
                             }`}
                             aria-hidden
                           />
-                          {f.name}
+                          <NameWithTitle
+                            name={f.name}
+                            titleId={f.titleId}
+                            nameClass="truncate font-bold text-white"
+                          />
                         </span>
                         <span
                           className={`text-xs font-extrabold ${
