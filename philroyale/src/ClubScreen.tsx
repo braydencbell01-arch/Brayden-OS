@@ -10,6 +10,7 @@ import {
 import { normalizeClubCode, publishClub, subscribeClub, type ClubMessage } from './clubHub'
 import { joinClubVerified } from './clubSync'
 import { formatWarRemain, phaseLabel } from './clubWar'
+import { NameWithTitle } from './ProfileChip'
 import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
 import {
   CLUB_SHOP_OFFERS,
@@ -22,6 +23,8 @@ import {
   fulfillDonation,
   loadCardProgress,
   loadClubWar,
+  loadCosmetics,
+  loadFriends,
   loadPlayerId,
   loadPlayerName,
   loadProfile,
@@ -47,6 +50,16 @@ type Props = {
     opts?: { mode?: GameMode; playerId?: string },
   ) => Promise<void>
   friendPresence?: Record<string, FriendPresenceInfo>
+}
+
+function lookUpTitleId(
+  playerId: string | undefined,
+  isYou: boolean | undefined,
+  presence: Record<string, FriendPresenceInfo>,
+): string | undefined {
+  if (isYou) return loadCosmetics().titleId
+  if (!playerId) return undefined
+  return presence[playerId]?.titleId || loadFriends().find((f) => f.playerId === playerId)?.titleId
 }
 
 export function ClubScreen({
@@ -450,16 +463,15 @@ export function ClubScreen({
                     onClick={() => setMemberProfile(m)}
                     className="flex w-full items-center justify-between rounded-lg bg-[#221610] px-3 py-2 text-left ring-1 ring-white/10 disabled:opacity-90"
                   >
-                    <div>
-                      <p className="font-bold text-white">
-                        {m.isYou ? '★ ' : ''}
-                        {m.name}
-                        {online ? (
-                          <span className="ml-1 text-[0.6rem] font-extrabold text-[#7dff9a]">
-                            ONLINE
-                          </span>
-                        ) : null}
-                      </p>
+                    <div className="min-w-0">
+                      <NameWithTitle
+                        name={`${m.isYou ? '★ ' : ''}${m.name}`}
+                        titleId={lookUpTitleId(m.playerId, m.isYou, friendPresence)}
+                        nameClass="font-bold text-white"
+                      />
+                      {online ? (
+                        <span className="text-[0.6rem] font-extrabold text-[#7dff9a]">ONLINE</span>
+                      ) : null}
                       <p className="text-[0.65rem] font-semibold text-white/55">
                         {roleLabel(m.role)}
                         {m.playerId ? ` · ${m.playerId.slice(0, 4)}…` : ''}
@@ -610,6 +622,10 @@ export function ClubScreen({
             <h2 className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
               {memberProfile.name}
             </h2>
+            <NameWithTitle
+              titleId={lookUpTitleId(memberProfile.playerId, false, friendPresence)}
+              titleClass="mt-0.5 text-[0.75rem] font-extrabold tracking-wide"
+            />
             <p className="mt-1 text-sm font-semibold text-white/70">
               {roleLabel(memberProfile.role)} · {memberProfile.trophies} trophies
             </p>
@@ -990,7 +1006,13 @@ export function ClubPeekModal({
                 key={m.playerId}
                 className="flex items-center justify-between px-3 py-1.5 text-sm"
               >
-                <span className="truncate font-bold text-white">{m.name}</span>
+                <span className="min-w-0">
+                  <NameWithTitle
+                    name={m.name}
+                    titleId={lookUpTitleId(m.playerId, false, {})}
+                    nameClass="truncate font-bold text-white"
+                  />
+                </span>
                 <span className="tabular-nums font-extrabold text-[#f5d76e]">
                   {m.trophies ?? 0}
                 </span>

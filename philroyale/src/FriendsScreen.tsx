@@ -6,13 +6,13 @@ import {
   peekDirectoryLastSeen,
   type FriendPresenceInfo,
 } from './socialHub'
-import { ProfileChip } from './ProfileChip'
-import { getTitle } from './cosmeticsCatalog'
+import { NameWithTitle, ProfileChip } from './ProfileChip'
 import {
   formatAccountCode,
   friendInviteUrl,
   getFriendLastOnlineAt,
   loadAccountCode,
+  loadCosmetics,
   loadFriendMeta,
   loadFriends,
   loadPlayerId,
@@ -325,6 +325,10 @@ export function FriendsScreen({
             placeholder="Name friends will see"
             className="mt-1 w-full rounded-lg bg-[#221610] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
           />
+          <NameWithTitle
+            titleId={loadCosmetics().titleId}
+            titleClass="mt-1 text-[0.65rem] font-extrabold tracking-wide"
+          />
         </label>
         <div className="mt-2 flex gap-2">
           {(
@@ -475,11 +479,14 @@ export function FriendsScreen({
                             size="sm"
                           />
                           <div className="min-w-0">
-                        <p className="font-bold text-white">
-                          {pinned ? '★ ' : ''}
-                          {f.name}
+                        <div className="flex items-center gap-2">
+                          <NameWithTitle
+                            name={`${pinned ? '★ ' : ''}${f.name}`}
+                            titleId={presence?.titleId || f.titleId}
+                            nameClass="font-bold text-white"
+                          />
                           <span
-                            className="ml-2 inline-block h-2 w-2 rounded-full"
+                            className="ml-auto inline-block h-2 w-2 shrink-0 rounded-full"
                             style={{
                               background: statusColor,
                               boxShadow: online || battling ? `0 0 6px ${statusColor}` : 'none',
@@ -493,11 +500,11 @@ export function FriendsScreen({
                             }
                           />
                           {battling ? (
-                            <span className="ml-1.5 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#ffb020]">
+                            <span className="shrink-0 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#ffb020]">
                               In battle
                             </span>
                           ) : null}
-                        </p>
+                        </div>
                         <p className="text-[0.65rem] font-semibold text-white/50">
                           {statusLabel}
                           {f.playerId ? ` · ${formatAccountCode(f.playerId)}` : ''}
@@ -832,18 +839,14 @@ export function FriendProfileModal({
           {pinned ? '★ ' : ''}
           {friend.name}
         </h2>
+        <NameWithTitle
+          titleId={presence?.titleId || friend.titleId}
+          titleClass="mt-0.5 text-[0.75rem] font-extrabold tracking-wide"
+        />
         <p className="mt-1 text-sm font-extrabold uppercase tracking-wide text-white/55">
           {status}
           {battling && presence?.opponentName ? ` · vs ${presence.opponentName}` : ''}
         </p>
-        {getTitle(presence?.titleId || friend.titleId).text ? (
-          <p
-            className="mt-0.5 text-[0.7rem] font-extrabold uppercase tracking-wide"
-            style={{ color: getTitle(presence?.titleId || friend.titleId).color }}
-          >
-            {getTitle(presence?.titleId || friend.titleId).text}
-          </p>
-        ) : null}
           </div>
         </div>
         <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">

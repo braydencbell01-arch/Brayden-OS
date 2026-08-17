@@ -70,8 +70,7 @@ import {
 } from './storage'
 import { getEmoteById, PHIL_EMOTE_SRC, type EmoteDef } from './emoteCatalog'
 import { CharacterModel } from './characters/CharacterModel'
-import { ProfileChip } from './ProfileChip'
-import { getTitle } from './cosmeticsCatalog'
+import { NameWithTitle, ProfileChip } from './ProfileChip'
 import type { BattleNet } from './battleSync'
 import { publishBattle, subscribeBattle } from './battleSync'
 import { useBattle } from './useBattle'
@@ -1141,20 +1140,12 @@ export function BattleScreen({
             size="xs"
           />
           <div className="min-w-0 leading-tight">
-            <p
-              className="max-w-[5.5rem] truncate text-[0.62rem] font-extrabold drop-shadow-[0_1px_1px_#000]"
-              style={{ color: '#f06ad8' }}
-            >
-              {foeName}
-            </p>
-            {getTitle(peerLook.titleId).text ? (
-              <p
-                className="max-w-[5.5rem] truncate text-[0.42rem] font-extrabold uppercase tracking-wide drop-shadow-[0_1px_1px_#000]"
-                style={{ color: getTitle(peerLook.titleId).color }}
-              >
-                {getTitle(peerLook.titleId).text}
-              </p>
-            ) : null}
+            <NameWithTitle
+              name={foeName}
+              titleId={peerLook.titleId}
+              nameClass="max-w-[5.5rem] truncate text-[0.62rem] font-extrabold drop-shadow-[0_1px_1px_#000] text-[#f06ad8]"
+              titleClass="max-w-[5.5rem] truncate text-[0.42rem] font-extrabold drop-shadow-[0_1px_1px_#000]"
+            />
             {clanLine ? (
               <p className="max-w-[5.5rem] truncate text-[0.48rem] font-bold text-white drop-shadow-[0_1px_1px_#000]">
                 {clanLine}
@@ -1300,10 +1291,15 @@ export function BattleScreen({
               <p className="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
                 Spectating
               </p>
-              <p className="text-sm font-bold text-white">
-                {foeName}
-                {clanLine ? ` · ${clanLine}` : ''}
-              </p>
+              <NameWithTitle
+                name={foeName}
+                titleId={peerLook.titleId}
+                nameClass="text-sm font-bold text-white"
+                titleClass="text-[0.65rem] font-extrabold tracking-wide"
+              />
+              {clanLine ? (
+                <p className="text-xs font-bold text-white/80">{clanLine}</p>
+              ) : null}
             </div>
             <button
               type="button"
