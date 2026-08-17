@@ -34,22 +34,35 @@ export const EMOTE_PHOTO_10 = `${BASE}emote-photo-10.png`
 
 export const MAX_ACTIVE_EMOTES = 12
 
+/** Photo pack that used to be free starters — now gem shop only. */
+export const PAID_PHOTO_PACK_IDS = [
+  'photo-01',
+  'photo-02',
+  'photo-03',
+  'photo-04',
+  'photo-05',
+  'photo-06',
+  'photo-07',
+  'photo-08',
+  'photo-09',
+  'photo-10',
+] as const
+
 export const EMOTE_CATALOG: EmoteDef[] = [
   { id: 'phil', label: 'Phil wave', kind: 'phil', priceGems: 0, anim: 'bounce', starter: true },
   { id: 'coach', label: 'Coach smile', kind: 'photo', src: EMOTE_COACH, priceGems: 50, anim: 'wiggle' },
   { id: 'hood', label: 'Hood stare', kind: 'photo', src: EMOTE_HOOD, priceGems: 50, anim: 'bob' },
   { id: 'buzz', label: 'Buzz cut', kind: 'photo', src: EMOTE_BUZZ, priceGems: 50, anim: 'bounce' },
-  // New photo pack — full-frame circles, unlocked for everyone
-  { id: 'photo-01', label: 'Event polo', kind: 'photo', src: EMOTE_PHOTO_01, priceGems: 0, anim: 'bob', starter: true },
-  { id: 'photo-02', label: 'Arms crossed', kind: 'photo', src: EMOTE_PHOTO_02, priceGems: 0, anim: 'wiggle', starter: true },
-  { id: 'photo-03', label: 'Blue jacket', kind: 'photo', src: EMOTE_PHOTO_03, priceGems: 0, anim: 'bounce', starter: true },
-  { id: 'photo-04', label: 'Group smile', kind: 'photo', src: EMOTE_PHOTO_04, priceGems: 0, anim: 'bob', starter: true },
-  { id: 'photo-05', label: 'Says what', kind: 'photo', src: EMOTE_PHOTO_05, priceGems: 0, anim: 'wiggle', starter: true },
-  { id: 'photo-06', label: 'Big grin', kind: 'photo', src: EMOTE_PHOTO_06, priceGems: 0, anim: 'bounce', starter: true },
-  { id: 'photo-07', label: 'Hands out', kind: 'photo', src: EMOTE_PHOTO_07, priceGems: 0, anim: 'bob', starter: true },
-  { id: 'photo-08', label: 'Side glance', kind: 'photo', src: EMOTE_PHOTO_08, priceGems: 0, anim: 'wiggle', starter: true },
-  { id: 'photo-09', label: 'Hairnet', kind: 'photo', src: EMOTE_PHOTO_09, priceGems: 0, anim: 'bounce', starter: true },
-  { id: 'photo-10', label: 'Close-up', kind: 'photo', src: EMOTE_PHOTO_10, priceGems: 0, anim: 'bob', starter: true },
+  { id: 'photo-01', label: 'Event photo', kind: 'photo', src: EMOTE_PHOTO_01, priceGems: 50, anim: 'bob' },
+  { id: 'photo-02', label: 'Arms crossed', kind: 'photo', src: EMOTE_PHOTO_02, priceGems: 50, anim: 'wiggle' },
+  { id: 'photo-03', label: 'Blue jacket', kind: 'photo', src: EMOTE_PHOTO_03, priceGems: 50, anim: 'bounce' },
+  { id: 'photo-04', label: 'Group smile', kind: 'photo', src: EMOTE_PHOTO_04, priceGems: 50, anim: 'bob' },
+  { id: 'photo-05', label: 'Says what', kind: 'photo', src: EMOTE_PHOTO_05, priceGems: 50, anim: 'wiggle' },
+  { id: 'photo-06', label: 'Big grin', kind: 'photo', src: EMOTE_PHOTO_06, priceGems: 50, anim: 'bounce' },
+  { id: 'photo-07', label: 'Hands out', kind: 'photo', src: EMOTE_PHOTO_07, priceGems: 50, anim: 'bob' },
+  { id: 'photo-08', label: 'Side glance', kind: 'photo', src: EMOTE_PHOTO_08, priceGems: 50, anim: 'wiggle' },
+  { id: 'photo-09', label: 'Hair net', kind: 'photo', src: EMOTE_PHOTO_09, priceGems: 50, anim: 'bounce' },
+  { id: 'photo-10', label: 'Close-up', kind: 'photo', src: EMOTE_PHOTO_10, priceGems: 50, anim: 'bob' },
   { id: 'emote-phil', label: 'Phil portrait', kind: 'character', charId: 'phil', priceGems: 80, anim: 'bob' },
   { id: 'emote-jeremy', label: 'Jeremy', kind: 'character', charId: 'jeremy', priceGems: 80, anim: 'wiggle' },
   { id: 'emote-kathie', label: 'Kathie', kind: 'character', charId: 'kathie', priceGems: 80, anim: 'bounce' },

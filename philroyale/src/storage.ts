@@ -47,6 +47,7 @@ import {
   getEmoteById,
   isPurchasableEmote,
   starterEmoteIds,
+  PAID_PHOTO_PACK_IDS,
   MAX_ACTIVE_EMOTES,
 } from './emoteCatalog'
 import {
@@ -763,6 +764,8 @@ const ROAD_KEY = 'philroyale.trophyRoad.v1'
 const SHOP_BOUGHT_KEY = 'philroyale.shopBought.v1'
 const EMOTES_KEY = 'philroyale.emotes.v1'
 const ACTIVE_EMOTES_KEY = 'philroyale.activeEmotes.v1'
+/** One-shot: strip formerly-free photo pack so they must be bought with gems. */
+const PHOTO_PACK_PAID_MIGRATION_KEY = 'philroyale.emotes.photoPackPaid.v1'
 
 export type PlayerProfile = {
   trophies: number
@@ -1761,7 +1764,15 @@ export function grantEmote(id: string): boolean {
 }
 
 export function loadOwnedEmotes(): string[] {
-  const owned = readJson<string[]>(EMOTES_KEY, [])
+  let owned = readJson<string[]>(EMOTES_KEY, [])
+  if (localStorage.getItem(PHOTO_PACK_PAID_MIGRATION_KEY) !== '1') {
+    const strip = new Set<string>(PAID_PHOTO_PACK_IDS)
+    owned = owned.filter((id) => !strip.has(id))
+    localStorage.setItem(PHOTO_PACK_PAID_MIGRATION_KEY, '1')
+    saveOwnedEmotes(owned)
+    const active = readJson<string[]>(ACTIVE_EMOTES_KEY, []).filter((id) => !strip.has(id))
+    localStorage.setItem(ACTIVE_EMOTES_KEY, JSON.stringify(active))
+  }
   const starters = starterEmoteIds()
   let changed = false
   for (const id of starters) {
