@@ -52,6 +52,9 @@ export type SocialMessage =
       /** Friend's camera in that room — spectator mirrors this view. */
       battleRole?: 'host' | 'guest'
       trophies?: number
+      avatarId?: string
+      titleId?: string
+      frameId?: string
     }
   | {
       type: 'battle_invite'
@@ -99,6 +102,9 @@ export type SocialMessage =
       inBattle?: boolean
       clubCode?: string
       clubName?: string
+      avatarId?: string
+      titleId?: string
+      frameId?: string
     }
 
 /** Latest presence snapshot for a friend (from heartbeats). */
@@ -112,6 +118,9 @@ export type FriendPresenceInfo = {
   trophies?: number
   clubCode?: string
   clubName?: string
+  avatarId?: string
+  titleId?: string
+  frameId?: string
 }
 
 /** How recently a presence ping counts as "online". */
@@ -300,6 +309,9 @@ export async function publishDirectory(
     challengeId?: string
     clubCode?: string
     clubName?: string
+    avatarId?: string
+    titleId?: string
+    frameId?: string
   },
 ): Promise<boolean> {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
@@ -310,6 +322,9 @@ export async function publishDirectory(
     trophies: extra?.trophies,
     inBattle: extra?.inBattle,
     challengeId: extra?.challengeId,
+    avatarId: extra?.avatarId,
+    titleId: extra?.titleId,
+    frameId: extra?.frameId,
   })
   const msg = {
     type: 'dir_ping' as const,
@@ -320,6 +335,9 @@ export async function publishDirectory(
     inBattle: extra?.inBattle,
     clubCode: extra?.clubCode,
     clubName: extra?.clubName,
+    avatarId: extra?.avatarId,
+    titleId: extra?.titleId,
+    frameId: extra?.frameId,
   } satisfies SocialMessage
 
   const cf = await mpPublish({ lobby: true, msg })

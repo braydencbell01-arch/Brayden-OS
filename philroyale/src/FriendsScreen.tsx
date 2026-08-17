@@ -6,6 +6,8 @@ import {
   peekDirectoryLastSeen,
   type FriendPresenceInfo,
 } from './socialHub'
+import { ProfileChip } from './ProfileChip'
+import { getTitle } from './cosmeticsCatalog'
 import {
   formatAccountCode,
   friendInviteUrl,
@@ -465,6 +467,14 @@ export function FriendsScreen({
                         onClick={() => setProfileFriend(f)}
                         className="min-w-0 flex-1 text-left"
                       >
+                        <div className="flex items-center gap-2">
+                          <ProfileChip
+                            avatarId={presence?.avatarId || f.avatarId}
+                            titleId={presence?.titleId || f.titleId}
+                            frameId={presence?.frameId || f.frameId}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
                         <p className="font-bold text-white">
                           {pinned ? '★ ' : ''}
                           {f.name}
@@ -496,6 +506,8 @@ export function FriendsScreen({
                         <p className="mt-0.5 text-[0.6rem] font-extrabold uppercase tracking-wide text-[#7ec8ff]/80">
                           Tap for profile
                         </p>
+                          </div>
+                        </div>
                       </button>
                       {battling && presence?.challengeId && onSpectate ? (
                         <button
@@ -805,6 +817,14 @@ export function FriendProfileModal({
           boxShadow: '0 12px 40px #00000088',
         }}
       >
+        <div className="flex items-center gap-3">
+          <ProfileChip
+            avatarId={presence?.avatarId || friend.avatarId}
+            titleId={presence?.titleId || friend.titleId}
+            frameId={presence?.frameId || friend.frameId}
+            size="lg"
+          />
+          <div className="min-w-0">
         <h2
           id="friend-profile-title"
           className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]"
@@ -816,6 +836,16 @@ export function FriendProfileModal({
           {status}
           {battling && presence?.opponentName ? ` · vs ${presence.opponentName}` : ''}
         </p>
+        {getTitle(presence?.titleId || friend.titleId).text ? (
+          <p
+            className="mt-0.5 text-[0.7rem] font-extrabold uppercase tracking-wide"
+            style={{ color: getTitle(presence?.titleId || friend.titleId).color }}
+          >
+            {getTitle(presence?.titleId || friend.titleId).text}
+          </p>
+        ) : null}
+          </div>
+        </div>
         <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
             <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">

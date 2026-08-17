@@ -9,6 +9,9 @@ export type MpPresence = {
   trophies?: number
   inBattle?: boolean
   challengeId?: string
+  avatarId?: string
+  titleId?: string
+  frameId?: string
 }
 
 export type MpLeaderboardRow = {
@@ -18,6 +21,9 @@ export type MpLeaderboardRow = {
   updatedAt?: number
   online?: boolean
   inBattle?: boolean
+  avatarId?: string
+  titleId?: string
+  frameId?: string
 }
 
 type MsgHandler = (msg: unknown) => void
@@ -40,6 +46,9 @@ const stickyLastSeen: Record<string, number> = {}
 let trophies = 0
 let inBattle = false
 let challengeId: string | undefined
+let avatarId: string | undefined
+let titleId: string | undefined
+let frameId: string | undefined
 
 async function resolveBase(): Promise<string | null> {
   if (cachedBase !== undefined) return cachedBase
@@ -178,6 +187,9 @@ function sendPing() {
         trophies,
         inBattle,
         challengeId,
+        avatarId,
+        titleId,
+        frameId,
       }),
     )
   } catch {
@@ -218,11 +230,17 @@ export function mpSetStatus(opts: {
   trophies?: number
   inBattle?: boolean
   challengeId?: string
+  avatarId?: string
+  titleId?: string
+  frameId?: string
 }) {
   if (opts.name) wsName = opts.name.trim().slice(0, 32) || wsName
   if (opts.trophies != null) trophies = opts.trophies
   if (opts.inBattle != null) inBattle = opts.inBattle
   if ('challengeId' in opts) challengeId = opts.challengeId
+  if (opts.avatarId) avatarId = opts.avatarId
+  if (opts.titleId) titleId = opts.titleId
+  if (opts.frameId) frameId = opts.frameId
   sendPing()
 }
 
@@ -324,7 +342,14 @@ export async function mpFetchLeaderboard(): Promise<MpLeaderboardRow[]> {
 
 /** Push known players onto the global board (friends / seen / self). */
 export async function mpReportLeaderboard(
-  players: { code: string; name: string; trophies?: number }[],
+  players: {
+    code: string
+    name: string
+    trophies?: number
+    avatarId?: string
+    titleId?: string
+    frameId?: string
+  }[],
 ): Promise<number> {
   const base = await resolveBase()
   if (!base || !players.length) return 0

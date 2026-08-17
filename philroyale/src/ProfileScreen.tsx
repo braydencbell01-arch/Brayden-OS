@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CHARACTERS } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
+import { ProfileChip } from './ProfileChip'
+import { FRAME_CATALOG, TITLE_CATALOG } from './cosmeticsCatalog'
 import { playerLevelFromXp } from './clubMeta'
 import {
   EMOTE_CATALOG,
@@ -18,6 +20,8 @@ import {
   loadActiveEmotes,
   loadAvatarId,
   loadCardProgress,
+  loadCosmetics,
+  cosmeticsPayload,
   loadFriends,
   loadOwnedEmotes,
   loadPlayerId,
@@ -30,6 +34,8 @@ import {
   saveAvatarId,
   savePlayerName,
   toggleActiveEmote,
+  equipTitle,
+  equipFrame,
 } from './storage'
 
 type Props = {
@@ -45,6 +51,9 @@ type BoardRow = {
   online: boolean
   inBattle: boolean
   isYou: boolean
+  avatarId?: string
+  titleId?: string
+  frameId?: string
 }
 
 function EmoteThumb({ emote }: { emote: EmoteDef }) {
@@ -69,6 +78,7 @@ function mergeBoard(
   myCode: string,
   myName: string,
   myTrophies: number,
+  mine: { avatarId?: string; titleId?: string; frameId?: string },
 ): BoardRow[] {
   const map = new Map<string, BoardRow>()
   const live = mpLastPresence()
@@ -163,6 +173,29 @@ function mergeBoard(
     })
   }
 
+  const seen = loadSeenLeaderboardPlayers()
+  const seenMap = new Map(seen.map((r) => [r.code, r]))
+  const friendByCode = new Map(
+    loadFriends()
+      .filter((f) => f.playerId)
+      .map((f) => [f.playerId!.replace(/\D/g, '').slice(0, 6), f]),
+  )
+  for (const [code, row] of map) {
+    if (code === myCode) {
+      row.avatarId = mine.avatarId
+      row.titleId = mine.titleId
+      row.frameId = mine.frameId
+      continue
+    }
+    const p = live[code]
+    const f = friendByCode.get(code)
+    const s = seenMap.get(code)
+    const rem = remote.find((r) => r.code === code)
+    row.avatarId = p?.avatarId || rem?.avatarId || f?.avatarId || s?.avatarId
+    row.titleId = p?.titleId || rem?.titleId || f?.titleId || s?.titleId
+    row.frameId = p?.frameId || rem?.frameId || f?.frameId || s?.frameId
+  }
+
   return [...map.values()].sort(
     (a, b) => b.trophies - a.trophies || a.name.localeCompare(b.name),
   )
@@ -204,6 +237,14 @@ function PlayerProfileModal({
           Rank #{rank}
           {row.isYou ? ' · You' : ''}
         </p>
+        <div className="mt-2 flex items-center gap-3">
+          <ProfileChip
+            avatarId={row.avatarId}
+            titleId={row.titleId}
+            frameId={row.frameId}
+            size="lg"
+          />
+          <div className="min-w-0">
         <h2
           id="lb-profile-title"
           className="font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]"
@@ -213,6 +254,8 @@ function PlayerProfileModal({
         <p className="mt-1 text-sm font-extrabold uppercase tracking-wide text-white/55">
           {row.inBattle ? 'In battle' : row.online ? 'Online' : 'Offline'}
         </p>
+          </div>
+        </div>
         <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-lg bg-[#140e0a] px-3 py-2 ring-1 ring-white/10">
             <dt className="text-[0.65rem] font-extrabold uppercase tracking-wide text-white/45">
@@ -270,6 +313,7 @@ function PlayerProfileModal({
 export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Props) {
   const [name, setName] = useState(() => loadPlayerName())
   const [avatarId, setAvatarId] = useState(() => loadAvatarId())
+  const [cosmetics, setCosmetics] = useState(() => loadCosmetics())
   const [owned, setOwned] = useState(() => loadOwnedEmotes())
   const [active, setActive] = useState(() => loadActiveEmotes())
   const [emoteMsg, setEmoteMsg] = useState<string | null>(null)
@@ -290,12 +334,18 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
     const myCode = loadPlayerId().replace(/\D/g, '').slice(0, 6)
     const me = loadPlayerName().trim() || 'Player'
     const myTrophies = loadProfile().trophies
-    noteSeenLeaderboardPlayer(myCode, me, myTrophies)
+    const mine = cosmeticsPayload()
+    noteSeenLeaderboardPlayer(myCode, me, myTrophies, mine)
 
     const live = mpLastPresence()
-    const payload: { code: string; name: string; trophies?: number }[] = [
-      { code: myCode, name: me, trophies: myTrophies },
-    ]
+    const payload: {
+      code: string
+      name: string
+      trophies?: number
+      avatarId?: string
+      titleId?: string
+      frameId?: string
+    }[] = [{ code: myCode, name: me, trophies: myTrophies, ...mine }]
 
     const pushRow = (code: string, name: string | undefined, trophies?: number) => {
       if (code.length !== 6) return
@@ -373,8 +423,9 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
         myId.replace(/\D/g, '').slice(0, 6),
         name.trim() || 'You',
         profile.trophies,
+        { avatarId, titleId: cosmetics.titleId, frameId: cosmetics.frameId },
       ),
-    [remoteBoard, myId, name, profile.trophies],
+    [remoteBoard, myId, name, profile.trophies, avatarId, cosmetics.titleId, cosmetics.frameId],
   )
 
   const myRank = board.findIndex((r) => r.isYou) + 1
@@ -429,12 +480,12 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
             boxShadow: 'inset 0 1px 0 #c9a22744, 0 6px 16px #00000055',
           }}
         >
-          <div
-            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl"
-            style={{ background: CARD_PORTRAIT_BG, boxShadow: '0 3px 0 #00000066' }}
-          >
-            <CharacterModel charId={avatarId} anim="idle" facing={-Math.PI / 2} portrait />
-          </div>
+          <ProfileChip
+            avatarId={avatarId}
+            titleId={cosmetics.titleId}
+            frameId={cosmetics.frameId}
+            size="lg"
+          />
           <div className="min-w-0 flex-1">
             <input
               value={name}
@@ -446,6 +497,11 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
             <p className="mt-1 text-sm font-bold text-white/80">
               {profile.trophies} trophies · Peak {profile.peakTrophies}
             </p>
+            {cosmetics.titleId && cosmetics.titleId !== 'title-none' ? (
+              <p className="text-[0.7rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
+                {TITLE_CATALOG.find((t) => t.id === cosmetics.titleId)?.text}
+              </p>
+            ) : null}
             <p className="text-xs font-extrabold text-[#f5d76e]/85">
               Level {level.level} · Friend code {formatAccountCode(code)}
               {myRank > 0 ? ` · Rank #${myRank}` : ''}
@@ -508,6 +564,12 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
                       >
                         {rank}
                       </span>
+                      <ProfileChip
+                        avatarId={row.isYou ? avatarId : row.avatarId}
+                        titleId={row.isYou ? cosmetics.titleId : row.titleId}
+                        frameId={row.isYou ? cosmetics.frameId : row.frameId}
+                        size="xs"
+                      />
                       <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-white">
                         {row.name}
                         {row.isYou ? (
@@ -534,6 +596,61 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
           {actionMsg ? (
             <p className="mt-1.5 text-xs font-bold text-[#7dff9a]">{actionMsg}</p>
           ) : null}
+        </section>
+
+        <section className="mt-4">
+          <p className="mb-2 text-[0.7rem] font-extrabold uppercase tracking-wide text-white/75">
+            Title
+          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {TITLE_CATALOG.filter((t) => cosmetics.ownedTitles.includes(t.id)).map((t) => {
+              const on = cosmetics.titleId === t.id
+              return (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      equipTitle(t.id)
+                      setCosmetics(loadCosmetics())
+                    }}
+                    className="rounded-full px-2.5 py-1 text-[0.65rem] font-extrabold"
+                    style={{
+                      color: t.color,
+                      background: on ? '#2a1a12' : '#140e0a',
+                      boxShadow: on ? `inset 0 0 0 2px ${t.color}` : 'inset 0 0 0 1px #ffffff22',
+                    }}
+                  >
+                    {t.text || 'None'}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="mb-2 mt-3 text-[0.7rem] font-extrabold uppercase tracking-wide text-white/75">
+            Frame
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {FRAME_CATALOG.filter((f) => cosmetics.ownedFrames.includes(f.id)).map((f) => {
+              const on = cosmetics.frameId === f.id
+              return (
+                <li key={f.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      equipFrame(f.id)
+                      setCosmetics(loadCosmetics())
+                    }}
+                    className="h-9 w-9 rounded-lg"
+                    style={{
+                      background: f.bg,
+                      boxShadow: on ? `${f.ring}, 0 0 0 2px #fff` : f.ring,
+                    }}
+                    aria-label={f.label}
+                  />
+                </li>
+              )
+            })}
+          </ul>
         </section>
 
         <section className="mt-4">

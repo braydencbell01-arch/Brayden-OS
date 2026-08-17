@@ -27,7 +27,7 @@ import {
   type Side,
 } from './arena'
 import type { GameMode } from './storage'
-import { loadPlayerId, loadPlayerName } from './storage'
+import { cosmeticsPayload, loadPlayerId, loadPlayerName } from './storage'
 import {
   BASE_ELIXIR_PER_SEC,
   elixirMultiplier,
@@ -1475,6 +1475,7 @@ export function useBattle(opts?: {
         role: 'guest',
         name,
         at: new Date().toISOString(),
+        ...cosmeticsPayload(),
       })
     }
 
@@ -1619,6 +1620,7 @@ export function useBattle(opts?: {
         role: net.role,
         name: loadPlayerName().trim() || net.role,
         at: new Date().toISOString(),
+        ...cosmeticsPayload(),
       })
     }
     if (net.role === 'host') {

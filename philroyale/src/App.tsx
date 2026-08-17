@@ -76,6 +76,8 @@ import {
   upsertFriend,
   saveFriendTrophies,
   saveFriendClub,
+  saveFriendCosmetics,
+  cosmeticsPayload,
   touchFriendLastOnline,
   type BattleChallenge,
   type BattleChannelMessage,
@@ -87,6 +89,10 @@ function directoryClubExtra(): { clubCode?: string; clubName?: string } {
   const club = loadRichClub()
   if (!club?.code) return {}
   return { clubCode: club.code, clubName: club.name }
+}
+
+function directoryPingExtra() {
+  return { ...directoryClubExtra(), ...cosmeticsPayload() }
 }
 
 type TabId = 'shop' | 'cards' | 'home' | 'social' | 'profile'
@@ -429,6 +435,7 @@ export default function App() {
         role: 'guest',
         name: acceptedBy,
         at,
+        ...cosmeticsPayload(),
       })
     }
     // Burst so the challenger (host) always picks up accept even if one channel hiccups.
@@ -556,7 +563,7 @@ export default function App() {
       window.dispatchEvent(new Event('philroyale-friends-changed'))
 
       const trophies = loadProfile().trophies
-      void publishDirectory(myId, me, { trophies, ...directoryClubExtra() })
+      void publishDirectory(myId, me, { trophies, ...directoryPingExtra() })
       const pushAdd = () => {
         const at = new Date().toISOString()
         const req = {
@@ -845,6 +852,13 @@ export default function App() {
         const at = Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
         if (msg.clubCode) saveFriendClub(msg.fromPlayerId, { clubCode: msg.clubCode, clubName: msg.clubName })
+        if (msg.avatarId || msg.titleId || msg.frameId) {
+          saveFriendCosmetics(msg.fromPlayerId, {
+            avatarId: msg.avatarId,
+            titleId: msg.titleId,
+            frameId: msg.frameId,
+          })
+        }
         touchFriendLastOnline(msg.fromPlayerId, at)
         setFriendPresence((prev) => ({
           ...prev,
@@ -855,6 +869,9 @@ export default function App() {
             trophies: msg.trophies ?? prev[msg.fromPlayerId]?.trophies,
             clubCode: msg.clubCode ?? prev[msg.fromPlayerId]?.clubCode,
             clubName: msg.clubName ?? prev[msg.fromPlayerId]?.clubName,
+            avatarId: msg.avatarId ?? prev[msg.fromPlayerId]?.avatarId,
+            titleId: msg.titleId ?? prev[msg.fromPlayerId]?.titleId,
+            frameId: msg.frameId ?? prev[msg.fromPlayerId]?.frameId,
           },
         }))
         return
@@ -866,6 +883,13 @@ export default function App() {
         if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const at = Date.parse(msg.at) || Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
+        if (msg.avatarId || msg.titleId || msg.frameId) {
+          saveFriendCosmetics(msg.fromPlayerId, {
+            avatarId: msg.avatarId,
+            titleId: msg.titleId,
+            frameId: msg.frameId,
+          })
+        }
         touchFriendLastOnline(msg.fromPlayerId, at)
         setFriendPresence((prev) => ({
           ...prev,
@@ -877,6 +901,9 @@ export default function App() {
             opponentName: msg.opponentName,
             battleRole: msg.battleRole,
             trophies: msg.trophies,
+            avatarId: msg.avatarId,
+            titleId: msg.titleId,
+            frameId: msg.frameId,
           },
         }))
         if (msg.fromName) {
@@ -899,7 +926,7 @@ export default function App() {
         upsertFriend({ name: msg.fromName, playerId: msg.fromPlayerId })
         window.dispatchEvent(new Event('philroyale-friends-changed'))
         // Reply on lobby + personal so the adder always gets our real name.
-        void publishDirectory(myId, me, { trophies, ...directoryClubExtra() })
+        void publishDirectory(myId, me, { trophies, ...directoryPingExtra() })
         const hello = {
           type: 'friend_hello' as const,
           fromPlayerId: myId,
@@ -910,7 +937,7 @@ export default function App() {
         void publishSocial(msg.fromPlayerId, hello)
         void publishLobby(hello)
         window.setTimeout(() => {
-          void publishDirectory(myId, me, { trophies, ...directoryClubExtra() })
+          void publishDirectory(myId, me, { trophies, ...directoryPingExtra() })
           void publishLobby({ ...hello, at: new Date().toISOString() })
         }, 800)
         if (!battleRef.current && claimPopupSlot()) {
@@ -1018,7 +1045,7 @@ export default function App() {
     void mpReady().then((ok) => {
       if (!ok) return
       unsub = mpConnect(myId, me)
-      mpSetStatus({ name: me, trophies: loadProfile().trophies })
+      mpSetStatus({ name: me, trophies: loadProfile().trophies, ...cosmeticsPayload() })
     })
     const unsubPres = mpOnPresence((players) => {
       const friendIds = new Set(
@@ -1030,6 +1057,11 @@ export default function App() {
         if (!p?.at) continue
         if (friendIds.has(code) || [...friendIds].some((id) => id.replace(/\D/g, '').slice(0, 6) === code)) {
           touchFriendLastOnline(code, p.at)
+          saveFriendCosmetics(code, {
+            avatarId: p.avatarId,
+            titleId: p.titleId,
+            frameId: p.frameId,
+          })
         }
       }
     })
@@ -1085,7 +1117,7 @@ export default function App() {
       const myId = loadPlayerId()
       const inMatch = battle && !!battleNet && !spectating
       const trophies = loadProfile().trophies
-      void publishDirectory(myId, me, { trophies, inBattle: inMatch, ...directoryClubExtra() })
+      void publishDirectory(myId, me, { trophies, inBattle: inMatch, ...directoryPingExtra() })
 
       // While hosting and still waiting for the friend to link, keep re-sending the invite.
       // Stop as soon as invite window ends (cleared when peer links).
@@ -1485,6 +1517,24 @@ export default function App() {
                 loadProfile().trophies
               : undefined
           }
+          opponentAvatarId={
+            battleNet?.peerPlayerId
+              ? friendPresence[battleNet.peerPlayerId]?.avatarId ??
+                loadFriends().find((f) => f.playerId === battleNet.peerPlayerId)?.avatarId
+              : undefined
+          }
+          opponentTitleId={
+            battleNet?.peerPlayerId
+              ? friendPresence[battleNet.peerPlayerId]?.titleId ??
+                loadFriends().find((f) => f.playerId === battleNet.peerPlayerId)?.titleId
+              : undefined
+          }
+          opponentFrameId={
+            battleNet?.peerPlayerId
+              ? friendPresence[battleNet.peerPlayerId]?.frameId ??
+                loadFriends().find((f) => f.playerId === battleNet.peerPlayerId)?.frameId
+              : undefined
+          }
           allyLevels={levels}
           allyEvolutions={evolutions}
           botLevel={botLevelForTrophies(trophies)}
@@ -1732,6 +1782,7 @@ function DraftPeerKeepalive({ net }: { net: BattleNet }) {
         role: net.role,
         name: loadPlayerName().trim() || net.role,
         at: new Date().toISOString(),
+        ...cosmeticsPayload(),
       })
     }
     burst()
