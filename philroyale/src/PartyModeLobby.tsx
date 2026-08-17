@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CHARACTERS, DECK_SIZE, getCharacter } from './characters'
+import { CHARACTERS, DECK_SIZE, cardKindOf, getCharacter } from './characters'
 import { BattleCard } from './BattleCard'
 import {
   publishBattle,
@@ -31,6 +31,69 @@ function randomIds(count: number, exclude: Set<string> = new Set()): string[] {
   return pool.slice(0, count)
 }
 
+type UndraftFamily = 'troop' | 'spell' | 'building' | 'spirit'
+
+function undraftFamilyOf(id: string): UndraftFamily {
+  const c = getCharacter(id)
+  if (!c) return 'troop'
+  if (/spirit/i.test(c.id) || /spirit/i.test(c.name)) return 'spirit'
+  const kind = cardKindOf(c)
+  if (kind === 'building' || kind === 'spell') return kind
+  return 'troop'
+}
+
+/** Closest unused cards to a seed — same family first, then elixir. */
+function closestSimilar(ids: string[], seed: string, count: number): string[] {
+  const seedC = getCharacter(seed)
+  const seedFam = undraftFamilyOf(seed)
+  const seedElixir = seedC?.elixir ?? 3
+  return ids
+    .slice()
+    .sort((a, b) => {
+      const famA = undraftFamilyOf(a) === seedFam ? 0 : 1
+      const famB = undraftFamilyOf(b) === seedFam ? 0 : 1
+      if (famA !== famB) return famA - famB
+      const eA = Math.abs((getCharacter(a)?.elixir ?? 3) - seedElixir)
+      const eB = Math.abs((getCharacter(b)?.elixir ?? 3) - seedElixir)
+      return eA - eB
+    })
+    .slice(0, count)
+}
+
+/**
+ * Four similar Undraft choices: same family (troop / spell / building / spirit)
+ * and close elixir. Avoids mixing a spirit/building into every troop pick.
+ */
+function similarUndraftIds(count: number, exclude: Set<string> = new Set()): string[] {
+  const unused = shuffle(CHARACTERS.map((c) => c.id).filter((id) => !exclude.has(id)))
+  if (unused.length <= count) return unused
+
+  const byFam = new Map<UndraftFamily, string[]>()
+  for (const id of unused) {
+    const fam = undraftFamilyOf(id)
+    const arr = byFam.get(fam) ?? []
+    arr.push(id)
+    byFam.set(fam, arr)
+  }
+
+  const full = (['troop', 'spell', 'building', 'spirit'] as UndraftFamily[]).filter(
+    (f) => (byFam.get(f)?.length ?? 0) >= count,
+  )
+  if (full.length > 0) {
+    // Most rounds should be troops so gifted decks stay playable.
+    const weighted = full.flatMap((f) => (f === 'troop' ? [f, f, f, f, f] : [f]))
+    const fam = weighted[Math.floor(Math.random() * weighted.length)]!
+    const pool = byFam.get(fam) ?? unused
+    const seed = pool[Math.floor(Math.random() * pool.length)]!
+    return closestSimilar(pool, seed, count)
+  }
+
+  const largest = [...byFam.entries()].sort((a, b) => b[1].length - a[1].length)[0]
+  const seedPool = largest?.[1] ?? unused
+  const seed = seedPool[Math.floor(Math.random() * seedPool.length)]!
+  return closestSimilar(unused, seed, count)
+}
+
 /** Friend-only party lobby: Draft, Undraft, or Infinite Elixir deck build. */
 export function PartyModeLobby({ mode, net, onReady, onCancel }: Props) {
   const role = net.role === 'spectator' ? 'guest' : net.role
@@ -58,14 +121,13 @@ export function PartyModeLobby({ mode, net, onReady, onCancel }: Props) {
       setStatus('Pick any 8 cards — locked cards allowed.')
       return
     }
-    const n = mode === 'draft' ? 2 : 3
-    const ids = randomIds(n)
+    const ids = mode === 'draft' ? randomIds(2) : similarUndraftIds(4)
     ids.forEach((id) => usedRef.current.add(id))
     setOptions(ids)
     setStatus(
       mode === 'draft'
         ? 'Pick 1 of 2 — the other goes to your friend.'
-        : 'Pick 1 of 3 — that card goes to your friend.',
+        : 'Pick 1 of 4 similar cards — that card goes to your friend.',
     )
   }, [mode])
 
@@ -139,7 +201,7 @@ export function PartyModeLobby({ mode, net, onReady, onCancel }: Props) {
   }
 
   function nextUndraftOptions() {
-    const ids = randomIds(3, usedRef.current)
+    const ids = similarUndraftIds(4, usedRef.current)
     ids.forEach((id) => usedRef.current.add(id))
     setOptions(ids)
   }
@@ -258,7 +320,9 @@ export function PartyModeLobby({ mode, net, onReady, onCancel }: Props) {
         </div>
       ) : (
         <div className="mt-4 flex min-h-0 flex-1 flex-col items-center justify-center gap-3">
-          <ul className="grid w-full max-w-md grid-cols-2 gap-3 sm:grid-cols-3">
+          <ul
+            className={`grid w-full max-w-md gap-3 ${mode === 'undraft' ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}
+          >
             {options.map((id) => {
               const c = getCharacter(id)
               if (!c) return null
