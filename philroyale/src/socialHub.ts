@@ -55,6 +55,7 @@ export type SocialMessage =
       avatarId?: string
       titleId?: string
       frameId?: string
+      bannerId?: string
     }
   | {
       type: 'battle_invite'
@@ -105,6 +106,7 @@ export type SocialMessage =
       avatarId?: string
       titleId?: string
       frameId?: string
+      bannerId?: string
     }
 
 /** Latest presence snapshot for a friend (from heartbeats). */
@@ -121,6 +123,7 @@ export type FriendPresenceInfo = {
   avatarId?: string
   titleId?: string
   frameId?: string
+  bannerId?: string
 }
 
 /** How recently a presence ping counts as "online". */
@@ -312,6 +315,7 @@ export async function publishDirectory(
     avatarId?: string
     titleId?: string
     frameId?: string
+    bannerId?: string
   },
 ): Promise<boolean> {
   const c = String(code || '').replace(/\D/g, '').slice(0, 6)
@@ -338,6 +342,7 @@ export async function publishDirectory(
     avatarId: extra?.avatarId,
     titleId: extra?.titleId,
     frameId: extra?.frameId,
+    bannerId: extra?.bannerId,
   } satisfies SocialMessage
 
   const cf = await mpPublish({ lobby: true, msg })

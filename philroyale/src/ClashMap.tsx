@@ -3,11 +3,15 @@
  * Lane mids match bridge cols 23 & 77; path width matches bridge footprint.
  */
 
+import { getTowerSkin, type TowerSkinDef } from './cosmeticsCatalog'
+
 type Props = {
   /** Tower ids with hp <= 0 — shown as rubble instead of intact towers. */
   destroyedIds?: ReadonlySet<string>
   /** King tower ids that have woken / activated (cannon deployed). */
   activatedKingIds?: ReadonlySet<string>
+  /** Equipped ally tower skin (enemy keeps default stone). */
+  allyTowerSkinId?: string | null
 }
 
 const TOWER_PLACES = [
@@ -19,7 +23,7 @@ const TOWER_PLACES = [
   { id: 'ally-right', x: null as number | null, y: 508, king: false, enemy: false, lane: 'right' as const },
 ] as const
 
-export function ClashMap({ destroyedIds, activatedKingIds }: Props) {
+export function ClashMap({ destroyedIds, activatedKingIds, allyTowerSkinId }: Props) {
   const fieldX = 0
   const fieldW = 360
   const leftLane = fieldX + (23 / 100) * fieldW
@@ -29,6 +33,7 @@ export function ClashMap({ destroyedIds, activatedKingIds }: Props) {
   const riverH = 26
   const dead = destroyedIds ?? new Set<string>()
   const woken = activatedKingIds ?? new Set<string>()
+  const allySkin = getTowerSkin(allyTowerSkinId)
 
   return (
     <svg
@@ -384,6 +389,7 @@ export function ClashMap({ destroyedIds, activatedKingIds }: Props) {
             king={place.king}
             enemy={place.enemy}
             cannonOut={place.king ? woken.has(place.id) : true}
+            skin={place.enemy ? undefined : allySkin}
           />
         )
       })}
@@ -507,6 +513,7 @@ function CrownTower({
   king,
   enemy,
   cannonOut = true,
+  skin,
 }: {
   x: number
   y: number
@@ -514,10 +521,14 @@ function CrownTower({
   enemy: boolean
   /** King: false while asleep (cannon stowed). Princess always true. */
   cannonOut?: boolean
+  skin?: TowerSkinDef
 }) {
   const s = king ? 0.78 : 0.52
   const banner = enemy ? '#e53935' : '#1e88e5'
   const bannerDark = enemy ? '#8e1a1a' : '#0d47a1'
+  const faceFill = skin?.face ?? 'url(#stoneFace)'
+  const merlonFill = skin?.merlon ?? '#d8d2c4'
+  const accent = skin?.accent ?? '#f0d060'
 
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`} filter="url(#towerShade)">
@@ -534,7 +545,7 @@ function CrownTower({
         />
       ))}
       <path d="M20 -22 L32 -14 L32 18 L20 10 Z" fill="url(#stoneSide)" stroke="#5a5448" strokeWidth="0.9" />
-      <rect x="-22" y="-24" width="42" height="36" fill="url(#stoneFace)" stroke="#7a7468" strokeWidth="1.4" />
+      <rect x="-22" y="-24" width="42" height="36" fill={faceFill} stroke="#7a7468" strokeWidth="1.4" />
       <path
         d="M-22 -6 H20 M-22 10 H20 M-1 -24 V10 M-11 -6 V10 M9 -6 V10"
         stroke="#8a8478"
@@ -542,7 +553,7 @@ function CrownTower({
         opacity="0.65"
       />
       <g transform="translate(-1 0)">
-        <circle cx="0" cy="0" r="11" fill="#f0d060" stroke="#b8860b" strokeWidth="1.4" />
+        <circle cx="0" cy="0" r="11" fill={accent} stroke="#b8860b" strokeWidth="1.4" />
         <path
           d="M-7 4 L-7 -3 L-3.5 1 L0 -6 L3.5 1 L7 -3 L7 4 Z"
           fill="#fff3a0"
@@ -558,7 +569,7 @@ function CrownTower({
       />
       {[-20, -8, 4, 16].map((bx) => (
         <g key={bx}>
-          <rect x={bx} y="-36" width="10" height="14" fill="#d8d2c4" stroke="#7a7468" strokeWidth="1" />
+          <rect x={bx} y="-36" width="10" height="14" fill={merlonFill} stroke="#7a7468" strokeWidth="1" />
           <rect x={bx + 1} y="-36" width="3" height="14" fill="#ffffff33" />
         </g>
       ))}

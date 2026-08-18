@@ -47,6 +47,7 @@ export type FrameDef = {
   /** CSS box-shadow ring around the avatar. */
   ring: string
   bg: string
+  rarity?: TitleRarity
   starter?: boolean
 }
 
@@ -257,6 +258,161 @@ export function shopTitles(): TitleDef[] {
 
 export function shopFrames(): FrameDef[] {
   return FRAME_CATALOG.filter((f) => f.priceGems > 0)
+}
+
+export function rarityFromGems(gems: number): TitleRarity {
+  if (gems >= 180) return 'legendary'
+  if (gems >= 110) return 'epic'
+  if (gems >= 70) return 'rare'
+  return 'common'
+}
+
+export function frameRarity(f: FrameDef): TitleRarity {
+  return f.rarity ?? rarityFromGems(f.priceGems)
+}
+
+export type TowerSkinDef = {
+  id: string
+  label: string
+  priceGems: number
+  rarity: TitleRarity
+  face: string
+  merlon: string
+  accent: string
+  starter?: boolean
+}
+
+export const DEFAULT_TOWER_SKIN_ID = 'tower-stone'
+
+export const TOWER_SKIN_CATALOG: TowerSkinDef[] = [
+  {
+    id: 'tower-stone',
+    label: 'Stone Keep',
+    priceGems: 0,
+    rarity: 'common',
+    face: '#cfc6b6',
+    merlon: '#d8d2c4',
+    accent: '#f0d060',
+    starter: true,
+  },
+  {
+    id: 'tower-timber',
+    label: 'Timber Keep',
+    priceGems: 50,
+    rarity: 'common',
+    face: '#c48a3a',
+    merlon: '#e0b878',
+    accent: '#f5d76e',
+  },
+  {
+    id: 'tower-ice',
+    label: 'Ice Keep',
+    priceGems: 90,
+    rarity: 'rare',
+    face: '#c8e8ff',
+    merlon: '#e8f6ff',
+    accent: '#7ec8ff',
+  },
+  {
+    id: 'tower-gold',
+    label: 'Gold Keep',
+    priceGems: 100,
+    rarity: 'rare',
+    face: '#ffe08a',
+    merlon: '#fff3a8',
+    accent: '#c9a227',
+  },
+  {
+    id: 'tower-ember',
+    label: 'Ember Keep',
+    priceGems: 140,
+    rarity: 'epic',
+    face: '#ff9a4a',
+    merlon: '#ffc078',
+    accent: '#ff3b3b',
+  },
+  {
+    id: 'tower-neon',
+    label: 'Neon Keep',
+    priceGems: 150,
+    rarity: 'epic',
+    face: '#c080ff',
+    merlon: '#e8c0ff',
+    accent: '#7dff9a',
+  },
+  {
+    id: 'tower-royal',
+    label: 'Royal Keep',
+    priceGems: 220,
+    rarity: 'legendary',
+    face: '#fff3a8',
+    merlon: '#ffe08a',
+    accent: '#9b6bff',
+  },
+  {
+    id: 'tower-void',
+    label: 'Night Keep',
+    priceGems: 240,
+    rarity: 'legendary',
+    face: '#2a3048',
+    merlon: '#4a5580',
+    accent: '#4a9eff',
+  },
+]
+
+export type BannerDef = {
+  id: string
+  label: string
+  priceGems: number
+  rarity: TitleRarity
+  theme: 'gold' | 'blue' | 'diner' | 'sundae' | 'fire' | 'pixel' | 'royal' | 'phil'
+  starter?: boolean
+}
+
+export const DEFAULT_BANNER_ID = 'banner-gold'
+
+export const BANNER_CATALOG: BannerDef[] = [
+  { id: 'banner-gold', label: 'Gold Ribbon', priceGems: 0, rarity: 'common', theme: 'gold', starter: true },
+  { id: 'banner-blue', label: 'Blue Check', priceGems: 50, rarity: 'common', theme: 'blue' },
+  { id: 'banner-diner', label: 'Diner Stripe', priceGems: 80, rarity: 'rare', theme: 'diner' },
+  { id: 'banner-sundae', label: 'Sundae Scene', priceGems: 90, rarity: 'rare', theme: 'sundae' },
+  { id: 'banner-fire', label: 'Fire Pit', priceGems: 130, rarity: 'epic', theme: 'fire' },
+  { id: 'banner-pixel', label: 'Pixel Skull', priceGems: 140, rarity: 'epic', theme: 'pixel' },
+  { id: 'banner-royal', label: 'King Banner', priceGems: 200, rarity: 'legendary', theme: 'royal' },
+  { id: 'banner-phil', label: 'Phil Forever', priceGems: 220, rarity: 'legendary', theme: 'phil' },
+]
+
+export function getTowerSkin(id: string | undefined | null): TowerSkinDef {
+  return TOWER_SKIN_CATALOG.find((t) => t.id === id) ?? TOWER_SKIN_CATALOG[0]!
+}
+
+export function getBanner(id: string | undefined | null): BannerDef {
+  return BANNER_CATALOG.find((b) => b.id === id) ?? BANNER_CATALOG[0]!
+}
+
+export function shopTowerSkins(): TowerSkinDef[] {
+  return TOWER_SKIN_CATALOG.filter((t) => t.priceGems > 0)
+}
+
+export function shopBanners(): BannerDef[] {
+  return BANNER_CATALOG.filter((b) => b.priceGems > 0)
+}
+
+export function sanitizeTowerSkinId(id: string | undefined | null): string {
+  return TOWER_SKIN_CATALOG.some((t) => t.id === id) ? id! : DEFAULT_TOWER_SKIN_ID
+}
+
+export function sanitizeBannerId(id: string | undefined | null): string {
+  return BANNER_CATALOG.some((b) => b.id === id) ? id! : DEFAULT_BANNER_ID
+}
+
+export type CosmeticDropKind = 'title' | 'frame' | 'emote' | 'towerSkin' | 'banner'
+
+export type CosmeticDrop = {
+  kind: CosmeticDropKind
+  id: string
+  label: string
+  rarity: TitleRarity
 }
 
 export type CosmeticIds = {

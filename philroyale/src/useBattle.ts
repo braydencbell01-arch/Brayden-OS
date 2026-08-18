@@ -58,7 +58,7 @@ import {
   publishBattle,
   subscribeBattle,
 } from './battleSync'
-import { sfx } from './audio'
+import { combatFx, sfx } from './audio'
 
 const SYNC_INTERVAL_MS = 220
 
@@ -936,7 +936,15 @@ function tryEnemyAiDeploy(
       }
       const target = pickAiSpellTarget(units, towers, 'enemy')
       if (!target) continue
-      const projectile = makeSpellProjectile(char, 'enemy', target.col, target.row, t, botLevel)
+      const projectile = makeSpellProjectile(
+        char,
+        'enemy',
+        target.col,
+        target.row,
+        t,
+        botLevel,
+        Math.random() < 0.22,
+      )
       if (!projectile) continue
       return finish(slot, {
         units: [],
@@ -948,7 +956,16 @@ function tryEnemyAiDeploy(
     for (const spot of spawnCandidates(role)) {
       if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
       const spawned: BattleUnit[] = []
-      spawnDeployedCard(char, spot.col, spot.row, 'enemy', t, botLevel, spawned)
+      spawnDeployedCard(
+        char,
+        spot.col,
+        spot.row,
+        'enemy',
+        t,
+        botLevel,
+        spawned,
+        Math.random() < 0.22,
+      )
       return finish(slot, {
         units: spawned,
         elixir: enemyElixir - char.elixir,
@@ -1835,6 +1852,7 @@ export function useBattle(opts?: {
           continue
         }
         projectilesChanged = true
+        combatFx(p.kind, p.damage)
         const splatRadius = p.splashRadius
         if (p.kind === 'sundae') {
           nextSplats.push({
@@ -2010,8 +2028,6 @@ export function useBattle(opts?: {
             radius: splatRadius,
           })
           splatsChanged = true
-          sfx.hit()
-          sfx.towerHit()
         }
         const berrySnapUnits =
           p.kind === 'berryJuice' && p.ownerUnitId
@@ -2320,7 +2336,10 @@ export function useBattle(opts?: {
             }
             u.launch = null
             u.rootedUntil = Math.max(u.rootedUntil, t + 200)
-            sfx.hit()
+            combatFx(
+              flight.leapHit ? 'jump' : 'launch',
+              flight.leapHit?.damage ?? flight.landDamage,
+            )
             unitsChanged = true
             if (u.hp <= 0) continue
           } else {
@@ -3280,13 +3299,14 @@ export function useBattle(opts?: {
                 arriveAt: t + flightMs,
                 landDamage: damage,
               }
+              combatFx(attack.kind, damage)
               target.lockKey = null
               target.nextAttackAt = Math.max(target.nextAttackAt, t + flightMs + 280)
               target.rootedUntil = Math.max(target.rootedUntil, t + flightMs)
               target.movingUntil = t + flightMs
             } else {
               target.hp -= damage
-              sfx.hit()
+              combatFx(attack.kind, damage)
               if (attack.pullToRange != null) {
                 const ang = Math.atan2(target.row - u.row, target.col - u.col)
                 let pc = Math.max(
@@ -3308,6 +3328,7 @@ export function useBattle(opts?: {
           const tw = nextTowers.find((x) => x.id === best.id)
           if (tw) {
             applyTowerDamage(tw, damage, t)
+            combatFx(attack.kind, damage)
             towersChanged = true
           }
         }

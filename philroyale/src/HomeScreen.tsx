@@ -10,8 +10,7 @@ import { arenaThemeBackground } from './arenaThemes'
 import {
   ARENA_COLORS,
   CHEST_META,
-  botNameForTrophies,
-  nextRoadStep,
+  arenaProgressInCurrent,
   type ChestRarity,
 } from './progression'
 import { PRESENCE_ONLINE_MS, type FriendPresenceInfo } from './socialHub'
@@ -109,23 +108,10 @@ export function HomeScreen({
     return typeof at === 'number' && now - at < PRESENCE_ONLINE_MS
   }
 
-  const nextStep = nextRoadStep(profile.trophies)
-  const botName = botNameForTrophies(profile.trophies)
   const unclaimed = countUnclaimedRoadRewards()
   const arena = arenaTitle(profile.trophies)
   const arenaColors = ARENA_COLORS[arena] ?? ARENA_COLORS['Training Camp']!
-  const prevTrophies = nextStep
-    ? TROPHY_PREV(profile.trophies, nextStep.trophies)
-    : 0
-  const roadProgress = nextStep
-    ? Math.max(
-        0,
-        Math.min(
-          1,
-          (profile.trophies - prevTrophies) / Math.max(1, nextStep.trophies - prevTrophies),
-        ),
-      )
-    : 1
+  const arenaProgress = arenaProgressInCurrent(profile.trophies)
 
   function flash(msg: string) {
     setToast(msg)
@@ -195,6 +181,7 @@ export function HomeScreen({
         gems: res.gems ?? 0,
         cards: res.cards,
         evoShards: res.evoShards ?? [],
+        cosmetic: res.cosmetic,
       },
     })
     refresh()
@@ -248,7 +235,7 @@ export function HomeScreen({
             ) : null}
           </div>
           <span className="shrink-0 text-sm font-black tabular-nums text-[#f5d76e]">
-            {profile.trophies} ★
+            {profile.trophies} 🏆
           </span>
         </div>
 
@@ -285,12 +272,6 @@ export function HomeScreen({
           >
             {arena}
           </p>
-          <p
-            className="relative text-xs font-bold text-white"
-            style={{ textShadow: '0 1px 3px #000, 0 0 8px #000000aa' }}
-          >
-            Tap for Trophy Road
-          </p>
         </motion.button>
 
         {/* Thin road progress */}
@@ -304,16 +285,14 @@ export function HomeScreen({
           }}
         >
           <div className="mb-1 flex items-center justify-between gap-2 text-[0.65rem] font-extrabold text-white/85">
-            <span>{profile.trophies} trophies</span>
-            <span className="truncate text-[#f5d76e]">
-              {nextStep ? `Next: ${nextStep.label}` : 'Road complete'}
-            </span>
+            <span>{arena}</span>
+            <span className="tabular-nums text-[#f5d76e]">{profile.trophies} 🏆</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-black/45 ring-1 ring-[#2f6fbf66]">
             <div
               className="h-full rounded-full"
               style={{
-                width: `${Math.round(roadProgress * 100)}%`,
+                width: `${Math.round(arenaProgress * 100)}%`,
                 background: 'linear-gradient(90deg,#6ec8ff,#2f6fbf)',
               }}
             />
@@ -339,7 +318,7 @@ export function HomeScreen({
 
           <motion.button
             type="button"
-            onClick={() => onPlay(botName)}
+            onClick={() => onPlay()}
             whileTap={{ scale: 0.97 }}
             className="min-w-0 flex-1 rounded-xl px-4 py-3.5 text-xl font-extrabold uppercase tracking-wider text-[#1a1410]"
             style={{
@@ -367,9 +346,6 @@ export function HomeScreen({
             </span>
           </motion.button>
         </div>
-        <p className="mt-1 text-center text-[0.7rem] font-bold text-white/70">
-          vs {botName}
-        </p>
 
         {/* Chest slots */}
         <section className="mt-4 w-full max-w-md self-center">
@@ -722,10 +698,4 @@ export function HomeScreen({
       ) : null}
     </div>
   )
-}
-
-function TROPHY_PREV(current: number, next: number): number {
-  // Approximate previous milestone ~100 below next, clamped
-  void current
-  return Math.max(0, next - 100)
 }

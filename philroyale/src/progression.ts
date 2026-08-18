@@ -1,4 +1,14 @@
 import { CHARACTERS, type Rarity } from './characters'
+import {
+  BANNER_CATALOG,
+  FRAME_CATALOG,
+  TITLE_CATALOG,
+  TOWER_SKIN_CATALOG,
+  frameRarity,
+  type CosmeticDrop,
+  type TitleRarity,
+} from './cosmeticsCatalog'
+import { EMOTE_CATALOG, emoteRarity } from './emoteCatalog'
 
 export const MAX_CARD_LEVEL = 15
 /** Each level above 1 adds this fraction to HP and damage. */
@@ -271,17 +281,100 @@ export function botAiProfile(trophies: number): {
   return { level, deployMinMs, deployMaxMs, elixirMult, startElixir, skill }
 }
 
+export function arenaProgressInCurrent(trophies: number): number {
+  const starts: { arena: string; start: number }[] = []
+  for (const step of TROPHY_ROAD) {
+    const last = starts[starts.length - 1]
+    if (!last || last.arena !== step.arena) starts.push({ arena: step.arena, start: step.trophies })
+  }
+  let i = 0
+  for (let k = 0; k < starts.length; k++) {
+    if (trophies >= starts[k]!.start) i = k
+  }
+  const start = starts[i]!.start
+  const end = starts[i + 1]?.start ?? start + 500
+  if (end <= start) return 1
+  return Math.max(0, Math.min(1, (trophies - start) / (end - start)))
+}
+
 export function botNameForTrophies(trophies: number): string {
-  const names = [
-    'Bot Bray',
-    'Training King',
-    'Sundae Scout',
-    'Pete Bandit',
-    'Jeremy Agent',
-    'Peak Phantom',
-  ]
-  const i = Math.min(names.length - 1, Math.floor(trophies / 800))
-  return names[i]!
+  return randomBotName(trophies)
+}
+
+const BOT_NAMES = [
+  'Sundae Scout',
+  'Pancake Bandit',
+  'Clucktown Kid',
+  'Diner Ghost',
+  'Pete Patrol',
+  'Jeremy Agent',
+  'Peak Phantom',
+  'Gym Rat Bot',
+  'Berry Bruiser',
+  'Chuck Chuck',
+  'Graf Grunt',
+  'Lynne Lance',
+  'Todd Tornado',
+  'Beans Brigade',
+  'Mable Drift',
+  'Huck Hooligan',
+  'Phil Fan 01',
+  'Phil Fan 99',
+  'Night Fryer',
+  'River Rascal',
+  'Bridge Brawler',
+  'Arena Ant',
+  'Trophy Trout',
+  'King of Ketchup',
+  'Mustard Mike',
+  'Whippoorwill',
+  'Sundae Slugger',
+  'Ice Cream Imp',
+  'Rocket Rookie',
+  'Car Park Kid',
+  'Hut Hunter',
+  'Spirit Sprite',
+  'Lane Lurker',
+  'Crown Chaser',
+  'Gold Goblin',
+  'Elixir Elf',
+  'Cycle Carl',
+  'Beatdown Bea',
+  'Control Cole',
+  'Zap Zoe',
+  'Hog Rider Hank',
+  'Mirror Marv',
+  'Log Larry',
+  'Fireball Fran',
+  'Ice Golem Ike',
+  'Goblin Gail',
+  'Miner Mo',
+  'Princess Pip',
+  'Wizard Wes',
+  'Knight Nate',
+  'Valkyrie Vi',
+  'Giant Gus',
+  'Sparky Sal',
+  'Ram Rider Rio',
+  'Fisherman Finn',
+  'Mother Witch Mel',
+  'Bowler Bo',
+  'Executioner Ed',
+  'Cannon Cart Cal',
+  'Royal Ghost Rex',
+  'Bandit Bea',
+  'Magic Archer Max',
+  'Night Witch Nyx',
+  'Lava Hound Lou',
+  'Balloon Bill',
+  'Miner Mel',
+  'Graveyard Gia',
+  'Bait Betty',
+]
+
+export function randomBotName(seed = Date.now()): string {
+  const i = Math.abs(Math.floor(seed * 17 + 31)) % BOT_NAMES.length
+  return BOT_NAMES[i]!
 }
 
 export type ShopOffer = {
@@ -445,6 +538,64 @@ export function rollChestLoot(rarity: ChestRarity): {
     // Count not specified — scale above epic (1–3) as 1–5.
     evoShards: [{ charId: pick(CHARACTERS).id, shards: randInt(1, 5) }],
   }
+}
+
+function pickRarityForChest(chest: ChestRarity): TitleRarity | null {
+  const dropChance =
+    chest === 'legendary' ? 0.4 : chest === 'epic' ? 0.28 : chest === 'rare' ? 0.18 : 0.12
+  if (Math.random() > dropChance) return null
+  const r = Math.random()
+  if (chest === 'common') {
+    if (r < 0.8) return 'common'
+    if (r < 0.98) return 'rare'
+    return 'epic'
+  }
+  if (chest === 'rare') {
+    if (r < 0.45) return 'common'
+    if (r < 0.85) return 'rare'
+    if (r < 0.98) return 'epic'
+    return 'legendary'
+  }
+  if (chest === 'epic') {
+    if (r < 0.2) return 'common'
+    if (r < 0.55) return 'rare'
+    if (r < 0.9) return 'epic'
+    return 'legendary'
+  }
+  if (r < 0.1) return 'rare'
+  if (r < 0.45) return 'epic'
+  return 'legendary'
+}
+
+export function rollChestCosmetic(
+  chest: ChestRarity,
+  owned: { titles: string[]; frames: string[]; emotes: string[]; skins: string[]; banners: string[] },
+): CosmeticDrop | null {
+  const rarity = pickRarityForChest(chest)
+  if (!rarity) return null
+  const pool: CosmeticDrop[] = []
+  for (const t of TITLE_CATALOG) {
+    if (t.priceGems <= 0 || t.rarity !== rarity || owned.titles.includes(t.id)) continue
+    pool.push({ kind: 'title', id: t.id, label: t.label, rarity: t.rarity })
+  }
+  for (const f of FRAME_CATALOG) {
+    if (f.priceGems <= 0 || frameRarity(f) !== rarity || owned.frames.includes(f.id)) continue
+    pool.push({ kind: 'frame', id: f.id, label: f.label, rarity: frameRarity(f) })
+  }
+  for (const e of EMOTE_CATALOG) {
+    if (e.priceGems <= 0 || emoteRarity(e) !== rarity || owned.emotes.includes(e.id)) continue
+    pool.push({ kind: 'emote', id: e.id, label: e.label, rarity: emoteRarity(e) })
+  }
+  for (const s of TOWER_SKIN_CATALOG) {
+    if (s.priceGems <= 0 || s.rarity !== rarity || owned.skins.includes(s.id)) continue
+    pool.push({ kind: 'towerSkin', id: s.id, label: s.label, rarity: s.rarity })
+  }
+  for (const b of BANNER_CATALOG) {
+    if (b.priceGems <= 0 || b.rarity !== rarity || owned.banners.includes(b.id)) continue
+    pool.push({ kind: 'banner', id: b.id, label: b.label, rarity: b.rarity })
+  }
+  if (pool.length === 0) return null
+  return pool[Math.floor(Math.random() * pool.length)] ?? null
 }
 
 /** Evolution shards needed to unlock a card's evolution. */

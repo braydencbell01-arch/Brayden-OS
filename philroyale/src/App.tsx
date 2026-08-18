@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BattleScreen } from './BattleScreen'
+import { VsSplash, randomBotFighter, type VsFighter } from './VsSplash'
+import { startHubBgm, stopHubBgm } from './audio'
 import { CharactersScreen } from './CharactersScreen'
 import { TopStatusBar } from './CurrencyBar'
 import { EventsScreen } from './EventsScreen'
@@ -34,7 +36,7 @@ import {
 } from './socialHub'
 import {
   botLevelForTrophies,
-  botNameForTrophies,
+  randomBotName,
 } from './progression'
 import {
   BATTLE_CHANNEL_NAME,
@@ -93,6 +95,38 @@ function directoryClubExtra(): { clubCode?: string; clubName?: string } {
 
 function directoryPingExtra() {
   return { ...directoryClubExtra(), ...cosmeticsPayload() }
+}
+
+function youFighter(): VsFighter {
+  const c = cosmeticsPayload()
+  return {
+    name: loadPlayerName() || 'You',
+    trophies: loadProfile().trophies,
+    avatarId: c.avatarId,
+    titleId: c.titleId,
+    frameId: c.frameId,
+    bannerId: c.bannerId,
+  }
+}
+
+function foeFighter(
+  name: string,
+  net: BattleNet | null,
+  presence: Record<string, FriendPresenceInfo>,
+): VsFighter {
+  if (!net?.peerPlayerId) {
+    return { ...randomBotFighter(loadProfile().trophies), name }
+  }
+  const f = loadFriends().find((x) => x.playerId === net.peerPlayerId)
+  const p = presence[net.peerPlayerId]
+  return {
+    name,
+    trophies: p?.trophies ?? f?.trophies ?? loadProfile().trophies,
+    avatarId: p?.avatarId ?? f?.avatarId,
+    titleId: p?.titleId ?? f?.titleId,
+    frameId: p?.frameId ?? f?.frameId,
+    bannerId: f?.bannerId,
+  }
 }
 
 type TabId = 'shop' | 'cards' | 'home' | 'social' | 'profile'
@@ -183,6 +217,7 @@ export default function App() {
   const [touchdownDeck, setTouchdownDeck] = useState<string[] | null>(null)
   const [partyDeck, setPartyDeck] = useState<string[] | null>(null)
   const [opponent, setOpponent] = useState<string | null>(null)
+  const [vsIntro, setVsIntro] = useState<{ you: VsFighter; foe: VsFighter } | null>(null)
   /** Bumps every solo/friend match so BattleScreen remounts with a fresh CPU deck. */
   const [battleSession, setBattleSession] = useState(0)
   const [showRoad, setShowRoad] = useState(false)
@@ -236,8 +271,8 @@ export default function App() {
 
   const startMatch = useCallback(
     (name?: string | null, mode: GameMode = 'classic', net: BattleNet | null = null) => {
-      const trophies = loadProfile().trophies
-      setOpponent(name ?? botNameForTrophies(trophies))
+      const foeName = name ?? randomBotName(Date.now())
+      setOpponent(foeName)
       setBattleMode(mode)
 
       // Only use a BattleNet when the caller explicitly provides one (friend/shared match).
@@ -283,9 +318,10 @@ export default function App() {
       setDraftingParty(false)
       setTouchdownDeck(null)
       setPartyDeck(null)
-      setBattle(true)
+      setVsIntro({ you: youFighter(), foe: foeFighter(foeName, room, friendPresence) })
+      setBattle(false)
     },
-    [flashFriend],
+    [flashFriend, friendPresence],
   )
 
   const startSpectate = useCallback(
@@ -319,6 +355,17 @@ export default function App() {
     setBattleNet(null)
     flashFriend("Friend didn't connect — training match vs bot.")
   }, [flashFriend])
+
+  useEffect(() => {
+    const unlock = () => startHubBgm()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => window.removeEventListener('pointerdown', unlock)
+  }, [])
+
+  useEffect(() => {
+    if (battle || vsIntro || draftingTouchdown || draftingParty || spectating) stopHubBgm()
+    else startHubBgm()
+  }, [battle, vsIntro, draftingTouchdown, draftingParty, spectating])
 
   /** Friend linked into the room — stop invite spam; battle UI stays clean. */
   const handlePeerLinked = useCallback(() => {
@@ -852,11 +899,12 @@ export default function App() {
         const at = Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
         if (msg.clubCode) saveFriendClub(msg.fromPlayerId, { clubCode: msg.clubCode, clubName: msg.clubName })
-        if (msg.avatarId || msg.titleId || msg.frameId) {
+        if (msg.avatarId || msg.titleId || msg.frameId || msg.bannerId) {
           saveFriendCosmetics(msg.fromPlayerId, {
             avatarId: msg.avatarId,
             titleId: msg.titleId,
             frameId: msg.frameId,
+            bannerId: msg.bannerId,
           })
         }
         touchFriendLastOnline(msg.fromPlayerId, at)
@@ -872,6 +920,7 @@ export default function App() {
             avatarId: msg.avatarId ?? prev[msg.fromPlayerId]?.avatarId,
             titleId: msg.titleId ?? prev[msg.fromPlayerId]?.titleId,
             frameId: msg.frameId ?? prev[msg.fromPlayerId]?.frameId,
+            bannerId: msg.bannerId ?? prev[msg.fromPlayerId]?.bannerId,
           },
         }))
         return
@@ -883,11 +932,12 @@ export default function App() {
         if (msg.toPlayerId && msg.toPlayerId !== myId) return
         const at = Date.parse(msg.at) || Date.now()
         if (typeof msg.trophies === 'number') saveFriendTrophies(msg.fromPlayerId, msg.trophies)
-        if (msg.avatarId || msg.titleId || msg.frameId) {
+        if (msg.avatarId || msg.titleId || msg.frameId || msg.bannerId) {
           saveFriendCosmetics(msg.fromPlayerId, {
             avatarId: msg.avatarId,
             titleId: msg.titleId,
             frameId: msg.frameId,
+            bannerId: msg.bannerId,
           })
         }
         touchFriendLastOnline(msg.fromPlayerId, at)
@@ -904,6 +954,7 @@ export default function App() {
             avatarId: msg.avatarId,
             titleId: msg.titleId,
             frameId: msg.frameId,
+            bannerId: msg.bannerId,
           },
         }))
         if (msg.fromName) {
@@ -1061,6 +1112,7 @@ export default function App() {
             avatarId: p.avatarId,
             titleId: p.titleId,
             frameId: p.frameId,
+            bannerId: p.bannerId,
           })
         }
       }
@@ -1461,7 +1513,10 @@ export default function App() {
             onReady={(ids) => {
               setTouchdownDeck(ids)
               setDraftingTouchdown(false)
-              setBattle(true)
+              setVsIntro({
+                you: youFighter(),
+                foe: foeFighter(opponent ?? 'Friend', battleNet, friendPresence),
+              })
             }}
           />
         </div>
@@ -1489,11 +1544,29 @@ export default function App() {
             onReady={(ids) => {
               setPartyDeck(ids)
               setDraftingParty(false)
-              setBattle(true)
+              setVsIntro({
+                you: youFighter(),
+                foe: foeFighter(opponent ?? 'Friend', battleNet, friendPresence),
+              })
             }}
           />
         </div>
         {socialOverlays}
+      </div>
+    )
+  }
+
+  if (vsIntro && !battle) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <VsSplash
+          you={vsIntro.you}
+          foe={vsIntro.foe}
+          onDone={() => {
+            setVsIntro(null)
+            setBattle(true)
+          }}
+        />
       </div>
     )
   }
