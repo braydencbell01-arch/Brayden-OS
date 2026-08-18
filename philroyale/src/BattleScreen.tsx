@@ -64,6 +64,7 @@ import { ARENA_COLS, ARENA_ROWS } from './arena'
 import {
   grantBattleChest,
   loadActiveEmotes,
+  loadCosmetics,
   loadDeck,
   loadPlayerId,
   loadProfile,
@@ -77,6 +78,7 @@ import type { BattleNet } from './battleSync'
 import { publishBattle, subscribeBattle } from './battleSync'
 import { useBattle } from './useBattle'
 import { sfx } from './audio'
+import { onBattlefieldShake } from './fx'
 
 type Props = {
   onExit: () => void
@@ -382,6 +384,8 @@ export function BattleScreen({
   // Solo: BattleScreen may pass a pre-rolled deck; useBattle also locks one if missing.
   const botDeckIds = useMemo(() => randomBotDeck(), [])
   const trophies = useMemo(() => loadProfile().trophies, [])
+  const allyTowerSkinId = useMemo(() => loadCosmetics().towerSkinId, [])
+  const [shake, setShake] = useState({ x: 0, y: 0, r: 0 })
   const [drawPile, setDrawPile] = useState<string[]>([])
   const [hand, setHand] = useState<string[]>([])
   const [nextId, setNextId] = useState<string | null>(null)
@@ -404,6 +408,17 @@ export function BattleScreen({
   const movedRef = useRef(false)
   const rewardsAppliedRef = useRef(false)
   const ended = result != null
+
+  useEffect(() => {
+    return onBattlefieldShake((mag) => {
+      setShake({
+        x: (Math.random() * 2 - 1) * mag * 11,
+        y: (Math.random() * 2 - 1) * mag * 8,
+        r: (Math.random() * 2 - 1) * mag * 0.85,
+      })
+      window.setTimeout(() => setShake({ x: 0, y: 0, r: 0 }), 70 + mag * 90)
+    })
+  }, [])
 
   function applyForfeitIfNeeded() {
     if (isSpectating || result || rewardsAppliedRef.current) return
@@ -872,11 +887,16 @@ export function BattleScreen({
       {/* Map sits above the solid CR blue dock so all six towers stay visible. */}
       <div
         className={`absolute inset-x-0 top-0 ${isSpectating ? 'bottom-[4.25rem]' : 'bottom-[6.85rem]'}`}
+        style={{
+          transform: `translate(${shake.x}px, ${shake.y}px) rotate(${shake.r}deg)`,
+          transition: shake.x === 0 && shake.y === 0 ? 'transform 120ms ease-out' : 'none',
+        }}
       >
         <Arena
           ref={arenaRef}
           towers={towers}
           mode={mode}
+          allyTowerSkinId={allyTowerSkinId}
           onArenaPointerDown={ended || isSpectating ? undefined : onArenaPointer}
           showBlockedOverlay={showTroopBlock}
           spellDeployOverlay={showSpellZone}
@@ -1428,6 +1448,7 @@ export function BattleScreen({
                 size="next"
                 elixir={elixir}
                 evolved={nextId ? nextPlayIsEvolved(nextId) : false}
+                evoUnlocked={nextId ? !!allyEvolutions?.includes(nextId) : false}
               />
             </div>
 
@@ -1455,6 +1476,7 @@ export function BattleScreen({
                       elixir={elixir}
                       selected={selected}
                       evolved={nextPlayIsEvolved(id)}
+                      evoUnlocked={!!allyEvolutions?.includes(id)}
                     />
                   </button>
                 )

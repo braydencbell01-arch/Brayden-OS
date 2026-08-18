@@ -7,8 +7,10 @@ type Props = {
   size?: 'hand' | 'next' | 'collection'
   elixir?: number
   selected?: boolean
-  /** Show purple evolution diamond (unlocked evo / evolved play). */
+  /** This play is the evolved form (purple evo frame). */
   evolved?: boolean
+  /** Player owns this card's evolution — fill the diamond. */
+  evoUnlocked?: boolean
 }
 
 const RARITY_FRAME: Record<
@@ -53,6 +55,7 @@ export function BattleCard({
   elixir,
   selected,
   evolved,
+  evoUnlocked,
 }: Props) {
   const next = size === 'next'
   const collection = size === 'collection'
@@ -76,16 +79,24 @@ export function BattleCard({
   }
 
   const frame = RARITY_FRAME[character.rarity]
+  const evoLook = !!evolved || (!!evoUnlocked && collection)
+  const diamondOn = !!evoUnlocked || !!evolved
   const afford =
     elixir == null ? 1 : Math.max(0, Math.min(1, elixir / Math.max(1, character.elixir)))
   const greyPct = (1 - afford) * 100
 
   return (
     <div
-      className={`relative overflow-hidden ${box} rounded-[0.4rem] ${selected ? 'scale-[1.04]' : ''}`}
+      className={`relative ${box} rounded-[0.4rem] ${selected ? 'scale-[1.04]' : ''}`}
       style={{
-        background: `linear-gradient(180deg, ${frame.top}, ${frame.border} 40%, ${frame.bottom})`,
-        boxShadow: selected
+        background: evoLook
+          ? 'linear-gradient(180deg, #e9b8ff, #9b2dff 42%, #4a0080)'
+          : `linear-gradient(180deg, ${frame.top}, ${frame.border} 40%, ${frame.bottom})`,
+        boxShadow: evoLook
+          ? selected
+            ? '0 0 0 2px #fff, 0 0 14px #c060ffcc, 0 3px 0 #5a00a8'
+            : '0 0 10px #c060ffaa, 0 2px 0 #5a00a8, 0 4px 8px #00000055'
+          : selected
           ? `0 0 0 2px #fff, 0 3px 0 ${frame.glow}, 0 6px 12px #00000066`
           : `0 2px 0 ${frame.glow}, 0 4px 8px #00000055`,
       }}
@@ -134,21 +145,37 @@ export function BattleCard({
             aria-hidden
           />
         ) : null}
-
-        {evolved ? (
-          <div
-            className={`pointer-events-none absolute z-[4] ${next ? 'right-0.5 top-0.5' : collection ? 'right-1 top-1' : 'right-0.5 top-0.5'}`}
-            aria-label="Evolved"
-          >
-            <span
-              className={`block rotate-45 ${next ? 'h-2 w-2' : collection ? 'h-3.5 w-3.5' : 'h-2.5 w-2.5'}`}
-              style={{
-                background: 'linear-gradient(135deg,#e9b8ff,#9b2dff 45%,#5a00a8)',
-                boxShadow: '0 0 6px #c060ffcc, inset 0 1px 0 #ffffff88',
-              }}
-            />
-          </div>
-        ) : null}
+      </div>
+      <div
+        className={`pointer-events-none absolute left-1/2 z-[6] -translate-x-1/2 ${
+          next ? '-top-[0.28rem]' : collection ? '-top-[0.38rem]' : '-top-[0.32rem]'
+        }`}
+        aria-label={diamondOn ? 'Evolution unlocked' : 'Evolution locked'}
+      >
+        <div
+          className={`flex items-end justify-center ${
+            next ? 'h-2.5 w-3' : collection ? 'h-4 w-[1.15rem]' : 'h-3.5 w-4'
+          }`}
+          style={{
+            background: diamondOn ? '#6a20c8' : '#5a5e66',
+            clipPath: 'polygon(12% 100%, 12% 28%, 50% 0%, 88% 28%, 88% 100%)',
+            boxShadow: diamondOn ? '0 0 8px #c060ffcc' : 'none',
+          }}
+        >
+          <span
+            className={`mb-[1px] block rotate-45 ${
+              next ? 'h-[0.38rem] w-[0.38rem]' : collection ? 'h-2 w-2' : 'h-[0.42rem] w-[0.42rem]'
+            }`}
+            style={{
+              background: diamondOn
+                ? 'linear-gradient(135deg,#f4e0ff,#c060ff 40%,#5a00a8)'
+                : 'linear-gradient(135deg,#c5cad2 0%, #8b919a 42%, #4a5058 100%)',
+              boxShadow: diamondOn
+                ? '0 0 5px #e9b8ff, inset 0 1px 0 #ffffffaa'
+                : 'inset 0 0 3px #2a2e36',
+            }}
+          />
+        </div>
       </div>
     </div>
   )

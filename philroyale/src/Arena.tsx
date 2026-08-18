@@ -262,6 +262,7 @@ type Props = {
   overlaySide?: 'ally' | 'enemy'
   /** Battle mode — changes background and tower visibility. */
   mode?: GameMode
+  allyTowerSkinId?: string | null
 }
 
 /**
@@ -417,6 +418,7 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
     spellDeployOverlay,
     overlaySide = 'ally',
     mode = 'classic',
+    allyTowerSkinId,
   },
   ref,
 ) {
@@ -469,7 +471,11 @@ export const Arena = forwardRef<HTMLDivElement, Props>(function Arena(
         {isTouchdown ? (
           <FootballField />
         ) : (
-          <ClashMap destroyedIds={destroyedIds} activatedKingIds={activatedKingIds} />
+          <ClashMap
+            destroyedIds={destroyedIds}
+            activatedKingIds={activatedKingIds}
+            allyTowerSkinId={allyTowerSkinId}
+          />
         )}
 
         {/* Lighting / AO wash — visual only; does not change hitboxes or layout */}

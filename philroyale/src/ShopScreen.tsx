@@ -14,11 +14,17 @@ import {
 import { CHEST_META, MAX_CARD_LEVEL, type ChestRarity } from './progression'
 import {
   TITLE_RARITY_LABEL,
+  frameRarity,
+  shopBanners,
   shopFrames,
   shopTitles,
+  shopTowerSkins,
   titleColor,
+  type BannerDef,
   type FrameDef,
+  type TowerSkinDef,
 } from './cosmeticsCatalog'
+import { BattleBannerArt } from './VsSplash'
 import { FramePreview } from './ProfileChip'
 import {
   GEM_PACKS,
@@ -34,6 +40,8 @@ import {
   buyGoldWithGems,
   buyShopOffer,
   buyTitle,
+  buyBanner,
+  buyTowerSkin,
   claimPaidShopSku,
   copiesToUpgrade,
   getShopOffers,
@@ -286,6 +294,7 @@ function FrameBuyTile({
   owned: boolean
   onBuy: () => void
 }) {
+  const rarity = frameRarity(frame)
   return (
     <button
       type="button"
@@ -295,6 +304,9 @@ function FrameBuyTile({
     >
       <FramePreview frameId={frame.id} className="h-12 w-12" />
       <span className="text-center text-[0.55rem] font-extrabold text-white">{frame.label}</span>
+      <span className="text-[0.45rem] font-extrabold uppercase text-white/60">
+        {TITLE_RARITY_LABEL[rarity]}
+      </span>
       <span className="flex items-center gap-0.5 text-[0.6rem] font-black text-white">
         {owned ? (
           'Owned'
@@ -302,6 +314,88 @@ function FrameBuyTile({
           <>
             <GemIcon className="h-3 w-3" />
             {frame.priceGems}
+          </>
+        )}
+      </span>
+    </button>
+  )
+}
+
+function TowerSkinBuyTile({
+  skin,
+  owned,
+  onBuy,
+}: {
+  skin: TowerSkinDef
+  owned: boolean
+  onBuy: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={owned}
+      onClick={onBuy}
+      className="flex flex-col items-center gap-1 rounded-lg px-1 py-2 disabled:opacity-70"
+      style={{
+        background: 'linear-gradient(180deg,#2a1a12,#140e0a)',
+        boxShadow: `inset 0 0 0 2px ${skin.accent}88`,
+      }}
+    >
+      <span
+        className="relative mt-1 block h-10 w-8"
+        style={{
+          background: `linear-gradient(180deg, ${skin.merlon}, ${skin.face})`,
+          clipPath: 'polygon(8% 100%, 8% 28%, 22% 18%, 22% 0, 78% 0, 78% 18%, 92% 28%, 92% 100%)',
+          boxShadow: `0 0 8px ${skin.accent}66`,
+        }}
+        aria-hidden
+      />
+      <span className="text-center text-[0.55rem] font-extrabold text-white">{skin.label}</span>
+      <span className="text-[0.45rem] font-extrabold uppercase text-white/60">
+        {TITLE_RARITY_LABEL[skin.rarity]}
+      </span>
+      <span className="flex items-center gap-0.5 text-[0.6rem] font-black text-white">
+        {owned ? (
+          'Owned'
+        ) : (
+          <>
+            <GemIcon className="h-3 w-3" />
+            {skin.priceGems}
+          </>
+        )}
+      </span>
+    </button>
+  )
+}
+
+function BannerBuyTile({
+  banner,
+  owned,
+  onBuy,
+}: {
+  banner: BannerDef
+  owned: boolean
+  onBuy: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={owned}
+      onClick={onBuy}
+      className="flex flex-col items-center gap-1 disabled:opacity-70"
+    >
+      <BattleBannerArt bannerId={banner.id} className="h-10 w-full" />
+      <span className="text-center text-[0.55rem] font-extrabold text-white">{banner.label}</span>
+      <span className="text-[0.45rem] font-extrabold uppercase text-white/60">
+        {TITLE_RARITY_LABEL[banner.rarity]}
+      </span>
+      <span className="flex items-center gap-0.5 text-[0.6rem] font-black text-white">
+        {owned ? (
+          'Owned'
+        ) : (
+          <>
+            <GemIcon className="h-3 w-3" />
+            {banner.priceGems}
           </>
         )}
       </span>
@@ -576,9 +670,9 @@ export function ShopScreen() {
           </div>
         </section>
 
-        {/* Cosmetics */}
+        {/* Titles */}
         <section className="mb-5">
-          <Ribbon label="Titles & Frames" tone="gold" />
+          <Ribbon label="Titles" tone="gold" />
           <div
             className="rounded-2xl p-3"
             style={{
@@ -586,9 +680,6 @@ export function ShopScreen() {
               boxShadow: 'inset 0 0 0 3px #c9a22755, 0 4px 0 #00000066',
             }}
           >
-            <p className="mb-2 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
-              Titles · gems
-            </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {shopTitles().map((title) => (
                 <CosmeticBuyTile
@@ -602,9 +693,19 @@ export function ShopScreen() {
                 />
               ))}
             </div>
-            <p className="mb-2 mt-3 text-[0.65rem] font-extrabold uppercase tracking-wide text-[#f5d76e]">
-              Frames · gems
-            </p>
+          </div>
+        </section>
+
+        {/* Frames */}
+        <section className="mb-5">
+          <Ribbon label="Frames" tone="blue" />
+          <div
+            className="rounded-2xl p-3"
+            style={{
+              background: 'linear-gradient(180deg,#1e5080,#0f2840)',
+              boxShadow: 'inset 0 0 0 3px #5eb8ff55, 0 4px 0 #00000066',
+            }}
+          >
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {shopFrames().map((frame) => (
                 <FrameBuyTile
@@ -612,6 +713,52 @@ export function ShopScreen() {
                   frame={frame}
                   owned={cosmetics.ownedFrames.includes(frame.id)}
                   onBuy={() => handle(buyFrame(frame.id))}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Tower skins */}
+        <section className="mb-5">
+          <Ribbon label="Tower Skins" tone="green" />
+          <div
+            className="rounded-2xl p-3"
+            style={{
+              background: 'linear-gradient(180deg,#1a4030,#0a2018)',
+              boxShadow: 'inset 0 0 0 3px #7dff9a55, 0 4px 0 #00000066',
+            }}
+          >
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {shopTowerSkins().map((skin) => (
+                <TowerSkinBuyTile
+                  key={skin.id}
+                  skin={skin}
+                  owned={cosmetics.ownedTowerSkins.includes(skin.id)}
+                  onBuy={() => handle(buyTowerSkin(skin.id))}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Battle banners */}
+        <section className="mb-5">
+          <Ribbon label="Battle Banners" tone="yellow" />
+          <div
+            className="rounded-2xl p-3"
+            style={{
+              background: 'linear-gradient(180deg,#3a2418,#1a100c)',
+              boxShadow: 'inset 0 0 0 3px #c9a22755, 0 4px 0 #00000066',
+            }}
+          >
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {shopBanners().map((banner) => (
+                <BannerBuyTile
+                  key={banner.id}
+                  banner={banner}
+                  owned={cosmetics.ownedBanners.includes(banner.id)}
+                  onBuy={() => handle(buyBanner(banner.id))}
                 />
               ))}
             </div>

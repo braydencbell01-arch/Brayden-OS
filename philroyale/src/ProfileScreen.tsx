@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CHARACTERS } from './characters'
 import { CharacterModel } from './characters/CharacterModel'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
-import { FRAME_CATALOG, TITLE_CATALOG, getTitle, titleColor } from './cosmeticsCatalog'
+import { FRAME_CATALOG, TITLE_CATALOG, TOWER_SKIN_CATALOG, BANNER_CATALOG, getTitle, titleColor } from './cosmeticsCatalog'
 import { FramePreview, NameWithTitle, ProfileChip } from './ProfileChip'
 import { playerLevelFromXp } from './clubMeta'
 import {
@@ -36,6 +36,8 @@ import {
   toggleActiveEmote,
   equipTitle,
   equipFrame,
+  equipTowerSkin,
+  equipBanner,
 } from './storage'
 
 type Props = {
@@ -648,6 +650,58 @@ export function ProfileScreen({ onOpenSocial, onAddByCode, onRequestBattle }: Pr
                     aria-label={f.label}
                   >
                     <FramePreview frameId={f.id} className="h-9 w-9" />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="mb-2 mt-3 text-[0.7rem] font-extrabold uppercase tracking-wide text-white/75">
+            Tower skin
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {TOWER_SKIN_CATALOG.filter((s) => cosmetics.ownedTowerSkins.includes(s.id)).map((s) => {
+              const on = cosmetics.towerSkinId === s.id
+              return (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      equipTowerSkin(s.id)
+                      setCosmetics(loadCosmetics())
+                    }}
+                    className="rounded-md px-2 py-1 text-[0.6rem] font-extrabold text-white"
+                    style={{
+                      background: `linear-gradient(180deg, ${s.merlon}, ${s.face})`,
+                      boxShadow: on ? `0 0 0 2px ${s.accent}` : 'inset 0 0 0 1px #ffffff22',
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="mb-2 mt-3 text-[0.7rem] font-extrabold uppercase tracking-wide text-white/75">
+            Battle banner
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {BANNER_CATALOG.filter((b) => cosmetics.ownedBanners.includes(b.id)).map((b) => {
+              const on = cosmetics.bannerId === b.id
+              return (
+                <li key={b.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      equipBanner(b.id)
+                      setCosmetics(loadCosmetics())
+                    }}
+                    className="rounded-md px-2 py-1 text-[0.6rem] font-extrabold text-white"
+                    style={{
+                      background: on ? '#2a1a12' : '#140e0a',
+                      boxShadow: on ? 'inset 0 0 0 2px #f5d76e' : 'inset 0 0 0 1px #ffffff22',
+                    }}
+                  >
+                    {b.label}
                   </button>
                 </li>
               )

@@ -5,8 +5,10 @@ import {
   RARITY_LABEL,
   RARITY_RANK,
   cardKindLabel,
+  cardKindOf,
   getCharacter,
   isSpellCard,
+  type CardKind,
   type CharacterDef,
   type Rarity,
 } from './characters'
@@ -42,20 +44,22 @@ type CardFilters = {
   name: string
   elixir: number | 'all'
   rarity: Rarity | 'all'
+  kind: CardKind | 'all'
 }
 
-const EMPTY_FILTERS: CardFilters = { name: '', elixir: 'all', rarity: 'all' }
+const EMPTY_FILTERS: CardFilters = { name: '', elixir: 'all', rarity: 'all', kind: 'all' }
 
 function matchesCardFilters(c: CharacterDef, f: CardFilters): boolean {
   if (f.elixir !== 'all' && c.elixir !== f.elixir) return false
   if (f.rarity !== 'all' && c.rarity !== f.rarity) return false
+  if (f.kind !== 'all' && cardKindOf(c) !== f.kind) return false
   const q = f.name.trim().toLowerCase()
   if (q && !c.name.toLowerCase().includes(q)) return false
   return true
 }
 
 function filtersActive(f: CardFilters): boolean {
-  return f.name.trim() !== '' || f.elixir !== 'all' || f.rarity !== 'all'
+  return f.name.trim() !== '' || f.elixir !== 'all' || f.rarity !== 'all' || f.kind !== 'all'
 }
 
 export function CharactersScreen() {
@@ -336,7 +340,7 @@ export function CharactersScreen() {
                   <button
                     key={i}
                     type="button"
-                    className="relative min-w-0"
+                    className="relative min-w-0 pt-1.5"
                     onClick={() => {
                       if (c) removeFromDeck(i)
                       else {
@@ -349,7 +353,11 @@ export function CharactersScreen() {
                       borderRadius: 8,
                     }}
                   >
-                    <BattleCard character={c} size="collection" />
+                    <BattleCard
+                      character={c}
+                      size="collection"
+                      evoUnlocked={!!c && !!progress.evolutions?.includes(c.id)}
+                    />
                   </button>
                 )
               })}
@@ -404,6 +412,7 @@ export function CharactersScreen() {
                     level={progress.levels[c.id] ?? 1}
                     copies={progress.copies[c.id] ?? 0}
                     locked={false}
+                    evoUnlocked={progress.evolutions?.includes(c.id)}
                     onClick={() => {
                       if (pickSlot != null) {
                         addToDeck(c.id)
@@ -435,6 +444,7 @@ export function CharactersScreen() {
                     level={progress.levels[c.id] ?? 1}
                     copies={progress.copies[c.id] ?? 0}
                     locked
+                    evoUnlocked={progress.evolutions?.includes(c.id)}
                     onClick={() => setProfileId(c.id)}
                   />
                 ))}
@@ -485,6 +495,7 @@ export function CharactersScreen() {
                       level={progress.levels[c.id] ?? 1}
                       copies={progress.copies[c.id] ?? 0}
                       locked={locked}
+                      evoUnlocked={progress.evolutions?.includes(c.id)}
                       onClick={() => setProfileId(c.id)}
                     />
                   )
@@ -604,6 +615,25 @@ function CardFilterPanel({
         ))}
       </div>
 
+      <p className="mb-1.5 mt-3 text-[0.6rem] font-extrabold uppercase tracking-wide text-white/60">
+        Type
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        <FilterChip
+          label="Any"
+          selected={filters.kind === 'all'}
+          onClick={() => onChange({ ...filters, kind: 'all' })}
+        />
+        {(['troop', 'building', 'spell'] as const).map((k) => (
+          <FilterChip
+            key={k}
+            label={k === 'troop' ? 'Troop' : k === 'building' ? 'Building' : 'Spell'}
+            selected={filters.kind === k}
+            onClick={() => onChange({ ...filters, kind: k })}
+          />
+        ))}
+      </div>
+
       {filtersActive(filters) ? (
         <button
           type="button"
@@ -666,12 +696,14 @@ function CollectionTile({
   level,
   copies,
   locked,
+  evoUnlocked,
   onClick,
 }: {
   character: CharacterDef
   level: number
   copies: number
   locked: boolean
+  evoUnlocked?: boolean
   onClick: () => void
 }) {
   const need = copiesToUpgrade(level, character.rarity)
@@ -684,8 +716,8 @@ function CollectionTile({
         className="relative w-full"
         style={{ filter: locked ? 'grayscale(1)' : undefined, opacity: locked ? 0.72 : 1 }}
       >
-        <div className="relative overflow-hidden rounded-lg">
-          <BattleCard character={character} size="collection" />
+        <div className="relative overflow-visible rounded-lg pt-1.5">
+          <BattleCard character={character} size="collection" evoUnlocked={evoUnlocked} />
           {locked ? (
             <span className="absolute inset-x-0 bottom-0 z-[2] bg-[#1a1410]/90 py-0.5 text-center text-[0.5rem] font-black text-white">
               Not Found
@@ -830,6 +862,7 @@ function CardProfile({
               character={character}
               size="collection"
               evolved={evoUnlocked}
+              evoUnlocked={evoUnlocked}
             />
           </div>
           <h2 className="mt-3 text-center font-[family-name:var(--font-display)] text-3xl text-[#f5d76e]">
@@ -920,7 +953,6 @@ function CardProfile({
                       : `${character.attackDelaySec}s`
                   }
                 />
-                <Stat label="Height" value={character.height} />
                 {character.battlefieldSize != null ? (
                   <Stat label="Size" value={`${character.battlefieldSize}`} />
                 ) : null}

@@ -38,6 +38,7 @@ import {
   roadStepKey,
   allShopOffers,
   rollChestLoot,
+  rollChestCosmetic,
   type ChestRarity,
   type ShopOffer,
 } from './progression'
@@ -56,12 +57,19 @@ import {
   getRealMoneyOffer,
 } from './shopCatalog'
 import {
+  BANNER_CATALOG,
+  DEFAULT_BANNER_ID,
   DEFAULT_FRAME_ID,
   DEFAULT_TITLE_ID,
+  DEFAULT_TOWER_SKIN_ID,
   FRAME_CATALOG,
   TITLE_CATALOG,
+  TOWER_SKIN_CATALOG,
+  sanitizeBannerId,
   sanitizeFrameId,
   sanitizeTitleId,
+  sanitizeTowerSkinId,
+  type CosmeticDrop,
 } from './cosmeticsCatalog'
 
 export type { GameMode } from './gameModes'
@@ -133,6 +141,7 @@ export type Friend = {
   avatarId?: string
   titleId?: string
   frameId?: string
+  bannerId?: string
   /** When they joined via your invite link */
   addedAt: string
 }
@@ -273,7 +282,7 @@ export function saveFriendTrophies(playerId: string, trophies: number): void {
 
 export function saveFriendCosmetics(
   playerId: string,
-  cosmetics: { avatarId?: string; titleId?: string; frameId?: string },
+  cosmetics: { avatarId?: string; titleId?: string; frameId?: string; bannerId?: string },
 ): void {
   const id = playerId.trim()
   if (!id) return
@@ -293,6 +302,10 @@ export function saveFriendCosmetics(
     }
     if (cosmetics.frameId && f.frameId !== cosmetics.frameId) {
       f.frameId = cosmetics.frameId
+      changed = true
+    }
+    if (cosmetics.bannerId && f.bannerId !== cosmetics.bannerId) {
+      f.bannerId = cosmetics.bannerId
       changed = true
     }
   }
@@ -1573,6 +1586,7 @@ export function openChestNow(
   gems?: number
   cards?: { charId: string; copies: number; newlyUnlocked?: boolean }[]
   evoShards?: { charId: string; shards: number; unlockedEvo?: boolean }[]
+  cosmetic?: { kind: string; id: string; label: string; rarity: string }
 } {
   const chests = loadChests()
   const idx = chests.findIndex((c) => c.id === chestId)
@@ -1589,6 +1603,15 @@ export function openChestNow(
   const ownedBeforeOpen = new Set(loadCardProgress().unlocked)
   applyNamedPlayerCardGrants()
   const loot = rollChestLoot(chest.rarity)
+  const cosmetics = loadCosmetics()
+  const cosmetic = rollChestCosmetic(chest.rarity, {
+    titles: cosmetics.ownedTitles,
+    frames: cosmetics.ownedFrames,
+    emotes: loadOwnedEmotes(),
+    skins: cosmetics.ownedTowerSkins,
+    banners: cosmetics.ownedBanners,
+  })
+  if (cosmetic) grantCosmeticDrop(cosmetic)
   const pendingGrant = takePendingChestCardGrant(loadPlayerName())
   if (pendingGrant) {
     const existing = loot.cards.find((c) => c.charId === pendingGrant.charId)
@@ -1652,14 +1675,18 @@ export function openChestNow(
   const gemBit = loot.gems > 0 ? ` · +${loot.gems} gems` : ''
   const goldBit = loot.gold > 0 ? `+${loot.gold} gold` : ''
   const shardMsg = shardBit ? ` · ${shardBit}` : ''
+  const cosmeticBit = cosmetic ? ` · ${cosmetic.label}` : ''
   return {
     ok: true,
-    message: `${[goldBit, names].filter(Boolean).join(' · ')}${gemBit}${shardMsg}`,
+    message: `${[goldBit, names].filter(Boolean).join(' · ')}${gemBit}${shardMsg}${cosmeticBit}`,
     rarity,
     gold: loot.gold,
     gems: loot.gems,
     cards,
     evoShards: evoShardDrops,
+    cosmetic: cosmetic
+      ? { kind: cosmetic.kind, id: cosmetic.id, label: cosmetic.label, rarity: cosmetic.rarity }
+      : undefined,
   }
 }
 
@@ -2989,16 +3016,24 @@ export function saveAvatarId(avatarId: string): void {
 export type CosmeticsState = {
   ownedTitles: string[]
   ownedFrames: string[]
+  ownedTowerSkins: string[]
+  ownedBanners: string[]
   titleId: string
   frameId: string
+  towerSkinId: string
+  bannerId: string
 }
 
 function defaultCosmetics(): CosmeticsState {
   return {
     ownedTitles: TITLE_CATALOG.filter((t) => t.starter || t.priceGems <= 0).map((t) => t.id),
     ownedFrames: FRAME_CATALOG.filter((f) => f.starter || f.priceGems <= 0).map((f) => f.id),
+    ownedTowerSkins: TOWER_SKIN_CATALOG.filter((t) => t.starter || t.priceGems <= 0).map((t) => t.id),
+    ownedBanners: BANNER_CATALOG.filter((b) => b.starter || b.priceGems <= 0).map((b) => b.id),
     titleId: DEFAULT_TITLE_ID,
     frameId: DEFAULT_FRAME_ID,
+    towerSkinId: DEFAULT_TOWER_SKIN_ID,
+    bannerId: DEFAULT_BANNER_ID,
   }
 }
 
@@ -3013,13 +3048,27 @@ export function loadCosmetics(): CosmeticsState {
     ...base.ownedFrames,
     ...(Array.isArray(raw?.ownedFrames) ? raw.ownedFrames : []),
   ])
+  const ownedTowerSkins = new Set([
+    ...base.ownedTowerSkins,
+    ...(Array.isArray(raw?.ownedTowerSkins) ? raw.ownedTowerSkins : []),
+  ])
+  const ownedBanners = new Set([
+    ...base.ownedBanners,
+    ...(Array.isArray(raw?.ownedBanners) ? raw.ownedBanners : []),
+  ])
   const titleId = sanitizeTitleId(raw?.titleId)
   const frameId = sanitizeFrameId(raw?.frameId)
+  const towerSkinId = sanitizeTowerSkinId(raw?.towerSkinId)
+  const bannerId = sanitizeBannerId(raw?.bannerId)
   const next: CosmeticsState = {
     ownedTitles: [...ownedTitles],
     ownedFrames: [...ownedFrames],
+    ownedTowerSkins: [...ownedTowerSkins],
+    ownedBanners: [...ownedBanners],
     titleId: ownedTitles.has(titleId) ? titleId : DEFAULT_TITLE_ID,
     frameId: ownedFrames.has(frameId) ? frameId : DEFAULT_FRAME_ID,
+    towerSkinId: ownedTowerSkins.has(towerSkinId) ? towerSkinId : DEFAULT_TOWER_SKIN_ID,
+    bannerId: ownedBanners.has(bannerId) ? bannerId : DEFAULT_BANNER_ID,
   }
   return next
 }
@@ -3088,9 +3137,94 @@ export function buyFrame(id: string): { ok: boolean; message: string } {
   return { ok: true, message: `${def.label} unlocked!` }
 }
 
-export function cosmeticsPayload(): { avatarId: string; titleId: string; frameId: string } {
+export function equipTowerSkin(id: string): { ok: boolean; message: string } {
+  const state = loadCosmetics()
+  const next = sanitizeTowerSkinId(id)
+  if (!state.ownedTowerSkins.includes(next)) return { ok: false, message: 'Skin locked' }
+  state.towerSkinId = next
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: 'Tower skin equipped' }
+}
+
+export function equipBanner(id: string): { ok: boolean; message: string } {
+  const state = loadCosmetics()
+  const next = sanitizeBannerId(id)
+  if (!state.ownedBanners.includes(next)) return { ok: false, message: 'Banner locked' }
+  state.bannerId = next
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: 'Banner equipped' }
+}
+
+export function buyTowerSkin(id: string): { ok: boolean; message: string } {
+  const def = TOWER_SKIN_CATALOG.find((t) => t.id === id)
+  if (!def || def.priceGems <= 0) return { ok: false, message: 'Skin not for sale' }
+  const state = loadCosmetics()
+  if (state.ownedTowerSkins.includes(def.id)) return { ok: false, message: 'Already owned' }
+  const profile = loadProfile()
+  if (profile.gems < def.priceGems) return { ok: false, message: `Need ${def.priceGems} gems` }
+  profile.gems -= def.priceGems
+  state.ownedTowerSkins.push(def.id)
+  state.towerSkinId = def.id
+  saveProfile(profile)
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: `${def.label} unlocked!` }
+}
+
+export function buyBanner(id: string): { ok: boolean; message: string } {
+  const def = BANNER_CATALOG.find((b) => b.id === id)
+  if (!def || def.priceGems <= 0) return { ok: false, message: 'Banner not for sale' }
+  const state = loadCosmetics()
+  if (state.ownedBanners.includes(def.id)) return { ok: false, message: 'Already owned' }
+  const profile = loadProfile()
+  if (profile.gems < def.priceGems) return { ok: false, message: `Need ${def.priceGems} gems` }
+  profile.gems -= def.priceGems
+  state.ownedBanners.push(def.id)
+  state.bannerId = def.id
+  saveProfile(profile)
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return { ok: true, message: `${def.label} unlocked!` }
+}
+
+export function grantCosmeticDrop(drop: CosmeticDrop): boolean {
+  if (drop.kind === 'emote') return grantEmote(drop.id)
+  const state = loadCosmetics()
+  if (drop.kind === 'title') {
+    if (state.ownedTitles.includes(drop.id)) return false
+    state.ownedTitles.push(drop.id)
+  } else if (drop.kind === 'frame') {
+    if (state.ownedFrames.includes(drop.id)) return false
+    state.ownedFrames.push(drop.id)
+  } else if (drop.kind === 'towerSkin') {
+    if (state.ownedTowerSkins.includes(drop.id)) return false
+    state.ownedTowerSkins.push(drop.id)
+  } else if (drop.kind === 'banner') {
+    if (state.ownedBanners.includes(drop.id)) return false
+    state.ownedBanners.push(drop.id)
+  }
+  saveCosmetics(state)
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+  return true
+}
+
+export function cosmeticsPayload(): {
+  avatarId: string
+  titleId: string
+  frameId: string
+  bannerId: string
+  towerSkinId: string
+} {
   const c = loadCosmetics()
-  return { avatarId: loadAvatarId(), titleId: c.titleId, frameId: c.frameId }
+  return {
+    avatarId: loadAvatarId(),
+    titleId: c.titleId,
+    frameId: c.frameId,
+    bannerId: c.bannerId,
+    towerSkinId: c.towerSkinId,
+  }
 }
 
 /* ——— Events ——— */

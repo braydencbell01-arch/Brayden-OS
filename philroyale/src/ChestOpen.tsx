@@ -10,6 +10,7 @@ export type ChestLoot = {
   gems?: number
   cards: { charId: string; copies: number; newlyUnlocked?: boolean }[]
   evoShards?: { charId: string; shards: number; unlockedEvo?: boolean }[]
+  cosmetic?: { kind: string; label: string; rarity: string }
 }
 
 type InspectProps = {
@@ -241,6 +242,7 @@ type RevealStep =
   | { kind: 'gems' }
   | { kind: 'card'; index: number }
   | { kind: 'shard'; index: number }
+  | { kind: 'cosmetic' }
   | { kind: 'summary' }
 
 function firstLootStep(loot: ChestLoot): RevealStep {
@@ -248,6 +250,7 @@ function firstLootStep(loot: ChestLoot): RevealStep {
   if ((loot.gems ?? 0) > 0) return { kind: 'gems' }
   if (loot.cards.length) return { kind: 'card', index: 0 }
   if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
+  if (loot.cosmetic) return { kind: 'cosmetic' }
   return { kind: 'summary' }
 }
 
@@ -255,12 +258,14 @@ function afterGold(loot: ChestLoot): RevealStep {
   if ((loot.gems ?? 0) > 0) return { kind: 'gems' }
   if (loot.cards.length) return { kind: 'card', index: 0 }
   if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
+  if (loot.cosmetic) return { kind: 'cosmetic' }
   return { kind: 'summary' }
 }
 
 function afterGems(loot: ChestLoot): RevealStep {
   if (loot.cards.length) return { kind: 'card', index: 0 }
   if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
+  if (loot.cosmetic) return { kind: 'cosmetic' }
   return { kind: 'summary' }
 }
 
@@ -268,6 +273,7 @@ function afterCards(loot: ChestLoot, cardIndex: number): RevealStep {
   const next = cardIndex + 1
   if (next < loot.cards.length) return { kind: 'card', index: next }
   if ((loot.evoShards ?? []).length) return { kind: 'shard', index: 0 }
+  if (loot.cosmetic) return { kind: 'cosmetic' }
   return { kind: 'summary' }
 }
 
@@ -304,7 +310,11 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
       const next = step.index + 1
       const shards = loot.evoShards ?? []
       if (next < shards.length) setStep({ kind: 'shard', index: next })
-      else setStep({ kind: 'summary' })
+      else setStep(loot.cosmetic ? { kind: 'cosmetic' } : { kind: 'summary' })
+      return
+    }
+    if (step.kind === 'cosmetic') {
+      setStep({ kind: 'summary' })
       return
     }
     onDone()
@@ -481,6 +491,33 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
           </motion.div>
         ) : null}
 
+        {step.kind === 'cosmetic' && loot.cosmetic ? (
+          <motion.div
+            key="cosmetic"
+            className="flex flex-col items-center"
+            initial={{ scale: 0.5, y: 40, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+          >
+            <div
+              className="flex h-24 w-24 items-center justify-center rounded-2xl text-4xl"
+              style={{
+                background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+                boxShadow: '0 8px 0 #8a6a12, 0 0 24px #f5d76e88',
+              }}
+            >
+              ✨
+            </div>
+            <p className="mt-4 font-[family-name:var(--font-display)] text-2xl text-[#f5d76e]">
+              {loot.cosmetic.label}
+            </p>
+            <p className="text-sm font-extrabold uppercase tracking-wide text-white/70">
+              {loot.cosmetic.rarity} {loot.cosmetic.kind}
+            </p>
+            <p className="mt-6 text-xs font-bold text-white/50">Tap to continue</p>
+          </motion.div>
+        ) : null}
+
         {step.kind === 'summary' ? (
           <motion.div
             key="summary"
@@ -534,6 +571,14 @@ export function ChestRevealSequence({ rarity, loot, onDone }: RevealProps) {
                   </li>
                 )
               })}
+              {loot.cosmetic ? (
+                <li className="rounded-lg bg-[#2a1a12] px-3 py-2 text-center text-sm font-extrabold text-[#f5d76e] ring-1 ring-[#c9a22766]">
+                  {loot.cosmetic.label}
+                  <span className="mt-0.5 block text-xs font-extrabold uppercase tracking-wide text-white/60">
+                    {loot.cosmetic.rarity} {loot.cosmetic.kind}
+                  </span>
+                </li>
+              ) : null}
             </ul>
             <button
               type="button"

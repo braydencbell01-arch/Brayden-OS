@@ -112,3 +112,10 @@ export function getEmoteById(id: string): EmoteDef | undefined {
 export function isPurchasableEmote(emote: EmoteDef): boolean {
   return emote.kind === 'photo' || emote.kind === 'character'
 }
+
+export function emoteRarity(e: EmoteDef): 'common' | 'rare' | 'epic' | 'legendary' {
+  if (e.priceGems >= 110) return 'legendary'
+  if (e.priceGems >= 80) return 'epic'
+  if (e.priceGems >= 40) return 'rare'
+  return 'common'
+}

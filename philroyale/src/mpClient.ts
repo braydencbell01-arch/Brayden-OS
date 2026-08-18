@@ -12,6 +12,7 @@ export type MpPresence = {
   avatarId?: string
   titleId?: string
   frameId?: string
+  bannerId?: string
 }
 
 export type MpLeaderboardRow = {
@@ -49,6 +50,7 @@ let challengeId: string | undefined
 let avatarId: string | undefined
 let titleId: string | undefined
 let frameId: string | undefined
+let bannerId: string | undefined
 
 async function resolveBase(): Promise<string | null> {
   if (cachedBase !== undefined) return cachedBase
@@ -190,6 +192,7 @@ function sendPing() {
         avatarId,
         titleId,
         frameId,
+        bannerId,
       }),
     )
   } catch {
@@ -233,6 +236,7 @@ export function mpSetStatus(opts: {
   avatarId?: string
   titleId?: string
   frameId?: string
+  bannerId?: string
 }) {
   if (opts.name) wsName = opts.name.trim().slice(0, 32) || wsName
   if (opts.trophies != null) trophies = opts.trophies
@@ -241,6 +245,7 @@ export function mpSetStatus(opts: {
   if (opts.avatarId) avatarId = opts.avatarId
   if (opts.titleId) titleId = opts.titleId
   if (opts.frameId) frameId = opts.frameId
+  if (opts.bannerId) bannerId = opts.bannerId
   sendPing()
 }
 
