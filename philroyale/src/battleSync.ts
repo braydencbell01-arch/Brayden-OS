@@ -77,6 +77,7 @@ export type SyncProjectile = {
     | 'cucumber'
     | 'berryJuice'
     | 'poop'
+    | 'grafBomb'
   fromCol: number
   fromRow: number
   toCol: number

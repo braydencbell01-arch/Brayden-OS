@@ -46,6 +46,8 @@ import {
   PoopSplat,
   RocketDot,
   RocketSplat,
+  GrafBombDot,
+  GrafBombBoom,
   SundaeDot,
   SundaeSplat,
   TowerArrow,
@@ -186,6 +188,7 @@ function FlyingShot({
     | 'cucumber'
     | 'berryJuice'
     | 'poop'
+    | 'grafBomb'
 }) {
   if (now < bornAt) return null
   const dur = Math.max(1, arriveAt - bornAt)
@@ -193,7 +196,9 @@ function FlyingShot({
   const col = fromCol + (toCol - fromCol) * p
   const row = fromRow + (toRow - fromRow) * p
   const arc =
-    kind === 'arrow'
+    kind === 'grafBomb'
+      ? 0
+      : kind === 'arrow'
       ? Math.sin(p * Math.PI) * 2.2
       : kind === 'cannon'
         ? Math.sin(p * Math.PI) * 1.6
@@ -287,6 +292,7 @@ function FlyingShot({
       {kind === 'cucumber' ? <CucumberDot /> : null}
       {kind === 'berryJuice' ? <BerryJuiceDot empowered={dur < 500} /> : null}
       {kind === 'poop' ? <PoopDot /> : null}
+      {kind === 'grafBomb' ? <GrafBombDot fuseP={p} /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
       {kind === 'cannon' ? <CannonBall /> : null}
     </div>
@@ -969,10 +975,36 @@ export function BattleScreen({
             p.kind === 'cheese' ||
             p.kind === 'cucumber' ||
             p.kind === 'berryJuice' ||
-            p.kind === 'poop' ? (
+            p.kind === 'poop' ||
+            p.kind === 'grafBomb' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
             ) : null,
           )}
+          {projectiles.map((p) => {
+            if (p.kind !== 'grafBomb' || p.splashRadius == null || p.splashRadius <= 0) return null
+            const fuse = Math.min(
+              1,
+              Math.max(0, (now - p.bornAt) / Math.max(1, p.arriveAt - p.bornAt)),
+            )
+            const pulse = 0.4 + 0.45 * (0.5 + 0.5 * Math.sin(now / (90 - fuse * 50)))
+            return (
+              <div
+                key={`${p.id}-fuse`}
+                className="pointer-events-none absolute rounded-full"
+                style={{
+                  ...unitStyle(p.toCol, p.toRow),
+                  width: `${((p.splashRadius * 2) / ARENA_COLS) * FIELD_W * 100}%`,
+                  height: `${((p.splashRadius * 2) / ARENA_ROWS) * FIELD_H * 100}%`,
+                  zIndex: 18,
+                  transform: 'translate(-50%, -50%)',
+                  background: `radial-gradient(circle, #ff3b3b55 0%, #ff980044 40%, #ff3b3b22 62%, transparent 72%)`,
+                  boxShadow: `inset 0 0 0 4px #ffe08aee, 0 0 18px #ff3b3b99`,
+                  opacity: pulse,
+                }}
+                aria-hidden
+              />
+            )
+          })}
           {splats.map((s) => (
             <div key={s.id}>
               {s.radius != null && s.radius > 0 ? (
@@ -986,7 +1018,9 @@ export function BattleScreen({
                     // On the tilted plane; center = impact. No counter-rotateX (that shifted the middle).
                     transform: 'translate(-50%, -50%)',
                     background:
-                      s.kind === 'football'
+                      s.kind === 'grafBomb'
+                        ? 'radial-gradient(circle, #fff6c8cc 0%, #ff9800aa 28%, #ff3b3b88 52%, #ff3b3b22 70%, transparent 76%)'
+                        : s.kind === 'football'
                         ? 'radial-gradient(circle, #e8c09055 0%, #8a5a2844 45%, transparent 70%)'
                         : s.kind === 'baseball'
                           ? 'radial-gradient(circle, #f5f5f055 0%, #c8b09044 45%, transparent 70%)'
@@ -1001,8 +1035,14 @@ export function BattleScreen({
                             : s.kind === 'cash'
                               ? 'radial-gradient(circle, #b8ffc855 0%, #3ecf6a44 45%, transparent 70%)'
                               : 'radial-gradient(circle, #ffe08a44 0%, #ff980033 45%, transparent 70%)',
-                    boxShadow: 'inset 0 0 0 2px #ffffff55',
-                    opacity: Math.max(0, 1 - (now - s.bornAt) / 900),
+                    boxShadow:
+                      s.kind === 'grafBomb'
+                        ? 'inset 0 0 0 4px #fff6c8, 0 0 22px #ff3b3bcc'
+                        : 'inset 0 0 0 2px #ffffff55',
+                    opacity: Math.max(
+                      0,
+                      1 - (now - s.bornAt) / (s.kind === 'grafBomb' ? 1500 : 900),
+                    ),
                   }}
                   aria-hidden
                 />
@@ -1015,7 +1055,9 @@ export function BattleScreen({
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                {s.kind === 'boom' ? (
+                {s.kind === 'grafBomb' ? (
+                  <GrafBombBoom ageMs={now - s.bornAt} />
+                ) : s.kind === 'boom' ? (
                   <BulletBoom ageMs={now - s.bornAt} />
                 ) : s.kind === 'dumbbell' ? (
                   <DumbbellSplat ageMs={now - s.bornAt} />

@@ -225,6 +225,7 @@ const BOOM_MS = 420
 const DUMBBELL_SPLAT_MS = 520
 const LOVE_SPLAT_MS = 720
 const MELEE_HIT_MS = 420
+const GRAF_BOMB_BOOM_MS = 1500
 /** Dan rage heart lifetime on the ground. */
 const RAGE_HEART_MS = 3000
 const RAGE_HEART_PICKUP = 1.35
@@ -283,6 +284,29 @@ export type TowerHp = {
 
 function towerMaxHp(kind: 'king' | 'princess'): number {
   return kind === 'king' ? 4000 : 2500
+}
+
+function splatLifeMs(kind: SplatFx['kind']): number {
+  if (kind === 'boom') return BOOM_MS
+  if (kind === 'dumbbell') return DUMBBELL_SPLAT_MS
+  if (kind === 'slobber') return SLOBBER_SPLAT_MS
+  if (kind === 'love') return LOVE_SPLAT_MS
+  if (kind === 'witchcraft') return WITCHCRAFT_SPLAT_MS
+  if (kind === 'pancake') return PANCAKE_SPLAT_MS
+  if (kind === 'iceCream' || kind === 'barrel') return 900
+  if (kind === 'grafBomb') return GRAF_BOMB_BOOM_MS
+  if (
+    kind === 'melee' ||
+    kind === 'whip' ||
+    kind === 'bite' ||
+    kind === 'kick' ||
+    kind === 'hug' ||
+    kind === 'uppercut' ||
+    kind === 'jump'
+  ) {
+    return MELEE_HIT_MS
+  }
+  return SPLAT_MS
 }
 
 function dist(aCol: number, aRow: number, bCol: number, bRow: number): number {
@@ -1745,7 +1769,7 @@ export function useBattle(opts?: {
       // Still advance local spell VFX (sundae throw) so casts feel responsive.
       if (roleNow === 'guest' || roleNow === 'spectator') {
         let nextProjectiles = projectilesRef.current.slice()
-        let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < 900)
+        let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < splatLifeMs(s.kind))
         let projectilesChanged = false
         let splatsChanged = nextSplats.length !== splatsRef.current.length
         const stillFlying: Projectile[] = []
@@ -1760,7 +1784,8 @@ export function useBattle(opts?: {
             p.kind === 'football' ||
             p.kind === 'baseball' ||
             p.kind === 'barrel' ||
-            p.kind === 'rocket'
+            p.kind === 'rocket' ||
+            p.kind === 'grafBomb'
           ) {
             nextSplats.push({
               id: nid('spellfx'),
@@ -1793,33 +1818,7 @@ export function useBattle(opts?: {
       let enemyElixirChanged = nextEnemyElixir !== enemyElixirRef.current
 
       let nextProjectiles = projectilesRef.current.slice()
-      let nextSplats = splatsRef.current.filter((s) => {
-        const life =
-          s.kind === 'boom'
-            ? BOOM_MS
-            : s.kind === 'dumbbell'
-              ? DUMBBELL_SPLAT_MS
-              : s.kind === 'slobber'
-                ? SLOBBER_SPLAT_MS
-                : s.kind === 'love'
-                  ? LOVE_SPLAT_MS
-                  : s.kind === 'witchcraft'
-                    ? WITCHCRAFT_SPLAT_MS
-                  : s.kind === 'pancake'
-                    ? PANCAKE_SPLAT_MS
-                  : s.kind === 'iceCream' || s.kind === 'barrel'
-                    ? 900
-                  : s.kind === 'melee' ||
-                      s.kind === 'whip' ||
-                      s.kind === 'bite' ||
-                      s.kind === 'kick' ||
-                      s.kind === 'hug' ||
-                      s.kind === 'uppercut' ||
-                      s.kind === 'jump'
-                    ? MELEE_HIT_MS
-                    : SPLAT_MS
-        return t - s.bornAt < life
-      })
+      let nextSplats = splatsRef.current.filter((s) => t - s.bornAt < splatLifeMs(s.kind))
       let nextUnits = unitsRef.current.map((u) => ({ ...u }))
       let nextTowers = towersRef.current.map((tw) => ({ ...tw }))
       let nextHearts = heartsRef.current.filter((h) => t - h.bornAt < RAGE_HEART_MS)
@@ -2001,6 +2000,18 @@ export function useBattle(opts?: {
             kind: 'poop',
           })
           splatsChanged = true
+        } else if (p.kind === 'grafBomb') {
+          nextSplats.push({
+            id: nid('grafbomb'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'grafBomb',
+            radius: splatRadius,
+          })
+          splatsChanged = true
+          sfx.hit()
+          sfx.towerHit()
         }
         const berrySnapUnits =
           p.kind === 'berryJuice' && p.ownerUnitId
@@ -3475,7 +3486,7 @@ export function useBattle(opts?: {
         unitsChanged = true
       }
 
-      // Building death spawn + Dan death hearts + Coach Graf Self Destruct.
+      // Building death spawn + Dan death hearts + Coach Graf Self Destruct bomb.
       for (const u of nextUnits) {
         if (u.hp > 0) continue
         const deadDef = getCharacter(u.charId)
@@ -3490,28 +3501,48 @@ export function useBattle(opts?: {
           deadDef.deathSplashRadius > 0
         ) {
           const deathDmg = scaledStat(deadDef.deathDamage, u.level)
-          const splash = applySplashAt(
-            nextUnits,
-            nextTowers,
-            u.side,
-            u.col,
-            u.row,
-            deadDef.deathSplashRadius,
-            deathDmg,
-            t,
-            { excludeUnitId: u.id },
-          )
-          if (splash.unitsChanged) unitsChanged = true
-          if (splash.towersChanged) towersChanged = true
-          nextSplats.push({
-            id: nid('selfdestruct'),
-            col: u.col,
-            row: u.row,
-            bornAt: t,
-            kind: 'boom',
-            radius: deadDef.deathSplashRadius,
-          })
-          splatsChanged = true
+          const fuseMs = deadDef.deathBombDelayMs ?? 0
+          if (fuseMs > 0) {
+            nextProjectiles.push({
+              id: nid('grafbomb'),
+              kind: 'grafBomb',
+              fromCol: u.col,
+              fromRow: u.row,
+              toCol: u.col,
+              toRow: u.row,
+              damage: deathDmg,
+              targetId: null,
+              targetTowerId: null,
+              bornAt: t,
+              arriveAt: t + fuseMs,
+              ownerSide: u.side,
+              splashRadius: deadDef.deathSplashRadius,
+            })
+            projectilesChanged = true
+          } else {
+            const splash = applySplashAt(
+              nextUnits,
+              nextTowers,
+              u.side,
+              u.col,
+              u.row,
+              deadDef.deathSplashRadius,
+              deathDmg,
+              t,
+              { excludeUnitId: u.id },
+            )
+            if (splash.unitsChanged) unitsChanged = true
+            if (splash.towersChanged) towersChanged = true
+            nextSplats.push({
+              id: nid('selfdestruct'),
+              col: u.col,
+              row: u.row,
+              bornAt: t,
+              kind: 'boom',
+              radius: deadDef.deathSplashRadius,
+            })
+            splatsChanged = true
+          }
         }
         if (!deadDef?.dropsRageHeart) continue
         nextHearts.push({

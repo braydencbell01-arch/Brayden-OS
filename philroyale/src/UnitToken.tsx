@@ -1222,3 +1222,85 @@ export function BulletBoom({ ageMs }: { ageMs: number }) {
     </div>
   )
 }
+
+/** Coach Graf death bomb — sits on the ground until the fuse hits 2s. */
+export function GrafBombDot({ fuseP = 0 }: { fuseP?: number }) {
+  const pulse = 0.92 + Math.sin(fuseP * Math.PI * 10) * (0.06 + fuseP * 0.12)
+  const spark = 0.7 + Math.sin(fuseP * 40) * 0.3
+  return (
+    <div
+      className="relative h-11 w-11"
+      style={{ transform: `scale(${pulse})` }}
+      aria-hidden
+    >
+      <div
+        className="absolute -inset-3 rounded-full"
+        style={{
+          background: `radial-gradient(circle, #ff3b3b${fuseP > 0.7 ? '66' : '33'} 0%, transparent 70%)`,
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-[18%] h-7 w-7 -translate-x-1/2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 35% 30%, #5a5a5a 0%, #1a1a1a 55%, #000 100%)',
+          boxShadow: '0 2px 0 #000, inset 0 1px 0 #ffffff33',
+        }}
+      />
+      <div
+        className="absolute left-1/2 top-[10%] h-3 w-1.5 -translate-x-1/2 rounded-sm"
+        style={{ background: 'linear-gradient(180deg,#c9a227,#8a5a10)' }}
+      />
+      <div
+        className="absolute left-[58%] top-0 h-3 w-3 rounded-full"
+        style={{
+          background: `radial-gradient(circle, #fff6c8 0%, #ff9800 ${40 + spark * 20}%, #e5393533 75%, transparent 80%)`,
+          transform: `scale(${0.7 + fuseP * 0.8})`,
+          opacity: 0.85 + spark * 0.15,
+        }}
+      />
+    </div>
+  )
+}
+
+/** Coach Graf bomb detonation — large fireball + shockwave. */
+export function GrafBombBoom({ ageMs }: { ageMs: number }) {
+  const p = Math.min(1, ageMs / 1500)
+  const scale = 0.35 + p * 4.2
+  const opacity = p < 0.18 ? 1 : 1 - (p - 0.18) / 0.82
+  const ring = 0.5 + p * 5.5
+  return (
+    <div className="relative h-24 w-24" aria-hidden>
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        style={{
+          width: `${ring * 18}px`,
+          height: `${ring * 18}px`,
+          border: '3px solid #fff6c8',
+          boxShadow: '0 0 18px #ff9800, 0 0 28px #e53935aa',
+          opacity: Math.max(0, 0.95 - p),
+        }}
+      />
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          transform: `scale(${scale})`,
+          opacity: Math.max(0, opacity),
+          background:
+            'radial-gradient(circle, #ffffff 0%, #fff6c8 12%, #ff9800 38%, #e53935 58%, #7a101033 72%, transparent 78%)',
+          boxShadow: '0 0 24px #ff9800, 0 0 48px #ff3b3b88',
+        }}
+      />
+      {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
+        <div
+          key={deg}
+          className="absolute left-1/2 top-1/2 h-2 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffe08a]"
+          style={{
+            transform: `rotate(${deg}deg) translateY(-${10 + p * 28}px)`,
+            opacity: Math.max(0, 1 - p * 1.1),
+            boxShadow: '0 0 6px #ff9800',
+          }}
+        />
+      ))}
+    </div>
+  )
+}

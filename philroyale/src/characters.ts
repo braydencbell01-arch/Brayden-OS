@@ -149,6 +149,8 @@ export type CharacterDef = {
   deathDamage?: number
   /** Blocks radius for deathDamage (diameter = 2×). */
   deathSplashRadius?: number
+  /** If set, drop a bomb on death; splash applies after this many ms. */
+  deathBombDelayMs?: number
   /** Building: spawn these troop ids on a timer (and often on death). */
   spawnPool?: string[]
   /** Building: seconds between spawns (first spawn is on place). */
@@ -1102,9 +1104,10 @@ export const COACH_GRAF: CharacterDef = {
   hue: 210,
   targetsBuildingsOnly: true,
   deathDamage: 260,
-  deathSplashRadius: 3.5,
+  deathSplashRadius: 8,
+  deathBombDelayMs: 2000,
   blurb:
-    'Win condition — sprints hard at buildings (slow). Knuckle Sandwich punches towers. Self Destruct: 260 splash (diameter 7) where he dies.',
+    'Win condition — sprints hard at buildings (slow). Knuckle Sandwich punches towers. Self Destruct: drops a bomb; after 2s it explodes for 260 splash (diameter 16).',
   attacks: [
     {
       id: 'knuckleSandwich',
@@ -1117,10 +1120,10 @@ export const COACH_GRAF: CharacterDef = {
     {
       id: 'selfDestruct',
       name: 'Self Destruct',
-      range: 3.5,
+      range: 8,
       damage: 260,
       rootWhileAttacking: false,
-      splashRadius: 3.5,
+      splashRadius: 8,
       onDeathOnly: true,
       kind: 'uppercut',
     },
