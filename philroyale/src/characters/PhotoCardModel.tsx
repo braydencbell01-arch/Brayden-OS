@@ -82,20 +82,22 @@ export function PhotoCardModel({
   const moving = anim === 'walk' || anim === 'attack'
   return (
     <div
-      className="relative h-full w-full overflow-visible"
+      className="relative h-full w-full overflow-hidden"
       style={{ transform: `scaleX(${flip})`, transformOrigin: '50% 100%' }}
     >
       <motion.img
         src={cardSrc}
         alt=""
         className="absolute inset-0 h-full w-full object-cover drop-shadow-[1px_3px_4px_rgba(0,0,0,0.5)]"
-        style={{ objectPosition: objectPos }}
-        animate={moving ? { rotate: [0, 360] } : { rotate: 0 }}
-        transition={
-          moving
-            ? { duration: 0.7, repeat: Infinity, ease: 'linear' }
-            : { duration: 0.2 }
-        }
+        style={{
+          objectPosition: objectPos,
+          // Card-art PNGs include a visible border/square background; zoom so
+          // only the character stays in-frame like other sprites.
+          transform: 'scale(1.26)',
+          transformOrigin: '50% 50%',
+        }}
+        animate={moving ? { y: [0, -2, 0] } : { y: 0 }}
+        transition={moving ? { duration: 0.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
         draggable={false}
       />
     </div>
