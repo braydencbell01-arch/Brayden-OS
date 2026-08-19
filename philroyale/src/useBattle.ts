@@ -126,6 +126,7 @@ function syncUnitToBattle(u: SyncUnit, flip: boolean, guestNow: number, hostNow:
     launch,
     nextSpawnAt: u.nextSpawnAt != null ? mapTime(u.nextSpawnAt, guestNow) : undefined,
     evolved: !!u.evolved,
+    spawnIdx: u.spawnIdx,
   }
 }
 
@@ -493,6 +494,7 @@ function makeBattleUnit(
   t: number,
   level = 1,
   evolved = false,
+  spawnIdx?: number,
 ): BattleUnit {
   const clampedCol = Math.max(0, Math.min(ARENA_COLS - 1, Math.floor(col)))
   const clampedRow = Math.max(0, Math.min(ARENA_ROWS - 1, Math.floor(row)))
@@ -530,6 +532,7 @@ function makeBattleUnit(
     hitOnceKeys: [],
     nextSpawnAt: isBuildingCard(char) && everySec > 0 ? t + everySec * 1000 : undefined,
     evolved,
+    spawnIdx,
   }
 }
 
@@ -584,9 +587,11 @@ function spawnDeployedCard(
   const count = Math.max(1, char.spawnCount ?? 1)
   const spawnDef = (char.spawnAsId ? getCharacter(char.spawnAsId) : null) ?? char
   const spawned: BattleUnit[] = []
-  for (const o of swarmOffsets(count)) {
+  const offsets = swarmOffsets(count)
+  for (let i = 0; i < offsets.length; i++) {
+    const o = offsets[i]!
     spawned.push(
-      makeBattleUnit(spawnDef, col + o.col, row + o.row, side, t, level, evolved),
+      makeBattleUnit(spawnDef, col + o.col, row + o.row, side, t, level, evolved, i),
     )
   }
   into.push(...spawned)
@@ -1481,6 +1486,7 @@ export function useBattle(opts?: {
         level: u.level,
         evolved: u.evolved,
         spawnedAt: u.spawnedAt,
+        spawnIdx: u.spawnIdx,
         nextAttackAt: u.nextAttackAt,
         attackIndex: u.attackIndex,
         burstShot: u.burstShot,
@@ -3800,6 +3806,10 @@ export function useBattle(opts?: {
             applyTowerDamage(tw, damage, t)
             combatFx(attack.kind, damage)
             towersChanged = true
+            if (attack.diesOnAttack) {
+              u.hp = 0
+              unitsChanged = true
+            }
           }
         }
 

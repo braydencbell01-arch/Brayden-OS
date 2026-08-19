@@ -1214,7 +1214,7 @@ export const BOCCE_BALLS: CharacterDef = {
   rarity: 'rare',
   elixir: 2,
   hp: 245,
-  moveSpeed: 10.8,
+  moveSpeed: 9.7,
   attackDelaySec: 0.1,
   hue: 10,
   pathToBuildingsOnly: true,

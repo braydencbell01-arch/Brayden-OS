@@ -971,6 +971,7 @@ export function BattleScreen({
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
                   evolved={u.evolved}
+                  spawnIdx={u.spawnIdx}
                 />
                 {deployWarming ? (
                   <div

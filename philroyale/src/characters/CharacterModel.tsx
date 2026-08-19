@@ -36,6 +36,7 @@ import { SusanModel } from './SusanModel'
 import { PhilsRocketModel } from './PhilsRocketModel'
 import { CoachGrafModel } from './CoachGrafModel'
 import { PhotoTroop } from './PhotoTroop'
+import { BocceBallModel } from './BocceBallModel'
 
 type Props = {
   charId: string
@@ -47,6 +48,8 @@ type Props = {
   initial?: string
   enraged?: boolean
   auraActive?: boolean
+  /** Swarm index — bocce red (0) vs green (1). */
+  spawnIdx?: number
 }
 
 /** Routes to Clash Royale–style toy-3D character models. */
@@ -58,6 +61,7 @@ export function CharacterModel({
   portrait,
   enraged,
   auraActive,
+  spawnIdx,
 }: Props) {
   let model: ReactNode
   if (charId === 'phil') {
@@ -177,25 +181,12 @@ export function CharacterModel({
         portrait={portrait}
         gait="waddle"
         attack="none"
-        spriteLegs={false}
+        spriteLegs
         troopScale={1.08}
       />
     )
   } else if (charId === 'bocceBalls') {
-    model = (
-      <PhotoTroop
-        cardSrc={`${import.meta.env.BASE_URL}characters/bocce-balls-card.png`}
-        troopSrc={`${import.meta.env.BASE_URL}characters/bocce-balls-troop.png`}
-        alt="Bocce Balls"
-        anim={anim}
-        facing={facing}
-        portrait={portrait}
-        gait="stiff"
-        attack="none"
-        spriteLegs={false}
-        troopScale={1.14}
-      />
-    )
+    model = <BocceBallModel anim={anim} facing={facing} portrait={portrait} spawnIdx={spawnIdx} />
   } else if (charId === 'georgesDiner') {
     model = (
       <PhotoTroop
@@ -205,7 +196,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
-        spriteLegs={false}
+        spriteLegs
         troopScale={1.06}
         gait="stiff"
         attack="none"
@@ -220,7 +211,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
-        spriteLegs={false}
+        spriteLegs
         gait="stiff"
         troopScale={1.04}
         attack="none"
@@ -235,7 +226,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
-        spriteLegs={false}
+        spriteLegs
         gait="stiff"
         troopScale={1.04}
         attack="none"
@@ -251,7 +242,7 @@ export function CharacterModel({
         facing={facing}
         portrait={portrait}
         gait="stiff"
-        spriteLegs={false}
+        spriteLegs
         troopScale={1.12}
         attack="none"
       />
