@@ -52,6 +52,8 @@ export type SyncUnit = {
   launch?: SyncLaunch | null
   /** Evolution form (+30% stats). */
   evolved?: boolean
+  /** Swarm spawn index (bocce red/green). */
+  spawnIdx?: number
 }
 
 export type SyncProjectile = {

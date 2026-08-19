@@ -57,6 +57,8 @@ export type BattleUnit = {
   launch?: LaunchFlight | null
   /** Ram (once-per-target) keys already hit: `unit:id` / `tower:id`. */
   hitOnceKeys?: string[]
+  /** Swarm spawn index (0 = first offset, e.g. red bocce ball). */
+  spawnIdx?: number
   /** Berry Aura — blue flames after a kill; stronger / faster juice. */
   auraActive?: boolean
   /** Faggol Short Temper — stain DoT until this performance.now. */

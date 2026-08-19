@@ -17,6 +17,7 @@ type Props = {
   facing?: number
   moving?: boolean
   evolved?: boolean
+  spawnIdx?: number
 }
 
 /** Large 2.5D troop; gameplay footprint remains 1 tile. */
@@ -33,6 +34,7 @@ export function UnitToken({
   facing,
   moving,
   evolved,
+  spawnIdx,
 }: Props) {
   const def = getCharacter(charId)
   if (!def) return null
@@ -153,6 +155,7 @@ export function UnitToken({
           initial={def.initial}
           enraged={enraged}
           auraActive={auraActive}
+          spawnIdx={spawnIdx}
         />
         {poopStain ? (
           <div
