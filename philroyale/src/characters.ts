@@ -1242,6 +1242,7 @@ export const BOCCE_BALLS: CharacterDef = {
       ignoreAttackDelay: true,
       knockbackTiles: 5,
       knockbackSide: true,
+      oncePerTarget: true,
       kind: 'ram',
     },
   ],
