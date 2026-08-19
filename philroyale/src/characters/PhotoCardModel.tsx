@@ -88,7 +88,8 @@ export function PhotoCardModel({
       <motion.img
         src={cardSrc}
         alt=""
-        className="absolute inset-0 h-full w-full object-contain drop-shadow-[1px_3px_4px_rgba(0,0,0,0.5)]"
+        className="absolute inset-0 h-full w-full object-cover drop-shadow-[1px_3px_4px_rgba(0,0,0,0.5)]"
+        style={{ objectPosition: objectPos }}
         animate={moving ? { rotate: [0, 360] } : { rotate: 0 }}
         transition={
           moving

@@ -174,6 +174,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
+        roll={!portrait}
         gait="waddle"
         objectPos="50% 42%"
         portraitScale={1.12}
@@ -201,6 +202,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
+        roll={!portrait}
         objectPos="50% 58%"
         portraitScale={1.06}
         spriteLegs={false}
@@ -214,6 +216,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
+        roll={!portrait}
         objectPos="50% 48%"
         spriteLegs={false}
       />
@@ -226,6 +229,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
+        roll={!portrait}
         objectPos="50% 48%"
         spriteLegs={false}
       />
@@ -238,6 +242,7 @@ export function CharacterModel({
         anim={anim}
         facing={facing}
         portrait={portrait}
+        roll={!portrait}
         gait="stiff"
         objectPos="50% 52%"
         portraitScale={1.1}
