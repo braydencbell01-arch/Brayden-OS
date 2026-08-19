@@ -1,6 +1,7 @@
 import type { CharacterDef, Rarity } from './characters'
 import { CARD_PORTRAIT_BG } from './characters/cardArt'
 import { CharacterModel } from './characters/CharacterModel'
+import { cardCanEvolve } from './evolutions'
 
 type Props = {
   character: CharacterDef | null
@@ -9,7 +10,7 @@ type Props = {
   selected?: boolean
   /** This play is the evolved form (purple evo frame). */
   evolved?: boolean
-  /** Player owns this card's evolution — fill the diamond. */
+  /** Player owns this card's evolution — fill the triangle. */
   evoUnlocked?: boolean
 }
 
@@ -79,8 +80,9 @@ export function BattleCard({
   }
 
   const frame = RARITY_FRAME[character.rarity]
-  const evoLook = !!evolved || (!!evoUnlocked && collection)
-  const diamondOn = !!evoUnlocked || !!evolved
+  const canEvo = cardCanEvolve(character.id)
+  const evoLook = canEvo && (!!evolved || (!!evoUnlocked && collection))
+  const triangleOn = canEvo && (!!evoUnlocked || !!evolved)
   const afford =
     elixir == null ? 1 : Math.max(0, Math.min(1, elixir / Math.max(1, character.elixir)))
   const greyPct = (1 - afford) * 100
@@ -146,37 +148,25 @@ export function BattleCard({
           />
         ) : null}
       </div>
+      {canEvo ? (
       <div
         className={`pointer-events-none absolute left-1/2 z-[6] -translate-x-1/2 ${
-          next ? '-top-[0.28rem]' : collection ? '-top-[0.38rem]' : '-top-[0.32rem]'
+          next ? '-top-[0.42rem]' : collection ? '-top-[0.52rem]' : '-top-[0.46rem]'
         }`}
-        aria-label={diamondOn ? 'Evolution unlocked' : 'Evolution locked'}
+        aria-label={triangleOn ? 'Evolution unlocked' : 'Evolution locked'}
       >
         <div
-          className={`flex items-end justify-center ${
-            next ? 'h-2.5 w-3' : collection ? 'h-4 w-[1.15rem]' : 'h-3.5 w-4'
-          }`}
+          className={next ? 'h-2.5 w-3' : collection ? 'h-3.5 w-[1.05rem]' : 'h-3 w-3.5'}
           style={{
-            background: diamondOn ? '#6a20c8' : '#5a5e66',
-            clipPath: 'polygon(12% 100%, 12% 28%, 50% 0%, 88% 28%, 88% 100%)',
-            boxShadow: diamondOn ? '0 0 8px #c060ffcc' : 'none',
+            background: triangleOn
+              ? 'linear-gradient(180deg,#e9b8ff,#9b2dff 45%,#5a00a8)'
+              : 'linear-gradient(180deg,#9aa0a8,#6a6e76 50%,#3a3e44)',
+            clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+            boxShadow: triangleOn ? '0 0 8px #c060ffcc' : 'none',
           }}
-        >
-          <span
-            className={`mb-[1px] block rotate-45 ${
-              next ? 'h-[0.38rem] w-[0.38rem]' : collection ? 'h-2 w-2' : 'h-[0.42rem] w-[0.42rem]'
-            }`}
-            style={{
-              background: diamondOn
-                ? 'linear-gradient(135deg,#f4e0ff,#c060ff 40%,#5a00a8)'
-                : 'linear-gradient(135deg,#c5cad2 0%, #8b919a 42%, #4a5058 100%)',
-              boxShadow: diamondOn
-                ? '0 0 5px #e9b8ff, inset 0 1px 0 #ffffffaa'
-                : 'inset 0 0 3px #2a2e36',
-            }}
-          />
-        </div>
+        />
       </div>
+      ) : null}
     </div>
   )
 }

@@ -59,6 +59,8 @@ import {
   subscribeBattle,
 } from './battleSync'
 import { combatFx, sfx } from './audio'
+import { shakeBattlefield, shakeForPlace } from './fx'
+import { cardCanEvolve, consumeEvoPlay, peekEvoPlay } from './evolutions'
 
 const SYNC_INTERVAL_MS = 220
 
@@ -158,6 +160,8 @@ function syncProjectileToBattle(
     bounceLeft: p.bounceLeft,
     bounceRange: p.bounceRange,
     bounceHitIds: p.bounceHitIds,
+    spawnEvolved: p.spawnEvolved,
+    splitGen: p.splitGen,
   }
 }
 
@@ -192,6 +196,14 @@ const LAG_GUEST_REPORT_MS = 700
 const LOVE_PROJECTILE_MS = 1600
 /** Gretchin Witchcraft — medium purple bolt. */
 const WITCHCRAFT_PROJECTILE_MS = 520
+const DAVE_EVO_AURA_RADIUS = 10
+const DAVE_EVO_AURA_DPS = 28
+const POISON_MS = 10_000
+const POISON_TICK_MS = 1000
+const POISON_DAMAGE = 10
+const CHICKEN_EVO_CAP = 24
+const SHAY_SPLIT_RANGE = 28
+const SHAY_SPLIT_MAX_GEN = 6
 const WITCHCRAFT_VFX_MS = 560
 const WITCHCRAFT_SPLAT_MS = 520
 const TOWER_PROJECTILE_MS = 320
@@ -509,7 +521,7 @@ function makeBattleUnit(
     rootedUntil: 0,
     spawnedAt: t,
     enraged: false,
-    auraActive: false,
+    auraActive: evolved && !!char.auraOnKill,
     poopStainUntil: 0,
     poopStainNextAt: 0,
     movingUntil: 0,
@@ -548,6 +560,7 @@ function spawnDogFromBuilding(
 /** Clash-style swarm offsets (Chicken Army = wide pentagon so each chicken is visible). */
 function swarmOffsets(count: number): { col: number; row: number }[] {
   if (count <= 1) return [{ col: 0, row: 0 }]
+  if (count === 2) return [{ col: -2.4, row: 0 }, { col: 2.4, row: 0 }]
   const pack = [
     { col: 0, row: -4.8 },
     { col: -6.4, row: -0.6 },
@@ -606,7 +619,10 @@ function makeSpellProjectile(
   const radius = char.spellRadius ?? 0
   if (!spawnOnLand && (damage <= 0 || radius <= 0)) return null
   const from = kingThrowPoint(side)
-  const travel = char.spellTravelMs ?? ICE_CREAM_PROJECTILE_MS
+  const travel =
+    evolved && char.id === 'chickenBarrel'
+      ? 500
+      : (char.spellTravelMs ?? ICE_CREAM_PROJECTILE_MS)
   const kind =
     char.id === 'bobbySpecial'
       ? 'football'
@@ -616,6 +632,10 @@ function makeSpellProjectile(
           ? 'barrel'
           : char.id === 'philsRocket'
             ? 'rocket'
+            : char.id === 'stalwart'
+              ? 'blobGreen'
+            : char.id === 'olReliable'
+              ? 'blob'
             : 'iceCream'
   return {
     id: nid('spell'),
@@ -651,7 +671,29 @@ function castSpellProjectile(
 ): boolean {
   const projectile = makeSpellProjectile(char, side, col, row, t, level, evolved)
   if (!projectile) return false
+  if (evolved && char.id === 'footballHuck') {
+    const d = 10
+    const corners = [
+      { col: col - d, row: row - d },
+      { col: col + d, row: row - d },
+      { col: col - d, row: row + d },
+      { col: col + d, row: row + d },
+    ]
+    for (const c of corners) {
+      const p = makeSpellProjectile(char, side, c.col, c.row, t, level, evolved)
+      if (p) into.push(p)
+    }
+    return true
+  }
   into.push(projectile)
+  if (evolved && char.id === 'iceCream') {
+    const follow = makeSpellProjectile(char, side, col, row, t, level, evolved)
+    if (follow) {
+      follow.bornAt += 1000
+      follow.arriveAt += 1000
+      into.push(follow)
+    }
+  }
   return true
 }
 
@@ -773,11 +815,14 @@ function tryEnemyAiDeploy(
   mode: GameMode = 'classic',
   deckIds: string[] = [],
   skill = 0.75,
+  evoDeck: string[] = [],
+  evoCounts: Record<string, number> = {},
 ): {
   units: BattleUnit[]
   elixir: number
   deck: string[]
   projectile?: Projectile | null
+  projectiles?: Projectile[]
 } {
   const lane = pickAiLane(units, skill)
   const colBase = lane === 'left' ? 18 : 70
@@ -871,6 +916,7 @@ function tryEnemyAiDeploy(
     payload: {
       units: BattleUnit[]
       projectile?: Projectile | null
+      projectiles?: Projectile[]
       elixir: number
     },
   ) => {
@@ -936,19 +982,31 @@ function tryEnemyAiDeploy(
       }
       const target = pickAiSpellTarget(units, towers, 'enemy')
       if (!target) continue
-      const projectile = makeSpellProjectile(
-        char,
-        'enemy',
-        target.col,
-        target.row,
-        t,
-        botLevel,
-        Math.random() < 0.22,
+      const evolved = consumeEvoPlay(
+        char.id,
+        char.elixir,
+        true,
+        evoDeck.length ? evoDeck : deck,
+        evoCounts,
       )
-      if (!projectile) continue
+      const shots: Projectile[] = []
+      if (
+        !castSpellProjectile(
+          char,
+          'enemy',
+          target.col,
+          target.row,
+          t,
+          botLevel,
+          shots,
+          evolved,
+        )
+      ) {
+        continue
+      }
       return finish(slot, {
         units: [],
-        projectile,
+        projectiles: shots,
         elixir: enemyElixir - char.elixir,
       })
     }
@@ -956,6 +1014,13 @@ function tryEnemyAiDeploy(
     for (const spot of spawnCandidates(role)) {
       if (!canSpawnAt(spot.col, spot.row, 'enemy', towers, live, mode)) continue
       const spawned: BattleUnit[] = []
+      const evolved = consumeEvoPlay(
+        char.id,
+        char.elixir,
+        true,
+        evoDeck.length ? evoDeck : deck,
+        evoCounts,
+      )
       spawnDeployedCard(
         char,
         spot.col,
@@ -964,7 +1029,7 @@ function tryEnemyAiDeploy(
         t,
         botLevel,
         spawned,
-        Math.random() < 0.22,
+        evolved,
       )
       return finish(slot, {
         units: spawned,
@@ -1164,12 +1229,57 @@ function nid(prefix: string): string {
   return `${prefix}-${seq}`
 }
 
+function inForwardCone(
+  fromCol: number,
+  fromRow: number,
+  facing: number,
+  toCol: number,
+  toRow: number,
+  range: number,
+  halfRad = 0.82,
+): boolean {
+  const d = Math.hypot(toCol - fromCol, toRow - fromRow)
+  if (d > range) return false
+  if (d < 0.2) return true
+  const ang = Math.atan2(toRow - fromRow, toCol - fromCol)
+  let diff = ang - facing
+  while (diff > Math.PI) diff -= Math.PI * 2
+  while (diff < -Math.PI) diff += Math.PI * 2
+  return Math.abs(diff) <= halfRad
+}
+
+function spawnChickenNear(
+  col: number,
+  row: number,
+  side: Side,
+  t: number,
+  level: number,
+  evolved: boolean,
+  into: BattleUnit[],
+): void {
+  const chicken = getCharacter('chicken')
+  if (!chicken) return
+  const live = into.filter((u) => u.side === side && u.charId === 'chicken' && u.hp > 0).length
+  if (live >= CHICKEN_EVO_CAP) return
+  const jitter = (n: number) => n + (Math.random() * 2.6 - 1.3)
+  into.push(makeBattleUnit(chicken, jitter(col), jitter(row), side, t, level, evolved))
+}
+
+function applyPoison(target: BattleUnit, t: number): void {
+  target.poisonUntil = t + POISON_MS
+  if (!target.poisonNextAt || target.poisonNextAt <= t) {
+    target.poisonNextAt = t + POISON_TICK_MS
+  }
+}
+
 export function useBattle(opts?: {
   paused?: boolean
   /** Ally card levels by charId */
   allyLevels?: Record<string, number>
   /** Ally cards with evolution unlocked */
   allyEvolutions?: string[]
+  /** Battle deck order — slots 0 and 1 are evolution slots. */
+  allyDeckIds?: string[]
   /** Enemy bot card level (all units) */
   botLevel?: number
   /** Player trophies — scales AI cadence / elixir on trophy road. */
@@ -1239,8 +1349,11 @@ export function useBattle(opts?: {
   allyLevelsRef.current = opts?.allyLevels ?? {}
   const allyEvolutionsRef = useRef(new Set(opts?.allyEvolutions ?? []))
   allyEvolutionsRef.current = new Set(opts?.allyEvolutions ?? [])
-  /** Plays since last evolved deploy (0–2); 3rd play is evolved. */
+  const allyDeckIdsRef = useRef(opts?.allyDeckIds ?? [])
+  allyDeckIdsRef.current = opts?.allyDeckIds ?? []
+  /** Plays since last evolved deploy; cycle length depends on elixir. */
   const allyPlayCountRef = useRef<Record<string, number>>({})
+  const botPlayCountRef = useRef<Record<string, number>>({})
   const [evoPlayTick, setEvoPlayTick] = useState(0)
   const botLevelRef = useRef(botLevel)
   botLevelRef.current = botLevel
@@ -1290,17 +1403,29 @@ export function useBattle(opts?: {
   >([])
 
   function consumeAllyEvolvedPlay(charId: string): boolean {
-    if (!allyEvolutionsRef.current.has(charId)) return false
-    const n = (allyPlayCountRef.current[charId] ?? 0) + 1
-    const evolved = n % 3 === 0
-    allyPlayCountRef.current[charId] = evolved ? 0 : n
-    setEvoPlayTick((x) => x + 1)
+    const char = getCharacter(charId)
+    if (!char) return false
+    const evolved = consumeEvoPlay(
+      charId,
+      char.elixir,
+      allyEvolutionsRef.current.has(charId),
+      allyDeckIdsRef.current,
+      allyPlayCountRef.current,
+    )
+    if (cardCanEvolve(charId)) setEvoPlayTick((x) => x + 1)
     return evolved
   }
 
   function nextPlayIsEvolved(charId: string): boolean {
-    if (!allyEvolutionsRef.current.has(charId)) return false
-    return ((allyPlayCountRef.current[charId] ?? 0) + 1) % 3 === 0
+    const char = getCharacter(charId)
+    if (!char) return false
+    return peekEvoPlay(
+      charId,
+      char.elixir,
+      allyEvolutionsRef.current.has(charId),
+      allyDeckIdsRef.current,
+      allyPlayCountRef.current,
+    )
   }
 
   const unitsRef = useRef(units)
@@ -1391,9 +1516,11 @@ export function useBattle(opts?: {
         spawnAsId: p.spawnAsId,
         spawnCount: p.spawnCount,
         spawnLevel: p.spawnLevel,
+        spawnEvolved: p.spawnEvolved,
         bounceLeft: p.bounceLeft,
         bounceRange: p.bounceRange,
         bounceHitIds: p.bounceHitIds,
+        splitGen: p.splitGen,
       })),
       allyScore: allyScoreRef.current,
       enemyScore: enemyScoreRef.current,
@@ -1430,6 +1557,10 @@ export function useBattle(opts?: {
       const n = netRef.current
       const role = liveRoleRef.current ?? n?.role
       const evolved = consumeAllyEvolvedPlay(char.id)
+      const placeSize =
+        char.battlefieldSize ??
+        Math.min(10, Math.max(2, Math.round((char.spellRadius ?? 8) / 2)))
+      shakeBattlefield(shakeForPlace(placeSize))
       if (n && role === 'guest') {
         // Optimistic elixir; host confirms via mirrored state.
         setElixir((e) => Math.max(0, e - char.elixir))
@@ -1999,14 +2130,32 @@ export function useBattle(opts?: {
             kind: 'cucumber',
           })
           splatsChanged = true
-        } else if (p.kind === 'berryJuice') {
+        } else if (p.kind === 'berryJuice' || p.kind === 'blob' || p.kind === 'blobGreen') {
           nextSplats.push({
             id: nid('berry'),
             col: p.toCol,
             row: p.toRow,
             bornAt: t,
-            kind: 'berryJuice',
+            kind: p.kind === 'blobGreen' ? 'blobGreen' : p.kind === 'blob' ? 'blob' : 'berryJuice',
             radius: splatRadius,
+          })
+          splatsChanged = true
+        } else if (p.kind === 'creamSmoke') {
+          nextSplats.push({
+            id: nid('cream'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'creamSmoke',
+          })
+          splatsChanged = true
+        } else if (p.kind === 'waffle') {
+          nextSplats.push({
+            id: nid('waffle'),
+            col: p.toCol,
+            row: p.toRow,
+            bornAt: t,
+            kind: 'waffle',
           })
           splatsChanged = true
         } else if (p.kind === 'poop') {
@@ -2099,6 +2248,16 @@ export function useBattle(opts?: {
             towersChanged = true
           }
         }
+        if (p.ownerUnitId) {
+          const owner = nextUnits.find((x) => x.id === p.ownerUnitId)
+          if (owner?.evolved && owner.charId === 'gretchin' && p.kind === 'witchcraft' && p.targetId) {
+            const poisoned = nextUnits.find((u) => u.id === p.targetId && u.hp > 0)
+            if (poisoned) {
+              applyPoison(poisoned, t)
+              unitsChanged = true
+            }
+          }
+        }
         // Shay Love — Jessie-style bounce to another foe still in Shay's range.
         if (
           p.kind === 'love' &&
@@ -2107,7 +2266,7 @@ export function useBattle(opts?: {
           p.ownerSide
         ) {
           const owner = nextUnits.find((x) => x.id === p.ownerUnitId && x.hp > 0)
-          if (owner) {
+          if (owner && !(owner.evolved && owner.charId === 'shay')) {
             const hitIds = new Set(p.bounceHitIds ?? [])
             if (p.targetId) hitIds.add(p.targetId)
             if (p.targetTowerId) hitIds.add(`tower:${p.targetTowerId}`)
@@ -2144,6 +2303,52 @@ export function useBattle(opts?: {
                 bounceRange: range,
                 bounceHitIds: [...hitIds],
               })
+            }
+          }
+        }
+        if (
+          p.kind === 'love' &&
+          p.ownerUnitId &&
+          p.ownerSide &&
+          (p.splitGen ?? 0) < SHAY_SPLIT_MAX_GEN
+        ) {
+          const owner = nextUnits.find((x) => x.id === p.ownerUnitId && x.hp > 0)
+          if (owner?.evolved && owner.charId === 'shay') {
+            const hitIds = new Set(p.bounceHitIds ?? [])
+            if (p.targetId) hitIds.add(p.targetId)
+            if (p.targetTowerId) hitIds.add(`tower:${p.targetTowerId}`)
+            const cands: { id: string; col: number; row: number; d: number }[] = []
+            for (const f of nextUnits) {
+              if (f.side === owner.side || f.hp <= 0 || hitIds.has(f.id)) continue
+              if (isAirborne(f)) continue
+              const c = unitCenter(f)
+              const d = dist(p.toCol, p.toRow, c.col, c.row)
+              if (d > SHAY_SPLIT_RANGE || d < 0.4) continue
+              cands.push({ id: f.id, col: c.col, row: c.row, d })
+            }
+            cands.sort((a, b) => a.d - b.d)
+            const splitMs = Math.max(220, Math.round(LOVE_PROJECTILE_MS * 0.22))
+            for (const hit of cands.slice(0, 2)) {
+              hitIds.add(hit.id)
+              stillFlying.push({
+                id: nid('p'),
+                kind: 'love',
+                fromCol: p.toCol,
+                fromRow: p.toRow,
+                toCol: hit.col,
+                toRow: hit.row,
+                damage: p.damage,
+                targetId: hit.id,
+                targetTowerId: null,
+                bornAt: t,
+                arriveAt: t + splitMs,
+                ownerSide: p.ownerSide,
+                ownerUnitId: p.ownerUnitId,
+                bounceHitIds: [...hitIds],
+                bounceRange: SHAY_SPLIT_RANGE,
+                splitGen: (p.splitGen ?? 0) + 1,
+              })
+              projectilesChanged = true
             }
           }
         }
@@ -2254,10 +2459,18 @@ export function useBattle(opts?: {
           modeRef.current,
           aiDeckCycleRef.current,
           profile.skill,
+          enemyDeckRef.current,
+          botPlayCountRef.current,
         )
         aiDeckCycleRef.current = ai.deck
         if (ai.projectile) {
           nextProjectiles.push(ai.projectile)
+          projectilesChanged = true
+          nextEnemyElixir = ai.elixir
+          enemyElixirChanged = true
+        }
+        if (ai.projectiles && ai.projectiles.length > 0) {
+          nextProjectiles.push(...ai.projectiles)
           projectilesChanged = true
           nextEnemyElixir = ai.elixir
           enemyElixirChanged = true
@@ -2293,6 +2506,46 @@ export function useBattle(opts?: {
             }
             u.poopStainNextAt = nextAt
             if (u.hp <= 0) continue
+          }
+        }
+
+        // Gretchin evo poison — 10 dmg / sec for 10s.
+        if (u.poisonUntil && u.poisonUntil > 0) {
+          if (t >= u.poisonUntil) {
+            u.poisonUntil = 0
+            u.poisonNextAt = 0
+            unitsChanged = true
+          } else {
+            let nextAt = u.poisonNextAt ?? 0
+            while (nextAt > 0 && t >= nextAt && nextAt <= u.poisonUntil) {
+              u.hp -= POISON_DAMAGE
+              nextAt += POISON_TICK_MS
+              unitsChanged = true
+              if (u.hp <= 0) break
+            }
+            u.poisonNextAt = nextAt
+            if (u.hp <= 0) continue
+          }
+        }
+
+        // D evolution — diameter-20 zap ring.
+        if (u.evolved && u.charId === 'dave' && u.hp > 0) {
+          const uc = unitCenter(u)
+          const tick = DAVE_EVO_AURA_DPS * dt
+          for (const f of nextUnits) {
+            if (f.side === u.side || f.hp <= 0 || isAirborne(f)) continue
+            const c = unitCenter(f)
+            if (dist(uc.col, uc.row, c.col, c.row) > DAVE_EVO_AURA_RADIUS) continue
+            f.hp -= tick
+            unitsChanged = true
+          }
+          for (const tw of nextTowers) {
+            if (tw.side === u.side || tw.hp <= 0) continue
+            const slot = towerSlot(tw.id)
+            if (!slot) continue
+            if (distUnitTileToTower(u.col, u.row, slot) > DAVE_EVO_AURA_RADIUS) continue
+            applyTowerDamage(tw, tick, t)
+            towersChanged = true
           }
         }
 
@@ -2772,7 +3025,43 @@ export function useBattle(opts?: {
         }
 
         let winRamReady = false
-        if (def.pathToBuildingsOnly) {
+        if (def.id === 'bocceBalls') {
+          const explodeAtk = def.attacks.find((a) => a.id === 'explode')
+          const explodeRange = explodeAtk?.range ?? 5
+          let explodeBest: typeof best | null = null
+          for (const tw of foeTowers) {
+            const slot = towerSlot(tw.id)
+            if (!slot) continue
+            const edge = distUnitTileToTower(u.col, u.row, slot)
+            if (edge > explodeRange) continue
+            const aim = towerFrontEngagePoint(me.col, me.row, slot)
+            if (!explodeBest || edge < explodeBest.rangeD) {
+              explodeBest = {
+                kind: 'tower',
+                id: tw.id,
+                col: aim.col,
+                row: aim.row,
+                d: edge,
+                rangeD: edge,
+              }
+            }
+          }
+          for (const f of foes) {
+            if (!isBuildingCard(getCharacter(f.charId))) continue
+            const c = unitCenter(f)
+            const edge = dist(me.col, me.row, c.col, c.row)
+            if (edge > explodeRange) continue
+            if (!explodeBest || edge < explodeBest.rangeD) {
+              explodeBest = { kind: 'unit', id: f.id, col: c.col, row: c.row, d: edge, rangeD: edge }
+            }
+          }
+          if (explodeBest && explodeAtk) {
+            best = explodeBest
+            const idx = def.attacks.findIndex((a) => a.id === 'explode')
+            if (idx >= 0) u.attackIndex = idx
+            winRamReady = true
+          }
+        } else if (def.pathToBuildingsOnly) {
           if (rammedStay && best) {
             const whipIdx = def.attacks.findIndex((a) => a.id === 'chickenWhip')
             if (whipIdx >= 0) u.attackIndex = whipIdx
@@ -2854,6 +3143,11 @@ export function useBattle(opts?: {
 
         // Shields (Dan) walk into contact then idle as a meat wall — never attack.
         if (!inRange) {
+          if (u.infernoLockKey) {
+            u.infernoLockKey = null
+            u.infernoSince = undefined
+            unitsChanged = true
+          }
           // Out of range: walk to the FRONT engage point (never the back).
           if (u.burstShot === 0 && u.nextAttackAt !== 0 && !def.pathToBuildingsOnly) {
             u.nextAttackAt = 0
@@ -2893,6 +3187,54 @@ export function useBattle(opts?: {
             unitsChanged = true
           }
           if (def.pathToBuildingsOnly && !rooted) {
+            if (def.id === 'bocceBalls') {
+              const rollAtk = def.attacks.find((a) => a.id === 'rollOver')
+              if (rollAtk && t >= u.nextAttackAt) {
+                let rollT: BattleUnit | null = null
+                let rollD = 999
+                for (const f of foes) {
+                  if (isBuildingCard(getCharacter(f.charId))) continue
+                  if (isAirborne(f)) continue
+                  const c = unitCenter(f)
+                  const edge = dist(u.col, u.row, c.col, c.row)
+                  if (edge > rollAtk.range) continue
+                  if (edge < rollD) {
+                    rollD = edge
+                    rollT = f
+                  }
+                }
+                if (rollT) {
+                  const dmg = rollAtk.damage * dmgMult * cardLevelMult(u.level)
+                  rollT.hp -= dmg
+                  const side = Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2
+                  const kb = rollAtk.knockbackTiles ?? 5
+                  const pc = Math.max(
+                    0,
+                    Math.min(ARENA_COLS - 1, rollT.col + Math.cos(u.facing + side) * kb),
+                  )
+                  const pr = Math.max(
+                    0,
+                    Math.min(ARENA_ROWS - 1, rollT.row + Math.sin(u.facing + side) * kb),
+                  )
+                  const flung = ejectFromTowers(pc, pr, liveIds, rollT.side)
+                  rollT.launch = {
+                    fromCol: rollT.col,
+                    fromRow: rollT.row,
+                    toCol: flung.col,
+                    toRow: flung.row,
+                    bornAt: t,
+                    arriveAt: t + 280,
+                    landDamage: 0,
+                  }
+                  combatFx('ram', dmg)
+                  u.nextAttackAt = t + 100
+                  u.vfx = 'rollOver'
+                  u.vfxUntil = t + 180
+                  unitsChanged = true
+                }
+              }
+              continue
+            }
             if (rammedStay) continue
             const whipAtk = def.attacks.find((a) => a.id === 'chickenWhip')
             if (whipAtk && t >= u.nextAttackAt) {
@@ -2974,7 +3316,31 @@ export function useBattle(opts?: {
             : auraOn && def.auraDamageMult != null
               ? attack.damage * def.auraDamageMult
               : attack.damage
-        const damage = attackDamage * dmgMult * cardLevelMult(u.level)
+        const damage = attack.infernoRamp
+          ? attack.damage *
+            Math.pow(
+              2,
+              Math.max(
+                0,
+                Math.floor(
+                  (t -
+                    (u.infernoLockKey === `${best.kind}:${best.id}`
+                      ? (u.infernoSince ?? t)
+                      : t)) /
+                    1000,
+                ),
+              ),
+            ) *
+            dmgMult *
+            cardLevelMult(u.level)
+          : attackDamage * dmgMult * cardLevelMult(u.level)
+        if (attack.infernoRamp) {
+          const lock = `${best.kind}:${best.id}`
+          if (u.infernoLockKey !== lock) {
+            u.infernoLockKey = lock
+            u.infernoSince = t
+          }
+        }
         const shotAim =
           best.kind === 'tower'
             ? (() => {
@@ -3037,6 +3403,76 @@ export function useBattle(opts?: {
 
         if (attack.rootWhileAttacking) {
           u.rootedUntil = t + vfxMs
+        }
+
+        if (attack.hitAllInRange || attack.kind === 'creamSmoke') {
+          const cone: { kind: 'unit' | 'tower'; id: string; col: number; row: number }[] = []
+          for (const f of foes) {
+            const c = unitCenter(f)
+            if (!inForwardCone(me.col, me.row, u.facing, c.col, c.row, attack.range)) continue
+            cone.push({ kind: 'unit', id: f.id, col: c.col, row: c.row })
+          }
+          for (const tw of foeTowers) {
+            const slot = towerSlot(tw.id)
+            if (!slot) continue
+            const aim = towerFrontAimPoint(slot)
+            const edge = distUnitTileToTower(u.col, u.row, slot)
+            if (edge > attack.range) continue
+            if (!inForwardCone(me.col, me.row, u.facing, aim.col, aim.row, attack.range, 1.05)) {
+              continue
+            }
+            cone.push({ kind: 'tower', id: tw.id, col: aim.col, row: aim.row })
+          }
+          for (const hit of cone) {
+            if (hit.kind === 'unit') {
+              const target = nextUnits.find((x) => x.id === hit.id)
+              if (target && !isAirborne(target)) {
+                target.hp -= damage
+                unitsChanged = true
+              }
+            } else {
+              const tw = nextTowers.find((x) => x.id === hit.id)
+              if (tw) {
+                applyTowerDamage(tw, damage, t)
+                towersChanged = true
+              }
+            }
+            nextProjectiles.push({
+              id: nid('p'),
+              kind: 'creamSmoke',
+              fromCol: me.col,
+              fromRow: me.row,
+              toCol: hit.col,
+              toRow: hit.row,
+              damage: 0,
+              targetId: hit.kind === 'unit' ? hit.id : null,
+              targetTowerId: hit.kind === 'tower' ? hit.id : null,
+              bornAt: t,
+              arriveAt: t + 260,
+              ownerSide: u.side,
+            })
+            projectilesChanged = true
+          }
+          combatFx('creamSmoke', damage)
+          continue
+        }
+
+        if (attack.kind === 'waffle' || attack.infernoRamp) {
+          nextProjectiles.push({
+            id: nid('p'),
+            kind: 'waffle',
+            fromCol: me.col,
+            fromRow: me.row,
+            toCol: shotAim.col,
+            toRow: shotAim.row,
+            damage: 0,
+            targetId: best.kind === 'unit' ? best.id : null,
+            targetTowerId: best.kind === 'tower' ? best.id : null,
+            bornAt: t,
+            arriveAt: t + 90,
+            ownerSide: u.side,
+          })
+          projectilesChanged = true
         }
 
         if (
@@ -3135,7 +3571,9 @@ export function useBattle(opts?: {
                           : attack.kind === 'dumbbell'
                             ? DUMBBELL_PROJECTILE_MS
                             : attack.kind === 'love'
-                              ? LOVE_PROJECTILE_MS
+                              ? u.evolved && u.charId === 'shay'
+                                ? LOVE_PROJECTILE_MS / 2
+                                : LOVE_PROJECTILE_MS
                               : attack.kind === 'witchcraft'
                                 ? WITCHCRAFT_PROJECTILE_MS
                                 : attack.kind === 'poop'
@@ -3154,16 +3592,27 @@ export function useBattle(opts?: {
               bornAt: t + throwDelay,
               arriveAt: t + throwDelay + flightMs,
               ownerSide: u.side,
-              ownerUnitId: berryAttack || attack.kind === 'love' ? u.id : undefined,
+              ownerUnitId:
+                berryAttack || attack.kind === 'love' || attack.kind === 'witchcraft'
+                  ? u.id
+                  : undefined,
               splashRadius: attack.splashRadius,
               splashDamage: attack.splashDamage,
-              ...(attack.kind === 'love' && (attack.bounceTargets ?? 0) > 1
+              ...(attack.kind === 'love' &&
+              (attack.bounceTargets ?? 0) > 1 &&
+              !(u.evolved && u.charId === 'shay')
                 ? {
                     bounceLeft: (attack.bounceTargets ?? 1) - 1,
                     bounceRange: attack.range,
                     bounceHitIds: [] as string[],
                   }
-                : {}),
+                : attack.kind === 'love' && u.evolved && u.charId === 'shay'
+                  ? {
+                      splitGen: 0,
+                      bounceHitIds: [] as string[],
+                      bounceRange: SHAY_SPLIT_RANGE,
+                    }
+                  : {}),
             })
           }
           projectilesChanged = true
@@ -3266,23 +3715,23 @@ export function useBattle(opts?: {
 
             if (canLaunch) {
               const ang = Math.atan2(target.row - u.row, target.col - u.col)
-              // Suplex: throw behind Chuck. Launch: fling past the target.
-              const throwAng = attack.knockbackBehind ? ang + Math.PI : ang
+              const kb =
+                (attack.knockbackTiles ?? 0) *
+                (u.evolved && u.charId === 'bigMable' ? 3 : 1)
+              const throwAng = attack.knockbackSide
+                ? ang + (Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2)
+                : attack.knockbackBehind
+                  ? ang + Math.PI
+                  : ang
               const originCol = attack.knockbackBehind ? u.col : target.col
               const originRow = attack.knockbackBehind ? u.row : target.row
               let pc = Math.max(
                 0,
-                Math.min(
-                  ARENA_COLS - 1,
-                  originCol + Math.cos(throwAng) * attack.knockbackTiles!,
-                ),
+                Math.min(ARENA_COLS - 1, originCol + Math.cos(throwAng) * kb),
               )
               let pr = Math.max(
                 0,
-                Math.min(
-                  ARENA_ROWS - 1,
-                  originRow + Math.sin(throwAng) * attack.knockbackTiles!,
-                ),
+                Math.min(ARENA_ROWS - 1, originRow + Math.sin(throwAng) * kb),
               )
               const ejected = ejectFromTowers(pc, pr, liveIds, target.side)
               const tiles = Math.hypot(ejected.col - target.col, ejected.row - target.row)
@@ -3297,7 +3746,10 @@ export function useBattle(opts?: {
                 toRow: ejected.row,
                 bornAt: t,
                 arriveAt: t + flightMs,
-                landDamage: damage,
+                landDamage: attack.knockbackSide ? 0 : damage,
+              }
+              if (attack.knockbackSide) {
+                target.hp -= damage
               }
               combatFx(attack.kind, damage)
               target.lockKey = null
@@ -3331,6 +3783,19 @@ export function useBattle(opts?: {
             combatFx(attack.kind, damage)
             towersChanged = true
           }
+        }
+
+        if (u.evolved && u.charId === 'chicken') {
+          spawnChickenNear(shotAim.col, shotAim.row, u.side, t, u.level, true, nextUnits)
+          unitsChanged = true
+        }
+        if (
+          u.evolved &&
+          (u.charId === 'phil' || u.charId === 'evilPhil') &&
+          attack.id === 'chickenWhip'
+        ) {
+          spawnChickenNear(shotAim.col, shotAim.row, u.side, t, u.level, false, nextUnits)
+          unitsChanged = true
         }
 
         if (attack.oncePerTarget) {

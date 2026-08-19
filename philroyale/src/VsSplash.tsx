@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { NameWithTitle, ProfileChip } from './ProfileChip'
 import { getBanner, BANNER_CATALOG, FRAME_CATALOG, TITLE_CATALOG, type BannerDef } from './cosmeticsCatalog'
 import { randomBotName } from './progression'
+import { ClashMap } from './ClashMap'
 
 const THEME: Record<
   BannerDef['theme'],
@@ -110,14 +112,15 @@ export function VsSplash({
       className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#140e0a] text-left"
       aria-label="Battle start"
     >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 80% 40% at 50% 50%, #1a2a40 0%, #0a0810 70%), repeating-linear-gradient(90deg, #1a141088 0 18px, #0e0a08 18px 36px)',
-        }}
-      />
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-between px-3 pb-8 pt-[max(2.2rem,env(safe-area-inset-top))]">
+      <div className="pointer-events-none absolute inset-0">
+        <ClashMap />
+      </div>
+      <motion.div
+        className="relative z-10 flex min-h-0 flex-1 flex-col justify-between px-3 pb-8 pt-[max(2.2rem,env(safe-area-inset-top))]"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 2.15, delay: 0.4, ease: 'easeIn' }}
+      >
         <div className="flex flex-col items-stretch gap-2">
           <BattleBannerArt bannerId={foe.bannerId} className="h-[5.5rem] w-full" />
           <div className="flex items-center gap-2 pl-1">
@@ -164,7 +167,7 @@ export function VsSplash({
           </div>
           <BattleBannerArt bannerId={you.bannerId} className="h-[5.5rem] w-full" />
         </div>
-      </div>
+      </motion.div>
     </button>
   )
 }

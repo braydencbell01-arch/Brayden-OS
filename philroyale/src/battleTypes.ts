@@ -65,6 +65,13 @@ export type BattleUnit = {
   poopStainNextAt?: number
   /** Evolution form — +30% HP / damage / speed. */
   evolved?: boolean
+  /** Inferno Waffle — lock key currently ramping. */
+  infernoLockKey?: string | null
+  /** When the current inferno lock started. */
+  infernoSince?: number
+  /** Gretchin evo poison — DoT until this performance.now. */
+  poisonUntil?: number
+  poisonNextAt?: number
 }
 
 export type Projectile = {
@@ -91,6 +98,10 @@ export type Projectile = {
     | 'berryJuice'
     | 'poop'
     | 'grafBomb'
+    | 'creamSmoke'
+    | 'waffle'
+    | 'blob'
+    | 'blobGreen'
   fromCol: number
   fromRow: number
   toCol: number
@@ -119,6 +130,8 @@ export type Projectile = {
   bounceRange?: number
   /** Unit / tower ids already hit in this bounce chain. */
   bounceHitIds?: string[]
+  /** Shay evo split generation (0 = original). */
+  splitGen?: number
 }
 
 /** Impact FX — sundae splat, slobber explode, bullet boom, or melee strike. */
@@ -155,6 +168,10 @@ export type SplatFx = {
     | 'berryJuice'
     | 'poop'
     | 'grafBomb'
+    | 'creamSmoke'
+    | 'waffle'
+    | 'blob'
+    | 'blobGreen'
 }
 
 /** Dan death heart — any troop can pick up for Finley-style rage. */

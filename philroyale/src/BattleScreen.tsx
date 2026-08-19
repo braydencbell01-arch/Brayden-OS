@@ -42,6 +42,8 @@ import {
   CucumberSplat,
   BerryJuiceDot,
   BerryJuiceSplat,
+  CreamSmokeDot,
+  WaffleDot,
   PoopDot,
   PoopSplat,
   RocketDot,
@@ -191,6 +193,10 @@ function FlyingShot({
     | 'berryJuice'
     | 'poop'
     | 'grafBomb'
+    | 'creamSmoke'
+    | 'waffle'
+    | 'blob'
+    | 'blobGreen'
 }) {
   if (now < bornAt) return null
   const dur = Math.max(1, arriveAt - bornAt)
@@ -219,7 +225,7 @@ function FlyingShot({
                     ? 2.4
                     : kind === 'witchcraft'
                       ? 1.8
-                    : kind === 'iceCream'
+                    : kind === 'iceCream' || kind === 'blob' || kind === 'blobGreen'
                       ? 9
                       : kind === 'football'
                         ? 14
@@ -246,7 +252,14 @@ function FlyingShot({
             ? p * 360
           : kind === 'barrel'
             ? p * 540
-          : kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice' || kind === 'poop'
+          : kind === 'cheese' ||
+              kind === 'cucumber' ||
+              kind === 'berryJuice' ||
+              kind === 'poop' ||
+              kind === 'blob' ||
+              kind === 'blobGreen' ||
+              kind === 'creamSmoke' ||
+              kind === 'waffle'
             ? p * 600
           : 0
   const aimKinds =
@@ -263,6 +276,10 @@ function FlyingShot({
     kind === 'cheese' ||
     kind === 'cucumber' ||
     kind === 'berryJuice' ||
+    kind === 'blob' ||
+    kind === 'blobGreen' ||
+    kind === 'creamSmoke' ||
+    kind === 'waffle' ||
     kind === 'poop'
   const transform = aimKinds
     ? `translate(-50%, -50%) rotate(${travelAngle + (kind === 'football' || kind === 'baseball' || kind === 'cash' || kind === 'dumbbell' || kind === 'pancake' || kind === 'barrel' || kind === 'cheese' || kind === 'cucumber' || kind === 'berryJuice' || kind === 'poop' ? spin : 0)}deg)`
@@ -293,6 +310,10 @@ function FlyingShot({
       {kind === 'cheese' ? <CheeseDot /> : null}
       {kind === 'cucumber' ? <CucumberDot /> : null}
       {kind === 'berryJuice' ? <BerryJuiceDot empowered={dur < 500} /> : null}
+      {kind === 'blob' ? <BerryJuiceDot empowered large /> : null}
+      {kind === 'blobGreen' ? <BerryJuiceDot empowered large tint="green" /> : null}
+      {kind === 'creamSmoke' ? <CreamSmokeDot /> : null}
+      {kind === 'waffle' ? <WaffleDot /> : null}
       {kind === 'poop' ? <PoopDot /> : null}
       {kind === 'grafBomb' ? <GrafBombDot fuseP={p} /> : null}
       {kind === 'arrow' ? <TowerArrow angleDeg={0} /> : null}
@@ -478,6 +499,7 @@ export function BattleScreen({
     paused: ended,
     allyLevels,
     allyEvolutions,
+    allyDeckIds: deckIds,
     botLevel,
     trophies,
     mode,
@@ -945,6 +967,7 @@ export function BattleScreen({
                   enraged={u.enraged}
                   auraActive={u.auraActive}
                   poopStain={!!u.poopStainUntil && now < u.poopStainUntil}
+                  poison={!!u.poisonUntil && now < u.poisonUntil}
                   facing={u.facing}
                   moving={now < u.movingUntil || !!flight}
                   evolved={u.evolved}
@@ -976,6 +999,48 @@ export function BattleScreen({
               </div>
               )
             })}
+          {units
+            .filter((u) => u.hp > 0 && u.evolved && u.charId === 'dave')
+            .map((u) => {
+              const r = 10
+              return (
+                <div key={`${u.id}-aura`} aria-hidden>
+                  <div
+                    className="pointer-events-none absolute rounded-full"
+                    style={{
+                      ...unitStyle(u.col, u.row),
+                      width: `${((r * 2) / ARENA_COLS) * FIELD_W * 100}%`,
+                      height: `${((r * 2) / ARENA_ROWS) * FIELD_H * 100}%`,
+                      zIndex: 16,
+                      transform: 'translate(-50%, -50%)',
+                      boxShadow: 'inset 0 0 0 2px #7dff9acc, 0 0 10px #3ecf6a66',
+                      background: 'radial-gradient(circle, #7dff9a18 0%, transparent 72%)',
+                    }}
+                  />
+                  {units
+                    .filter((f) => {
+                      if (f.side === u.side || f.hp <= 0) return false
+                      return Math.hypot(f.col - u.col, f.row - u.row) <= r
+                    })
+                    .map((f) => (
+                      <div
+                        key={`${u.id}-zap-${f.id}`}
+                        className="pointer-events-none absolute left-0 top-0 z-[17] h-0.5 origin-left"
+                        style={{
+                          ...unitStyle(u.col, u.row),
+                          width: `${(Math.hypot(f.col - u.col, f.row - u.row) / ARENA_COLS) * FIELD_W * 100}%`,
+                          transform: `translate(0, 0) rotate(${
+                            (Math.atan2(f.row - u.row, f.col - u.col) * 180) / Math.PI
+                          }deg)`,
+                          background: 'linear-gradient(90deg, #f4e0ff, #7dff9a 55%, transparent)',
+                          boxShadow: '0 0 6px #7dff9a',
+                          opacity: 0.85,
+                        }}
+                      />
+                    ))}
+                </div>
+              )
+            })}
           {projectiles.map((p) =>
             p.kind === 'sundae' ||
             p.kind === 'slobber' ||
@@ -995,6 +1060,10 @@ export function BattleScreen({
             p.kind === 'cheese' ||
             p.kind === 'cucumber' ||
             p.kind === 'berryJuice' ||
+            p.kind === 'blob' ||
+            p.kind === 'blobGreen' ||
+            p.kind === 'creamSmoke' ||
+            p.kind === 'waffle' ||
             p.kind === 'poop' ||
             p.kind === 'grafBomb' ? (
               <FlyingShot key={p.id} {...p} kind={p.kind} now={now} />
@@ -1105,8 +1174,14 @@ export function BattleScreen({
                   <CheeseSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'cucumber' ? (
                   <CucumberSplat ageMs={now - s.bornAt} />
-                ) : s.kind === 'berryJuice' ? (
+                ) : s.kind === 'berryJuice' || s.kind === 'blob' ? (
                   <BerryJuiceSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'blobGreen' ? (
+                  <BerryJuiceSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'creamSmoke' ? (
+                  <BerryJuiceSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'waffle' ? (
+                  <PancakeSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'poop' ? (
                   <PoopSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'melee' ||
@@ -1467,7 +1542,9 @@ export function BattleScreen({
                     onPointerMove={onCardPointerMove}
                     onPointerUp={onCardPointerUp}
                     onPointerCancel={onCardPointerUp}
-                    className={`shrink-0 touch-none transition-transform active:scale-95 ${dragging ? 'opacity-40' : ''}`}
+                    className={`shrink-0 touch-none transition-transform duration-150 ${
+                      selected || dragging ? '-translate-y-2.5' : ''
+                    } ${dragging ? 'opacity-70' : ''}`}
                     aria-label={c ? `Select or drag ${c.name}` : `Card ${i + 1}`}
                     aria-pressed={selected}
                   >
