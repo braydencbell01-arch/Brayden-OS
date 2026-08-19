@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-19T15:22:06Z",
+  "syncedAt": "2026-08-19T15:42:26Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -2370,11 +2370,11 @@
       "brand": "Under Armour",
       "source": "square",
       "category": "",
+      "condition": "New",
+      "conditionEbay": "New with tags",
       "description": "Waffle Crew is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/86uxXwUG",
       "checkoutUrlDiscounted": "https://square.link/u/EeqwOBLN",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "conditionId": "1000"
     },
     {
@@ -2503,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-19T14:10:42Z"
+  "ebayDetailsSyncedAt": "2026-08-19T15:42:26Z"
 }
