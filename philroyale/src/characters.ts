@@ -24,6 +24,10 @@ export type AttackId =
   | 'shortTemper'
   | 'knuckleSandwich'
   | 'selfDestruct'
+  | 'creamSmoke'
+  | 'infernoWaffle'
+  | 'rollOver'
+  | 'explode'
 
 export type AttackDef = {
   id: AttackId
@@ -66,6 +70,12 @@ export type AttackDef = {
    * attacker's range (never the same target twice). Total hits = bounceTargets.
    */
   bounceTargets?: number
+  /** Hit every opponent in range (Cool Whip cream cone). */
+  hitAllInRange?: boolean
+  /** Knock sideways (perpendicular to travel) instead of away. */
+  knockbackSide?: boolean
+  /** Inferno-style DPS doubles every second on the same lock. */
+  infernoRamp?: boolean
   kind:
     | 'sundae'
     | 'whip'
@@ -90,6 +100,8 @@ export type AttackDef = {
     | 'suplex'
     | 'berryJuice'
     | 'poop'
+    | 'creamSmoke'
+    | 'waffle'
 }
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
@@ -858,7 +870,7 @@ export const CHICKEN_BARREL: CharacterDef = {
     'Spell — toss a barrel anywhere. It bursts on landing and three Chickens jump out.',
   spellDamage: 0,
   spellRadius: 7,
-  spellTravelMs: 2400,
+  spellTravelMs: 3500,
   spawnCount: 3,
   spawnAsId: 'chicken',
   attacks: [],
@@ -1098,7 +1110,7 @@ export const COACH_GRAF: CharacterDef = {
   battlefieldSize: 7,
   rarity: 'rare',
   elixir: 3,
-  hp: 845,
+  hp: 1245,
   moveSpeed: 3.2,
   attackDelaySec: 2.1,
   hue: 210,
@@ -1160,6 +1172,184 @@ export const BIG_MABLE: CharacterDef = {
   ],
 }
 
+/** Epic cream-spray troop — EMZ-style cone ticks. */
+export const COOL_WHIP: CharacterDef = {
+  id: 'coolWhip',
+  name: 'Cool Whip',
+  initial: 'CW',
+  pronoun: 'it',
+  height: "4'8\"",
+  battlefieldSize: 8,
+  rarity: 'epic',
+  elixir: 4,
+  hp: 930,
+  moveSpeed: 5.9,
+  attackDelaySec: 3.4,
+  hue: 200,
+  blurb:
+    'Epic tub — Cream Smoke from its mouth, three white sprays that hit everyone in the cone (170 each).',
+  attacks: [
+    {
+      id: 'creamSmoke',
+      name: 'Cream Smoke',
+      range: 16,
+      damage: 170,
+      rootWhileAttacking: true,
+      burstShots: 3,
+      burstGapSec: 0.35,
+      hitAllInRange: true,
+      kind: 'creamSmoke',
+    },
+  ],
+}
+
+/** Rare win-con pair — two rolling balls. */
+export const BOCCE_BALLS: CharacterDef = {
+  id: 'bocceBalls',
+  name: 'Bocce Balls',
+  initial: 'Bo',
+  pronoun: 'they',
+  height: "1'6\"",
+  battlefieldSize: 3,
+  rarity: 'rare',
+  elixir: 2,
+  hp: 245,
+  moveSpeed: 10.8,
+  attackDelaySec: 0.1,
+  hue: 10,
+  pathToBuildingsOnly: true,
+  spawnCount: 2,
+  blurb:
+    'Win condition — two balls roll at buildings. Roll Over knocks troops aside; Explode vs buildings and towers.',
+  attacks: [
+    {
+      id: 'explode',
+      name: 'Explode',
+      range: 5,
+      damage: 355,
+      rootWhileAttacking: true,
+      buildingsOnly: true,
+      ignoreAttackDelay: true,
+      diesOnAttack: true,
+      kind: 'ram',
+    },
+    {
+      id: 'rollOver',
+      name: 'Roll Over',
+      range: 5,
+      damage: 155,
+      rootWhileAttacking: false,
+      ignoreAttackDelay: true,
+      knockbackTiles: 5,
+      knockbackSide: true,
+      kind: 'ram',
+    },
+  ],
+}
+
+/** Common inferno diner turret. */
+export const GEORGES_DINER: CharacterDef = {
+  id: 'georgesDiner',
+  name: "George's Diner",
+  initial: 'GD',
+  pronoun: 'it',
+  height: "5'0\"",
+  battlefieldSize: 9,
+  rarity: 'common',
+  elixir: 4,
+  hp: 660,
+  moveSpeed: 0,
+  attackDelaySec: 0.2,
+  hue: 15,
+  cardKind: 'building',
+  hpDecayPerSec: 14,
+  blurb:
+    'Building — Inferno Waffle laser. Damage doubles each second on the same target, then resets.',
+  attacks: [
+    {
+      id: 'infernoWaffle',
+      name: 'Inferno Waffle',
+      range: 21,
+      damage: 10,
+      rootWhileAttacking: true,
+      infernoRamp: true,
+      kind: 'waffle',
+    },
+  ],
+}
+
+/** Legendary blue blob drop. */
+export const OL_RELIABLE: CharacterDef = {
+  id: 'olReliable',
+  name: "Ol' Reliable",
+  initial: 'OR',
+  pronoun: 'it',
+  height: "1'0\"",
+  rarity: 'legendary',
+  elixir: 4,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 210,
+  cardKind: 'spell',
+  blurb: 'Spell — a blue blob falls from the sky. Huge creamy splash where it lands.',
+  spellDamage: 505,
+  spellRadius: 9.5,
+  spellTravelMs: 700,
+  attacks: [],
+}
+
+/** Epic green blob drop. */
+export const STALWART: CharacterDef = {
+  id: 'stalwart',
+  name: 'Stalwart',
+  initial: 'St',
+  pronoun: 'it',
+  height: "1'0\"",
+  rarity: 'epic',
+  elixir: 3,
+  hp: 0,
+  moveSpeed: 0,
+  attackDelaySec: 0,
+  hue: 130,
+  cardKind: 'spell',
+  blurb: 'Spell — a green blob falls from the sky. Splash where it lands.',
+  spellDamage: 355,
+  spellRadius: 8,
+  spellTravelMs: 900,
+  attacks: [],
+}
+
+/** Rare inflatable tube — Launch like Big Mable. */
+export const TENTACOOL: CharacterDef = {
+  id: 'tentacool',
+  name: 'Tentacool',
+  initial: 'Tc',
+  pronoun: 'it',
+  height: "4'0\"",
+  battlefieldSize: 7,
+  rarity: 'rare',
+  elixir: 4,
+  hp: 1940,
+  moveSpeed: 2.8,
+  attackDelaySec: 0.5,
+  hue: 220,
+  noLock: true,
+  blurb:
+    'Rare tube — Tentalaunch flings troops 10 blocks; they take 210 when they land. Towers take the hit only.',
+  attacks: [
+    {
+      id: 'launch',
+      name: 'Tentalaunch',
+      range: 2,
+      damage: 210,
+      rootWhileAttacking: true,
+      knockbackTiles: 10,
+      kind: 'launch',
+    },
+  ],
+}
+
 export const CHARACTERS: CharacterDef[] = [
   PHIL,
   KATHIE,
@@ -1195,6 +1385,12 @@ export const CHARACTERS: CharacterDef[] = [
   SUSAN,
   COACH_GRAF,
   BIG_MABLE,
+  COOL_WHIP,
+  BOCCE_BALLS,
+  GEORGES_DINER,
+  OL_RELIABLE,
+  STALWART,
+  TENTACOOL,
 ]
 
 export const DECK_SIZE = 8
@@ -1363,6 +1559,9 @@ const NON_HUMAN_TROOP_IDS = new Set([
   'peteSpirit',
   'jeremySpirit',
   'bigMable',
+  'coolWhip',
+  'bocceBalls',
+  'tentacool',
 ])
 
 /** Humans get a thicker battlefield sprite; pets/buildings/spells/spirits do not. */

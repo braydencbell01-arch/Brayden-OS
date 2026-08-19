@@ -78,6 +78,10 @@ export type SyncProjectile = {
     | 'berryJuice'
     | 'poop'
     | 'grafBomb'
+    | 'creamSmoke'
+    | 'waffle'
+    | 'blob'
+    | 'blobGreen'
   fromCol: number
   fromRow: number
   toCol: number
@@ -94,9 +98,11 @@ export type SyncProjectile = {
   spawnAsId?: string
   spawnCount?: number
   spawnLevel?: number
+  spawnEvolved?: boolean
   bounceLeft?: number
   bounceRange?: number
   bounceHitIds?: string[]
+  splitGen?: number
 }
 
 export type SyncTower = {

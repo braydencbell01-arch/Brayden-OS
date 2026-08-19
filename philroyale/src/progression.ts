@@ -1,4 +1,5 @@
 import { CHARACTERS, type Rarity } from './characters'
+import { cardCanEvolve } from './evolutions'
 import {
   BANNER_CATALOG,
   FRAME_CATALOG,
@@ -78,10 +79,11 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 40, arena: 'Training Camp', label: 'x1 Tristan', unlockCard: 'tristan', gold: 50 },
   { trophies: 60, arena: 'Training Camp', label: 'x1 Pete', unlockCard: 'dan', gold: 40 },
   { trophies: 80, arena: 'Training Camp', label: 'x1 Chuck', unlockCard: 'pete', gold: 70 },
+  { trophies: 90, arena: 'Training Camp', label: "x1 George's Diner", unlockCard: 'georgesDiner', gold: 45 },
   // Sundae Strip 100–300
   { trophies: 100, arena: 'Sundae Strip', label: 'x1 D', unlockCard: 'dave', gold: 80 },
   { trophies: 120, arena: 'Sundae Strip', label: 'x1 Coach Graf', unlockCard: 'coachGraf', gold: 55 },
-  { trophies: 140, arena: 'Sundae Strip', label: 'Rare Chest', chest: 'rare', gold: 35, unlockEmote: 'wave' },
+  { trophies: 160, arena: 'Sundae Strip', label: 'x1 Bocce Balls', unlockCard: 'bocceBalls', gold: 50 },
   { trophies: 180, arena: 'Sundae Strip', label: 'x1 Gretchin', unlockCard: 'gretchin', gold: 70 },
   { trophies: 220, arena: 'Sundae Strip', label: 'x8 Lynne', cardCopies: { charId: 'lynne', copies: 8 }, gold: 100 },
   { trophies: 260, arena: 'Sundae Strip', label: 'x1 Berry', unlockCard: 'berry', gold: 90 },
@@ -97,17 +99,21 @@ export const TROPHY_ROAD: TrophyRoadReward[] = [
   { trophies: 540, arena: 'Phil Pier', label: 'x1 Baseball Huck', unlockCard: 'footballHuck', gold: 50 },
   { trophies: 580, arena: 'Phil Pier', label: 'x1 Hamburger Chicken', unlockCard: 'hamburgerChicken', gold: 80 },
   { trophies: 620, arena: 'Phil Pier', label: 'x1 Chicken Army', unlockCard: 'chickenArmy', gold: 70 },
+  { trophies: 640, arena: 'Phil Pier', label: 'x1 Stalwart', unlockCard: 'stalwart', gold: 70 },
   { trophies: 660, arena: 'Phil Pier', label: 'x1 Chicken Barrel', unlockCard: 'chickenBarrel', gold: 80 },
   // Dave's Dungeon 700–1000
   { trophies: 700, arena: "Dave's Dungeon", label: 'x1 Scott', unlockCard: 'scott', gold: 60 },
+  { trophies: 730, arena: "Dave's Dungeon", label: 'x1 Tentacool', unlockCard: 'tentacool', gold: 70 },
   { trophies: 760, arena: "Dave's Dungeon", label: 'x1 Big Mable', unlockCard: 'bigMable', gold: 80, unlockEmote: 'party' },
   { trophies: 820, arena: "Dave's Dungeon", label: "x1 Phil's Car", unlockCard: 'philsCar', gold: 90 },
   { trophies: 850, arena: "Dave's Dungeon", label: "x1 Phil's Rocket", unlockCard: 'philsRocket', gold: 70 },
   { trophies: 880, arena: "Dave's Dungeon", label: 'x1 Evil Phil', unlockCard: 'evilPhil', gold: 100 },
   { trophies: 940, arena: "Dave's Dungeon", label: 'x1 Phil', unlockCard: 'phil', gold: 110 },
   // Kathie's Kitchen 1000–1300
+  { trophies: 980, arena: "Kathie's Kitchen", label: 'x1 Cool Whip', unlockCard: 'coolWhip', gold: 90 },
   { trophies: 1000, arena: "Kathie's Kitchen", label: 'Legendary Chest', chest: 'legendary', gold: 75, unlockEmote: 'cool' },
   { trophies: 1060, arena: "Kathie's Kitchen", label: 'x6 Jacobson', cardCopies: { charId: 'mike', copies: 6 }, gold: 150 },
+  { trophies: 1080, arena: "Kathie's Kitchen", label: "x1 Ol' Reliable", unlockCard: 'olReliable', gold: 90 },
   { trophies: 1120, arena: "Kathie's Kitchen", label: 'Rare Chest', chest: 'rare', gold: 70 },
   { trophies: 1180, arena: "Kathie's Kitchen", label: 'x5 Baseball Huck', cardCopies: { charId: 'footballHuck', copies: 5 }, gold: 70 },
   { trophies: 1240, arena: "Kathie's Kitchen", label: "x4 Steve's Diner", cardCopies: { charId: 'stevesDiner', copies: 4 }, gold: 65 },
@@ -473,6 +479,7 @@ export function rollChestLoot(rarity: ChestRarity): {
   evoShards: { charId: string; shards: number }[]
 } {
   const pool = (r: Rarity) => CHARACTERS.filter((c) => c.rarity === r)
+  const evoPool = CHARACTERS.filter((c) => cardCanEvolve(c.id))
   const pick = (list: typeof CHARACTERS) =>
     list[Math.floor(Math.random() * list.length)] ?? CHARACTERS[0]!
   const randInt = (lo: number, hi: number) =>
@@ -504,7 +511,7 @@ export function rollChestLoot(rarity: ChestRarity): {
         ...(chance(0.6) ? [{ charId: pick(pool('epic')).id, copies: 1 }] : []),
       ],
       evoShards: chance(0.25)
-        ? [{ charId: pick(CHARACTERS).id, shards: 1 }]
+        ? [{ charId: pick(evoPool).id, shards: 1 }]
         : [],
     }
   }
@@ -520,7 +527,7 @@ export function rollChestLoot(rarity: ChestRarity): {
         ...(chance(0.25) ? [{ charId: pick(pool('legendary')).id, copies: 1 }] : []),
       ],
       evoShards: chance(0.6)
-        ? [{ charId: pick(CHARACTERS).id, shards: randInt(1, 3) }]
+        ? [{ charId: pick(evoPool).id, shards: randInt(1, 3) }]
         : [],
     }
   }
@@ -536,7 +543,7 @@ export function rollChestLoot(rarity: ChestRarity): {
       { charId: pick(pool('legendary')).id, copies: randInt(1, 3) },
     ],
     // Count not specified — scale above epic (1–3) as 1–5.
-    evoShards: [{ charId: pick(CHARACTERS).id, shards: randInt(1, 5) }],
+    evoShards: [{ charId: pick(evoPool).id, shards: randInt(1, 5) }],
   }
 }
 

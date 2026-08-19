@@ -56,15 +56,25 @@ function charAssetUrls(charId: string): string[] {
                       ? 'hamburger-chicken'
                       : charId === 'chickenArmy'
                         ? 'chicken'
-                        : charId === 'chickenBarrel'
-                          ? 'chicken-barrel'
+                : charId === 'chickenBarrel'
+                  ? 'chicken-barrel'
+                  : charId === 'coolWhip'
+                    ? 'cool-whip'
+                    : charId === 'bocceBalls'
+                      ? 'bocce-balls'
+                      : charId === 'georgesDiner'
+                        ? 'georges-diner'
+                        : charId === 'olReliable'
+                          ? 'ol-reliable'
                           : charId === 'philSpirit'
                             ? 'phil-spirit'
                             : charId === 'peteSpirit'
                               ? 'pete-spirit'
-                              : charId === 'jeremySpirit'
-                                ? 'jeremy-spirit'
-                                : charId.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
+                : charId === 'jeremySpirit'
+                  ? 'jeremy-spirit'
+                  : charId === 'tentacool'
+                    ? 'tentacool'
+                    : charId.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
   return [
     `${root}characters/${fileBase}-troop.png`,
     `${root}characters/${fileBase}-card.png`,
@@ -214,15 +224,14 @@ export function BootFlow({ children }: { children: ReactNode }) {
           <img
             src={`${import.meta.env.BASE_URL}loading-screen.jpg`}
             alt=""
-            className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-center"
+            className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-[center_8%]"
             draggable={false}
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-[42%]"
             style={{
-              background:
-                'linear-gradient(180deg, #00000033 0%, transparent 28%, transparent 58%, #000000aa 78%, #000000dd 100%)',
+              background: 'linear-gradient(180deg, transparent 0%, #0a1018 38%, #0a1018 100%)',
             }}
           />
           <h1 className="sr-only">Phil Royale</h1>

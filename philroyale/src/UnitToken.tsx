@@ -13,6 +13,7 @@ type Props = {
   enraged?: boolean
   auraActive?: boolean
   poopStain?: boolean
+  poison?: boolean
   facing?: number
   moving?: boolean
   evolved?: boolean
@@ -28,6 +29,7 @@ export function UnitToken({
   enraged,
   auraActive,
   poopStain,
+  poison,
   facing,
   moving,
   evolved,
@@ -59,14 +61,22 @@ export function UnitToken({
           aspectRatio:
             charId === 'dogHut'
               ? '5 / 4.6'
-              : charId === 'philsCar' || charId === 'stevesDiner' || charId === 'bigMable'
+              : charId === 'philsCar' ||
+                  charId === 'stevesDiner' ||
+                  charId === 'bigMable' ||
+                  charId === 'georgesDiner' ||
+                  charId === 'tentacool'
                 ? '5 / 3.4'
               : charId === 'iceCream' ||
                   charId === 'footballHuck' ||
                   charId === 'bobbySpecial' ||
                   charId === 'chickenBarrel' ||
-                  charId === 'philsRocket'
+                  charId === 'philsRocket' ||
+                  charId === 'olReliable' ||
+                  charId === 'stalwart'
                 ? '3 / 4'
+              : charId === 'bocceBalls' || charId === 'coolWhip'
+                ? '4 / 4.4'
               : charId === 'finley' || charId === 'beans' || charId === 'shay'
               ? '4 / 4.6'
               : charId === 'jeremy'
@@ -104,16 +114,34 @@ export function UnitToken({
       >
         {evolved ? (
           <div
-            className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-[120%]"
+            className="pointer-events-none absolute inset-[-18%] z-[8]"
             aria-hidden
           >
-            <span
-              className="block h-2.5 w-2.5 rotate-45"
+            <div
+              className="absolute inset-0"
               style={{
-                background: 'linear-gradient(135deg,#e9b8ff,#9b2dff 45%,#5a00a8)',
-                boxShadow: '0 0 8px #c060ffcc, inset 0 1px 0 #ffffff88',
+                borderRadius: '48% 52% 46% 54% / 42% 58% 40% 60%',
+                background:
+                  'radial-gradient(ellipse 55% 70% at 50% 62%, #c060ff66 0%, #7a20d844 42%, transparent 72%)',
+                boxShadow: '0 0 14px #b040ff88, inset 0 0 10px #e9b8ff44',
+                animation: 'evoFlame 0.9s ease-in-out infinite alternate',
               }}
             />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="absolute bottom-[8%] left-1/2 h-[42%] w-[18%] -translate-x-1/2"
+                style={{
+                  marginLeft: `${(i - 2) * 14}%`,
+                  background:
+                    'linear-gradient(180deg, #f4e0ff 0%, #c060ff 38%, #6a20c800 100%)',
+                  clipPath: 'polygon(50% 0%, 12% 100%, 88% 100%)',
+                  opacity: 0.75,
+                  filter: 'blur(0.4px)',
+                  transform: `translateX(-50%) scaleY(${0.85 + (i % 2) * 0.25})`,
+                }}
+              />
+            ))}
           </div>
         ) : null}
         <CharacterModel
@@ -135,6 +163,18 @@ export function UnitToken({
                 'radial-gradient(ellipse 42% 28% at 38% 62%, #5c3a18cc 0%, transparent 70%), radial-gradient(ellipse 36% 24% at 62% 70%, #3a2410aa 0%, transparent 72%), radial-gradient(ellipse 28% 18% at 48% 48%, #6e4a2288 0%, transparent 75%)',
               mixBlendMode: 'multiply',
               opacity: 0.85,
+            }}
+          />
+        ) : null}
+        {poison ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-11"
+            aria-hidden
+            style={{
+              background:
+                'radial-gradient(ellipse 50% 40% at 50% 55%, #7dff9a66 0%, #3ecf6a33 45%, transparent 72%)',
+              mixBlendMode: 'screen',
+              opacity: 0.7,
             }}
           />
         ) : null}
@@ -406,22 +446,31 @@ export function CucumberSplat({ ageMs }: { ageMs: number }) {
 }
 
 /** Berry — tiny irregular blue water blob (not a perfect bubble). */
-export function BerryJuiceDot({ empowered }: { empowered?: boolean }) {
-  // ~half the old size; empowered is only a touch larger.
-  const size = empowered ? 'h-3.5 w-4' : 'h-2.5 w-3'
+export function BerryJuiceDot({
+  empowered,
+  tint = 'blue',
+  large,
+}: {
+  empowered?: boolean
+  tint?: 'blue' | 'green' | 'cream'
+  large?: boolean
+}) {
+  const size = large ? (empowered ? 'h-9 w-10' : 'h-8 w-9') : empowered ? 'h-3.5 w-4' : 'h-2.5 w-3'
+  const fill =
+    tint === 'green'
+      ? 'radial-gradient(ellipse 70% 65% at 38% 32%, #d8ffb8cc 0%, #6adf4aaa 38%, #189018bb 68%, #0a4a1088 100%)'
+      : tint === 'cream'
+        ? 'radial-gradient(ellipse 70% 65% at 38% 32%, #fffef8cc 0%, #fff6e8aa 38%, #f0e0c8bb 68%, #d8c8a888 100%)'
+        : 'radial-gradient(ellipse 70% 65% at 38% 32%, #b8e8ffcc 0%, #4ab0ffaa 38%, #1878d0bb 68%, #0a3a7888 100%)'
   return (
     <div className={`relative ${size}`} aria-hidden>
-      {/* Main watery blob — lumpy border-radius, soft edges */}
       <div
         className="absolute inset-0"
         style={{
           borderRadius: '62% 38% 55% 45% / 48% 58% 42% 52%',
-          background:
-            'radial-gradient(ellipse 70% 65% at 38% 32%, #b8e8ffcc 0%, #4ab0ffaa 38%, #1878d0bb 68%, #0a3a7888 100%)',
+          background: fill,
           filter: 'blur(0.35px)',
-          boxShadow: empowered
-            ? '0 0 4px #40b0ff66'
-            : '0 0 2px #40b0ff44',
+          boxShadow: empowered ? '0 0 4px #40b0ff66' : '0 0 2px #40b0ff44',
         }}
       />
       {/* Side drip / satellite droplet */}
@@ -491,6 +540,30 @@ export function BerryJuiceSplat({ ageMs }: { ageMs: number }) {
           filter: 'blur(0.5px)',
         }}
       />
+    </div>
+  )
+}
+
+export function CreamSmokeDot() {
+  return <BerryJuiceDot tint="cream" empowered />
+}
+
+export function WaffleDot() {
+  return (
+    <div className="relative h-3.5 w-4" aria-hidden>
+      <div
+        className="absolute inset-0 rounded-[2px]"
+        style={{
+          background: 'linear-gradient(180deg,#f5d090,#c48a3a 55%,#8a5820)',
+          boxShadow: '0 0 4px #e8b86a88',
+        }}
+      />
+      <div className="absolute inset-[2px] grid grid-cols-2 grid-rows-2 gap-[1px]">
+        <div className="bg-[#8a582088]" />
+        <div className="bg-[#8a582088]" />
+        <div className="bg-[#8a582088]" />
+        <div className="bg-[#8a582088]" />
+      </div>
     </div>
   )
 }

@@ -35,6 +35,7 @@ import { BerryModel } from './BerryModel'
 import { SusanModel } from './SusanModel'
 import { PhilsRocketModel } from './PhilsRocketModel'
 import { CoachGrafModel } from './CoachGrafModel'
+import { PhotoCardModel } from './PhotoCardModel'
 
 type Props = {
   charId: string
@@ -163,6 +164,85 @@ export function CharacterModel({
         attackId={attackId}
         portrait={portrait}
         auraActive={auraActive}
+      />
+    )
+  } else if (charId === 'coolWhip') {
+    model = (
+      <PhotoCardModel
+        cardSrc={`${import.meta.env.BASE_URL}characters/cool-whip-card.png`}
+        alt="Cool Whip"
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        gait="waddle"
+        objectPos="50% 42%"
+        portraitScale={1.12}
+        spriteLegs={false}
+      />
+    )
+  } else if (charId === 'bocceBalls') {
+    model = (
+      <PhotoCardModel
+        cardSrc={`${import.meta.env.BASE_URL}characters/bocce-balls-card.png`}
+        alt="Bocce Balls"
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        roll={!portrait}
+        objectPos="50% 55%"
+        troopScale={1.2}
+      />
+    )
+  } else if (charId === 'georgesDiner') {
+    model = (
+      <PhotoCardModel
+        cardSrc={`${import.meta.env.BASE_URL}characters/georges-diner-card.png`}
+        alt="George's Diner"
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        objectPos="50% 58%"
+        portraitScale={1.06}
+        spriteLegs={false}
+      />
+    )
+  } else if (charId === 'olReliable') {
+    model = (
+      <PhotoCardModel
+        cardSrc={`${import.meta.env.BASE_URL}characters/ol-reliable-card.png`}
+        alt="Ol' Reliable"
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        objectPos="50% 48%"
+        spriteLegs={false}
+      />
+    )
+  } else if (charId === 'stalwart') {
+    model = (
+      <PhotoCardModel
+        cardSrc={`${import.meta.env.BASE_URL}characters/stalwart-card.png`}
+        alt="Stalwart"
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        objectPos="50% 48%"
+        spriteLegs={false}
+      />
+    )
+  } else if (charId === 'tentacool') {
+    model = (
+      <PhotoCardModel
+        cardSrc={`${import.meta.env.BASE_URL}characters/tentacool-card.png`}
+        alt="Tentacool"
+        anim={anim}
+        facing={facing}
+        portrait={portrait}
+        gait="stiff"
+        objectPos="50% 52%"
+        portraitScale={1.1}
+        troopScale={1.15}
+        spriteLegs={false}
       />
     )
   } else {

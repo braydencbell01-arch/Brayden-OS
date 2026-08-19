@@ -13,6 +13,7 @@ import {
   type Rarity,
 } from './characters'
 import { EVO_SHARDS_NEEDED, MAX_CARD_LEVEL, scaledStat } from './progression'
+import { cardCanEvolve, evoPlaysBeforeEvo } from './evolutions'
 import {
   copiesToUpgrade,
   goldToUpgrade,
@@ -349,10 +350,26 @@ export function CharactersScreen() {
                     }}
                     aria-label={c ? `Remove ${c.name}` : `Add to slot ${i + 1}`}
                     style={{
-                      outline: picking ? '2px solid #4a9eff' : undefined,
+                      outline: picking
+                        ? '2px solid #4a9eff'
+                        : i < 2
+                          ? '2px solid #9b2dff88'
+                          : undefined,
                       borderRadius: 8,
+                      boxShadow: i < 2 ? '0 0 10px #9b2dff44' : undefined,
                     }}
                   >
+                    {i < 2 ? (
+                      <span
+                        className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 rounded px-1 text-[0.42rem] font-black uppercase tracking-wide text-white"
+                        style={{
+                          background: 'linear-gradient(180deg,#c080ff,#6a20c8)',
+                          boxShadow: '0 1px 0 #3a0066',
+                        }}
+                      >
+                        Evo
+                      </span>
+                    ) : null}
                     <BattleCard
                       character={c}
                       size="collection"
@@ -880,10 +897,11 @@ function CardProfile({
           <p className="mt-1 text-center text-[0.7rem] font-semibold text-white/55">
             {copies}/{need} copies
           </p>
+          {cardCanEvolve(character.id) ? (
           <div className="mt-3 rounded-lg bg-[#1a1020] px-3 py-2 ring-1 ring-[#9b2dff66]">
             <p className="text-center text-[0.65rem] font-extrabold uppercase tracking-wide text-[#e9b8ff]">
               {evoUnlocked
-                ? 'Evolution unlocked — 3rd play is evolved (+30%)'
+                ? `Evolution unlocked — place ${evoPlaysBeforeEvo(character.elixir)} times, then the next is evolved (+30%). Must be in an Evo deck slot.`
                 : `Evolution shards ${Math.min(evoShards, EVO_SHARDS_NEEDED)}/${EVO_SHARDS_NEEDED}`}
             </p>
             {!evoUnlocked ? (
@@ -898,6 +916,7 @@ function CardProfile({
               </div>
             ) : null}
           </div>
+          ) : null}
 
           <dl className="mt-4 grid grid-cols-2 gap-2 text-sm">
             {isSpellCard(character) ? (
