@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { NameWithTitle, ProfileChip } from './ProfileChip'
 import { getBanner, BANNER_CATALOG, FRAME_CATALOG, TITLE_CATALOG, type BannerDef } from './cosmeticsCatalog'
@@ -101,16 +101,18 @@ export function VsSplash({
   foe: VsFighter
   onDone: () => void
 }) {
+  const doneRef = useRef(onDone)
+  doneRef.current = onDone
+
   useEffect(() => {
-    const id = window.setTimeout(onDone, 4600)
+    const id = window.setTimeout(() => doneRef.current(), 4200)
     return () => window.clearTimeout(id)
-  }, [onDone])
+  }, [])
+
   return (
-    <button
-      type="button"
-      onClick={onDone}
-      className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#140e0a] text-left"
-      aria-label="Battle start"
+    <div
+      className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#140e0a]"
+      aria-hidden
     >
       <div className="pointer-events-none absolute inset-0">
         <ClashMap />
@@ -168,6 +170,6 @@ export function VsSplash({
           <BattleBannerArt bannerId={you.bannerId} className="h-[5.5rem] w-full" />
         </div>
       </motion.div>
-    </button>
+    </div>
   )
 }

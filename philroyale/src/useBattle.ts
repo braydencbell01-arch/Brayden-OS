@@ -563,7 +563,7 @@ function spawnDogFromBuilding(
 /** Clash-style swarm offsets (Chicken Army = wide pentagon so each chicken is visible). */
 function swarmOffsets(count: number): { col: number; row: number }[] {
   if (count <= 1) return [{ col: 0, row: 0 }]
-  if (count === 2) return [{ col: -2.4, row: 0 }, { col: 2.4, row: 0 }]
+  if (count === 2) return [{ col: -4.4, row: 0 }, { col: 4.4, row: 0 }]
   const pack = [
     { col: 0, row: -4.8 },
     { col: -6.4, row: -0.6 },
