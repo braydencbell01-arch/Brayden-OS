@@ -35,7 +35,7 @@ import { BerryModel } from './BerryModel'
 import { SusanModel } from './SusanModel'
 import { PhilsRocketModel } from './PhilsRocketModel'
 import { CoachGrafModel } from './CoachGrafModel'
-import { PhotoCardModel } from './PhotoCardModel'
+import { PhotoTroop } from './PhotoTroop'
 
 type Props = {
   charId: string
@@ -168,86 +168,92 @@ export function CharacterModel({
     )
   } else if (charId === 'coolWhip') {
     model = (
-      <PhotoCardModel
+      <PhotoTroop
         cardSrc={`${import.meta.env.BASE_URL}characters/cool-whip-card.png`}
+        troopSrc={`${import.meta.env.BASE_URL}characters/cool-whip-troop.png`}
         alt="Cool Whip"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        roll={!portrait}
         gait="waddle"
-        objectPos="50% 42%"
-        portraitScale={1.12}
+        attack="none"
         spriteLegs={false}
+        troopScale={1.08}
       />
     )
   } else if (charId === 'bocceBalls') {
     model = (
-      <PhotoCardModel
+      <PhotoTroop
         cardSrc={`${import.meta.env.BASE_URL}characters/bocce-balls-card.png`}
+        troopSrc={`${import.meta.env.BASE_URL}characters/bocce-balls-troop.png`}
         alt="Bocce Balls"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        roll={!portrait}
-        objectPos="50% 55%"
-        troopScale={1.2}
+        gait="stiff"
+        attack="none"
+        spriteLegs={false}
+        troopScale={1.14}
       />
     )
   } else if (charId === 'georgesDiner') {
     model = (
-      <PhotoCardModel
+      <PhotoTroop
         cardSrc={`${import.meta.env.BASE_URL}characters/georges-diner-card.png`}
+        troopSrc={`${import.meta.env.BASE_URL}characters/georges-diner-troop.png`}
         alt="George's Diner"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        roll={!portrait}
-        objectPos="50% 58%"
-        portraitScale={1.06}
         spriteLegs={false}
+        troopScale={1.06}
+        gait="stiff"
+        attack="none"
       />
     )
   } else if (charId === 'olReliable') {
     model = (
-      <PhotoCardModel
+      <PhotoTroop
         cardSrc={`${import.meta.env.BASE_URL}characters/ol-reliable-card.png`}
+        troopSrc={`${import.meta.env.BASE_URL}characters/ol-reliable-troop.png`}
         alt="Ol' Reliable"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        roll={!portrait}
-        objectPos="50% 48%"
         spriteLegs={false}
+        gait="stiff"
+        troopScale={1.04}
+        attack="none"
       />
     )
   } else if (charId === 'stalwart') {
     model = (
-      <PhotoCardModel
+      <PhotoTroop
         cardSrc={`${import.meta.env.BASE_URL}characters/stalwart-card.png`}
+        troopSrc={`${import.meta.env.BASE_URL}characters/stalwart-troop.png`}
         alt="Stalwart"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        roll={!portrait}
-        objectPos="50% 48%"
         spriteLegs={false}
+        gait="stiff"
+        troopScale={1.04}
+        attack="none"
       />
     )
   } else if (charId === 'tentacool') {
     model = (
-      <PhotoCardModel
+      <PhotoTroop
         cardSrc={`${import.meta.env.BASE_URL}characters/tentacool-card.png`}
+        troopSrc={`${import.meta.env.BASE_URL}characters/tentacool-troop.png`}
         alt="Tentacool"
         anim={anim}
         facing={facing}
         portrait={portrait}
-        roll={!portrait}
         gait="stiff"
-        objectPos="50% 52%"
-        portraitScale={1.1}
-        troopScale={1.15}
         spriteLegs={false}
+        troopScale={1.12}
+        attack="none"
       />
     )
   } else {
