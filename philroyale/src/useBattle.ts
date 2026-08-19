@@ -3787,6 +3787,11 @@ export function useBattle(opts?: {
                 target.row = ejected.row
               }
             }
+            // Ram/knockback attacks (like Bocce Balls explode) should die immediately after impact.
+            if (attack.diesOnAttack) {
+              u.hp = 0
+              unitsChanged = true
+            }
             unitsChanged = true
           }
         } else {
