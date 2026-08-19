@@ -30,7 +30,7 @@ export function PhotoCardModel({
   troopScale = 1.05,
   spriteLegs = true,
 }: Props) {
-  if (portrait || !roll) {
+  if (portrait) {
     return (
       <PhotoTroop
         cardSrc={cardSrc}
@@ -38,7 +38,7 @@ export function PhotoCardModel({
         alt={alt}
         anim={anim}
         facing={facing}
-        portrait={portrait}
+        portrait
         portraitScale={portraitScale}
         troopScale={troopScale}
         objectPos={objectPos}
@@ -46,6 +46,35 @@ export function PhotoCardModel({
         attack="none"
         spriteLegs={spriteLegs}
       />
+    )
+  }
+
+  if (!roll) {
+    const flip = Math.cos(facing) < 0 ? -1 : 1
+    const moving = anim === 'walk' || anim === 'attack'
+    return (
+      <div
+        className="relative h-full w-full overflow-visible"
+        style={{ transform: `scaleX(${flip})`, transformOrigin: '50% 100%' }}
+      >
+        <motion.img
+          src={cardSrc}
+          alt=""
+          className="absolute inset-0 h-full w-full object-contain drop-shadow-[1px_3px_4px_rgba(0,0,0,0.5)]"
+          style={{ background: 'none' }}
+          animate={
+            moving
+              ? { translateY: [0, -2, 0], scale: [1, 1.03, 1] }
+              : { translateY: 0, scale: 1 }
+          }
+          transition={
+            moving
+              ? { duration: 0.55, repeat: Infinity, ease: 'easeInOut' }
+              : { duration: 0.2 }
+          }
+          draggable={false}
+        />
+      </div>
     )
   }
 

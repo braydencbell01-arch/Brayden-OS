@@ -3204,33 +3204,41 @@ export function useBattle(opts?: {
                   }
                 }
                 if (rollT) {
-                  const dmg = rollAtk.damage * dmgMult * cardLevelMult(u.level)
-                  rollT.hp -= dmg
-                  const side = Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2
-                  const kb = rollAtk.knockbackTiles ?? 5
-                  const pc = Math.max(
-                    0,
-                    Math.min(ARENA_COLS - 1, rollT.col + Math.cos(u.facing + side) * kb),
-                  )
-                  const pr = Math.max(
-                    0,
-                    Math.min(ARENA_ROWS - 1, rollT.row + Math.sin(u.facing + side) * kb),
-                  )
-                  const flung = ejectFromTowers(pc, pr, liveIds, rollT.side)
-                  rollT.launch = {
-                    fromCol: rollT.col,
-                    fromRow: rollT.row,
-                    toCol: flung.col,
-                    toRow: flung.row,
-                    bornAt: t,
-                    arriveAt: t + 280,
-                    landDamage: 0,
+                  const hitKey = `unit:${rollT.id}`
+                  if (!(u.hitOnceKeys ?? []).includes(hitKey)) {
+                    u.hitOnceKeys = [...(u.hitOnceKeys ?? []), hitKey]
+                    const dmg = rollAtk.damage * dmgMult * cardLevelMult(u.level)
+                    rollT.hp -= dmg
+                    const perpAng = u.facing + Math.PI / 2
+                    const sideDir = (rollT.col - u.col) * Math.cos(perpAng) +
+                      (rollT.row - u.row) * Math.sin(perpAng) >= 0
+                      ? 1
+                      : -1
+                    const kb = rollAtk.knockbackTiles ?? 5
+                    const pc = Math.max(
+                      0,
+                      Math.min(ARENA_COLS - 1, rollT.col + Math.cos(perpAng) * kb * sideDir),
+                    )
+                    const pr = Math.max(
+                      0,
+                      Math.min(ARENA_ROWS - 1, rollT.row + Math.sin(perpAng) * kb * sideDir),
+                    )
+                    const flung = ejectFromTowers(pc, pr, liveIds, rollT.side)
+                    rollT.launch = {
+                      fromCol: rollT.col,
+                      fromRow: rollT.row,
+                      toCol: flung.col,
+                      toRow: flung.row,
+                      bornAt: t,
+                      arriveAt: t + 280,
+                      landDamage: 0,
+                    }
+                    combatFx('ram', dmg)
+                    u.nextAttackAt = t + 100
+                    u.vfx = 'rollOver'
+                    u.vfxUntil = t + 180
+                    unitsChanged = true
                   }
-                  combatFx('ram', dmg)
-                  u.nextAttackAt = t + 100
-                  u.vfx = 'rollOver'
-                  u.vfxUntil = t + 180
-                  unitsChanged = true
                 }
               }
               continue
@@ -3719,7 +3727,12 @@ export function useBattle(opts?: {
                 (attack.knockbackTiles ?? 0) *
                 (u.evolved && u.charId === 'bigMable' ? 3 : 1)
               const throwAng = attack.knockbackSide
-                ? ang + (Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2)
+                ? (() => {
+                    const perpAng = ang + Math.PI / 2
+                    const dot = (target.col - u.col) * Math.cos(perpAng) +
+                      (target.row - u.row) * Math.sin(perpAng)
+                    return dot >= 0 ? perpAng : perpAng + Math.PI
+                  })()
                 : attack.knockbackBehind
                   ? ang + Math.PI
                   : ang

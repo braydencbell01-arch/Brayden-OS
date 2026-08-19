@@ -102,7 +102,7 @@ export function VsSplash({
   onDone: () => void
 }) {
   useEffect(() => {
-    const id = window.setTimeout(onDone, 2800)
+    const id = window.setTimeout(onDone, 4600)
     return () => window.clearTimeout(id)
   }, [onDone])
   return (
@@ -119,7 +119,7 @@ export function VsSplash({
         className="relative z-10 flex min-h-0 flex-1 flex-col justify-between px-3 pb-8 pt-[max(2.2rem,env(safe-area-inset-top))]"
         initial={{ opacity: 1 }}
         animate={{ opacity: 0 }}
-        transition={{ duration: 2.15, delay: 0.4, ease: 'easeIn' }}
+        transition={{ duration: 3.2, delay: 1.0, ease: 'easeIn' }}
       >
         <div className="flex flex-col items-stretch gap-2">
           <BattleBannerArt bannerId={foe.bannerId} className="h-[5.5rem] w-full" />
