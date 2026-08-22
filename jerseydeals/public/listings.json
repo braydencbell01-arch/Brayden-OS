@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-22T07:06:16Z",
+  "syncedAt": "2026-08-22T07:15:23Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -899,13 +899,13 @@
       "conditionId": "1000"
     },
     {
-      "id": "UQWJCMVXI44M4BYKG5ZXMUFO",
-      "itemId": "OX7AAG6BBHIQYZ4OEW4GUWFM",
-      "sku": "ebay:800482167587",
+      "id": "FR54IBYAVCWIP56CCWHA6BXC",
+      "itemId": "HN6GZV42DKFKGCGNG3C6YF4H",
+      "sku": "ebay:800547832646",
       "title": "Ajax Kit — Standard",
       "price": 32,
       "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/ajax-kit/OX7AAG6BBHIQYZ4OEW4GUWFM",
+      "url": "https://jerseydealsofficial.square.site/product/ajax-kit/HN6GZV42DKFKGCGNG3C6YF4H",
       "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
       "images": [
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
@@ -924,8 +924,8 @@
       "source": "square",
       "category": "",
       "description": "Scarf is new and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/C7rnx0f8",
-      "checkoutUrlDiscounted": "https://square.link/u/ccWDSsj5",
+      "checkoutUrl": "https://square.link/u/f22OKSsN",
+      "checkoutUrlDiscounted": "https://square.link/u/Zh4RNr88",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2503,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-21T19:11:00Z"
+  "ebayDetailsSyncedAt": "2026-08-22T07:15:23Z"
 }
