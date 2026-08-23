@@ -3451,22 +3451,20 @@ export function useBattle(opts?: {
                 towersChanged = true
               }
             }
-            nextProjectiles.push({
-              id: nid('p'),
-              kind: 'creamSmoke',
-              fromCol: me.col,
-              fromRow: me.row,
-              toCol: hit.col,
-              toRow: hit.row,
-              damage: 0,
-              targetId: hit.kind === 'unit' ? hit.id : null,
-              targetTowerId: hit.kind === 'tower' ? hit.id : null,
-              bornAt: t,
-              arriveAt: t + 260,
-              ownerSide: u.side,
-            })
-            projectilesChanged = true
           }
+          const cloudReach = attack.range * (nextBurst / Math.max(1, burstShots))
+          const cloudCol = me.col + Math.cos(u.facing) * cloudReach * 0.55
+          const cloudRow = me.row + Math.sin(u.facing) * cloudReach * 0.55
+          nextSplats.push({
+            id: nid('creamcloud'),
+            col: cloudCol,
+            row: cloudRow,
+            bornAt: t,
+            kind: 'creamCloud',
+            radius: cloudReach,
+            facing: u.facing,
+          })
+          splatsChanged = true
           combatFx('creamSmoke', damage)
           continue
         }

@@ -62,17 +62,16 @@ const RARITY_TEXT: Record<Rarity, string> = {
 }
 
 const QUILT_BG = {
-  backgroundColor: '#1a6b8a',
+  backgroundColor: '#0c2848',
   backgroundImage: `
-    linear-gradient(45deg, #145a75 25%, transparent 25%),
-    linear-gradient(-45deg, #145a75 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #145a75 75%),
-    linear-gradient(-45deg, transparent 75%, #145a75 75%),
-    linear-gradient(135deg, #2a8fad 25%, transparent 25%),
-    linear-gradient(-135deg, #2a8fad 25%, transparent 25%)
+    radial-gradient(ellipse 120% 80% at 50% -20%, #2a6cb888 0%, transparent 55%),
+    linear-gradient(180deg, #143860 0%, #0a2038 45%, #061428 100%)
   `,
-  backgroundSize: '28px 28px',
-  backgroundPosition: '0 0, 0 14px, 14px -14px, -14px 0, 7px 7px, 7px 21px',
+}
+
+const CR_SHOP_FRAME = {
+  background: 'linear-gradient(180deg,#5c3a1a 0%,#3a2410 8%,#2a180c 92%,#1a1008 100%)',
+  boxShadow: 'inset 0 0 0 3px #c9a227, inset 0 0 0 6px #5c3a1a, 0 6px 0 #00000088',
 }
 
 function msUntilMidnight(): number {
@@ -632,16 +631,29 @@ export function ShopScreen() {
   return (
     <div className="relative flex h-full min-h-0 flex-col" style={QUILT_BG}>
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
+        <div
+          className="mb-4 rounded-2xl px-3 py-3 text-center"
+          style={CR_SHOP_FRAME}
+        >
+          <p className="font-[family-name:var(--font-display)] text-xl tracking-wide text-[#ffe08a]">
+            Shop
+          </p>
+          <p className="text-xs font-semibold text-white/75">
+            Daily deals refresh in {dailyRefresh}
+          </p>
+        </div>
         {/* Offers */}
         <section className="mb-5">
           <Ribbon label="Offers" tone="gold" />
           <ul className="flex flex-col gap-3">
             {REAL_MONEY_OFFERS.map((offer) => (
               <li key={offer.id}>
-                <RoyaleOfferCard
-                  offer={offer}
-                  onBuy={() => void startUsdPurchase(offer.id, offer.title)}
-                />
+                <div className="rounded-xl p-0.5" style={CR_SHOP_FRAME}>
+                  <RoyaleOfferCard
+                    offer={offer}
+                    onBuy={() => void startUsdPurchase(offer.id, offer.title)}
+                  />
+                </div>
               </li>
             ))}
           </ul>

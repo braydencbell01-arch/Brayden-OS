@@ -144,6 +144,8 @@ export type SplatFx = {
   bornAt: number
   /** When set, draw an AoE ring centered on the impact (blocks). */
   radius?: number
+  /** Cone / directed FX (Cool Whip cloud). */
+  facing?: number
   kind:
     | 'sundae'
     | 'slobber'
@@ -171,6 +173,7 @@ export type SplatFx = {
     | 'poop'
     | 'grafBomb'
     | 'creamSmoke'
+    | 'creamCloud'
     | 'waffle'
     | 'blob'
     | 'blobGreen'

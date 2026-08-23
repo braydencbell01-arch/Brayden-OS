@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { playerLevelFromXp } from './clubMeta'
-import { loadProfile } from './storage'
+import { claimLevelUpChest, loadProfile } from './storage'
 
 /** Gold coin + gem crystal icons for the persistent currency chip. */
 export function GoldIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -35,18 +35,39 @@ export function GemIcon({ className = 'h-4 w-4' }: { className?: string }) {
 function Pill({
   children,
   onPlus,
+  onClick,
   ariaLabel,
+  shiny,
 }: {
   children: React.ReactNode
   onPlus?: () => void
+  onClick?: () => void
   ariaLabel: string
+  shiny?: boolean
 }) {
   return (
     <div
-      className="pointer-events-auto flex items-center gap-1 rounded-full pl-2 pr-1 py-1"
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
+      className={`pointer-events-auto flex items-center gap-1 rounded-full pl-2 pr-1 py-1 ${onClick ? 'cursor-pointer' : ''} ${shiny ? 'level-bar-shiny ring-2 ring-[#ffe08a]' : ''}`}
       style={{
-        background: 'linear-gradient(180deg,#3a2418,#1a100c)',
-        boxShadow: '0 2px 0 #00000066, inset 0 1px 0 #c9a22744',
+        background: shiny
+          ? 'linear-gradient(180deg,#4a3828,#2a1a12)'
+          : 'linear-gradient(180deg,#3a2418,#1a100c)',
+        boxShadow: shiny
+          ? '0 0 12px #ffe08a88, 0 2px 0 #00000066, inset 0 1px 0 #ffffff55'
+          : '0 2px 0 #00000066, inset 0 1px 0 #c9a22744',
       }}
       aria-label={ariaLabel}
     >
@@ -54,7 +75,10 @@ function Pill({
       {onPlus ? (
         <button
           type="button"
-          onClick={onPlus}
+          onClick={(e) => {
+            e.stopPropagation()
+            onPlus()
+          }}
           className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full text-xs font-black text-[#1a1410]"
           style={{
             background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
@@ -78,6 +102,8 @@ export function TopStatusBar({ onShop }: { onShop?: () => void }) {
   const [gold, setGold] = useState(() => loadProfile().gold)
   const [gems, setGems] = useState(() => loadProfile().gems)
   const [xp, setXp] = useState(() => loadProfile().xp)
+  const [levelUpReady, setLevelUpReady] = useState(() => !!loadProfile().levelUpChestReady)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     const sync = () => {
@@ -85,60 +111,94 @@ export function TopStatusBar({ onShop }: { onShop?: () => void }) {
       setGold(p.gold)
       setGems(p.gems)
       setXp(p.xp)
+      setLevelUpReady(!!p.levelUpChestReady)
     }
     sync()
     const id = window.setInterval(sync, 800)
     window.addEventListener('storage', sync)
     window.addEventListener('focus', sync)
+    window.addEventListener('philroyale-profile-changed', sync)
     return () => {
       window.clearInterval(id)
       window.removeEventListener('storage', sync)
       window.removeEventListener('focus', sync)
+      window.removeEventListener('philroyale-profile-changed', sync)
     }
   }, [])
 
   const level = playerLevelFromXp(xp)
 
-  return (
-    <div
-      className="pointer-events-none absolute inset-x-0 top-[max(0.2rem,env(safe-area-inset-top))] z-50 flex items-center justify-between gap-2 px-2"
-      aria-label={`Level ${level.level}, gold ${gold}, gems ${gems}`}
-    >
-      <Pill ariaLabel={`Level ${level.level}`}>
-        <span
-          className="flex h-5 min-w-5 items-center justify-center rounded-full text-[0.65rem] font-black text-[#1a1410]"
-          style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
-        >
-          {level.level}
-        </span>
-        <div className="w-14 pr-1">
-          <div className="h-1.5 overflow-hidden rounded-full bg-black/50">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.round((level.into / Math.max(1, level.need)) * 100)}%`,
-                background: 'linear-gradient(90deg,#7dff9a,#4a9eff)',
-              }}
-            />
-          </div>
-        </div>
-      </Pill>
+  function claimLevelChest() {
+    if (!levelUpReady) return
+    const res = claimLevelUpChest()
+    setToast(res.message)
+    window.setTimeout(() => setToast(null), 2600)
+    setLevelUpReady(false)
+    window.dispatchEvent(new Event('philroyale-profile-changed'))
+  }
 
-      <div className="flex items-center gap-1.5">
-        <Pill ariaLabel={`Gold ${gold}`} onPlus={onShop}>
-          <GoldIcon className="h-4 w-4 shrink-0" />
-          <span className="min-w-[1.5rem] text-xs font-extrabold tabular-nums text-[#f5d76e]">
-            {gold}
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute inset-x-0 top-[max(0.2rem,env(safe-area-inset-top))] z-50 flex items-center justify-between gap-2 px-2"
+        aria-label={`Level ${level.level}, gold ${gold}, gems ${gems}`}
+      >
+        <Pill
+          ariaLabel={
+            levelUpReady
+              ? `Level ${level.level} — tap to claim level-up chest`
+              : `Level ${level.level}`
+          }
+          shiny={levelUpReady}
+          onClick={levelUpReady ? claimLevelChest : undefined}
+        >
+          <span
+            className="flex h-5 min-w-5 items-center justify-center rounded-full text-[0.65rem] font-black text-[#1a1410]"
+            style={{ background: 'linear-gradient(180deg,#ffe08a,#c9a227)' }}
+          >
+            {level.level}
           </span>
+          <div className="w-14 pr-1">
+            <div className="h-1.5 overflow-hidden rounded-full bg-black/50">
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.round((level.into / Math.max(1, level.need)) * 100)}%`,
+                  background: levelUpReady
+                    ? 'linear-gradient(90deg,#fff6c8,#ffe08a,#c9a227)'
+                    : 'linear-gradient(90deg,#7dff9a,#4a9eff)',
+                }}
+              />
+            </div>
+          </div>
+          {levelUpReady ? (
+            <span className="pr-1 text-[0.55rem] font-black uppercase text-[#ffe08a]">Tap</span>
+          ) : null}
         </Pill>
-        <Pill ariaLabel={`Gems ${gems}`} onPlus={onShop}>
-          <GemIcon className="h-4 w-4 shrink-0" />
-          <span className="min-w-[1.25rem] text-xs font-extrabold tabular-nums text-[#7dffef]">
-            {gems}
-          </span>
-        </Pill>
+
+        <div className="flex items-center gap-1.5">
+          <Pill ariaLabel={`Gold ${gold}`} onPlus={onShop}>
+            <GoldIcon className="h-4 w-4 shrink-0" />
+            <span className="min-w-[1.5rem] text-xs font-extrabold tabular-nums text-[#f5d76e]">
+              {gold}
+            </span>
+          </Pill>
+          <Pill ariaLabel={`Gems ${gems}`} onPlus={onShop}>
+            <GemIcon className="h-4 w-4 shrink-0" />
+            <span className="min-w-[1.25rem] text-xs font-extrabold tabular-nums text-[#7dffef]">
+              {gems}
+            </span>
+          </Pill>
+        </div>
       </div>
-    </div>
+      {toast ? (
+        <div className="pointer-events-none absolute inset-x-0 top-[max(3rem,calc(env(safe-area-inset-top)+2.5rem))] z-[60] flex justify-center px-4">
+          <p className="rounded-lg bg-black/85 px-3 py-1.5 text-center text-xs font-bold text-[#ffe08a] ring-1 ring-[#c9a227]">
+            {toast}
+          </p>
+        </div>
+      ) : null}
+    </>
   )
 }
 

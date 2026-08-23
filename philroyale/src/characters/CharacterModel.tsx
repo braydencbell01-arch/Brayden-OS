@@ -48,7 +48,7 @@ type Props = {
   initial?: string
   enraged?: boolean
   auraActive?: boolean
-  /** Swarm index — bocce red (0) vs green (1). */
+  /** Swarm index — bocce green (0, left) vs red (1, right). */
   spawnIdx?: number
 }
 
