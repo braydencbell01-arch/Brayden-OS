@@ -43,6 +43,7 @@ import {
   BerryJuiceDot,
   BerryJuiceSplat,
   CreamSmokeDot,
+  CreamCloudSplat,
   WaffleDot,
   PoopDot,
   PoopSplat,
@@ -1179,6 +1180,12 @@ export function BattleScreen({
                   <BerryJuiceSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'blobGreen' ? (
                   <BerryJuiceSplat ageMs={now - s.bornAt} />
+                ) : s.kind === 'creamCloud' ? (
+                  <CreamCloudSplat
+                    ageMs={now - s.bornAt}
+                    radius={s.radius}
+                    facing={s.facing}
+                  />
                 ) : s.kind === 'creamSmoke' ? (
                   <BerryJuiceSplat ageMs={now - s.bornAt} />
                 ) : s.kind === 'waffle' ? (

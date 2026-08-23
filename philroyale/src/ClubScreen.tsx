@@ -3,6 +3,7 @@ import { getCharacter } from './characters'
 import {
   CLUB_BADGES,
   CLUB_CHEST_GOAL,
+  CLUB_THEMES,
   roleLabel,
   roleRank,
   type ClubMember,
@@ -36,6 +37,7 @@ import {
   saveRichClub,
   shareText,
   startClubWar,
+  updateRichClubCustomization,
   clubInviteUrl,
   upsertFriend,
   type ClubWarState,
@@ -80,6 +82,8 @@ export function ClubScreen({
   const [createName, setCreateName] = useState('')
   const [createDesc, setCreateDesc] = useState('')
   const [badge, setBadge] = useState(0)
+  const [themeId, setThemeId] = useState(0)
+  const [createMotto, setCreateMotto] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [joining, setJoining] = useState(false)
   const [donateChar, setDonateChar] = useState('finley')
@@ -180,6 +184,29 @@ export function ClubScreen({
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-[0.65rem] font-extrabold uppercase text-white/70">Theme</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {CLUB_THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setThemeId(t.id)}
+                  className="rounded-lg px-2 py-1 text-[0.6rem] font-black text-white"
+                  style={{
+                    background: t.header,
+                    outline: themeId === t.id ? '2px solid #fff' : 'none',
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <input
+              value={createMotto}
+              onChange={(e) => setCreateMotto(e.target.value)}
+              placeholder="Club motto (optional)"
+              className="mt-2 w-full rounded-lg bg-black/30 px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/20 placeholder:text-white/40"
+            />
             <button
               type="button"
               onClick={() => {
@@ -187,7 +214,7 @@ export function ClubScreen({
                   flash('Enter a club name')
                   return
                 }
-                const c = createRichClub(createName, createDesc, badge)
+                const c = createRichClub(createName, createDesc, badge, themeId, createMotto)
                 setClub(c)
                 window.dispatchEvent(new Event('philroyale-club-changed'))
                 flash(`${c.name} founded! Share code ${c.code}`)
@@ -257,13 +284,20 @@ export function ClubScreen({
   }
 
   const badgeMeta = CLUB_BADGES[club.badge] ?? CLUB_BADGES[0]!
+  const theme = CLUB_THEMES[club.themeId ?? 0] ?? CLUB_THEMES[0]!
+  const youMember = club.members.find((m) => m.isYou)
+  const canCustomize =
+    youMember?.role === 'leader' || youMember?.role === 'coLeader'
   const sortedMembers = [...club.members].sort(
     (a, b) => roleRank(b.role) - roleRank(a.role) || b.trophies - a.trophies,
   )
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="shrink-0 px-3 pb-2 pt-1">
+      <header
+        className="shrink-0 px-3 pb-2 pt-1"
+        style={{ background: theme.header, boxShadow: '0 4px 0 #00000055' }}
+      >
         <div className="flex items-start gap-2">
           <div
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-lg font-black text-[#1a1410]"
@@ -275,9 +309,14 @@ export function ClubScreen({
             <h1 className="truncate font-[family-name:var(--font-display)] text-xl text-[#f5d76e]">
               {club.name}
             </h1>
-            <p className="text-xs font-bold text-white/70">
+            <p className="text-xs font-bold text-white/90">
               {club.tag} · {clubMemberCount(club)} · {club.trophies} club trophies
             </p>
+            {club.motto ? (
+              <p className="mt-0.5 truncate text-[0.65rem] font-semibold italic text-white/75">
+                “{club.motto}”
+              </p>
+            ) : null}
           </div>
         </div>
         <div className="mt-2 flex gap-1 overflow-x-auto">
@@ -311,9 +350,66 @@ export function ClubScreen({
         {tab === 'home' ? (
           <div className="space-y-3">
             <p className="text-sm font-semibold text-white/75">{club.description}</p>
+            {canCustomize ? (
+              <div
+                className="rounded-xl p-3 ring-2 ring-[#c9a227]/40"
+                style={{ background: theme.panel }}
+              >
+                <p className="text-xs font-extrabold uppercase text-[#ffe08a]">Customize club</p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {CLUB_THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        updateRichClubCustomization({ themeId: t.id })
+                        refresh()
+                        flash(`Theme: ${t.label}`)
+                      }}
+                      className="rounded px-2 py-1 text-[0.55rem] font-black text-white"
+                      style={{
+                        background: t.header,
+                        outline: (club.themeId ?? 0) === t.id ? '2px solid #fff' : 'none',
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {CLUB_BADGES.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => {
+                        updateRichClubCustomization({ badge: b.id })
+                        refresh()
+                      }}
+                      className="h-8 w-8 rounded-lg text-[0.6rem] font-black"
+                      style={{
+                        background: b.color,
+                        color: '#1a1410',
+                        outline: club.badge === b.id ? '2px solid #fff' : 'none',
+                      }}
+                    >
+                      {b.label.slice(0, 1)}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  defaultValue={club.motto ?? ''}
+                  placeholder="Club motto"
+                  onBlur={(e) => {
+                    updateRichClubCustomization({ motto: e.target.value })
+                    refresh()
+                  }}
+                  className="mt-2 w-full rounded-lg bg-black/30 px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/20"
+                />
+              </div>
+            ) : null}
             <div
               className="rounded-xl p-3"
-              style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+              style={{ background: theme.panel }}
             >
               <p className="text-xs font-extrabold uppercase text-[#f5d76e]/85">Club chest</p>
               <p className="mt-1 text-sm font-bold text-white">

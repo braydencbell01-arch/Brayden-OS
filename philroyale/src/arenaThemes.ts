@@ -6,7 +6,7 @@ const ARENA_IMAGE_SLUG: Record<string, string> = {
   "Beans' Battleground": 'beans-battleground',
   'Phil Pier': 'phil-pier',
   "Dave's Dungeon": 'daves-dungeon',
-  "Kathie's Kitchen": 'kathies-kitchen',
+  "Katherine's Kitchen": 'kathies-kitchen',
   'Jacobson Junction': 'jacobson-junction',
   "Gretchin's Grill": 'gretchins-grill',
   "Ricky's Diner": 'rickys-diner',
@@ -14,9 +14,11 @@ const ARENA_IMAGE_SLUG: Record<string, string> = {
   "Jeremy's Junkyard": 'jeremys-junkyard',
   Clucktown: 'clucktown',
   "Todd's Tavern": 'todds-tavern',
-  'Pete Palace': 'pete-palace',
+  'Peter Palace': 'pete-palace',
   'Phil Peak': 'phil-peak',
   // Legacy aliases
+  "Kathie's Kitchen": 'kathies-kitchen',
+  'Pete Palace': 'pete-palace',
   "Pete's Pit": 'pete-palace',
   'Jeremy Land': 'jeremys-junkyard',
   'Phil Plaza': 'phil-pier',
@@ -63,6 +65,12 @@ export const ARENA_THEME_CSS: Record<string, string> = {
     repeating-linear-gradient(0deg, transparent 0 18px, #3a181044 18px 20px),
     linear-gradient(180deg, #8a4a30 0%, #3a2018 40%, #120808 100%)
   `,
+  "Katherine's Kitchen": `
+    radial-gradient(circle at 25% 30%, #fff0c8aa 0 0.5rem, transparent 0.55rem),
+    radial-gradient(circle at 72% 58%, #ff8a4a44 0 0.6rem, transparent 0.65rem),
+    repeating-linear-gradient(90deg, #f0c07055 0 12px, #e8a05055 12px 24px),
+    linear-gradient(180deg, #ffe0a0 0%, #d08040 42%, #5a2810 100%)
+  `,
   "Kathie's Kitchen": `
     radial-gradient(circle at 25% 30%, #fff0c8aa 0 0.5rem, transparent 0.55rem),
     radial-gradient(circle at 72% 58%, #ff8a4a44 0 0.6rem, transparent 0.65rem),
@@ -104,6 +112,13 @@ export const ARENA_THEME_CSS: Record<string, string> = {
     radial-gradient(ellipse 50% 28% at 40% 30%, #e8b86a44 0%, transparent 55%),
     repeating-linear-gradient(0deg, transparent 0 16px, #4a281844 16px 18px),
     linear-gradient(180deg, #c07040 0%, #6a3818 42%, #201008 100%)
+  `,
+  'Peter Palace': `
+    radial-gradient(ellipse 40% 20% at 30% 55%, #e8d0a0aa 0%, transparent 60%),
+    radial-gradient(ellipse 35% 18% at 70% 60%, #d0b08099 0%, transparent 55%),
+    repeating-linear-gradient(0deg, transparent 0 14px, #3a201844 14px 16px),
+    radial-gradient(ellipse 100% 55% at 50% 100%, #1a0c08 0%, transparent 60%),
+    linear-gradient(180deg, #6a4a30 0%, #3a2418 40%, #140a08 100%)
   `,
   'Pete Palace': `
     radial-gradient(ellipse 40% 20% at 30% 55%, #e8d0a0aa 0%, transparent 60%),

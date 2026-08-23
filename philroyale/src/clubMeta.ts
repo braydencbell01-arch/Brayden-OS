@@ -54,6 +54,10 @@ export type RichClub = {
   warStars: number
   warDay: number
   createdAt: string
+  /** Banner / panel theme (0–5). */
+  themeId?: number
+  /** Short club motto shown on home. */
+  motto?: string
 }
 
 export const CLUB_BADGES = [
@@ -69,6 +73,15 @@ export const CLUB_BADGES = [
   { id: 9, label: 'Heart', color: '#ff8ab8' },
   { id: 10, label: 'Tower', color: '#c9a227' },
   { id: 11, label: 'Phil', color: '#5ad0ff' },
+] as const
+
+export const CLUB_THEMES = [
+  { id: 0, label: 'Royal Blue', header: 'linear-gradient(180deg,#4a9eff,#1d4a86)', panel: 'linear-gradient(180deg,#2f6fbf,#1a3058)' },
+  { id: 1, label: 'Gold Hall', header: 'linear-gradient(180deg,#ffe08a,#b8860b)', panel: 'linear-gradient(180deg,#3a2818,#1a1008)' },
+  { id: 2, label: 'Forest', header: 'linear-gradient(180deg,#7dff9a,#1e9a4a)', panel: 'linear-gradient(180deg,#1a4030,#0a2018)' },
+  { id: 3, label: 'Sunset', header: 'linear-gradient(180deg,#ff8a4a,#c04020)', panel: 'linear-gradient(180deg,#4a2818,#1a1008)' },
+  { id: 4, label: 'Violet', header: 'linear-gradient(180deg,#c080ff,#6020a8)', panel: 'linear-gradient(180deg,#3a1848,#140820)' },
+  { id: 5, label: 'Steel', header: 'linear-gradient(180deg,#9aa8b8,#4a5460)', panel: 'linear-gradient(180deg,#2a3038,#121820)' },
 ] as const
 
 export const CLUB_MAX_MEMBERS = 50

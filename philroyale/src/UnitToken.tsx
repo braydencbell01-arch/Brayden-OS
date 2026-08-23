@@ -553,6 +553,59 @@ export function CreamSmokeDot() {
   return <BerryJuiceDot tint="cream" empowered />
 }
 
+/** Cool Whip — expanding cream cone cloud. */
+export function CreamCloudSplat({
+  ageMs,
+  radius = 16,
+  facing = -Math.PI / 2,
+}: {
+  ageMs: number
+  radius?: number
+  facing?: number
+}) {
+  const life = 820
+  const p = Math.min(1, Math.max(0, ageMs / life))
+  const expand = 0.4 + p * 0.85
+  const fade = Math.max(0, 1 - p * 0.92)
+  const deg = (facing * 180) / Math.PI + 90
+  const w = Math.max(28, radius * 7.5 * expand)
+  const h = Math.max(22, radius * 5.2 * expand)
+
+  return (
+    <div
+      className="pointer-events-none relative"
+      style={{
+        width: w,
+        height: h,
+        transform: `rotate(${deg}deg)`,
+        transformOrigin: '50% 100%',
+        opacity: fade,
+      }}
+      aria-hidden
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          clipPath: 'polygon(50% 100%, 8% 6%, 92% 6%)',
+          background:
+            'radial-gradient(ellipse 80% 90% at 50% 85%, #ffffffee 0%, #f8f8ffcc 28%, #e8e8f099 52%, #d0d0e066 72%, transparent 100%)',
+          filter: 'blur(1px)',
+          boxShadow: '0 0 18px #ffffff88',
+        }}
+      />
+      <div
+        className="absolute inset-[12%]"
+        style={{
+          clipPath: 'polygon(50% 100%, 18% 12%, 82% 12%)',
+          background:
+            'radial-gradient(ellipse 70% 80% at 50% 90%, #ffffff 0%, #f0f0f8aa 45%, transparent 78%)',
+          opacity: 0.85,
+        }}
+      />
+    </div>
+  )
+}
+
 export function WaffleDot() {
   return (
     <div className="relative h-3.5 w-4" aria-hidden>

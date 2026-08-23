@@ -269,9 +269,18 @@ export function FriendsScreen({
 
   if (section === 'clubs') {
     return (
-      <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-        <div className="shrink-0 px-3 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
-          <div className="flex gap-2">
+      <div className="flex h-full min-h-0 flex-col bg-[#0a1828]">
+        <header
+          className="shrink-0 px-4 pb-3 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]"
+          style={{
+            background: 'linear-gradient(180deg,#4a9eff 0%,#1d4a86 72%,#0a1828 100%)',
+            boxShadow: '0 4px 0 #00000055',
+          }}
+        >
+          <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-white">
+            Social · Club
+          </h1>
+          <div className="mt-3 flex gap-2">
             {(
               [
                 ['friends', 'Friends'],
@@ -282,19 +291,19 @@ export function FriendsScreen({
                 key={id}
                 type="button"
                 onClick={() => setSection(id)}
-                className="flex-1 rounded-lg py-2 text-sm font-extrabold"
+                className="flex-1 rounded-lg py-2 text-sm font-extrabold uppercase tracking-wide"
                 style={{
                   background:
-                    section === id ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : '#2a1a12',
+                    section === id ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : '#1a3050',
                   color: section === id ? '#1a1410' : '#fff6e8',
-                  boxShadow: section === id ? '0 3px 0 #8a6a12' : 'none',
+                  boxShadow: section === id ? '0 3px 0 #8a6a12' : 'inset 0 0 0 2px #5eb8ff55',
                 }}
               >
                 {label}
               </button>
             ))}
           </div>
-        </div>
+        </header>
         <div className="min-h-0 flex-1">
           <ClubScreen
             onBattleBot={(name) => _onBattle(name ?? 'Club Bot')}
@@ -307,30 +316,32 @@ export function FriendsScreen({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#140e0a]">
-      <header className="shrink-0 px-4 pb-2 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-[#f5d76e]">
-          Friends
-        </h1>
-        <p className="text-sm font-semibold text-white/70">
-          Share your <span className="text-[#f5d76e]">6-digit friend code</span>. Keep Phil Royale
-          open on both phones so online status and battle invites can connect.
-          link. Both keep Phil Royale open, then Invite to play.
-        </p>
-        <label className="mt-2 block text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
-          Your name
-          <input
-            value={playerName}
-            onChange={(e) => persistName(e.target.value)}
-            placeholder="Name friends will see"
-            className="mt-1 w-full rounded-lg bg-[#221610] px-3 py-2 text-sm font-semibold text-white outline-none ring-1 ring-white/15 placeholder:text-white/35"
-          />
-          <NameWithTitle
-            titleId={loadCosmetics().titleId}
-            titleClass="mt-1 text-[0.65rem] font-extrabold tracking-wide"
-          />
-        </label>
-        <div className="mt-2 flex gap-2">
+    <div className="flex h-full min-h-0 flex-col bg-[#0a1828]">
+      <header
+        className="shrink-0 px-4 pb-3 pt-[max(3.4rem,calc(env(safe-area-inset-top)+2.85rem))]"
+        style={{
+          background: 'linear-gradient(180deg,#4a9eff 0%,#1d4a86 72%,#0a1828 100%)',
+          boxShadow: '0 4px 0 #00000055',
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-black text-[#1a1410]"
+            style={{
+              background: 'linear-gradient(180deg,#ffe08a,#c9a227)',
+              boxShadow: '0 2px 0 #8a6a12',
+            }}
+          >
+            👥
+          </div>
+          <div>
+            <h1 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-white">
+              Social
+            </h1>
+            <p className="text-xs font-semibold text-white/80">Friends · battles · club</p>
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
           {(
             [
               ['friends', 'Friends'],
@@ -341,12 +352,12 @@ export function FriendsScreen({
               key={id}
               type="button"
               onClick={() => setSection(id)}
-              className="flex-1 rounded-lg py-2 text-sm font-extrabold"
+              className="flex-1 rounded-lg py-2 text-sm font-extrabold uppercase tracking-wide"
               style={{
                 background:
-                  section === id ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : '#2a1a12',
+                  section === id ? 'linear-gradient(180deg,#ffe08a,#c9a227)' : '#1a3050',
                 color: section === id ? '#1a1410' : '#fff6e8',
-                boxShadow: section === id ? '0 3px 0 #8a6a12' : 'none',
+                boxShadow: section === id ? '0 3px 0 #8a6a12' : 'inset 0 0 0 2px #5eb8ff55',
               }}
             >
               {label}
@@ -354,14 +365,27 @@ export function FriendsScreen({
           ))}
         </div>
       </header>
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-2">
+        <label className="block text-xs font-extrabold uppercase tracking-wide text-[#ffe08a]/90">
+          Your name
+          <input
+            value={playerName}
+            onChange={(e) => persistName(e.target.value)}
+            placeholder="Name friends will see"
+            className="mt-1 w-full rounded-lg bg-[#1a3050] px-3 py-2 text-sm font-semibold text-white outline-none ring-2 ring-[#5eb8ff44] placeholder:text-white/35"
+          />
+          <NameWithTitle
+            titleId={loadCosmetics().titleId}
+            titleClass="mt-1 text-[0.65rem] font-extrabold tracking-wide"
+          />
+        </label>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
-        <div className="flex flex-col gap-3">
+        <div className="mt-3 flex flex-col gap-3">
           <div
-            className="rounded-xl p-3"
-            style={{ background: 'linear-gradient(180deg,#3a2418,#1f140e)' }}
+            className="rounded-xl p-3 ring-2 ring-[#5eb8ff33]"
+            style={{ background: 'linear-gradient(180deg,#1e5080,#0f2840)' }}
           >
-            <p className="text-xs font-extrabold uppercase tracking-wide text-[#f5d76e]/85">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#ffe08a]/90">
               Your friend code (6 digits)
             </p>
             <p className="mt-1 font-[family-name:var(--font-display)] text-3xl tracking-[0.2em] text-white">
@@ -463,7 +487,8 @@ export function FriendsScreen({
                 return (
                   <li
                     key={f.id}
-                    className="rounded-lg bg-[#221610] px-3 py-2.5 ring-1 ring-white/10"
+                    className="rounded-xl px-3 py-2.5 ring-2 ring-[#5eb8ff22]"
+                    style={{ background: 'linear-gradient(180deg,#1a3050,#0f2038)' }}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <button

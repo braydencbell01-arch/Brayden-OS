@@ -846,6 +846,10 @@ export type PlayerProfile = {
   crownChest: number
   /** King tower XP */
   xp: number
+  /** Last player level that received the tap-to-claim chest reward. */
+  levelRewardClaimed?: number
+  /** True when a new level-up chest is waiting on the XP bar. */
+  levelUpChestReady?: boolean
   /** Portrait character id for profile / road markers */
   avatarId: string
   /** Daily donation remaining */
@@ -1052,17 +1056,51 @@ export function loadProfile(): PlayerProfile {
   const p = { ...DEFAULT_PROFILE, ...legacy, ...cur }
   if (p.peakTrophies < p.trophies) p.peakTrophies = p.trophies
   if (!p.avatarId || typeof p.avatarId !== 'string') p.avatarId = 'phil'
+  const synced = syncLevelUpChestFlag(p)
   const day = todayKey()
   if (p.donateDay !== day) {
     p.donateDay = day
     p.donateLeft = DONATE_LIMIT_DAY
-    saveProfile(p)
+    saveProfile(synced)
   }
-  return p
+  return synced
 }
 
 export function saveProfile(profile: PlayerProfile): void {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  const synced = syncLevelUpChestFlag(profile)
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(synced))
+  window.dispatchEvent(new Event('philroyale-profile-changed'))
+}
+
+function syncLevelUpChestFlag(p: PlayerProfile): PlayerProfile {
+  const lv = kingLevelFromXp(p.xp).level
+  const claimed = p.levelRewardClaimed ?? lv
+  if (lv > claimed) {
+    p.levelUpChestReady = true
+  }
+  if (p.levelRewardClaimed == null) p.levelRewardClaimed = lv
+  return p
+}
+
+/** Roll 25% each: common / rare / epic / legendary. */
+export function claimLevelUpChest(): { ok: boolean; message: string; chest?: ChestRarity } {
+  const p = loadProfile()
+  if (!p.levelUpChestReady) {
+    return { ok: false, message: 'No level-up chest ready.' }
+  }
+  const roll = Math.random()
+  const chest: ChestRarity =
+    roll < 0.25 ? 'legendary' : roll < 0.5 ? 'epic' : roll < 0.75 ? 'rare' : 'common'
+  const added = addChest(chest)
+  if (!added.ok) return added
+  p.levelRewardClaimed = kingLevelFromXp(p.xp).level
+  p.levelUpChestReady = false
+  saveProfile(p)
+  return {
+    ok: true,
+    message: `Level up! ${CHEST_META[chest].label} added to your chest queue.`,
+    chest,
+  }
 }
 
 function randIntInclusive(min: number, max: number): number {
@@ -2174,7 +2212,13 @@ function makeYouMember(role: ClubRole): ClubMember {
   }
 }
 
-export function createRichClub(name: string, description: string, badge: number): RichClub {
+export function createRichClub(
+  name: string,
+  description: string,
+  badge: number,
+  themeId = 0,
+  motto = '',
+): RichClub {
   // 6-char club codes (distinct from 8-char account codes).
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = ''
@@ -2195,6 +2239,8 @@ export function createRichClub(name: string, description: string, badge: number)
     description: description.trim() || 'A Phil Royale club. Donate, chat, war.',
     code,
     badge: Math.max(0, Math.min(11, badge)),
+    themeId: Math.max(0, Math.min(5, themeId)),
+    motto: motto.trim(),
     access: 'invite',
     minTrophies: 0,
     trophies,
@@ -2223,6 +2269,29 @@ export function createRichClub(name: string, description: string, badge: number)
     at: new Date().toISOString(),
     kind: 'join',
   })
+  saveRichClub(club)
+  return club
+}
+
+/** Join a live club by invite code — real members sync over the club channel (no bots). */
+export function updateRichClubCustomization(patch: {
+  description?: string
+  badge?: number
+  themeId?: number
+  motto?: string
+  minTrophies?: number
+  access?: 'open' | 'invite'
+}): RichClub | null {
+  const club = loadRichClub()
+  if (!club) return null
+  const you = club.members.find((m) => m.isYou)
+  if (!you || (you.role !== 'leader' && you.role !== 'coLeader')) return club
+  if (patch.description != null) club.description = patch.description.trim() || club.description
+  if (patch.motto != null) club.motto = patch.motto.trim()
+  if (patch.badge != null) club.badge = Math.max(0, Math.min(11, patch.badge))
+  if (patch.themeId != null) club.themeId = Math.max(0, Math.min(5, patch.themeId))
+  if (patch.minTrophies != null) club.minTrophies = Math.max(0, patch.minTrophies)
+  if (patch.access != null) club.access = patch.access
   saveRichClub(club)
   return club
 }
