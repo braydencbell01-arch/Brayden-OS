@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-24T07:16:35Z",
+  "syncedAt": "2026-08-24T07:42:08Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -608,13 +608,13 @@
       "conditionId": "1000"
     },
     {
-      "id": "VUWLFJKHDOIHTL3U3K3R36E7",
-      "itemId": "FFGES2GD3B3I4G3CTO2KT6JZ",
-      "sku": "ebay:800482159852",
+      "id": "4ITHA2IJWFHIS7W7YR63V4VO",
+      "itemId": "OBJQXY5755QIHPAJJAXVGNLE",
+      "sku": "ebay:800554792101",
       "title": "AC Milan 23/24 Pre-Match Jersey (Puma) · M",
       "price": 40,
       "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/ac-milan-23-24-pre-match-jersey-puma-m/FFGES2GD3B3I4G3CTO2KT6JZ",
+      "url": "https://jerseydealsofficial.square.site/product/ac-milan-23-24-pre-match-jersey-puma-m/OBJQXY5755QIHPAJJAXVGNLE",
       "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4d0AAeSwjXJpQyrJ/$_57.JPG?set_id=8800005007",
       "images": [
         "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4d0AAeSwjXJpQyrJ/$_57.JPG?set_id=8800005007",
@@ -637,8 +637,8 @@
       "source": "square",
       "category": "",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/3DLsrUBk",
-      "checkoutUrlDiscounted": "https://square.link/u/yHL4XJms",
+      "checkoutUrl": "https://square.link/u/7Sa9MKgd",
+      "checkoutUrlDiscounted": "https://square.link/u/Rd28BUBg",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2503,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-23T15:50:22Z"
+  "ebayDetailsSyncedAt": "2026-08-24T07:42:08Z"
 }
