@@ -2084,12 +2084,12 @@ export default function App() {
                 id="epl-sale-heading"
                 className="mt-5 font-display text-4xl font-bold uppercase leading-[0.95] tracking-wide text-white sm:text-5xl md:text-6xl"
               >
-                Top-flight kits.
+                Home, away, third, training and pre-match kits.
                 <br />
                 On sale now.
               </h2>
               <p className="mt-4 max-w-md font-brand text-sm leading-relaxed text-white/85 md:text-base">
-                Authentic Premier League jerseys at sale prices — shop the selection while stock lasts.
+                — shop the selection while stock lasts.
               </p>
               <motion.button
                 type="button"
