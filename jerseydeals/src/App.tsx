@@ -2109,7 +2109,7 @@ export default function App() {
         </section>
 
         {/* Editorial shop paths */}
-        <section id="shop" className="scroll-mt-44 bg-cream py-12 md:py-16">
+        <section id="shop" className="scroll-mt-44 bg-cream py-8 md:py-10">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div {...fadeUp(reduce)} className="max-w-2xl">
               <div className="brand-rule" aria-hidden />
@@ -2121,7 +2121,7 @@ export default function App() {
               </p>
             </motion.div>
 
-            <div className="mt-7 grid grid-cols-2 gap-2.5 sm:gap-3 md:gap-4">
+            <div className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 md:gap-4">
               {(
                 [
                   {
@@ -2196,18 +2196,17 @@ export default function App() {
         </section>
 
         {/* New drops */}
-        <section id="new-drops" className="cv-auto scroll-mt-44 bg-white py-14 md:py-20">
+        <section id="new-drops" className="cv-auto scroll-mt-44 bg-white py-8 md:py-10">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
             <motion.div
               {...fadeUp(reduce)}
-              className="flex flex-col gap-4 border-b border-navy/10 pb-6 md:flex-row md:items-end md:justify-between"
+              className="flex flex-col gap-3 border-b border-navy/10 pb-4 md:flex-row md:items-end md:justify-between"
             >
               <div>
-                <p className="eyebrow text-crimson">Just in</p>
-                <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
                   New drops
                 </h2>
-                <p className="mt-2 max-w-xl text-muted">Fresh arrivals</p>
+                <p className="mt-2 max-w-xl text-muted">New season. New shirts.</p>
               </div>
               <button
                 type="button"
@@ -2222,7 +2221,7 @@ export default function App() {
             </motion.div>
 
             {newDrops.length > 0 ? (
-              <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
+              <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
                 {newDrops.map((item, i) => (
                   <ProductLink
                     key={item.id}
