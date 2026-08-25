@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-25T07:29:58Z",
+  "syncedAt": "2026-08-25T07:42:24Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -14,18 +14,21 @@
       "price": 49.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/ac-milan-25-26-training-jersey-puma-m/5Z25E2DPSKA7DV7ZAWI55UCL",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/fad85e8321fa5b8fa5da101eb3d30897c2a50727/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/Ae8AAeSwbG9qc8ML/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/fad85e8321fa5b8fa5da101eb3d30897c2a50727/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/84483c6ed227ac64ad84758d55b3d8e7ce65b79b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/45e7afee49638cd53e393e73fb9bbbcd3bda0586/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/14de670daf5e59bab8d2ef413e52819a0945ed51/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7eced22af5fc66e2bf7790155415f5f761901873/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b3fb58d2ea7fa2f2d314bde249dbb2be1d895848/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/cb56c175e2ecf5cafdca8abd8320b1fc52368796/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7c31c4a82b49aaf06921e4e0d73e3fa049e0c2f1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/391e3aef04fc892b37a1b08309e244c11b165345/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/6d91c78d746473b11f41cb42525861f86cbb14ec/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/Ae8AAeSwbG9qc8ML/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/ODIAAeSwVktqc8ML/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/CUcAAeSwtD9qc8ML/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/paoAAeSwdkBqEcSS/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cyEAAeSwKuRqEcSY/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q0IAAeSwqZVqEcSU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/je4AAeSwz5hqEcSV/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DbwAAeSw-PRqEcST/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Cy0AAeSwd2xqEcSU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pscAAeSwyJ5qEcSW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7dQAAeSwZZBqEcSW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GK8AAeSwbvhqEcSX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aGYAAeSwCbZqEcSY/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -34,11 +37,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/BjbUosnN",
-      "checkoutUrlDiscounted": "https://square.link/u/Z50zQDhA"
+      "checkoutUrlDiscounted": "https://square.link/u/Z50zQDhA",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "NPGYT7TP5A4DA25PU5TQNYQI",
@@ -48,9 +52,21 @@
       "price": 49.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/inter-milan-23-24-home-jersey-nike-s/MESUKSIHUJYM6FHJIBSGKZ4Q",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/e8834b42812b1552f618a453462d4f6ba0d0256a/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAwMFg2NzI=/z/iHQAAeSwlktqc8XJ/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e8834b42812b1552f618a453462d4f6ba0d0256a/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAwMFg2NzI=/z/iHQAAeSwlktqc8XJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bvkAAeSwMDlqZSjh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WhYAAeSwkN9qZSjl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/VuAAAeSwhEBqZSpR/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2XkAAeSwQBhqZSpR/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qjsAAeSwwnxqZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8lgAAeSwAQ9qZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TB8AAeSwErFqZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7rsAAeSw6JVqZSji/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/yWsAAeSw8vVqZSjk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0QUAAeSwQBhqZSjk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/uqsAAeSwsehqZSjl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eykAAeSwZB9qZSjm/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Jerseys",
@@ -59,11 +75,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ttOwwmqC",
-      "checkoutUrlDiscounted": "https://square.link/u/ewyKlCET"
+      "checkoutUrlDiscounted": "https://square.link/u/ewyKlCET",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "PCRQSQ7AQOFTR2CKD3ZX4JR4",
@@ -73,9 +90,21 @@
       "price": 49.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/inter-milan-23-24-home-jersey-nike-youth-xl/LGLVQYXDNLPGWAZV63HOLV3D",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/c3a38ce89d524da3b6e9422260076ea181c8048e/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAwMFg2NzI=/z/29MAAeSwD-Bqc8Xs/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c3a38ce89d524da3b6e9422260076ea181c8048e/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAwMFg2NzI=/z/29MAAeSwD-Bqc8Xs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HaUAAeSwWEBqZWB-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~DoAAeSw-4NqZWCA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g2EAAeSwqmpqZWCC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/EgAAAeSwnQxqZWCC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Rz4AAeSw2OhqZWB~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/dzMAAeSwfZRqZWB~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/mu4AAeSwdbtqZWB~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GDcAAeSw0VtqZWB~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Dt0AAeSwU7xqZWCB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FBAAAeSw8vVqZWCB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/EhAAAeSwpwZqZWCB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XkEAAeSwOk1qZWCB/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -84,11 +113,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/iW5gIxep",
-      "checkoutUrlDiscounted": "https://square.link/u/nqGtSSk9"
+      "checkoutUrlDiscounted": "https://square.link/u/nqGtSSk9",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "5TQZU3FKRKF2HAZQIYA23ZCQ",
@@ -98,17 +128,20 @@
       "price": 49.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-city-25-26-pre-match-jersey-puma-l/ZUWTVQYMYMIC4RXTPUJDIYCJ",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/46d78f985191df668fbc095f069be48154535203/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/keYAAeSw6Xlqc8OD/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/46d78f985191df668fbc095f069be48154535203/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1c6df35e4747bce6163258a3fbc338875cc9dccb/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ccdd205ebfe98bdc6a189f74cded624064ac0b02/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/4338578224999363e26b1a4dba8a559e78fb3784/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/fb898f93945493ddc33c4f2d15916766bec53a55/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8123d014f650ca5ee7e404b3a0800788a70322a7/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/39d92d5bc24c9edf001a691395e262e2ad3ba8e3/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e22cab9f48b89f86e7ef5d3c39a4a896d4f597d9/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/15f977b62b6511cdec67c3733b7bb471fcd0b525/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/keYAAeSw6Xlqc8OD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/fVQAAeSwZB9qc8OD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/N6IAAeSwahlqc8OD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tBEAAeSwZLVqEdAs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aUoAAeSwANdqEdAw/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/KAwAAeSwf8FqEdAu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zCoAAeSwKuRqEdAu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fMAAAeSweUpqEdAu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UPEAAeSwtmpqEdAu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kjcAAeSwAllqEdAv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TtAAAeSwEoBqEdAw/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YhIAAeSw16pqEdAw/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -117,11 +150,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/IeSsVEvQ",
-      "checkoutUrlDiscounted": "https://square.link/u/FsqOg9ra"
+      "checkoutUrlDiscounted": "https://square.link/u/FsqOg9ra",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -131,16 +165,19 @@
       "price": 49.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-united-23-24-training-jersey-adidas-s/423SKBUUFE7GNCVVNZLLM4TL",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/be1a2051eaa76c3ee652bd7f299b6d3ba01e100b/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/b5YAAeSwPGtqc79U/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/be1a2051eaa76c3ee652bd7f299b6d3ba01e100b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/cbcb5e7ca44751ccf1068ef3d104d7b461d875ac/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3f3243d372f0c1c981bed37187a6bd7e43508eeb/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/79ea537db281c8ebb8991a183adc74c5582f040e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/69587bd0b13eb46571ed114ed53f2493ccbf2fd5/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/78bdd8ea0c7a3495b7bba6ed058e1cee2872d891/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/87ee02015ff4e62129f19ab3d13bee86823e8a7c/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/64a663ec12d91f11e9e3899074f83360afd0eea9/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/b5YAAeSwPGtqc79U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/issAAeSw-4Nqc79U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/Ov4AAeSwKs5qc79U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/brYAAeSweRNpQeh5/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hmAAAeSws8ZpQeiu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eFEAAeSwJmFpQeh-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-MYAAeSwcxppQeiD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d~4AAeSwlJ9pQeiF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cY4AAeSwrMdpQeiJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d4UAAeSwvBtpQeiP/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tMMAAeSwTGppQeiX/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -149,11 +186,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/HXKYa0Dr",
-      "checkoutUrlDiscounted": "https://square.link/u/vn8q2ZVK"
+      "checkoutUrlDiscounted": "https://square.link/u/vn8q2ZVK",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "HF5D4QEYD2CSREEN75LHME7Y",
@@ -163,24 +201,24 @@
       "price": 49.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/tottenham-hotspur-24-25-home-jersey-nike-youth-xl/AHXYNZF2JKQ35R6VIZHVFZIB",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/6d12ba6601468d9d83deddc44ecebc23c97f5fdb/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eWEAAeSwHjNqc7tH/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/6d12ba6601468d9d83deddc44ecebc23c97f5fdb/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/51907080979c778fd7c5f0d258807c83a7304f0e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/84de9df1d62d2e6e72eee5f2139cc3095b723500/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9626752774a4677f33cc48ea87b96225a2fdf0be/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/4db293553195c4fad7bd99b3fcba88a2621928f6/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/79dc65045568c97117c6ed336fe3582fd22e20bd/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/882e55ae68ee6f04c3c422ef74341b7c6dc07763/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9afaebb2e6331b2ba1c13044562bd3b16ad023e3/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/58d2df9c46c22a11fb968d60d88ba7f33d6efcad/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a8cbb48030c4272ebb2d7abc7aded72d01b8206a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9f701f7e12110c19df3fee3e7298c74f5424def0/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9f5a4c9f6afb604641e5ca919ef2e941776175db/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ba3cd857a1d651bb24184fa97465563d64c67394/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/cd681ce848fde9aec27515336bc8f1b6a1862b01/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7f6032264e9011177ac639cb32c63d976c110dc2/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5655a471abaa0752badfbec33c8f1095d3a26d6c/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eWEAAeSwHjNqc7tH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6BoAAeSwpx9qc7tH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jD8AAeSwBGxqc7tH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E6oAAeSwgm9qZSwE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/V4sAAeSwygVqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZYUAAeSwwvJqZSwI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q-wAAeSweXxqZSwI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AOUAAeSwOKhqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ao8AAeSwapBqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/P6gAAeSwlOZqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/djEAAeSwOPZqZSwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZCQAAeSwf4JqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LuoAAeSwPFVqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2RAAAeSwpwZqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NwkAAeSwIoZqZSwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kncAAeSw371qZSwI/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -189,11 +227,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/dwTWs1LD",
-      "checkoutUrlDiscounted": "https://square.link/u/F8D7Zh26"
+      "checkoutUrlDiscounted": "https://square.link/u/F8D7Zh26",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "MXVXOENXOALOOAT44NW5IR32",
@@ -203,16 +242,19 @@
       "price": 47.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/paris-saint-germain-23-24-pre-match-jersey-nike-youth-xl/YVMFPPDX6N3EFXYN3CITMVFG",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/6b94ff2b747a3e598d0c0831fcb92859ccead6e6/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/i44AAeSw9h1qc8BM/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/6b94ff2b747a3e598d0c0831fcb92859ccead6e6/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/dbb8c311efab2862463b0c601d38fb3b8884511a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c387c79b55d8a9e3b2f6418ce05b6ee177f16d5d/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1c7e20e5cbbc501a73cf24cf34a4198a64625c56/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/6965e12956fc6f722a9c80f77caf607f072676d8/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b7d1d6cbdda7b17f925c922f167f2b5bad599c7d/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/93937808957f055f6c13d6546a09d0338beb1228/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3c1911964060946953c9285feef6f39564e9679e/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/i44AAeSw9h1qc8BM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/gdAAAeSwdhFqc8BM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/6VEAAeSwDDdqc8BM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NvwAAeSwlFppQyd-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/IAAAAeSwhftpQyfc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/O1UAAeSwjFppQyeB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2NAAAeSw~iZpQyeF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C8gAAeSwDyppQyeI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-NAAAeSwm~NpQyeO/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/EHcAAeSweTlpQyeZ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Tg4AAeSw4VlpQye-/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -221,11 +263,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/zKAPwbHN",
-      "checkoutUrlDiscounted": "https://square.link/u/yMl6Fc6F"
+      "checkoutUrlDiscounted": "https://square.link/u/yMl6Fc6F",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "F2D2CZHZSJV52P4ANCZ3O4F4",
@@ -235,17 +278,20 @@
       "price": 46.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-city-25-26-pre-match-jersey-puma-s/OZPTLBOYRTJ5Q5DIMC3ROCS4",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/b339eb4f94b676bcc2c813f07bbe3f883d2d6dc7/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/sHAAAeSwnQxqc8NH/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b339eb4f94b676bcc2c813f07bbe3f883d2d6dc7/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a833b4103bcc131815d07af6d4f418e3da8d5ff5/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1dffe9e83892c5c1f6d1339b1060f14103f6379f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7bd427379c3961eb48f927293167461d2d6bfe3b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ff0a528dd8163279890d537ba2dca9d4eeaec00e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/26fb0504088b2e2da033cfec724119646b5be4b5/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ebb8f7289d86f502ca510db5720175f421305ec0/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/58eec7f5cf5b3b988176e427bd1597845cb10c13/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/71c3508ec5b69eb9a37ff6a254ec5b09e0649031/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/sHAAAeSwnQxqc8NH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/AQwAAeSwIX5qc8NH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/KhQAAeSwRT1qc8NH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4GsAAeSwN8dqEcby/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LCYAAeSwbvhqEcb6/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9xYAAeSwyWlqEcbz/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1XwAAeSwSeRqEcb0/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LMkAAeSwICVqEcb3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jgEAAeSwm5BqEcb1/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/K7sAAeSwPKtqEcb4/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1IcAAeSwpB1qEcb4/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UqQAAeSw12VqEcb5/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -254,11 +300,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/jJH6CcdF",
-      "checkoutUrlDiscounted": "https://square.link/u/5Tx3vuP8"
+      "checkoutUrlDiscounted": "https://square.link/u/5Tx3vuP8",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "U6N3EI2MXKOTR5ASQSFWGW2U",
@@ -268,17 +315,20 @@
       "price": 46.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-city-25-26-training-jersey-puma-l/UBR6QUCA7LP5WAY476FB43J7",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/8c23fc4e7553cbb2df9c4a736df1d30180916b6e/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/zIcAAeSwf79qc8PD/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8c23fc4e7553cbb2df9c4a736df1d30180916b6e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/bbba9f7995a2f478f37a9e1112d2237f09a0459f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b8c45a28f3b9feed5c48437935d170a6ad315e0f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5b62ed0481881b461ca8100356ce0a131e52f208/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b0759c2cc04d9f5351d137829e5085c160d5f570/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2164d322bfec383d657f51d2e78a67097de878ec/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c7cb54e240b6fe292400ad3be3d57ec428c5c261/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7398c8082c2e6ae464352a11fc284c931fff4ba7/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e1fee09f20269c6bd95a36773c5e7484f6ff664f/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/zIcAAeSwf79qc8PD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/ligAAeSwydZqc8PD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/qysAAeSwjYdqc8PZ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d60AAeSwmT1qEdNo/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9-MAAeSw77xqEdNs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/za0AAeSwu-dqEdNq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lpMAAeSweUpqEdNq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5W8AAeSwCVRqEdNq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bEYAAeSwKzJqEdNq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Aa4AAeSw-7BqEdNr/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kAAAAeSw1URqEdNs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WWwAAeSwhPFqEdNs/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -291,7 +341,8 @@
       "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/gOt4R6CN",
-      "checkoutUrlDiscounted": "https://square.link/u/98fppkSJ"
+      "checkoutUrlDiscounted": "https://square.link/u/98fppkSJ",
+      "conditionId": "1000"
     },
     {
       "id": "MCEIHY77J3ER5UHJJGLCSLYN",
@@ -301,17 +352,20 @@
       "price": 44.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/borussia-dortmund-25-26-pre-match-jersey-puma-l/NLP3C7KACU2IIIRIEL4DUZUD",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/d8ff1a7a0b862cc91a8ca26116834fd3fb6acd8e/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/a8oAAeSwKzZqc8Kk/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d8ff1a7a0b862cc91a8ca26116834fd3fb6acd8e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5f03efce9d8eef11a98dda89bcd6940c7193f6ae/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8848f2235b4d3e4bb0deef17d4ca6f3cdc12483a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f794cf4a37fcf2953ceeb4cb57ffbae7877d9931/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7ade26ada3255259c645ef7817c8fcfc4bf7fd79/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ea953ef776a715db859caf4373f708999355a3a1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3c4d162da750b60ba33b9f0bbb1b5f34416d9d3e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/25f687a9b5a51e0f625f5a9d295e7d043c89dc40/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/cf4970955d3f8052e434f25eec271c0d77390334/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/a8oAAeSwKzZqc8Kk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/usEAAeSwoi5qc8Kk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/U-wAAeSw5eRqc8Kk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DusAAeSwKDVqEb9o/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lWoAAeSwGqFqEb9q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vQQAAeSwY5xqEb9p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/RecAAeSwI49qEb9p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jHYAAeSw-dNqEb9p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/dt0AAeSwoslqEb9p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9g4AAeSweUpqEb9p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/R6QAAeSws11qEb9q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vQoAAeSwY5xqEb9q/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -320,11 +374,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/2n4lqIi2",
-      "checkoutUrlDiscounted": "https://square.link/u/riJwaBai"
+      "checkoutUrlDiscounted": "https://square.link/u/riJwaBai",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "KRHP6YJO5KRMODFKNAYBKK6S",
@@ -334,17 +389,20 @@
       "price": 44.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/borussia-dortmund-25-26-pre-match-jersey-puma-s/D2UU2DA3XDMHDSHEHQFFP2D3",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/3bdaaa46d92d638ba0a3b389527aa4077886bba1/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/z~sAAeSw~Lpqc8LI/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3bdaaa46d92d638ba0a3b389527aa4077886bba1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/53e2d4897cf96e5d25c1d5a4d2ab67d330c3d8ce/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7f16e6e37a1d4608ec7a0033e8fdd2fe72993460/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/60e4d844ce807382239b2b85c7e0b2296d1bb40f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a79bad0095056f9e79fe21094ad7f1ed75206b83/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7c47e99c53700bb5b06efb19ed2c6510c26ab736/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ae9543a13c8957a68604803308dbbf27a5b89c99/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e75e62dece1048499db7ca70ad8f3880c3d26f57/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/efcb92eecad7c57d146278483ea77207aa9fee98/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/z~sAAeSw~Lpqc8LI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/iQsAAeSw-ABqc8LI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/nboAAeSwMndqc8LI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lEEAAeSweJZqEcFC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/J-8AAeSwwelqEcFF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PnoAAeSwwilqEcFD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WyAAAeSwEJpqEcFE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DQEAAeSwvPRqEcFD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Ee8AAeSwPN5qEcFE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qg0AAeSwpB1qEcFE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DUYAAeSweBdqEcFF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MMcAAeSwa5xqEcFF/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -353,11 +411,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/UC5VK1Eg",
-      "checkoutUrlDiscounted": "https://square.link/u/DnXiQ4j6"
+      "checkoutUrlDiscounted": "https://square.link/u/DnXiQ4j6",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "HELNG4NELK57GRBIGQUMIFKZ",
@@ -367,17 +426,20 @@
       "price": 44.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-city-23-24-pre-match-jersey-puma-m/DJ3DNTNYKI4YJMCNPUMKG6MX",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/18f26a057cc84d0f480a9dc18a4ae049524a367f/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/feMAAeSwo4Nqc74G/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/18f26a057cc84d0f480a9dc18a4ae049524a367f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3f4d06a3dae34cc97877d951de8a17b9ed7ab7e4/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e7e366d725b062aa5a4c8c26dd10c96742f40ef3/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/25dadba0a290c4dcac906cd6abb981e1d2368662/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/008004fc0b18cbd068760e8cf44616da683d4a9b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/52f17aafbeb0ae2e1b3b9230f7e818391ed114ea/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5d64d839971fbd49c0503f15f75ac88961cfc474/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/00b8febf0054af561c7ba807821009d406ecad50/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/49f6a332875be815160280f72ae246969845b5e3/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/feMAAeSwo4Nqc74G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3SgAAeSwMttqc74H/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1wMAAeSwfRBqc74G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/400AAeSwrmRp-o1e/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/uHwAAeSwFU1p-o2V/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7XAAAeSwto1p-o1n/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lzIAAeSwm5Bp-o1q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/sPAAAeSw-Bhp-o1s/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SW4AAeSwBb1p-o1v/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pccAAeSwDgxp-o13/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tpUAAeSwS-xp-o1-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cmMAAeSwo41p-o2e/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -386,23 +448,30 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/cN7wbRzO",
-      "checkoutUrlDiscounted": "https://square.link/u/11TEkU5a"
+      "checkoutUrlDiscounted": "https://square.link/u/11TEkU5a",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "QCCF2TEC7CWZKOBANLF2GSDU",
       "itemId": "KNSK5LGPRL5TOLESTEEFWAIB",
-      "sku": "ebay:389366033549",
+      "sku": "ebay:800559721022",
       "title": "Paris Saint-Germain 22/23 Pre-Match Jersey (Nike) · L",
       "price": 44.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/paris-saint-germain-22-23-pre-match-jersey-nike-l/KNSK5LGPRL5TOLESTEEFWAIB",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/e63a4e7541939a1d3e8cbf4a5967b0c4400a5a7a/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/M7EAAeSwwuJpPNVE/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e63a4e7541939a1d3e8cbf4a5967b0c4400a5a7a/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/M7EAAeSwwuJpPNVE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UjQAAeSwm~NpPNVL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/M10AAeSwOjZpPNVJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kFEAAeSwHGJpPNVK/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pbkAAeSwNu5pPNVH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7acAAeSwogdpPNVK/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PFkAAeSwDu9pPNVK/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -415,7 +484,8 @@
       "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/OPp39ogO",
-      "checkoutUrlDiscounted": "https://square.link/u/aYF0Do3k"
+      "checkoutUrlDiscounted": "https://square.link/u/aYF0Do3k",
+      "conditionId": "1000"
     },
     {
       "id": "TVAE6QTZ6YQL7326JAIX2I7C",
@@ -425,9 +495,24 @@
       "price": 44.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/paris-saint-germain-23-24-away-jersey-nike-youth-xl/K2MVDBOYRK7AH5HTPLYYU6VT",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/0d88469507ce9e328b20edd9f438c5bc9e312432/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/ODAwWDgwMA==/z/vwcAAeSwh~xqc8aH/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0d88469507ce9e328b20edd9f438c5bc9e312432/original.jpeg"
+        "https://i.ebayimg.com/00/s/ODAwWDgwMA==/z/vwcAAeSwh~xqc8aH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/ODAwWDgwMA==/z/6qQAAeSwBGxqc8aH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/L8wAAeSwfRBqZS2g/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8SgAAeSwSApqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hzEAAeSw0ZZqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UhsAAeSwZl5qZS2k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lgIAAeSwaTJqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TScAAeSweXxqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/f68AAeSwycZqZS2h/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bjsAAeSwYlpqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FnwAAeSwjYdqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/afcAAeSwW0ZqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zb0AAeSw1uFqZS2i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/dT0AAeSwo9lqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZlUAAeSwMndqZS2j/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gS0AAeSw0ttqZS2j/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -436,11 +521,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yHZesRZ9",
-      "checkoutUrlDiscounted": "https://square.link/u/6orjWQYi"
+      "checkoutUrlDiscounted": "https://square.link/u/6orjWQYi",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "7J6DO636MD5CSSILRBUXTMQB",
@@ -450,18 +536,21 @@
       "price": 42.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-city-23-24-training-jersey-puma-l/XQENLPF2YKZMKNCX2UZICT3C",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/4a63dbc3b010535fe2fa9babc78fd0667057d4fd/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/OTAwWDkwMA==/z/~o4AAeSwpx9qc71x/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/4a63dbc3b010535fe2fa9babc78fd0667057d4fd/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/721ac0f0c148b08f0d566b64aa5dc2fae855890d/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/08efe29996a5d905836243cbe8a2fc0e8d1f9c8e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/142c15453d1cef4ad5c91a64177c45bc8c09dccf/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c5ea8b78765e54b9d013b8070a3c0fd98a57e866/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/623e91deae12de09e92fef762106bf4bbe3e00ef/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/912d79b05d5c97f3d0913bf53254d0387b7d4383/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/91177e7669a1bc9eb9455731d7911ad9e7d9979c/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7049d40f7151f312c65d6a935093e5798d79033f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/71ffec64526c3e955319f91af949c0594baac78c/original.jpeg"
+        "https://i.ebayimg.com/00/s/OTAwWDkwMA==/z/~o4AAeSwpx9qc71x/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/OTAwWDkwMA==/z/zO8AAeSw8EFqc71y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/OTAwWDkwMA==/z/g0MAAeSwB-dqc71x/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Y7wAAeSw7slpY~8a/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eY0AAeSwuutpY~-H/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-WsAAeSwB~VpY~8h/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CzwAAeSwWBRpY~8l/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ohsAAeSw5ttpY~8o/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8D0AAeSwpMhpY~8s/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vNQAAeSwvrRpY~80/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d~0AAeSw5UxpY~8-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/nwQAAeSwZbFpY~9L/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eHsAAeSwQWtpY~9f/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -470,11 +559,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/1tEGS1UH",
-      "checkoutUrlDiscounted": "https://square.link/u/TmBmtEjn"
+      "checkoutUrlDiscounted": "https://square.link/u/TmBmtEjn",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "XS7BTRL6MGQUPHSRU3ZEP3IN",
@@ -484,9 +574,24 @@
       "price": 42.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/newcastle-united-24-25-home-jersey-adidas-youth-l/WA7QDAZ2WFEUGXFGZMSXB6SB",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/554e51279eedfba1902db753b2b1bd9d7bcf568c/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/ODAwWDgwMA==/z/zXIAAeSwB-dqc8bk/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/554e51279eedfba1902db753b2b1bd9d7bcf568c/original.jpeg"
+        "https://i.ebayimg.com/00/s/ODAwWDgwMA==/z/zXIAAeSwB-dqc8bk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/ODAwWDgwMA==/z/a6MAAeSwzM5qc8bk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/RTkAAeSw2OBqZV5w/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/h~cAAeSwNRxqZV5z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AvMAAeSw86VqZV50/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zEUAAeSwhQNqZV50/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/I2oAAeSwiBtqZV5y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FFwAAeSwHjVqZV5y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7Q0AAeSwFdNqZV5y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LB4AAeSwdhFqZV5y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/y54AAeSwRXVqZV5z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kgIAAeSw24RqZV5z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gXYAAeSwY89qZV5z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QSYAAeSwtxVqZV5z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/b7MAAeSweXxqZV5z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jNAAAeSwdbtqZV50/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -495,11 +600,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/JqxujS6q",
-      "checkoutUrlDiscounted": "https://square.link/u/tFmNrYGQ"
+      "checkoutUrlDiscounted": "https://square.link/u/tFmNrYGQ",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "4ITHA2IJWFHIS7W7YR63V4VO",
@@ -509,9 +615,19 @@
       "price": 40,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/ac-milan-23-24-pre-match-jersey-puma-m/OBJQXY5755QIHPAJJAXVGNLE",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/35ec2c094e88e78c9ef7dbb03e88bf3e844fe35e/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4d0AAeSwjXJpQyrJ/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/35ec2c094e88e78c9ef7dbb03e88bf3e844fe35e/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4d0AAeSwjXJpQyrJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7aQAAeSwXAlpQyrV/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UpYAAeSwSIRpQyrM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-JkAAeSwNDtpQyrM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/IuQAAeSwKxdpQyrM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qzsAAeSwnv1pQyrL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/46AAAeSws8ZpQyrT/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/xN8AAeSwgcVpQyrV/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kfAAAeSwv3JpQyrU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NYIAAeSwBCxpQyrV/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zYsAAeSwQIRpQyzK/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -520,11 +636,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/7Sa9MKgd",
-      "checkoutUrlDiscounted": "https://square.link/u/Rd28BUBg"
+      "checkoutUrlDiscounted": "https://square.link/u/Rd28BUBg",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "4LP56ZKILA3QF5HHTTZFRACA",
@@ -534,9 +651,16 @@
       "price": 39.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/juventus-24-25-pre-match-jersey-adidas-xl/2FCNBETUYBPEHUSCOWCICP4E",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/59d4e4c92406be65450fb810c382f320cfad7922/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UgoAAeSwtqtqf0CL/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/59d4e4c92406be65450fb810c382f320cfad7922/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UgoAAeSwtqtqf0CL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E14AAeSwG5pqf0CN/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/VYcAAeSwsJVqf0CM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aSoAAeSwtixqf0CM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TdQAAeSwYtBqf0CM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aRQAAeSwd8Vqf0CM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FpAAAeSwA6tqf0CN/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/R~YAAeSw2L1qf0CN/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -545,11 +669,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/bbe6qdZZ",
-      "checkoutUrlDiscounted": "https://square.link/u/wYzG2ygT"
+      "checkoutUrlDiscounted": "https://square.link/u/wYzG2ygT",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "NNVRQNJQSHXIRQC5GCJB4ES4",
@@ -559,17 +684,20 @@
       "price": 39.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/liverpool-23-24-training-jersey-nike-m/AI7MS2BI5EIGYGWYMCAHVF3Z",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f542c5ad238d371abc99f76d7006da1bee6cde75/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/P1sAAeSwAbdqc7wX/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f542c5ad238d371abc99f76d7006da1bee6cde75/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/87a4ed9a37ef9451d944f955ef07942350094285/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/78c140479212a17110ced762638866f158e143bd/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d87681004a1ed27ed2467c48fb7b9cac677aab43/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f90512f7525bdf398dc44fd804beaece9f722a56/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/57bd67b8de1e60ecdcaffe5e9293f34f551c65c3/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/24d4b70cd3ef5bfe8276c17c98545cba29a9e397/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8f9beb662e9c6a823d8bff1f5413a61418b335fb/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2c4bf377986ab1ac8a5e8df9d2fd3d141103696f/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/P1sAAeSwAbdqc7wX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/3qAAAeSwIoZqc7wX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/W-UAAeSwErFqc7wX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/sSAAAeSwS-xp-ox1/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4SMAAeSwzmBp-oyn/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WqQAAeSwtK1p-ox7/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZokAAeSwDeVp-ox~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/oQIAAeSwDgxp-oyB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QlsAAeSwEPFp-oyE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cOIAAeSw3uFp-oyJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lTsAAeSwxGJp-oyU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/xBwAAeSwU0pp-oy0/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -578,11 +706,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ElmhWmhx",
-      "checkoutUrlDiscounted": "https://square.link/u/s4Wnhdrq"
+      "checkoutUrlDiscounted": "https://square.link/u/s4Wnhdrq",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "SGQ7YT6PMDHO63KLDU6E637Y",
@@ -592,9 +721,23 @@
       "price": 39.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-united-24-25-third-jersey-adidas-youth-xl/5UJTISW5ZU3VENBDVTJWBJRO",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/aafe34fa927d40fc6790280fcda56f7993781f3d/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTQ0MFgxNDQw/z/~Y8AAeSwBFtqc8ms/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/aafe34fa927d40fc6790280fcda56f7993781f3d/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTQ0MFgxNDQw/z/~Y8AAeSwBFtqc8ms/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HagAAeSw529qZWLC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/viEAAeSwlcJqZWLF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/H6gAAeSwPAZqZWLG/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~oAAAeSwTy5qZWLG/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ttUAAeSw7EhqZWLD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/o0cAAeSwws5qZWLD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Sh8AAeSwdhFqZWLD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZpgAAeSw8KJqZWLE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wjsAAeSwRydqZWLE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XtAAAeSwRo9qZWLE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eEsAAeSwT55qZWLE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vAAAAeSwB-dqZWLF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/IuAAAeSwYG9qZWLF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qWsAAeSwvw1qZWLF/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -603,11 +746,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/D9gQgFvd",
-      "checkoutUrlDiscounted": "https://square.link/u/3OPbhF89"
+      "checkoutUrlDiscounted": "https://square.link/u/3OPbhF89",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "4536BCCPRWZHQSXIC2Z4HAMX",
@@ -617,16 +761,18 @@
       "price": 34.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/tottenham-hotspur-22-23-training-jersey-nike-s/E5E46BOX5Z5YC33IAF4GZI2D",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/a81b855b89dace7882229eb932729251b9ce3fd5/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/NzAwWDcwMA==/z/2-kAAeSwUKRqc7se/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a81b855b89dace7882229eb932729251b9ce3fd5/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b8272ca837517127d25d9071a26a0856850b9bbe/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/6ef24350cd9bf5eebc3ebb4d9e5a01e4f79e7efb/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d5b9d7143cb8e62efc0dd85f83268326c106b70a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1e2052ebd44fd5eba8fdb508804b16f17d1fac4f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9fb8f15a812c7bfa9134034d4d5966834648310f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d06cd717a1ba839a94c97f1d5149ca3251068b31/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e06e29952207181b00143260031b84b0b5f04b73/original.jpeg"
+        "https://i.ebayimg.com/00/s/NzAwWDcwMA==/z/2-kAAeSwUKRqc7se/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTE3NVgxMTc5/z/IdEAAeSwNRxqc7zH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/O84AAeSwD11pPX4Q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/prwAAeSw9hlpPX5u/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZrEAAeSw4BNpPX4U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q50AAeSwZyppPX4X/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4kAAAeSwbc5pPX4Y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vYYAAeSwZjppPX4e/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/H0EAAeSweiBpPX40/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HW0AAeSws8ZpPX5T/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -639,7 +785,8 @@
       "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/LioYy6ME",
-      "checkoutUrlDiscounted": "https://square.link/u/N5hWNfD8"
+      "checkoutUrlDiscounted": "https://square.link/u/N5hWNfD8",
+      "conditionId": "1000"
     },
     {
       "id": "Z3DE6BQ55K4EBWVLD3JZY6JP",
@@ -649,16 +796,19 @@
       "price": 34.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/tottenham-hotspur-23-24-strike-top-nike-youth-l/A52ARHAZ6DFRB3IEGELRU3AZ",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/ae64d72e44257c190a913d2e3fb7489eccde1d90/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/074AAeSwfwRqc7ut/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ae64d72e44257c190a913d2e3fb7489eccde1d90/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1e61f509e7b0e11830619c0f46d4b6a8ce53dd97/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/377213ac74b2476ff523a30642940fa4dc98a276/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5e154e394d4aec355346eb0ed91d160946927a46/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f205659c16c1c0b3eeda632cff8e33178e1c8239/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8f76ff15ede9b700c5d62d7325a265f42267468b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1b42d310bd202673a2ba64de628f36b0615e728a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3c6206854649046ed7d4fd5e5d2533d207360a55/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/074AAeSwfwRqc7ut/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/d2kAAeSwVDJqc7ut/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/Z5MAAeSwlcJqc7ut/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rQcAAeSw4VlpPNna/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HwgAAeSwm5xpPNnl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/JbwAAeSwVbFpPNnk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0HIAAeSwTYBpPNnh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NXEAAeSwlfxpPNnk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Nr8AAeSwlhJpPNnj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~aYAAeSw4lZpPNnj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zpYAAeSwPHFpPNnl/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -667,11 +817,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/eonL5G05",
-      "checkoutUrlDiscounted": "https://square.link/u/hSZZyx9V"
+      "checkoutUrlDiscounted": "https://square.link/u/hSZZyx9V",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "5ZMO6NV7TPNCYMUREA6QBZCH",
@@ -681,18 +832,21 @@
       "price": 32.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/germany-22-23-home-jersey-adidas-youth-xl/CRPQ6OS5FV6RHBJTZ54C6XHO",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/facf1dab7844c8920a1145a974f0dce0e02c1d37/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/XLcAAeSwe41qc8Qc/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/facf1dab7844c8920a1145a974f0dce0e02c1d37/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9786a5fa745e5faca7ddcacaebf41db7b844d261/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0ce5dbf655332aaf96fde79bde1f87658037efce/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9165d06d66ea30250f0ca5302e8d2c6c86b09d54/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/32bc806e72cdb66afd29bcf10204f5556f8be7fa/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5eb9f6cc887cfdfc912df1b7f749ceafe5be2179/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9a50f8711ec999c42688b600a8f466dd1682f992/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/20985a02746a6f84e828668445598273f9bf4c78/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e697c802aa4b4ce28866d160ab7d6164b4c5e1d7/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/eb64294f8a874c2833c084821d885f098e49da94/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/XLcAAeSwe41qc8Qc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/XGQAAeSwf4Jqc8Qc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/LdAAAeSw2Vhqc8Qc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hu8AAeSwPMtpQySY/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5~YAAeSw~JppQySf/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fgUAAeSwjP1pQySd/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jsMAAeSwNFxpQySe/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SpgAAeSw4QFpQySa/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MK4AAeSwr-VpQySd/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/dqMAAeSw5-ZpQySe/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/r44AAeSw8~VpQySe/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kCAAAeSwmnZpQySf/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/z6EAAeSwZDdpQySf/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -701,11 +855,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "WORLD CUP SALE. Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/3wlOLNMx",
-      "checkoutUrlDiscounted": "https://square.link/u/4Sj4d8mC"
+      "checkoutUrlDiscounted": "https://square.link/u/4Sj4d8mC",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "ZPVVMODVRJMOICVJBS5DS4WU",
@@ -715,16 +870,19 @@
       "price": 32.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/real-madrid-16-17-training-jersey-adidas-youth-xl/4NT3VHQTA66R54HFBO2AH5HH",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/0c91f8d9c1f4094eb49fbba2f006eb93a3f546b2/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/sIQAAeSw8vVqc8Jf/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0c91f8d9c1f4094eb49fbba2f006eb93a3f546b2/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c2f60d9687499fffc9f803d686edaaec3f2987de/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/11b7741179664a65a2ec4efd7f6c608c8598e1ce/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/618cc164fe8ef17e47220a88af9643ce6f6ba461/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/74a33eba62dcfcecf09298e4cea68c2db1e06e95/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e79f98da8b584ec0a82483f155b2d386d9c670c4/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2c143638acc40a6693d190d049f5b48df0c8d92f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ee0a269f28228384bbdc028b258f18876ce5b77d/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/sIQAAeSw8vVqc8Jf/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/qxMAAeSwnQxqc8Jf/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTAxOFgxMDE4/z/o3YAAeSwObdqc8Je/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5ukAAeSwi69p-7kf/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g7IAAeSw6SNp-7kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8ZMAAeSwtZBp-7kg/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Kp4AAeSwu-dp-7kh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~xYAAeSwisJp-7ki/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aCEAAeSwevZp-7ki/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pcMAAeSwKE5p-7kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/j38AAeSwDPJp-7kj/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -733,11 +891,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/NiYzTeE6",
-      "checkoutUrlDiscounted": "https://square.link/u/5OloRg3q"
+      "checkoutUrlDiscounted": "https://square.link/u/5OloRg3q",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "FR54IBYAVCWIP56CCWHA6BXC",
@@ -747,9 +906,15 @@
       "price": 32,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/ajax-kit/HN6GZV42DKFKGCGNG3C6YF4H",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/90f4f51a244363a452211aea43a89fd88ecc6f5f/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/90f4f51a244363a452211aea43a89fd88ecc6f5f/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-SkAAeSwWEBqWlYi/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9EoAAeSwAzZqWlYl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OO0AAeSwDCFqWlYk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SckAAeSwlcJqWlYk/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hEoAAeSwNKlqWlYl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5vUAAeSwyWFqWlYm/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3rwAAeSwsIxqWlYm/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Jerseys",
@@ -758,11 +923,12 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Scarf is new and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/f22OKSsN",
-      "checkoutUrlDiscounted": "https://square.link/u/Zh4RNr88"
+      "checkoutUrlDiscounted": "https://square.link/u/Zh4RNr88",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "F5DEPH7PNZQPAO4J5U7TTMOU",
@@ -772,17 +938,17 @@
       "price": 29.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/chelsea-16-17-home-jersey-adidas-youth-l/3OQZ6ETJMRZRSOEVDJYL7QTW",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/ca75b1db14d7d7b4ea2f0c032ca9c159fda28547/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-9UAAeSwUXxqW9mY/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ca75b1db14d7d7b4ea2f0c032ca9c159fda28547/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0da3be1e87b7bd518d2c7f0020d13307044c7465/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/15a89b5909eb0a78f1317080db111758267fd5b1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9f5c7c68fadbd6959bb8ff4b032a16c9d384dc6f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2337fc47d94046d19d5adb8f353ec4c154185fee/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/4034a8a3c3cdd23750d5a16214613a58c2470b82/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/cb5af9dd722fb506c76b3b9fc161e5dbfd6378a7/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7709e68a7176613e0399daa515630eabb5012d0f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c2541c16b1f18870db9e4e335590d6da6568810b/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-9UAAeSwUXxqW9mY/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QG8AAeSw7EhqW9me/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~-AAAeSw8fBqW9ma/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OAkAAeSwBEtqW9mb/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6p0AAeSwIoZqW9mc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/RpoAAeSwRRNqW9mb/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zUIAAeSw6QhqW9mc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/acsAAeSw3QFqW9md/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/N-8AAeSwW0ZqW9me/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -791,11 +957,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in great condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/a7FEvLYN",
-      "checkoutUrlDiscounted": "https://square.link/u/r2mgPDkx"
+      "checkoutUrlDiscounted": "https://square.link/u/r2mgPDkx",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "G44CV27QG5UMAN3VPZPQSC3R",
@@ -805,9 +972,15 @@
       "price": 25.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/fc-barcelona-crest-t-shirt-xl/VW5IKZJZ22MOYDBLGJLUAOOU",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/8aea91615247ecd35da0aefc00d659926d9c8e44/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PJcAAeSwjWhqf0Tb/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8aea91615247ecd35da0aefc00d659926d9c8e44/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PJcAAeSwjWhqf0Tb/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MgoAAeSwT0pqf0Tj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LI8AAeSwJvdqf0Tc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GlMAAeSwBCJqf0Td/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MakAAeSwgYVqf0Tc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gSgAAeSwIVVqf0Tc/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NokAAeSwt99qf0Td/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -816,11 +989,12 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/Yua7LHLn",
-      "checkoutUrlDiscounted": "https://square.link/u/BSIOIufy"
+      "checkoutUrlDiscounted": "https://square.link/u/BSIOIufy",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "WSZKEVL3YZH5CD73UCGFDP7K",
@@ -830,20 +1004,20 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/chelsea-12-13-home-jersey-torres-9-adidas-youth-xl/6FT2DIWVL2DMVGUTETE23BJF",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f94cf10f338853dec66f0ce86f2898c237968255/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9R8AAeSwm7lp-7B9/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f94cf10f338853dec66f0ce86f2898c237968255/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d5276eeecb2ebf9b08b337880a6397be7ac0de80/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/17d1195c5d7e91454aad7960c23231e6148e6b2a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ea5c892688de8036cec3f988f6bad83eec5de5a6/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8978f9532aa41f85fee447255b702737fae0c6be/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9b9c8220da85035258abbe47f98ddc2e8a95da75/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/04662ba8e1f7007ffa3c412260dee44a068dec06/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/199fb3528df6870b05d3bb88eb5a0c0cf163a24a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/188cd5e7e33edc8f82a1fdd90ba5d41e2bf9d7e4/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/148b3a5701d6e457a334fe924149a98b60995b59/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/100b6a47dc44fe48fc50f7cab0841233febeff27/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/93f288cb4024886234e737ab7beb0914f70f81d1/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9R8AAeSwm7lp-7B9/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HTIAAeSwzp1p-7CC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tz8AAeSwmmlp-7CA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UJEAAeSwSzpp-7CA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cpcAAeSwhIJp-7CA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/r1UAAeSwCctp-7CA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bGkAAeSwNylp-7CC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g6kAAeSwS1dp-7CC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7goAAeSwXBNp-7CC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jLAAAeSw-Bhp-7CD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YrUAAeSwM4hp-7CE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ucEAAeSwLqJp-7CE/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -852,11 +1026,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in pretty good condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/Lpx6Dxsl",
-      "checkoutUrlDiscounted": "https://square.link/u/NvbrJnra"
+      "checkoutUrlDiscounted": "https://square.link/u/NvbrJnra",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "2R5BPPFCVBMJLBOKNX5PT6AF",
@@ -866,17 +1041,17 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/chelsea-16-17-home-jersey-adidas-youth-xl/7QEXEFKYLJ5UXCPCFJKJCZPU",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f2d6300da5e4a1a7c24522e69f8c38caf04565f9/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XP8AAeSw3cFqEclx/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f2d6300da5e4a1a7c24522e69f8c38caf04565f9/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2943992fd4dcc31db7c89bd68eb5ad0f84505499/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9bd7a26f13257f97ed9b451b214a9ee4500c07e0/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/23bd831462fb6d1a8a37e00899d70557520c9bc8/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d331c9224764c2740934751e9e1ffe4c6650ffb1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/bd868cc37df69e61d945d752cdb422b5ce9e498b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c9d2ebb6a7e9ee582375acd3618dfb609e261c24/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/afb458ac9bc435952997786c860c7fd97d6b60ca/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/aa813be50c39e602d85690694097c13d27d3c2d0/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XP8AAeSw3cFqEclx/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q48AAeSwSzpqEcl2/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SG0AAeSwyk1qEclx/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/w44AAeSwoslqEcl0/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fccAAeSwr9dqEclz/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ByQAAeSwsj1qEcly/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/RwAAAeSweQNqEcl0/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gJAAAeSwZXNqEcl1/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MCgAAeSwGgVqEcl2/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -885,11 +1060,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/7TAVcV4J",
-      "checkoutUrlDiscounted": "https://square.link/u/omAIumHV"
+      "checkoutUrlDiscounted": "https://square.link/u/omAIumHV",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "K67ZXTGTIJP6MJJNY2JIQ4SL",
@@ -899,9 +1075,14 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/portugal-crest-t-shirt-puma-l/NMR35X7JWVZVRPGCSXISFFRE",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/18034a79a472f616fef21793d4b843a610210df5/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zncAAeSw6Z5qc9X7/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/18034a79a472f616fef21793d4b843a610210df5/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zncAAeSw6Z5qc9X7/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OjkAAeSwo4Nqc9YW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WmEAAeSwgPtqc9X8/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hZsAAeSwU6Vqc9X8/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FDEAAeSw-Dtqc9X9/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/KvgAAeSw6JVqc9X8/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -910,11 +1091,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/Z7swQQSz",
-      "checkoutUrlDiscounted": "https://square.link/u/NhftMdKb"
+      "checkoutUrlDiscounted": "https://square.link/u/NhftMdKb",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "QQOILPX4ZTJXJI6PENOFLGJV",
@@ -924,9 +1106,14 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/portugal-crest-t-shirt-puma-m/OKGE4WCZMXFR6HKJEQRDGW44",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/98f58c3732202d9a2f64bb8a19d0d124c5cf54c1/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hZQAAeSw9ABqc9Tv/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/98f58c3732202d9a2f64bb8a19d0d124c5cf54c1/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hZQAAeSw9ABqc9Tv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jaMAAeSw529qc9Tx/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/G-UAAeSwlDZqc9Tw/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q2UAAeSwYG9qc9Tw/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/sGIAAeSwpfRqc9Tw/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WY4AAeSwdJpqc9Tx/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -935,11 +1122,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/1TvnU3VV",
-      "checkoutUrlDiscounted": "https://square.link/u/sOonncWG"
+      "checkoutUrlDiscounted": "https://square.link/u/sOonncWG",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "OEWI7BCXE3NX2MXMIBQ3H34N",
@@ -949,9 +1137,14 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/portugal-crest-t-shirt-puma-xl/TIMP4GBQS5DGX2MNUF5F72C4",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/a5a7e5931be73320e97ae03c15e1083c663dd6e1/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bfQAAeSwvw1qc9b-/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a5a7e5931be73320e97ae03c15e1083c663dd6e1/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bfQAAeSwvw1qc9b-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/n5oAAeSwzOhqc9cA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9tIAAeSwXRFqc9b~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/nQwAAeSw529qc9b~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WiwAAeSwWEBqc9b~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Et8AAeSw0ttqc9b~/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -960,11 +1153,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/VJpVGWum",
-      "checkoutUrlDiscounted": "https://square.link/u/92ccW9rG"
+      "checkoutUrlDiscounted": "https://square.link/u/92ccW9rG",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "BMSH3PUXUNEI53EKDA6KZFL7",
@@ -974,9 +1168,14 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/red-puma-canada-national-team-fanpack-graphic-t-shirt-l-large/HUWLFC7KPIIUS4ZVXXRII5XA",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/01b5ea2c081f2921d38e5f0ae47d68e7499c4aa4/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LgYAAeSwgPtqc9CC/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/01b5ea2c081f2921d38e5f0ae47d68e7499c4aa4/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LgYAAeSwgPtqc9CC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2e0AAeSwrFJqc9CE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/I1QAAeSwENVqc9CF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gWUAAeSw3Qtqc9CE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2SsAAeSwSApqc9CD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AnEAAeSwycZqc9CE/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -985,11 +1184,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/mcwptIst",
-      "checkoutUrlDiscounted": "https://square.link/u/ZknXHuel"
+      "checkoutUrlDiscounted": "https://square.link/u/ZknXHuel",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "AZKGNCLOMSL2O3MVFNLSBK3X",
@@ -999,9 +1199,14 @@
       "price": 24.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/usa-crest-t-shirt-puma-m/4CSC2D2DVJFRIRSU66RTDPQY",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f2734ef743802bc9bcd9e6b185a48ba973420f24/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XRYAAeSwpwZqc9gt/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f2734ef743802bc9bcd9e6b185a48ba973420f24/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XRYAAeSwpwZqc9gt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cokAAeSwZnFqc9gv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YQoAAeSwHjNqc9gv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Vd0AAeSwT55qc9gu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/K2IAAeSwiBtqc9gu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FK0AAeSwU7hqc9gu/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1010,11 +1215,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/JKEVINlf",
-      "checkoutUrlDiscounted": "https://square.link/u/JTxBJbKi"
+      "checkoutUrlDiscounted": "https://square.link/u/JTxBJbKi",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "KTKQNRLKNTODXGSMZKP5U575",
@@ -1024,9 +1230,15 @@
       "price": 22.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/beige-columbia-colorful-logo-t-shirt-l-large/BYDEPKAKMGLLL4YUUJTRKIBB",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/713f60ac4ce025ff9817c7d42de563c0669a54b6/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MmoAAeSw8KJqczcW/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/713f60ac4ce025ff9817c7d42de563c0669a54b6/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MmoAAeSw8KJqczcW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MKYAAeSwlYhqczcZ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GBIAAeSwWkBqczcX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/GDMAAeSwWkBqczcZ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YvYAAeSwahlqczcZ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YtMAAeSwahlqczcX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BBEAAeSwkB5qczcZ/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1039,7 +1251,8 @@
       "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/BJljXUIa",
-      "checkoutUrlDiscounted": "https://square.link/u/rlVj8ZWw"
+      "checkoutUrlDiscounted": "https://square.link/u/rlVj8ZWw",
+      "conditionId": "1000"
     },
     {
       "id": "MBIUG2X725JY6IIS7RERAWLH",
@@ -1049,9 +1262,15 @@
       "price": 22.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/navy-columbia-mountain-graphic-t-shirt-m-medium/FW74IW4WQWNJREQUGPN4MIZG",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/5bd1a081de90cf58c45e8742922a7f3f88d81226/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4KcAAeSwOPZqczUx/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5bd1a081de90cf58c45e8742922a7f3f88d81226/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4KcAAeSwOPZqczUx/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1FoAAeSwK8xqczU0/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vt4AAeSwxUxqczU0/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/MfUAAeSwzIxqczUz/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wtgAAeSw86VqczU0/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/dyUAAeSwl-1qczUz/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5JUAAeSwgm9qczU0/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1064,7 +1283,8 @@
       "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yFlLaI1L",
-      "checkoutUrlDiscounted": "https://square.link/u/OiVF0WCs"
+      "checkoutUrlDiscounted": "https://square.link/u/OiVF0WCs",
+      "conditionId": "1000"
     },
     {
       "id": "CDYIRLC7YSGOWQLBO7KARZIE",
@@ -1074,9 +1294,16 @@
       "price": 21.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/inter-miami-crest-t-shirt-adidas-youth-l/MXKISJ6WZPYKE5BIKRWC4PCU",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/ed00c0d5226d393670b2a460c93e9cefb9a7a302/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hHIAAeSwfjZqf0X4/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ed00c0d5226d393670b2a460c93e9cefb9a7a302/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hHIAAeSwfjZqf0X4/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7H8AAeSwDzRqf0X7/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QFsAAeSwW4tqf0X5/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5DUAAeSwocpqf0X6/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BRsAAeSwCsZqf0X6/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OCcAAeSwMbhqf0X5/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SUIAAeSwqXxqf0X6/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Tf8AAeSwvFVqf0X7/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1085,11 +1312,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ZlQW1tbN",
-      "checkoutUrlDiscounted": "https://square.link/u/Tcz6aqjq"
+      "checkoutUrlDiscounted": "https://square.link/u/Tcz6aqjq",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "356P43HDBEFWQOVXCPXCDVSS",
@@ -1099,9 +1327,15 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/bayern-munich-crest-t-shirt-adidas-youth-l/WAZIAIXMC2NNUAOAGOHUN2XO",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/60d77bbc4860b63d70f705ddb0c95b1ec7df97f9/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~KwAAeSwkNxqf0HF/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/60d77bbc4860b63d70f705ddb0c95b1ec7df97f9/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~KwAAeSwkNxqf0HF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cWIAAeSwIGNqf0HI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zSEAAeSwXyBqf0HH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AAIAAeSwNSNqf0HH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DrgAAeSwNz9qf0HH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/KgMAAeSwtlZqf0HH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E4IAAeSwbspqf0HI/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1110,11 +1344,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/HiebtNyw",
-      "checkoutUrlDiscounted": "https://square.link/u/xujEXcLt"
+      "checkoutUrlDiscounted": "https://square.link/u/xujEXcLt",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "W7IVX3QFH6P6K2OPYA3RRGCT",
@@ -1124,9 +1359,15 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/bayern-munich-crest-t-shirt-adidas-youth-m/QYRSDSJ63DHBBMOX5SN2BNP3",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/e2592053454dc1afe74a6385cddf9c808c3dc542/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/c6gAAeSwm6tqf0NG/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e2592053454dc1afe74a6385cddf9c808c3dc542/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/c6gAAeSwm6tqf0NG/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DiQAAeSwBCJqf0NJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZKUAAeSw~wRqf0NI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ai4AAeSwU21qf0NI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/H5kAAeSwhrBqf0NI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/IHoAAeSwv-Jqf0NI/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HlQAAeSwMbhqf0NI/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1135,11 +1376,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/gOONgGeD",
-      "checkoutUrlDiscounted": "https://square.link/u/CNI7oJHX"
+      "checkoutUrlDiscounted": "https://square.link/u/CNI7oJHX",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "5WUKS2WBNN6QAABUKJFFXZLD",
@@ -1149,9 +1391,14 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-adidas-camo-t-shirt-with-logo-on-back-m-medium/LJJON57P6UCY5YEXFW5K2H43",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/8362febc651e7a217be99cd8ec94da5d8c459a59/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WaAAAeSwe4Rqcnqd/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8362febc651e7a217be99cd8ec94da5d8c459a59/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WaAAAeSwe4Rqcnqd/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LYUAAeSwkB5qcnqg/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C-cAAeSwYrtqcnqf/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rjAAAeSwKs5qcnqg/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5HoAAeSw-ABqcnqg/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/S8YAAeSwfRBqcnqf/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1160,11 +1407,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yVv95PWp",
-      "checkoutUrlDiscounted": "https://square.link/u/iTk9Fcjg"
+      "checkoutUrlDiscounted": "https://square.link/u/iTk9Fcjg",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "OIA4I5P56QLWOI2QXTE34NOV",
@@ -1174,9 +1422,13 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-adidas-originals-logo-graphic-t-shirt-l-large/S42HWCM5SFBZLAEB65LJV4UF",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f65b488ad1156c1712ae953b62a46aa41a174d38/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fl4AAeSwJaRqcm3V/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f65b488ad1156c1712ae953b62a46aa41a174d38/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fl4AAeSwJaRqcm3V/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UcYAAeSwRydqcm3X/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ld0AAeSw-1dqcm3W/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ockAAeSwHjNqcm3X/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/F5YAAeSw4Ndqcm3X/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1185,11 +1437,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/6KP4cc3z",
-      "checkoutUrlDiscounted": "https://square.link/u/Z0PNhKuW"
+      "checkoutUrlDiscounted": "https://square.link/u/Z0PNhKuW",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "GBNCKYZWXZBIUZMM37VNTGBY",
@@ -1199,9 +1452,13 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-adidas-originals-t-shirt-l-large/FJ5YN3P4QU2UWDVG2RVARQBE",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/466f446fda05d16b707cd6154a36d8d26416e9da/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0A0AAeSw6wpqcmrR/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/466f446fda05d16b707cd6154a36d8d26416e9da/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0A0AAeSw6wpqcmrR/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ddUAAeSwlcJqcmrU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4zMAAeSwogFqcmrU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/av8AAeSwrBNqcmrU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/07cAAeSwe4RqcmrT/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1210,11 +1467,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tag. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/on2gLtJW",
-      "checkoutUrlDiscounted": "https://square.link/u/Fq0ZHQnU"
+      "checkoutUrlDiscounted": "https://square.link/u/Fq0ZHQnU",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "7UZU655PFBCCNWLGIEFZUZXU",
@@ -1224,9 +1482,14 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-adidas-sportswear-graphic-t-shirt-xl-extra-large/G2D5ATA2JOS7KZCZUZTH5357",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/b91fb9164011a6af79a298eefbbc811704e42f2f/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wJkAAeSwYexqcnTs/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b91fb9164011a6af79a298eefbbc811704e42f2f/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wJkAAeSwYexqcnTs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0soAAeSwxUxqcnTu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UsgAAeSwahlqcnTu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gjMAAeSwXRFqcnTt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QlAAAeSw2AdqcnTt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eQwAAeSwSFFqcnTt/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1235,11 +1498,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/KkyfGYfN",
-      "checkoutUrlDiscounted": "https://square.link/u/hQq7qTcT"
+      "checkoutUrlDiscounted": "https://square.link/u/hQq7qTcT",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "IPSNJZLDR3OVPT45P2LXOX6X",
@@ -1249,9 +1513,18 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-adidas-toronto-fc-pregame-logo-t-shirt-l-large/JJ4HKLSBRK6QMNK6P7JNSUL4",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/0644073452180bd8ac62ef0495230804c029dd82/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/VSYAAeSwVNpqf0e8/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0644073452180bd8ac62ef0495230804c029dd82/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/VSYAAeSwVNpqf0e8/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/f0YAAeSwG~Vqf0e-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/li8AAeSwbiNqf0e-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q~oAAeSwiiFqf0e9/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/R9UAAeSwfwBqf0e-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UlkAAeSwt99qf0e9/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vzgAAeSweEtqf0e-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SisAAeSw3C1qf0e-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aWkAAeSwnCZqf0e-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zywAAeSwXRhqf0e~/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1260,11 +1533,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/zUsh0Kzb",
-      "checkoutUrlDiscounted": "https://square.link/u/np9dPiFY"
+      "checkoutUrlDiscounted": "https://square.link/u/np9dPiFY",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "3SPC25RHRK6ZGR7WVJGOY22U",
@@ -1274,9 +1548,17 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/blue-adidas-charlotte-fc-pregame-logo-t-shirt-m-medium/FDDNDGUPOTSUPIBHSWSJUXNA",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f55b035056a258d466479f21977c7524bb1f6e31/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZgEAAeSwtGBqf0j-/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f55b035056a258d466479f21977c7524bb1f6e31/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZgEAAeSwtGBqf0j-/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/X8YAAeSwZoJqf0kE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/p8wAAeSwIVVqf0kA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YKcAAeSwDp1qf0kB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YroAAeSw9jhqf0kB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BaEAAeSwocpqf0kB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YUQAAeSw~uRqf0kB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/oYoAAeSwbiNqf0kE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Zh4AAeSw-Mdqf0kF/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1285,11 +1567,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/qN3BPVxY",
-      "checkoutUrlDiscounted": "https://square.link/u/8UQu0EAs"
+      "checkoutUrlDiscounted": "https://square.link/u/8UQu0EAs",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "P7CRJZPPKELGOVVJKTB77QVH",
@@ -1299,9 +1582,17 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/blue-adidas-cincinnati-fc-pregame-logo-t-shirt-l-large/5IZYE3AZAK3PFSWEJAMN3O7L",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/9dbeed018f711aeae2fa4627e57c9c48ab68f356/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YJQAAeSwJvdqf0pL/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9dbeed018f711aeae2fa4627e57c9c48ab68f356/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YJQAAeSwJvdqf0pL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/x2gAAeSw0hNqf0pQ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HgcAAeSw~8Jqf0pP/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/p00AAeSw~wRqf0pO/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/egYAAeSwgvRqf0pO/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YmkAAeSwv-Jqf0pN/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/yHMAAeSw1yVqf0pP/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTU5OVgxMTk5/z/R~sAAeSwk-9qf0pQ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTU5OVgxMTk5/z/bv8AAeSw4PZqf0pR/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1310,11 +1601,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/P7lDbWa7",
-      "checkoutUrlDiscounted": "https://square.link/u/OvxFT4uC"
+      "checkoutUrlDiscounted": "https://square.link/u/OvxFT4uC",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "2NB7RWXBYDTV6MXXV53PXAL3",
@@ -1324,9 +1616,14 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/blue-adidas-logo-graphic-t-shirt-m-medium/RV4XL6ML5WIA4EO3UD2OY7JA",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/0a621b4871a6d49ffb64ace0d12f325a094dc876/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9SwAAeSwrBNqcnwE/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0a621b4871a6d49ffb64ace0d12f325a094dc876/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9SwAAeSwrBNqcnwE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C8oAAeSwUFpqcnxm/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UOQAAeSw1ihqcnwG/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YSEAAeSwzmFqcnwH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LvcAAeSwdJpqcnwF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/33cAAeSw8fBqcnwH/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1335,11 +1632,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/nnqsgKRW",
-      "checkoutUrlDiscounted": "https://square.link/u/fmJkkC7B"
+      "checkoutUrlDiscounted": "https://square.link/u/fmJkkC7B",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "HQTRPUGYSAZHSTPFYC4LJHWO",
@@ -1349,9 +1647,13 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/blue-adidas-logo-graphic-t-shirt-s-small/XZALDSNOXXKZNQPY4ML5WI5M",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/d014d12ded4630f9a4227f48cfea5b08a23f1324/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Fp4AAeSwIoZqcnAm/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d014d12ded4630f9a4227f48cfea5b08a23f1324/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Fp4AAeSwIoZqcnAm/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/yrAAAeSwWEBqcnAo/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Zi0AAeSwZlJqcnAn/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/iAwAAeSwXiNqcnAo/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ibcAAeSwaTJqcnAo/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1360,11 +1662,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/a6TBZxVQ",
-      "checkoutUrlDiscounted": "https://square.link/u/70j1bGtc"
+      "checkoutUrlDiscounted": "https://square.link/u/70j1bGtc",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "SEQEMDAMQGUWPILJW7HEUWZO",
@@ -1374,17 +1677,17 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/chelsea-17-18-home-jersey-nike-youth-l/IGV5HZ64I2IDIIKCLDRL6EA6",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/a17e7a59811f233c09037eafdf49805825ed0174/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4JMAAeSwOhNqEcgR/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a17e7a59811f233c09037eafdf49805825ed0174/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8d571b356fbe1bc1e7e2a762548bb01b8c583b2b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9eb1a9c8183cc1ff041e62c9632b7578328a1096/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d62083b3d556751f9f1a814ed5b67ee2b621c931/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a6211e32b5befa5e8df6b8124c5575994017153a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9b1922d9ba63cd7d614a34b60926f8039b427222/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/323ff87b313ca6222ac32e8cde0e5ed96d948ae1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/180c52fbf706acc4094cfd5a8ea038a62a6d434e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c9229926276092a82558024a85e1615ef062baf0/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4JMAAeSwOhNqEcgR/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YYMAAeSwA59qEcgW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/lj4AAeSw4GNqEcgT/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zIoAAeSwcWdqEcgT/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~zUAAeSwEoBqEcgU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6eUAAeSwAaFqEcgT/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/acAAAeSwZoxqEcgV/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/A5QAAeSwyXRqEcgW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ERMAAeSwEv9qEcgX/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1393,11 +1696,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in near perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yaAWVC5W",
-      "checkoutUrlDiscounted": "https://square.link/u/MVqgUz25"
+      "checkoutUrlDiscounted": "https://square.link/u/MVqgUz25",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "Q5U6CE4YFROKNHEJ75DRAE7W",
@@ -1407,15 +1711,17 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/fc-barcelona-crest-t-shirt-navy-m/IIPRTHBFFASDGQLT7XSZXT4C",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f8b1346989195421acf4ab80af5c07862c6cd369/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/OTU3WDc4Ng==/z/S1oAAeSw3jFqc8HH/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f8b1346989195421acf4ab80af5c07862c6cd369/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2217579efb7865ab273225910ea69a25773d26ab/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7d51934270b2e0a9f224e4a75075afccb3975fa8/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2b041f82446f5907eb3a1b7a09e73f108585f804/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/e73bf8ddd87ae4d5d339f8a98c1d7bc0c898d850/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/1f390698342a8b247f4c514741ffb612e91859c6/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/93c26253c55e623a034ae2c0d27db6596c47e0bb/original.jpeg"
+        "https://i.ebayimg.com/00/s/OTU3WDc4Ng==/z/S1oAAeSw3jFqc8HH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/ODg0WDc4Ng==/z/Y9MAAeSwn2Jqc8HH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LDYAAeSwwuJpQy8q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9tcAAeSwB5dpQy8s/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FZEAAeSwlURpQy8r/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rasAAeSw8xFpQy8r/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/FCoAAeSwdeFpQy8r/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WVgAAeSw1HhpQy8r/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/h1AAAeSwcxppQy8r/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1424,11 +1730,12 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Product is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/HmJj8SgP",
-      "checkoutUrlDiscounted": "https://square.link/u/XnOQYpHm"
+      "checkoutUrlDiscounted": "https://square.link/u/XnOQYpHm",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "ZNFNJDQEXT24M2USPO63GIIT",
@@ -1438,9 +1745,14 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/green-adidas-logo-graphic-t-shirt-l-large/BCG7CYGMENMJHX2UA7Z5IRGP",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/3ad7dfa7d7abde241665e2f94e478b91b3093b9a/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/X2kAAeSwIoZqcnlU/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3ad7dfa7d7abde241665e2f94e478b91b3093b9a/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/X2kAAeSwIoZqcnlU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zcwAAeSwiBtqcnlY/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qLgAAeSwe41qcnlY/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q2EAAeSwgblqcnlX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QH4AAeSwsIxqcnlX/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g5YAAeSwwvJqcnlW/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1449,11 +1761,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/cm2iddIB",
-      "checkoutUrlDiscounted": "https://square.link/u/fS0URyL3"
+      "checkoutUrlDiscounted": "https://square.link/u/fS0URyL3",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "QNLA5JXCMPQWWKXBKA2637XG",
@@ -1463,9 +1776,16 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/green-adidas-t-shirt-with-multicolor-worldwide-graphic-on-back-m-medium/5E2TPWBWINZ6LOXVWBSJYGDZ",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/c21f563eafc34267a5f266415a78210d2bc1864a/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5GIAAeSwHjNqcnZC/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c21f563eafc34267a5f266415a78210d2bc1864a/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5GIAAeSwHjNqcnZC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jakAAeSwXRFqcnZE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/xR4AAeSw2S9qcnZE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qpMAAeSwrFJqcnZC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9BgAAeSwEFNqcnZE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rRsAAeSwAbdqcnZD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WL4AAeSwRT1qcnZE/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0z4AAeSwWkBqcnZF/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1474,11 +1794,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/KHGIDK2H",
-      "checkoutUrlDiscounted": "https://square.link/u/lyZPk8FD"
+      "checkoutUrlDiscounted": "https://square.link/u/lyZPk8FD",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "PFDGWERV4SLJPIHLMYDGJHOQ",
@@ -1488,9 +1809,13 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/grey-adidas-originals-logo-graphic-t-shirt-l-large/4I5XKVJADKB2PVFJUQC6SWDM",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/aa52bc3d98263f85950e2e7a923a3f976cf7d95c/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SNMAAeSwSFFqcm6p/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/aa52bc3d98263f85950e2e7a923a3f976cf7d95c/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SNMAAeSwSFFqcm6p/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/siAAAeSw-4Nqcm6s/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ltsAAeSwMndqcm6s/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~RIAAeSwRTtqcm6r/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WvIAAeSwGjJqcm6r/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1499,11 +1824,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/xTtvbfoh",
-      "checkoutUrlDiscounted": "https://square.link/u/TtHzkUYw"
+      "checkoutUrlDiscounted": "https://square.link/u/TtHzkUYw",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "TR7CJHQQOIORGFKMQEEDYKOK",
@@ -1513,9 +1839,16 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/grey-adidas-t-shirt-with-outdoors-graphic-on-back-l-large/3PUUINK2CUWJ5QT7IPI7FXWO",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/7c42be42c26e0913f195597835bcf4428cfa9b3f/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/c7YAAeSwTy5qcne7/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7c42be42c26e0913f195597835bcf4428cfa9b3f/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/c7YAAeSwTy5qcne7/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cNgAAeSwYttqcnfD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UoAAAeSwIoZqcnfD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/61wAAeSwgvZqcne~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DaYAAeSwdJpqcnfD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WU0AAeSw2AdqcnfA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9E8AAeSwT55qcnfD/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/TTkAAeSwogFqcnfF/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1524,11 +1857,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yUu2nMuK",
-      "checkoutUrlDiscounted": "https://square.link/u/96bujevx"
+      "checkoutUrlDiscounted": "https://square.link/u/96bujevx",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "PHHYZGCS2KPDLSUOCGEZWJP5",
@@ -1538,9 +1872,15 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/inter-miami-crest-t-shirt-adidas-l/3PWM6K2IXBF7Y4JADS7DKV2L",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/fc73e9d624766704bc96f221be23b3319bae5c27/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zS4AAeSwd8Vqf0um/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/fc73e9d624766704bc96f221be23b3319bae5c27/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zS4AAeSwd8Vqf0um/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kscAAeSwQQxqf0uo/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jLUAAeSwr-1qf0un/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/y0MAAeSw3T9qf0un/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1JYAAeSwaRZqf0un/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/U9AAAeSwk-9qf0un/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/etIAAeSw4PZqf0uo/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1549,11 +1889,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ySITwv0Y",
-      "checkoutUrlDiscounted": "https://square.link/u/vNUJvPv2"
+      "checkoutUrlDiscounted": "https://square.link/u/vNUJvPv2",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     },
     {
       "id": "XDF6VB47D6ALWBLMWSNUTEM6",
@@ -1563,19 +1904,19 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/manchester-united-16-17-away-jersey-pogba-6-adidas-youth-xl/VQSG23BLZT77FFNWGXRN4XYO",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/75e931dcdbfed80b3caba75d0ef43866a60b2705/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OdcAAeSwO~1p-nxt/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/75e931dcdbfed80b3caba75d0ef43866a60b2705/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7929b698d3ad0d084b5701be0baa1dcbcf02347d/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/65079bfebc837a6f2856cb860dd8a77fc321ad43/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/55a09f73382d8a052ec1a1835a6ec1f1f3e0dcb4/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3d700b3d0b3fde0e8d475dc34cee72e4f90f0e3b/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/cc64a2e49904e7a927ea6440f1c59bcfc2d5b5b2/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7fdad026cf3ca7b6ea2d4f01818457461cb7047c/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a692d3ed684b8b2cea6768c1f90ed0a01f392d50/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/d475bd02a6c7d578ea1f278f833bc8175eb6a4b8/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/2ebf0548034199a03d5041cd1cacaedafc401310/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/b8035c21f91bc76a6935c563985ae4c41890e2a9/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/OdcAAeSwO~1p-nxt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/VNsAAeSwyMZp-nxs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/00AAAeSw8fBp-nxu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ENIAAeSwzANp-nxu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NW4AAeSwxGJp-nxu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/30kAAeSwisJp-nxu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DU4AAeSwLQ1p-nxv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eq4AAeSwN8dp-nxv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/B2IAAeSwWvdp-nxw/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HwwAAeSw6z9p-nxv/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/As4AAeSwjCJp-nxw/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1584,11 +1925,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in great condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/CYpYakwK",
-      "checkoutUrlDiscounted": "https://square.link/u/Mr5B0z8N"
+      "checkoutUrlDiscounted": "https://square.link/u/Mr5B0z8N",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "CCMYBBETJ6AIUOEWPTA74G6H",
@@ -1598,9 +1940,13 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/white-adidas-originals-logo-graphic-t-shirt-l-large/HCDARA2BPIJ57MRWACHALL3H",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/7156b9dcaddda87e1ae47376ba45e1be98d3fa18/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C6UAAeSwRT1qcmz5/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/7156b9dcaddda87e1ae47376ba45e1be98d3fa18/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C6UAAeSwRT1qcmz5/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hqUAAeSwMndqcmz8/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QssAAeSwW0Zqcmz8/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HnMAAeSwRQxqcmz9/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jj0AAeSwlcJqcmz8/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1609,11 +1955,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/B9JQaSHv",
-      "checkoutUrlDiscounted": "https://square.link/u/LvJatUI8"
+      "checkoutUrlDiscounted": "https://square.link/u/LvJatUI8",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "QQM2QDUTLHJEHCTCQZYMXHAU",
@@ -1623,9 +1970,15 @@
       "price": 19.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/white-adidas-t-shirt-with-blue-logo-graphic-on-back-l-large/OGTAERFQYGGLQHQJX6NMFV7M",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/143f42efe4742b2b7c2e6a0ae091bd6a435c5142/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tssAAeSwU6VqcnHl/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/143f42efe4742b2b7c2e6a0ae091bd6a435c5142/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tssAAeSwU6VqcnHl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Zr4AAeSwW3hqcnHm/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Vh4AAeSwizZqcnHn/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CzAAAeSw8KJqcnHn/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/b5YAAeSwRydqcnHm/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1RsAAeSw371qcnHn/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~i4AAeSwzM5qcnQ5/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1634,11 +1987,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/3LUfTv1a",
-      "checkoutUrlDiscounted": "https://square.link/u/H9d9qRg3"
+      "checkoutUrlDiscounted": "https://square.link/u/H9d9qRg3",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "QTD4DUQRLVOBZ4TZC7XFYCDL",
@@ -1648,9 +2002,16 @@
       "price": 17.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/blue-puma-1948-athletics-graphic-t-shirt-xxl-extra-extra-large-s/IVTURGEOIWMKKMWKSMS4L3VZ",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/60b84cbf681517a8491c2738caca79f11917f9a4/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jkQAAeSwAzZqc9xo/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/60b84cbf681517a8491c2738caca79f11917f9a4/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jkQAAeSwAzZqc9xo/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/t5gAAeSwDCFqc9xr/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zW8AAeSw6Ppqc9xp/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eRIAAeSwYG9qc9xp/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/irIAAeSwQBhqc9xq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ivYAAeSw-jdqc9xq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HBkAAeSw3jFqc9xq/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aeQAAeSwh~xqc9xq/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1659,11 +2020,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/9GpvXhZy",
-      "checkoutUrlDiscounted": "https://square.link/u/Ym3L3OZN"
+      "checkoutUrlDiscounted": "https://square.link/u/Ym3L3OZN",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "THX7VFJO2ALZ7ZGRFAEPER2G",
@@ -1673,9 +2035,16 @@
       "price": 17.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/usa-crest-t-shirt-under-armour-youth-l/DVKHCBD4VVWMDM7SPTNMLMVS",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/3b95196cafbca186ed66ccb9d9f751ba313367bb/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HlQAAeSwfCxqczzU/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/3b95196cafbca186ed66ccb9d9f751ba313367bb/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HlQAAeSwfCxqczzU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pwAAAeSwflRqcz0Z/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/L2EAAeSwPpdqczzV/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/z2EAAeSwx7pqczzW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HywAAeSw2S9qczzW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UzYAAeSwQBhqczzW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/F5gAAeSw7ehqczzW/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/O6UAAeSw-4Nqcz0Z/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 2,
       "tag": "Youth",
@@ -1684,11 +2053,12 @@
       "brand": "Under Armour",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yUq10pnT",
-      "checkoutUrlDiscounted": "https://square.link/u/6xBT8XUv"
+      "checkoutUrlDiscounted": "https://square.link/u/6xBT8XUv",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "H4MRADR5XPZCLS5JNIBEEIVH",
@@ -1698,9 +2068,16 @@
       "price": 17.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/usa-crest-t-shirt-under-armour-youth-xl/UZSRPC5LNCZISTUHGJMV65CC",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/36b17a8484e9eed408a1b777f453bc36799205ec/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0ukAAeSwHjNqc15R/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/36b17a8484e9eed408a1b777f453bc36799205ec/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0ukAAeSwHjNqc15R/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/q0cAAeSw-ABqc15U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rbgAAeSw7ehqc15U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/fLkAAeSwKzZqc15T/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/00wAAeSwNwVqc15S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CvcAAeSwdqlqc15U/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/umoAAeSw-~pqc15V/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zDUAAeSwfVNqc15V/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1709,11 +2086,12 @@
       "brand": "Under Armour",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/0cNZDx9U",
-      "checkoutUrlDiscounted": "https://square.link/u/UqPLcmJA"
+      "checkoutUrlDiscounted": "https://square.link/u/UqPLcmJA",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "HBIW7YGGOPFZ3C47TL7FSEUP",
@@ -1723,9 +2101,14 @@
       "price": 17.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/yellow-puma-logo-graphic-t-shirt-s-small/CVPNKFZPXTXYY64PTNWQSTUB",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/c4e14ac7221cef645ba4f128146b9651c2ee4187/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PMkAAeSwmaVqc9qr/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/c4e14ac7221cef645ba4f128146b9651c2ee4187/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/PMkAAeSwmaVqc9qr/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cukAAeSwEbBqc9qt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8PYAAeSwVktqc9qs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ensAAeSwgPtqc9qs/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d8YAAeSw371qc9qt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gcUAAeSwAzZqc9qt/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1734,11 +2117,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/iFENSSYZ",
-      "checkoutUrlDiscounted": "https://square.link/u/bc0hKWvN"
+      "checkoutUrlDiscounted": "https://square.link/u/bc0hKWvN",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "TNLLMZ7CSS72HGOHXAYNALLP",
@@ -1748,14 +2132,14 @@
       "price": 16.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/syracuse-orange-football-jersey-12-9-12-yrs/XQKZH5QRW3YTTKSM2NAZTHNH",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/51e0f55d845c51a668c3a25780a350e8809df939/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cqgAAeSwS1dp-niL/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/51e0f55d845c51a668c3a25780a350e8809df939/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/18041a52a5ce018d0ab3c8d18fa5192c7321fcd1/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0fab2f4f12584358727a8a48f25a1dd7cbabd9c9/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f589d152d7635cce58ec91efa1f2176b119a6c6e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/716772c951f3035504812709b5210e58d7475f2a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/28df638b57dcfd0c2a805e4db0e8701cb82c5ad9/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cqgAAeSwS1dp-niL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/G88AAeSwwilp-niL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pMEAAeSwEv9p-niL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/B3IAAeSwzp1p-niL/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LroAAeSwxChp-niM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cq4AAeSwS1dp-niM/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1764,11 +2148,12 @@
       "brand": "",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/9Zu2iWHb",
-      "checkoutUrlDiscounted": "https://square.link/u/VaUy67i9"
+      "checkoutUrlDiscounted": "https://square.link/u/VaUy67i9",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "XUWT5HYLPACVFYKWR43Q2OEA",
@@ -1778,9 +2163,15 @@
       "price": 14.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-puma-soccer-stadium-graphic-t-shirt-m-medium/3PWLEWS7DBQDAXVP2LHEWEWH",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/f7af940f397bd147f827b3f52fdad2892de254e6/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/llgAAeSwFuJqc91i/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/f7af940f397bd147f827b3f52fdad2892de254e6/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/llgAAeSwFuJqc91i/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aO4AAeSw7dlqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/bbEAAeSwo4Nqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6FoAAeSwIoZqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1CYAAeSwzmFqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5VgAAeSwraVqc91k/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/he4AAeSwVDJqc91k/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1789,11 +2180,12 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/MlGuNObJ",
-      "checkoutUrlDiscounted": "https://square.link/u/bgeEdRZ8"
+      "checkoutUrlDiscounted": "https://square.link/u/bgeEdRZ8",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "FPACGK626CQ3PF4CRARJHXLW",
@@ -1803,16 +2195,16 @@
       "price": 14.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/chelsea-14-15-home-jersey-adidas-youth-m/U4MZV6JN663KJQXOXVX4EAVU",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/0f17377b2009e5f3debacaf9911d2a142ac9451f/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UyMAAeSwZqJp-7Kh/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0f17377b2009e5f3debacaf9911d2a142ac9451f/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0c3f31015d4614e1f99921fef66f018d40e01503/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/795443d241289459ba742cff9a170f710e50b561/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/80445fe4ea436e450e61eaf7ff8e881c8cdce51e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/76ae48cb1b75e3b08ea42cbb915558a7ade06fe0/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ca37a0aa6c0f0e7c1cbd2ea10de0540b5e87180e/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/ecac726555e4c74311ee874d81b6065d1b83048a/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/5e156defc0accf511e9071c379486f05f2bf92b8/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UyMAAeSwZqJp-7Kh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WVEAAeSwZLVp-7Km/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Y-UAAeSwJyRp-7Kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CIkAAeSwAKZp-7Kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ctUAAeSwrclp-7Kj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/U4AAAeSw0Plp-7Ki/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wR4AAeSwnxZp-7Kl/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2nUAAeSwisJp-7Km/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1821,11 +2213,12 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "Used",
-      "conditionEbay": "Used",
       "description": "Jersey is in pretty good condition there are no stains just a tiny bit of peeling as you can see. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/lHukh4ga",
-      "checkoutUrlDiscounted": "https://square.link/u/p9Is3goT"
+      "checkoutUrlDiscounted": "https://square.link/u/p9Is3goT",
+      "condition": "Used",
+      "conditionEbay": "Used",
+      "conditionId": "3000"
     },
     {
       "id": "DMGN4WRW6ZIQXZVAE3DKDVVM",
@@ -1835,9 +2228,15 @@
       "price": 14.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/green-under-armour-red-one-graphic-t-shirt-s-small/QNT36BNMBU56Z2GUPSVAC2BR",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/caf31375b77aa2cf7262a2a918595f5b87f3a457/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ABIAAeSwh~xqczl1/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/caf31375b77aa2cf7262a2a918595f5b87f3a457/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ABIAAeSwh~xqczl1/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QNsAAeSwDCFqczl3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2AMAAeSwWXRqczl3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/v7sAAeSwn2Jqczl2/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6EsAAeSw-ABqczl2/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zVkAAeSw8fBqczl3/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ypQAAeSwUr5qczl4/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1848,7 +2247,10 @@
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/NqhYNInb",
-      "checkoutUrlDiscounted": "https://square.link/u/IVl31SFW"
+      "checkoutUrlDiscounted": "https://square.link/u/IVl31SFW",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "AKDERTQZ4VGAWZONRP3KMDWB",
@@ -1858,9 +2260,13 @@
       "price": 14.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/purple-nike-t-shirt-l-large/XPWPTTQ52H4WLDSR34BOZNZU",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/8aea621bbeae7979fa19fb346b4cfc7343e67baa/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/30EAAeSwWatqf05B/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/8aea621bbeae7979fa19fb346b4cfc7343e67baa/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/30EAAeSwWatqf05B/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jhMAAeSwg5hqf05D/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WrcAAeSw3DNqf05E/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jVIAAeSwv8xqf05C/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/oQsAAeSwPoZqf05C/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1869,11 +2275,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/8kcqhOxa",
-      "checkoutUrlDiscounted": "https://square.link/u/BNN6SyrM"
+      "checkoutUrlDiscounted": "https://square.link/u/BNN6SyrM",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "DPZ2ZTZCKZJ3AI7TL3L6C5RF",
@@ -1898,11 +2305,12 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/8wQqBoq2",
-      "checkoutUrlDiscounted": "https://square.link/u/4uWywAiO"
+      "checkoutUrlDiscounted": "https://square.link/u/4uWywAiO",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "XNHNL2WTQEIFBDPIAMDP4AVH",
@@ -1912,9 +2320,16 @@
       "price": 14.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/red-under-armour-red-one-graphic-t-shirt-s-small/DH3ECCJONSTXEWEEZOUZZM6I",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/a1a813096f457fe6f85c8a376765055031b7e28b/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ac4AAeSwOk1qczsg/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/a1a813096f457fe6f85c8a376765055031b7e28b/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ac4AAeSwOk1qczsg/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZkcAAeSwfRBqczsj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/R-gAAeSwQ7dqczsj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/N1oAAeSw0-xqczsh/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wvoAAeSwNRxqczsi/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/afIAAeSwOk1qczsj/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/exgAAeSwS0Bqczsi/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/V~YAAeSwHjVqczsj/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1925,7 +2340,10 @@
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/mJLNYG0b",
-      "checkoutUrlDiscounted": "https://square.link/u/XAkrQjhn"
+      "checkoutUrlDiscounted": "https://square.link/u/XAkrQjhn",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "IOMKHE7C2ESYQ4XYI3M564FU",
@@ -1935,9 +2353,15 @@
       "price": 13.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/maroon-under-armour-long-sleeve-waffle-crew-m-medium/6OWM243QJBQTIAHD2ZENZS7Y",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/be2ba6a1297b73df20ec05f2aa0c0a1b79caa435/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HPwAAeSwWEBqc88E/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/be2ba6a1297b73df20ec05f2aa0c0a1b79caa435/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HPwAAeSwWEBqc88E/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/udIAAeSwXRFqc88v/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9q4AAeSwUIlqc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3LkAAeSwUr5qc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/G~EAAeSwSFFqc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/BeUAAeSwFJVqc88G/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/YN8AAeSwsIxqc88v/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1950,7 +2374,8 @@
       "conditionEbay": "New with tags",
       "description": "Waffle Crew is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/86uxXwUG",
-      "checkoutUrlDiscounted": "https://square.link/u/EeqwOBLN"
+      "checkoutUrlDiscounted": "https://square.link/u/EeqwOBLN",
+      "conditionId": "1000"
     },
     {
       "id": "X4IFRN5JDBNFHCN7ZPXBTGA5",
@@ -1960,9 +2385,14 @@
       "price": 11.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/black-puma-soccer-pictures-graphic-t-shirt-m-medium/IKDFJA2RXTRWIT4WHRRNXPCN",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/780fcf9def97d4058736b94dcee1fd3b59d34be4/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gFYAAeSwtxVqc98Q/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/780fcf9def97d4058736b94dcee1fd3b59d34be4/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gFYAAeSwtxVqc98Q/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cNkAAeSwfCxqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hS8AAeSwFJVqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0dIAAeSwDCFqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/taIAAeSw~Lpqc98S/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aewAAeSwgMtqc98S/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -1973,7 +2403,10 @@
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/GaQin7Is",
-      "checkoutUrlDiscounted": "https://square.link/u/kn2WQelK"
+      "checkoutUrlDiscounted": "https://square.link/u/kn2WQelK",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "E22YGWAC36VSREYKSOFG7FLS",
@@ -1983,9 +2416,15 @@
       "price": 9.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/blue-youth-adidas-logo-graphic-t-shirt-ythl-youth-l/XWDE2IE3XCNBHBUM2CLQXQIN",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/4915a07cb12ea7ca4d36e8ce09b7ff48c2d66cf2/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1fcAAeSwBVhqfz5y/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/4915a07cb12ea7ca4d36e8ce09b7ff48c2d66cf2/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/1fcAAeSwBVhqfz5y/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CP0AAeSwvgtqfz52/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8xgAAeSwv-Jqfz51/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4owAAeSw6glqfz51/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/6D0AAeSwPd5qfz52/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-~QAAeSwSLlqfz51/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3q0AAeSwS4pqfz6A/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Youth",
@@ -1998,7 +2437,8 @@
       "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/CP6m7DYo",
-      "checkoutUrlDiscounted": "https://square.link/u/AXUl63aO"
+      "checkoutUrlDiscounted": "https://square.link/u/AXUl63aO",
+      "conditionId": "1000"
     },
     {
       "id": "4PCPQEYN4SLI7XMOOHTPIL7P",
@@ -2008,9 +2448,16 @@
       "price": 9.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/grey-puma-logo-vote-graphic-t-shirt-l-large/D5W5GS55U2TKYXXLQOAEOJR3",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/0ad27b25f42ad87b53fa5cf23d089b229e876ef4/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0ugAAeSwpfRqc9l~/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0ad27b25f42ad87b53fa5cf23d089b229e876ef4/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0ugAAeSwpfRqc9l~/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XvwAAeSwB-dqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Jm8AAeSwQtRqc9mB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/giIAAeSw~Lpqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/d6QAAeSwBFtqc9mB/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Nz0AAeSwPGtqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tpEAAeSw6Ppqc9mC/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Qu4AAeSw6JVqc9mD/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -2021,7 +2468,10 @@
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/3fk3gqWc",
-      "checkoutUrlDiscounted": "https://square.link/u/qut2yXiM"
+      "checkoutUrlDiscounted": "https://square.link/u/qut2yXiM",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "PPVWVZKJYRLSFX33RN4XQDOV",
@@ -2031,11 +2481,11 @@
       "price": 7.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/syracuse-soccer-rally-towels-2-pack/KL5J6BT3HLBFTOVJMCUZRG7S",
-      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/be747deb7e282fe51ce41f72d9f33c871a35bf76/original.jpeg",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zfIAAeSwQBhqWlB4/$_57.JPG?set_id=8800005007",
       "images": [
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/be747deb7e282fe51ce41f72d9f33c871a35bf76/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/0d9f46d94af968510f768cbb52940c4ffeb60fdb/original.jpeg",
-        "https://items-images-production.s3.us-west-2.amazonaws.com/files/4d4890313384f0a09817ad6b40ef91ddf300d8c9/original.jpeg"
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zfIAAeSwQBhqWlB4/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/tsgAAeSwiBtqWlB6/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/3IYAAeSwNm9qWlB6/$_57.JPG?set_id=8800005007"
       ],
       "quantity": 1,
       "tag": "Apparel",
@@ -2046,9 +2496,12 @@
       "category": "",
       "description": "Rally Towel is in perfect condition. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ZEOOvMjO",
-      "checkoutUrlDiscounted": "https://square.link/u/Srne1pBU"
+      "checkoutUrlDiscounted": "https://square.link/u/Srne1pBU",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-24T21:24:07Z"
+  "ebayDetailsSyncedAt": "2026-08-25T07:42:24Z"
 }
