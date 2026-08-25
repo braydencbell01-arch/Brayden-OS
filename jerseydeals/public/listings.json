@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-08-25T08:21:42Z",
+  "syncedAt": "2026-08-25T08:37:33Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -480,11 +480,11 @@
       "brand": "Nike",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/OPp39ogO",
       "checkoutUrlDiscounted": "https://square.link/u/aYF0Do3k",
+      "condition": "New",
+      "conditionEbay": "New",
       "conditionId": "1000"
     },
     {
@@ -2503,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-08-25T07:42:24Z"
+  "ebayDetailsSyncedAt": "2026-08-25T08:37:33Z"
 }
