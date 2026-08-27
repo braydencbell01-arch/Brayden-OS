@@ -3,9 +3,10 @@ import type { GameMode } from './storage'
 
 type Props = {
   onPlay: (opponentName?: string | null, mode?: GameMode) => void
+  onPhilipo?: () => void
 }
 
-export function EventsScreen({ onPlay }: Props) {
+export function EventsScreen({ onPlay, onPhilipo }: Props) {
   const season = loadSeason()
   const king = kingInfo()
   const profile = loadProfile()
@@ -50,6 +51,16 @@ export function EventsScreen({ onPlay }: Props) {
               <p className="text-sm font-extrabold text-white">Classic</p>
               <p className="text-xs font-semibold text-white/55">
                 1v1 towers · {profile.trophies} trophies
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => onPhilipo?.()}
+              className="rounded-lg bg-[#221610] px-3 py-3 text-left ring-1 ring-[#4a9eff]/35"
+            >
+              <p className="text-sm font-extrabold text-white">Philipo</p>
+              <p className="text-xs font-semibold text-white/55">
+                Stratego-style board — 8×10 grid, lakes, hidden ranks, capture the flag.
               </p>
             </button>
             <div className="rounded-lg bg-[#221610] px-3 py-3 text-left ring-1 ring-white/10">

@@ -6,6 +6,7 @@ export type GameMode =
   | 'draft'
   | 'undraft'
   | 'infiniteElixir'
+  | 'philipo'
 
 export const PARTY_MODES: GameMode[] = [
   'touchdown',
@@ -38,6 +39,8 @@ export function modeLabel(mode: GameMode): string {
       return 'Undraft'
     case 'infiniteElixir':
       return 'Infinite Elixir'
+    case 'philipo':
+      return 'Philipo'
     default:
       return 'Classic'
   }
@@ -71,7 +74,8 @@ export function parseGameMode(raw: unknown): GameMode {
     raw === 'touchdown' ||
     raw === 'draft' ||
     raw === 'undraft' ||
-    raw === 'infiniteElixir'
+    raw === 'infiniteElixir' ||
+    raw === 'philipo'
   ) {
     return raw
   }

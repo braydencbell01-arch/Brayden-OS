@@ -6,6 +6,7 @@ import { startHubBgm, stopHubBgm } from './audio'
 import { CharactersScreen } from './CharactersScreen'
 import { TopStatusBar } from './CurrencyBar'
 import { EventsScreen } from './EventsScreen'
+import { PhilipoScreen } from './PhilipoScreen'
 import { FriendsScreen } from './FriendsScreen'
 import { HomeScreen } from './HomeScreen'
 import { ProfileScreen } from './ProfileScreen'
@@ -222,6 +223,7 @@ export default function App() {
   const [battleSession, setBattleSession] = useState(0)
   const [showRoad, setShowRoad] = useState(false)
   const [showEvents, setShowEvents] = useState(false)
+  const [showPhilipo, setShowPhilipo] = useState(false)
   const [incomingChallenge, setIncomingChallenge] = useState<BattleChallenge | null>(null)
   const [outgoingChallenge, setOutgoingChallenge] = useState<BattleChallenge | null>(() =>
     loadOutgoingChallenge(),
@@ -1697,6 +1699,19 @@ export default function App() {
     )
   }
 
+  if (showPhilipo) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col">
+        <PhilipoScreen
+          onExit={() => {
+            setShowPhilipo(false)
+            setShowEvents(true)
+          }}
+        />
+      </div>
+    )
+  }
+
   if (showEvents) {
     return (
       <div className="relative flex h-full min-h-0 flex-col">
@@ -1706,6 +1721,10 @@ export default function App() {
             onPlay={(name, mode) => {
               setShowEvents(false)
               startMatch(name, mode ?? 'classic')
+            }}
+            onPhilipo={() => {
+              setShowEvents(false)
+              setShowPhilipo(true)
             }}
           />
         </div>
