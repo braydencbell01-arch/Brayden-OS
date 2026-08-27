@@ -16,6 +16,8 @@ export type PhilipoRank =
   | 'colonel'
   | 'general'
   | 'commander'
+  | 'flag'
+  | 'bomb'
   | 'wall'
 
 export type PhilipoSide = 'red' | 'blue'
@@ -92,6 +94,8 @@ const RANK_VALUE: Record<PhilipoRank, number> = {
   colonel: 8,
   general: 9,
   commander: 10,
+  flag: 0,
+  bomb: 0,
   wall: -1,
 }
 
@@ -107,6 +111,8 @@ const RANK_LABEL: Record<PhilipoRank, string> = {
   colonel: '8',
   general: '9',
   commander: '10',
+  flag: 'F',
+  bomb: 'B',
   wall: 'W',
 }
 
@@ -122,6 +128,8 @@ const RANK_NAME: Record<PhilipoRank, string> = {
   colonel: 'Colonel',
   general: 'General',
   commander: 'Commander',
+  flag: 'Flag',
+  bomb: 'Bomb',
   wall: 'Wall',
 }
 
@@ -141,15 +149,15 @@ const PROMOTE_NEXT: Partial<Record<PhilipoRank, PhilipoRank>> = {
 
 /**
  * 24-piece army:
- * 1 Assassin, 4 Privates, 3 Scouts, 3 Miners, 1 Commander, 1 General, 1 Wall,
- * 2 of everything else (Sergeant–Colonel).
+ * 1 Assassin, 3 Privates, 1 Flag, 3 Scouts, 3 Miners, 1 Bomb, 1 Wall,
+ * 1 Commander, 1 General, 1 Colonel, 2 of Sergeant–Major.
  */
 const ARMY: PhilipoRank[] = [
   'assassin',
   'private',
   'private',
   'private',
-  'private',
+  'flag',
   'scout',
   'scout',
   'scout',
@@ -165,7 +173,7 @@ const ARMY: PhilipoRank[] = [
   'major',
   'major',
   'colonel',
-  'colonel',
+  'bomb',
   'general',
   'commander',
   'wall',
@@ -383,7 +391,7 @@ function autoPlace(side: PhilipoSide, pieces: PhilipoPiece[]): Map<string, Phili
 }
 
 function canMovePiece(rank: PhilipoRank): boolean {
-  return rank !== 'wall'
+  return rank !== 'wall' && rank !== 'flag' && rank !== 'bomb'
 }
 
 function inOwnHalf(side: PhilipoSide, row: number): boolean {
@@ -392,7 +400,9 @@ function inOwnHalf(side: PhilipoSide, row: number): boolean {
 
 /**
  * Combat with buffs. Ties always kill both.
- * Wall: only Miner (or Defuse) removes it — others bounce (attacker stays, no kill).
+ * Flag: attacker captures and wins.
+ * Bomb: attacker dies unless Miner or Defuse.
+ * Wall: only Miner (or Defuse) removes it — others bounce.
  * Assassin: only kills when Assassination is active on the attack.
  */
 function combat(
@@ -401,6 +411,11 @@ function combat(
   atkBuff: PendingBuffs,
   defBuff: PendingBuffs,
 ): 'attacker' | 'defender' | 'both' | 'bounce' {
+  if (defender.rank === 'flag') return 'attacker'
+  if (defender.rank === 'bomb') {
+    if (attacker.rank === 'miner' || atkBuff.defuse) return 'attacker'
+    return 'defender'
+  }
   if (defender.rank === 'wall') {
     if (attacker.rank === 'miner' || atkBuff.defuse) return 'attacker'
     return 'bounce'
@@ -774,11 +789,11 @@ export function PhilipoScreen({ onExit }: Props) {
     }
     if (result === 'attacker') {
       map.set(toKey, { ...piece, revealed: true })
-      if (target.rank === 'wall') {
+      if (target.rank === 'flag') {
         setBoard(map)
         setWinner('blue')
         setPhase('over')
-        setMessage('Blue destroyed your Wall.')
+        setMessage('Blue captured your Flag.')
         return
       }
     } else if (result === 'defender') {
@@ -832,11 +847,11 @@ export function PhilipoScreen({ onExit }: Props) {
     map.delete(fromKey)
     if (result === 'attacker') {
       map.set(toKey, { ...mover, revealed: true })
-      if (target.rank === 'wall') {
+      if (target.rank === 'flag') {
         setBoard(map)
         setWinner('red')
         setPhase('over')
-        setMessage('You destroyed their Wall — victory!')
+        setMessage('You captured the Flag — victory!')
         return
       }
       if (buffs.capture) {
@@ -1060,10 +1075,17 @@ export function PhilipoScreen({ onExit }: Props) {
                           background:
                             piece.rank === 'wall'
                               ? 'linear-gradient(180deg,#9a9a9a,#4a4a4a)'
-                              : piece.side === 'red'
-                                ? 'linear-gradient(180deg,#e85a4a,#9a2018)'
-                                : 'linear-gradient(180deg,#4a8adf,#1a3a78)',
-                          color: '#fff6e8',
+                              : piece.rank === 'bomb'
+                                ? 'linear-gradient(180deg,#3a3a3a,#1a1a1a)'
+                                : piece.rank === 'flag'
+                                  ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                                  : piece.side === 'red'
+                                    ? 'linear-gradient(180deg,#e85a4a,#9a2018)'
+                                    : 'linear-gradient(180deg,#4a8adf,#1a3a78)',
+                          color:
+                            piece.rank === 'flag' && showRank(piece)
+                              ? '#1a1410'
+                              : '#fff6e8',
                           boxShadow: '0 1px 0 #00000055, inset 0 1px 0 #ffffff33',
                           border: '1px solid #1a100888',
                         }}
@@ -1118,8 +1140,12 @@ export function PhilipoScreen({ onExit }: Props) {
                         ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
                         : p.rank === 'wall'
                           ? 'linear-gradient(180deg,#9a9a9a,#4a4a4a)'
-                          : 'linear-gradient(180deg,#e85a4a,#9a2018)',
-                      color: on ? '#1a1410' : '#fff6e8',
+                          : p.rank === 'bomb'
+                            ? 'linear-gradient(180deg,#3a3a3a,#1a1a1a)'
+                            : p.rank === 'flag'
+                              ? 'linear-gradient(180deg,#ffe08a,#c9a227)'
+                              : 'linear-gradient(180deg,#e85a4a,#9a2018)',
+                      color: on || p.rank === 'flag' ? '#1a1410' : '#fff6e8',
                       boxShadow: on ? '0 0 0 2px #fff' : '0 2px 0 #5a1008',
                     }}
                     aria-label={RANK_NAME[p.rank]}
