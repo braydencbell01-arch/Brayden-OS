@@ -163,8 +163,6 @@ function FooterSocials({ ebaySeller }: { ebaySeller: string }) {
 function buildSections(opts: { ebayShop: string; showTrending: boolean }): FooterSection[] {
   const shop: FooterItem[] = [
     { kind: 'hash', label: 'Collections', href: '#collections' },
-    { kind: 'hash', label: 'Premier League', href: '#epl' },
-    { kind: 'hash', label: 'Champions League', href: '#ucl' },
     { kind: 'hash', label: 'Shop', href: '#shop' },
     { kind: 'action', label: 'Full inventory', action: 'inventory' },
     { kind: 'hash', label: 'Rewards', href: '#rewards' },

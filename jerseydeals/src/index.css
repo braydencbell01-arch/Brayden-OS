@@ -125,10 +125,29 @@
   }
 
   .brand-rule {
-    height: 4px;
-    width: 4rem;
-    background: linear-gradient(90deg, var(--color-crimson) 0%, var(--color-crimson) 42%, var(--color-navy) 100%);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-crimson) 18%, transparent);
+    height: 3px;
+    width: 3rem;
+    background: var(--color-navy);
+  }
+
+  .floor-tile-photo {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, white 88%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--color-navy) 14%, transparent),
+      0 14px 34px color-mix(in srgb, var(--color-navy) 10%, transparent);
+  }
+
+  .floor-tile-outline {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--color-cream) 94%, white), var(--color-chalk)),
+      repeating-linear-gradient(
+        -45deg,
+        color-mix(in srgb, var(--color-navy) 4%, transparent) 0 1px,
+        transparent 1px 14px
+      );
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-navy) 8%, transparent),
+      0 10px 28px color-mix(in srgb, var(--color-navy) 8%, transparent);
   }
 
   .brand-panel {

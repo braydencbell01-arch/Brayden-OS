@@ -14,15 +14,11 @@ import {
   EBAY_FEEDBACK_COUNT,
   EBAY_OVERALL_RATING,
   EBAY_RATINGS,
-  EBAY_SALE_URL,
   EBAY_SELLER,
   EBAY_SELLER_URL,
   EBAY_SHOP_URL,
   FAMILY_NOTE,
   FREE_SHIPPING_THRESHOLD,
-  PROMO_BAR,
-  SALE_HEADLINE,
-  SALE_URGENCY,
   SQUARE_STORE_URL,
 } from './config'
 import {
@@ -114,7 +110,6 @@ import {
   matchesListingQuery,
   matchesPriceFilter,
   matchesTypeFilter,
-  pickFeatured,
   pickNewDrops,
   pickSaleItems,
   pickTrending,
@@ -301,16 +296,7 @@ function ProductCardCover({
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-/** Official Premier League purple. */
-const PL_PURPLE = '#37003c'
-const PL_PURPLE_DEEP = '#240028'
-
-/** Champions League blue. */
-const UCL_BLUE = '#001E62'
-const UCL_BLUE_DEEP = '#010b28'
-const UCL_GOLD = '#C4A35A'
-
-/** Company logos used in Shop by company (reuse collection art). */
+/** Brand logos used in Shop by brand (reuse collection art). */
 const COMPANY_LOGO: Record<string, string> = {
   nike: 'collections/nike.jpg',
   adidas: 'collections/adidas.jpg',
@@ -1162,7 +1148,6 @@ export default function App() {
     if (itemProfile) return
     leaveItemPage()
   }, [itemPageId, itemProfile, catalog])
-  const featured = useMemo(() => pickFeatured(listings, 6), [listings])
   const newDrops = useMemo(() => pickNewDrops(listings, 6), [listings])
   const salePicks = useMemo(() => pickSaleItems(listings), [listings])
   const visibleSalePicks = useMemo(
@@ -1537,8 +1522,6 @@ export default function App() {
     { href: '#collections', label: 'Collections' },
     { href: '#favorites', label: 'Favorites' },
     { href: '#profile', label: 'Profile' },
-    { href: '#epl', label: 'EPL' },
-    { href: '#ucl', label: 'UCL' },
     { href: '#shop', label: 'Shop' },
     { href: inventoryHref(), label: 'Inventory', inventory: true as const },
     { href: '#rewards', label: 'Rewards' },
@@ -1591,26 +1574,6 @@ export default function App() {
       ) : null}
 
       <div ref={topChromeRef} className="pointer-events-auto fixed inset-x-0 top-0 z-[100]">
-      {/* Promo bar — Premier League shop CTA */}
-      <button
-        type="button"
-        onClick={() => {
-          track('promo_bar_click', { destination: 'epl_section' })
-          const goEpl = () => {
-            document.getElementById('epl')?.scrollIntoView({ behavior: 'smooth' })
-          }
-          if (inventoryOpen || favoritesOpen || profileOpen || offersOpen || itemPageId) {
-            leaveToHome()
-            window.setTimeout(goEpl, 40)
-            return
-          }
-          goEpl()
-        }}
-        className="flex w-full min-h-10 items-center justify-center bg-gradient-to-r from-crimson via-[#c45a1a] to-[#8a3a12] px-3 py-2 text-center font-brand text-[0.62rem] font-bold uppercase leading-tight tracking-[0.1em] text-cream transition hover:brightness-110 sm:min-h-9 sm:px-4 sm:text-xs sm:tracking-[0.16em]"
-      >
-        <span className="line-clamp-2 sm:line-clamp-1">{PROMO_BAR}</span>
-      </button>
-
       <a
         href={inventoryHref()}
         onClick={(e) => {
@@ -1947,11 +1910,11 @@ export default function App() {
                 <div className="mb-4 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                   <p className="inline-flex items-center gap-2.5 font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/90 sm:text-[0.7rem]">
                     <span className="h-px w-5 shrink-0 bg-[#f0d45a]" aria-hidden />
-                    Premier League kicks off 8/21
+                    Premier League is underway
                   </p>
                   <p className="inline-flex items-center gap-2.5 font-brand text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-cream/90 sm:text-[0.7rem]">
                     <span className="h-px w-5 shrink-0 bg-[#f0d45a]" aria-hidden />
-                    Shop our Premier League sale
+                    Shop jerseys and fan gear
                   </p>
                 </div>
                 <h1 className="max-w-xl font-brand text-5xl font-bold uppercase leading-[0.9] tracking-[0.08em] text-cream sm:text-6xl md:text-7xl">
@@ -2026,84 +1989,6 @@ export default function App() {
           }}
         />
 
-        {/* Premier League sale — purple promo band; shop-by-club is a separate section */}
-        <section
-          id="epl"
-          className="scroll-mt-44 relative overflow-hidden"
-          style={{ background: PL_PURPLE_DEEP }}
-          aria-labelledby="epl-sale-heading"
-        >
-          <div className="absolute inset-0" aria-hidden>
-            <motion.img
-              src={asset('epl-kits-bg.jpg')}
-              alt=""
-              initial={reduce ? false : { scale: 1.04 }}
-              whileInView={reduce ? undefined : { scale: 1 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 1.15, ease }}
-              className="h-full w-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background: [
-                  `linear-gradient(105deg, ${PL_PURPLE_DEEP} 0%, ${PL_PURPLE}ee 38%, ${PL_PURPLE}99 62%, ${PL_PURPLE}55 100%)`,
-                  `linear-gradient(180deg, ${PL_PURPLE_DEEP}66 0%, transparent 28%, ${PL_PURPLE_DEEP}aa 100%)`,
-                ].join(', '),
-              }}
-            />
-          </div>
-
-          <div className="relative z-10 mx-auto flex min-h-[22rem] max-w-6xl flex-col justify-end px-5 py-14 md:min-h-[26rem] md:px-8 md:py-20">
-            <motion.div
-              initial={reduce ? false : { opacity: 0.001, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.45 }}
-              transition={{ duration: 0.75, ease }}
-              className="max-w-xl"
-            >
-              <div className="flex items-center gap-3">
-                <img
-                  src={asset('premier-league-logo.png')}
-                  alt=""
-                  className="h-11 w-11 object-contain md:h-12 md:w-12"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <p className="font-display text-lg font-bold uppercase tracking-[0.14em] text-white md:text-xl">
-                  Premier League sale
-                </p>
-              </div>
-              <h2
-                id="epl-sale-heading"
-                className="mt-5 font-display text-4xl font-bold uppercase leading-[0.95] tracking-wide text-white sm:text-5xl md:text-6xl"
-              >
-                Top-flight kits.
-                <br />
-                On sale now.
-              </h2>
-              <p className="mt-4 max-w-md font-brand text-sm leading-relaxed text-white/85 md:text-base">
-                Authentic Premier League jerseys at sale prices — shop the selection while stock lasts.
-              </p>
-              <motion.button
-                type="button"
-                onClick={() => {
-                  track('cta_click', { place: 'shop_epl_sale' })
-                  goInventory({ reset: true, leagueId: 'premier-league' })
-                }}
-                whileHover={reduce ? undefined : { scale: 1.02 }}
-                whileTap={reduce ? undefined : { scale: 0.98 }}
-                className="mt-7 inline-flex bg-white px-8 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] transition hover:bg-cream"
-                style={{ color: PL_PURPLE }}
-              >
-                Shop the sale
-              </motion.button>
-            </motion.div>
-          </div>
-        </section>
-
         {/* Editorial shop paths */}
         <section id="shop" className="scroll-mt-44 bg-cream py-12 md:py-16">
           <div className="mx-auto max-w-6xl px-5 md:px-8">
@@ -2113,16 +1998,18 @@ export default function App() {
                 Shop the floor
               </h2>
               <p className="mt-2 font-brand text-base text-muted">
-                Youth, sale, catalog, or apparel — start where you want.
+                Youth, jerseys, catalog, or leagues — start where you want.
               </p>
             </motion.div>
 
-            <div className="mt-7 grid grid-cols-2 gap-2.5 sm:gap-3 md:gap-4">
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 md:gap-5">
               {(
                 [
                   {
                     key: 'youth',
                     label: 'Youth',
+                    subtitle: 'Kids sizes',
+                    kind: 'photo' as const,
                     image: 'category-youth.jpg',
                     onClick: () => {
                       track('category_click', { category: 'category_youth' })
@@ -2130,21 +2017,21 @@ export default function App() {
                     },
                   },
                   {
-                    key: 'sale',
-                    label: 'Sale',
-                    image: 'category-sale.jpg',
+                    key: 'jerseys',
+                    label: 'Jerseys',
+                    subtitle: 'Match kits',
+                    kind: 'outline' as const,
+                    icon: 'jersey' as const,
                     onClick: () => {
-                      track('category_click', { category: 'category_sale' })
-                      if (onSquare) {
-                        goInventory({ saleOnly: true, reset: true })
-                      } else {
-                        window.open(EBAY_SALE_URL, '_blank', 'noopener,noreferrer')
-                      }
+                      track('category_click', { category: 'category_jerseys' })
+                      goInventory({ tag: 'Jerseys', reset: true })
                     },
                   },
                   {
                     key: 'catalog',
                     label: 'Catalog',
+                    subtitle: 'Full inventory',
+                    kind: 'photo' as const,
                     image: 'category-catalog.jpg',
                     onClick: () => {
                       track('category_click', { category: 'category_all' })
@@ -2152,12 +2039,14 @@ export default function App() {
                     },
                   },
                   {
-                    key: 'apparel',
-                    label: 'Apparel',
-                    image: 'product-hoodie.jpg',
+                    key: 'leagues',
+                    label: 'Leagues',
+                    subtitle: 'EPL · UCL · more',
+                    kind: 'outline' as const,
+                    icon: 'leagues' as const,
                     onClick: () => {
-                      track('category_click', { category: 'category_apparel' })
-                      goInventory({ tag: 'Apparel', reset: true })
+                      track('category_click', { category: 'category_leagues' })
+                      document.getElementById('collections')?.scrollIntoView({ behavior: 'smooth' })
                     },
                   },
                 ] as const
@@ -2167,24 +2056,68 @@ export default function App() {
                   type="button"
                   onClick={tile.onClick}
                   {...fadeUp(reduce, 0.04 * i)}
-                  className="group relative aspect-square w-full overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crimson"
+                  className={`group relative aspect-square w-full overflow-hidden text-left outline-none transition duration-300 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2 focus-visible:ring-offset-cream ${
+                    tile.kind === 'photo' ? 'floor-tile-photo' : 'floor-tile-outline border-2 border-navy/20'
+                  }`}
                 >
-                  <img
-                    src={asset(tile.image)}
-                    alt=""
-                    className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      e.currentTarget.src = FALLBACK_IMAGE
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent" />
-                  <div className="relative flex h-full flex-col justify-end p-3 sm:p-4">
-                    <p className="font-display text-lg font-bold uppercase tracking-wide text-white sm:text-xl md:text-2xl">
-                      {tile.label}
-                    </p>
-                  </div>
+                  {tile.kind === 'photo' ? (
+                    <>
+                      <img
+                        src={asset(tile.image)}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.currentTarget.src = FALLBACK_IMAGE
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-navy-deep/92 via-navy-deep/30 to-navy-deep/5" />
+                      <div className="absolute inset-3 border border-white/25 transition group-hover:border-white/45" aria-hidden />
+                    </>
+                  ) : (
+                    <div className="relative flex h-full flex-col items-center justify-center gap-3 p-4 sm:p-5">
+                      <div
+                        className="grid h-16 w-16 place-items-center rounded-full border-2 border-navy/20 bg-white/80 text-navy transition group-hover:border-navy/40 group-hover:bg-white sm:h-[4.5rem] sm:w-[4.5rem]"
+                        aria-hidden
+                      >
+                        {tile.icon === 'jersey' ? (
+                          <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.75">
+                            <path d="M16 8l-4 6v26h24V14l-4-6" strokeLinejoin="round" />
+                            <path d="M16 8h16M20 8v6M28 8v6" strokeLinecap="round" />
+                            <path d="M24 20v12" strokeLinecap="round" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.75">
+                            <circle cx="24" cy="24" r="14" />
+                            <path d="M24 10v28M10 24h28" strokeLinecap="round" />
+                            <path d="M13.5 13.5c4.5 2.5 16.5 2.5 21 0M13.5 34.5c4.5-2.5 16.5-2.5 21 0" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <p className="font-display text-lg font-bold uppercase tracking-[0.08em] text-navy sm:text-xl md:text-2xl">
+                          {tile.label}
+                        </p>
+                        <p className="mt-1 font-brand text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-muted sm:text-[0.68rem]">
+                          {tile.subtitle}
+                        </p>
+                      </div>
+                      <span className="absolute bottom-3 right-3 font-brand text-[0.58rem] font-bold uppercase tracking-[0.16em] text-navy/55 transition group-hover:text-navy sm:bottom-4 sm:right-4 sm:text-[0.62rem]">
+                        Shop →
+                      </span>
+                    </div>
+                  )}
+                  {tile.kind === 'photo' ? (
+                    <div className="relative flex h-full flex-col justify-end p-3 sm:p-4">
+                      <p className="font-display text-lg font-bold uppercase tracking-wide text-white sm:text-xl md:text-2xl">
+                        {tile.label}
+                      </p>
+                      <p className="mt-0.5 font-brand text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-white/75 sm:text-[0.68rem]">
+                        {tile.subtitle}
+                      </p>
+                    </div>
+                  ) : null}
                 </motion.button>
               ))}
             </div>
@@ -2199,11 +2132,10 @@ export default function App() {
               className="flex flex-col gap-4 border-b border-navy/10 pb-6 md:flex-row md:items-end md:justify-between"
             >
               <div>
-                <p className="eyebrow text-crimson">Just in</p>
-                <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
+                <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
                   New drops
                 </h2>
-                <p className="mt-2 max-w-xl text-muted">Fresh arrivals</p>
+                <p className="mt-2 max-w-xl text-muted">New season. New shirts.</p>
               </div>
               <button
                 type="button"
@@ -2218,7 +2150,7 @@ export default function App() {
             </motion.div>
 
             {newDrops.length > 0 ? (
-              <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
+              <ul className="mt-4 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-4 lg:grid-cols-6">
                 {newDrops.map((item, i) => (
                   <ProductLink
                     key={item.id}
@@ -2235,7 +2167,7 @@ export default function App() {
                 ))}
               </ul>
             ) : (
-              <p className="mt-8 text-muted">
+              <p className="mt-4 text-muted">
                 {loadState === 'loading' ? 'Loading new drops…' : 'New drops appear when listings sync.'}
               </p>
             )}
@@ -2274,87 +2206,6 @@ export default function App() {
             </div>
           </section>
         )}
-
-        {/* Champions League — blue promo band; shop-by-club is a separate section */}
-        <section
-          id="ucl"
-          className="scroll-mt-44 relative overflow-hidden"
-          style={{ background: UCL_BLUE_DEEP }}
-          aria-labelledby="ucl-shop-heading"
-        >
-          <div className="absolute inset-0" aria-hidden>
-            <motion.img
-              src={asset('epl-tunnel.jpg')}
-              alt=""
-              initial={reduce ? false : { scale: 1.04 }}
-              whileInView={reduce ? undefined : { scale: 1 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: 1.15, ease }}
-              className="h-full w-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                background: [
-                  `linear-gradient(105deg, ${UCL_BLUE_DEEP} 0%, ${UCL_BLUE}ee 38%, ${UCL_BLUE}99 62%, ${UCL_BLUE}55 100%)`,
-                  `linear-gradient(180deg, ${UCL_BLUE_DEEP}66 0%, transparent 28%, ${UCL_BLUE_DEEP}aa 100%)`,
-                ].join(', '),
-              }}
-            />
-          </div>
-
-          <div className="relative z-10 mx-auto flex min-h-[22rem] max-w-6xl flex-col justify-end px-5 py-14 md:min-h-[26rem] md:px-8 md:py-20">
-            <motion.div
-              initial={reduce ? false : { opacity: 0.001, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.45 }}
-              transition={{ duration: 0.75, ease }}
-              className="max-w-xl"
-            >
-              <div className="flex items-center gap-3">
-                <img
-                  src={asset('ucl-badge.svg')}
-                  alt=""
-                  className="h-11 w-11 object-contain md:h-12 md:w-12"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <p
-                  className="font-display text-lg font-bold uppercase tracking-[0.14em] md:text-xl"
-                  style={{ color: UCL_GOLD }}
-                >
-                  Champions League
-                </p>
-              </div>
-              <h2
-                id="ucl-shop-heading"
-                className="mt-5 font-display text-4xl font-bold uppercase leading-[0.95] tracking-wide text-white sm:text-5xl md:text-6xl"
-              >
-                Europe’s biggest stage.
-                <br />
-                Shop the kits.
-              </h2>
-              <p className="mt-4 max-w-md font-brand text-sm leading-relaxed text-white/85 md:text-base">
-                Authentic Champions League jerseys from Europe’s biggest clubs — shop what we stock.
-              </p>
-              <motion.button
-                type="button"
-                onClick={() => {
-                  track('cta_click', { place: 'shop_ucl' })
-                  goInventory({ reset: true, leagueId: 'champions-league' })
-                }}
-                whileHover={reduce ? undefined : { scale: 1.02 }}
-                whileTap={reduce ? undefined : { scale: 0.98 }}
-                className="mt-7 inline-flex bg-white px-8 py-3.5 font-brand text-sm font-bold uppercase tracking-[0.14em] transition hover:bg-cream"
-                style={{ color: UCL_BLUE }}
-              >
-                Shop UCL
-              </motion.button>
-            </motion.div>
-          </div>
-        </section>
 
         {/* Training edit */}
         {trainingPicks.length > 0 ? (
@@ -2400,90 +2251,14 @@ export default function App() {
           </section>
         ) : null}
 
-        {/* Featured */}
-        <section id="featured" className="cv-auto scroll-mt-44 bg-navy py-14 text-white md:py-20">
-          <div className="mx-auto max-w-6xl px-5 md:px-8">
-            <motion.div {...fadeUp(reduce)} className="max-w-2xl">
-              <p className="eyebrow text-crimson-hot">Selected</p>
-              <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide md:text-5xl">
-                Featured gear
-              </h2>
-              <p className="mt-3 text-base text-white/65">
-                Editor picks from live inventory — quick view details, then add to cart.
-              </p>
-            </motion.div>
-
-            {loadState === 'loading' && <p className="mt-12 text-white/60">Loading listings…</p>}
-
-            {loadState === 'error' && (
-              <p className="mt-12 text-white/70">
-                Listings are temporarily unavailable.{' '}
-                <a
-                  href={ebayShop}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline decoration-crimson-hot underline-offset-4 hover:text-white"
-                >
-                  Open the eBay shop
-                </a>
-                .
-              </p>
-            )}
-
-            {featured.length > 0 && (
-              <ul className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-6">
-                {featured.map((item, i) => (
-                  <ProductLink
-                    key={item.id}
-                    item={item}
-                    favoriteSet={favoriteSet}
-                    reduce={reduce}
-                    delay={i * 0.03}
-                    tone="dark"
-                    size="compact"
-                    onAddToCart={handleAddToCart}
-                    onQuickView={handleQuickView}
-                    onBuyNow={handleBuyNow}
-                  />
-                ))}
-              </ul>
-            )}
-
-            {listings.length > featured.length && (
-              <motion.div {...fadeUp(reduce, 0.15)} className="mt-10 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    track('cta_click', { place: 'featured_inventory' })
-                    goInventory({ tag: 'All', reset: true })
-                  }}
-                  className="inline-flex border border-white/30 px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white hover:bg-white/5"
-                >
-                  Browse all {listings.length} listings
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    track('cta_click', { place: 'featured_all' })
-                    goInventory({ reset: true })
-                  }}
-                  className="inline-flex bg-crimson px-5 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
-                >
-                  Browse inventory
-                </button>
-              </motion.div>
-            )}
-          </div>
-        </section>
-
-        {/* Shop by company */}
+        {/* Shop by brand */}
         {availableBrands.length > 0 && (
           <section id="brands" className="scroll-mt-44 border-y border-navy/10 bg-white py-16 md:py-20">
             <div className="mx-auto max-w-6xl px-5 md:px-8">
               <motion.div {...fadeUp(reduce)}>
-                <p className="eyebrow text-crimson">Companies</p>
+                <p className="eyebrow text-crimson">Brands</p>
                 <h2 className="mt-3 font-display text-4xl font-bold uppercase tracking-wide text-navy md:text-5xl">
-                  Shop by company
+                  Shop by brand
                 </h2>
               </motion.div>
               <ul className="mt-10 grid gap-3 sm:grid-cols-3">
@@ -2604,49 +2379,6 @@ export default function App() {
             </div>
           </section>
         )}
-
-        {/* Sale campaign */}
-        <section id="sale" className="cv-auto relative min-h-[68svh] scroll-mt-44 overflow-hidden bg-navy-deep text-white">
-          <div className="absolute inset-0" aria-hidden>
-            <img
-              src={asset('category-sale.jpg')}
-              alt=""
-              className="h-full w-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-navy-deep via-navy-deep/80 to-navy-deep/25" />
-          </div>
-          <div className="relative z-10 mx-auto flex min-h-[68svh] max-w-6xl items-end px-5 py-16 md:items-center md:px-8 md:py-24">
-            <motion.div {...fadeUp(reduce)} className="max-w-lg">
-              <p className="eyebrow text-crimson-hot">Limited stock</p>
-              <h2 className="mt-3 font-display text-5xl font-bold uppercase tracking-wide md:text-7xl">
-                {SALE_HEADLINE}
-              </h2>
-              <p className="mt-4 text-lg text-white/80">{SALE_URGENCY}</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    track('cta_click', { place: 'sale_banner' })
-                    goInventory({ saleOnly: true, reset: true })
-                  }}
-                  className="inline-flex bg-crimson px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-crimson-hot"
-                >
-                  Shop sale kits
-                </button>
-                {salePicks.length > 0 ? (
-                  <a
-                    href="#sale-picks"
-                    className="inline-flex border border-white/40 px-6 py-3.5 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:border-white hover:bg-white/10"
-                  >
-                    See sale picks
-                  </a>
-                ) : null}
-              </div>
-            </motion.div>
-          </div>
-        </section>
 
         {salePicks.length > 0 ? (
           <section id="sale-picks" className="bg-navy py-16 text-white md:py-20">
