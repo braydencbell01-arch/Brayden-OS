@@ -207,8 +207,8 @@ jobs:
           npm run build
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
-          if ! grep -q 'Shop our Premier League sale' dist/assets/*.js; then
-            echo "ERROR: custom-domain build missing Premier League sale eyebrow" >&2
+          if ! grep -q 'Premier League is underway' dist/assets/*.js; then
+            echo "ERROR: custom-domain build missing Premier League hero eyebrow" >&2
             exit 1
           fi
 
