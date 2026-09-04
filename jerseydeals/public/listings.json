@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-09-04T12:12:43Z",
+  "syncedAt": "2026-09-04T13:45:21Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -1857,11 +1857,11 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yUu2nMuK",
       "checkoutUrlDiscounted": "https://square.link/u/96bujevx",
+      "condition": "New",
+      "conditionEbay": "New with tags",
       "conditionId": "1000"
     },
     {
@@ -2503,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-04T09:25:52Z"
+  "ebayDetailsSyncedAt": "2026-09-04T13:45:21Z"
 }
