@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-09-04T07:26:15Z",
+  "syncedAt": "2026-09-04T09:25:52Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -1834,7 +1834,7 @@
     {
       "id": "TR7CJHQQOIORGFKMQEEDYKOK",
       "itemId": "3PUUINK2CUWJ5QT7IPI7FXWO",
-      "sku": "ebay:800462519354",
+      "sku": "ebay:800610879349",
       "title": "Grey adidas T-Shirt With Outdoors Graphic On Back L Large",
       "price": 19.99,
       "currency": "USD",
@@ -1857,11 +1857,11 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
+      "condition": "New",
+      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/yUu2nMuK",
       "checkoutUrlDiscounted": "https://square.link/u/96bujevx",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "conditionId": "1000"
     },
     {
@@ -2503,5 +2503,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-04T04:58:06Z"
+  "ebayDetailsSyncedAt": "2026-09-04T09:25:52Z"
 }

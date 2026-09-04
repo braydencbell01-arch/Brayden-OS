@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-04T05:05:07Z",
+  "updatedAt": "2026-09-04T09:32:53Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -143,12 +143,13 @@
     "ebay:800508178173",
     "ebay:800547832646",
     "ebay:800554792101",
-    "ebay:800559721022"
+    "ebay:800559721022",
+    "ebay:800610879349"
   ],
   "pending": [],
-  "lastEmailedAt": "2026-08-25T07:42:33Z",
-  "lastEmailedDay": "2026-08-25",
+  "lastEmailedAt": "2026-09-04T09:32:57Z",
+  "lastEmailedDay": "2026-09-04",
   "lastEmailedIds": [
-    "ebay:800559721022"
+    "ebay:800610879349"
   ]
 }
