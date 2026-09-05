@@ -1,0 +1,18 @@
+{
+  "updatedAt": "2026-09-05T16:35:08Z",
+  "bootstrappedAt": "2026-07-29T15:41:51Z",
+  "emailedOrderIds": [
+    "07uj1BljabQeYpsIDpJpMUSbp4FZY",
+    "YLpzAeiPj9rhJZjXCv5jVnvBxNCZY",
+    "cP4EN0f3VmfBwKex9Mm7oKdXnZZZY",
+    "k9hUQuiR7E7XqWYrzSaf8wRqMQdZY",
+    "sdvAA5LjPBOXLKaPmkraq7GMOL9YY"
+  ],
+  "lastEmailedAt": "2026-08-08T15:58:53Z",
+  "lastEmailedOrderIds": [
+    "sdvAA5LjPBOXLKaPmkraq7GMOL9YY",
+    "k9hUQuiR7E7XqWYrzSaf8wRqMQdZY",
+    "cP4EN0f3VmfBwKex9Mm7oKdXnZZZY"
+  ],
+  "note": "Cleared once so existing Square buyers get the thank-you backfill."
+}

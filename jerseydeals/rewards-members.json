@@ -1,0 +1,77 @@
+{
+  "syncedAt": "2026-08-24T16:40:05Z",
+  "kind": "rewards_members",
+  "scope": "jerseydeals-landing",
+  "listGeneration": "2026-07-27-email-reset",
+  "count": 6,
+  "emails": [
+    "braydencbell01@gmail.com",
+    "braydencbelll01@gmail.com",
+    "calebrschrader@gmail.com",
+    "candkbell@gmail.com",
+    "lynne8002@aol.com",
+    "tbsports9@icloud.com"
+  ],
+  "entries": [
+    {
+      "email": "braydencbell01@gmail.com",
+      "sources": [
+        "rewards_club",
+        "cart_checkout_gate",
+        "offer_activate_pl5",
+        "first_buyer_offer"
+      ],
+      "firstSeen": "2026-07-27T15:39:21.000Z",
+      "lastSeen": "2026-08-08T00:27:32.000Z",
+      "phone": "5855053244"
+    },
+    {
+      "email": "braydencbelll01@gmail.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-08-05T17:42:26.000Z",
+      "lastSeen": "2026-08-05T17:42:26.000Z",
+      "phone": "5855053244"
+    },
+    {
+      "email": "calebrschrader@gmail.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T20:02:10.000Z",
+      "lastSeen": "2026-07-27T20:02:10.000Z",
+      "phone": "5856623023"
+    },
+    {
+      "email": "candkbell@gmail.com",
+      "sources": [
+        "rewards_club",
+        "cart_checkout_gate"
+      ],
+      "firstSeen": "2026-07-28T19:19:46.000Z",
+      "lastSeen": "2026-08-05T12:38:47.000Z",
+      "phone": "6158786872"
+    },
+    {
+      "email": "lynne8002@aol.com",
+      "sources": [
+        "rewards_club",
+        "landing"
+      ],
+      "firstSeen": "2026-07-27T18:55:23.000Z",
+      "lastSeen": "2026-07-29T16:00:26.000Z",
+      "phone": "7576309980"
+    },
+    {
+      "email": "tbsports9@icloud.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-07-27T16:46:43.000Z",
+      "lastSeen": "2026-07-27T16:46:43.000Z",
+      "phone": "5855057726"
+    }
+  ],
+  "note": "Jersey Deals landing-page Rewards members only (not Square Online / BrayStats)."
+}

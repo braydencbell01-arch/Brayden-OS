@@ -1,0 +1,54 @@
+{
+  "updatedAt": "2026-09-05T18:15:59.703Z",
+  "locationId": "L6ZVPG4Q71605",
+  "skus": {
+    "royale-starter": {
+      "url": "https://square.link/u/GifMZOkt",
+      "paymentLinkId": "VJO5NUGXUQDG5XYG",
+      "cents": 499,
+      "name": "Phil Royale — Royale Starter"
+    },
+    "royale-mega": {
+      "url": "https://square.link/u/AJFrm5Mm",
+      "paymentLinkId": "7QJFXNDSG5QYGQTA",
+      "cents": 1199,
+      "name": "Phil Royale — Mega Phil Bundle"
+    },
+    "gems-80": {
+      "url": "https://square.link/u/SI528gVV",
+      "paymentLinkId": "CKRZALKT6UHTH7N3",
+      "cents": 99,
+      "name": "Phil Royale — 80 Gems"
+    },
+    "gems-500": {
+      "url": "https://square.link/u/O3aHmPUa",
+      "paymentLinkId": "NW4LQ77S6Z3Q3GB7",
+      "cents": 499,
+      "name": "Phil Royale — 500 Gems"
+    },
+    "gems-1200": {
+      "url": "https://square.link/u/UM4706Jj",
+      "paymentLinkId": "J4EVPKMMH2P72TFK",
+      "cents": 999,
+      "name": "Phil Royale — 1,200 Gems"
+    },
+    "gems-2500": {
+      "url": "https://square.link/u/foyarTO7",
+      "paymentLinkId": "67VHPPAPODCA3XQJ",
+      "cents": 1999,
+      "name": "Phil Royale — 2,500 Gems"
+    },
+    "gems-6500": {
+      "url": "https://square.link/u/0fyFb4Rj",
+      "paymentLinkId": "RTDJUGXGT2P7GICL",
+      "cents": 4999,
+      "name": "Phil Royale — 6,500 Gems"
+    },
+    "gems-14000": {
+      "url": "https://square.link/u/6vLKJ3AB",
+      "paymentLinkId": "N2K5HN6JV3YJPWWT",
+      "cents": 9999,
+      "name": "Phil Royale — 14,000 Gems"
+    }
+  }
+}
