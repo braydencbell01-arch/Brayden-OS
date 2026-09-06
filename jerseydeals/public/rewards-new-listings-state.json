@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-06T20:48:27Z",
+  "updatedAt": "2026-09-06T22:45:54Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -155,7 +155,13 @@
     "ebay:800622478090",
     "ebay:800622622235",
     "ebay:800622634168",
-    "ebay:800622664381"
+    "ebay:800622664381",
+    "ebay:800623078137",
+    "ebay:800623087424",
+    "ebay:800623089089",
+    "ebay:800623093226",
+    "ebay:800623097178",
+    "ebay:800623117071"
   ],
   "pending": [
     {
@@ -173,6 +179,27 @@
       "seenAt": "2026-09-06T20:48:27Z"
     },
     {
+      "id": "ebay:800623117071",
+      "title": "Adidas Canada FIFA World Cup 2026 Tee Men’s Medium Red NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-canada-fifa-world-cup-2026-tee-men-s-medium-red-nwt/6SM2QV5CJZHI5V54PXZYUP3H",
+      "price": 24.99,
+      "seenAt": "2026-09-06T22:45:54Z"
+    },
+    {
+      "id": "ebay:800623087424",
+      "title": "Adidas England FIFA World Cup 2026 Tee Men’s Large White NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-england-fifa-world-cup-2026-tee-men-s-large-white-nwt/HBHOVBCLTRIXFFHHZRIWHW3Z",
+      "price": 24.99,
+      "seenAt": "2026-09-06T22:45:54Z"
+    },
+    {
+      "id": "ebay:800623097178",
+      "title": "Adidas England FIFA World Cup 2026 Tee Men’s Medium White NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-england-fifa-world-cup-2026-tee-men-s-medium-white-nwt/5MAVVGPBDWNBD2M6SZ5AV3XG",
+      "price": 24.99,
+      "seenAt": "2026-09-06T22:45:54Z"
+    },
+    {
       "id": "ebay:800622431330",
       "title": "Adidas FIFA World Cup 2026 T-Shirt Youth Large White NWT",
       "url": "https://jerseydealsofficial.square.site/product/adidas-fifa-world-cup-2026-t-shirt-youth-large-white-nwt/5GIWQLYTA2XFHZVLANB3YXMI",
@@ -185,6 +212,27 @@
       "url": "https://jerseydealsofficial.square.site/product/adidas-fifa-world-cup-2026-tee-men-s-xl-royal-blue-nwt/YL64A2KHJMWJIQQNZ42DS7BF",
       "price": 19.99,
       "seenAt": "2026-09-06T20:48:27Z"
+    },
+    {
+      "id": "ebay:800623089089",
+      "title": "Adidas France FIFA World Cup 2026 Tee Men’s Large Blue NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-france-fifa-world-cup-2026-tee-men-s-large-blue-nwt/M7JO7PTSPLRWDDICW55JF6OS",
+      "price": 24.99,
+      "seenAt": "2026-09-06T22:45:54Z"
+    },
+    {
+      "id": "ebay:800623093226",
+      "title": "Adidas Japan FIFA World Cup 2026 Tee Men’s Medium White NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-japan-fifa-world-cup-2026-tee-men-s-medium-white-nwt/QCK2KMTTY7VQKIMB5U52OKPU",
+      "price": 24.99,
+      "seenAt": "2026-09-06T22:45:54Z"
+    },
+    {
+      "id": "ebay:800623078137",
+      "title": "Adidas Morocco FIFA World Cup 2026 Tee Men’s Large Red NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-morocco-fifa-world-cup-2026-tee-men-s-large-red-nwt/KWQZ4ZTZKK7MBDM5ZANDTD42",
+      "price": 24.99,
+      "seenAt": "2026-09-06T22:45:54Z"
     },
     {
       "id": "ebay:800622634168",

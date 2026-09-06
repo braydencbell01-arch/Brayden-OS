@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-06T22:28:12Z",
+  "syncedAt": "2026-09-06T22:44:12Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 76,
+  "count": 82,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -994,6 +994,84 @@
       "discountPaymentLinkId": "5HKBZW46KYJRFF6Z",
       "discountUrl": "https://square.link/u/3xvXJKSM",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OSnBxalaDQZU0tYGlF6MWhDPa9aZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "KWQZ4ZTZKK7MBDM5ZANDTD42",
+      "variationId": "WO45BKQTHFB54Q7PDPOCUGYU",
+      "title": "Adidas Morocco FIFA World Cup 2026 Tee Men’s Large Red NWT",
+      "sku": "ebay:800623078137",
+      "paymentLinkId": "Y7CNQQUX3IGV3VBS",
+      "url": "https://square.link/u/xT56enbT",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gvbsIc4dW5MwpSO7Ql3Ko9UgddbZY",
+      "discountPaymentLinkId": "AT2AYBXK5FXBTL7Y",
+      "discountUrl": "https://square.link/u/LUP5WW2D",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/agpqUlpa49hzo9bYsZkZoQLm3SMZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "HBHOVBCLTRIXFFHHZRIWHW3Z",
+      "variationId": "HUX4ON6QJZFQN2MKJHYIK3AV",
+      "title": "Adidas England FIFA World Cup 2026 Tee Men’s Large White NWT",
+      "sku": "ebay:800623087424",
+      "paymentLinkId": "GDEXPPCG2O5ZOJ6N",
+      "url": "https://square.link/u/Db2hd5Fj",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wts7KEiviP0wiXUiy9LbrsjzGmWZY",
+      "discountPaymentLinkId": "Y6OOVWAVZZSLZVAF",
+      "discountUrl": "https://square.link/u/HgHgiNfX",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/sfUUPgtTcbW2yzhugioeS95h4ocZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "M7JO7PTSPLRWDDICW55JF6OS",
+      "variationId": "2DOR4GGQ3IGBVVBNHTZAAGKY",
+      "title": "Adidas France FIFA World Cup 2026 Tee Men’s Large Blue NWT",
+      "sku": "ebay:800623089089",
+      "paymentLinkId": "JS27TCP62YDHA75Y",
+      "url": "https://square.link/u/4v9o6Hg2",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8ZPllPJuH40pbcQmb84k8SfZcBOZY",
+      "discountPaymentLinkId": "3LM46ND6722ELPSU",
+      "discountUrl": "https://square.link/u/RJqu0TwU",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/svgSv1LF0rdh34w3D0to3lVi5xYZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "QCK2KMTTY7VQKIMB5U52OKPU",
+      "variationId": "RAESR3KH2PZBNFCQJ5Z7HUKS",
+      "title": "Adidas Japan FIFA World Cup 2026 Tee Men’s Medium White NWT",
+      "sku": "ebay:800623093226",
+      "paymentLinkId": "MRRTNVOATZ2LR2CN",
+      "url": "https://square.link/u/5wr2Nytb",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Gip1xYbK9EkTK4eeWNx0ILXLFxWZY",
+      "discountPaymentLinkId": "SBOSAVGC4O36EYZP",
+      "discountUrl": "https://square.link/u/gpjhdiXQ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WCzoPK1k6F31fgOLUnC5TZUTZvIZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "5MAVVGPBDWNBD2M6SZ5AV3XG",
+      "variationId": "DUHM3KRFETABMMIQ4FF7QYGW",
+      "title": "Adidas England FIFA World Cup 2026 Tee Men’s Medium White NWT",
+      "sku": "ebay:800623097178",
+      "paymentLinkId": "Q7GF47ACGY2QOBKK",
+      "url": "https://square.link/u/sxeeBSin",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YPfFkEftpYrfRzPt8KuZWqOakHYZY",
+      "discountPaymentLinkId": "TBTEEN2PTHFAQH6I",
+      "discountUrl": "https://square.link/u/tPupa5gQ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0hJtGs5cqNpYFtNVY3b52Tab8ZGZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "6SM2QV5CJZHI5V54PXZYUP3H",
+      "variationId": "3MVKJQLKJ63GLTMPALFCINRY",
+      "title": "Adidas Canada FIFA World Cup 2026 Tee Men’s Medium Red NWT",
+      "sku": "ebay:800623117071",
+      "paymentLinkId": "HRHIXEOFOBWQTU2Y",
+      "url": "https://square.link/u/kLGMvR5Q",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6Wi3fMjjV8gE5xab0E6fOxDKMhDZY",
+      "discountPaymentLinkId": "GQN62CZG2SURY6JS",
+      "discountUrl": "https://square.link/u/A1ySCKQV",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/uCjRWqBUv3A5TINtRcHZYHRN8LbZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
