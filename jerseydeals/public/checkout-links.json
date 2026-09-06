@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-06T18:39:18Z",
+  "syncedAt": "2026-09-06T19:37:36Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 152,
+  "count": 145,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -110,32 +110,6 @@
       "discountPaymentLinkId": "KJDZQ7DKSZX2IHWJ",
       "discountUrl": "https://square.link/u/FsqOg9ra",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SgPEaivyfMUaXlKhIokQjwSipkIZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "UBR6QUCA7LP5WAY476FB43J7",
-      "variationId": "U6N3EI2MXKOTR5ASQSFWGW2U",
-      "title": "Manchester City 25/26 Training Jersey (Puma) · L",
-      "sku": "ebay:800482157564",
-      "paymentLinkId": "KJCWS3TJGM5N7LJS",
-      "url": "https://square.link/u/gOt4R6CN",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WiTwHyhnFUVm3UYmJ8prTHbFHHQZY",
-      "discountPaymentLinkId": "AG5BAOC2O54DYYU3",
-      "discountUrl": "https://square.link/u/98fppkSJ",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ucI3dp8mBKQU1phf2IgincSfN5FZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "E5E46BOX5Z5YC33IAF4GZI2D",
-      "variationId": "4536BCCPRWZHQSXIC2Z4HAMX",
-      "title": "Tottenham Hotspur 22/23 Training Jersey (Nike) · S",
-      "sku": "ebay:800482157996",
-      "paymentLinkId": "5B3U4STFWBZYINIW",
-      "url": "https://square.link/u/LioYy6ME",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/e08zKrV7qJhGEpA6CpbI8jztB2AZY",
-      "discountPaymentLinkId": "V4FRHUP2URVYZDIC",
-      "discountUrl": "https://square.link/u/N5hWNfD8",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OmDUsFtiwHsohx4CUNUKYOZTXmcZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
@@ -607,32 +581,6 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
-      "itemId": "FW74IW4WQWNJREQUGPN4MIZG",
-      "variationId": "MBIUG2X725JY6IIS7RERAWLH",
-      "title": "Navy Columbia Mountain Graphic T-Shirt M Medium",
-      "sku": "ebay:800482173966",
-      "paymentLinkId": "UFT67EEJMVWCETYS",
-      "url": "https://square.link/u/yFlLaI1L",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CgvO6HHrUVRbFNWmuhPFxDPUZLaZY",
-      "discountPaymentLinkId": "LXYPB5BERAIMKRII",
-      "discountUrl": "https://square.link/u/OiVF0WCs",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2YwtzQOuM3t234P2cV41EcF3GYBZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "BYDEPKAKMGLLL4YUUJTRKIBB",
-      "variationId": "KTKQNRLKNTODXGSMZKP5U575",
-      "title": "Beige Columbia Colorful Logo T-Shirt L Large",
-      "sku": "ebay:800482174529",
-      "paymentLinkId": "RZGRXNEQMHCYAXRT",
-      "url": "https://square.link/u/BJljXUIa",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WGDn9dU5l44d2HQXuC8KMEgzYGDZY",
-      "discountPaymentLinkId": "O2WHSAKGQQAM7MIY",
-      "discountUrl": "https://square.link/u/rlVj8ZWw",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WMoW6aVLRJcq5YFWYQi3cZQpZNQZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
       "itemId": "QNT36BNMBU56Z2GUPSVAC2BR",
       "variationId": "DMGN4WRW6ZIQXZVAE3DKDVVM",
       "title": "Green Under Armour Red One Graphic T-Shirt S Small",
@@ -682,19 +630,6 @@
       "discountPaymentLinkId": "RMGK25QFWBIDDT6I",
       "discountUrl": "https://square.link/u/UqPLcmJA",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/akj24vdHCjhMUqOlqRFtD9TkQh6YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "6OWM243QJBQTIAHD2ZENZS7Y",
-      "variationId": "IOMKHE7C2ESYQ4XYI3M564FU",
-      "title": "Maroon Under Armour Long Sleeve Waffle Crew M Medium",
-      "sku": "ebay:800482084110",
-      "paymentLinkId": "2LS5G6WHYCIATWVD",
-      "url": "https://square.link/u/86uxXwUG",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OOJlYjKIaNfHDYnRVlnZUypTA0RZY",
-      "discountPaymentLinkId": "PNSLBILFQMHW66P6",
-      "discountUrl": "https://square.link/u/EeqwOBLN",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/qgFOIsoNd4fGREM1HrNV74UkYeZZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
@@ -1777,19 +1712,6 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
-      "itemId": "XWDE2IE3XCNBHBUM2CLQXQIN",
-      "variationId": "E22YGWAC36VSREYKSOFG7FLS",
-      "title": "Blue Youth adidas Logo Graphic T-Shirt YthL · Youth L",
-      "sku": "ebay:800507961616",
-      "paymentLinkId": "IEM4DRYJ5J4VF2KP",
-      "url": "https://square.link/u/CP6m7DYo",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cLqUAcVVEqg7lVgJG5P4Qc3r8scZY",
-      "discountPaymentLinkId": "STCOLCFZBLVRSHWG",
-      "discountUrl": "https://square.link/u/AXUl63aO",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/slV7Jxarjj9VcE1fiopSLDZrLKEZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
       "itemId": "2FCNBETUYBPEHUSCOWCICP4E",
       "variationId": "4LP56ZKILA3QF5HHTTZFRACA",
       "title": "Juventus 24/25 Pre-Match Jersey (adidas) · XL",
@@ -1826,19 +1748,6 @@
       "discountPaymentLinkId": "KBEZUEWMFXHFSNJM",
       "discountUrl": "https://square.link/u/CNI7oJHX",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/W8AIFn9ktyeoPzlXAuobcGKp8bFZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "VW5IKZJZ22MOYDBLGJLUAOOU",
-      "variationId": "G44CV27QG5UMAN3VPZPQSC3R",
-      "title": "FC Barcelona Crest T-Shirt · XL",
-      "sku": "ebay:800508040867",
-      "paymentLinkId": "AM5S6L2VWXKVNS7Q",
-      "url": "https://square.link/u/Yua7LHLn",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OkANjweqiQnI22wD5yBeD6k3V4eZY",
-      "discountPaymentLinkId": "WEFXF7JS4BEMEANJ",
-      "discountUrl": "https://square.link/u/BSIOIufy",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0V9cnENhJXkkEnJo14ImE5R5hdSZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
