@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-09-06T08:52:18Z",
+  "syncedAt": "2026-09-06T09:11:00Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -615,19 +615,9 @@
       "price": 40,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/ac-milan-23-24-pre-match-jersey-puma-m/OBJQXY5755QIHPAJJAXVGNLE",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4d0AAeSwjXJpQyrJ/$_57.JPG?set_id=8800005007",
+      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/35ec2c094e88e78c9ef7dbb03e88bf3e844fe35e/original.jpeg",
       "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/4d0AAeSwjXJpQyrJ/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/7aQAAeSwXAlpQyrV/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UpYAAeSwSIRpQyrM/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/-JkAAeSwNDtpQyrM/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/IuQAAeSwKxdpQyrM/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qzsAAeSwnv1pQyrL/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/46AAAeSws8ZpQyrT/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/xN8AAeSwgcVpQyrV/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kfAAAeSwv3JpQyrU/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NYIAAeSwBCxpQyrV/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zYsAAeSwQIRpQyzK/$_57.JPG?set_id=8800005007"
+        "https://items-images-production.s3.us-west-2.amazonaws.com/files/35ec2c094e88e78c9ef7dbb03e88bf3e844fe35e/original.jpeg"
       ],
       "quantity": 1,
       "tag": "Training",
@@ -636,12 +626,11 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/7Sa9MKgd",
-      "checkoutUrlDiscounted": "https://square.link/u/Rd28BUBg",
       "condition": "New",
       "conditionEbay": "New",
-      "conditionId": "1000"
+      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/7Sa9MKgd",
+      "checkoutUrlDiscounted": "https://square.link/u/Rd28BUBg"
     },
     {
       "id": "4LP56ZKILA3QF5HHTTZFRACA",
@@ -2503,5 +2492,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-06T04:59:11Z"
+  "ebayDetailsSyncedAt": "2026-09-06T09:11:00Z"
 }
