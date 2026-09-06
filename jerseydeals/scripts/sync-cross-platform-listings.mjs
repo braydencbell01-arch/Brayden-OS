@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * Bidirectional listing sync across eBay ↔ Square (Jersey Deals site pulls Square).
+ * Listing sync with eBay ActiveList as the source of truth for what is for sale.
  *
- * - New / updated eBay actives → create or update Square (SKU ebay:{itemId})
- * - Linked Square items → revise eBay price / qty when Square drifts (qty up or down)
- * - New Square-only sellable items → create eBay FixedPrice listing, write back SKU
- * - Linked but ended on eBay + Square still has stock → RelistFixedPriceItem
- *   (new ItemID written back to Square SKU). Confirmed sold / sold-out skipped.
- * - Removals / sold are owned by reconcile-sold-inventory.mjs
- * - Qty SoT is Square after create: never bump Square stock up from eBay (that undid
- *   Payment Link sales when eBay still showed the pre-sale qty). Decreases from eBay OK.
+ * - Active eBay listings → create/update Square (SKU ebay:{itemId}), titles from eBay
+ * - Linked active pairs → revise eBay price/qty when Square drifts (sales)
+ * - Square rows whose ebay:{id} is NOT in eBay ActiveList → zero qty + unsellable
+ *   (do NOT auto-relist onto eBay — that inflated inventory past the eBay shop)
+ * - Square-only items are not published to eBay unless ALLOW_SQUARE_TO_EBAY_CREATE=1
+ * - Removals / confirmed sales also handled by reconcile-sold-inventory.mjs
+ * - Qty: never bump Square stock up from eBay (Payment Link sales); decreases OK
  *
  * Join key: Square variation SKU = ebay:{eBayItemId}
  *
  * Requires: SQUARE_ACCESS_TOKEN, EBAY_APP_ID, EBAY_CERT_ID, EBAY_DEV_ID, EBAY_USER_TOKEN
- * Optional: SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT, DRY_RUN=1, SKIP_EBAY_CREATE=1
+ * Optional: SQUARE_LOCATION_ID, SQUARE_ENVIRONMENT, DRY_RUN=1,
+ *           ALLOW_SQUARE_TO_EBAY_CREATE=1 (off by default)
  *
  *   node jerseydeals/scripts/sync-cross-platform-listings.mjs
  */
@@ -36,7 +36,10 @@ const SQUARE_VERSION = '2025-10-16'
 const SQUARE_TOKEN = process.env.SQUARE_ACCESS_TOKEN
 const LOCATION_OVERRIDE = process.env.SQUARE_LOCATION_ID || ''
 const DRY = process.env.DRY_RUN === '1'
-const SKIP_EBAY_CREATE = process.env.SKIP_EBAY_CREATE === '1'
+/** Legacy alias: SKIP_EBAY_CREATE=1 also disables Square→eBay creates. */
+const ALLOW_SQUARE_TO_EBAY_CREATE =
+  process.env.ALLOW_SQUARE_TO_EBAY_CREATE === '1' && process.env.SKIP_EBAY_CREATE !== '1'
+const SKIP_EBAY_CREATE = !ALLOW_SQUARE_TO_EBAY_CREATE
 
 const EBAY = {
   app: process.env.EBAY_APP_ID,
@@ -223,6 +226,7 @@ async function fetchEbaySoldIds(lookbackDays = 60) {
 
 async function fetchEbayActives() {
   const listings = []
+  const seen = new Set()
   let page = 1
   let totalPages = 1
   while (page <= totalPages && page <= 20) {
@@ -234,19 +238,25 @@ async function fetchEbayActives() {
       <EntriesPerPage>100</EntriesPerPage>
       <PageNumber>${page}</PageNumber>
     </Pagination>
-  </ActiveList>
-  <DetailLevel>ReturnAll</DetailLevel>`,
+  </ActiveList>`,
     )
     const ack = xmlText(xml, 'Ack')
     if (ack !== 'Success' && ack !== 'Warning') {
       throw new Error(`GetMyeBaySelling Ack=${ack}`)
     }
-    totalPages = Number(xmlText(xml, 'TotalNumberOfPages') || xml.match(/<TotalNumberOfPages>(\d+)/)?.[1] || '1')
-    const items = [...xml.matchAll(/<Item>([\s\S]*?)<\/Item>/gi)].map((m) => m[1])
+    // Scope to ActiveList — DetailLevel/other sections can embed extra <Item> nodes.
+    const activeXml = (xml.match(/<ActiveList>[\s\S]*?<\/ActiveList>/i) || [xml])[0]
+    totalPages = Number(
+      (activeXml.match(/<TotalNumberOfPages>(\d+)/)?.[1] ||
+        xml.match(/<ActiveList>[\s\S]*?<TotalNumberOfPages>(\d+)/)?.[1] ||
+        '1'),
+    )
+    const items = [...activeXml.matchAll(/<Item>([\s\S]*?)<\/Item>/gi)].map((m) => m[1])
     for (const item of items) {
       const id = xmlText(item, 'ItemID')
       const title = decodeXml(xmlText(item, 'Title'))
-      if (!id || !title) continue
+      if (!id || !title || seen.has(id)) continue
+      seen.add(id)
       const priceRaw =
         xmlText(item, 'CurrentPrice') ||
         (item.match(/<CurrentPrice[^>]*>([^<]+)/i) || [])[1] ||
@@ -388,6 +398,55 @@ async function setSquareQty(variationId, locationId, qty) {
   })
 }
 
+async function markVariationUnsellable(variationId) {
+  if (DRY) return
+  const data = await square(`/v2/catalog/object/${variationId}?include_related_objects=false`)
+  const obj = data.object
+  if (!obj || obj.type !== 'ITEM_VARIATION') return
+  const vd = obj.item_variation_data || {}
+  if (vd.sellable === false) return
+  await square('/v2/catalog/object', {
+    method: 'POST',
+    body: {
+      idempotency_key: randomUUID(),
+      object: {
+        ...obj,
+        present_at_all_locations: true,
+        item_variation_data: {
+          ...vd,
+          sellable: false,
+          track_inventory: true,
+        },
+      },
+    },
+  })
+}
+
+async function markVariationSellable(variationId) {
+  if (DRY) return
+  const data = await square(`/v2/catalog/object/${variationId}?include_related_objects=false`)
+  const obj = data.object
+  if (!obj || obj.type !== 'ITEM_VARIATION') return
+  const vd = obj.item_variation_data || {}
+  if (vd.sellable !== false) return
+  await square('/v2/catalog/object', {
+    method: 'POST',
+    body: {
+      idempotency_key: randomUUID(),
+      object: {
+        ...obj,
+        present_at_all_locations: true,
+        item_variation_data: {
+          ...vd,
+          sellable: true,
+          track_inventory: true,
+          stockable: true,
+        },
+      },
+    },
+  })
+}
+
 async function findVariationBySku(sku) {
   const data = await square('/v2/catalog/search', {
     method: 'POST',
@@ -423,9 +482,12 @@ async function upsertSquareFromEbay(ebay, locationId, { soldOutEbayIds } = {}) {
   const qty = Math.max(1, details.quantity || ebay.quantity || 1)
 
   if (existing) {
-    // Do not revive kits we already marked unsellable / sold-out.
+    // Confirmed sold stays dead. Otherwise revive if this eBay id is active again.
     if (existing.item_variation_data?.sellable === false) {
-      return { status: 'skipped', reason: 'square-unsellable', sku }
+      if (soldOutEbayIds?.has(ebay.ebayId)) {
+        return { status: 'skipped', reason: 'square-unsellable', sku }
+      }
+      await markVariationSellable(existing.id)
     }
     const variationId = existing.id
     const itemId = existing.item_variation_data?.item_id
@@ -716,7 +778,7 @@ async function setSquareSku(variationId, sku) {
 async function main() {
   console.log(
     `Cross-platform listing sync${DRY ? ' (dry-run)' : ''}${
-      SKIP_EBAY_CREATE ? ' [skip eBay create]' : ''
+      SKIP_EBAY_CREATE ? ' [eBay SoT — no Square→eBay create]' : ' [ALLOW_SQUARE_TO_EBAY_CREATE]'
     }`,
   )
   const locationId = await primaryLocationId()
@@ -805,110 +867,110 @@ async function main() {
 
   let squareToEbayRevised = 0
   let squareToEbayCreated = 0
-  let squareToEbayRelisted = 0
+  let squarePruned = 0
   let squareToEbayFailed = 0
 
-  console.log('→ Square → eBay')
+  console.log('→ Square prune / revise (eBay ActiveList is source of truth)')
+  // Prefer a single sellable Square variation per ebay:{id}.
+  const bestByEbay = new Map()
   for (const row of squareRowsAfter) {
-    // Skip zero-qty — sold reconcile owns those
-    if ((row.quantity ?? 0) <= 0) continue
+    if (!row.ebayId || !ebayActiveIds.has(row.ebayId)) continue
+    if (confirmedSoldVariationIds.has(row.variationId)) continue
+    const prev = bestByEbay.get(row.ebayId)
+    const score = (r) =>
+      (Number(r.quantity) || 0) * 1000 + String(r.title || '').length
+    if (!prev || score(row) > score(prev)) bestByEbay.set(row.ebayId, row)
+  }
+
+  for (const row of squareRowsAfter) {
     if (confirmedSoldVariationIds.has(row.variationId)) continue
 
-    if (row.ebayId) {
-      if (!ebayActiveIds.has(row.ebayId)) {
-        // Still in stock on Square but ended/completed on eBay → put it back.
-        // Skip only explicit sold-out / recent SoldList ids (confirmed sell-through).
-        if (soldOutEbayIds.has(row.ebayId)) {
-          console.log(
-            `  · eBay sold ${row.ebayId} — skip relist (${row.title.slice(0, 40)})`,
-          )
-          continue
-        }
-        try {
-          const relisted = await relistEbayFixedPrice(row.ebayId, row.quantity)
-          if (!relisted.ok) {
-            // Duplicate Listing usually means an equivalent active already exists —
-            // bind Square SKU to that active instead of leaving the kit off eBay.
-            const dup = /duplicate listing/i.test(relisted.message || '')
-            const match = dup
-              ? ebayActives.find(
-                  (e) =>
-                    normalizeTitle(e.title).toLowerCase() ===
-                    normalizeTitle(row.title).toLowerCase(),
-                )
-              : null
-            if (match) {
-              await setSquareSku(row.variationId, `ebay:${match.ebayId}`)
-              squareToEbayRelisted += 1
-              console.log(
-                `  ↺ eBay bind duplicate ${row.ebayId} → ${match.ebayId} (${row.title.slice(0, 40)})`,
-              )
-              continue
-            }
-            squareToEbayFailed += 1
-            console.warn(
-              `  ✗ eBay relist ${row.ebayId}: ${relisted.message} (${row.title.slice(0, 40)})`,
-            )
-            continue
-          }
-          if (relisted.ebayId !== row.ebayId) {
-            await setSquareSku(row.variationId, `ebay:${relisted.ebayId}`)
-            ebayActiveIds.add(relisted.ebayId)
-          } else {
-            ebayActiveIds.add(row.ebayId)
-          }
-          squareToEbayRelisted += 1
-          console.log(
-            `  ↺ eBay relist ${row.ebayId} → ${relisted.ebayId} (${row.title.slice(0, 40)})`,
-          )
-        } catch (err) {
-          squareToEbayFailed += 1
-          console.warn(`  ✗ eBay relist ${row.ebayId}: ${err.message}`)
-        }
-        continue
-      }
-      const ebay = ebayActives.find((e) => e.ebayId === row.ebayId)
-      if (!ebay) continue
+    // Duplicate Square rows sharing an active eBay SKU → keep the best one only.
+    if (
+      row.ebayId &&
+      ebayActiveIds.has(row.ebayId) &&
+      bestByEbay.get(row.ebayId)?.variationId !== row.variationId
+    ) {
       try {
-        // Title/description SoT is eBay → Square (handled above).
-        // Price + qty: push Square → eBay whenever they drift (including qty decreases).
-        const priceChanged = !nearlySamePrice(row.price, ebay.price)
-        const sqQty = Number(row.quantity)
-        const ebQty = Number(ebay.quantity)
-        const qtyChanged = Number.isFinite(sqQty) && Number.isFinite(ebQty) && sqQty !== ebQty
-        if (priceChanged || qtyChanged) {
-          const inv = await reviseEbayInventory(row.ebayId, {
-            price: priceChanged ? row.price : undefined,
-            quantity: qtyChanged ? Math.max(0, sqQty) : undefined,
-          })
-          if (!inv.ok) throw new Error(inv.message || 'revise inventory failed')
-          squareToEbayRevised += 1
-          console.log(
-            `  ~ eBay ${row.title.slice(0, 50)} ($${ebay.price}→$${row.price}${
-              qtyChanged ? `, qty ${ebay.quantity}→${row.quantity}` : ''
-            })`,
-          )
-        }
+        await setSquareQty(row.variationId, locationId, 0)
+        await markVariationUnsellable(row.variationId)
+        squarePruned += 1
+        console.log(
+          `  − Square dup SKU ${row.ebayId} (${row.title.slice(0, 50)})`,
+        )
       } catch (err) {
         squareToEbayFailed += 1
-        console.warn(`  ✗ Square→eBay revise ${row.ebayId}: ${err.message}`)
+        console.warn(`  ✗ Square dup delist ${row.variationId}: ${err.message}`)
       }
       continue
     }
 
-    if (SKIP_EBAY_CREATE) continue
-    try {
-      const created = await createEbayFromSquare(row)
-      if (!created.ok) {
-        console.log(`  · skip create ${row.title.slice(0, 50)}: ${created.message}`)
-        continue
+    // Not on active eBay (or Square-only) → remove from Square storefront. Do not relist.
+    if (!row.ebayId || !ebayActiveIds.has(row.ebayId)) {
+      try {
+        await setSquareQty(row.variationId, locationId, 0)
+        await markVariationUnsellable(row.variationId)
+        squarePruned += 1
+        console.log(
+          `  − Square delist ${row.ebayId || 'no-ebay'} (${row.title.slice(0, 50)})`,
+        )
+      } catch (err) {
+        squareToEbayFailed += 1
+        console.warn(`  ✗ Square delist ${row.variationId}: ${err.message}`)
       }
-      await setSquareSku(row.variationId, `ebay:${created.ebayId}`)
-      squareToEbayCreated += 1
-      console.log(`  + eBay ${row.title.slice(0, 60)} → ${created.ebayId}`)
+      continue
+    }
+
+    // Skip zero-qty — sold reconcile owns those
+    if ((row.quantity ?? 0) <= 0) continue
+
+    const ebay = ebayActives.find((e) => e.ebayId === row.ebayId)
+    if (!ebay) continue
+    try {
+      // Title/description SoT is eBay → Square (handled above).
+      // Price + qty: push Square → eBay whenever they drift (including qty decreases).
+      const priceChanged = !nearlySamePrice(row.price, ebay.price)
+      const sqQty = Number(row.quantity)
+      const ebQty = Number(ebay.quantity)
+      const qtyChanged = Number.isFinite(sqQty) && Number.isFinite(ebQty) && sqQty !== ebQty
+      if (priceChanged || qtyChanged) {
+        const inv = await reviseEbayInventory(row.ebayId, {
+          price: priceChanged ? row.price : undefined,
+          quantity: qtyChanged ? Math.max(0, sqQty) : undefined,
+        })
+        if (!inv.ok) throw new Error(inv.message || 'revise inventory failed')
+        squareToEbayRevised += 1
+        console.log(
+          `  ~ eBay ${row.title.slice(0, 50)} ($${ebay.price}→$${row.price}${
+            qtyChanged ? `, qty ${ebay.quantity}→${row.quantity}` : ''
+          })`,
+        )
+      }
     } catch (err) {
       squareToEbayFailed += 1
-      console.warn(`  ✗ Square→eBay create ${row.variationId}: ${err.message}`)
+      console.warn(`  ✗ Square→eBay revise ${row.ebayId}: ${err.message}`)
+    }
+  }
+
+  if (ALLOW_SQUARE_TO_EBAY_CREATE) {
+    console.log('→ Square-only → eBay create (ALLOW_SQUARE_TO_EBAY_CREATE=1)')
+    for (const row of squareRowsAfter) {
+      if ((row.quantity ?? 0) <= 0) continue
+      if (confirmedSoldVariationIds.has(row.variationId)) continue
+      if (row.ebayId) continue
+      try {
+        const created = await createEbayFromSquare(row)
+        if (!created.ok) {
+          console.log(`  · skip create ${row.title.slice(0, 50)}: ${created.message}`)
+          continue
+        }
+        await setSquareSku(row.variationId, `ebay:${created.ebayId}`)
+        squareToEbayCreated += 1
+        console.log(`  + eBay ${row.title.slice(0, 60)} → ${created.ebayId}`)
+      } catch (err) {
+        squareToEbayFailed += 1
+        console.warn(`  ✗ Square→eBay create ${row.variationId}: ${err.message}`)
+      }
     }
   }
 
@@ -917,7 +979,7 @@ async function main() {
     `Done. eBay→Square created=${ebayToSquareCreated} updated=${ebayToSquareUpdated} unchanged=${ebayToSquareUnchanged} failed=${ebayToSquareFailed}`,
   )
   console.log(
-    `      Square→eBay created=${squareToEbayCreated} revised=${squareToEbayRevised} relisted=${squareToEbayRelisted} failed=${squareToEbayFailed}`,
+    `      Square→eBay created=${squareToEbayCreated} revised=${squareToEbayRevised} pruned=${squarePruned} failed=${squareToEbayFailed}`,
   )
   console.log(`Next: sync:square → sync:ebay-details → square:buyable-checkout (for new Payment Links).`)
 }
