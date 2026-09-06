@@ -108,13 +108,10 @@ export function listingProductPageUrl(item: Listing, storeUrl: string) {
   return `${storeUrl.replace(/\/$/, '')}/product/${slug}/${item.itemId}`
 }
 
+/** Display title as stored (same as eBay / Square) — do not rewrite. */
 export function shortTitle(title: string) {
-  return title
-    // Keep youth sizing readable after we strip the word "Youth": "Youth XL" → "Yth XL".
-    .replace(/\bYouth\s*(XXL|XL|XS|[SML])\b/gi, (_m, size: string) => `Yth ${String(size).toUpperCase()}`)
-    .replace(/\b(Men'?s|Women'?s|Youth|Boys|Girls)\b/gi, '')
-    .replace(/\s{2,}/g, ' ')
-    .replace(/\s*·\s*/g, ' · ')
+  return String(title || '')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 

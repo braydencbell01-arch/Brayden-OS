@@ -139,81 +139,14 @@ export function extractKitLabel(title, tag = '') {
 }
 
 /**
- * Build a cleaner storefront title.
- * e.g. "Inter Miami 22/23 Home Jersey — Messi #10 · XL"
+ * Keep listing titles identical to the eBay seller title (and Square catalog name).
+ * Do not rewrite into a "storefront" format — Jersey Deals should show the same name as eBay.
+ * Only collapses whitespace; does not change punctuation (e.g. curly apostrophes).
  */
-export function polishTitle(rawTitle, meta = {}) {
-  const title = cleanSpaces(rawTitle).replace(/\s*[—–-]\s*Size\s+\S+.*$/i, '')
-  const season = extractSeason(title)
-  const brand = extractBrand(title, meta.brand || '')
-  const team = extractTeam(title)
-  const size = extractSize(title, meta.size || meta.note || '')
-  const kit = extractKitLabel(title, meta.tag || '')
-  const player = extractPlayer(title)
-
-  // Special / non-soccer leftovers
-  if (/syracuse.*towel|two\s*pack/i.test(title)) {
-    return 'Syracuse Soccer Rally Towels (2-Pack)'
-  }
-  if (/syracuse.*jersey|#12/i.test(title) && /syracuse/i.test(title)) {
-    return size
-      ? `Syracuse Orange Football Jersey #12 · ${size}`
-      : 'Syracuse Orange Football Jersey #12'
-  }
-  if (/barcelona.*t-?shirt|crest\s*t-?shirt/i.test(title)) {
-    const bits = ['FC Barcelona Crest T-Shirt']
-    if (/navy/i.test(title)) bits[0] += ' — Navy'
-    if (size) bits.push(size)
-    return bits.length > 1 ? `${bits[0]} · ${bits[1]}` : bits[0]
-  }
-
-  // Unknown club: keep the seller title. Using only "brand + kit" drops names
-  // like "Newcastle United" / "Inter Milan" and ships incomplete storefront cards.
-  if (!team) {
-    let fallback = title
-      .replace(/\bMen'?s\b/gi, '')
-      .replace(/\bWomen'?s\b/gi, '')
-      .replace(/\b(?:Boys|Girls)\b/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-    if (size) {
-      const sizeRe = new RegExp(
-        `\\b${size.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')}\\b`,
-        'i',
-      )
-      if (!sizeRe.test(fallback)) {
-        fallback = fallback
-          .replace(
-            /\b(?:Yth(?:XXL|XL|XS|[SML])|Youth\s*(?:Extra\s*)?(?:Large|Medium|Small|XXL|XL|XS|[SML])|XXL|XL|XS|[SML])(?:\s+(?:Extra\s+)?(?:Large|Medium|Small))?\s*$/i,
-            '',
-          )
-          .trim()
-        fallback = `${fallback} · ${size}`
-      }
-    }
-    return cleanSpaces(fallback)
-  }
-
-  const headParts = []
-  headParts.push(team)
-  if (season) headParts.push(season)
-  headParts.push(kit)
-
-  let head = headParts.join(' ')
-  if (player?.name && player?.number) {
-    head += ` — ${player.name} #${player.number}`
-  } else if (player?.number) {
-    head += ` — #${player.number}`
-  }
-
-  if (brand) {
-    // Keep brand subtle at end for searchability without cluttering the card
-    head += ` (${brand})`
-  }
-
-  if (size) head += ` · ${size}`
-
-  return cleanSpaces(head)
+export function polishTitle(rawTitle, _meta = {}) {
+  return String(rawTitle || '')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 /** Canonical buyer-contact sentence on listing descriptions. */

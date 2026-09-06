@@ -27,6 +27,7 @@
     "square:first10-links": "node scripts/ensure-first-buyer-discount-links.mjs",
     "square:cart-combo-links": "node scripts/ensure-cart-combo-links.mjs",
     "square:polish-catalog": "node scripts/polish-square-catalog.mjs",
+    "square:restore-ebay-titles": "node scripts/restore-ebay-titles.mjs",
     "square:polish-storefront": "node scripts/polish-square-storefront.mjs",
     "email:collect-server": "node scripts/email-collect-server.mjs",
     "email:collect": "node scripts/collect-email.mjs",
