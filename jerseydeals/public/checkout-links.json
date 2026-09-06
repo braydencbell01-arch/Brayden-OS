@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-06T18:25:00Z",
+  "syncedAt": "2026-09-06T18:37:04Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 148,
+  "count": 152,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1930,6 +1930,58 @@
       "discountPaymentLinkId": "D655IU4KJX5OUF4K",
       "discountUrl": "https://square.link/u/4uWywAiO",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/4Xd4jRY9vH65x3n99DjLl5msqJIZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "IC46SF5U6YPTSD5ORSJF4A63",
+      "variationId": "VRVKC5VULJ3C6FRXXJQYWWBW",
+      "title": "Argentina Kit (Adidas) · Youth L",
+      "sku": "ebay:800622157910",
+      "paymentLinkId": "QOF5VYCLSKBK5Q5P",
+      "url": "https://square.link/u/aKqn2Wee",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/yw5dm1gLUgz5zYSLmMpSNEOcJFXZY",
+      "discountPaymentLinkId": "WTWX6GREERD2D24X",
+      "discountUrl": "https://square.link/u/Y8dxZ7jq",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/uyvB3ve8GXY0EzI4WAmNOdDZbaPZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "GPOPB7JECFA3UR7ZMCQBABM4",
+      "variationId": "JKMIEBVBSBGNKZO2GYR5EB7V",
+      "title": "USA Kit (Adidas) · Youth L",
+      "sku": "ebay:800622167127",
+      "paymentLinkId": "ZY7FVJ4YFBSU5DZT",
+      "url": "https://square.link/u/jasIJ7zQ",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gvxHc2aX2qBafashw3N4HJZy1U7YY",
+      "discountPaymentLinkId": "SB27GKVJK37M2VDR",
+      "discountUrl": "https://square.link/u/YiD2wxS4",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/oxG89kCKzzzi24EAqFRZojAKVDeZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "IJGYVRZ6EMBQ7RIZIP35W65H",
+      "variationId": "XIVDZZLZMLYVKDKM5D6PP5GW",
+      "title": "Germany Kit (Adidas) · Youth L",
+      "sku": "ebay:800622203814",
+      "paymentLinkId": "ALVUEQUDSXPWLZXY",
+      "url": "https://square.link/u/JorXJMsy",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/akF70SWvmEl7KDE1PzL9A3TxEYWZY",
+      "discountPaymentLinkId": "KYFXAO7ELU5MZ6XK",
+      "discountUrl": "https://square.link/u/77r8XlTV",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KErMu5K1I70SpZLd8uqHVINwFGSZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "U46RLKM4HX3DQFDMX4KCC34A",
+      "variationId": "LR3Q4FLQGRV3ACXCW2XLIWVL",
+      "title": "Adidas FIFA World Cup 2026 T-Shirt Youth Medium Black NWT · Youth M",
+      "sku": "ebay:800622228856",
+      "paymentLinkId": "GVPNX3LDY5F673BY",
+      "url": "https://square.link/u/Gt9ffI3p",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/APVntkCbu30J4Ej5ZKvTFLfGX39YY",
+      "discountPaymentLinkId": "ZKB23HN6BXOWKY7E",
+      "discountUrl": "https://square.link/u/2bpRC4Mq",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wN4HDrdob9uFthe5VbmBtBvCChbZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
