@@ -1,19 +1,34 @@
 #!/usr/bin/env node
 /**
- * Relist Square-linked kits that ended / completed on eBay but still have stock.
+ * MANUAL ONLY — Relist Square-linked kits that ended on eBay but still have stock.
+ *
+ * Routine inventory sync treats eBay ActiveList as source of truth and will
+ * *delist* Square rows that are not active on eBay (not relist them).
+ * Do not run this unless you intentionally want those kits back on eBay.
+ *
+ * Requires FORCE=1 to run.
  *
  * RelistFixedPriceItem returns a new ItemID → Square SKU is updated to ebay:{newId}.
  *
  * Requires: SQUARE_ACCESS_TOKEN, EBAY_APP_ID, EBAY_CERT_ID, EBAY_DEV_ID, EBAY_USER_TOKEN
  * Optional: DRY_RUN=1, LIMIT=N, DELAY_MS=400
  *
- *   node jerseydeals/scripts/relist-ended-ebay.mjs
+ *   FORCE=1 node jerseydeals/scripts/relist-ended-ebay.mjs
  */
 
 import { randomUUID } from 'node:crypto'
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+if (process.env.FORCE !== '1') {
+  console.error(
+    'Refusing to run: eBay ActiveList is the inventory source of truth.\n' +
+      'Routine sync delists Square extras instead of relisting onto eBay.\n' +
+      'Set FORCE=1 only if you intentionally want to put ended kits back on eBay.',
+  )
+  process.exit(1)
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ENV = (process.env.SQUARE_ENVIRONMENT || 'production').toLowerCase()

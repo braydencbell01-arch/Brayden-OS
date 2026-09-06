@@ -10,6 +10,8 @@
  *   SQUARE_ENVIRONMENT    — production (default) | sandbox
  *   SQUARE_LOCATION_ID    — limit inventory counts to one location
  *   SQUARE_INCLUDE_ZERO   — if "1", keep items with 0 sellable qty
+ *   EBAY_* credentials    — when set, only keep listings whose ebay:{id} SKU is
+ *                           currently Active on eBay (site mirrors eBay shop)
  *
  * Usage:
  *   node jerseydeals/scripts/sync-square-catalog.mjs
@@ -380,32 +382,114 @@ for (const item of items) {
   }
 }
 
-// Catalog often has duplicate ITEMs for the same kit — keep one row per title,
-// preferring the newest ebay:{id} SKU (post-relist) when present.
+// One site row per eBay ItemID (SKU ebay:{id}). Fall back to title for any leftovers.
 const deduped = []
 {
-  const groups = new Map()
+  const byEbay = new Map()
+  const noEbay = []
   for (const row of listings) {
+    const ebayId = String(row.sku || '').match(/^ebay:(\d+)/i)?.[1] || ''
+    if (!ebayId) {
+      noEbay.push(row)
+      continue
+    }
+    const prev = byEbay.get(ebayId)
+    if (!prev) {
+      byEbay.set(ebayId, row)
+      continue
+    }
+    // Prefer the row whose title looks closer to a full eBay title (longer / has Men’s|Youth).
+    const score = (r) => {
+      const t = String(r.title || '')
+      return (
+        (/\bMen.?s\b|\bYouth\b|\bWomen.?s\b/i.test(t) ? 10 : 0) +
+        t.length +
+        (Number(r.quantity) || 0)
+      )
+    }
+    if (score(row) > score(prev)) byEbay.set(ebayId, row)
+  }
+  deduped.push(...byEbay.values())
+  // Title-dedupe any Square-only leftovers (should be rare with eBay SoT).
+  const titleGroups = new Map()
+  for (const row of noEbay) {
     const key = String(row.title || '')
       .toLowerCase()
       .replace(/\s+/g, ' ')
       .trim()
-    if (!groups.has(key)) groups.set(key, [])
-    groups.get(key).push(row)
+    if (!titleGroups.has(key)) titleGroups.set(key, row)
   }
-  for (const rows of groups.values()) {
-    rows.sort((x, y) => {
-      const ex = Number((String(x.sku || '').match(/ebay:(\d+)/i) || [])[1] || 0)
-      const ey = Number((String(y.sku || '').match(/ebay:(\d+)/i) || [])[1] || 0)
-      return ey - ex
-    })
-    deduped.push(rows[0])
-  }
+  deduped.push(...titleGroups.values())
   if (deduped.length < listings.length) {
-    console.log(`Deduped catalog titles ${listings.length} → ${deduped.length}`)
+    console.log(`Deduped catalog ${listings.length} → ${deduped.length} (by eBay SKU)`)
   }
   listings.length = 0
   listings.push(...deduped)
+}
+
+/** When eBay credentials exist, site inventory = eBay ActiveList only. */
+async function fetchEbayActiveIds() {
+  const app = process.env.EBAY_APP_ID
+  const cert = process.env.EBAY_CERT_ID
+  const dev = process.env.EBAY_DEV_ID
+  const token = process.env.EBAY_USER_TOKEN
+  if (!app || !cert || !dev || !token) return null
+  const ids = new Set()
+  let page = 1
+  let totalPages = 1
+  while (page <= totalPages) {
+    const body = `<?xml version="1.0" encoding="utf-8"?>
+<GetMyeBaySellingRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <RequesterCredentials><eBayAuthToken>${token}</eBayAuthToken></RequesterCredentials>
+  <ActiveList>
+    <Include>true</Include>
+    <Pagination><EntriesPerPage>200</EntriesPerPage><PageNumber>${page}</PageNumber></Pagination>
+  </ActiveList>
+</GetMyeBaySellingRequest>`
+    const res = await fetch('https://api.ebay.com/ws/api.dll', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+        'X-EBAY-API-COMPATIBILITY-LEVEL': '967',
+        'X-EBAY-API-CALL-NAME': 'GetMyeBaySelling',
+        'X-EBAY-API-SITEID': '0',
+        'X-EBAY-API-APP-NAME': app,
+        'X-EBAY-API-DEV-NAME': dev,
+        'X-EBAY-API-CERT-NAME': cert,
+      },
+      body,
+    })
+    const xml = await res.text()
+    if (!/<Ack>(Success|Warning)<\/Ack>/i.test(xml)) {
+      throw new Error(`GetMyeBaySelling failed: ${xml.slice(0, 240)}`)
+    }
+    totalPages = Number(xml.match(/<TotalNumberOfPages>(\d+)<\/TotalNumberOfPages>/)?.[1] || 1)
+    const activeXml = (xml.match(/<ActiveList>[\s\S]*?<\/ActiveList>/i) || [xml])[0]
+    for (const m of activeXml.matchAll(/<ItemID>(\d+)<\/ItemID>/g)) ids.add(m[1])
+    page += 1
+  }
+  return ids
+}
+
+{
+  try {
+    const activeIds = await fetchEbayActiveIds()
+    if (activeIds) {
+      const before = listings.length
+      const kept = listings.filter((row) => {
+        const id = String(row.sku || '').match(/^ebay:(\d+)/i)?.[1]
+        // Require an eBay SKU that is currently active — no Square-only orphans on the site.
+        return id && activeIds.has(id)
+      })
+      listings.length = 0
+      listings.push(...kept)
+      console.log(
+        `eBay ActiveList filter ${before} → ${listings.length} (active=${activeIds.size})`,
+      )
+    }
+  } catch (err) {
+    console.warn(`eBay ActiveList filter skipped: ${err.message}`)
+  }
 }
 
 listings.sort((a, b) => {
