@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /**
- * Polish Square Catalog item names + descriptions for a more professional storefront.
+ * Align Square Catalog item names + descriptions with listings.json.
  *
- * Prefers original titles from jerseydeals/public/listings.json when present
- * (matched by itemId / variation id), so player names survive re-runs.
+ * Titles stay identical to the listing/eBay name (polishTitle is a passthrough).
+ * Descriptions still get a light polish + contact line.
+ *
+ * Prefers titles from jerseydeals/public/listings.json when present
+ * (matched by itemId / variation id).
  *
  * Requires: SQUARE_ACCESS_TOKEN
  * Optional: SQUARE_ENVIRONMENT=production|sandbox
