@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-06T22:45:54Z",
+  "updatedAt": "2026-09-07T00:37:58Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -161,7 +161,8 @@
     "ebay:800623089089",
     "ebay:800623093226",
     "ebay:800623097178",
-    "ebay:800623117071"
+    "ebay:800623117071",
+    "ebay:800623137455"
   ],
   "pending": [
     {
@@ -177,6 +178,13 @@
       "url": "https://jerseydealsofficial.square.site/product/adidas-brazil-fifa-world-cup-2026-tee-men-s-large-yellow-nwt/RCMV2AOUQ7W7J43RTZALQAHB",
       "price": 24.99,
       "seenAt": "2026-09-06T20:48:27Z"
+    },
+    {
+      "id": "ebay:800623137455",
+      "title": "Adidas Brazil FIFA World Cup 2026 Tee Youth Large Yellow NWT",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-brazil-fifa-world-cup-2026-tee-youth-large-yellow-nwt/RK6I4A63HRPXJIXST2SAL5MR",
+      "price": 24.99,
+      "seenAt": "2026-09-07T00:37:58Z"
     },
     {
       "id": "ebay:800623117071",

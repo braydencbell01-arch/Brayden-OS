@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-07T00:20:34Z",
+  "syncedAt": "2026-09-07T00:36:06Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 82,
+  "count": 83,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1072,6 +1072,19 @@
       "discountPaymentLinkId": "GQN62CZG2SURY6JS",
       "discountUrl": "https://square.link/u/A1ySCKQV",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/uCjRWqBUv3A5TINtRcHZYHRN8LbZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "RK6I4A63HRPXJIXST2SAL5MR",
+      "variationId": "5Q3MFXN5F4KTAQMPPTEGQWXQ",
+      "title": "Adidas Brazil FIFA World Cup 2026 Tee Youth Large Yellow NWT",
+      "sku": "ebay:800623137455",
+      "paymentLinkId": "MT2YJHQUYR6XIMZS",
+      "url": "https://square.link/u/nk3IhSJ9",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/8N7YuVvrhYuc5npyW42nUKdmgDPZY",
+      "discountPaymentLinkId": "GMVCZVJJFCBZQGTT",
+      "discountUrl": "https://square.link/u/LkQlWjwV",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/If1yGD7Z2I64p5u9hWM1CDSzZTdZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]

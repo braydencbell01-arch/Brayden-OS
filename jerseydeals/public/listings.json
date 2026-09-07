@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-07T00:20:34Z",
+  "syncedAt": "2026-09-07T00:37:53Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 82,
+  "count": 83,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -943,6 +943,40 @@
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/ikKdU3un",
       "checkoutUrlDiscounted": "https://square.link/u/3xvXJKSM",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
+      "id": "5Q3MFXN5F4KTAQMPPTEGQWXQ",
+      "itemId": "RK6I4A63HRPXJIXST2SAL5MR",
+      "sku": "ebay:800623137455",
+      "title": "Adidas Brazil FIFA World Cup 2026 Tee Youth Large Yellow NWT",
+      "price": 24.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-brazil-fifa-world-cup-2026-tee-youth-large-yellow-nwt/RK6I4A63HRPXJIXST2SAL5MR",
+      "image": "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/lbcAAeSw1VdqneoA/$_57.JPG?set_id=8800005007",
+      "images": [
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/lbcAAeSw1VdqneoA/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/UU4AAeSw2MxqneoF/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/ExIAAeSwrj5qneoM/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/VCEAAeSwBD9qneoS/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/kboAAeSw0BpqneoH/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/DJ0AAeSwS6JqneoU/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/pPcAAeSwjhxqneoZ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/1ukAAeSw1qNqneom/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/UsYAAeSw2Mxqneou/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Youth",
+      "note": "Youth L",
+      "size": "Youth L",
+      "brand": "Adidas",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/nk3IhSJ9",
+      "checkoutUrlDiscounted": "https://square.link/u/LkQlWjwV",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2718,5 +2752,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-06T22:45:49Z"
+  "ebayDetailsSyncedAt": "2026-09-07T00:37:53Z"
 }
