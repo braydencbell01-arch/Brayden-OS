@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-09-10T21:00:15Z",
+  "syncedAt": "2026-09-10T21:24:03Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -2048,7 +2048,10 @@
       "category": "",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/cm2iddIB",
-      "checkoutUrlDiscounted": "https://square.link/u/fS0URyL3"
+      "checkoutUrlDiscounted": "https://square.link/u/fS0URyL3",
+      "condition": "New",
+      "conditionEbay": "New with tags",
+      "conditionId": "1000"
     },
     {
       "id": "QNLA5JXCMPQWWKXBKA2637XG",
@@ -2749,5 +2752,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-10T18:55:42Z"
+  "ebayDetailsSyncedAt": "2026-09-10T21:24:03Z"
 }
