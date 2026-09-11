@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-11T20:54:28Z",
+  "syncedAt": "2026-09-11T21:33:42Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 83,
+  "count": 82,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -1474,38 +1474,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "LR3Q4FLQGRV3ACXCW2XLIWVL",
-      "itemId": "U46RLKM4HX3DQFDMX4KCC34A",
-      "sku": "ebay:800622228856",
-      "title": "Adidas FIFA World Cup 2026 T-Shirt Youth Medium Black NWT",
-      "price": 22.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/adidas-fifa-world-cup-2026-t-shirt-youth-medium-black-nwt/U46RLKM4HX3DQFDMX4KCC34A",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/jJ0AAeSwmwZqnacz/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/jJ0AAeSwmwZqnacz/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/bZYAAeSwVppqnac1/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/xRwAAeSw9fJqnac0/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/LxMAAeSwu7Zqnac2/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/ljMAAeSw-qlqnac1/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/g0oAAeSwwh5qnac2/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/USMAAeSw5Alqnac2/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth M",
-      "size": "Youth M",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/Gt9ffI3p",
-      "checkoutUrlDiscounted": "https://square.link/u/2bpRC4Mq",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
       "id": "IXW3DEPC4MADIAUXYNABLZOG",
       "itemId": "GOFQKDUDHCCXE6BZZTFGXNIE",
       "sku": "ebay:800622622235",
@@ -2752,5 +2720,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-11T18:58:58Z"
+  "ebayDetailsSyncedAt": "2026-09-11T21:33:42Z"
 }
