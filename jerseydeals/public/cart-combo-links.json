@@ -1,13 +1,13 @@
 {
-  "syncedAt": "2026-09-12T11:04:43Z",
+  "syncedAt": "2026-09-12T14:18:29Z",
   "source": "square-cart-combo-links",
   "locationId": "L6ZVPG4Q71605",
   "shippingPercent": 10,
   "itemCount": 40,
-  "pairCount": 2252,
-  "pairFirst10Count": 2252,
-  "pairFreeShipCount": 2252,
-  "pairFirst10FreeShipCount": 2252,
+  "pairCount": 2253,
+  "pairFirst10Count": 2253,
+  "pairFreeShipCount": 2253,
+  "pairFirst10FreeShipCount": 2253,
   "pairs": {
     "GKCKDASTXCN4AG4LUMQHNL4X|NK4QWAQHIVIST5HLZRY7DWRH": {
       "url": "https://square.link/u/eP02l5Or",
@@ -24185,6 +24185,17 @@
       "first10": false,
       "freeShipping": false,
       "updatedAt": "2026-09-07T00:36:01Z"
+    },
+    "5Q3MFXN5F4KTAQMPPTEGQWXQ|QQOILPX4ZTJXJI6PENOFLGJV": {
+      "url": "https://square.link/u/7QhT8l63",
+      "paymentLinkId": "FWVEAR4BJUWPTIUF",
+      "ids": [
+        "5Q3MFXN5F4KTAQMPPTEGQWXQ",
+        "QQOILPX4ZTJXJI6PENOFLGJV"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-09-12T14:18:27Z"
     }
   },
   "pairsFirst10": {
@@ -48364,6 +48375,17 @@
       "first10": true,
       "freeShipping": false,
       "updatedAt": "2026-09-07T00:36:02Z"
+    },
+    "5Q3MFXN5F4KTAQMPPTEGQWXQ|QQOILPX4ZTJXJI6PENOFLGJV": {
+      "url": "https://square.link/u/l8Ly4R9W",
+      "paymentLinkId": "UMSTSGL3Q2RBTMY7",
+      "ids": [
+        "5Q3MFXN5F4KTAQMPPTEGQWXQ",
+        "QQOILPX4ZTJXJI6PENOFLGJV"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-09-12T14:18:28Z"
     }
   },
   "pairsFreeShip": {
@@ -73138,6 +73160,17 @@
       "first10": false,
       "freeShipping": true,
       "updatedAt": "2026-09-07T00:36:02Z"
+    },
+    "5Q3MFXN5F4KTAQMPPTEGQWXQ|QQOILPX4ZTJXJI6PENOFLGJV": {
+      "url": "https://square.link/u/W6N2MuM1",
+      "paymentLinkId": "C3QMSSSFFOH25FBS",
+      "ids": [
+        "5Q3MFXN5F4KTAQMPPTEGQWXQ",
+        "QQOILPX4ZTJXJI6PENOFLGJV"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-09-12T14:18:28Z"
     }
   },
   "pairsFirst10FreeShip": {
@@ -97912,6 +97945,17 @@
       "first10": true,
       "freeShipping": true,
       "updatedAt": "2026-09-07T00:36:03Z"
+    },
+    "5Q3MFXN5F4KTAQMPPTEGQWXQ|QQOILPX4ZTJXJI6PENOFLGJV": {
+      "url": "https://square.link/u/lBLQRptD",
+      "paymentLinkId": "2M2BZZXKXIUOVJOZ",
+      "ids": [
+        "5Q3MFXN5F4KTAQMPPTEGQWXQ",
+        "QQOILPX4ZTJXJI6PENOFLGJV"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-09-12T14:18:29Z"
     }
   }
 }
