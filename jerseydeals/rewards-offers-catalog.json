@@ -1,0 +1,33 @@
+{
+  "updatedAt": "2026-07-28T21:00:00Z",
+  "note": "Offers that auto-appear under My offers for Rewards members. Default: expiresAt = addedAt + 1 month unless the user says otherwise. first10 (popup) is not in this file and never expires.",
+  "offers": [
+    {
+      "id": "pl5",
+      "title": "$5 off a Premier League jersey",
+      "detail": "Rewards Club offer — save $5 on a Premier League kit.",
+      "activateHint": "Activate at checkout",
+      "audience": "rewards",
+      "addedAt": "2026-07-28",
+      "expiresAt": "2026-08-28",
+      "pricing": {
+        "type": "flat_off",
+        "amount": 5,
+        "league": "premier-league"
+      }
+    },
+    {
+      "id": "freeship1",
+      "title": "Free shipping on your first order",
+      "detail": "Rewards Club offer — free shipping on your first Jersey Deals order.",
+      "activateHint": "Activate at checkout",
+      "audience": "rewards",
+      "addedAt": "2026-07-28",
+      "expiresAt": "2026-08-28",
+      "pricing": {
+        "type": "free_shipping",
+        "firstOrderOnly": true
+      }
+    }
+  ]
+}
