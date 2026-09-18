@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-18T13:50:38Z",
+  "syncedAt": "2026-09-18T14:10:58Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 81,
+  "count": 80,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -903,19 +903,6 @@
       "discountPaymentLinkId": "KYFXAO7ELU5MZ6XK",
       "discountUrl": "https://square.link/u/77r8XlTV",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KErMu5K1I70SpZLd8uqHVINwFGSZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "5GIWQLYTA2XFHZVLANB3YXMI",
-      "variationId": "QS6XM5OVOUJYSDVZR23Z4IAI",
-      "title": "Adidas FIFA World Cup 2026 T-Shirt Youth Large White NWT",
-      "sku": "ebay:800622431330",
-      "paymentLinkId": "HEOHAVNMZEZK5G4Q",
-      "url": "https://square.link/u/lECnVgRd",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WEu7SMg5cjirygbpVkO7K6xvbeKZY",
-      "discountPaymentLinkId": "PRNLUH2B5LERIB4Z",
-      "discountUrl": "https://square.link/u/kQeY67v0",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gD39ggXzCevPwpJlcE4ocvHyhVTZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

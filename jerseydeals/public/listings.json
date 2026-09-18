@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-18T13:50:38Z",
+  "syncedAt": "2026-09-18T14:12:58Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 81,
+  "count": 80,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -1045,38 +1045,6 @@
       "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/sxeeBSin",
       "checkoutUrlDiscounted": "https://square.link/u/tPupa5gQ",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "QS6XM5OVOUJYSDVZR23Z4IAI",
-      "itemId": "5GIWQLYTA2XFHZVLANB3YXMI",
-      "sku": "ebay:800622431330",
-      "title": "Adidas FIFA World Cup 2026 T-Shirt Youth Large White NWT",
-      "price": 24.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/adidas-fifa-world-cup-2026-t-shirt-youth-large-white-nwt/5GIWQLYTA2XFHZVLANB3YXMI",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/vVcAAeSwSUNqnbMZ/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/vVcAAeSwSUNqnbMZ/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/fuQAAeSwW8NqnbMa/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/EAQAAeSwQUJqnbMc/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/FZEAAeSwF-ZqnbMb/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/OHQAAeSw-~ZqnbMb/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/fq0AAeSwNhhqnbMc/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/h28AAeSwe8dqnbMc/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth L",
-      "size": "Youth L",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/lECnVgRd",
-      "checkoutUrlDiscounted": "https://square.link/u/kQeY67v0",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2686,5 +2654,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-18T10:00:53Z"
+  "ebayDetailsSyncedAt": "2026-09-18T14:12:58Z"
 }
