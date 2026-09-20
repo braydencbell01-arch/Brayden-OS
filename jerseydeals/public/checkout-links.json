@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-20T21:29:48Z",
+  "syncedAt": "2026-09-20T21:54:00Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 79,
+  "count": 85,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1033,6 +1033,84 @@
       "discountPaymentLinkId": "GMVCZVJJFCBZQGTT",
       "discountUrl": "https://square.link/u/LkQlWjwV",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/If1yGD7Z2I64p5u9hWM1CDSzZTdZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "SHVMUSF7KOTKIT2VTBFJLH5Z",
+      "variationId": "Z4I2G4YZWMDFYOQU6QOBY5Q2",
+      "title": "adidas Mexico Home Fan Jersey Youth Medium Green World Cup 2026",
+      "sku": "ebay:800691639506",
+      "paymentLinkId": "GQVEIEX7BZBKFBXG",
+      "url": "https://square.link/u/FrDcFVoH",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/47XiMU8idvJH4DrfyYuq1Z86cdbZY",
+      "discountPaymentLinkId": "RXREMHI55EJKVUAP",
+      "discountUrl": "https://square.link/u/1fwUuxoQ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UjAwMM5XLogqV3x7GS4kiRjDdPPZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "TLDZ7CLIPEB6AYWADL45QZ2T",
+      "variationId": "AJORXWWHDR3AUCZ3BICAAEEZ",
+      "title": "adidas Mexico Home Fan Jersey Youth Large Green World Cup 2026",
+      "sku": "ebay:800691643720",
+      "paymentLinkId": "QSXX276NGQMLSWRX",
+      "url": "https://square.link/u/U6EEREAd",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KcFrSbRfGrP553g7v8eiCnpjkuGZY",
+      "discountPaymentLinkId": "E5AUNUVWYYNZC7FT",
+      "discountUrl": "https://square.link/u/2aL4faUC",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GeXJjiPY7E4MC8YtzIrHgWFy6yIZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "2IFWIEECPSM3MC6I5K2QFOVT",
+      "variationId": "A4NX35JQ7UKEDOFUIO7HSJZH",
+      "title": "adidas Germany Home Fan Jersey Youth Medium White World Cup 2026",
+      "sku": "ebay:800691648354",
+      "paymentLinkId": "MQJL2QKTOCTVYAAD",
+      "url": "https://square.link/u/2huF1Kzo",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UDSdA1oVCe97RViIGpae3eCo3kFZY",
+      "discountPaymentLinkId": "3VO3UZSFZ4OA7WFJ",
+      "discountUrl": "https://square.link/u/YQkPdqKT",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/IZKgvj7HHa0lYFyBd4sNGA4nLIHZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "I7J2S4AP6OZYCPDHHYJAW2SI",
+      "variationId": "HPVO25JTDNAKZMOXM4FHLEVJ",
+      "title": "adidas Germany Home Fan Jersey Youth Extra Large White World Cup 2026",
+      "sku": "ebay:800691651286",
+      "paymentLinkId": "KYEAJKWSBINBLLNJ",
+      "url": "https://square.link/u/UPoAcR6a",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ojDSB1cpTdEtQMmElE21f7drtXPZY",
+      "discountPaymentLinkId": "2VFEDBKYOYXR7UO5",
+      "discountUrl": "https://square.link/u/rUfFmVzQ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kDQgZt2TODKH9heE1yVKJlCnijCZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "NPOGIOYMH6ZBNP5HYRTET7BF",
+      "variationId": "KQ7OR6IGL435UO3CIGRHMZMA",
+      "title": "adidas Germany Home Fan Jersey Men’s Large White World Cup 2026",
+      "sku": "ebay:800691674099",
+      "paymentLinkId": "5SVG6ODOTNBCGJFQ",
+      "url": "https://square.link/u/a0PdMw6r",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/O2RNZ0QeNcnZvdO2yNYiPi7ICyTZY",
+      "discountPaymentLinkId": "ZYSJ7NLDQLYOANX2",
+      "discountUrl": "https://square.link/u/FiZfovSQ",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ig9Td4Gd2IpYJLDd3DW9kgTQLvKZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "HZ4CZCF5LRQTY32NF5ZPCKLY",
+      "variationId": "DDRFH77Q4WGXGR7ZZWRNRTEG",
+      "title": "adidas Germany Home Fan Jersey Men’s Extra Large White World Cup 2026",
+      "sku": "ebay:800691687129",
+      "paymentLinkId": "UX4LWKCTBRXAD5RY",
+      "url": "https://square.link/u/8TJUQbTZ",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/K8JPlSDUxDYGASvq4Fx05B1xs9OZY",
+      "discountPaymentLinkId": "7W7JWA7R67NJKXPM",
+      "discountUrl": "https://square.link/u/IJGhSHQN",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kHM5R8VMerfGeKPbyujS0s7QsuCZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
