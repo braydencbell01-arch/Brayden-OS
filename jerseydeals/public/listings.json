@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-20T16:27:16Z",
+  "syncedAt": "2026-09-20T16:58:12Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 80,
+  "count": 79,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -1698,37 +1698,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "7UZU655PFBCCNWLGIEFZUZXU",
-      "itemId": "G2D5ATA2JOS7KZCZUZTH5357",
-      "sku": "ebay:800482170788",
-      "title": "Black Men’s adidas Sportswear Graphic T-Shirt XL Extra Large",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/black-men-s-adidas-sportswear-graphic-t-shirt-xl-extra-large/G2D5ATA2JOS7KZCZUZTH5357",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wJkAAeSwYexqcnTs/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wJkAAeSwYexqcnTs/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0soAAeSwxUxqcnTu/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UsgAAeSwahlqcnTu/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/gjMAAeSwXRFqcnTt/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QlAAAeSw2AdqcnTt/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eQwAAeSwSFFqcnTt/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size XL",
-      "size": "XL",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/KkyfGYfN",
-      "checkoutUrlDiscounted": "https://square.link/u/hQq7qTcT",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
       "id": "IPSNJZLDR3OVPT45P2LXOX6X",
       "itemId": "JJ4HKLSBRK6QMNK6P7JNSUL4",
       "sku": "ebay:800508086628",
@@ -2654,5 +2623,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-20T13:12:16Z"
+  "ebayDetailsSyncedAt": "2026-09-20T16:58:12Z"
 }

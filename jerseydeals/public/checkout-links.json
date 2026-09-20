@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-20T16:27:16Z",
+  "syncedAt": "2026-09-20T16:56:34Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 80,
+  "count": 79,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -435,19 +435,6 @@
       "discountPaymentLinkId": "HNZULIGJOXKMBHQZ",
       "discountUrl": "https://square.link/u/H9d9qRg3",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SwzqWir2Nc3HjKIGHGlhyo9C4NcZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "G2D5ATA2JOS7KZCZUZTH5357",
-      "variationId": "7UZU655PFBCCNWLGIEFZUZXU",
-      "title": "Black Men’s adidas Sportswear Graphic T-Shirt XL Extra Large",
-      "sku": "ebay:800482170788",
-      "paymentLinkId": "R6SVH7W55XTBLO6X",
-      "url": "https://square.link/u/KkyfGYfN",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kjIUR7rLrTEYYKRXjDtBCJd7jhXZY",
-      "discountPaymentLinkId": "YFHLBPNI2C3DGPL7",
-      "discountUrl": "https://square.link/u/hQq7qTcT",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/yQhVGSGFNYYKGOKKOuJqcdyUt3PZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
