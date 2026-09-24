@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-24T17:24:33Z",
+  "syncedAt": "2026-09-24T17:42:28Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 85,
+  "count": 84,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -305,19 +305,6 @@
       "discountPaymentLinkId": "5ZU5BSOEC7AZDH6N",
       "discountUrl": "https://square.link/u/ewyKlCET",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CC2VgbBfVXWUt67iXesEiCI3RxYZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "AHXYNZF2JKQ35R6VIZHVFZIB",
-      "variationId": "HF5D4QEYD2CSREEN75LHME7Y",
-      "title": "24/25 Youth Nike Tottenham Hotspur Home Jersey YthXL Youth Extra Large",
-      "sku": "ebay:800482164938",
-      "paymentLinkId": "DBZHKXDZ5QFVMHQ7",
-      "url": "https://square.link/u/dwTWs1LD",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0fobzt0Wy398zscNdyPZCFNaTQJZY",
-      "discountPaymentLinkId": "LRVA6LXPR3WK2QH6",
-      "discountUrl": "https://square.link/u/F8D7Zh26",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/EvSccWNC0PCsZ3pS1Ir5e4gtxFLZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

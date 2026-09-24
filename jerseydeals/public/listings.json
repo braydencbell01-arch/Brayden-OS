@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-24T17:24:33Z",
+  "syncedAt": "2026-09-24T17:44:14Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 85,
+  "count": 84,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -143,44 +143,6 @@
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/iW5gIxep",
       "checkoutUrlDiscounted": "https://square.link/u/nqGtSSk9",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "HF5D4QEYD2CSREEN75LHME7Y",
-      "itemId": "AHXYNZF2JKQ35R6VIZHVFZIB",
-      "sku": "ebay:800482164938",
-      "title": "24/25 Youth Nike Tottenham Hotspur Home Jersey YthXL Youth Extra Large",
-      "price": 49.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/24-25-youth-nike-tottenham-hotspur-home-jersey-ythxl-youth-extra-large/AHXYNZF2JKQ35R6VIZHVFZIB",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E6oAAeSwgm9qZSwE/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E6oAAeSwgm9qZSwE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/V4sAAeSwygVqZSwH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZYUAAeSwwvJqZSwI/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Q-wAAeSweXxqZSwI/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AOUAAeSwOKhqZSwF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ao8AAeSwapBqZSwF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/P6gAAeSwlOZqZSwF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/djEAAeSwOPZqZSwF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZCQAAeSwf4JqZSwH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/LuoAAeSwPFVqZSwH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2RAAAeSwpwZqZSwH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/NwkAAeSwIoZqZSwH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/kncAAeSw371qZSwI/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth XL",
-      "size": "Youth XL",
-      "brand": "Nike",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/dwTWs1LD",
-      "checkoutUrlDiscounted": "https://square.link/u/F8D7Zh26",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2815,5 +2777,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-24T12:39:30Z"
+  "ebayDetailsSyncedAt": "2026-09-24T17:44:14Z"
 }
