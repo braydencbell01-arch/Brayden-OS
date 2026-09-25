@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-25T13:01:55Z",
+  "syncedAt": "2026-09-25T14:04:56Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 84,
+  "count": 83,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -665,38 +665,6 @@
       "checkoutUrlDiscounted": "https://square.link/u/IJGhSHQN",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
-      "id": "KQ7OR6IGL435UO3CIGRHMZMA",
-      "itemId": "NPOGIOYMH6ZBNP5HYRTET7BF",
-      "sku": "ebay:800691674099",
-      "title": "adidas Germany Home Fan Jersey Men’s Large White World Cup 2026",
-      "price": 34.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/adidas-germany-home-fan-jersey-men-s-large-white-world-cup-2026/NPOGIOYMH6ZBNP5HYRTET7BF",
-      "image": "https://i.ebayimg.com/images/g/~PoAAeSwSkFqsFAi/s-l1600.jpg",
-      "images": [
-        "https://i.ebayimg.com/images/g/~PoAAeSwSkFqsFAi/s-l1600.jpg",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/64cAAeSwVyhqsFAv/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/9LgAAeSwwlhqsFAz/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/AZcAAeSwICxqsFA4/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/0c0AAeSwFqxqsFA9/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/BOQAAeSwy3FqsFBB/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/-8gAAeSwEjRqsFAK/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Jerseys",
-      "note": "Size S",
-      "size": "S",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/a0PdMw6r",
-      "checkoutUrlDiscounted": "https://square.link/u/FiZfovSQ",
-      "condition": "New",
-      "conditionEbay": "New",
       "conditionId": "1000"
     },
     {
@@ -2777,5 +2745,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-25T08:26:25Z"
+  "ebayDetailsSyncedAt": "2026-09-25T14:04:56Z"
 }

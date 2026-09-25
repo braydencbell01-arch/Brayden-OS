@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-25T13:01:55Z",
+  "syncedAt": "2026-09-25T14:03:09Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 84,
+  "count": 83,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1072,19 +1072,6 @@
       "discountPaymentLinkId": "2VFEDBKYOYXR7UO5",
       "discountUrl": "https://square.link/u/rUfFmVzQ",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kDQgZt2TODKH9heE1yVKJlCnijCZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "NPOGIOYMH6ZBNP5HYRTET7BF",
-      "variationId": "KQ7OR6IGL435UO3CIGRHMZMA",
-      "title": "adidas Germany Home Fan Jersey Men’s Large White World Cup 2026",
-      "sku": "ebay:800691674099",
-      "paymentLinkId": "5SVG6ODOTNBCGJFQ",
-      "url": "https://square.link/u/a0PdMw6r",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/O2RNZ0QeNcnZvdO2yNYiPi7ICyTZY",
-      "discountPaymentLinkId": "ZYSJ7NLDQLYOANX2",
-      "discountUrl": "https://square.link/u/FiZfovSQ",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/ig9Td4Gd2IpYJLDd3DW9kgTQLvKZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
