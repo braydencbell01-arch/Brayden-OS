@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-26T05:09:43Z",
+  "syncedAt": "2026-09-26T05:18:46Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 83,
+  "count": 82,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -559,45 +559,6 @@
       "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/bbe6qdZZ",
       "checkoutUrlDiscounted": "https://square.link/u/wYzG2ygT",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "SGQ7YT6PMDHO63KLDU6E637Y",
-      "itemId": "5UJTISW5ZU3VENBDVTJWBJRO",
-      "sku": "ebay:800482168591",
-      "title": "24/25 Youth adidas Manchester United Third Jersey YthXL Youth Extra Large",
-      "price": 39.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/24-25-youth-adidas-manchester-united-third-jersey-ythxl-youth-extra-large/5UJTISW5ZU3VENBDVTJWBJRO",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HagAAeSw529qZWLC/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HagAAeSw529qZWLC/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/viEAAeSwlcJqZWLF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/H6gAAeSwPAZqZWLG/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~oAAAeSwTy5qZWLG/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ttUAAeSw7EhqZWLD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/o0cAAeSwws5qZWLD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Sh8AAeSwdhFqZWLD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ZpgAAeSw8KJqZWLE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wjsAAeSwRydqZWLE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/XtAAAeSwRo9qZWLE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eEsAAeSwT55qZWLE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/vAAAAeSwB-dqZWLF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/IuAAAeSwYG9qZWLF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qWsAAeSwvw1qZWLF/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth XL",
-      "size": "Youth XL",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/D9gQgFvd",
-      "checkoutUrlDiscounted": "https://square.link/u/3OPbhF89",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2745,5 +2706,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-26T00:22:17Z"
+  "ebayDetailsSyncedAt": "2026-09-26T05:18:46Z"
 }

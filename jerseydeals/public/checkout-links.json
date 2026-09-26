@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-26T05:09:43Z",
+  "syncedAt": "2026-09-26T05:17:03Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 83,
+  "count": 82,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -344,19 +344,6 @@
       "discountPaymentLinkId": "GXEYGM5SKX4OYDTD",
       "discountUrl": "https://square.link/u/nqGtSSk9",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gzNubLwDROe2VdJFopBIIUmt4q8YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "5UJTISW5ZU3VENBDVTJWBJRO",
-      "variationId": "SGQ7YT6PMDHO63KLDU6E637Y",
-      "title": "24/25 Youth adidas Manchester United Third Jersey YthXL Youth Extra Large",
-      "sku": "ebay:800482168591",
-      "paymentLinkId": "ZD26JLJW6E7LFGGF",
-      "url": "https://square.link/u/D9gQgFvd",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0f4Nm0GnBj6o5t7TgYSbPlHeYgGZY",
-      "discountPaymentLinkId": "54LAMMWE5MBZGVYG",
-      "discountUrl": "https://square.link/u/3OPbhF89",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6iae2s1cxTjxSCzNA99zLHiZ0deZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
