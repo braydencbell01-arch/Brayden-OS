@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-09-28T01:57:18Z",
+  "syncedAt": "2026-09-28T05:41:48Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 82,
+  "count": 81,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -409,19 +409,6 @@
       "discountPaymentLinkId": "HNZULIGJOXKMBHQZ",
       "discountUrl": "https://square.link/u/H9d9qRg3",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/SwzqWir2Nc3HjKIGHGlhyo9C4NcZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "5E2TPWBWINZ6LOXVWBSJYGDZ",
-      "variationId": "QNLA5JXCMPQWWKXBKA2637XG",
-      "title": "Green Men’s adidas T-Shirt With Multicolor Worldwide Graphic On Back M Medium",
-      "sku": "ebay:800482171113",
-      "paymentLinkId": "SDV457Q3OJTGQOEZ",
-      "url": "https://square.link/u/KHGIDK2H",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kvINJawHw6GE1SnBBOijlK2Nn3SZY",
-      "discountPaymentLinkId": "IKBMZMXI2TSDT7CJ",
-      "discountUrl": "https://square.link/u/lyZPk8FD",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aWEimiuks5rL2Uyh0cjzMGwDwLcZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

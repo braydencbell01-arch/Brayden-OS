@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-09-28T01:57:18Z",
+  "syncedAt": "2026-09-28T05:43:37Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 82,
+  "count": 81,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2008,39 +2008,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "QNLA5JXCMPQWWKXBKA2637XG",
-      "itemId": "5E2TPWBWINZ6LOXVWBSJYGDZ",
-      "sku": "ebay:800482171113",
-      "title": "Green Men’s adidas T-Shirt With Multicolor Worldwide Graphic On Back M Medium",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/green-men-s-adidas-t-shirt-with-multicolor-worldwide-graphic-on-back-m-medium/5E2TPWBWINZ6LOXVWBSJYGDZ",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5GIAAeSwHjNqcnZC/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5GIAAeSwHjNqcnZC/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jakAAeSwXRFqcnZE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/xR4AAeSw2S9qcnZE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/qpMAAeSwrFJqcnZC/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/9BgAAeSwEFNqcnZE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/rRsAAeSwAbdqcnZD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WL4AAeSwRT1qcnZE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/0z4AAeSwWkBqcnZF/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size M",
-      "size": "M",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/KHGIDK2H",
-      "checkoutUrlDiscounted": "https://square.link/u/lyZPk8FD",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
       "id": "PFDGWERV4SLJPIHLMYDGJHOQ",
       "itemId": "4I5XKVJADKB2PVFJUQC6SWDM",
       "sku": "ebay:800482169797",
@@ -2706,5 +2673,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-28T00:13:49Z"
+  "ebayDetailsSyncedAt": "2026-09-28T05:43:37Z"
 }
