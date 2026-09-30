@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-09-30T12:27:20Z",
+  "syncedAt": "2026-09-30T12:55:07Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -604,15 +604,9 @@
       "price": 34.99,
       "currency": "USD",
       "url": "https://jerseydealsofficial.square.site/product/adidas-germany-home-fan-jersey-men-s-extra-large-white-world-cup-2026/HZ4CZCF5LRQTY32NF5ZPCKLY",
-      "image": "https://i.ebayimg.com/images/g/D1wAAeSwHahqsFDX/s-l1600.jpg",
+      "image": "https://items-images-production.s3.us-west-2.amazonaws.com/files/9547401c33057b5dd4f30a74d048d3d6a1504df4/original.jpeg",
       "images": [
-        "https://i.ebayimg.com/images/g/D1wAAeSwHahqsFDX/s-l1600.jpg",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/B1AAAeSwNyZqsFEA/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/5C0AAeSwd3NqsFD8/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/7vUAAeSw3TxqsFD4/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/yZMAAeSwWP1qsFD0/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/2r8AAeSwFx9qsFDw/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/44gAAeSwMXRqsFDq/$_57.JPG?set_id=8800005007"
+        "https://items-images-production.s3.us-west-2.amazonaws.com/files/9547401c33057b5dd4f30a74d048d3d6a1504df4/original.jpeg"
       ],
       "quantity": 1,
       "tag": "Jerseys",
@@ -621,12 +615,11 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/8TJUQbTZ",
-      "checkoutUrlDiscounted": "https://square.link/u/IJGhSHQN",
       "condition": "New",
       "conditionEbay": "New with tags",
-      "conditionId": "1000"
+      "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/8TJUQbTZ",
+      "checkoutUrlDiscounted": "https://square.link/u/IJGhSHQN"
     },
     {
       "id": "HPVO25JTDNAKZMOXM4FHLEVJ",
@@ -2673,5 +2666,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-09-30T06:15:44Z"
+  "ebayDetailsSyncedAt": "2026-09-30T12:55:07Z"
 }
