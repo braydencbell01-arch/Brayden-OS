@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-10-01T14:35:48Z",
+  "syncedAt": "2026-10-01T14:43:27Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 81,
+  "count": 80,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2001,36 +2001,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "PFDGWERV4SLJPIHLMYDGJHOQ",
-      "itemId": "4I5XKVJADKB2PVFJUQC6SWDM",
-      "sku": "ebay:800482169797",
-      "title": "Grey Men’s adidas Originals Logo Graphic T-Shirt L Large",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/grey-men-s-adidas-originals-logo-graphic-t-shirt-l-large/4I5XKVJADKB2PVFJUQC6SWDM",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SNMAAeSwSFFqcm6p/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/SNMAAeSwSFFqcm6p/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/siAAAeSw-4Nqcm6s/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ltsAAeSwMndqcm6s/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~RIAAeSwRTtqcm6r/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WvIAAeSwGjJqcm6r/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size L",
-      "size": "L",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/xTtvbfoh",
-      "checkoutUrlDiscounted": "https://square.link/u/TtHzkUYw",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
       "id": "TR7CJHQQOIORGFKMQEEDYKOK",
       "itemId": "3PUUINK2CUWJ5QT7IPI7FXWO",
       "sku": "ebay:800610879349",
@@ -2666,5 +2636,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-10-01T07:28:03Z"
+  "ebayDetailsSyncedAt": "2026-10-01T14:43:27Z"
 }
