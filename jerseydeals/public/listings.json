@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-10-06T16:14:52Z",
+  "syncedAt": "2026-10-06T19:20:23Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 80,
+  "count": 79,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2034,38 +2034,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "356P43HDBEFWQOVXCPXCDVSS",
-      "itemId": "WAZIAIXMC2NNUAOAGOHUN2XO",
-      "sku": "ebay:800508006751",
-      "title": "Red Youth adidas FC Bayern Munich T-Shirt YthL Youth Large",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/red-youth-adidas-fc-bayern-munich-t-shirt-ythl-youth-large/WAZIAIXMC2NNUAOAGOHUN2XO",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~KwAAeSwkNxqf0HF/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~KwAAeSwkNxqf0HF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/cWIAAeSwIGNqf0HI/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zSEAAeSwXyBqf0HH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/AAIAAeSwNSNqf0HH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/DrgAAeSwNz9qf0HH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/KgMAAeSwtlZqf0HH/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/E4IAAeSwbspqf0HI/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth L",
-      "size": "Youth L",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/HiebtNyw",
-      "checkoutUrlDiscounted": "https://square.link/u/xujEXcLt",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
       "id": "W7IVX3QFH6P6K2OPYA3RRGCT",
       "itemId": "QYRSDSJ63DHBBMOX5SN2BNP3",
       "sku": "ebay:800508026388",
@@ -2636,5 +2604,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-10-06T13:52:31Z"
+  "ebayDetailsSyncedAt": "2026-10-06T19:20:23Z"
 }
