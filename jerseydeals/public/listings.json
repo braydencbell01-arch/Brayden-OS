@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-10-08T21:16:05Z",
+  "syncedAt": "2026-10-08T21:44:30Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 79,
+  "count": 78,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2289,39 +2289,6 @@
       "conditionId": "3000"
     },
     {
-      "id": "FPACGK626CQ3PF4CRARJHXLW",
-      "itemId": "U4MZV6JN663KJQXOXVX4EAVU",
-      "sku": "ebay:800482087139",
-      "title": "14/15 Youth Adidas Chelsea FC Home Jersey YthM Youth Medium",
-      "price": 14.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/14-15-youth-adidas-chelsea-fc-home-jersey-ythm-youth-medium/U4MZV6JN663KJQXOXVX4EAVU",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UyMAAeSwZqJp-7Kh/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/UyMAAeSwZqJp-7Kh/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/WVEAAeSwZLVp-7Km/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Y-UAAeSwJyRp-7Kj/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/CIkAAeSwAKZp-7Kj/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ctUAAeSwrclp-7Kj/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/U4AAAeSw0Plp-7Ki/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/wR4AAeSwnxZp-7Kl/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/2nUAAeSwisJp-7Km/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth M",
-      "size": "Youth M",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is in pretty good condition there are no stains just a tiny bit of peeling as you can see. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/lHukh4ga",
-      "checkoutUrlDiscounted": "https://square.link/u/p9Is3goT",
-      "condition": "Used",
-      "conditionEbay": "Used",
-      "conditionId": "3000"
-    },
-    {
       "id": "XUWT5HYLPACVFYKWR43Q2OEA",
       "itemId": "3PWLEWS7DBQDAXVP2LHEWEWH",
       "sku": "ebay:800482180199",
@@ -2604,5 +2571,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-10-08T16:46:33Z"
+  "ebayDetailsSyncedAt": "2026-10-08T21:44:30Z"
 }
