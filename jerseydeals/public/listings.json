@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-10-20T19:27:48Z",
+  "syncedAt": "2026-10-20T19:35:37Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 77,
+  "count": 76,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2031,36 +2031,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "CCMYBBETJ6AIUOEWPTA74G6H",
-      "itemId": "HCDARA2BPIJ57MRWACHALL3H",
-      "sku": "ebay:800482169162",
-      "title": "White Men’s adidas Originals Logo Graphic T-Shirt L Large",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/white-men-s-adidas-originals-logo-graphic-t-shirt-l-large/HCDARA2BPIJ57MRWACHALL3H",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C6UAAeSwRT1qcmz5/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/C6UAAeSwRT1qcmz5/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/hqUAAeSwMndqcmz8/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/QssAAeSwW0Zqcmz8/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HnMAAeSwRQxqcmz9/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jj0AAeSwlcJqcmz8/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size L",
-      "size": "L",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/B9JQaSHv",
-      "checkoutUrlDiscounted": "https://square.link/u/LvJatUI8",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
       "id": "QQM2QDUTLHJEHCTCQZYMXHAU",
       "itemId": "OGTAERFQYGGLQHQJX6NMFV7M",
       "sku": "ebay:800482170500",
@@ -2536,5 +2506,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-10-20T15:34:04Z"
+  "ebayDetailsSyncedAt": "2026-10-20T19:35:37Z"
 }

@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-10-20T19:27:48Z",
+  "syncedAt": "2026-10-20T19:33:46Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 77,
+  "count": 76,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -318,19 +318,6 @@
       "discountPaymentLinkId": "GXEYGM5SKX4OYDTD",
       "discountUrl": "https://square.link/u/nqGtSSk9",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gzNubLwDROe2VdJFopBIIUmt4q8YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "HCDARA2BPIJ57MRWACHALL3H",
-      "variationId": "CCMYBBETJ6AIUOEWPTA74G6H",
-      "title": "White Men’s adidas Originals Logo Graphic T-Shirt L Large",
-      "sku": "ebay:800482169162",
-      "paymentLinkId": "VFGLTSXL6HL6L2DN",
-      "url": "https://square.link/u/B9JQaSHv",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/AFYDpISBqBh7JEzFx4kuxplXL1FZY",
-      "discountPaymentLinkId": "S36DI6R6LMYL43RX",
-      "discountUrl": "https://square.link/u/LvJatUI8",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0p9DbBgt64duVngnFZKH7yZZbraZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
