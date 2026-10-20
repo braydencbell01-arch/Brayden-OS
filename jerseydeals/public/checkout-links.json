@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-10-20T00:39:50Z",
+  "syncedAt": "2026-10-20T00:53:41Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 78,
+  "count": 77,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -162,19 +162,6 @@
       "discountPaymentLinkId": "IORAAVT753CUBITI",
       "discountUrl": "https://square.link/u/5Tx3vuP8",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/a4BuXtsgosnS2gmNLIU2DANZA07YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "4NT3VHQTA66R54HFBO2AH5HH",
-      "variationId": "ZPVVMODVRJMOICVJBS5DS4WU",
-      "title": "16/17 Youth Adidas Real Madrid Purple Training Jersey YthXL Youth Extra Large",
-      "sku": "ebay:800482162028",
-      "paymentLinkId": "ZJV7UKCNEAMGRCCH",
-      "url": "https://square.link/u/NiYzTeE6",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UFrV4Q3z9qscpG1gXMu3tDE288SZY",
-      "discountPaymentLinkId": "A5VOQ5DJ7DIYFB36",
-      "discountUrl": "https://square.link/u/5OloRg3q",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/mMwG9l3Fcy2FnOarYFKO5sTyPUEZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-10-20T00:39:50Z",
+  "syncedAt": "2026-10-20T00:55:26Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 78,
+  "count": 77,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -743,39 +743,6 @@
       "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/FrDcFVoH",
       "checkoutUrlDiscounted": "https://square.link/u/1fwUuxoQ",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "ZPVVMODVRJMOICVJBS5DS4WU",
-      "itemId": "4NT3VHQTA66R54HFBO2AH5HH",
-      "sku": "ebay:800482162028",
-      "title": "16/17 Youth Adidas Real Madrid Purple Training Jersey YthXL Youth Extra Large",
-      "price": 32.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/16-17-youth-adidas-real-madrid-purple-training-jersey-ythxl-youth-extra-large/4NT3VHQTA66R54HFBO2AH5HH",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5ukAAeSwi69p-7kf/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/5ukAAeSwi69p-7kf/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/g7IAAeSw6SNp-7kj/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/8ZMAAeSwtZBp-7kg/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/Kp4AAeSwu-dp-7kh/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/~xYAAeSwisJp-7ki/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aCEAAeSwevZp-7ki/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/pcMAAeSwKE5p-7kj/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/j38AAeSwDPJp-7kj/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Youth",
-      "note": "Youth XL",
-      "size": "Youth XL",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/NiYzTeE6",
-      "checkoutUrlDiscounted": "https://square.link/u/5OloRg3q",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -2569,5 +2536,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-10-19T21:43:33Z"
+  "ebayDetailsSyncedAt": "2026-10-20T00:55:26Z"
 }
