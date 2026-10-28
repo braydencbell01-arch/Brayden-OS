@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-10-28T19:50:23Z",
+  "syncedAt": "2026-10-28T20:04:28Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -2185,11 +2185,11 @@
       "brand": "Puma",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New with tags",
       "description": "T-Shirt is new with tags. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/iFENSSYZ",
       "checkoutUrlDiscounted": "https://square.link/u/bc0hKWvN",
+      "condition": "New",
+      "conditionEbay": "New with tags",
       "conditionId": "1000"
     },
     {
@@ -2506,5 +2506,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-10-28T14:48:32Z"
+  "ebayDetailsSyncedAt": "2026-10-28T20:04:28Z"
 }
