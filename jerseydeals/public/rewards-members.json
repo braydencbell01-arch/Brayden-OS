@@ -1,10 +1,11 @@
 {
-  "syncedAt": "2026-10-25T21:24:39Z",
+  "syncedAt": "2026-10-28T20:34:55Z",
   "kind": "rewards_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 6,
+  "count": 7,
   "emails": [
+    "abdulsesayp@gmail.com",
     "braydencbell01@gmail.com",
     "braydencbelll01@gmail.com",
     "calebrschrader@gmail.com",
@@ -13,6 +14,15 @@
     "tbsports9@icloud.com"
   ],
   "entries": [
+    {
+      "email": "abdulsesayp@gmail.com",
+      "sources": [
+        "rewards_club"
+      ],
+      "firstSeen": "2026-10-28T16:55:12.000Z",
+      "lastSeen": "2026-10-28T16:55:12.000Z",
+      "phone": "+44739157636"
+    },
     {
       "email": "braydencbell01@gmail.com",
       "sources": [
