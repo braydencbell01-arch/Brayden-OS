@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BrayStats">
+  <!-- Pitch badge -->
+  <rect width="64" height="64" rx="14" fill="#0B3D2E"/>
+  <!-- Soft inner field -->
+  <rect x="4" y="4" width="56" height="56" rx="11" fill="#146B4A" opacity="0.35"/>
+
+  <!-- Bold B stem + bowls -->
+  <path
+    fill="#C8F542"
+    d="M16 14h14.2c7.2 0 11.8 3.5 11.8 9.1 0 3.6-1.8 6.2-4.8 7.7 4.1 1.4 6.6 4.5 6.6 9 0 6.3-5 10.2-13.1 10.2H16V14zm8.2 13.2h5.4c3.1 0 4.9-1.5 4.9-3.8s-1.8-3.7-4.9-3.7h-5.4v7.5zm0 16.1h6.2c3.6 0 5.7-1.6 5.7-4.2s-2.1-4.1-5.7-4.1h-6.2v8.3z"
+  />
+
+  <!-- Ascending stats bars (cut into lower-right of mark) -->
+  <rect x="40" y="38" width="4.5" height="10" rx="1.2" fill="#C8F542"/>
+  <rect x="46.5" y="32" width="4.5" height="16" rx="1.2" fill="#C8F542"/>
+  <rect x="53" y="25" width="4.5" height="23" rx="1.2" fill="#D9FF6A"/>
+
+  <!-- Tiny ball node on tallest bar -->
+  <circle cx="55.25" cy="22" r="3.2" fill="none" stroke="#F2F7F3" stroke-width="1.8"/>
+  <path
+    d="M53.4 21.2c.7.5 1.6.8 2.5.8.5 0 1-.1 1.4-.3M54.2 23.6c.6-.6 1.3-1 2.1-1.1"
+    fill="none"
+    stroke="#F2F7F3"
+    stroke-width="1.2"
+    stroke-linecap="round"
+  />
+</svg>
