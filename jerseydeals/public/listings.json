@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-11-03T22:29:18Z",
+  "syncedAt": "2026-11-03T22:54:47Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 76,
+  "count": 75,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2063,39 +2063,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "QTD4DUQRLVOBZ4TZC7XFYCDL",
-      "itemId": "IVTURGEOIWMKKMWKSMS4L3VZ",
-      "sku": "ebay:800482179923",
-      "title": "Blue Men’s Puma 1948 Athletics Graphic T-Shirt XXL Extra Extra Large",
-      "price": 17.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/blue-men-s-puma-1948-athletics-graphic-t-shirt-xxl-extra-extra-large/IVTURGEOIWMKKMWKSMS4L3VZ",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jkQAAeSwAzZqc9xo/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/jkQAAeSwAzZqc9xo/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/t5gAAeSwDCFqc9xr/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/zW8AAeSw6Ppqc9xp/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/eRIAAeSwYG9qc9xp/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/irIAAeSwQBhqc9xq/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/ivYAAeSw-jdqc9xq/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/HBkAAeSw3jFqc9xq/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxNjAw/z/aeQAAeSwh~xqc9xq/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size XXL",
-      "size": "XXL",
-      "brand": "Puma",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/9GpvXhZy",
-      "checkoutUrlDiscounted": "https://square.link/u/Ym3L3OZN",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
       "id": "H4MRADR5XPZCLS5JNIBEEIVH",
       "itemId": "UZSRPC5LNCZISTUHGJMV65CC",
       "sku": "ebay:800482176285",
@@ -2506,5 +2473,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-03T18:03:03Z"
+  "ebayDetailsSyncedAt": "2026-11-03T22:54:47Z"
 }

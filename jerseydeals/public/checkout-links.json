@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-03T22:29:18Z",
+  "syncedAt": "2026-11-03T22:53:04Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 76,
+  "count": 75,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -552,19 +552,6 @@
       "discountPaymentLinkId": "5PA7JV4MMQAHSOVA",
       "discountUrl": "https://square.link/u/bc0hKWvN",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0tdo48PsPd8gUTvPUYG7BEMtasVZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "IVTURGEOIWMKKMWKSMS4L3VZ",
-      "variationId": "QTD4DUQRLVOBZ4TZC7XFYCDL",
-      "title": "Blue Men’s Puma 1948 Athletics Graphic T-Shirt XXL Extra Extra Large",
-      "sku": "ebay:800482179923",
-      "paymentLinkId": "YOTFKYK4IITDT5JZ",
-      "url": "https://square.link/u/9GpvXhZy",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YrrqfCCcDe9BKGFJgKPRZJse4XLZY",
-      "discountPaymentLinkId": "656QIWHBTNVAI76U",
-      "discountUrl": "https://square.link/u/Ym3L3OZN",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KOe7oEyRNUpy7AWAMD0AZxTrsaNZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
