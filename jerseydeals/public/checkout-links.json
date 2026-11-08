@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-08T17:55:13Z",
+  "syncedAt": "2026-11-08T19:57:07Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 94,
+  "count": 98,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1220,7 +1220,7 @@
     {
       "itemId": "Q5LVTSHMXTJEKLFKASKUI4D3",
       "variationId": "VVJN4CIB7L7VUQQTKOCZAG4M",
-      "title": "Nike USA Youth Crest T-Shirt White YthM Youth Medium",
+      "title": "Nike Youth USA USMNT Logo Graphic T-Shirt White YthM Youth Medium",
       "sku": "ebay:800890735646",
       "paymentLinkId": "PK6C5VNMBCHIT4SO",
       "url": "https://square.link/u/JeLfJjNB",
@@ -1228,6 +1228,58 @@
       "discountPaymentLinkId": "G7MTUC7WNKC7O7A4",
       "discountUrl": "https://square.link/u/YwwCzbD9",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/iyEYujQccqlVM5RlFEZAhj0SHyLZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "A4DDZLGHYQMXZWJTXGZVGPUB",
+      "variationId": "ZJRDGSIGF5F6NMKJMGIQN25V",
+      "title": "Nike Men’s Brazil CBF Core Cotton Graphic T-Shirt Yellow L Large",
+      "sku": "ebay:800893371462",
+      "paymentLinkId": "43RWFBNYAJGUBZBN",
+      "url": "https://square.link/u/KYoxkDTo",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aUFPkglulLWwcf53XZKnLcwz63aZY",
+      "discountPaymentLinkId": "CVV5TW6W36IK7EQD",
+      "discountUrl": "https://square.link/u/ECvAnOp5",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Cc9Wsicrgubmgq8SS1fgTVXrG4eZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "GGVBB3VW77L4JYIZEUHYFZ6X",
+      "variationId": "6EONXCBARE2FGALOXQTXFWFE",
+      "title": "Nike Men’s Brazil CBF Core Cotton Graphic T-Shirt Yellow M Medium",
+      "sku": "ebay:800893378003",
+      "paymentLinkId": "GQVDYITARDLINCZY",
+      "url": "https://square.link/u/Z8piLdRT",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/6g77iZiFOy1EY0Qsh4q6Jf7CR8KZY",
+      "discountPaymentLinkId": "GXKKO2COXNPF64XN",
+      "discountUrl": "https://square.link/u/RxXR4UaB",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/64PzeW28DIXnnNC0fXIXMNre3TVZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "ULAYJSR6AHFSYFUHZV6HGQTA",
+      "variationId": "YRJLJOP3OXKQKRXXYH6X7PHD",
+      "title": "Nike Men’s France FFF Navy Graphic T-Shirt M Medium",
+      "sku": "ebay:800893393729",
+      "paymentLinkId": "32SSP7K5ORHC2WUS",
+      "url": "https://square.link/u/1WavaT9g",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/mivktcroDBmTYSnI3fVHpHxjuIbZY",
+      "discountPaymentLinkId": "CR2N7B2HVJEJLKKG",
+      "discountUrl": "https://square.link/u/t1dHbtJi",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/W6Pw1BEoCqxpKaoDazmftcD45bWZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "2J7WESUIN6M6Q4DH2YBK72WY",
+      "variationId": "FEGSLUT7DMM7SBNSBFNHXXRB",
+      "title": "Nike Men’s Brazil CBF Pullover Hoodie Green L Large",
+      "sku": "ebay:800893406139",
+      "paymentLinkId": "3RFWSWD7DJ53VHPN",
+      "url": "https://square.link/u/fVfJTGI3",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cxNq1fvY3l4TxfcNMX2KlrG4D2eZY",
+      "discountPaymentLinkId": "MBVVIOVMU3USFHDA",
+      "discountUrl": "https://square.link/u/kd5I32jq",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/msOT0Rmuj6szsetZ2S3K9DG2NkOZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
