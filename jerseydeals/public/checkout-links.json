@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-07T23:58:44Z",
+  "syncedAt": "2026-11-08T01:50:03Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 84,
+  "count": 92,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -828,19 +828,6 @@
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
-      "itemId": "KWQZ4ZTZKK7MBDM5ZANDTD42",
-      "variationId": "WO45BKQTHFB54Q7PDPOCUGYU",
-      "title": "Adidas Morocco FIFA World Cup 2026 Tee Men’s Large Red NWT",
-      "sku": "ebay:800623078137",
-      "paymentLinkId": "Y7CNQQUX3IGV3VBS",
-      "url": "https://square.link/u/xT56enbT",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gvbsIc4dW5MwpSO7Ql3Ko9UgddbZY",
-      "discountPaymentLinkId": "AT2AYBXK5FXBTL7Y",
-      "discountUrl": "https://square.link/u/LUP5WW2D",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/agpqUlpa49hzo9bYsZkZoQLm3SMZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
       "itemId": "HBHOVBCLTRIXFFHHZRIWHW3Z",
       "variationId": "HUX4ON6QJZFQN2MKJHYIK3AV",
       "title": "Adidas England FIFA World Cup 2026 Tee Men’s Large White NWT",
@@ -1098,6 +1085,123 @@
       "discountPaymentLinkId": "C5UVOEQN5OEYQDUQ",
       "discountUrl": "https://square.link/u/jp9AkzJZ",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/i6EUhrLui8Mvp1qSUTp7y4mhIufZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "FFZMJTATEE7R3CZG4XF7QA2E",
+      "variationId": "C2JYX5BPWR3ZYESUVFXRBJ2Y",
+      "title": "adidas Belgium Home Fan Jersey Youth Extra Large Red World Cup 2026",
+      "sku": "ebay:800890271568",
+      "paymentLinkId": "3BKY2HWC3HGRSUDA",
+      "url": "https://square.link/u/J4ijiU2R",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/mupW5ALHj9LMYiotBRC9QnidPQaZY",
+      "discountPaymentLinkId": "O7GMGJDAODGBZUQQ",
+      "discountUrl": "https://square.link/u/alhb7KV3",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/uKxkr5J0bQh1bU9UQZ3y52QlVbNZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "CBCMVDKQ2C6ZPO5QHCNA2MA2",
+      "variationId": "UMKRYQ7VZBVJA7VGLGXMJEV2",
+      "title": "adidas Belgium Home Fan Jersey Youth Large Red World Cup 2026",
+      "sku": "ebay:800890275676",
+      "paymentLinkId": "DFXF36P6227WYQF2",
+      "url": "https://square.link/u/Bj1Uqf68",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/MD6AsRXEMoIrVgMUeQ8NY7fYt9aZY",
+      "discountPaymentLinkId": "N55CR4W7ELAODZH4",
+      "discountUrl": "https://square.link/u/DfgduN7t",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gZOnYjhfkd7snc6lCGUpmBToyD6YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "7ONLSK2NVIIEGXLVKKW6MLHD",
+      "variationId": "22Z5X6LW6SEIQCGCGRYL2GNG",
+      "title": "adidas Belgium Home Fan Jersey Youth Medium Red World Cup 2026",
+      "sku": "ebay:800890279343",
+      "paymentLinkId": "CY6NKPMKGXEP6LSZ",
+      "url": "https://square.link/u/8ZV9TeqM",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GKr6sk4f3iQsEPIw6oq7uegjg86YY",
+      "discountPaymentLinkId": "U5O2TM57N7OGNWVT",
+      "discountUrl": "https://square.link/u/jtnp4NMX",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/gFuSXbiK1wiZMgJ0n03VdXQeoHAZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "RXSFT4KWCM5LIGRXDDOYZ5YW",
+      "variationId": "KJWF6TL4O5PW3N7PJ6YE6PEE",
+      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey S Small",
+      "sku": "ebay:800890290886",
+      "paymentLinkId": "RLTOSXGFUMMHVPLC",
+      "url": "https://square.link/u/m1w6mr7Q",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/uCbzFeuhvE0nkfggtJnfpgLwB5CZY",
+      "discountPaymentLinkId": "656CM4TNRRJPZ7AY",
+      "discountUrl": "https://square.link/u/8uv5ltoS",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/iA5tpFsTj62kfZbZuqrDabGxZSQZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "FYR5V7ZHBRTBLW5RD6HDAVCT",
+      "variationId": "5L5ODNTM2TKV5PNVWNUQS53G",
+      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey M Medium",
+      "sku": "ebay:800890296102",
+      "paymentLinkId": "VBQTUYI4IDXHZVSK",
+      "url": "https://square.link/u/S259asxJ",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/c3I4KzounIsVSSdIYWdJgTmXc2GZY",
+      "discountPaymentLinkId": "V6GUHZNN77IY6CCX",
+      "discountUrl": "https://square.link/u/xK4AycDs",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Colx79jxTnKrbuDOseoMja5RIDDZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "FARHVF34Z2MM7V23Q57J3YSN",
+      "variationId": "S4MZY2OLBITYOJ72Z3CYBUW6",
+      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey L Large",
+      "sku": "ebay:800890305605",
+      "paymentLinkId": "HWBXSDLCZCCB7VF7",
+      "url": "https://square.link/u/OvWH4wVi",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/oDZDae8oAJxIBcfxM8aO9ABWI0CZY",
+      "discountPaymentLinkId": "DDTAKBY5LVHFM5TT",
+      "discountUrl": "https://square.link/u/KMOTOksP",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Os6wVnmyrm1QURdSUIXJTtYXdpfZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "MDVTWPPWLELU6HXJXEQOTNCE",
+      "variationId": "I4OSDTR72MKB33QBTTDT3H7U",
+      "title": "26/27 Men’s Nike Brazil National Team Pre-Match Jersey M Medium",
+      "sku": "ebay:800890605445",
+      "paymentLinkId": "ZCRMGXUXEF2V4EX5",
+      "url": "https://square.link/u/6GqyxJE2",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/yGwt5mBeiNtI6IJ4oTJUitCQq8bZY",
+      "discountPaymentLinkId": "6F72GNSEERJIPUZ5",
+      "discountUrl": "https://square.link/u/DQwcYIID",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/mIK0ZNUzsJCNYq2GQX86OSUA5ARZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "7V774PLT5UU3ZNBIIFEQJCCY",
+      "variationId": "SUI2QGGHXZ4FNXCYICTQUZXT",
+      "title": "Nike Men’s Brazil CBF Logo Graphic T-Shirt White L Large",
+      "sku": "ebay:800890698883",
+      "paymentLinkId": "NBJJSP6RTB2JLP7L",
+      "url": "https://square.link/u/sGCCores",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/yo3kt3cNnPRJoxEfykqjHoKTmYXZY",
+      "discountPaymentLinkId": "KLABMDOXPQRM625O",
+      "discountUrl": "https://square.link/u/qy4aVNSd",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/EpBHHfLAn6U0rNWuhKc1XO3yBnDZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "PNHIWVGO2XAVC5ZASOV5BPXE",
+      "variationId": "USZWXT4U3MBLMC4WHL6YGYLG",
+      "title": "Nike Men’s Brazil CBF Logo Graphic T-Shirt Teal L Large",
+      "sku": "ebay:800890704567",
+      "paymentLinkId": "VWWQ5J2Q6MWJO7DG",
+      "url": "https://square.link/u/sASDTr1v",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Q12uQk7FfuMVy0T90YVlADpUe2FZY",
+      "discountPaymentLinkId": "LFCY7G7R45ZY4JR6",
+      "discountUrl": "https://square.link/u/mNIjkDgo",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KeYkQcEuUHNl6lmEwmTaXadn1teZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]

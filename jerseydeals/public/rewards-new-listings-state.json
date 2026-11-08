@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T22:24:58Z",
+  "updatedAt": "2026-11-08T01:52:12Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -178,9 +178,82 @@
     "ebay:800890143733",
     "ebay:800890156614",
     "ebay:800890184732",
-    "ebay:800890189240"
+    "ebay:800890189240",
+    "ebay:800890271568",
+    "ebay:800890275676",
+    "ebay:800890279343",
+    "ebay:800890290886",
+    "ebay:800890296102",
+    "ebay:800890305605",
+    "ebay:800890605445",
+    "ebay:800890698883",
+    "ebay:800890704567"
   ],
-  "pending": [],
+  "pending": [
+    {
+      "id": "ebay:800890305605",
+      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey L Large",
+      "url": "https://jerseydealsofficial.square.site/product/26-27-men-s-adidas-belgium-national-team-pre-match-jersey-l-large/FARHVF34Z2MM7V23Q57J3YSN",
+      "price": 44.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890296102",
+      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey M Medium",
+      "url": "https://jerseydealsofficial.square.site/product/26-27-men-s-adidas-belgium-national-team-pre-match-jersey-m-medium/FYR5V7ZHBRTBLW5RD6HDAVCT",
+      "price": 44.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890290886",
+      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey S Small",
+      "url": "https://jerseydealsofficial.square.site/product/26-27-men-s-adidas-belgium-national-team-pre-match-jersey-s-small/RXSFT4KWCM5LIGRXDDOYZ5YW",
+      "price": 44.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890605445",
+      "title": "26/27 Men’s Nike Brazil National Team Pre-Match Jersey M Medium",
+      "url": "https://jerseydealsofficial.square.site/product/26-27-men-s-nike-brazil-national-team-pre-match-jersey-m-medium/MDVTWPPWLELU6HXJXEQOTNCE",
+      "price": 44.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890271568",
+      "title": "adidas Belgium Home Fan Jersey Youth Extra Large Red World Cup 2026",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-belgium-home-fan-jersey-youth-extra-large-red-world-cup-2026/FFZMJTATEE7R3CZG4XF7QA2E",
+      "price": 34.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890275676",
+      "title": "adidas Belgium Home Fan Jersey Youth Large Red World Cup 2026",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-belgium-home-fan-jersey-youth-large-red-world-cup-2026/CBCMVDKQ2C6ZPO5QHCNA2MA2",
+      "price": 34.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890279343",
+      "title": "adidas Belgium Home Fan Jersey Youth Medium Red World Cup 2026",
+      "url": "https://jerseydealsofficial.square.site/product/adidas-belgium-home-fan-jersey-youth-medium-red-world-cup-2026/7ONLSK2NVIIEGXLVKKW6MLHD",
+      "price": 34.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890704567",
+      "title": "Nike Men’s Brazil CBF Logo Graphic T-Shirt Teal L Large",
+      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-brazil-cbf-logo-graphic-t-shirt-teal-l-large/PNHIWVGO2XAVC5ZASOV5BPXE",
+      "price": 21.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    },
+    {
+      "id": "ebay:800890698883",
+      "title": "Nike Men’s Brazil CBF Logo Graphic T-Shirt White L Large",
+      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-brazil-cbf-logo-graphic-t-shirt-white-l-large/7V774PLT5UU3ZNBIIFEQJCCY",
+      "price": 21.99,
+      "seenAt": "2026-11-08T01:52:12Z"
+    }
+  ],
   "lastEmailedAt": "2026-11-07T22:25:01Z",
   "lastEmailedDay": "2026-11-07",
   "lastEmailedIds": [
