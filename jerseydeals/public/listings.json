@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-11-08T05:29:44Z",
+  "syncedAt": "2026-11-08T08:26:29Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 92,
+  "count": 94,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -1911,6 +1911,38 @@
       "conditionId": "1000"
     },
     {
+      "id": "N6DJEU742OLU4TLCW76HX7RH",
+      "itemId": "2ZWZOYOI3U2TGJ7RAH5R7HEM",
+      "sku": "ebay:800890729471",
+      "title": "FC Barcelona Men’s Crest T-Shirt Maroon XL Extra Large",
+      "price": 23.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/fc-barcelona-men-s-crest-t-shirt-maroon-xl-extra-large/2ZWZOYOI3U2TGJ7RAH5R7HEM",
+      "image": "https://i.ebayimg.com/images/g/XNsAAeSwu91q79GU/s-l1600.jpg",
+      "images": [
+        "https://i.ebayimg.com/images/g/XNsAAeSwu91q79GU/s-l1600.jpg",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/VL0AAeSw76dq79GJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/CYIAAeSwN9Jq79GJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/TtAAAeSwdV1q79GJ/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/0kkAAeSwukRq79GK/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/MbYAAeSw5WNq79GK/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/Q2IAAeSwF9Fq79GK/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 2,
+      "tag": "Apparel",
+      "note": "Size XL",
+      "size": "XL",
+      "brand": "",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/XfKIP9SG",
+      "checkoutUrlDiscounted": "https://square.link/u/Pqg1glzf",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
       "id": "IXW3DEPC4MADIAUXYNABLZOG",
       "itemId": "GOFQKDUDHCCXE6BZZTFGXNIE",
       "sku": "ebay:800622622235",
@@ -2525,6 +2557,38 @@
       "conditionId": "1000"
     },
     {
+      "id": "VVJN4CIB7L7VUQQTKOCZAG4M",
+      "itemId": "Q5LVTSHMXTJEKLFKASKUI4D3",
+      "sku": "ebay:800890735646",
+      "title": "Nike USA Youth Crest T-Shirt White YthM Youth Medium",
+      "price": 19.99,
+      "currency": "USD",
+      "url": "https://jerseydealsofficial.square.site/product/nike-usa-youth-crest-t-shirt-white-ythm-youth-medium/Q5LVTSHMXTJEKLFKASKUI4D3",
+      "image": "https://i.ebayimg.com/images/g/X48AAeSw585q79MO/s-l1600.jpg",
+      "images": [
+        "https://i.ebayimg.com/images/g/X48AAeSw585q79MO/s-l1600.jpg",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/k~EAAeSw~75q79Lt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/3dUAAeSw~n1q79Lt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/Zj4AAeSwmalq79Lt/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/fU4AAeSwzABq79Lu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/3Y8AAeSwBXNq79Lu/$_57.JPG?set_id=8800005007",
+        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/Xq0AAeSwdV1q79Lu/$_57.JPG?set_id=8800005007"
+      ],
+      "quantity": 1,
+      "tag": "Youth",
+      "note": "Youth M",
+      "size": "Youth M",
+      "brand": "Nike",
+      "source": "square",
+      "category": "",
+      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
+      "checkoutUrl": "https://square.link/u/JeLfJjNB",
+      "checkoutUrlDiscounted": "https://square.link/u/YwwCzbD9",
+      "condition": "New",
+      "conditionEbay": "New",
+      "conditionId": "1000"
+    },
+    {
       "id": "W7IVX3QFH6P6K2OPYA3RRGCT",
       "itemId": "QYRSDSJ63DHBBMOX5SN2BNP3",
       "sku": "ebay:800508026388",
@@ -2999,5 +3063,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-08T01:52:07Z"
+  "ebayDetailsSyncedAt": "2026-11-08T08:26:29Z"
 }

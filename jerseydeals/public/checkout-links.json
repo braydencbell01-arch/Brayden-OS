@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-08T05:29:44Z",
+  "syncedAt": "2026-11-08T08:24:37Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 92,
+  "count": 94,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1202,6 +1202,32 @@
       "discountPaymentLinkId": "LFCY7G7R45ZY4JR6",
       "discountUrl": "https://square.link/u/mNIjkDgo",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KeYkQcEuUHNl6lmEwmTaXadn1teZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "2ZWZOYOI3U2TGJ7RAH5R7HEM",
+      "variationId": "N6DJEU742OLU4TLCW76HX7RH",
+      "title": "FC Barcelona Men’s Crest T-Shirt Maroon XL Extra Large",
+      "sku": "ebay:800890729471",
+      "paymentLinkId": "VHNXANOLNEIP6SYX",
+      "url": "https://square.link/u/XfKIP9SG",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/qchpucMl0aZWY4bJgA64TWL32dEZY",
+      "discountPaymentLinkId": "WZSSOYLK3RMWXOZG",
+      "discountUrl": "https://square.link/u/Pqg1glzf",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/MDszdzvavJfQMf5Y6Lz0HcnTJq9YY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "Q5LVTSHMXTJEKLFKASKUI4D3",
+      "variationId": "VVJN4CIB7L7VUQQTKOCZAG4M",
+      "title": "Nike USA Youth Crest T-Shirt White YthM Youth Medium",
+      "sku": "ebay:800890735646",
+      "paymentLinkId": "PK6C5VNMBCHIT4SO",
+      "url": "https://square.link/u/JeLfJjNB",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/2sIegMOoW9pfCZlL1js0awOwlrPZY",
+      "discountPaymentLinkId": "G7MTUC7WNKC7O7A4",
+      "discountUrl": "https://square.link/u/YwwCzbD9",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/iyEYujQccqlVM5RlFEZAhj0SHyLZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
