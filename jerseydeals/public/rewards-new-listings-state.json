@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T02:56:14Z",
+  "updatedAt": "2026-11-09T10:46:21Z",
   "bootstrappedAt": "2026-07-28T18:05:18Z",
   "knownIds": [
     "ebay:388851790862",
@@ -195,49 +195,13 @@
     "ebay:800893393729",
     "ebay:800893406139"
   ],
-  "pending": [
-    {
-      "id": "ebay:800893371462",
-      "title": "Nike Men’s Brazil CBF Core Cotton Graphic T-Shirt Yellow L Large",
-      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-brazil-cbf-core-cotton-graphic-t-shirt-yellow-l-large/A4DDZLGHYQMXZWJTXGZVGPUB",
-      "price": 24.99,
-      "seenAt": "2026-11-08T19:59:23Z"
-    },
-    {
-      "id": "ebay:800893378003",
-      "title": "Nike Men’s Brazil CBF Core Cotton Graphic T-Shirt Yellow M Medium",
-      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-brazil-cbf-core-cotton-graphic-t-shirt-yellow-m-medium/GGVBB3VW77L4JYIZEUHYFZ6X",
-      "price": 24.99,
-      "seenAt": "2026-11-08T19:59:23Z"
-    },
-    {
-      "id": "ebay:800893406139",
-      "title": "Nike Men’s Brazil CBF Pullover Hoodie Green L Large",
-      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-brazil-cbf-pullover-hoodie-green-l-large/2J7WESUIN6M6Q4DH2YBK72WY",
-      "price": 37.99,
-      "seenAt": "2026-11-08T19:59:23Z"
-    },
-    {
-      "id": "ebay:800893393729",
-      "title": "Nike Men’s France FFF Navy Graphic T-Shirt M Medium",
-      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-france-fff-navy-graphic-t-shirt-m-medium/ULAYJSR6AHFSYFUHZV6HGQTA",
-      "price": 19.99,
-      "seenAt": "2026-11-08T19:59:23Z"
-    }
-  ],
-  "lastEmailedAt": "2026-11-08T08:26:38Z",
-  "lastEmailedDay": "2026-11-08",
+  "pending": [],
+  "lastEmailedAt": "2026-11-09T10:46:25Z",
+  "lastEmailedDay": "2026-11-09",
   "lastEmailedIds": [
-    "ebay:800890305605",
-    "ebay:800890296102",
-    "ebay:800890290886",
-    "ebay:800890605445",
-    "ebay:800890271568",
-    "ebay:800890275676",
-    "ebay:800890279343",
-    "ebay:800890729471",
-    "ebay:800890704567",
-    "ebay:800890698883",
-    "ebay:800890735646"
+    "ebay:800893371462",
+    "ebay:800893378003",
+    "ebay:800893406139",
+    "ebay:800893393729"
   ]
 }
