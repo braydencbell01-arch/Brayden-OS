@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-11-12T13:03:22Z",
+  "syncedAt": "2026-11-12T18:37:12Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 98,
+  "count": 97,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -1690,40 +1690,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "RAESR3KH2PZBNFCQJ5Z7HUKS",
-      "itemId": "QCK2KMTTY7VQKIMB5U52OKPU",
-      "sku": "ebay:800623093226",
-      "title": "Adidas Japan FIFA World Cup 2026 Tee Men’s Medium White NWT",
-      "price": 24.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/adidas-japan-fifa-world-cup-2026-tee-men-s-medium-white-nwt/QCK2KMTTY7VQKIMB5U52OKPU",
-      "image": "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/YKkAAeSwCjpqnedt/$_57.JPG?set_id=8800005007",
-      "images": [
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/YKkAAeSwCjpqnedt/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/VvAAAeSw~vdqnedu/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/q7wAAeSwVzdqnedu/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/~XYAAeSw7dJqnedv/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/P8YAAeSwRHNqnedv/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/Zz0AAeSwHiZqnedv/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/epwAAeSw1Vdqnedv/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/4koAAeSwEU1qnedv/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/XxgAAeSwa1Bqnedv/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size S",
-      "size": "S",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/5wr2Nytb",
-      "checkoutUrlDiscounted": "https://square.link/u/gpjhdiXQ",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
       "id": "TEJ45IH7C5GXJIX2SPCZGP57",
       "itemId": "ZT75RPDEYRGDGG4RCQ3GQBW7",
       "sku": "ebay:800622634168",
@@ -3195,5 +3161,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-12T10:34:26Z"
+  "ebayDetailsSyncedAt": "2026-11-12T18:37:12Z"
 }

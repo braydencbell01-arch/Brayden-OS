@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-12T13:03:22Z",
+  "syncedAt": "2026-11-12T18:34:53Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 98,
+  "count": 97,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -851,19 +851,6 @@
       "discountPaymentLinkId": "3LM46ND6722ELPSU",
       "discountUrl": "https://square.link/u/RJqu0TwU",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/svgSv1LF0rdh34w3D0to3lVi5xYZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "QCK2KMTTY7VQKIMB5U52OKPU",
-      "variationId": "RAESR3KH2PZBNFCQJ5Z7HUKS",
-      "title": "Adidas Japan FIFA World Cup 2026 Tee Men’s Medium White NWT",
-      "sku": "ebay:800623093226",
-      "paymentLinkId": "MRRTNVOATZ2LR2CN",
-      "url": "https://square.link/u/5wr2Nytb",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Gip1xYbK9EkTK4eeWNx0ILXLFxWZY",
-      "discountPaymentLinkId": "SBOSAVGC4O36EYZP",
-      "discountUrl": "https://square.link/u/gpjhdiXQ",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WCzoPK1k6F31fgOLUnC5TZUTZvIZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
