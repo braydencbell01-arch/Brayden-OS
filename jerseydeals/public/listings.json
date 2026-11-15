@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-15T14:51:24Z",
+  "syncedAt": "2026-11-15T17:23:08Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -946,7 +946,8 @@
       "conditionEbay": "New",
       "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/M0c2hCR8",
-      "checkoutUrlDiscounted": "https://square.link/u/cJA5PKcS"
+      "checkoutUrlDiscounted": "https://square.link/u/cJA5PKcS",
+      "conditionId": "1000"
     },
     {
       "id": "NSNIT7SKLSN5ZXTMWFJ7HVD3",
@@ -3161,5 +3162,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-15T10:17:26Z"
+  "ebayDetailsSyncedAt": "2026-11-15T17:23:08Z"
 }
