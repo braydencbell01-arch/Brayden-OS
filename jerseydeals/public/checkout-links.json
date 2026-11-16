@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-16T06:58:06Z",
+  "syncedAt": "2026-11-16T08:51:36Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 97,
+  "count": 96,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1241,19 +1241,6 @@
       "discountPaymentLinkId": "GXKKO2COXNPF64XN",
       "discountUrl": "https://square.link/u/RxXR4UaB",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/64PzeW28DIXnnNC0fXIXMNre3TVZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "ULAYJSR6AHFSYFUHZV6HGQTA",
-      "variationId": "YRJLJOP3OXKQKRXXYH6X7PHD",
-      "title": "Nike Men’s France FFF Navy Graphic T-Shirt M Medium",
-      "sku": "ebay:800893393729",
-      "paymentLinkId": "32SSP7K5ORHC2WUS",
-      "url": "https://square.link/u/1WavaT9g",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/mivktcroDBmTYSnI3fVHpHxjuIbZY",
-      "discountPaymentLinkId": "CR2N7B2HVJEJLKKG",
-      "discountUrl": "https://square.link/u/t1dHbtJi",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/W6Pw1BEoCqxpKaoDazmftcD45bWZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

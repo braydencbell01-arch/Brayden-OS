@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-11-16T06:58:06Z",
+  "syncedAt": "2026-11-16T08:53:20Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 97,
+  "count": 96,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -2621,38 +2621,6 @@
       "conditionId": "1000"
     },
     {
-      "id": "YRJLJOP3OXKQKRXXYH6X7PHD",
-      "itemId": "ULAYJSR6AHFSYFUHZV6HGQTA",
-      "sku": "ebay:800893393729",
-      "title": "Nike Men’s France FFF Navy Graphic T-Shirt M Medium",
-      "price": 19.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-france-fff-navy-graphic-t-shirt-m-medium/ULAYJSR6AHFSYFUHZV6HGQTA",
-      "image": "https://i.ebayimg.com/images/g/tX0AAeSwd-Nq8Lvb/s-l1600.jpg",
-      "images": [
-        "https://i.ebayimg.com/images/g/tX0AAeSwd-Nq8Lvb/s-l1600.jpg",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/p~QAAeSw3EBq8LvP/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/lLQAAeSwR~9q8LvP/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/4PEAAeSw~~tq8LvP/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/PzAAAeSwYxRq8LvP/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/FZgAAeSwRP9q8LvP/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/Eu8AAeSw5WNq8LvP/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Apparel",
-      "note": "Size M",
-      "size": "M",
-      "brand": "Nike",
-      "source": "square",
-      "category": "",
-      "description": "T-Shirt is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/1WavaT9g",
-      "checkoutUrlDiscounted": "https://square.link/u/t1dHbtJi",
-      "condition": "New",
-      "conditionEbay": "New with tags",
-      "conditionId": "1000"
-    },
-    {
       "id": "VVJN4CIB7L7VUQQTKOCZAG4M",
       "itemId": "Q5LVTSHMXTJEKLFKASKUI4D3",
       "sku": "ebay:800890735646",
@@ -3159,5 +3127,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-16T01:36:49Z"
+  "ebayDetailsSyncedAt": "2026-11-16T08:53:20Z"
 }
