@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-17T00:45:50Z",
+  "syncedAt": "2026-11-17T02:37:44Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
@@ -1143,8 +1143,6 @@
       "brand": "Adidas",
       "source": "square",
       "category": "",
-      "condition": "New",
-      "conditionEbay": "New",
       "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/WXeImyP9",
       "checkoutUrlDiscounted": "https://square.link/u/ne9pAnFp"
@@ -3127,5 +3125,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-16T19:10:12Z"
+  "ebayDetailsSyncedAt": "2026-11-17T02:37:44Z"
 }
