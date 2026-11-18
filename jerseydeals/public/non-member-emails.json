@@ -1,9 +1,9 @@
 {
-  "syncedAt": "2026-10-29T00:25:40Z",
+  "syncedAt": "2026-11-18T19:36:44Z",
   "kind": "non_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 8,
+  "count": 9,
   "emails": [
     "aqsmith08@gmail.com",
     "bboysoccer9@icloud.com",
@@ -11,6 +11,7 @@
     "joachimbekken@yahoo.com",
     "johnnymac123@aol.com",
     "marek.p.173@gmail.com",
+    "msolanocotto@gmail.com",
     "nelson.jordan1305@gmail.com",
     "no1squall@msn.com"
   ],
@@ -64,6 +65,14 @@
       ],
       "firstSeen": "2026-10-25T19:12:43.000Z",
       "lastSeen": "2026-10-25T19:12:43.000Z"
+    },
+    {
+      "email": "msolanocotto@gmail.com",
+      "sources": [
+        "first_buyer_offer"
+      ],
+      "firstSeen": "2026-11-18T14:01:18.000Z",
+      "lastSeen": "2026-11-18T14:01:18.000Z"
     },
     {
       "email": "nelson.jordan1305@gmail.com",
