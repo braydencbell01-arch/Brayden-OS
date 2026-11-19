@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-11-19T23:31:42Z",
+  "syncedAt": "2026-11-19T23:48:10Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 96,
+  "count": 95,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -729,42 +729,6 @@
       "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/bbe6qdZZ",
       "checkoutUrlDiscounted": "https://square.link/u/wYzG2ygT",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "FEGSLUT7DMM7SBNSBFNHXXRB",
-      "itemId": "2J7WESUIN6M6Q4DH2YBK72WY",
-      "sku": "ebay:800893406139",
-      "title": "Nike Men’s Brazil CBF Pullover Hoodie Green L Large",
-      "price": 37.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/nike-men-s-brazil-cbf-pullover-hoodie-green-l-large/2J7WESUIN6M6Q4DH2YBK72WY",
-      "image": "https://i.ebayimg.com/images/g/xXcAAeSw76dq8LzO/s-l1600.jpg",
-      "images": [
-        "https://i.ebayimg.com/images/g/xXcAAeSw76dq8LzO/s-l1600.jpg",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/9FEAAeSwzylq8LzD/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/tmgAAeSwSxVq8Lzk/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/3BkAAeSwsNlq8LzE/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/lkAAAeSwYKZq8LzF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/wpkAAeSwSk1q8LzF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/k30AAeSwbnpq8LzF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/y9sAAeSwFCJq8LzF/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/f3YAAeSwzfdq8LzG/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/2RYAAeSwAGdq8LzG/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/m0UAAeSwXmpq8LzG/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Court / Sideline",
-      "note": "Size L",
-      "size": "L",
-      "brand": "Nike",
-      "source": "square",
-      "category": "",
-      "description": "Hoodie is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/fVfJTGI3",
-      "checkoutUrlDiscounted": "https://square.link/u/kd5I32jq",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -3125,5 +3089,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-19T17:35:23Z"
+  "ebayDetailsSyncedAt": "2026-11-19T23:48:10Z"
 }

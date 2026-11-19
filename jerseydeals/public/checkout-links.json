@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-19T23:31:42Z",
+  "syncedAt": "2026-11-19T23:46:15Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 96,
+  "count": 95,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1241,19 +1241,6 @@
       "discountPaymentLinkId": "GXKKO2COXNPF64XN",
       "discountUrl": "https://square.link/u/RxXR4UaB",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/64PzeW28DIXnnNC0fXIXMNre3TVZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "2J7WESUIN6M6Q4DH2YBK72WY",
-      "variationId": "FEGSLUT7DMM7SBNSBFNHXXRB",
-      "title": "Nike Men’s Brazil CBF Pullover Hoodie Green L Large",
-      "sku": "ebay:800893406139",
-      "paymentLinkId": "3RFWSWD7DJ53VHPN",
-      "url": "https://square.link/u/fVfJTGI3",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/cxNq1fvY3l4TxfcNMX2KlrG4D2eZY",
-      "discountPaymentLinkId": "MBVVIOVMU3USFHDA",
-      "discountUrl": "https://square.link/u/kd5I32jq",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/msOT0Rmuj6szsetZ2S3K9DG2NkOZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
