@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-21T17:28:33Z",
+  "syncedAt": "2026-11-21T17:53:54Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 95,
+  "count": 94,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1137,19 +1137,6 @@
       "discountPaymentLinkId": "V6GUHZNN77IY6CCX",
       "discountUrl": "https://square.link/u/xK4AycDs",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Colx79jxTnKrbuDOseoMja5RIDDZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "FARHVF34Z2MM7V23Q57J3YSN",
-      "variationId": "S4MZY2OLBITYOJ72Z3CYBUW6",
-      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey L Large",
-      "sku": "ebay:800890305605",
-      "paymentLinkId": "HWBXSDLCZCCB7VF7",
-      "url": "https://square.link/u/OvWH4wVi",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/oDZDae8oAJxIBcfxM8aO9ABWI0CZY",
-      "discountPaymentLinkId": "DDTAKBY5LVHFM5TT",
-      "discountUrl": "https://square.link/u/KMOTOksP",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Os6wVnmyrm1QURdSUIXJTtYXdpfZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {

@@ -1,10 +1,10 @@
 {
-  "syncedAt": "2026-11-21T17:28:33Z",
+  "syncedAt": "2026-11-21T17:55:45Z",
   "source": "square",
   "seller": "Jersey Deals",
   "sellerUrl": "https://jerseydealsofficial.square.site",
   "shopUrl": "https://jerseydealsofficial.square.site",
-  "count": 95,
+  "count": 94,
   "listings": [
     {
       "id": "RFRY3WZVRRU7FSQGTRQAM6KU",
@@ -418,40 +418,6 @@
       "description": "Jersey is new with tag and authentic. Please message us if you have any questions.",
       "checkoutUrl": "https://square.link/u/UC5VK1Eg",
       "checkoutUrlDiscounted": "https://square.link/u/DnXiQ4j6",
-      "condition": "New",
-      "conditionEbay": "New",
-      "conditionId": "1000"
-    },
-    {
-      "id": "S4MZY2OLBITYOJ72Z3CYBUW6",
-      "itemId": "FARHVF34Z2MM7V23Q57J3YSN",
-      "sku": "ebay:800890305605",
-      "title": "26/27 Men’s adidas Belgium National Team Pre-Match Jersey L Large",
-      "price": 44.99,
-      "currency": "USD",
-      "url": "https://jerseydealsofficial.square.site/product/26-27-men-s-adidas-belgium-national-team-pre-match-jersey-l-large/FARHVF34Z2MM7V23Q57J3YSN",
-      "image": "https://i.ebayimg.com/images/g/hpgAAeSw4V9q76bC/s-l1600.jpg",
-      "images": [
-        "https://i.ebayimg.com/images/g/hpgAAeSw4V9q76bC/s-l1600.jpg",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/PCcAAeSwEExq76a4/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/iBIAAeSwQqFq76a3/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/IrEAAeSwzytq76a3/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/jCcAAeSw~epq76a5/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/nhIAAeSwNIFq76a4/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/m0sAAeSw9gtq76a5/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/caoAAeSwOXJq76a5/$_57.JPG?set_id=8800005007",
-        "https://i.ebayimg.com/00/s/MTYwMFgxMjAw/z/Oi0AAeSw9uxq76a6/$_57.JPG?set_id=8800005007"
-      ],
-      "quantity": 1,
-      "tag": "Training",
-      "note": "Size L",
-      "size": "L",
-      "brand": "Adidas",
-      "source": "square",
-      "category": "",
-      "description": "Jersey is new with tags and authentic. Please message us if you have any questions.",
-      "checkoutUrl": "https://square.link/u/OvWH4wVi",
-      "checkoutUrlDiscounted": "https://square.link/u/KMOTOksP",
       "condition": "New",
       "conditionEbay": "New",
       "conditionId": "1000"
@@ -3089,5 +3055,5 @@
     }
   ],
   "checkoutMode": "square-online-cart+payment-links",
-  "ebayDetailsSyncedAt": "2026-11-21T10:36:09Z"
+  "ebayDetailsSyncedAt": "2026-11-21T17:55:45Z"
 }

@@ -1,13 +1,13 @@
 {
-  "syncedAt": "2026-11-21T10:34:12Z",
+  "syncedAt": "2026-11-21T17:53:51Z",
   "source": "square-cart-combo-links",
   "locationId": "L6ZVPG4Q71605",
   "shippingPercent": 10,
   "itemCount": 40,
-  "pairCount": 3136,
-  "pairFirst10Count": 3136,
-  "pairFreeShipCount": 3136,
-  "pairFirst10FreeShipCount": 3136,
+  "pairCount": 3142,
+  "pairFirst10Count": 3142,
+  "pairFreeShipCount": 3142,
+  "pairFirst10FreeShipCount": 3142,
   "pairs": {
     "GKCKDASTXCN4AG4LUMQHNL4X|NK4QWAQHIVIST5HLZRY7DWRH": {
       "url": "https://square.link/u/eP02l5Or",
@@ -33909,6 +33909,72 @@
       "first10": false,
       "freeShipping": false,
       "updatedAt": "2026-11-08T19:57:02Z"
+    },
+    "5L5ODNTM2TKV5PNVWNUQS53G|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/qHkS2Php",
+      "paymentLinkId": "SWFFFHEWGVDONL5O",
+      "ids": [
+        "5L5ODNTM2TKV5PNVWNUQS53G",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:41Z"
+    },
+    "KJWF6TL4O5PW3N7PJ6YE6PEE|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/0N2i1nY2",
+      "paymentLinkId": "7ITKO6GXXAYAJMIA",
+      "ids": [
+        "KJWF6TL4O5PW3N7PJ6YE6PEE",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:43Z"
+    },
+    "I4OSDTR72MKB33QBTTDT3H7U|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/mJp2mN9p",
+      "paymentLinkId": "56OT7Y3IN7QC3H24",
+      "ids": [
+        "I4OSDTR72MKB33QBTTDT3H7U",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:45Z"
+    },
+    "C2JYX5BPWR3ZYESUVFXRBJ2Y|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/SSmbSNx6",
+      "paymentLinkId": "34IJWB6HAD2NOVQ7",
+      "ids": [
+        "C2JYX5BPWR3ZYESUVFXRBJ2Y",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:46Z"
+    },
+    "UMKRYQ7VZBVJA7VGLGXMJEV2|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/p2YFlyuI",
+      "paymentLinkId": "YKEIQFDCDT2FAFBL",
+      "ids": [
+        "UMKRYQ7VZBVJA7VGLGXMJEV2",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:48Z"
+    },
+    "22Z5X6LW6SEIQCGCGRYL2GNG|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/Lsimuazi",
+      "paymentLinkId": "AHXN7BZRRTKHQO2M",
+      "ids": [
+        "22Z5X6LW6SEIQCGCGRYL2GNG",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:50Z"
     }
   },
   "pairsFirst10": {
@@ -67812,6 +67878,72 @@
       "first10": true,
       "freeShipping": false,
       "updatedAt": "2026-11-08T19:57:03Z"
+    },
+    "5L5ODNTM2TKV5PNVWNUQS53G|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/eJqO2aAV",
+      "paymentLinkId": "F6L2WSZLXA57EWHO",
+      "ids": [
+        "5L5ODNTM2TKV5PNVWNUQS53G",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:42Z"
+    },
+    "KJWF6TL4O5PW3N7PJ6YE6PEE|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/SRPnF2BE",
+      "paymentLinkId": "XHZXLHNNQ2KJFYUJ",
+      "ids": [
+        "KJWF6TL4O5PW3N7PJ6YE6PEE",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:43Z"
+    },
+    "I4OSDTR72MKB33QBTTDT3H7U|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/SV1y0ECj",
+      "paymentLinkId": "CIDMSJ6ORLLENLQK",
+      "ids": [
+        "I4OSDTR72MKB33QBTTDT3H7U",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:45Z"
+    },
+    "C2JYX5BPWR3ZYESUVFXRBJ2Y|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/sBHlauyc",
+      "paymentLinkId": "5SCCTBM7HXFWANRP",
+      "ids": [
+        "C2JYX5BPWR3ZYESUVFXRBJ2Y",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:47Z"
+    },
+    "UMKRYQ7VZBVJA7VGLGXMJEV2|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/uuhffmDc",
+      "paymentLinkId": "XUK457DM4W5EEIML",
+      "ids": [
+        "UMKRYQ7VZBVJA7VGLGXMJEV2",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:49Z"
+    },
+    "22Z5X6LW6SEIQCGCGRYL2GNG|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/ng2Qb4wA",
+      "paymentLinkId": "7OUZ44JAQDSSGTQA",
+      "ids": [
+        "22Z5X6LW6SEIQCGCGRYL2GNG",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": false,
+      "updatedAt": "2026-11-21T17:53:50Z"
     }
   },
   "pairsFreeShip": {
@@ -102310,6 +102442,72 @@
       "first10": false,
       "freeShipping": true,
       "updatedAt": "2026-11-08T19:57:03Z"
+    },
+    "5L5ODNTM2TKV5PNVWNUQS53G|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/gIQgdhFf",
+      "paymentLinkId": "RUESOSCA4IPODBWC",
+      "ids": [
+        "5L5ODNTM2TKV5PNVWNUQS53G",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:42Z"
+    },
+    "KJWF6TL4O5PW3N7PJ6YE6PEE|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/nlh9SxPI",
+      "paymentLinkId": "HNINP5PTBKTDTP7X",
+      "ids": [
+        "KJWF6TL4O5PW3N7PJ6YE6PEE",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:44Z"
+    },
+    "I4OSDTR72MKB33QBTTDT3H7U|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/HLUgdJG4",
+      "paymentLinkId": "ZAKANVKNO6UIJEJH",
+      "ids": [
+        "I4OSDTR72MKB33QBTTDT3H7U",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:46Z"
+    },
+    "C2JYX5BPWR3ZYESUVFXRBJ2Y|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/8pIdDuNp",
+      "paymentLinkId": "G2YHRHZLQYSOAMYD",
+      "ids": [
+        "C2JYX5BPWR3ZYESUVFXRBJ2Y",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:47Z"
+    },
+    "UMKRYQ7VZBVJA7VGLGXMJEV2|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/9Owl4Fer",
+      "paymentLinkId": "VN6VGWNOIKLZJEMB",
+      "ids": [
+        "UMKRYQ7VZBVJA7VGLGXMJEV2",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:49Z"
+    },
+    "22Z5X6LW6SEIQCGCGRYL2GNG|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/CxTEAEFO",
+      "paymentLinkId": "2AQNCKDJZFX6E3DA",
+      "ids": [
+        "22Z5X6LW6SEIQCGCGRYL2GNG",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": false,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:51Z"
     }
   },
   "pairsFirst10FreeShip": {
@@ -136808,6 +137006,72 @@
       "first10": true,
       "freeShipping": true,
       "updatedAt": "2026-11-08T19:57:04Z"
+    },
+    "5L5ODNTM2TKV5PNVWNUQS53G|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/xuc3QW7Z",
+      "paymentLinkId": "KTOFNTQB6FV7IA57",
+      "ids": [
+        "5L5ODNTM2TKV5PNVWNUQS53G",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:43Z"
+    },
+    "KJWF6TL4O5PW3N7PJ6YE6PEE|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/kQwcE11n",
+      "paymentLinkId": "GHSJR4ZRAIPLVIT3",
+      "ids": [
+        "KJWF6TL4O5PW3N7PJ6YE6PEE",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:44Z"
+    },
+    "I4OSDTR72MKB33QBTTDT3H7U|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/0KNVR0cd",
+      "paymentLinkId": "HL5N6POWLHKM5UDV",
+      "ids": [
+        "I4OSDTR72MKB33QBTTDT3H7U",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:46Z"
+    },
+    "C2JYX5BPWR3ZYESUVFXRBJ2Y|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/ITyIqyOo",
+      "paymentLinkId": "HRFKROSKVXTJ5YFC",
+      "ids": [
+        "C2JYX5BPWR3ZYESUVFXRBJ2Y",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:48Z"
+    },
+    "UMKRYQ7VZBVJA7VGLGXMJEV2|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/sNTmd1gV",
+      "paymentLinkId": "3LANYYN5IGIXMYAD",
+      "ids": [
+        "UMKRYQ7VZBVJA7VGLGXMJEV2",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:49Z"
+    },
+    "22Z5X6LW6SEIQCGCGRYL2GNG|WSZKEVL3YZH5CD73UCGFDP7K": {
+      "url": "https://square.link/u/u8CRNZ9V",
+      "paymentLinkId": "CBZF5R2ZP6J24UAB",
+      "ids": [
+        "22Z5X6LW6SEIQCGCGRYL2GNG",
+        "WSZKEVL3YZH5CD73UCGFDP7K"
+      ],
+      "first10": true,
+      "freeShipping": true,
+      "updatedAt": "2026-11-21T17:53:51Z"
     }
   }
 }
