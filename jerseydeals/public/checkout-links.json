@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-22T22:51:46Z",
+  "syncedAt": "2026-11-22T23:45:54Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 94,
+  "count": 97,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -1228,6 +1228,45 @@
       "discountPaymentLinkId": "GXKKO2COXNPF64XN",
       "discountUrl": "https://square.link/u/RxXR4UaB",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/64PzeW28DIXnnNC0fXIXMNre3TVZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "MDWU7Y2CEVI54VQZ3LSFEWQY",
+      "variationId": "K3VLAZAF3EUIO6MU25RNX7NX",
+      "title": "Red Men’s adidas Red Bull New York Pregame Logo T-Shirt XL Extra Large",
+      "sku": "ebay:800953390486",
+      "paymentLinkId": "PMBJQ5UON275HZQI",
+      "url": "https://square.link/u/gXzA4Ofw",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/wdInZnbbNpdD4ezkC28rXLPyzbMZY",
+      "discountPaymentLinkId": "QM7LKFCT4IGTVFIK",
+      "discountUrl": "https://square.link/u/0anOWh5y",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/YBWgoLXtS2OMhGbGc3OMkgwKIYYZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "ZA6NYERKB7I7UB77Q4UWSLGF",
+      "variationId": "OIQNH4ZDMTSG5IXVRCLN4QEX",
+      "title": "Navy Men’s adidas New England Revolution Pregame Logo T-Shirt XL Extra Large",
+      "sku": "ebay:800953397712",
+      "paymentLinkId": "ZYGVXGKDWN6BVBCX",
+      "url": "https://square.link/u/p939UP0F",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/KU3iIfV532JAyVzosbGBm1B76H6YY",
+      "discountPaymentLinkId": "WLROJ35TR2534BCG",
+      "discountUrl": "https://square.link/u/g51MBAeN",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/CYrItKvteqMsjQyzAmEyLsw76pJZY",
+      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
+    },
+    {
+      "itemId": "JGZ74QUNI6IQFMZVRHZTAVWQ",
+      "variationId": "RZMXD4SNXECK4WJAB6MYRGJ6",
+      "title": "Navy Men’s adidas Sporting Kansas City Pregame Logo T-Shirt L Large",
+      "sku": "ebay:800953401782",
+      "paymentLinkId": "GNONCWW5VGU7XDL2",
+      "url": "https://square.link/u/Vk4gzr0P",
+      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/UvSWEgRzA5FqpESoFwGnSmnlQoXZY",
+      "discountPaymentLinkId": "AXG2J6YCRGUVR7C7",
+      "discountUrl": "https://square.link/u/EEctmkTj",
+      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/AZoYgbsFRbaRZrrLz6CuPuRpHZVZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     }
   ]
