@@ -1,13 +1,14 @@
 {
-  "syncedAt": "2026-11-21T12:05:22Z",
+  "syncedAt": "2026-11-25T19:20:40Z",
   "kind": "non_members",
   "scope": "jerseydeals-landing",
   "listGeneration": "2026-07-27-email-reset",
-  "count": 10,
+  "count": 11,
   "emails": [
     "aqsmith08@gmail.com",
     "bboysoccer9@icloud.com",
     "bell29@webstercsd.org",
+    "betsy.mcmahon.my@gmail.com",
     "dkshengkiat@gmail.com",
     "joachimbekken@yahoo.com",
     "johnnymac123@aol.com",
@@ -42,6 +43,14 @@
       ],
       "firstSeen": "2026-07-27T15:29:03.000Z",
       "lastSeen": "2026-07-27T18:18:56.000Z"
+    },
+    {
+      "email": "betsy.mcmahon.my@gmail.com",
+      "sources": [
+        "first_buyer_offer"
+      ],
+      "firstSeen": "2026-11-25T13:40:36.000Z",
+      "lastSeen": "2026-11-25T13:40:36.000Z"
     },
     {
       "email": "dkshengkiat@gmail.com",
