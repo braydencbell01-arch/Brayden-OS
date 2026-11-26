@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-25T23:34:48Z",
+  "syncedAt": "2026-11-26T00:52:09Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 97,
+  "count": 94,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -84,19 +84,6 @@
       "discountPaymentLinkId": "XXSYPTDTUPMRFBMK",
       "discountUrl": "https://square.link/u/DnXiQ4j6",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kjiBf8El9WWkoNnwtbzwPKN7HQAZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "CRPQ6OS5FV6RHBJTZ54C6XHO",
-      "variationId": "5ZMO6NV7TPNCYMUREA6QBZCH",
-      "title": "22/23 Youth Adidas Germany National Team Home Jersey YthXL Youth Extra Large",
-      "sku": "ebay:800482158420",
-      "paymentLinkId": "7LICV5BN4HJ66M3X",
-      "url": "https://square.link/u/3wlOLNMx",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Cs3RVcrvi3KxOdpZfMeEGf8vgc8YY",
-      "discountPaymentLinkId": "HVB5UJJMDWASXS4A",
-      "discountUrl": "https://square.link/u/4Sj4d8mC",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/OSXBZw7AL9C3FGUnxUIsXCrINi6YY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
@@ -201,19 +188,6 @@
       "discountPaymentLinkId": "CNF53BRJL3SDTNOL",
       "discountUrl": "https://square.link/u/omAIumHV",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/IVCFvTmibl5Cfc5notWqJ5ltml8YY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "VQSG23BLZT77FFNWGXRN4XYO",
-      "variationId": "XDF6VB47D6ALWBLMWSNUTEM6",
-      "title": "16/17 Youth Adidas Pogba 6 Manchester United Away Jersey YthXL Youth Extra Large",
-      "sku": "ebay:800482163372",
-      "paymentLinkId": "WTPAXZRZHKJRWPZ2",
-      "url": "https://square.link/u/CYpYakwK",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/0zMGoybvwrzXv5cFiNNsKClac1IZY",
-      "discountPaymentLinkId": "7GCROI2GYX4SMCV6",
-      "discountUrl": "https://square.link/u/Mr5B0z8N",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/aSEhhSHuXaTtybFzT2ByQBeYggBZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
@@ -1007,19 +981,6 @@
       "discountPaymentLinkId": "TDE3SRAS3FP63KXR",
       "discountUrl": "https://square.link/u/cVOmVCNE",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/WQe0Wd6yeRSHfo2npMkBqq3qryUZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "XSL2MJ5SUOOA5HCFCU2VQ6W2",
-      "variationId": "2D7JPX4WEMHG2ZOU6LSCJXTB",
-      "title": "adidas Argentina Home Fan Jersey Youth Extra Large Light Blue World Cup 2026",
-      "sku": "ebay:800890133567",
-      "paymentLinkId": "VM2VXLYLY7NWGBCQ",
-      "url": "https://square.link/u/JZfW9aPR",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/AJMIhvFXSliysRkoekMIueSQ4BZZY",
-      "discountPaymentLinkId": "GLNP5NSXWPVS5OTU",
-      "discountUrl": "https://square.link/u/mxXFjUmb",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/GajwPueO076IyriLsFcKgwkhRPcZY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
