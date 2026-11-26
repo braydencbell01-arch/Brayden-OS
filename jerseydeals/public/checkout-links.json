@@ -1,12 +1,12 @@
 {
-  "syncedAt": "2026-11-26T15:43:13Z",
+  "syncedAt": "2026-11-26T19:14:12Z",
   "source": "square-payment-links",
   "locationId": "L6ZVPG4Q71605",
   "discountId": "OLPMVGCGLRBDCULSOPQOY2FI",
   "discountName": "First-time buyer 10% off",
   "shippingPercent": 10,
   "shippingCents": 0,
-  "count": 94,
+  "count": 93,
   "links": [
     {
       "itemId": "423SKBUUFE7GNCVVNZLLM4TL",
@@ -175,19 +175,6 @@
       "discountPaymentLinkId": "JHAR6VUKL773MV57",
       "discountUrl": "https://square.link/u/NvbrJnra",
       "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/kdrtUfxwEA4yNcnhRRDVSNTnluPZY",
-      "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
-    },
-    {
-      "itemId": "7QEXEFKYLJ5UXCPCFJKJCZPU",
-      "variationId": "2R5BPPFCVBMJLBOKNX5PT6AF",
-      "title": "16/17 Youth Adidas Chelsea FC Home Jersey YthXL Youth Extra Large",
-      "sku": "ebay:800482163144",
-      "paymentLinkId": "5QYUPBMA6G5GAKTK",
-      "url": "https://square.link/u/7TAVcV4J",
-      "longUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/Oil0nHp6FRGr6fjRbWmP4K0vLEdZY",
-      "discountPaymentLinkId": "CNF53BRJL3SDTNOL",
-      "discountUrl": "https://square.link/u/omAIumHV",
-      "discountLongUrl": "https://checkout.square.site/merchant/MLH0EXEFQGBKH/order/IVCFvTmibl5Cfc5notWqJ5ltml8YY",
       "discountId": "OLPMVGCGLRBDCULSOPQOY2FI"
     },
     {
