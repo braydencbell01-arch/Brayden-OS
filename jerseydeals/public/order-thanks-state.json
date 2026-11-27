@@ -1,19 +1,18 @@
 {
-  "updatedAt": "2026-11-27T11:09:52Z",
+  "updatedAt": "2026-11-27T20:11:29Z",
   "bootstrappedAt": "2026-07-29T15:41:51Z",
   "emailedOrderIds": [
     "07uj1BljabQeYpsIDpJpMUSbp4FZY",
     "2oMnD0AXsmZxcN3Hl46HuQkL1vRZY",
     "YLpzAeiPj9rhJZjXCv5jVnvBxNCZY",
     "cP4EN0f3VmfBwKex9Mm7oKdXnZZZY",
+    "k1FMIbN4k051QjFINwEJqjnRH3LZY",
     "k9hUQuiR7E7XqWYrzSaf8wRqMQdZY",
     "sdvAA5LjPBOXLKaPmkraq7GMOL9YY"
   ],
-  "lastEmailedAt": "2026-08-08T15:58:53Z",
+  "lastEmailedAt": "2026-11-27T20:11:29Z",
   "lastEmailedOrderIds": [
-    "sdvAA5LjPBOXLKaPmkraq7GMOL9YY",
-    "k9hUQuiR7E7XqWYrzSaf8wRqMQdZY",
-    "cP4EN0f3VmfBwKex9Mm7oKdXnZZZY"
+    "k1FMIbN4k051QjFINwEJqjnRH3LZY"
   ],
   "note": "Cleared once so existing Square buyers get the thank-you backfill."
 }
